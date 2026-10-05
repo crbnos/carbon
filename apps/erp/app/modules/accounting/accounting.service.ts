@@ -2703,7 +2703,13 @@ export async function unlockAccountingPeriod(
 export async function closeAccountingPeriod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { periodId: string; companyId: string; userId: string }
+  args: {
+    periodId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  },
+  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
 ) {
   const period = await getAccountingPeriodById(
     client,
@@ -2748,10 +2754,11 @@ export async function closeAccountingPeriod(
   // Checklist gate: every required task must be Done/Skipped and no Blocker
   // auto-check may be failing (acceptance criteria 7/10). Instantiation is
   // idempotent, so this both materializes and evaluates the checklist.
-  const checklist = await getPeriodCloseChecklist(
+  const checklist = await loadPeriodCloseChecklist(
     client,
     args.companyId,
-    args.periodId
+    args.periodId,
+    previewRuns
   );
   if (checklist.error || !checklist.data) {
     return {
@@ -2854,11 +2861,17 @@ export async function closeAccountingPeriod(
 export async function closePeriodWithChecklist(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; periodId: string; userId: string }
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    periodId: string;
+    userId: string;
+  }
 ) {
   return closeAccountingPeriod(client, db, {
     periodId: args.periodId,
     companyId: args.companyId,
+    companyGroupId: args.companyGroupId,
     userId: args.userId
   });
 }
@@ -2993,6 +3006,12 @@ export type PeriodReadinessCheck = {
   failing: boolean;
   count: number;
   documents?: PeriodCloseUnpostedDocument[];
+  /** Run checks only: the base-currency total behind `count`. */
+  amount?: number;
+  /** Run checks only: what a new run for the period would hold now. */
+  due?: RunPreview;
+  /** Run checks only: the Draft runs the check is waiting on. */
+  draftRuns?: { id: string; readableId: string }[];
 };
 
 // An operational document (receipt, shipment, invoice) that has not posted to
@@ -3157,154 +3176,136 @@ export async function getPeriodExternalGlSyncReadiness(
  *  can never disagree about which journals are unbalanced. */
 const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
-/**
- * Planned contract revenue months starting on or before `endDate`, of a
- * confirmed (non-Draft) contract, that no revenue recognition schedule row
- * references yet — the contract half of the "Recognize revenue for the
- * period" close task. Mirrors `synthesizeContractRevenue` (the
- * `propose-revenue-recognition-run` server function); a month it has already
- * synthesized is counted by its Planned schedule rows instead. A failed read
- * counts as failing (1), never as a silent pass.
- */
-async function countUnsynthesizedContractRevenue(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  endDate: string
-): Promise<number> {
-  const result = await client
-    .from("customerContractRevenue")
-    .select(
-      "id, customerContract!inner(status), revenueRecognitionSchedule(id)",
-      {
-        count: "exact",
-        head: true
-      }
-    )
-    .eq("companyId", companyId)
-    .eq("status", "Planned")
-    .lte("periodStart", endDate)
-    .neq("amount", 0)
-    .neq("customerContract.status", "Draft")
-    .is("revenueRecognitionSchedule", null);
-  if (result.error) return 1;
-  return result.count ?? 0;
-}
+/** What a new run for the period would hold now, or why it is unknown. */
+export type RunPreview = {
+  count: number;
+  amount: number;
+  error: string | null;
+};
 
 /**
- * Rental-treated lines that earned rent inside [startDate, endDate] which no
- * posted invoice covers and no Accrual row for this period end accrues — the
- * accrual half of the "Recognize revenue for the period" close task. Mirrors
- * `synthesizeRentalAccruals` (the `propose-revenue-recognition-run` server function): a
- * non-adjustment billing period of an Rental-treated `On Rent` / `Returned` line,
- * overlapping the period inside the line's `[deliveredAt, returnedAt]`, that is
- * `Pending` or `Invoiced` onto a Draft/Pending invoice. Usually one query: the
- * invoice and accrual reads only run when a candidate exists. A failed read
- * counts as failing (1), never as a silent pass.
+ * What a revenue recognition run and a depreciation run for `periodEnd`
+ * would hold if created now. The close checklist reads this instead of
+ * copying the runs' rules.
  */
-async function countUnaccruedRentalLines(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  startDate: string,
-  endDate: string
-): Promise<number> {
-  const periods = await fetchAllFromTable<{
-    id: string;
-    rentalAgreementLineId: string;
-    periodStart: string;
-    periodEnd: string;
-    status: Database["public"]["Enums"]["rentalBillingPeriodStatus"];
-    rentalAgreementLine: {
-      deliveredAt: string | null;
-      returnedAt: string | null;
-    };
-  }>(
-    client,
-    "rentalBillingPeriod",
-    "id, rentalAgreementLineId, periodStart, periodEnd, status, rentalAgreementLine!inner(deliveredAt, returnedAt)",
-    (query: any) =>
-      query
-        .eq("companyId", companyId)
-        .eq("isAdjustment", false)
-        .lte("periodStart", endDate)
-        .gte("periodEnd", startDate)
-        .eq("rentalAgreementLine.lessorClassification", "Rental")
-        .in("rentalAgreementLine.status", ["On Rent", "Returned"])
-        .lte("rentalAgreementLine.deliveredAt", endDate)
-        .order("id")
-  );
-  if (periods.error) return 1;
+export type PeriodRunPreview = {
+  revenue: RunPreview;
+  depreciation: RunPreview;
+};
 
-  const earning = (periods.data ?? []).filter((period) => {
-    const { deliveredAt, returnedAt } = period.rentalAgreementLine;
-    if (!deliveredAt) return false;
-    const starts = [period.periodStart, startDate, deliveredAt];
-    const ends = [
-      period.periodEnd,
-      endDate,
-      ...(returnedAt ? [returnedAt] : [])
-    ];
-    const start = starts.reduce((a, b) => (a > b ? a : b));
-    const end = ends.reduce((a, b) => (a < b ? a : b));
-    return start <= end;
-  });
-  if (earning.length === 0) return 0;
+export type PeriodRunPreviewer = (
+  periodEnd: string
+) => Promise<PeriodRunPreview>;
 
-  let unbilled = earning.filter((period) => period.status === "Pending");
-  if (unbilled.length < earning.length) {
-    // An Invoiced period is still unbilled while its invoice has not posted.
-    const unposted = await fetchAllFromTable<{
-      rentalBillingPeriodId: string;
-    }>(
-      client,
-      "salesInvoiceLine",
-      "rentalBillingPeriodId, salesInvoice!inner(status)",
-      (query: any) =>
-        query
-          .eq("companyId", companyId)
-          .not("rentalBillingPeriodId", "is", null)
-          .in("salesInvoice.status", ["Draft", "Pending"])
-          .order("id")
-    );
-    if (unposted.error) return 1;
-    const unpostedPeriodIds = new Set(
-      (unposted.data ?? []).map((line) => line.rentalBillingPeriodId)
-    );
-    unbilled = earning.filter(
-      (period) =>
-        period.status === "Pending" || unpostedPeriodIds.has(period.id)
-    );
+function previewError(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
   }
-  if (unbilled.length === 0) return 0;
-
-  const accruals = await fetchAllFromTable<{ rentalAgreementLineId: string }>(
-    client,
-    "revenueRecognitionSchedule",
-    "rentalAgreementLineId",
-    (query: any) =>
-      query
-        .eq("companyId", companyId)
-        .eq("type", "Accrual")
-        .eq("scheduledDate", endDate)
-        .not("rentalAgreementLineId", "is", null)
-        .order("id")
-  );
-  if (accruals.error) return 1;
-  const accruedLineIds = new Set(
-    (accruals.data ?? []).map((row) => row.rentalAgreementLineId)
-  );
-
-  return new Set(
-    unbilled
-      .map((period) => period.rentalAgreementLineId)
-      .filter((lineId) => !accruedLineIds.has(lineId))
-  ).size;
+  return fallback;
 }
 
-async function computePeriodReadiness(
+/**
+ * Asks both run engines what a new run for `periodEnd` would hold, without
+ * creating one. Revenue: the `preview-revenue-recognition-run` server
+ * function (the proposal's synthesizers and due rows, rolled back).
+ * Depreciation: `buildDepreciationRunLines`, empty when a later period is
+ * already posted (per-month posting put those months in their periods).
+ * Never throws: a failure is returned as the preview's `error`.
+ */
+export async function getPeriodRunPreview(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    periodEnd: string;
+  }
+): Promise<PeriodRunPreview> {
+  const { companyId, companyGroupId, userId, periodEnd } = args;
+  const [revenue, depreciation] = await Promise.all([
+    serverFns
+      .system({ db, companyId, userId })
+      .invoke("preview-revenue-recognition-run", { periodEnd })
+      .then(
+        (result): RunPreview =>
+          result.error
+            ? {
+                count: 0,
+                amount: 0,
+                error: previewError(
+                  result.error,
+                  "Failed to preview revenue recognition"
+                )
+              }
+            : { ...result.data, error: null }
+      )
+      .catch(
+        (error): RunPreview => ({
+          count: 0,
+          amount: 0,
+          error: previewError(error, "Failed to preview revenue recognition")
+        })
+      ),
+    buildDepreciationRunLines(client, { companyId, companyGroupId, periodEnd })
+      .then((result): RunPreview => {
+        if (!result.data) {
+          return {
+            count: 0,
+            amount: 0,
+            error: previewError(
+              result.error,
+              "Failed to calculate depreciation"
+            )
+          };
+        }
+        if (result.data.laterPostedRunId) {
+          return { count: 0, amount: 0, error: null };
+        }
+        const { lines } = result.data;
+        return {
+          count: new Set(lines.map((line) => line.fixedAssetId)).size,
+          amount: round(lines.reduce((sum, line) => sum + line.amount, 0)),
+          error: null
+        };
+      })
+      .catch(
+        (error): RunPreview => ({
+          count: 0,
+          amount: 0,
+          error: previewError(error, "Failed to calculate depreciation")
+        })
+      )
+  ]);
+  return { revenue, depreciation };
+}
+
+/** The previewer the close checklist uses outside tests. */
+function runPreviewer(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; companyGroupId: string; userId: string }
+): PeriodRunPreviewer {
+  return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
+}
+
+/**
+ * Evaluates every Auto close check for the period. `runPreview` is what new
+ * revenue recognition and depreciation runs for `endDate` would hold
+ * (`getPeriodRunPreview`).
+ */
+export async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
+  runPreview: PeriodRunPreview
 ): Promise<{
   checks: PeriodReadinessCheck[];
   blockers: { key: string; label: string; count: number }[];
@@ -3326,8 +3327,7 @@ async function computePeriodReadiness(
   const [
     draftJournals,
     journalsInPeriod,
-    draftDepreciation,
-    unpostedRevenueSchedules,
+    draftDepreciationRuns,
     unmatchedIC,
     pendingReceipts,
     pendingShipments,
@@ -3353,23 +3353,16 @@ async function computePeriodReadiness(
       .eq("status", "Posted")
       .gte("postingDate", startDate)
       .lte("postingDate", endDate),
+    // Draft depreciation runs ending in the period: they hold depreciation
+    // that is not posted yet, so the preview does not count it again.
     client
       .from("depreciationRun")
-      .select("id", { count: "exact", head: true })
+      .select("id, depreciationRunId, depreciationRunLine(amount)")
       .eq("companyId", companyId)
       .eq("status", "Draft")
       .gte("periodEnd", startDate)
-      .lte("periodEnd", endDate),
-    // Planned revenue schedule rows due on or before the period end — the
-    // "Recognize revenue for the period" close task (autoCheckKey
-    // unposted-revenue-schedules) fails while any exist. Not bounded below:
-    // an overdue row from an earlier period is still unrecognized revenue.
-    client
-      .from("revenueRecognitionSchedule")
-      .select("id", { count: "exact", head: true })
-      .eq("companyId", companyId)
-      .eq("status", "Planned")
-      .lte("scheduledDate", endDate),
+      .lte("periodEnd", endDate)
+      .order("depreciationRunId"),
     client
       .from("intercompanyTransaction")
       .select("id", { count: "exact", head: true })
@@ -3434,25 +3427,51 @@ async function computePeriodReadiness(
     getPeriodExternalGlSyncReadiness(client, companyId, startDate, endDate)
   ]);
 
-  // Sequential on purpose: almost every company has no rental lines, so this
-  // is one empty read after the batch above.
-  const unaccruedRentalLines = await countUnaccruedRentalLines(
+  // Planned rows due on or before the period end that a Draft run holds.
+  // The preview counts only the rows no run holds. Not bounded below: an
+  // overdue row from an earlier period is still unrecognized revenue.
+  const heldRevenueRows = await fetchAllFromTable<{
+    amount: number;
+    run: { id: string; runId: string };
+  }>(
     client,
-    companyId,
-    startDate,
-    endDate
+    "revenueRecognitionRunLine",
+    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, status), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("run.status", "Draft")
+        .eq("schedule.status", "Planned")
+        .lte("schedule.scheduledDate", endDate)
+        .order("id")
   );
-  // Contract months due by the period end that no run has synthesized yet
-  // (the run turns a month into schedule rows when it is proposed).
-  const unsynthesizedContractRevenue = await countUnsynthesizedContractRevenue(
-    client,
-    companyId,
-    endDate
+
+  // Revenue: what a new run would claim, plus what Draft runs hold.
+  const revenueDraftRuns = new Map<string, string>();
+  let heldRevenueAmount = 0;
+  for (const line of heldRevenueRows.data ?? []) {
+    revenueDraftRuns.set(line.run.id, line.run.runId);
+    heldRevenueAmount += Number(line.amount);
+  }
+  const heldRevenueCount = heldRevenueRows.error
+    ? 1
+    : (heldRevenueRows.data ?? []).length;
+  const revenueCount = runPreview.revenue.count + heldRevenueCount;
+
+  // Depreciation: the assets a new run would depreciate, plus Draft runs.
+  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
+  const draftDepreciationAmount = depreciationDraftRuns.reduce(
+    (sum, run) =>
+      sum +
+      run.depreciationRunLine.reduce(
+        (lineSum, line) => lineSum + Number(line.amount),
+        0
+      ),
+    0
   );
-  const unrecognizedRevenue =
-    (unpostedRevenueSchedules.count ?? 0) +
-    unaccruedRentalLines +
-    unsynthesizedContractRevenue;
+  const depreciationCount =
+    runPreview.depreciation.count +
+    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3564,17 +3583,30 @@ async function computePeriodReadiness(
     {
       autoCheckKey: "draft-depreciation",
       severity: "Warning",
-      label: "Draft depreciation runs ending in this period",
-      failing: (draftDepreciation.count ?? 0) > 0,
-      count: draftDepreciation.count ?? 0
+      label:
+        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
+      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
+      count: depreciationCount,
+      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
+      due: runPreview.depreciation,
+      draftRuns: depreciationDraftRuns.map((run) => ({
+        id: run.id,
+        readableId: run.depreciationRunId
+      }))
     },
     {
       autoCheckKey: "unposted-revenue-schedules",
       severity: "Warning",
       label:
-        "Unposted revenue recognition schedules or unaccrued rental days due on or before this period end",
-      failing: unrecognizedRevenue > 0,
-      count: unrecognizedRevenue
+        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
+      failing: revenueCount > 0 || runPreview.revenue.error !== null,
+      count: revenueCount,
+      amount: round(runPreview.revenue.amount + heldRevenueAmount),
+      due: runPreview.revenue,
+      draftRuns: [...revenueDraftRuns].map(([id, readableId]) => ({
+        id,
+        readableId
+      }))
     },
     {
       autoCheckKey: "unmatched-ic",
@@ -3598,9 +3630,15 @@ async function computePeriodReadiness(
 /** @mcp read */
 export async function getPeriodCloseReadiness(
   client: SupabaseClient<Database>,
-  companyId: string,
-  periodId: string
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    periodId: string;
+  }
 ) {
+  const { companyId, periodId } = args;
   const period = await getAccountingPeriodById(client, periodId, companyId);
   if (period.error || !period.data) {
     return {
@@ -3612,7 +3650,11 @@ export async function getPeriodCloseReadiness(
     client,
     companyId,
     period.data.startDate,
-    period.data.endDate
+    period.data.endDate,
+    await getPeriodRunPreview(client, db, {
+      ...args,
+      periodEnd: period.data.endDate
+    })
   );
   return { data: { checks, blockers, warnings }, error: null };
 }
@@ -3774,8 +3816,28 @@ export function evaluateCloseChecklist(
  */
 export async function getPeriodCloseChecklist(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    periodId: string;
+  }
+) {
+  return loadPeriodCloseChecklist(
+    client,
+    args.companyId,
+    args.periodId,
+    runPreviewer(client, db, args)
+  );
+}
+
+/** `getPeriodCloseChecklist` with the run previewer passed in. */
+export async function loadPeriodCloseChecklist(
+  client: SupabaseClient<Database>,
   companyId: string,
-  periodId: string
+  periodId: string,
+  previewRuns: PeriodRunPreviewer
 ) {
   const period = await getAccountingPeriodById(client, periodId, companyId);
   if (period.error || !period.data) {
@@ -3844,7 +3906,8 @@ export async function getPeriodCloseChecklist(
     client,
     companyId,
     period.data.startDate,
-    period.data.endDate
+    period.data.endDate,
+    await previewRuns(period.data.endDate)
   );
 
   const evaluated = evaluateCloseChecklist(

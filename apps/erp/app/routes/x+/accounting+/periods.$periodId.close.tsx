@@ -79,16 +79,22 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      view: "accounting",
+      role: "employee"
+    });
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
   const [checklist, periods] = await Promise.all([
-    getPeriodCloseChecklist(client, companyId, periodId),
+    getPeriodCloseChecklist(client, getDatabaseClient(), {
+      companyId,
+      companyGroupId,
+      userId,
+      periodId
+    }),
     getAccountingPeriods(client, companyId)
   ]);
 
@@ -109,9 +115,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "accounting"
+    });
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
@@ -194,6 +201,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "close") {
     const result = await closePeriodWithChecklist(client, getDatabaseClient(), {
       companyId,
+      companyGroupId,
       periodId,
       userId
     });

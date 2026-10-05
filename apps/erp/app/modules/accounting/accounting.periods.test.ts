@@ -29,19 +29,19 @@ vi.mock("@carbon/content/glossary", () => ({
 
 import type {
   PeriodCloseTaskRow,
-  PeriodReadinessCheck
+  PeriodReadinessCheck,
+  PeriodRunPreview
 } from "./accounting.service";
 import {
   checklistTasksToCreate,
   closeAccountingPeriod,
-  closePeriodWithChecklist,
+  computePeriodReadiness,
   createFiscalYearPeriods,
   deleteAccountingPeriod,
   evaluateCloseChecklist,
   getAccountingPeriodDeletability,
   getFiscalCalendarCommitted,
   getOrCreateAccountingPeriod,
-  getPeriodCloseReadiness,
   postJournalEntry,
   reopenAccountingPeriod,
   skipCloseTask
@@ -188,7 +188,20 @@ function makeKyselyRecorder() {
   return { db, updates, rawExecutions };
 }
 
-const args = { periodId: "P2", companyId: "C1", userId: "U1" };
+const args = {
+  periodId: "P2",
+  companyId: "C1",
+  companyGroupId: "G1",
+  userId: "U1"
+};
+
+// What new runs would hold. The close path takes it as a function so these
+// tests need no server function or depreciation reads.
+const nothingDue: PeriodRunPreview = {
+  revenue: { count: 0, amount: 0, error: null },
+  depreciation: { count: 0, amount: 0, error: null }
+};
+const noRunsDue = async () => nothingDue;
 
 describe("closeAccountingPeriod — sequential close", () => {
   it("rejects closing period N while an earlier period is not Closed", async () => {
@@ -198,7 +211,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     ]);
     const { db } = makeKyselyRecorder();
 
-    const result = await closeAccountingPeriod(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error).toBeTruthy();
     expect(result.error?.message).toMatch(/sequential close/i);
@@ -211,7 +224,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     ]);
     const { db } = makeKyselyRecorder();
 
-    const result = await closeAccountingPeriod(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error?.message).toMatch(/must be locked/i);
     expect(result.data).toBeNull();
@@ -238,7 +251,7 @@ describe("closeAccountingPeriod — sequential close", () => {
       { data: [] }, // external GL readiness: no active integrations
       { count: 0 }, // readiness: draft journals
       { data: [] }, // readiness: posted journals in period
-      { count: 0 }, // readiness: draft depreciation
+      { data: [] }, // readiness: Draft depreciation runs
       { count: 0 }, // readiness: unmatched intercompany
       { count: 0 }, // readiness: pending receipts
       { count: 0 }, // readiness: pending shipments
@@ -250,7 +263,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     // The period-flip write goes through the Kysely transaction, not supabase.
     const { db } = makeKyselyRecorder();
 
-    const result = await closeAccountingPeriod(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "P2" });
@@ -282,7 +295,7 @@ const lockedPeriodWithRange = {
   endDate: "2026-02-28"
 };
 
-describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", () => {
+describe("closeAccountingPeriod — Blocker gate + Auto-task persistence", () => {
   it("rejects the close when a Blocker auto-check (draft JEs) is failing", async () => {
     const { client, updates } = makeRecordingClient([
       { data: lockedPeriod }, // getAccountingPeriodById
@@ -315,7 +328,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
       { data: [] }, // external GL readiness: no active integrations
       { count: 2 }, // readiness: draft journals present -> Blocker failing
       { data: [] }, // readiness: posted journals in period
-      { count: 0 }, // readiness: draft depreciation
+      { data: [] }, // readiness: Draft depreciation runs
       { count: 0 }, // readiness: unmatched intercompany
       { count: 0 }, // readiness: pending receipts
       { count: 0 }, // readiness: pending shipments
@@ -326,7 +339,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
     ]);
     const { db, updates: txUpdates } = makeKyselyRecorder();
 
-    const result = await closePeriodWithChecklist(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.data).toBeNull();
     expect(result.error?.message).toMatch(/draft journal/i);
@@ -373,7 +386,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
       { data: [] }, // external GL readiness: no active integrations
       { count: 0 }, // readiness: no draft journals -> Blocker passing
       { data: [] }, // readiness: posted journals in period
-      { count: 0 }, // readiness: draft depreciation
+      { data: [] }, // readiness: Draft depreciation runs
       { count: 0 }, // readiness: unmatched intercompany
       { count: 0 }, // readiness: pending receipts
       { count: 0 }, // readiness: pending shipments
@@ -385,7 +398,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
     // The task persist + period flip both run inside the Kysely transaction.
     const { db, updates: txUpdates, rawExecutions } = makeKyselyRecorder();
 
-    const result = await closePeriodWithChecklist(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "P2" });
@@ -973,153 +986,142 @@ describe("createFiscalYearPeriods", () => {
 });
 
 // ---------------------------------------------------------------------------
-// unposted-revenue-schedules — the rental accrual half. After the batched
-// readiness reads, the evaluator reads the period's operating rental billing
-// periods, then (only when some are Invoiced) the unposted rental invoice
-// lines, then (only when some are unbilled) the period-end Accrual rows.
+// The two run checks ask what new runs would hold (the preview) and which
+// Draft runs are waiting. The batched readiness reads come first, then the
+// Planned rows Draft revenue recognition runs hold.
 // ---------------------------------------------------------------------------
 
-describe("getPeriodCloseReadiness — unaccrued operating rent", () => {
-  const october = {
-    id: "P10",
-    startDate: "2026-10-01",
-    endDate: "2026-10-31",
-    closeStatus: "Open"
-  };
-  // Period lookup, timezone, external GL (no integrations), then the batched
-  // readiness reads in issue order.
-  const baseline = (unpostedSchedules: number): Scripted[] => [
-    { data: october },
+describe("computePeriodReadiness — run checks", () => {
+  const script = ({
+    draftDepreciationRuns = [],
+    heldRevenueRows = []
+  }: {
+    draftDepreciationRuns?: unknown[];
+    heldRevenueRows?: unknown[];
+  }): Scripted[] => [
     { data: { timezone: "America/New_York" } },
     { data: [] }, // external GL readiness: no active integrations
     { count: 0 }, // draft journals
     { data: [] }, // posted journals in period
-    { count: 0 }, // draft depreciation
-    { count: unpostedSchedules }, // Planned revenue schedule rows due
+    { data: draftDepreciationRuns },
     { count: 0 }, // unmatched intercompany
     { count: 0 }, // pending receipts
     { count: 0 }, // pending shipments
     { count: 0 }, // pending sales invoices
     { count: 0 }, // pending purchase invoices
     { count: 0 }, // draft payments
-    { count: 0 } // draft memos
+    { count: 0 }, // draft memos
+    { data: heldRevenueRows }
   ];
-  const line = (deliveredAt: string | null, returnedAt: string | null) => ({
-    deliveredAt,
-    returnedAt
+  const preview = (overrides: Partial<PeriodRunPreview>): PeriodRunPreview => ({
+    ...nothingDue,
+    ...overrides
   });
-
-  it("adds operating lines with unbilled, unaccrued rent in the period to the count", async () => {
-    const client = makeClient([
-      ...baseline(2),
-      {
-        data: [
-          // Pending, delivered mid-month, accrued -> covered.
-          {
-            id: "BP1",
-            rentalAgreementLineId: "L1",
-            periodStart: "2026-10-15",
-            periodEnd: "2026-10-31",
-            status: "Pending",
-            rentalAgreementLine: line("2026-10-15", null)
-          },
-          // Invoiced onto a Draft invoice, not accrued -> unaccrued.
-          {
-            id: "BP2",
-            rentalAgreementLineId: "L2",
-            periodStart: "2026-10-01",
-            periodEnd: "2026-10-31",
-            status: "Invoiced",
-            rentalAgreementLine: line("2026-09-01", null)
-          },
-          // Invoiced onto a posted invoice -> billed, nothing to accrue.
-          {
-            id: "BP3",
-            rentalAgreementLineId: "L3",
-            periodStart: "2026-10-01",
-            periodEnd: "2026-10-31",
-            status: "Invoiced",
-            rentalAgreementLine: line("2026-09-01", null)
-          },
-          // Returned before October -> no rent earned in the period.
-          {
-            id: "BP4",
-            rentalAgreementLineId: "L4",
-            periodStart: "2026-09-15",
-            periodEnd: "2026-10-12",
-            status: "Pending",
-            rentalAgreementLine: line("2026-09-15", "2026-09-28")
-          }
-        ]
-      },
-      { data: [{ rentalBillingPeriodId: "BP2" }] }, // unposted invoice lines
-      { data: [{ rentalAgreementLineId: "L1" }] } // October Accrual rows
-    ]);
-
-    const result = await getPeriodCloseReadiness(client, "C1", "P10");
-
-    const check = result.data?.checks.find(
-      (c) => c.autoCheckKey === "unposted-revenue-schedules"
+  const readiness = (client: unknown, runPreview: PeriodRunPreview) =>
+    computePeriodReadiness(
+      client as any,
+      "C1",
+      "2026-10-01",
+      "2026-10-31",
+      runPreview
     );
-    expect(check).toMatchObject({ failing: true, count: 3 });
-    expect(
-      result.data?.warnings.find((w) => w.key === "unposted-revenue-schedules")
-        ?.count
-    ).toBe(3);
+  const check = (result: Awaited<ReturnType<typeof readiness>>, key: string) =>
+    result.checks.find((c) => c.autoCheckKey === key);
+
+  it("passes both when nothing is due and no Draft run waits", async () => {
+    const result = await readiness(makeClient(script({})), nothingDue);
+
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: false,
+      count: 0,
+      amount: 0
+    });
+    expect(check(result, "draft-depreciation")).toMatchObject({
+      failing: false,
+      count: 0,
+      amount: 0
+    });
   });
 
-  it("passes when every earning line is accrued and nothing is Planned", async () => {
-    const client = makeClient([
-      ...baseline(0),
-      {
-        data: [
-          {
-            id: "BP1",
-            rentalAgreementLineId: "L1",
-            periodStart: "2026-10-01",
-            periodEnd: "2026-10-31",
-            status: "Pending",
-            rentalAgreementLine: line("2026-10-01", null)
-          }
-        ]
-      },
-      { data: [{ rentalAgreementLineId: "L1" }] } // October Accrual rows
-    ]);
+  it("fails revenue with what a new run would claim", async () => {
+    const result = await readiness(
+      makeClient(script({})),
+      preview({ revenue: { count: 2, amount: 150, error: null } })
+    );
 
-    const result = await getPeriodCloseReadiness(client, "C1", "P10");
-
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: true,
+      count: 2,
+      amount: 150,
+      due: { count: 2, amount: 150 },
+      draftRuns: []
+    });
     expect(
-      result.data?.checks.find(
-        (c) => c.autoCheckKey === "unposted-revenue-schedules"
-      )
-    ).toMatchObject({ failing: false, count: 0 });
+      result.warnings.find((w) => w.key === "unposted-revenue-schedules")?.count
+    ).toBe(2);
   });
 
-  it("adds contract revenue months no run has synthesized to the count", async () => {
-    const client = makeClient([
-      ...baseline(1),
-      { data: [] }, // no rental lines
-      { count: 2 } // Planned contract months due with no schedule row
-    ]);
+  it("adds the rows a Draft run holds, and names the run", async () => {
+    const result = await readiness(
+      makeClient(
+        script({
+          heldRevenueRows: [
+            { amount: 40, run: { id: "R1", runId: "RR-000001" } },
+            { amount: 10, run: { id: "R1", runId: "RR-000001" } }
+          ]
+        })
+      ),
+      preview({ revenue: { count: 1, amount: 25, error: null } })
+    );
 
-    const result = await getPeriodCloseReadiness(client, "C1", "P10");
-
-    expect(
-      result.data?.checks.find(
-        (c) => c.autoCheckKey === "unposted-revenue-schedules"
-      )
-    ).toMatchObject({ failing: true, count: 3 });
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: true,
+      count: 3,
+      amount: 75,
+      draftRuns: [{ id: "R1", readableId: "RR-000001" }]
+    });
   });
 
-  it("passes trivially for a company with no rental lines", async () => {
-    const client = makeClient([...baseline(0), { data: [] }]);
+  it("fails revenue when the preview could not run", async () => {
+    const result = await readiness(
+      makeClient(script({})),
+      preview({
+        revenue: {
+          count: 0,
+          amount: 0,
+          error: "Set the Contract Assets account default"
+        }
+      })
+    );
 
-    const result = await getPeriodCloseReadiness(client, "C1", "P10");
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: true,
+      count: 0
+    });
+  });
 
-    expect(
-      result.data?.checks.find(
-        (c) => c.autoCheckKey === "unposted-revenue-schedules"
-      )
-    ).toMatchObject({ failing: false, count: 0 });
+  it("counts the assets a new run would depreciate plus the Draft runs", async () => {
+    const result = await readiness(
+      makeClient(
+        script({
+          draftDepreciationRuns: [
+            {
+              id: "D1",
+              depreciationRunId: "DEP-000001",
+              depreciationRunLine: [{ amount: 60 }, { amount: 40 }]
+            }
+          ]
+        })
+      ),
+      preview({ depreciation: { count: 3, amount: 900, error: null } })
+    );
+
+    expect(check(result, "draft-depreciation")).toMatchObject({
+      failing: true,
+      count: 4,
+      amount: 1000,
+      due: { count: 3, amount: 900 },
+      draftRuns: [{ id: "D1", readableId: "DEP-000001" }]
+    });
   });
 });
