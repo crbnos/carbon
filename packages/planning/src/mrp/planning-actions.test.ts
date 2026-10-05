@@ -15,7 +15,9 @@ import {
   earlierDate,
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
-  naturalKey
+  keyPeriodFor,
+  naturalKey,
+  projectionsWithExpedites
 } from "./planning-actions";
 
 const PERIODS = [
@@ -765,5 +767,149 @@ describe("diffPlanningActions", () => {
       toleranceDays: TOLERANCE
     });
     expect(diff.inserts[0]).toEqual(candidate);
+  });
+
+  // MRP puts current and overdue demand in the first week, a different week
+  // every Sunday, and a change action's need moves with it. Keyed on the week,
+  // each such action got a new row weekly, losing its dismissal and assignee.
+  describe("identity across weeks", () => {
+    const thisRun = PERIODS; // p1 is the current week
+    const lastWeek = "p0"; // a week before this run's first
+
+    it("keys a change action by its order, whatever week its need is in", () => {
+      const expedite = (periodId: string) =>
+        naturalKey({
+          itemId: "item-1",
+          locationId: "loc-1",
+          type: "Expedite",
+          periodId,
+          purchaseOrderLineId: "pol-a",
+          jobId: null
+        });
+      expect(expedite("p1")).toBe(expedite("p2"));
+    });
+
+    it("keys every week up to the current one as one 'now', later weeks apart", () => {
+      const keyPeriod = keyPeriodFor(thisRun);
+      expect(keyPeriod(lastWeek)).toBe("now");
+      expect(keyPeriod("p1")).toBe("now");
+      expect(keyPeriod("p2")).toBe("p2");
+    });
+
+    it("moves a dismissed change action to its new week instead of replacing it", () => {
+      const dismissed: ExistingPlanningAction = {
+        ...existing,
+        type: "Expedite",
+        status: "Dismissed",
+        periodId: "p1",
+        purchaseOrderLineId: "pol-a"
+      };
+      const diff = diffPlanningActions({
+        existing: [dismissed],
+        candidates: [
+          {
+            ...candidate,
+            type: "Expedite",
+            periodId: "p2",
+            purchaseOrderLineId: "pol-a"
+          }
+        ],
+        periods: thisRun,
+        toleranceDays: TOLERANCE
+      });
+      expect(diff.inserts).toEqual([]);
+      expect(diff.deleteIds).toEqual([]);
+      expect(diff.updates).toEqual([
+        { id: "pla-1", patch: { periodId: "p2" } }
+      ]);
+    });
+
+    it("keeps last week's current-week Order, and its assignee, when the shortage goes on", () => {
+      const lastWeeksOrder: ExistingPlanningAction = {
+        ...existing,
+        periodId: lastWeek,
+        assignee: "planner-2",
+        assigneeOverridden: true
+      };
+      const diff = diffPlanningActions({
+        existing: [lastWeeksOrder],
+        candidates: [candidate], // p1
+        periods: thisRun,
+        toleranceDays: TOLERANCE
+      });
+      expect(diff.inserts).toEqual([]);
+      expect(diff.deleteIds).toEqual([]);
+      expect(diff.updates).toEqual([
+        { id: "pla-1", patch: { periodId: "p1" } }
+      ]);
+    });
+
+    it("keeps the row already on the current week when two share 'now'", () => {
+      const diff = diffPlanningActions({
+        existing: [
+          { ...existing, id: "pla-old", periodId: lastWeek },
+          { ...existing, id: "pla-now", periodId: "p1" }
+        ],
+        candidates: [candidate],
+        periods: thisRun,
+        toleranceDays: TOLERANCE
+      });
+      expect(diff.deleteIds).toEqual(["pla-old"]);
+      expect(diff.updates).toEqual([]);
+      expect(diff.inserts).toEqual([]);
+    });
+  });
+});
+
+// An Expedite and a new Order could both answer one shortage: sizing read the
+// projection with the late order still in its old week. Sizing now reads the
+// projection with every Expedite done.
+describe("projectionsWithExpedites", () => {
+  const expedite = (purchaseOrderLineId: string, periodId: string) => ({
+    type: "Expedite" as const,
+    periodId,
+    purchaseOrderLineId,
+    jobId: null
+  });
+  // p1..p5, stock below zero in p2 and p3 until the PO lands in p4
+  const projections = [5, -5, -5, 5, 5];
+  const lateOrder = {
+    purchaseOrderLineId: "pol-1",
+    quantity: 10,
+    dueDate: "2026-10-28", // lands in p4
+    requiresManualAction: false
+  };
+
+  it("counts an expedited order from its need week instead of its landing week", () => {
+    expect(
+      projectionsWithExpedites({
+        projections,
+        periods: PERIODS,
+        changeActions: [expedite("pol-1", "p2")],
+        openOrders: [lateOrder]
+      })
+    ).toEqual([5, 5, 5, 5, 5]);
+  });
+
+  it("covers to the end for an order landing after the last week", () => {
+    expect(
+      projectionsWithExpedites({
+        projections: [5, -5, -5, -5, -5],
+        periods: PERIODS,
+        changeActions: [expedite("pol-1", "p2")],
+        openOrders: [{ ...lateOrder, dueDate: "2026-12-14" }]
+      })
+    ).toEqual([5, 5, 5, 5, 5]);
+  });
+
+  it("leaves the projection alone for every action but Expedite", () => {
+    expect(
+      projectionsWithExpedites({
+        projections,
+        periods: PERIODS,
+        changeActions: [{ ...expedite("pol-1", "p2"), type: "Defer" as const }],
+        openOrders: [lateOrder]
+      })
+    ).toEqual(projections);
   });
 });

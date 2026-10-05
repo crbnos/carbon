@@ -147,6 +147,11 @@ Phase-7 write) and throws on failure.
      (`api+/items.$id.$locationId.forecast.ts`, which nets the raw projections
      `getItemDemand` returns). Regenerative: nothing to
      un-consume — cancelled orders/edited forecasts re-net on the next run.
+     Consumption is re-netted only inside MRP's window, so a PAST week keeps
+     its last leftover: every read path must stop at the current week. The
+     planning RPCs do by their `periods` argument; `get_inventory_quantities`
+     joins `period` and keeps `endDate >= location_today(...)` (without it the
+     Inventory screen's Demand Forecast grew by each past week's leftover).
      Unit tests: `forecast-consumption.test.ts`. Spec:
      `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md`.
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
@@ -197,7 +202,7 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261003203300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, period, target) via a partial unique index |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261003203300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 
@@ -300,6 +305,10 @@ unaffected.
   `max_rows` (1000); an item missing from those rows has no candidates, and the
   diff then deletes its existing actions, dismissals and assignee overrides
   included.
+- Change actions are derived BEFORE new-supply sizing, and sizing reads
+  `projectionsWithExpedites`: the projection with every Expedite done (the
+  order's quantity counted from its need week). Sized on the raw projection, a
+  shortage an Expedite covered also got an Order for the same week.
 - `deriveChangeActions` measures Expedite / Defer from the order's EXPECTED date:
   its due date, or today when it is overdue (`laterDate`). Measured from the old
   due date, a late order read as early and got a Defer to a date already past.

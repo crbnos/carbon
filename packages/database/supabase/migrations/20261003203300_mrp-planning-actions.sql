@@ -100,11 +100,13 @@ CREATE INDEX IF NOT EXISTS "planningAction_periodId_idx"
 CREATE INDEX IF NOT EXISTS "planningAction_locationId_idx"
   ON "planningAction" ("locationId");
 
--- Deterministic regen identity (diff-write): one non-terminal action per
--- (item, location, type, period, target document)
+-- Deterministic regen identity (diff-write, `naturalKey` in
+-- @carbon/planning): one non-terminal action per (item, location, type, and
+-- the target order, or for a new order its week). A change action's week is
+-- data, updated in place when its need moves, so it is not part of the key.
 CREATE UNIQUE INDEX IF NOT EXISTS "planningAction_natural_key_idx" ON "planningAction"
-  ("companyId", "itemId", "locationId", "type", "periodId",
-   (COALESCE("purchaseOrderLineId", "jobId", '')))
+  ("companyId", "itemId", "locationId", "type",
+   (COALESCE("purchaseOrderLineId", "jobId", "periodId")))
   WHERE "status" <> 'Actioned';
 
 -- RLS policies live in packages/database/src/authz/manifest.ts (`planningAction`)

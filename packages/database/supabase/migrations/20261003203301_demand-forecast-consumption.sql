@@ -1099,10 +1099,15 @@ WITH
       -- Planner-entered projections, net of forecast consumption. Previously
       -- omitted entirely, so a top-level item whose only demand was a
       -- projection showed zero forecast demand on the Inventory screen.
+      -- Current and future weeks only: MRP re-nets a projection's consumption
+      -- only inside its window, so a past week kept its last leftover and,
+      -- unfiltered, every week that passed added to this total for good.
       SELECT dp."itemId", GREATEST(dp."forecastQuantity" - dp."consumedQuantity", 0) AS qty
       FROM "demandProjection" dp
+      INNER JOIN "period" pr ON pr."id" = dp."periodId"
       WHERE dp."companyId" = company_id AND dp."locationId" = location_id
         AND (item_id IS NULL OR dp."itemId" = item_id)
+        AND pr."endDate" >= location_today(location_id, company_id)
     ) combined
     GROUP BY combined."itemId"
   )

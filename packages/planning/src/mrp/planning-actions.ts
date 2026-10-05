@@ -362,6 +362,64 @@ export function deriveChangeActions(
 }
 
 /**
+ * The stock projection as if every Expedite were done: an expedited order's
+ * quantity counts from the week it is needed instead of the week it lands.
+ *
+ * New-supply sizing reads this projection. Sized on the raw one, a shortage an
+ * Expedite already covers also got an Order (or Make) for the same week, and
+ * applying both doubled that week's supply and left the order's old week short.
+ * Only Expedite moves supply EARLIER; Defer, Cancel and Decrease take away
+ * supply nothing needs, so they cannot open a shortage and are not applied.
+ *
+ * `projections[i]` is the projected on-hand at the end of `periods[i]`. An order
+ * dated before the first week counts in it (as MRP books overdue supply); one
+ * dated after the last week is outside the projection.
+ */
+export function projectionsWithExpedites(args: {
+  projections: number[];
+  periods: { id: string; startDate: string }[];
+  changeActions: Pick<
+    ChangeCandidate,
+    "type" | "periodId" | "purchaseOrderLineId" | "jobId"
+  >[];
+  openOrders: OpenSupplyOrder[];
+}): number[] {
+  const { projections, periods, changeActions, openOrders } = args;
+  const adjusted = [...projections];
+  const lastPeriod = periods[periods.length - 1];
+
+  const weekOf = (dateIso: string): number => {
+    if (
+      lastPeriod &&
+      daysBetween(dateIso, lastPeriod.startDate) >= DAYS_PER_PERIOD
+    ) {
+      return periods.length;
+    }
+    let index = 0;
+    periods.forEach((p, i) => {
+      if (daysBetween(p.startDate, dateIso) <= 0) index = i;
+    });
+    return index;
+  };
+
+  for (const action of changeActions) {
+    if (action.type !== "Expedite") continue;
+    const target = action.purchaseOrderLineId ?? action.jobId;
+    const order = openOrders.find(
+      (o) => (o.purchaseOrderLineId ?? o.jobId) === target
+    );
+    const needIndex = periods.findIndex((p) => p.id === action.periodId);
+    if (!order || needIndex < 0) continue;
+
+    const landIndex = Math.min(weekOf(order.dueDate), adjusted.length);
+    for (let i = needIndex; i < landIndex; i++) {
+      adjusted[i] = (adjusted[i] ?? 0) + order.quantity;
+    }
+  }
+  return adjusted;
+}
+
+/**
  * Fold a new-supply suggestion into an existing open order landing in the same
  * window: instead of "create another order" AND leaving the existing one
  * unchanged, emit ONE Increase on that order (to existing + suggested). Only
@@ -410,21 +468,50 @@ export function convertOrdersToIncreases(args: {
   });
 }
 
-export function naturalKey(action: {
-  itemId: string;
-  locationId: string;
-  type: string;
-  periodId: string;
-  purchaseOrderLineId: string | null;
-  jobId: string | null;
-}): string {
+/**
+ * The identity an action keeps from run to run.
+ *
+ * A change action belongs to its ORDER: item, location, type and target. Its
+ * period (the week of the need it was measured against) is data, so a need
+ * that moves a week updates the same row instead of replacing it.
+ *
+ * A new-supply action (Order / Make) has no order yet, so its week is its
+ * identity — except that every week up to the current one is one "now" key
+ * (`keyPeriod`). MRP puts all current and overdue demand in the first week,
+ * which is a different week every Sunday; keyed on it, a shortage that went on
+ * got a new row each week and lost its dismissal and its hand-set assignee.
+ */
+export function naturalKey(
+  action: {
+    itemId: string;
+    locationId: string;
+    type: string;
+    periodId: string;
+    purchaseOrderLineId: string | null;
+    jobId: string | null;
+  },
+  keyPeriod: (periodId: string) => string = (periodId) => periodId
+): string {
+  const target = action.purchaseOrderLineId ?? action.jobId;
   return [
     action.itemId,
     action.locationId,
     action.type,
-    action.periodId,
-    action.purchaseOrderLineId ?? action.jobId ?? ""
+    target ? `order:${target}` : `period:${keyPeriod(action.periodId)}`
   ].join(KEY_SEP);
+}
+
+/**
+ * `naturalKey`'s period mapping for one run: the current week, and any week
+ * before it (a row written in an earlier week), are all "now".
+ */
+export function keyPeriodFor(
+  periods: { id: string }[]
+): (periodId: string) => string {
+  const current = periods[0]?.id;
+  const later = new Set(periods.slice(1).map((p) => p.id));
+  return (periodId) =>
+    periodId === current || !later.has(periodId) ? "now" : periodId;
 }
 
 export type PlanningActionDiff = {
@@ -478,17 +565,32 @@ export function diffPlanningActions(args: {
   existing: ExistingPlanningAction[];
   candidates: PlanningActionCandidate[];
   toleranceDays: number;
+  /** This run's weeks, current first; their ids decide what is "now". */
+  periods?: { id: string }[];
 }): PlanningActionDiff {
   const { existing, candidates, toleranceDays } = args;
+  const keyPeriod = args.periods ? keyPeriodFor(args.periods) : undefined;
+  const keyOf = (action: Parameters<typeof naturalKey>[0]) =>
+    naturalKey(action, keyPeriod);
 
-  const existingByKey = new Map(existing.map((e) => [naturalKey(e), e]));
+  // Two stored rows can share a "now" key (last week's current-week row and
+  // one written for this week): keep the one already on the current week; the
+  // other is deleted below as unseen.
+  const currentPeriodId = args.periods?.[0]?.id;
+  const existingByKey = new Map<string, ExistingPlanningAction>();
+  for (const row of existing) {
+    const key = keyOf(row);
+    const kept = existingByKey.get(key);
+    if (!kept || row.periodId === currentPeriodId) existingByKey.set(key, row);
+  }
+  const keptIds = new Set([...existingByKey.values()].map((row) => row.id));
   const seen = new Set<string>();
 
   const inserts: PlanningActionCandidate[] = [];
   const updates: PlanningActionDiff["updates"] = [];
 
   for (const candidate of candidates) {
-    const key = naturalKey(candidate);
+    const key = keyOf(candidate);
     if (seen.has(key)) continue; // one action per natural key
     seen.add(key);
 
@@ -504,8 +606,11 @@ export function diffPlanningActions(args: {
         toleranceDays;
 
     const patch: Record<string, unknown> = {};
-    // The grid-facing dates track the candidate on every row, dismissed ones
-    // included: keeping them current never re-opens anything.
+    // The week and the grid-facing dates track the candidate on every row,
+    // dismissed ones included: keeping them current never re-opens anything.
+    if (current.periodId !== candidate.periodId) {
+      patch.periodId = candidate.periodId;
+    }
     if (current.horizonDate !== candidate.horizonDate) {
       patch.horizonDate = candidate.horizonDate;
     }
@@ -562,7 +667,7 @@ export function diffPlanningActions(args: {
   }
 
   const deleteIds = existing
-    .filter((e) => !seen.has(naturalKey(e)))
+    .filter((e) => !keptIds.has(e.id) || !seen.has(keyOf(e)))
     .map((e) => e.id);
 
   return { inserts, updates, deleteIds };
@@ -841,7 +946,29 @@ export async function generatePlanningActions(
       const itemLocationKey = `${row.id}${KEY_SEP}${location.id}`;
       const openOrders = openOrdersByItemLocation.get(itemLocationKey) ?? [];
 
-      // new-supply suggestions from the shared sizing (same math as the grid)
+      // change actions against real open documents
+      const demandMap =
+        demandByItemLocation.get(itemLocationKey) ?? new Map<string, number>();
+      const demandPeriods = periods
+        .filter((p) => (demandMap.get(p.id) ?? 0) > 0)
+        .map((p) => ({
+          periodId: p.id,
+          startDate: p.startDate,
+          quantity: demandMap.get(p.id) ?? 0
+        }));
+
+      const changeActions = deriveChangeActions({
+        onHand: onHandByItemLocation.get(itemLocationKey) ?? 0,
+        demandPeriods,
+        openOrders,
+        periods,
+        policyFloor: policyFloorFor(row),
+        toleranceDays,
+        todayDate
+      });
+
+      // new-supply suggestions from the shared sizing (same math as the grid),
+      // sized on the projection with every Expedite above already done
       let sizing: ChangeCandidate[] = [];
       if (row.supersessionMode === "Stock Only") {
         const shortfall = Math.max(0, Number(row.quantityToOrder) || 0);
@@ -877,9 +1004,14 @@ export async function generatePlanningActions(
           ];
         }
       } else {
-        const projections = periods.map((_, i) => {
-          const value = row[`week${i + 1}` as keyof typeof row];
-          return Number(value) || 0;
+        const projections = projectionsWithExpedites({
+          projections: periods.map((_, i) => {
+            const value = row[`week${i + 1}` as keyof typeof row];
+            return Number(value) || 0;
+          }),
+          periods,
+          changeActions,
+          openOrders
         });
         sizing = computePlanningOrders({
           reorderingPolicy: row.reorderingPolicy,
@@ -919,27 +1051,6 @@ export async function generatePlanningActions(
           triggerValues: order.triggerValues
         }));
       }
-
-      // change actions against real open documents
-      const demandMap =
-        demandByItemLocation.get(itemLocationKey) ?? new Map<string, number>();
-      const demandPeriods = periods
-        .filter((p) => (demandMap.get(p.id) ?? 0) > 0)
-        .map((p) => ({
-          periodId: p.id,
-          startDate: p.startDate,
-          quantity: demandMap.get(p.id) ?? 0
-        }));
-
-      const changeActions = deriveChangeActions({
-        onHand: onHandByItemLocation.get(itemLocationKey) ?? 0,
-        demandPeriods,
-        openOrders,
-        periods,
-        policyFloor: policyFloorFor(row),
-        toleranceDays,
-        todayDate
-      });
 
       const merged = convertOrdersToIncreases({
         sizingCandidates: sizing,
@@ -1052,6 +1163,7 @@ export async function generatePlanningActions(
   const diff = diffPlanningActions({
     existing,
     candidates,
+    periods,
     toleranceDays
   });
 
