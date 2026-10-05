@@ -2290,6 +2290,9 @@ msgstr "Pause"
 msgid "Pause {0}"
 msgstr "Pause {0}"
 
+msgid "Pause the build"
+msgstr "Pause the build"
+
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr "per {0}"
@@ -2407,6 +2410,9 @@ msgstr "PINs are set per employee in the ERP, under People."
 
 msgid "Planned"
 msgstr "Planned"
+
+msgid "Play the build"
+msgstr "Play the build"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "Please record all steps for this operation before closing."

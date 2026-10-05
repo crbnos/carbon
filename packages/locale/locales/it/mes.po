@@ -2290,6 +2290,9 @@ msgstr "Sospendi"
 msgid "Pause {0}"
 msgstr ""
 
+msgid "Pause the build"
+msgstr ""
+
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr ""
@@ -2407,6 +2410,9 @@ msgstr ""
 
 msgid "Planned"
 msgstr "Pianificato"
+
+msgid "Play the build"
+msgstr ""
 
 msgid "Please record all steps for this operation before closing."
 msgstr "Registra tutti i passi per questa operazione prima di chiudere."

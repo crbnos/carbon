@@ -5,9 +5,15 @@
 import type { AssemblyPlaybackStep } from "@carbon/mes-core";
 import { indexAssemblyGraph } from "@carbon/viewer/graph";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
-import type { Entity, Float3, Mat4 } from "react-native-filament";
+import { Pause, Play } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import type {
+  CameraManipulator,
+  Entity,
+  Float3,
+  Mat4
+} from "react-native-filament";
 import {
   Camera,
   DefaultLight,
@@ -18,6 +24,8 @@ import {
   useFilamentContext,
   useModel
 } from "react-native-filament";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useThemeColors } from "~/components/useThemeColor";
 import type { AssemblyGraphNode } from "./modelVisibility";
 import {
   buildSubtreeIndex,
@@ -59,15 +67,35 @@ import {
  * names repeat (48 spokes share one in the demo bicycle), so matching on the
  * authored name would address the wrong part with no sign that it had.
  *
- * What this does NOT do yet, and web does: animate the insertion path of the
- * active step, ghost the parts still to come, and frame the camera per step.
- * The model, the step's parts and free orbit are the first pass.
+ * Matching web's viewer, this shows the step's parts, ghosts the ones a later
+ * step fits, animates the insertion, frames the camera per step and lets the
+ * operator orbit, pan and zoom by hand (`ModelGestures`).
+ *
+ * What web has and this does not: the view cube, and damped/inertial camera
+ * motion — drei's `OrbitControls` gives web both for free, and Filament's
+ * manipulator has neither.
  */
 /** `useModel`'s result once it has finished loading. */
 type LoadedModel = Extract<ReturnType<typeof useModel>, { state: "loaded" }>;
 
 /** The opacity web ghosts a not-yet-installed part at. */
 const GHOST_OPACITY = 0.3;
+
+/**
+ * Pinch scale → Filament scroll units. Filament's scroll step is sized for a
+ * mouse wheel notch, which is far coarser than a pinch, so the raw ratio
+ * moves the camera barely at all without this.
+ */
+const ZOOM_SENSITIVITY = 12;
+
+/**
+ * The beat held on a seated step before the next one starts.
+ *
+ * Most steps in real data carry no authored motion, so their synthesized
+ * insertion is short; without a pause the whole assembly plays in a couple
+ * of seconds and reads as a flicker rather than a sequence.
+ */
+const STEP_DWELL_MS = 600;
 
 /**
  * Every entity one component id names in a copy of the model: the id itself,
@@ -151,7 +179,15 @@ function Scene(props: {
  * The scene then renders with nothing inside the frustum, which looks exactly
  * like a broken viewer.
  */
-function CameraRig({ view, radius }: { view: StepView; radius: number }) {
+function CameraRig({
+  view,
+  radius,
+  onManipulator
+}: {
+  view: StepView;
+  radius: number;
+  onManipulator: (m: CameraManipulator | undefined) => void;
+}) {
   const cameraManipulator = useCameraManipulator({
     orbitHomePosition: view.position,
     targetPosition: view.target,
@@ -159,6 +195,18 @@ function CameraRig({ view, radius }: { view: StepView; radius: number }) {
     // whatever units it was drawn in.
     orbitSpeed: [0.004, 0.004]
   });
+
+  // Handed UP rather than held here, because the gestures that drive it are
+  // attached outside `FilamentView` while the manipulator is fixed to this
+  // camera. A ref, not state: this component is REMOUNTED on every step that
+  // carries its own view, and storing the manipulator in the parent's state
+  // would re-render the whole scene each time — which re-adds the asset and
+  // silently resets the ghosts to solid.
+  useEffect(() => {
+    onManipulator(cameraManipulator);
+    return () => onManipulator(undefined);
+  }, [cameraManipulator, onManipulator]);
+
   return (
     <Camera
       cameraManipulator={cameraManipulator}
@@ -168,17 +216,121 @@ function CameraRig({ view, radius }: { view: StepView; radius: number }) {
   );
 }
 
+/**
+ * Orbit, pan and zoom with a finger.
+ *
+ * Web gets this from drei's `OrbitControls`; Filament exposes the same thing
+ * as three imperative calls on the manipulator, so the gestures are wired by
+ * hand. One finger orbits, two pan, a pinch zooms — the convention every CAD
+ * viewer on a tablet uses, and the one an operator will already have from
+ * Maps.
+ *
+ * **Every callback runs on the JS thread** (`runOnJS(true)`). The manipulator
+ * is a JSI host object created on the JS thread; reaching it from the UI
+ * thread, which is where gesture-handler runs its callbacks by default, is
+ * not safe.
+ *
+ * **Strafe is decided once, at `onBegin`.** `grabBegin` takes it as an
+ * argument and Filament holds that mode for the whole grab, so a finger
+ * added or lifted part-way cannot switch between orbiting and panning. That
+ * is Filament's model, not a simplification of it.
+ */
+function ModelGestures({
+  manipulator,
+  children
+}: {
+  manipulator: React.RefObject<CameraManipulator | undefined>;
+  children: React.ReactNode;
+}) {
+  // The pinch's own scale is cumulative; the manipulator wants a per-frame
+  // delta, so the previous value is kept to difference against.
+  const lastScale = useRef(1);
+
+  const gesture = useMemo(() => {
+    const drag = Gesture.Pan()
+      .onBegin((e) => {
+        manipulator.current?.grabBegin(
+          e.x,
+          e.y,
+          // Two fingers pan, one orbits.
+          e.numberOfPointers > 1
+        );
+      })
+      .onUpdate((e) => {
+        manipulator.current?.grabUpdate(e.x, e.y);
+      })
+      .onFinalize(() => {
+        // onFinalize, not onEnd: a gesture cancelled by the system never
+        // fires onEnd, and a grab left open ignores every later one.
+        manipulator.current?.grabEnd();
+      })
+      .runOnJS(true);
+
+    const pinch = Gesture.Pinch()
+      .onBegin(() => {
+        lastScale.current = 1;
+      })
+      .onUpdate((e) => {
+        // Filament reads NEGATIVE as zoom in, and spreading the fingers
+        // (scale > 1) is zoom in, so the difference is taken in this order.
+        const delta = (lastScale.current - e.scale) * ZOOM_SENSITIVITY;
+        lastScale.current = e.scale;
+        manipulator.current?.scroll(e.focalX, e.focalY, delta);
+      })
+      .runOnJS(true);
+
+    // Simultaneous, so two fingers can pan and zoom in one movement the way
+    // they do on a map. Exclusive would make the operator lift and re-place
+    // their fingers to switch between the two.
+    return Gesture.Simultaneous(drag, pinch);
+  }, [manipulator]);
+
+  return <GestureDetector gesture={gesture}>{children}</GestureDetector>;
+}
+
 function LoadedScene({
   model,
   graphRoot,
   steps,
-  activeStepIndex
+  activeStepIndex: operatorStepIndex
 }: {
   model: LoadedModel;
   graphRoot: AssemblyGraphNode | null;
   steps: AssemblyPlaybackStep[];
   activeStepIndex: number;
 }) {
+  // The player's own playhead, which is NOT the operator's procedure step.
+  //
+  // Web's `AssemblyPlayer` plays the assembly as its own timeline, and that
+  // separation matters more here than it does there: on this screen,
+  // changing the operator's step records progress, advances the unit and can
+  // start the Labor timer. A 3D preview must never do any of that. So
+  // playing overrides the index locally, and the moment the operator moves
+  // on their own the playhead is dropped and the view follows them again.
+  const [playIndex, setPlayIndex] = useState<number | null>(null);
+  const activeStepIndex = playIndex ?? operatorStepIndex;
+  const playing = playIndex !== null;
+
+  // Adjusted during render rather than in an effect. React documents this
+  // for "reset state when a prop changes", and it is the correct tool twice
+  // over here: an effect would need the operator's index as a dependency it
+  // never reads (a trigger, which the exhaustive-deps rule rightly objects
+  // to), and it would land a frame late — showing one frame of the playhead's
+  // step after the operator had already moved off it.
+  const lastOperatorStep = useRef(operatorStepIndex);
+  if (lastOperatorStep.current !== operatorStepIndex) {
+    lastOperatorStep.current = operatorStepIndex;
+    if (playIndex !== null) setPlayIndex(null);
+  }
+
+  // The live camera manipulator, published by CameraRig. A ref because the
+  // rig remounts whenever a step brings its own view, and the gestures only
+  // need it at touch time — nothing has to re-render when it changes.
+  const manipulator = useRef<CameraManipulator | undefined>(undefined);
+  const setManipulator = useCallback((m: CameraManipulator | undefined) => {
+    manipulator.current = m;
+  }, []);
+
   // TWO instances of one asset: a solid one and a ghost one. Filament can
   // set opacity per ASSET or per INSTANCE, never per entity, so this is how a
   // SUBSET of the model is shown faintly. Instancing shares the geometry, so
@@ -438,29 +590,96 @@ function LoadedScene({
     };
   }, [copies, motion, step, transformManager]);
 
+  // Auto-advance, the way web's player does: when a step's insertion has
+  // played, move to the next and keep going; stop on the last rather than
+  // looping. The dwell is what makes it readable — back to back, the steps
+  // of a small assembly go by faster than anyone can follow.
+  useEffect(() => {
+    if (!playing) return;
+    const next = activeStepIndex + 1;
+    if (next >= steps.length) return;
+    const timer = setTimeout(
+      () => setPlayIndex(next),
+      motionDurationMs(motion) + STEP_DWELL_MS
+    );
+    return () => clearTimeout(timer);
+  }, [playing, activeStepIndex, steps.length, motion]);
+
   return (
-    <FilamentView style={{ flex: 1 }}>
-      {/*
+    // The gestures sit OUTSIDE FilamentView, wrapping it: FilamentView is a
+    // native surface, so a touch handler on it never sees the gesture.
+    <ModelGestures manipulator={manipulator}>
+      <View style={{ flex: 1 }}>
+        <FilamentView style={{ flex: 1 }}>
+          {/*
         near and far are derived from the model, not left at Filament's
         defaults. CAD comes in its own units — this engine's half-extent is
         464, so the framed camera sits ~1100 out, which is past the default
         far plane: the scene renders, and nothing is inside the frustum. A
         black viewport with no error is the symptom.
       */}
-      {/*
+          {/*
         Keyed on the view, so a step with its own camera gets a manipulator
         built for it — the home is fixed at construction and there is no
         setter. ONLY the camera remounts: remounting the whole scene would
         remount `ModelRenderer` too, which re-adds the asset and resets the
         materials, and the ghosts would silently go solid.
       */}
-      <CameraRig
-        key={`${view.position.join()}|${view.target.join()}`}
-        view={view}
-        radius={radius}
-      />
-      <DefaultLight />
-      <ModelRenderer model={model} />
-    </FilamentView>
+          <CameraRig
+            key={`${view.position.join()}|${view.target.join()}`}
+            view={view}
+            radius={radius}
+            onManipulator={setManipulator}
+          />
+          <DefaultLight />
+          <ModelRenderer model={model} />
+        </FilamentView>
+        <PlayButton
+          playing={playing}
+          // From the operator's step, so Play always shows the build from
+          // where they actually are rather than from wherever it last
+          // stopped.
+          onPress={() =>
+            setPlayIndex(
+              playing ? null : Math.min(operatorStepIndex, steps.length - 1)
+            )
+          }
+        />
+      </View>
+    </ModelGestures>
+  );
+}
+
+/**
+ * Play / pause the build.
+ *
+ * Overlaid on the model rather than placed under it: the viewport is the
+ * whole tab, and a control in a bar below would cost a row of the only thing
+ * on screen worth looking at. Bottom-left keeps it clear of the right-handed
+ * grip that orbits the model.
+ */
+function PlayButton({
+  playing,
+  onPress
+}: {
+  playing: boolean;
+  onPress: () => void;
+}) {
+  const { t } = useLingui();
+  const colors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: playing }}
+      accessibilityLabel={playing ? t`Pause the build` : t`Play the build`}
+      className="absolute bottom-4 left-4 h-14 w-14 items-center justify-center rounded-full border border-border bg-card/90 active:opacity-70"
+    >
+      {playing ? (
+        <Pause size={24} color={colors.foreground} fill={colors.foreground} />
+      ) : (
+        <Play size={24} color={colors.foreground} fill={colors.foreground} />
+      )}
+    </Pressable>
   );
 }

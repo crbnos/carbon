@@ -2290,6 +2290,9 @@ msgstr "रोकें"
 msgid "Pause {0}"
 msgstr ""
 
+msgid "Pause the build"
+msgstr ""
+
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr ""
@@ -2407,6 +2410,9 @@ msgstr ""
 
 msgid "Planned"
 msgstr "नियोजित"
+
+msgid "Play the build"
+msgstr ""
 
 msgid "Please record all steps for this operation before closing."
 msgstr "कृपया बंद करने से पहले इस ऑपरेशन के लिए सभी चरणों को रिकॉर्ड करें।"
