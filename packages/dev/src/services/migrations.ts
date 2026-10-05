@@ -55,6 +55,33 @@ export async function waitForPostgres(port: number, timeoutMs = 60_000) {
   throw new Error(`postgres did not accept queries within ${timeoutMs}ms`);
 }
 
+// Block until Kong answers for both PostgREST and GoTrue. After a hibernated
+// stack is started again the ports open well before these two can serve, and
+// the request that woke the stack is waiting on exactly them.
+export async function waitForApi(
+  port: number,
+  anonKey: string,
+  timeoutMs = 60_000
+) {
+  const deadline = Date.now() + timeoutMs;
+  const up = async (path: string) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+        headers: { apikey: anonKey },
+        signal: AbortSignal.timeout(2000)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+  while (Date.now() < deadline) {
+    if ((await up("/rest/v1/")) && (await up("/auth/v1/health"))) return;
+    await sleep(500);
+  }
+  throw new Error(`the API did not answer within ${timeoutMs}ms`);
+}
+
 /**
  * Block until supabase storage-api has bootstrapped `storage.buckets`. Probes
  * for 30s first; if missing, invokes `onHeal` (re-apply init.sql + restart

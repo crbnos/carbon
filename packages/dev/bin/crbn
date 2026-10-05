@@ -448,6 +448,7 @@ crbn — Carbon dev CLI
     crbn up --borrow                Reuse another worktree's containers.
     crbn up --no-apps               Services only, no dev servers.
     crbn up --full                  Also start Studio, Postgres-Meta, edge runtime, imgproxy.
+    crbn up --no-hibernate          Don't stop the containers when ERP/MES go quiet.
     crbn down                       Stop stack (volumes preserved).
     crbn down --purge               Stop stack, wipe volumes, release the slot.
     crbn reset                      Wipe volumes + redis, then up.

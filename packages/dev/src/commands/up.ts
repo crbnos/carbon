@@ -6,6 +6,7 @@ import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
+import pc from "picocolors";
 import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
@@ -36,14 +37,17 @@ import {
   pullStack,
   restartServices,
   type StackSize,
+  sleepStack,
   tailServiceLogs
 } from "../services/compose.js";
+import { stackStateDir, watchIdle } from "../services/hibernate.js";
 import {
   applyBootstrapSql,
   applyMigrations,
   ensureConfigRow,
   ensureSmokeTestUser,
   syncAuthz,
+  waitForApi,
   waitForPostgres,
   waitForServiceSchemas,
   waitForStorageReady,
@@ -106,6 +110,8 @@ type UpOpts = {
   minimal?: boolean;
   /** Also start Studio, Postgres-Meta and the edge runtime. */
   full?: boolean;
+  /** Stop the containers while ERP/MES get no traffic (default true). */
+  hibernate?: boolean;
 };
 
 type Ctx = {
@@ -197,8 +203,9 @@ export async function up(opts: UpOpts = {}) {
   let borrowedEntry:
     | { ports: PortMap; redisDb: number; jwt: JwtCreds }
     | undefined;
+  let borrowSlug: string | undefined;
   if (shouldBorrow) {
-    const borrowSlug = await pickBorrowSlug(slug);
+    borrowSlug = await pickBorrowSlug(slug);
     const entry = getSlot(borrowSlug);
     if (!entry)
       throw new Error(
@@ -300,13 +307,41 @@ export async function up(opts: UpOpts = {}) {
     return;
   }
   outro("apps starting (Ctrl+C to stop)");
-  await runAppsThenTeardown(
-    root,
-    selectedApps,
-    ctx.ports,
-    portless,
-    stripeChild
-  );
+
+  // The dev servers report traffic for the stack they talk to — the borrowed
+  // one under --borrow, whose own `crbn up` does the hibernating.
+  const stateDir = stackStateDir(borrowSlug ?? slug);
+  process.env.CRBN_STACK_STATE = stateDir;
+  const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
+  const hibernates =
+    opts.hibernate !== false &&
+    !borrowSlug &&
+    idleMinutes > 0 &&
+    reactRouterApps(selectedApps).length > 0;
+  const stopWatching = hibernates
+    ? watchIdle({
+        dir: stateDir,
+        idleMs: idleMinutes * 60_000,
+        sleep: () => sleepStack(root, slug),
+        wake: async () => {
+          await bootStack(root, slug, size);
+          await waitForPostgres(ctx.ports.PORT_DB);
+          await waitForApi(ctx.ports.PORT_API, ctx.jwt.anonKey);
+        },
+        log: (line) => process.stderr.write(`${pc.cyan("•")} ${line}\n`)
+      })
+    : undefined;
+  try {
+    await runAppsThenTeardown(
+      root,
+      selectedApps,
+      ctx.ports,
+      portless,
+      stripeChild
+    );
+  } finally {
+    stopWatching?.();
+  }
 }
 
 // Kill the detached stripe listener's whole process group (apps-mode teardown).

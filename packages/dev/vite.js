@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import fs from "node:fs";
 import path from "node:path";
 import { loadEnv } from "vite";
 
@@ -82,4 +83,52 @@ export function linguiWithoutIdQuery(plugins) {
       },
     };
   });
+}
+
+/**
+ * Dev-server half of stack hibernation (see `services/hibernate.ts` in this
+ * package). Touches `activity` on each request so `crbn up` can tell the apps
+ * are in use, and holds a request while the stack is asleep until `crbn up`
+ * has started the containers again. Does nothing unless `crbn up` set
+ * `CRBN_STACK_STATE`, so a build or a bare `vite dev` is unaffected.
+ *
+ * `/api/inngest` is not traffic: the Inngest dev server polls it constantly
+ * and would keep every stack awake.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function stackActivity() {
+  return {
+    name: "carbon:stack-activity",
+    apply: "serve",
+    configureServer(server) {
+      const dir = process.env.CRBN_STACK_STATE;
+      if (!dir) return;
+      const activity = path.join(dir, "activity");
+      const asleep = path.join(dir, "asleep");
+      let touched = 0;
+      const touch = (force) => {
+        const now = Date.now();
+        if (!force && now - touched < 2000) return;
+        touched = now;
+        try {
+          fs.writeFileSync(activity, "");
+        } catch {
+          // crbn up is gone; nothing is watching
+        }
+      };
+      server.middlewares.use(async (req, _res, next) => {
+        if (req.url?.startsWith("/api/inngest")) return next();
+        touch(false);
+        if (fs.existsSync(asleep)) {
+          touch(true);
+          const deadline = Date.now() + 120_000;
+          while (fs.existsSync(asleep) && Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        }
+        next();
+      });
+    },
+  };
 }

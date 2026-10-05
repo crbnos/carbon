@@ -113,6 +113,17 @@ export async function bootStack(
   await execStrict("docker", buildUpArgs(root, slug, opts), root);
 }
 
+// Stop every container of the stack but keep them (and their volumes): the
+// memory is freed and `bootStack` brings them back. All profiles, so a service
+// started later with `crbn reload` is stopped too. 30s for Postgres to shut
+// down cleanly before Docker kills it.
+export async function sleepStack(root: string, slug: string) {
+  const args = devArgs(root, slug, ...envFileArgs(root));
+  for (const profile of COMPOSE_PROFILES) args.push("--profile", profile);
+  args.push("stop", "--timeout", "30");
+  await execStrict("docker", args, root);
+}
+
 // `docker compose restart` a subset of services. Used by the storage-stuck
 // heal path: after re-applying init.sql we restart storage/gotrue/postgrest so
 // they reconnect with the freshly-rotated supabase role passwords.
