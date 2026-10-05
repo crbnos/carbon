@@ -71,9 +71,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const journalIds = (lines.data ?? []).flatMap((line) =>
-    line.journalId ? [line.journalId] : []
-  );
+  // Each month's line has its own journal, and each month its deferred tax.
+  const journalIds = [
+    ...new Set(
+      (lines.data ?? []).flatMap((line) =>
+        [line.journalId, line.deferredTaxJournalId].filter((id): id is string =>
+          Boolean(id)
+        )
+      )
+    )
+  ];
 
   return {
     run: run.data,
@@ -103,16 +110,26 @@ export default function DepreciationRunDetailRoute() {
   const totalTaxAmount = taxDepreciationEnabled
     ? lines.reduce((sum, line) => sum + Number((line as any).taxAmount ?? 0), 0)
     : 0;
-  const assetCount = lines.length;
+  // A run holds one line per asset per month.
+  const assetCount = new Set(lines.map((line) => line.fixedAssetId)).size;
+  // Per asset: its total in this run, and its running total before each
+  // line's month, so a later month starts from the earlier months.
+  const runAmountByAsset = new Map<string, number>();
+  const earlierAmountByLine = new Map<string, number>();
+  for (const line of lines) {
+    const before = runAmountByAsset.get(line.fixedAssetId) ?? 0;
+    earlierAmountByLine.set(line.id, before);
+    runAmountByAsset.set(line.fixedAssetId, before + Number(line.amount));
+  }
 
   const gridCols = taxDepreciationEnabled
-    ? "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px_120px]"
-    : "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px]";
+    ? "grid-cols-[auto_100px_1fr_1fr_120px_120px_120px_120px_120px]"
+    : "grid-cols-[auto_100px_1fr_1fr_120px_120px_120px_120px]";
   // The columns are fixed-width money; below this the table scrolls sideways
   // instead of crushing the asset names.
   const minTableWidth = taxDepreciationEnabled
-    ? "min-w-[880px]"
-    : "min-w-[760px]";
+    ? "min-w-[980px]"
+    : "min-w-[860px]";
 
   return (
     <DocumentPage
@@ -178,6 +195,9 @@ export default function DepreciationRunDetailRoute() {
               >
                 <div className="w-6" />
                 <div>
+                  <Trans>Period</Trans>
+                </div>
+                <div>
                   <Trans>Asset</Trans>
                 </div>
                 <div>
@@ -222,7 +242,10 @@ export default function DepreciationRunDetailRoute() {
                         asset?.accumulatedDepreciation ?? 0
                       ),
                       amount,
-                      isPosted
+                      isPosted,
+                      earlierAmount: earlierAmountByLine.get(line.id) ?? 0,
+                      runAmount:
+                        runAmountByAsset.get(line.fixedAssetId) ?? amount
                     });
                     return (
                       <div
@@ -231,6 +254,12 @@ export default function DepreciationRunDetailRoute() {
                       >
                         <div className="w-6 text-muted-foreground tabular-nums">
                           {index + 1}
+                        </div>
+                        <div className="tabular-nums">
+                          <DateTime
+                            value={line.periodEnd ?? run.periodEnd}
+                            variant="date"
+                          />
                         </div>
                         <div className="min-w-0 truncate">
                           {asset?.id ? (
@@ -275,6 +304,7 @@ export default function DepreciationRunDetailRoute() {
                   className={`grid ${gridCols} items-center gap-3 px-4 py-3 bg-muted/50 border-t border-border`}
                 >
                   <div className="w-6" />
+                  <div />
                   <div className="text-sm font-medium">
                     {assetCount === 1 ? t`1 Asset` : t`${assetCount} Assets`}
                   </div>

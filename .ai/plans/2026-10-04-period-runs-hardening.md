@@ -36,7 +36,7 @@ Terms used in this plan:
 - [x] Task 7: Build depreciation lines per asset per month (lines from before the migration read their run's `periodEnd`)
 - [x] Task 8: Post depreciation one journal per line, dated per month
 - [x] Task 9: Post revenue recognition one journal per month (contract ledger entries and lease schedule lines record their own month's journal)
-- [ ] Task 10: Show the period on depreciation lines and every journal in the Documents panels
+- [x] Task 10: Show the period on depreciation lines and every journal in the Documents panels (also: Accum. Depr. / NBV After start a later month from the earlier months of the same asset)
 - [ ] Task 11: Allow more than one revenue recognition run per period
 - [ ] Task 12: Add Reverse Run for revenue recognition
 - [ ] Task 13: Add Reverse Run for depreciation

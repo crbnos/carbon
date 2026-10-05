@@ -40,24 +40,35 @@ export function computeDisposalGainLoss(
 
 /**
  * Display figures for one depreciation-run line: the accumulated depreciation
- * *before* this run and the net book value *after* it.
+ * *before* this line's month and the net book value *after* it.
  *
  * `accumulatedDepreciation` is the asset's live value. On a Draft run that is
  * the pre-run balance; once the run is Posted, `postDepreciationRun` has already
- * folded this run's `amount` into it. To keep the row arithmetic identical
- * before and after posting — `cost − accumulatedBefore − amount = nbvAfter` —
- * and to avoid double-counting the amount in NBV, subtract the run's own amount
- * back out of the live balance for a Posted run.
+ * folded every line of the asset in this run (`runAmount`) into it. A run holds
+ * one line per asset per month, so a later month starts from the earlier
+ * months' amounts (`earlierAmount`). Either way the row arithmetic holds:
+ * `cost − accumulatedBefore − amount = nbvAfter`.
  */
 export function depreciationRunLineDisplay(args: {
   acquisitionCost: number;
   accumulatedDepreciation: number;
   amount: number;
   isPosted: boolean;
+  /** This asset's amounts in this run for months before this line's. */
+  earlierAmount?: number;
+  /** This asset's amounts in this run across all its months. */
+  runAmount?: number;
 }): { accumulatedDepreciationBefore: number; netBookValueAfter: number } {
-  const { acquisitionCost, accumulatedDepreciation, amount, isPosted } = args;
+  const {
+    acquisitionCost,
+    accumulatedDepreciation,
+    amount,
+    isPosted,
+    earlierAmount = 0,
+    runAmount = amount
+  } = args;
   const accumulatedDepreciationBefore =
-    accumulatedDepreciation - (isPosted ? amount : 0);
+    accumulatedDepreciation - (isPosted ? runAmount : 0) + earlierAmount;
   const netBookValueAfter =
     acquisitionCost - accumulatedDepreciationBefore - amount;
   return { accumulatedDepreciationBefore, netBookValueAfter };

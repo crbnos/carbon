@@ -154,7 +154,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       client,
       companyId,
       run.data.periodEnd,
-      run.data.journalId ? [run.data.journalId] : []
+      // One journal per month: every journal the run's rows posted.
+      [
+        ...new Set(
+          (lines.data ?? []).flatMap((line) =>
+            line.schedule?.journalId ? [line.schedule.journalId] : []
+          )
+        )
+      ]
     )
   };
 }

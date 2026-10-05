@@ -6004,19 +6004,34 @@ export async function getJournalEntryRelatedItems(
             ])
           )
       : none,
+    // A run posts one journal per month, so the run is found through the
+    // schedule rows the journal posted, not the run's own journalId.
     journal.sourceType === "Revenue Recognition"
       ? client
-          .from("revenueRecognitionRun")
-          .select("id, runId")
+          .from("revenueRecognitionSchedule")
+          .select(
+            "runLine:revenueRecognitionRunLine!revenueRecognitionRunLine_schedule_fkey(run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey(id, runId))"
+          )
           .eq("journalId", journal.id)
           .eq("companyId", companyId)
-          .then(({ data }) =>
-            (data ?? []).map((r) => ({
+          .then(({ data }) => {
+            const runs = new Map<string, string>();
+            for (const row of data ?? []) {
+              const lines = Array.isArray(row.runLine)
+                ? row.runLine
+                : row.runLine
+                  ? [row.runLine]
+                  : [];
+              for (const line of lines) {
+                if (line.run) runs.set(line.run.id, line.run.runId);
+              }
+            }
+            return [...runs].map(([id, runId]) => ({
               kind: "revenueRecognitionRun" as const,
-              id: r.id,
-              readableId: r.runId
-            }))
-          )
+              id,
+              readableId: runId
+            }));
+          })
       : none
   ];
 
@@ -7133,9 +7148,11 @@ export async function getDepreciationRunLines(
   return client
     .from("depreciationRunLine")
     .select(
-      "id, amount, taxAmount, journalId, fixedAsset:fixedAssetId(id, fixedAssetId, name, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent)"
+      "id, fixedAssetId, periodEnd, amount, taxAmount, journalId, deferredTaxJournalId, fixedAsset:fixedAssetId(id, fixedAssetId, name, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent)"
     )
-    .eq("depreciationRunId", depreciationRunId);
+    .eq("depreciationRunId", depreciationRunId)
+    .order("periodEnd")
+    .order("fixedAssetId");
 }
 
 // -- Revenue Recognition --

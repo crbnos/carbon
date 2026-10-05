@@ -147,6 +147,32 @@ describe("computeDisposalGainLoss", () => {
 // ---------------------------------------------------------------------------
 
 describe("depreciationRunLineDisplay", () => {
+  it("starts a later month from the earlier months of the same run", () => {
+    // Two months of 1,800 on a 120,000 asset with 10,000 already depreciated.
+    const draftSecond = depreciationRunLineDisplay({
+      acquisitionCost: 120000,
+      accumulatedDepreciation: 10000,
+      amount: 1800,
+      isPosted: false,
+      earlierAmount: 1800,
+      runAmount: 3600
+    });
+    const postedSecond = depreciationRunLineDisplay({
+      acquisitionCost: 120000,
+      accumulatedDepreciation: 13600,
+      amount: 1800,
+      isPosted: true,
+      earlierAmount: 1800,
+      runAmount: 3600
+    });
+    const expected = {
+      accumulatedDepreciationBefore: 11800,
+      netBookValueAfter: 106400
+    };
+    expect(draftSecond).toEqual(expected);
+    expect(postedSecond).toEqual(expected);
+  });
+
   // cost 100k, 20k already depreciated, this run adds 4k → NBV after = 76k.
   const cost = 100_000;
   const amount = 4_000;
