@@ -27,7 +27,8 @@ let held = false;
  *   until a reload: the save's own realtime broadcast arrived mid-redirect).
  *
  * A call made while a fetcher is submitting or a navigation is in flight is
- * held and runs once the router is idle.
+ * held and runs once the router is idle. The promise of a held call resolves
+ * at once, before that reload: awaiting it does not wait for the data.
  */
 export function useRevalidator() {
   const revalidator = useRouterRevalidator();

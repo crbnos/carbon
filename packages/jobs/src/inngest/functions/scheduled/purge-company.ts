@@ -131,7 +131,9 @@ export async function dropOrphanCompanyTables(
   db: Kysely<KyselyDatabase>,
   limit: number
 ): Promise<string[]> {
-  // starts_with, not LIKE: `_` is a LIKE wildcard.
+  // starts_with, not LIKE: `_` is a LIKE wildcard. The rest of the name must
+  // look like a company id (xid or base58), so a table that only shares the
+  // prefix is never dropped.
   const { rows } = await sql<{ name: string }>`
     SELECT c.relname AS name
     FROM pg_class c
@@ -140,6 +142,7 @@ export async function dropOrphanCompanyTables(
       ON starts_with(c.relname, p.prefix)
     WHERE n.nspname = 'public'
       AND c.relkind = 'r'
+      AND substr(c.relname, length(p.prefix) + 1) ~ '^[A-Za-z0-9]{20,}$'
       AND NOT EXISTS (
         SELECT 1 FROM "company" co WHERE p.prefix || co.id = c.relname
       )

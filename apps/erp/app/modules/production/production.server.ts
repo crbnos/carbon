@@ -313,6 +313,10 @@ export async function reorderScheduleOperations(
     return invalid;
   }
 
+  const processByOperation = new Map(
+    operations.data.map((o) => [o.id, o.processId])
+  );
+
   try {
     await db.transaction().execute(async (trx) => {
       const written = await sql<{ id: string }>`
@@ -322,14 +326,19 @@ export async function reorderScheduleOperations(
           "updatedBy" = ${userId},
           "updatedAt" = ${datetime.timestamp()}
         FROM (VALUES ${sql.join(
-          updates.map((u) => sql`(${u.id}, ${u.priority})`)
-        )}) AS v("id", "priority")
+          updates.map(
+            (u) =>
+              sql`(${u.id}, ${u.priority}, ${processByOperation.get(u.id) ?? null})`
+          )
+        )}) AS v("id", "priority", "processId")
         WHERE o."id" = v."id"
+          AND o."processId" IS NOT DISTINCT FROM v."processId"
           AND o."companyId" = ${companyId}
           AND o."status" NOT IN ('Done', 'Canceled')
         RETURNING o."id"
       `.execute(trx);
-      // An operation that finished or left since the read: none are written.
+      // An operation that finished, left or changed process since the read:
+      // none are written.
       if (written.rows.length !== ids.length) {
         throw new Error("Operation unavailable");
       }

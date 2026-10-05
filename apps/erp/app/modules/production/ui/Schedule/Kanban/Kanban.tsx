@@ -800,7 +800,9 @@ const Kanban = ({
                 method: "post",
                 action: path.to.priorityOperationUpdate,
                 navigate: false,
-                fetcherKey: `item:${origin.item.id}`
+                // Not the card's own key: a later move of that card would
+                // replace this fetcher and drop the other cards' pending order.
+                fetcherKey: `reorder:${commit.columnId}`
               }
             );
           }
