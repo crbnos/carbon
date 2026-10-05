@@ -42,7 +42,7 @@ Terms used in this plan:
 - [x] Task 13: Add Reverse Run for depreciation
 - [x] Task 14: Refuse generic reversal of run journals (`RUN_JOURNAL_SOURCES` lives in `accounting.models.ts`, shared by the service and the header)
 - [x] Task 15: Update AGENTS.md and the fixed-asset rule
-- [ ] Task 16: Verify in the browser
+- [x] Task 16: Verify in the browser (all 7 cases PASS; found and fixed unrounded accumulated depreciation on posting)
 
 ## Dependencies
 
