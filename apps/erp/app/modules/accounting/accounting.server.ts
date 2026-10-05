@@ -1264,19 +1264,13 @@ export async function postRevenueRecognitionRun(
     runId: string;
     companyId: string;
     userId: string;
-    accountingPeriodId: string;
-    postingDate: string;
+    /** Each month the run's rows fall in → its period and posting date
+     *  (`resolveRunPostingPeriods`). */
+    periods: RunPostingPeriods;
     dimensionIds: RevenueRecognitionDimensionIds;
   }
 ) {
-  const {
-    runId,
-    companyId,
-    userId,
-    accountingPeriodId,
-    postingDate,
-    dimensionIds
-  } = args;
+  const { runId, companyId, userId, periods, dimensionIds } = args;
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
@@ -1305,6 +1299,7 @@ export async function postRevenueRecognitionRun(
         "s.amount as scheduleAmount",
         "s.status as scheduleStatus",
         "s.id as scheduleId",
+        sql<string>`s."scheduledDate"::text`.as("scheduledDate"),
         "s.type",
         "s.debitAccountId",
         "s.creditAccountId",
@@ -1497,29 +1492,62 @@ export async function postRevenueRecognitionRun(
       contractLines.map((line) => [line.id, line])
     );
 
-    const journalEntryId = await getNextSequence(
-      trx,
-      "journalEntry",
-      companyId
-    );
-    const journal = await trx
-      .insertInto("journal")
-      .values({
-        journalEntryId,
-        accountingPeriodId,
-        companyId,
-        description: `Revenue Recognition ${run.runId}`,
-        postingDate,
-        sourceType: "Revenue Recognition",
-        status: "Posted",
-        postedAt: now,
-        postedBy: userId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+    // One journal per month: a row posts in the period of the month it was
+    // scheduled for (the run's own period when that month is Closed), so a
+    // catch-up run puts each month's revenue where it was earned.
+    const periodOfRow = (row: { scheduledDate: string }) => {
+      const period = periods.get(monthEndOf(row.scheduledDate));
+      if (!period) {
+        throw new Error(
+          `No accounting period resolved for ${monthEndOf(row.scheduledDate)}`
+        );
+      }
+      return period;
+    };
+    const targets = [
+      ...new Map(
+        rows.map((row) => {
+          const period = periodOfRow(row);
+          return [period.postingDate, period] as const;
+        })
+      ).values()
+    ].sort((a, b) => a.postingDate.localeCompare(b.postingDate));
+    const journalByDate = new Map<
+      string,
+      { id: string; journalEntryId: string }
+    >();
+    for (const target of targets) {
+      const journalEntryId = await getNextSequence(
+        trx,
+        "journalEntry",
+        companyId
+      );
+      const journal = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId,
+          accountingPeriodId: target.accountingPeriodId,
+          companyId,
+          description: `Revenue Recognition ${run.runId}`,
+          postingDate: target.postingDate,
+          sourceType: "Revenue Recognition",
+          status: "Posted",
+          postedAt: now,
+          postedBy: userId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+      journalByDate.set(target.postingDate, {
+        id: journal.id,
+        journalEntryId
+      });
+    }
+    const journalOf = (row: { scheduledDate: string }) =>
+      journalByDate.get(periodOfRow(row).postingDate)!;
 
     for (const row of rows) {
+      const journal = journalOf(row);
       const amount = Number(row.amount);
       const descriptions =
         row.customerContractLineId && row.type === "Accrual"
@@ -1673,13 +1701,32 @@ export async function postRevenueRecognitionRun(
         .where("companyId", "=", companyId)
         .execute();
     }
+    // Each ledger entry and lease schedule line records the journal of its
+    // own month: one statement per journal, not per row.
+    const byJournal = (ids: (row: (typeof rows)[number]) => string | null) => {
+      const grouped = new Map<string, Set<string>>();
+      for (const row of rows) {
+        const id = ids(row);
+        if (!id) continue;
+        const journalId = journalOf(row).id;
+        const set = grouped.get(journalId) ?? new Set<string>();
+        set.add(id);
+        grouped.set(journalId, set);
+      }
+      return grouped;
+    };
+
     if (contractScheduleIds.length > 0) {
-      await trx
-        .updateTable("customerContractLedgerEntry")
-        .set({ journalId: journal.id })
-        .where("revenueRecognitionScheduleId", "in", contractScheduleIds)
-        .where("companyId", "=", companyId)
-        .execute();
+      for (const [journalId, scheduleIds] of byJournal((row) =>
+        row.customerContractLineId ? row.scheduleId : null
+      )) {
+        await trx
+          .updateTable("customerContractLedgerEntry")
+          .set({ journalId })
+          .where("revenueRecognitionScheduleId", "in", [...scheduleIds])
+          .where("companyId", "=", companyId)
+          .execute();
+      }
     }
 
     // An Interest row posts one period of a sales-type lease's effective
@@ -1694,23 +1741,33 @@ export async function postRevenueRecognitionRun(
       )
     ];
     if (leaseScheduleLineIds.length > 0) {
-      await trx
-        .updateTable("rentalLeaseScheduleLine")
-        .set({
-          journalId: journal.id,
-          postedAt: now,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "in", leaseScheduleLineIds)
-        .where("companyId", "=", companyId)
-        .execute();
+      for (const [journalId, lineIds] of byJournal(
+        (row) => row.rentalLeaseScheduleLineId
+      )) {
+        await trx
+          .updateTable("rentalLeaseScheduleLine")
+          .set({
+            journalId,
+            postedAt: now,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "in", [...lineIds])
+          .where("companyId", "=", companyId)
+          .execute();
+      }
     }
+
+    // The run names the journal of its own period, else its latest month's;
+    // every journal is reachable from the schedule rows it posted.
+    const runJournal =
+      journalByDate.get(run.periodEnd) ??
+      journalByDate.get(targets[targets.length - 1].postingDate)!;
 
     await trx
       .updateTable("revenueRecognitionRun")
       .set({
-        journalId: journal.id,
+        journalId: runJournal.id,
         status: "Posted",
         postedAt: now,
         postedBy: userId,
@@ -1720,7 +1777,10 @@ export async function postRevenueRecognitionRun(
       .where("companyId", "=", companyId)
       .execute();
 
-    return { journalId: journal.id, journalEntryId };
+    return {
+      journalId: runJournal.id,
+      journalEntryId: runJournal.journalEntryId
+    };
   });
 }
 

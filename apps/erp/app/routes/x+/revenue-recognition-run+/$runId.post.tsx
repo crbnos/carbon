@@ -8,12 +8,13 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
-import { getOrCreateAccountingPeriod } from "~/modules/accounting";
 import {
   futureRunPeriodError,
   postRevenueRecognitionRun,
-  RunOutOfDateError
+  RunOutOfDateError,
+  resolveRunPostingPeriods
 } from "~/modules/accounting/accounting.server";
+import { monthEndOf } from "~/modules/accounting/accounting.utils";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -58,23 +59,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const postingDate = run.data.periodEnd;
-
-  const [accountingPeriod, dimensionsResult] = await Promise.all([
-    getOrCreateAccountingPeriod(client, companyId, postingDate, "accounting"),
+  // Each row posts in the period of the month it was scheduled for (the
+  // run's own period when that month is Closed).
+  const [scheduledLines, dimensionsResult] = await Promise.all([
+    client
+      .from("revenueRecognitionRunLine")
+      .select(
+        "schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(scheduledDate)"
+      )
+      .eq("runId", runId)
+      .eq("companyId", companyId),
     client
       .from("dimension")
       .select("id, entityType")
       .eq("companyGroupId", companyGroupId)
       .eq("active", true)
   ]);
-
-  if (accountingPeriod.error || !accountingPeriod.data) {
+  if (scheduledLines.error) {
     throw redirect(
       path.to.revenueRecognitionRun(runId),
       await flash(
         request,
-        error(accountingPeriod.error, "Failed to get accounting period")
+        error(scheduledLines.error, "Failed to load revenue recognition run")
+      )
+    );
+  }
+
+  const periods = await resolveRunPostingPeriods(client, {
+    companyId,
+    monthEnds: scheduledLines.data.flatMap((line) =>
+      line.schedule ? [monthEndOf(line.schedule.scheduledDate)] : []
+    ),
+    runPeriodEnd: run.data.periodEnd
+  });
+  if (!periods.data) {
+    throw redirect(
+      path.to.revenueRecognitionRun(runId),
+      await flash(
+        request,
+        error(periods.error, "Failed to get accounting period")
       )
     );
   }
@@ -92,8 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       runId,
       companyId,
       userId,
-      accountingPeriodId: accountingPeriod.data,
-      postingDate,
+      periods: periods.data,
       dimensionIds
     });
   } catch (err) {
