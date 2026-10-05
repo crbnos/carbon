@@ -2845,9 +2845,17 @@ chunked when that bound is large — about 100 ids per request. When the related
 a foreign key, embed them in the first read instead of looking them up afterwards. And a
 loader never swaps a failed read for an empty list: log it and throw.
 
-**Applies to:** `getPlanningActions` in `apps/erp/app/modules/production/production.service.ts`,
-the planning loaders (`x+/purchasing+/planning.tsx`, `x+/production+/planning.tsx`), and any
-"read rows, then `.in()` their ids" enrichment.
+A list the USER builds (the ids of a bulk selection: Apply, Dismiss, Assign) has no bound at
+all, and chunking a WRITE breaks its atomicity — a claim that lands in chunk 1 and fails in
+chunk 2 leaves rows claimed with nothing applied. Send such a list through Kysely instead:
+`where("id", "in", ids)` binds the ids as parameters, one statement, no URL, no `max_rows`.
+The same bulk Apply did this over PostgREST in five functions and would have failed whole on a
+page of busy parts.
+
+**Applies to:** `getPlanningActions` and the planning action worklist writes in
+`apps/erp/app/modules/production/production.service.ts`, the planning loaders and
+`planning.update` routes (`x+/purchasing+/planning*.tsx`, `x+/production+/planning*.tsx`), and
+any "read rows, then `.in()` their ids" enrichment.
 
 ## `useNumberFormatter()` with no argument is a new formatter on every render
 

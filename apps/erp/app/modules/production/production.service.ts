@@ -10651,20 +10651,53 @@ export async function getPlanningActions(
   };
 }
 
+// The worklist writes below take an id LIST and go through Kysely, one
+// statement each. Over PostgREST every id goes into the URL: a bulk Apply on a
+// page of busy items sent hundreds, the gateway answered 431, and the whole
+// batch failed before anything was claimed. A read over PostgREST also stops
+// at max_rows (1000) and would report every id after that as "not found".
+// One statement is also what makes the claim below a lock: every row of the
+// batch flips in one transaction or none does.
+type PlanningActionIdListResult<Row> =
+  | { data: Row[]; error: null }
+  | { data: null; error: { message: string } };
+
+async function planningActionIdList<Row>(
+  ids: string[],
+  run: () => Promise<Row[]>
+): Promise<PlanningActionIdListResult<Row>> {
+  if (ids.length === 0) return { data: [], error: null };
+  try {
+    return { data: await run(), error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: err instanceof Error ? err.message : String(err) }
+    };
+  }
+}
+
 export async function dismissPlanningActions(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { ids: string[]; companyId: string; userId: string }
 ) {
   // Open-only: Actioned is terminal, and a stale worklist id must never flip
   // an Actioned row to Dismissed (which would make it visible again and
   // eligible for the generator's Dismissed-reopen branch).
-  return client
-    .from("planningAction")
-    .update({ status: "Dismissed" as const, updatedBy: args.userId })
-    .in("id", args.ids)
-    .eq("companyId", args.companyId)
-    .eq("status", "Open")
-    .select("id");
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Dismissed",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Open")
+      .returning("id")
+      .execute()
+  );
 }
 
 /**
@@ -10674,16 +10707,23 @@ export async function dismissPlanningActions(
  * affected-row check is the concurrency lock for the whole apply path.
  */
 export async function markPlanningActionsActioned(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { ids: string[]; companyId: string; userId: string }
 ) {
-  return client
-    .from("planningAction")
-    .update({ status: "Actioned" as const, updatedBy: args.userId })
-    .in("id", args.ids)
-    .eq("companyId", args.companyId)
-    .eq("status", "Open")
-    .select("id");
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Actioned",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Open")
+      .returning("id")
+      .execute()
+  );
 }
 
 /** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */
@@ -10736,16 +10776,23 @@ export async function releasePlanningActionClaim(
  * separate so a stale worklist id can never un-claim a row another apply holds.
  */
 export async function reopenDismissedPlanningActions(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { ids: string[]; companyId: string; userId: string }
 ) {
-  return client
-    .from("planningAction")
-    .update({ status: "Open" as const, updatedBy: args.userId })
-    .in("id", args.ids)
-    .eq("companyId", args.companyId)
-    .eq("status", "Dismissed")
-    .select("id");
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Open",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Dismissed")
+      .returning("id")
+      .execute()
+  );
 }
 
 /**
@@ -10756,7 +10803,7 @@ export async function reopenDismissedPlanningActions(
  * the ids it changed: the route reports those, not the ids it was sent.
  */
 export async function assignPlanningActions(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     ids: string[];
     companyId: string;
@@ -10764,29 +10811,36 @@ export async function assignPlanningActions(
     userId: string;
   }
 ) {
-  return client
-    .from("planningAction")
-    .update({
-      assignee: args.assignee || null,
-      assigneeOverridden: true,
-      updatedBy: args.userId
-    })
-    .in("id", args.ids)
-    .eq("companyId", args.companyId)
-    .in("status", ["Open", "Dismissed"])
-    .select("id");
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        assignee: args.assignee || null,
+        assigneeOverridden: true,
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "in", ["Open", "Dismissed"])
+      .returning("id")
+      .execute()
+  );
 }
 
 /** The actions an Apply was sent, in one read (an Apply used to read each). */
 export async function getPlanningActionsByIds(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { ids: string[]; companyId: string }
 ) {
-  return client
-    .from("planningAction")
-    .select("*")
-    .in("id", args.ids)
-    .eq("companyId", args.companyId);
+  return planningActionIdList(args.ids, () =>
+    db
+      .selectFrom("planningAction")
+      .selectAll()
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .execute()
+  );
 }
 
 /**

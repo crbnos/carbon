@@ -541,7 +541,13 @@ never offered a Cancel, Defer or Expedite.
   busy parts (2,000+ actions) put 50 kB of ids in the URL, the gateway answered
   431, and the loader's `?? []` turned that into a grid with no actions. The
   loaders now log and throw on a failed read instead — an empty Actions column
-  must never be what a failure looks like.
+  must never be what a failure looks like. The id lists a bulk selection sends
+  (Apply, Dismiss, Reopen, Assign, and Apply's job / PO line reads) have no
+  page bound at all, so those go through Kysely as ONE statement each
+  (`getPlanningActionsByIds`, `markPlanningActionsActioned`,
+  `dismissPlanningActions`, `reopenDismissedPlanningActions`,
+  `assignPlanningActions` take the `db` handle): the ids are bound
+  parameters, never a URL, and the claim flips the whole batch or none of it.
   - Purchasing quantities are in PURCHASE units (the line's
     `purchaseQuantity`; the open-lines view reports inventory units), and an
     action's suggested quantity is converted and rounded up as Apply does. The

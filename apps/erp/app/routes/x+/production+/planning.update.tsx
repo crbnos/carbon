@@ -717,6 +717,7 @@ export async function action({ request }: ActionFunctionArgs) {
       };
       const changeActionTypes = new Set(Object.values(wireToType));
 
+      const db = getDatabaseClient();
       const applied: string[] = [];
       const requiresManualAction: { id: string; jobId: string | null }[] = [];
       const errors: string[] = [];
@@ -747,7 +748,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // action: each job gets its own value, and a cancel has several steps.
       // The batch used to read the action, read its job and claim it one at a
       // time — four round trips per action before anything changed.
-      const actionRows = await getPlanningActionsByIds(client, {
+      const actionRows = await getPlanningActionsByIds(db, {
         ids: parsedIds.data,
         companyId
       });
@@ -796,19 +797,25 @@ export async function action({ request }: ActionFunctionArgs) {
         eligible.push({ planningActionId, row });
       }
 
+      // One statement, like the reads above: the id list goes to Postgres as a
+      // parameter, never into a PostgREST URL.
       const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
-      const jobs =
-        jobIds.length > 0
-          ? await client
-              .from("job")
-              .select("id, status")
-              .in("id", jobIds)
-              .eq("companyId", companyId)
-          : { data: [], error: null };
-      if (jobs.error) {
+      let jobStatusById: Map<string, string>;
+      try {
+        const jobs =
+          jobIds.length > 0
+            ? await db
+                .selectFrom("job")
+                .select(["id", "status"])
+                .where("id", "in", jobIds)
+                .where("companyId", "=", companyId)
+                .execute()
+            : [];
+        jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+      } catch (err) {
         logger.error("Failed to read jobs for planning actions", {
           companyId,
-          error: jobs.error
+          error: err
         });
         return data(
           {
@@ -818,9 +825,6 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
-      const jobStatusById = new Map(
-        (jobs.data ?? []).map((job) => [job.id, job.status])
-      );
 
       const toClaim: { planningActionId: string; row: PlanningActionRow }[] =
         [];
@@ -850,7 +854,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Actioned rows).
       const claimedIds = new Set<string>();
       if (toClaim.length > 0) {
-        const claim = await markPlanningActionsActioned(client, {
+        const claim = await markPlanningActionsActioned(db, {
           ids: toClaim.map(({ planningActionId }) => planningActionId),
           companyId,
           userId
@@ -1025,7 +1029,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const result = await dismissPlanningActions(client, {
+      const result = await dismissPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
         userId
@@ -1066,7 +1070,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const result = await reopenDismissedPlanningActions(client, {
+      const result = await reopenDismissedPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
         userId
@@ -1126,7 +1130,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const result = await assignPlanningActions(client, {
+      const result = await assignPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
         assignee: parsedAssignee.data || null,

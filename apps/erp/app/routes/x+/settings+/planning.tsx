@@ -7,11 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Heading, ScrollArea, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { z } from "zod";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {

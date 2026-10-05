@@ -52,16 +52,20 @@ type PlanningActionRow = NonNullable<
  */
 function promisedDateOf(line: {
   promisedDate: string | null;
-  purchaseOrder: {
-    purchaseOrderDelivery: { receiptPromisedDate: string | null } | null;
-  } | null;
+  receiptPromisedDate: string | null | undefined;
 }): string | null {
-  return (
-    line.promisedDate ??
-    line.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate ??
-    null
-  );
+  return line.promisedDate ?? line.receiptPromisedDate ?? null;
 }
+
+/** A PO line an Apply targets, with its order's status and delivery promise. */
+type PlanningLine = {
+  id: string;
+  purchaseOrderId: string;
+  conversionFactor: number | null;
+  promisedDate: string | null;
+  purchaseOrderStatus: string | null;
+  receiptPromisedDate: string | null;
+};
 
 const itemsValidator = z
   .object({
@@ -877,7 +881,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (
         parsedLine.data.field === "dueDate" &&
-        promisedDateOf(target.data) !== null
+        promisedDateOf({
+          promisedDate: target.data.promisedDate,
+          receiptPromisedDate:
+            target.data.purchaseOrder?.purchaseOrderDelivery
+              ?.receiptPromisedDate
+        }) !== null
       ) {
         return data(
           {
@@ -1010,7 +1019,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // action: each line gets its own value, and Cancel deletes the line.
       // The batch used to read the action, read its line and claim it one at
       // a time — four round trips per action before anything changed.
-      const actionRows = await getPlanningActionsByIds(client, {
+      const actionRows = await getPlanningActionsByIds(db, {
         ids: parsedIds.data,
         companyId
       });
@@ -1059,25 +1068,43 @@ export async function action({ request }: ActionFunctionArgs) {
         eligible.push({ planningActionId, row });
       }
 
+      // One statement, like the reads above: the id list goes to Postgres as a
+      // parameter, never into a PostgREST URL. The order's status and delivery
+      // promise come with the line, as the embed gave them.
       const lineIds = [
         ...new Set(eligible.map(({ row }) => row.purchaseOrderLineId!))
       ];
-      const lines =
-        lineIds.length > 0
-          ? await client
-              .from("purchaseOrderLine")
-              .select(
-                "id, purchaseOrderId, conversionFactor, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
-              )
-              .in("id", lineIds)
-              .eq("companyId", companyId)
-          : { data: [], error: null };
-      if (lines.error) {
+      let lineById: Map<string, PlanningLine>;
+      try {
+        const lines =
+          lineIds.length > 0
+            ? await db
+                .selectFrom("purchaseOrderLine as pol")
+                .innerJoin("purchaseOrder as po", (join) =>
+                  join
+                    .onRef("po.id", "=", "pol.purchaseOrderId")
+                    .on("po.companyId", "=", companyId)
+                )
+                .leftJoin("purchaseOrderDelivery as pod", "pod.id", "po.id")
+                .select([
+                  "pol.id",
+                  "pol.purchaseOrderId",
+                  "pol.conversionFactor",
+                  "pol.promisedDate",
+                  "po.status as purchaseOrderStatus",
+                  "pod.receiptPromisedDate"
+                ])
+                .where("pol.id", "in", lineIds)
+                .where("pol.companyId", "=", companyId)
+                .execute()
+            : [];
+        lineById = new Map(lines.map((line) => [line.id, line]));
+      } catch (err) {
         logger.error(
           "Failed to read purchase order lines for planning actions",
           {
             companyId,
-            error: lines.error
+            error: err
           }
         );
         return data(
@@ -1088,14 +1115,11 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
-      const lineById = new Map(
-        (lines.data ?? []).map((line) => [line.id, line])
-      );
 
       const toClaim: {
         planningActionId: string;
         row: PlanningActionRow;
-        line: NonNullable<ReturnType<typeof lineById.get>>;
+        line: PlanningLine;
       }[] = [];
       for (const { planningActionId, row } of eligible) {
         const line = lineById.get(row.purchaseOrderLineId!);
@@ -1106,11 +1130,13 @@ export async function action({ request }: ActionFunctionArgs) {
           continue;
         }
 
-        const poStatus = line.purchaseOrder?.status;
         const datePromised =
           (row.type === "Expedite" || row.type === "Defer") &&
           promisedDateOf(line) !== null;
-        if (!isPurchaseOrderEditableFromPlanning(poStatus) || datePromised) {
+        if (
+          !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
+          datePromised
+        ) {
           // In approval or sent, or a date the supplier promised (which Apply's
           // required date cannot move) — surface "Review on PO" instead.
           requiresManualAction.push({
@@ -1137,7 +1163,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Actioned rows).
       const claimedIds = new Set<string>();
       if (toClaim.length > 0) {
-        const claim = await markPlanningActionsActioned(client, {
+        const claim = await markPlanningActionsActioned(db, {
           ids: toClaim.map(({ planningActionId }) => planningActionId),
           companyId,
           userId
@@ -1297,7 +1323,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const result = await dismissPlanningActions(client, {
+      const result = await dismissPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
         userId
@@ -1338,7 +1364,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const result = await reopenDismissedPlanningActions(client, {
+      const result = await reopenDismissedPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
         userId
@@ -1398,7 +1424,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const result = await assignPlanningActions(client, {
+      const result = await assignPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
         assignee: parsedAssignee.data || null,

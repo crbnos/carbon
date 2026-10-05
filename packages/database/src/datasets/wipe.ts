@@ -81,7 +81,10 @@ const TRANSIENT_MRP_TABLES = [
   "demandForecastSource",
   "demandActual",
   "supplyForecast",
-  "supplyActual"
+  "supplyActual",
+  // planningAction_change_target_chk: a change action must keep its job or
+  // PO line, and the FK-nulling pass would clear jobId while jobs still exist.
+  "planningAction"
 ];
 
 // Their content CHECK (imagePath OR modelUploadId) cannot survive the FK-nulling
