@@ -5,6 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { Button, Loading, useHydrated, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -13,7 +14,7 @@ import { ReactFlowProvider, useReactFlow, useStore } from "@xyflow/react";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useCallback, useMemo, useState } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData, useNavigation } from "react-router";
+import { Link, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import { Combobox, HStack, VStack } from "@carbon/react";
 import { round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -52,7 +53,13 @@ export function ReturnEntityForm({
     candidates: CandidateEntity[];
     assigned: AssignedRow[];
   }>();
-  const assignFetcher = useFetcher<{ error?: string }>();
+  const assignFetcher = useAction<{ error?: string }>({
+    onSettled: (data) => {
+      if (data) {
+        reload();
+      }
+    }
+  });
 
   const reload = () => {
     if (line.lineId) {
@@ -66,14 +73,6 @@ export function ReturnEntityForm({
   useEffect(() => {
     reload();
   }, [line.lineId]);
-
-  // Refresh assignment state after each assign/remove settles
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refetch on settle
-  useEffect(() => {
-    if (assignFetcher.state === "idle" && assignFetcher.data) {
-      reload();
-    }
-  }, [assignFetcher.state]);
 
   const candidates = candidatesFetcher.data?.candidates;
 

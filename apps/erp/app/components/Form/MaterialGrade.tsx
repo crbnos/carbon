@@ -4,10 +4,10 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type {
   getMaterialGradeList,
   MaterialGrade as MaterialGradeType
@@ -36,25 +36,13 @@ const MaterialGradePreview = (
 
 const MaterialGrade = (props: MaterialGradeSelectProps) => {
   const { t } = useLingui();
-  const materialGradesLoader =
-    useFetcher<Awaited<ReturnType<typeof getMaterialGradeList>>>();
+  const materialGradesLoader = useLoaderQuery<
+    Awaited<ReturnType<typeof getMaterialGradeList>>
+  >(props.substanceId ? path.to.api.materialGrades(props.substanceId) : null);
 
   const newGradeModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useMount(() => {
-    if (props.substanceId) {
-      materialGradesLoader.load(path.to.api.materialGrades(props.substanceId));
-    }
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (props.substanceId) {
-      materialGradesLoader.load(path.to.api.materialGrades(props.substanceId));
-    }
-  }, [props.substanceId]);
 
   const options = useMemo(() => {
     return (materialGradesLoader.data?.data ?? []).map((c) => ({

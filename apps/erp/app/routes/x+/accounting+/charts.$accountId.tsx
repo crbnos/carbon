@@ -6,12 +6,9 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData, useNavigate } from "react-router";
 import {
   accountValidator,
   getAccount,
@@ -25,7 +22,6 @@ import {
 } from "~/modules/accounting/ui/ChartOfAccounts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { accountsQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyGroupId } = await requirePermissions(request, {
@@ -137,14 +133,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.chartOfAccounts,
     await flash(request, success("Updated account"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    accountsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function EditChartOfAccountsRoute() {

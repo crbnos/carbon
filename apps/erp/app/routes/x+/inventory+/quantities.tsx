@@ -6,12 +6,12 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, pluckUnique } from "@carbon/utils";
+import { isUnaffectedByNavigation, pluckUnique, redirect } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import type { InventoryItem } from "~/modules/inventory";
 import {
   expandStorageUnitIdsWithDescendants,
@@ -27,8 +27,13 @@ import {
 import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import { getUserDefaults } from "~/modules/users/users.server";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+export const handle: Handle = {
+  realtime: ["itemStockQuantities"]
+};
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
   isUnaffectedByNavigation(args, { search: "all" })

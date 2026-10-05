@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
@@ -15,13 +15,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, Outlet, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeNoticesForNonConformance,
@@ -48,6 +42,15 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "issue-detail");
 
 export const handle: Handle = {
+  realtime: [
+    { table: "nonConformance", column: "id", param: "id" },
+    {
+      table: "nonConformanceActionTask",
+      column: "nonConformanceId",
+      param: "id"
+    },
+    { table: "nonConformanceItem", column: "nonConformanceId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issues`, to: path.to.issues },
     (data) => data?.nonConformance?.nonConformanceId

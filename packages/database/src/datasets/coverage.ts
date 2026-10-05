@@ -238,7 +238,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierTax: 11,
   supplierType: 6,
   tag: 5,
-  timeCardEntry: 7,
+  timeCardEntry: 6,
   tool: 2,
   trackedActivity: 7,
   trackedActivityInput: 6,

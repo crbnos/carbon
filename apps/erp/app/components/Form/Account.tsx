@@ -4,16 +4,11 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
-import { Badge, Combobox as ComboboxBase, useMount } from "@carbon/react";
-import { useEffect, useMemo, useState } from "react";
-import { useFetcher } from "react-router";
+import { useLoaderQuery } from "@carbon/query";
+import { Badge, Combobox as ComboboxBase } from "@carbon/react";
+import { useMemo } from "react";
 import type { AccountClass, getAccountsList } from "~/modules/accounting";
 import { path } from "~/utils/path";
-import {
-  accountsQuery,
-  getClientCache,
-  getCompanyId
-} from "~/utils/react-query";
 
 type AccountData = {
   id: string;
@@ -23,27 +18,13 @@ type AccountData = {
   incomeBalance: string | null;
 };
 
+const NO_ACCOUNTS: AccountData[] = [];
+
 export function useAccounts(classes?: AccountClass[]): AccountData[] {
-  const fetcher = useFetcher<Awaited<ReturnType<typeof getAccountsList>>>();
-  const companyId = getCompanyId();
-  const { queryKey } = accountsQuery(companyId);
-
-  const [accounts, setAccounts] = useState<AccountData[]>(() => {
-    return getClientCache()?.getQueryData<AccountData[]>(queryKey) ?? [];
-  });
-
-  useMount(() => {
-    if (accounts.length === 0) {
-      fetcher.load(`${path.to.api.accounts}?isGroup=false`);
-    }
-  });
-
-  useEffect(() => {
-    if (fetcher.data?.data) {
-      getClientCache()?.setQueryData(queryKey, fetcher.data.data);
-      setAccounts(fetcher.data.data as AccountData[]);
-    }
-  }, [fetcher.data, queryKey]);
+  const { data } = useLoaderQuery<Awaited<ReturnType<typeof getAccountsList>>>(
+    `${path.to.api.accounts}?isGroup=false`
+  );
+  const accounts = (data?.data ?? NO_ACCOUNTS) as AccountData[];
 
   return useMemo(() => {
     if (!classes || classes.length === 0) return accounts;

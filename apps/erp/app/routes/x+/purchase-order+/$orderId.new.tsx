@@ -7,8 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import {
   getPurchaseOrder,

@@ -27,7 +27,7 @@ Check `.ai/specs/` before modifying any module. Create or update specs when the 
 3. Spec written in .ai/specs/{YYYY-MM-DD}-{title}.md with resolutions baked in
    (questions surfaced while writing go back to step 2 before the spec is final)
 4. Implementation proceeds phase-by-phase
-5. Completed spec moves to .ai/specs/implemented/
+5. Completed spec moves to .ai/specs/implemented/ (with its /explain .html, if any)
 6. PR links back to spec via "Tracking spec:" line
 ```
 
@@ -52,6 +52,12 @@ Examples:
 | Cross-module behavior change | Create spec |
 | Small bug fix or typo | Skip spec |
 | One-file refactor, no behavior change | Skip spec |
+
+## HTML explainers
+
+A spec may have a sibling `{same-name}.html` made by `/explain`. The `.md` is
+the source of truth. After you edit a spec, find the stale pages with the
+loop in `/explain` → "Keeping pages fresh", and regenerate each one.
 
 ## Spec Template
 

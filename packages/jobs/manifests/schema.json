@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-05T15:06:42.624Z",
+  "exportedAt": "2026-10-05T19:30:59.577Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -6943,6 +6943,7 @@
     "oauthToken",
     "ssoConnection",
     "ssoDomain",
+    "tableChange",
     "webhook"
   ]
 }

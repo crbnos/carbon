@@ -5,15 +5,10 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getDatabaseErrorMessage } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
 import { deleteCustomerLocation } from "~/modules/sales";
 import { path } from "~/utils/path";
-import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -53,18 +48,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.customerLocations(customerId),
     await flash(request, success("Successfully deleted customer location"))
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { customerId } = params;
-  if (customerId) {
-    window.clientCache?.setQueryData(
-      customerLocationsQuery(customerId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }

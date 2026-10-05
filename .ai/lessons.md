@@ -2952,6 +2952,32 @@ other state-driven drawers that still unmount on close.
 **Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.
 
 
+## Copying child rows onto a new record can make that record undeletable
+
+**Context:** A new item revision now inherits the source revision's supplier parts and their
+price breaks (`copyItemPlanningAndPurchasing`, called by `createRevision`). A change notice
+discards its draft revision by deleting the draft item.
+
+**Problem:** `supplierPart.itemId → item` is `ON DELETE CASCADE`, but
+`supplierPartPrice → supplierPart` is `ON DELETE RESTRICT`. An item delete therefore cascades
+into a supplier part that a price break refuses to let go, and the whole delete fails with
+`23503`. Before the copy, a fresh revision had no supplier parts, so nothing exercised that
+path; after it, every revision of an item with price breaks carries the blocker: the Item
+Master delete was refused, and the change notice's draft discard ignored the delete's error,
+so the draft would have survived silently. Reading the migrations for the table being copied
+was not enough; the constraint that mattered sat on its child.
+
+**Rule:** Before copying rows onto a record, list the delete rule of every FK that points at
+the copied tables (`pg_constraint.confdeltype`, or `grep REFERENCES` for the table name) and
+walk every path that deletes the parent. A `RESTRICT`/`NO ACTION` child turns a copy into a
+delete blocker. Either delete the child first on that path, in the same transaction as the
+parent so a refused parent delete does not lose the child, or change the rule in a migration.
+And a delete whose failure the caller ignores is not a delete: return the error.
+
+**Applies to:** `apps/erp/app/modules/items/items.service.ts` (`createRevision`,
+`deleteItemsWithPriceBreaks`, `deleteItem`, `discardChangeNoticeDrafts`,
+`deleteSupplierPart`), and any copy/duplicate of `supplierPart`.
+
 ## "Come back here" must carry the query string
 
 **Context:** Notification emails link to `/api/link?event=…&documentId=…&companyId=…`, and `requireAuthSession` sends a request away and back for a token refresh, login, MFA or idle unlock.
@@ -2983,3 +3009,112 @@ other state-driven drawers that still unmount on close.
 **Rule:** A default is filled or it is not published (`defaultsPolicy` / `publishDefaults`): always for a read, a create or an action, on create only for an upsert, never for an update. Before publishing or filling one, read what the service does when the field is absent, and compare with the column's own database default.
 
 **Applies to:** `scripts/lib/service-metadata.ts`, `apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`, any validator default that reaches an API schema.
+
+
+## A `prepare` script that edits git config reaches every worktree
+
+**Context:** Replacing husky with simple-git-hooks, `prepare` unset `core.hooksPath` and installed hooks. It ran on every `pnpm install` in a worktree.
+
+**Problem:** Worktrees share one `.git`. The unset removed the main checkout's `core.hooksPath` and simple-git-hooks wrote into the shared `.git/hooks`, so checkouts still on husky skipped their hooks without a word. The desktop app also sets `core.hooksPath` at WORKTREE scope, which a plain `git config --unset` does not touch. simple-git-hooks additionally deletes every hook it does not manage unless `preserveUnused` is set.
+
+**Rule:** Treat a lifecycle script that touches git config or `.git/hooks` as a change to every checkout of the repository. Use `pnpm install --ignore-scripts` while such a branch is unmerged, clear both the local and the worktree scope, and set `preserveUnused: true`.
+
+**Applies to:** root `package.json` (`prepare`, `simple-git-hooks`), `scripts/git-hooks/`.
+
+
+## `scripts/one-off/` is a registry, not a folder of leftovers
+
+**Context:** A cleanup pass listed `scripts/one-off/recopy-private-buckets.ts` as dead because nothing referenced it by name.
+
+**Problem:** `ci/src/one-off-scripts.ts` runs every `.ts` file in that folder once per database on deploy; the folder IS the reference. Deleting a file there changes what the next deploy does.
+
+**Rule:** "No grep hits" does not mean dead. Before deleting a script, check whether its directory is enumerated (`readdirSync`, a glob in a workflow or `turbo.json`).
+
+**Applies to:** `scripts/one-off/`, `ci/src/one-off-scripts.ts`, any repo cleanup.
+
+
+## A Vite plugin that reads the file name must drop the query first
+
+**Context:** Lingui 6.9.0's native macro transform chooses its parser from `path.basename(id)`.
+
+**Problem:** React Router loads route modules as `route.tsx?__react-router-build-client-route`. The extension no longer ends the name, the file is parsed as plain JS, and the build fails with hundreds of "Expected ','" errors on `import type`. vitest and non-route files never show it.
+
+**Rule:** When a transform plugin misbehaves only on route modules, look at the id's query. Verify a build-plugin change with a real `react-router build` of ERP, not with vitest.
+
+**Applies to:** `packages/dev/vite.js` (`linguiWithoutIdQuery`), `apps/*/vite.config.ts`.
+
+
+## A realtime subscription to a table that is not published fails silently
+
+**Context:** The ERP job page did not show an operation completed in the MES until a reload. It subscribed with `postgres_changes` to `jobOperationStep` and `jobOperationStepRecord`, which were never in the `supabase_realtime` publication, and it had no subscription to `jobOperation` or `job` at all.
+
+**Problem:** Realtime accepts a `postgres_changes` subscription for any table name. For an unpublished table it joins, delivers nothing and reports nothing. The code looked wired and typecheck, lint and tests were all green.
+
+**Rule:** Realtime goes through broadcast topics (`@carbon/query`). Declare a route's tables in `handle.realtime`; the table type is derived from `event-system/attachments.ts`, so a table with no broadcast handler does not compile, and `no-postgres-changes` fails the old API. Verify a "live" page by changing the row while the page is open, not by reading the subscription code.
+
+**Applies to:** `apps/*/app/routes/**` `handle.realtime`, `useRealtime`, `useChangedRows`, `.claude/rules/realtime-system.md`.
+
+
+## `getCompanyId()` read an httpOnly cookie in the browser and always returned null
+
+**Context:** The client cache scoped its keys with `getCompanyId()`, which parsed `document.cookie` for `companyId`.
+
+**Problem:** That cookie is httpOnly, so JavaScript never sees it. Every key was scoped to the string `"null"`, and an invalidation that matched on the real company id matched nothing. It went unnoticed because a company switch reloads the page and empties the in-memory cache.
+
+**Rule:** Never read a session cookie from `document.cookie`. A value the browser needs comes from loader data: the shell layout calls `setClientCompanyId(company.id)` during render (`@carbon/query/cache`).
+
+**Applies to:** `packages/query/src/cache.ts`, both `apps/*/app/routes/x+/_layout.tsx`, any new client-side tenant scoping.
+
+
+## A `.client.ts` module is empty on the server, even for a value a route only calls at load
+
+**Context:** The invalidation middleware factory lived in `invalidate.client.ts`, next to `flash.client.ts`. `root.tsx` calls `createInvalidationMiddleware(...)` while the module is evaluated.
+
+**Problem:** React Router replaces a `.client` module's exports with `undefined` on the server. `flash.client.ts` survives because `root.tsx` only REFERENCES its export; a factory is CALLED, so SSR died with "is not a function". Typecheck, lint and unit tests passed.
+
+**Rule:** A module whose export is called at module load of a route must not be named `.client` or `.server`. After adding anything to `root.tsx` or a shell layout, load the page from a running dev server before calling it done.
+
+**Applies to:** `apps/*/app/root.tsx`, `packages/query/src/invalidation.ts`, any shared module imported by a route.
+
+
+## Two hooks that open the same Realtime topic close each other's channel
+
+**Context:** The shell, the live lists and individual components each called `carbon.channel(topic)` for `company:<id>:<table>`.
+
+**Problem:** `RealtimeClient.channel()` returns the EXISTING channel when the topic is already open. Two hooks then hold one channel object, and the first to unmount calls `removeChannel` and silences the other. A customers page that declared `customer` while the customer list also followed it would have lost one of them at random.
+
+**Rule:** One owner per topic. Listeners register in the registry in `packages/query/src/useRealtime.tsx` (`useTopic`, `useTableChanges`) and `RouteRealtime` owns the channels. Do not call `carbon.channel` or `useRealtimeChannel` for a broadcast topic directly.
+
+**Applies to:** `packages/query/src/useRealtime.tsx`, any new realtime listener.
+
+
+## Chained Supabase writes in a route action are not a transaction
+
+**Context:** RFQ finalize and supplier quote finalize each wrote a quote, its lines, a share link and a price list as separate `client.from(...)` calls in a loop, logging and skipping any that failed.
+
+**Problem:** Every statement was its own PostgREST request (about 34 ms each), and a failure partway left quotes without lines or half a price list while the action still reported success. The checks that made the write safe (every line priced, the RFQ still Draft) lived in the route, so the API tool for the same operation skipped them.
+
+**Rule:** A write that spans tables is a server function (`packages/server-functions`) with one Kysely transaction. Its preconditions are checked inside it, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email.
+
+**Applies to:** any route action with more than one write; `finalize-purchasing-rfq`, `finalize-supplier-quote`.
+
+## A stored copy of server data belongs to a user, not a browser
+
+**Context:** The live lists (items, customers, suppliers, people) were kept in IndexedDB under `<list>:<companyId>` and patched from a change log.
+
+**Problem:** The rows a user holds are their RLS view. The next person to sign in on that browser hydrated the previous user's rows, and patching only the changed ids never removed them. The in-memory query cache had the same hole inside one tab.
+
+**Rule:** Key anything stored on the device by user as well as company, and empty the in-memory cache when the user changes (`setClientCompanyId(companyId, userId)`). A cache that is only ever patched needs a path that replaces it.
+
+**Applies to:** `packages/query/src/useLiveList.tsx`, `packages/query/src/cache.ts`, any new client-side persistence.
+
+
+## A prefetch the browser cannot reuse makes the click slower
+
+**Context:** Links prefetched their page's data on hover, then (2026-10-02) on press, to give the click a head start.
+
+**Problem:** Single-fetch `.data` responses carry `cache-control: max-age=0, must-revalidate` and no validator, so the browser never serves the click from the prefetched response: both requests reach the server. Chrome also holds a second request for a URL until the first one's response arrives (its HTTP cache admits one writer per URL). The click's request therefore waited behind the prefetch: 781 ms against 518 ms median click-to-page in production, and two same-URL `fetch` calls took 572 / 923 ms where two `cache: "no-store"` ones took 615 / 585 ms.
+
+**Rule:** A prefetch only helps if the browser may reuse its response. Give a prefetch response (`Sec-Purpose: prefetch`) a short `private` lifetime and leave every other response uncached; `prefetchCacheMiddleware` (`@carbon/utils`) does it in each app's root `middleware`, the fix React Router points to (remix-run/react-router#13255). Measure a prefetch by click-to-page time, not by whether the request was sent. A first fix removed the prefetch instead (`6e3bdf7bc6`); it worked but threw away the head start.
+
+**Applies to:** `packages/react/src/PrefetchLink.tsx`; `packages/utils/src/prefetch.ts`; any `<Link prefetch>` or `PrefetchPageLinks`; a revalidation started while a navigation to the same URL is loading.

@@ -4,9 +4,8 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
-import { useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import { useFetcher } from "react-router";
 import type { getAbilitiesList } from "~/modules/resources";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
@@ -33,12 +32,9 @@ Ability.displayName = "Ability";
 export default Ability;
 
 export const useAbilities = () => {
-  const abilityFetcher =
-    useFetcher<Awaited<ReturnType<typeof getAbilitiesList>>>();
-
-  useMount(() => {
-    abilityFetcher.load(path.to.api.abilities);
-  });
+  const abilityFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getAbilitiesList>>
+  >(path.to.api.abilities);
 
   const options = useMemo(
     () =>

@@ -16,16 +16,11 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { Card, CardHeader, CardTitle } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, Outlet, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getItemReplenishment } from "~/modules/items";
@@ -293,7 +288,7 @@ export default function EditSalesOrderLineRoute() {
     <Fragment key={lineId}>
       <SalesOrderLineForm
         key={initialValues.id}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
       />
 

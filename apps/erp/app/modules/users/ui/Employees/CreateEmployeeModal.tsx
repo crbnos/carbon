@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   HStack,
   Modal,
@@ -12,11 +13,11 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useMount,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import {
   Boolean,
   Hidden,
@@ -44,14 +45,11 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   // plan. When gated (Community / Starter), every invite defaults to the seeded
   // Admin type — "everyone is an admin".
   const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
-  const employeeTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
-
-  useMount(() => {
-    employeeTypeFetcher.load(path.to.api.employeeTypes);
-  });
+  const employeeTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getEmployeeTypes>>
+  >(path.to.api.employeeTypes);
 
   const employeeTypes = employeeTypeFetcher.data?.data ?? [];
   const employeeTypeOptions = employeeTypes.map((et) => ({
@@ -70,7 +68,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />

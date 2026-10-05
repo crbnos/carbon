@@ -149,7 +149,6 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
       {
         id: "days",
         header: t`Days`,
-        // @ts-ignore
         cell: ({ row }) => renderDays(row.original),
         meta: {
           icon: <LuCalendarDays />,

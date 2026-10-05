@@ -166,6 +166,23 @@ export type CarbonStorage = {
 };
 
 /**
+ * What to say when a storage image transform fails. Storage hands transforms
+ * to imgproxy, and when that service is not running the failure names it
+ * (`getaddrinfo ENOTFOUND imgproxy`) — a stack problem, not a bad image, and
+ * the local dev stack leaves imgproxy off by default. Anything else gets the
+ * caller's own message.
+ */
+export function imageTransformErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === "string" && /imgproxy/i.test(message)
+    ? "Image transformation is unavailable: storage cannot reach imgproxy. On the local dev stack, start it with `crbn reload imgproxy` or boot with `crbn up --full`."
+    : fallback;
+}
+
+/**
  * The HTTP status behind a storage error. `download()` skips reading the
  * error body, so a 400/404 arrives as `StorageUnknownError("{}")` with the
  * status only on the raw response in `originalError`.

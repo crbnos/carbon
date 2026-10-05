@@ -8,9 +8,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {

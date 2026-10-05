@@ -23,7 +23,7 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { VStack } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
@@ -33,7 +33,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
@@ -65,6 +65,26 @@ import { stripSpecialCharacters } from "~/utils/string";
 const logger = getLogger("erp", "purchase-order");
 
 export const handle: Handle = {
+  realtime: [
+    { table: "purchaseOrder", column: "id", param: "orderId" },
+    { table: "purchaseOrderLine", column: "purchaseOrderId", param: "orderId" },
+    {
+      // Receipts and invoices of this order share its supplier interaction
+      // (`usePurchaseOrder`, `getSupplierInteraction`).
+      table: "receipt",
+      filter: ({ data }) =>
+        data?.purchaseOrder?.supplierInteractionId
+          ? `supplierInteractionId=eq.${data.purchaseOrder.supplierInteractionId}`
+          : undefined
+    },
+    {
+      table: "purchaseInvoice",
+      filter: ({ data }) =>
+        data?.purchaseOrder?.supplierInteractionId
+          ? `supplierInteractionId=eq.${data.purchaseOrder.supplierInteractionId}`
+          : undefined
+    }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
     (data) => data?.purchaseOrder?.purchaseOrderId

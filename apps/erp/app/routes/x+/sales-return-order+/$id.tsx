@@ -6,13 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getSalesReturnOrder, getSalesReturnOrderLines } from "~/modules/sales";
 import {
@@ -24,6 +24,10 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "salesReturnOrder", column: "id", param: "id" },
+    { table: "salesReturnOrderLine", column: "salesReturnOrderId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RMAs`, to: path.to.salesReturnOrders },
     (data) => data?.salesReturnOrder?.salesReturnOrderId

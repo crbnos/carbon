@@ -179,6 +179,9 @@ export async function runLocationSchedule(
     });
   }
 
+  // After the pre-pass, which writes member operations.
+  await provider.preloadJobs(batch);
+
   let conflictsDetected = 0;
   const failedJobIds: string[] = [];
   const newlyLate: NewlyLateJob[] = [];

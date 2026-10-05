@@ -8,13 +8,13 @@ import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { Outlet, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import RiskRegisterCard from "~/modules/quality/ui/RiskRegister/RiskRegisterCard";
 import {
@@ -35,6 +35,9 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "maintenanceDispatch", column: "id", param: "dispatchId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Maintenance`, to: path.to.maintenanceDispatches },
     (data) => data?.dispatch?.maintenanceDispatchId

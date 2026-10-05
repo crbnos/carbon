@@ -4,6 +4,7 @@
 
 import { getBrowserEnv } from "@carbon/auth";
 import { DateTimePicker, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -30,7 +31,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import PermissionMatrix from "~/components/PermissionMatrix";
@@ -63,7 +63,13 @@ const ApiKeyForm = ({
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<{ key: string }>();
+  const fetcher = useAction<{ key: string }>({
+    onSettled: (data) => {
+      if (data?.key) {
+        setKey(data.key);
+      }
+    }
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = !permissions.can("update", "users");
@@ -84,12 +90,6 @@ const ApiKeyForm = ({
     initialState: initialScopeState,
     bulkExcludedKeys: apiKeyOptInPermissionKeys
   });
-
-  useEffect(() => {
-    if (fetcher.data?.key) {
-      setKey(fetcher.data.key);
-    }
-  }, [fetcher.data]);
 
   // Serialize scopes to JSONB format for form submission
   const scopesJsonb = companyId

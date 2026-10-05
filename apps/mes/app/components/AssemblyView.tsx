@@ -44,7 +44,6 @@ import {
   useDisclosure,
   useKeyboardWedge,
   useMode,
-  useRealtimeChannel,
   useRouteData,
   useShortcutKeys
 } from "@carbon/react";
@@ -100,7 +99,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
-import { useRealtimeRevalidator, useUser } from "~/hooks";
+import { useRealtime, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import type {
   JobMaterial,
@@ -539,7 +538,6 @@ export function AssemblyView({
   const { carbon } = useCarbon();
   const mode = useMode();
   const navigate = useNavigate();
-  const revalidate = useRealtimeRevalidator();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLingui();
   // Which main panel is shown: the assembly details, the 3D model, or chat.
@@ -581,44 +579,10 @@ export function AssemblyView({
 
   // Live sync — refresh loader data when this operation's events, step records,
   // job, or tracked entities change (incl. edits from the operation view).
-  useRealtimeChannel({
-    topic: `assembly:${operationId}`,
-    dependencies: [operationId],
-    setup(channel) {
-      const refresh = () => revalidate();
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `jobOperationId=eq.${operationId}`
-          },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "jobOperationStepRecord" },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "trackedActivity" },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=eq.${operationId}`
-          },
-          refresh
-        );
-    }
-  });
+  useRealtime("productionEvent", `jobOperationId=eq.${operationId}`);
+  useRealtime("jobOperationStepRecord", `operationId=eq.${operationId}`);
+  useRealtime("trackedActivity", `jobOperationId=eq.${operationId}`);
+  useRealtime("jobOperation", `id=eq.${operationId}`);
 
   // Kanban barcode scan → complete the operation (matches the operation view).
   // The returned buffer is non-empty while a scan burst is in flight — the
@@ -1660,7 +1624,7 @@ export function AssemblyView({
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
 
   return (
-    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
       <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border">
         {/* Full-height segment matching the Flag issue / Complete / timer buttons. */}
@@ -2353,14 +2317,21 @@ export function AssemblyView({
                     <p className="text-lg font-medium leading-relaxed">
                       {step.name ?? `Step ${currentStep + 1}`}
                     </p>
-                    {stepDescriptionHtml ? (
-                      <div
-                        className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
-                        dangerouslySetInnerHTML={{
-                          __html: stepDescriptionHtml
-                        }}
-                      />
-                    ) : null}
+                    {/* generateHTML returns nothing on the server, so the
+                        server never renders this block: rendering it during
+                        hydration would not match. */}
+                    <ClientOnly>
+                      {() =>
+                        stepDescriptionHtml ? (
+                          <div
+                            className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
+                            dangerouslySetInnerHTML={{
+                              __html: stepDescriptionHtml
+                            }}
+                          />
+                        ) : null
+                      }
+                    </ClientOnly>
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -2965,7 +2936,11 @@ function TimerControl({
       >
         <span className="hidden flex-col items-end leading-none sm:flex">
           <span className="text-sm font-medium tabular-nums">
-            {formatElapsed(elapsed)}
+            {/* The clock moves between the server render and hydration, so the
+                elapsed time is only rendered in the browser. */}
+            <ClientOnly fallback={formatElapsed(0)}>
+              {() => formatElapsed(elapsed)}
+            </ClientOnly>
           </span>
           <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
             {workType}

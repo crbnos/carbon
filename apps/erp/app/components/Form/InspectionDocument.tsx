@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { HStack } from "@carbon/react";
-import { useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
+import { useMemo } from "react";
 import type { getInspectionDocumentsForItem } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
@@ -37,17 +37,11 @@ export default InspectionDocument;
 
 export const useInspectionDocuments = (args: { itemId?: string }) => {
   const { itemId } = args;
-  const inspectionDocumentFetcher =
-    useFetcher<Awaited<ReturnType<typeof getInspectionDocumentsForItem>>>();
+  const inspectionDocumentFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getInspectionDocumentsForItem>>
+  >(itemId ? path.to.api.inspectionDocuments(itemId) : null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher.load is not referentially stable; reload only when itemId changes
-  useEffect(() => {
-    if (itemId) {
-      inspectionDocumentFetcher.load(path.to.api.inspectionDocuments(itemId));
-    }
-  }, [itemId]);
-
-  const loading = inspectionDocumentFetcher.state !== "idle";
+  const loading = inspectionDocumentFetcher.isFetching;
 
   const options = useMemo(
     () =>

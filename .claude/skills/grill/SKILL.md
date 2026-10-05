@@ -85,6 +85,9 @@ apply regardless of target:
       chat
 - [ ] Durable conventions reflected in `.claude/rules/`; glossary offers made
       where the three-part test passed
+- [ ] Every resolution written to a spec or plan is in STE-80, and the
+      STE-80 review pass (`.claude/rules/writing-ste.md` → Enforcement) is
+      done on that file
 
 ## Anti-patterns
 

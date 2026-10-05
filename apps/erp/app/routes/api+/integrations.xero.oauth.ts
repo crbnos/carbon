@@ -14,8 +14,9 @@ import {
 } from "@carbon/ee/accounting";
 import { xeroOnInstall } from "@carbon/ee/xero/hooks.server";
 import { getLogger } from "@carbon/logger";
+import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { getIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared";
@@ -203,7 +204,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const createdXeroIntegration = await upsertCompanyIntegration(client, {
       id: Xero.id,
       active: true,
-      // @ts-ignore
+      // @ts-expect-error
       metadata: {
         syncConfig: DEFAULT_SYNC_CONFIG,
         settings: { syncEnabled },
@@ -226,7 +227,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (createdXeroIntegration?.data?.metadata) {
       // Canonical public origin — `request.url`'s origin is the internal proxy
       // address in dev, which would drop the session cookies on redirect.
-      return redirect(`${getAppUrl()}${path.to.integrations}`, {
+      return redirectExternal(`${getAppUrl()}${path.to.integrations}`, {
         headers: { "Set-Cookie": consumedState.cookie }
       });
     } else {

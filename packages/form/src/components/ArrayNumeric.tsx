@@ -127,7 +127,7 @@ const ArrayNumericInput = ({
     <FormControl isInvalid={!!error} isRequired>
       <HStack className="w-full content-between">
         <NumberField
-          // @ts-ignore
+          // @ts-expect-error
           {...getInputProps({
             id: name,
             ...rest

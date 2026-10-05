@@ -6280,33 +6280,6 @@ export function peopleAndTime(ctx: ValidationCtx): void {
   const { dataset, fail, need } = ctx;
   const ops = dataset.ops;
 
-  const clockIn = secondsOfDay(ops.openTimecard.clockIn);
-  if (clockIn === null) {
-    fail(
-      `ops.openTimecard: clockIn "${ops.openTimecard.clockIn}" is not a UTC "HH:MM:SS"`
-    );
-  } else {
-    const runningStarts = [
-      OPEN_EVENT_TIME,
-      dataset.production.batch.running.startTimeOfDay
-    ];
-    for (const job of dataset.production.jobs) {
-      for (const override of job.operationOverrides ?? []) {
-        if (override.running) {
-          runningStarts.push(override.running.startTimeOfDay);
-        }
-      }
-    }
-    const earliest = Math.min(
-      ...runningStarts.map((time) => secondsOfDay(time) ?? 0)
-    );
-    if (clockIn > earliest) {
-      fail(
-        `ops.openTimecard: clocked in at ${ops.openTimecard.clockIn}, after a production timer already running today`
-      );
-    }
-  }
-
   const assignmentDays = new Set<number>();
   const assignedWorkCenters = new Set<string>();
   const seenAssignments = new Set<string>();

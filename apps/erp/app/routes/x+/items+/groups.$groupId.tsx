@@ -6,12 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getItemPostingGroup,
   itemPostingGroupValidator,
@@ -20,7 +18,6 @@ import {
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -79,25 +76,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return (
-        queryKey[0] === itemPostingGroupsQuery(companyId).queryKey[0] &&
-        queryKey[1] === companyId
-      );
-    }
-  });
-
-  return await serverAction();
-}
-
 export default function EditItemPostingGroupsRoute() {
   const { itemPostingGroup } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: itemPostingGroup?.id ?? undefined,
@@ -110,7 +91,7 @@ export default function EditItemPostingGroupsRoute() {
     <ItemPostingGroupForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

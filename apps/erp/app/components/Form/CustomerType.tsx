@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import type { getCustomerTypesList } from "~/modules/sales";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
@@ -69,12 +69,9 @@ CustomerType.displayName = "CustomerType";
 export default CustomerType;
 
 export const useCustomerTypes = (enabled = true) => {
-  const customerTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerTypesList>>>();
-
-  useMount(() => {
-    if (enabled) customerTypeFetcher.load(path.to.api.customerTypes);
-  });
+  const customerTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerTypesList>>
+  >(enabled ? path.to.api.customerTypes : null);
 
   const options = useMemo(() => {
     const dataSource = customerTypeFetcher.data?.data ?? [];

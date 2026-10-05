@@ -6,12 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import type { ShippingCarrier } from "~/modules/inventory";
 import {
   getShippingMethod,
@@ -21,7 +19,6 @@ import {
 } from "~/modules/inventory";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, shippingMethodsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -80,17 +77,9 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    shippingMethodsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
-}
-
 export default function EditShippingMethodsRoute() {
   const { shippingMethod } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: shippingMethod?.id ?? undefined,
@@ -105,7 +94,7 @@ export default function EditShippingMethodsRoute() {
     <ShippingMethodForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

@@ -2,17 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useState } from "react";
-import useMount from "./useMount";
+import { useSyncExternalStore } from "react";
 
-let hydrating = true;
+const subscribe = () => () => {};
 
 /**
  * Return a boolean indicating if the JS has been hydrated already.
  * When doing Server-Side Rendering, the result will always be false.
- * When doing Client-Side Rendering, the result will always be false on the
- * first render and true from then on. Even if a new component renders it will
- * always start with true.
+ * While a component hydrates, the result is false; it is true from then on.
+ * A component that mounts after hydration starts with true.
  *
  * Example: Disable a button that needs JS to work.
  * ```tsx
@@ -25,12 +23,14 @@ let hydrating = true;
  * ```
  */
 export default function useHydrated() {
-  let [hydrated, setHydrated] = useState(() => !hydrating);
-
-  useMount(() => {
-    hydrating = false;
-    setHydrated(true);
-  });
-
-  return hydrated;
+  // The server snapshot is what React reads while it hydrates THIS component,
+  // whenever that happens. A page hydrates in pieces (each Suspense boundary on
+  // its own), so a flag flipped by the first mount is already true when a later
+  // piece hydrates: it then renders its client-only content against the
+  // server's fallback, and React discards the server-rendered page.
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  );
 }

@@ -3,22 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import {
-  toast,
-  useDisclosure,
-  useInterval,
-  useRealtimeChannel
-} from "@carbon/react";
+import { useChangedRows } from "@carbon/query";
+import { toast, useDisclosure, useInterval } from "@carbon/react";
 import {
   getLocalTimeZone,
   now,
   parseAbsolute,
   toZoned
 } from "@internationalized/date";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
-import { useRealtimeRevalidator, useUrlParams, useUser } from "~/hooks";
+import { useRealtime, useUrlParams, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import { shouldAdvanceToNextSerialUnit } from "~/services/serial-advancement";
 import type {
@@ -71,10 +66,6 @@ export function useOperation({
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
 
-  const revalidate = useRealtimeRevalidator();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const channelRef = useRef<RealtimeChannel | null>(null);
-
   const actionsSheet = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -121,91 +112,62 @@ export function useOperation({
     setOperationState(operation);
   }, [operation]);
 
-  useRealtimeChannel({
-    topic: `job-operations:${operation.id}`,
-    dependencies: [operation.jobId, batchId],
-    setup(channel) {
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "job",
-            filter: `id=eq.${operation.jobId}`
-          },
-          (payload) => {
-            if (payload.eventType === "UPDATE") {
-              revalidate();
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: batchId
-              ? `jobOperationBatchId=eq.${batchId}`
-              : `jobOperationId=eq.${operation.id}`
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "INSERT":
-                const { new: inserted } = payload;
-                setEventState((prevEvents) => [
-                  ...prevEvents,
-                  inserted as ProductionEvent
-                ]);
-                break;
-              case "UPDATE":
-                const { new: updated } = payload;
+  useRealtime("job", `id=eq.${operation.jobId}`);
 
-                setEventState((prevEvents) =>
-                  prevEvents.map((event) =>
-                    event.id === updated.id
-                      ? ({
-                          ...event,
-                          ...updated
-                        } as ProductionEvent)
-                      : event
-                  )
-                );
-                break;
-              case "DELETE":
-                const { old: deleted } = payload;
-                setEventState((prevEvents) =>
-                  prevEvents.filter((event) => event.id !== deleted.id)
-                );
-                break;
-              default:
-                break;
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=eq.${operation.id}`
-          },
-          (payload) => {
-            if (payload.eventType === "UPDATE") {
-              const updated = payload.new;
-              setOperationState((prev) => ({
-                ...prev,
-                ...updated,
-                operationStatus: updated.status ?? prev.operationStatus
-              }));
-            } else if (payload.eventType === "DELETE") {
-              toast.error("This operation has been deleted");
-              window.location.href = path.to.operations;
-            }
-          }
+  useChangedRows<ProductionEvent>({
+    companyId: user.company.id,
+    table: "productionEvent",
+    filter: batchId
+      ? `jobOperationBatchId=eq.${batchId}`
+      : `jobOperationId=eq.${operation.id}`,
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        setEventState((prevEvents) =>
+          prevEvents.filter((event) => !ids.includes(event.id))
         );
+        return;
+      }
+      const mine = rows.filter((row) =>
+        batchId
+          ? row.jobOperationBatchId === batchId
+          : row.jobOperationId === operation.id
+      );
+      setEventState((prevEvents) => {
+        let next = prevEvents;
+        for (const row of mine) {
+          next = next.some((event) => event.id === row.id)
+            ? next.map((event) =>
+                event.id === row.id ? { ...event, ...row } : event
+              )
+            : [...next, row];
+        }
+        return next;
+      });
+    }
+  });
+
+  useChangedRows<{
+    id: string;
+    status?: OperationWithDetails["operationStatus"];
+  }>({
+    companyId: user.company.id,
+    table: "jobOperation",
+    filter: `id=eq.${operation.id}`,
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        if (ids.includes(operation.id)) {
+          toast.error("This operation has been deleted");
+          window.location.href = path.to.operations;
+        }
+        return;
+      }
+      const updated = rows.find((row) => row.id === operation.id);
+      if (!updated) return;
+      setOperationState((prev) => ({
+        ...prev,
+        ...updated,
+        operationStatus: updated.status ?? prev.operationStatus
+      }));
     }
   });
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BottomSheet,
@@ -611,7 +612,7 @@ export function InspectionView({
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
 
   return (
-    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
       <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border">
         <SidebarTrigger className="h-full w-auto shrink-0 rounded-none border-r border-border px-2 hover:bg-accent md:px-4" />
@@ -1157,15 +1158,15 @@ function AcceptLotModal({
   eventIds: ProductionEventIdFields;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
-      submitted.current = false;
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state, onClose]);
+  });
+  const submitted = useRef(false);
 
   return (
     <Modal
@@ -1360,7 +1361,11 @@ function TimerControl({
       >
         <span className="hidden flex-col items-end leading-none sm:flex">
           <span className="text-sm font-medium tabular-nums">
-            {formatElapsed(elapsed)}
+            {/* The clock moves between the server render and hydration, so the
+                elapsed time is only rendered in the browser. */}
+            <ClientOnly fallback={formatElapsed(0)}>
+              {() => formatElapsed(elapsed)}
+            </ClientOnly>
           </span>
           <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
             {workType}

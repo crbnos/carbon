@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useMount } from "@carbon/react";
+import { RefreshRate, useLoaderQuery } from "@carbon/query";
 import { cldrCurrencyDecimals, DEFAULT_CURRENCY_DECIMALS } from "@carbon/utils";
 import { createContext, useContext, useMemo } from "react";
-import { useFetcher } from "react-router";
 import type { getCurrenciesList } from "~/modules/accounting";
 import { path } from "~/utils/path";
 import { useCompanySettings } from "./useCompanySettings";
@@ -15,7 +14,7 @@ type CurrencyList = NonNullable<
 >;
 
 /** Set by a route that loaded the list itself. The currencies API is
- *  `requirePermissions`-gated, so the fetcher below returns nothing on a public
+ *  `requirePermissions`-gated, so the query below returns nothing on a public
  *  page and every amount silently falls back to CLDR — which is the one thing
  *  the standard says is NOT authoritative. */
 const CurrenciesContext = createContext<CurrencyList | undefined>(undefined);
@@ -30,13 +29,12 @@ export const CurrenciesProvider = CurrenciesContext.Provider;
  */
 export function useCurrencies(): CurrencyList {
   const provided = useContext(CurrenciesContext);
-  const currencyFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCurrenciesList>>>();
-
-  useMount(() => {
-    // A provided list means the route already has it and the endpoint is not
-    // reachable anyway — asking would be a guaranteed 401 on every public view.
-    if (!provided) currencyFetcher.load(path.to.api.currencies);
+  // A provided list means the route already has it and the endpoint is not
+  // reachable anyway — asking would be a guaranteed 401 on every public view.
+  const currencyFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCurrenciesList>>
+  >(provided ? null : path.to.api.currencies, {
+    staleTime: RefreshRate.Never
   });
 
   return provided ?? currencyFetcher.data?.data ?? [];

@@ -10,8 +10,8 @@ import {
   flash,
   updateCompanySession
 } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getLocation, setLocation } from "~/services/location.server";
 import { path, requestReferrer } from "~/utils/path";
 

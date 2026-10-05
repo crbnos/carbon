@@ -35,7 +35,7 @@ export const modelThumbnailFunction = inngest.createFunction(
   },
   { event: "carbon/model-thumbnail" },
   async ({ event, step, logger }) => {
-    const { modelId, companyId } = event.data;
+    const { modelId, companyId, direction } = event.data;
 
     if (!assemblerEnabled()) {
       logger.info("model thumbnail skipped — assembler not configured", {
@@ -99,7 +99,7 @@ export const modelThumbnailFunction = inngest.createFunction(
         }
         return {
           source: { url: internalizeStorageUrl(signed.data.signedUrl) },
-          output: { path: thumbnailPath }
+          output: { path: thumbnailPath, ...(direction && { direction }) }
         };
       },
       mintUploadUrls: async () => {

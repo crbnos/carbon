@@ -22,11 +22,10 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
-import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
+import { PO_EMAIL_ATTACHMENT_LIMIT_MB, redirect } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {

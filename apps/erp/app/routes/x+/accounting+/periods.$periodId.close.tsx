@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -44,13 +44,7 @@ import {
   LuX
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import type {
   PeriodCloseStatus,

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Combobox, Radios, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -27,9 +28,8 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { LuArrowRight, LuLink, LuPlus, LuTrash2 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import {
   dimensionSlotsUpdateValidator,
@@ -714,17 +714,15 @@ function MatchByNameDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSettled: () => {
+      if (submittedRef.current) {
+        onClose();
+      }
+    }
+  });
   const isSubmitting = fetcher.state !== "idle";
   const submittedRef = useRef(false);
-
-  // Close once the confirm-all POST settles; revalidation has already
-  // refreshed the sections behind the drawer.
-  useEffect(() => {
-    if (submittedRef.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
 
   const confirmAll = () => {
     if (proposals.length === 0) return;

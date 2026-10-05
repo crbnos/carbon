@@ -215,12 +215,12 @@ For dynamic numbers, prevent layout shift with `tabular-nums` (used in
 
 ### 4. Scale on Press
 
-Tactile button feedback. `Button` itself applies `active:scale-[0.96]
+Tactile button feedback. `Button` itself applies `active:scale-[0.98]
 active:duration-75`; reuse `Button`/`IconButton` rather than reimplementing. When
-hand-rolling a pressable element, match `0.96` (never below `0.95`).
+hand-rolling a pressable element, match `0.98` (a deeper press reads as the layout moving; never below `0.95`).
 
 ```typescript
-<button className="active:scale-[0.96] transition-transform">
+<button className="active:scale-[0.98] transition-transform">
 ```
 
 ### 5. Minimum Hit Area
@@ -246,8 +246,8 @@ className="transition-all"
 
 ### 7. AnimatePresence
 
-Motion uses `framer-motion` (imported as `from "framer-motion"`, e.g.
-`apps/erp/app/components/DirectionAwareTabs.tsx`). Skip animation on page load with
+Motion uses `motion` (imported as `from "motion/react"`; `framer-motion` is no longer a dependency), e.g.
+`apps/erp/app/components/DirectionAwareTabs.tsx`. Skip animation on page load with
 `initial={false}`:
 
 ```typescript

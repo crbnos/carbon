@@ -5,9 +5,9 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getDatabaseErrorMessage } from "@carbon/utils";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { deleteGauge } from "~/modules/quality";
 import { path } from "~/utils/path";
 

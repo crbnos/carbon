@@ -11,7 +11,7 @@ import {
   useIsMobile
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import {
   createContext,

@@ -6,12 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect, useNavigate } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
+import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import {
   LocationForm,
@@ -20,7 +18,6 @@ import {
 } from "~/modules/resources";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, locationsQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -65,14 +62,6 @@ export async function action({ request }: ActionFunctionArgs) {
         path.to.locations,
         await flash(request, success("Location created"))
       );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    locationsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewLocationRoute() {

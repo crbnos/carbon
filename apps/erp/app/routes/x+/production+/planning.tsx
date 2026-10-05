@@ -7,13 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { datetime, isUnaffectedByNavigation } from "@carbon/utils";
+import { datetime, isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import type { ProductionPlanningItem } from "~/modules/production";
 import {
   getPlanningActions,
@@ -33,6 +33,7 @@ const WEEKS_TO_PLAN = 12 * 4;
 const logger = getLogger("erp", "production", "planning");
 
 export const handle: Handle = {
+  realtime: ["job"],
   breadcrumb: msg`Material Planning`,
   to: path.to.productionPlanning
 };

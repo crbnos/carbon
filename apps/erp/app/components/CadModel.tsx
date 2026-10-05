@@ -35,6 +35,8 @@ import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
+import type { ViewDirection } from "~/utils/model-thumbnail";
+import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import { UploadProgress } from "./UploadProgress";
 
@@ -104,6 +106,35 @@ const CadModel = ({
   } = useOptimizedModel({ modelPath, modelUploadId, companyId, file });
   // Never on top of the upload progress overlay.
   const showOptimizeProgress = optimizeProgressActive && upload === null;
+
+  // The thumbnail is drawn from where the viewer's camera stands. The item
+  // panel reads the model's thumbnail from the loader, so revalidate once the
+  // new one lands.
+  // One at a time: two in flight both wait for "a new path", so the first to
+  // land would be reported as the second's view.
+  const [isCapturing, setIsCapturing] = useState(false);
+  const onCaptureThumbnail = async (direction: ViewDirection) => {
+    if (!modelUploadId || !carbon || isCapturing) return;
+    setIsCapturing(true);
+    toast.info(t`Regenerating thumbnail…`);
+    try {
+      const thumbnailPath = await regenerateModelThumbnail({
+        carbon,
+        modelId: modelUploadId,
+        direction
+      });
+      if (thumbnailPath) {
+        revalidator.revalidate();
+        toast.success(t`Thumbnail updated`);
+      } else {
+        toast.info(t`Thumbnail is still generating`);
+      }
+    } catch {
+      toast.error(t`Failed to regenerate thumbnail`);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   const onDelete = async () => {
     if (!carbon) {
@@ -278,6 +309,10 @@ const CadModel = ({
                 onRetry={modelPath && canRetry ? onRetry : undefined}
                 retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
+                onCaptureThumbnail={
+                  !isReadOnly && modelUploadId ? onCaptureThumbnail : undefined
+                }
+                isCapturingThumbnail={isCapturing}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
               />
               {upload !== null && (

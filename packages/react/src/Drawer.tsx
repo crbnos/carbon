@@ -16,9 +16,10 @@ import { forwardRef } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ClientOnly } from "./ClientOnly";
+import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
 
-const Drawer = DialogPrimitive.Root;
+const Drawer = DialogRoot;
 
 const DrawerTrigger = DialogPrimitive.Trigger;
 
@@ -62,7 +63,7 @@ const DrawerOverlay = forwardRef<
 >(({ className, children, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/10 backdrop-blur-sm  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -90,12 +91,12 @@ const sheetVariants = cva(
   {
     variants: {
       position: {
-        top: "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top w-full data-[state=open]:duration-300 data-[state=closed]:duration-200",
+        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full duration-300 ease-out",
         bottom:
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom w-full data-[state=open]:duration-300 data-[state=closed]:duration-200",
-        left: "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left h-full data-[state=open]:duration-300 data-[state=closed]:duration-200",
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full duration-300 ease-out",
+        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full duration-300 ease-out",
         right:
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right h-full data-[state=open]:duration-300 data-[state=closed]:duration-200"
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full duration-300 ease-out"
       },
       size: {
         content: "",
@@ -197,29 +198,34 @@ const DrawerContent = forwardRef<
       ...props
     },
     ref
-  ) => (
-    <ClientOnly fallback={null}>
-      {() => (
-        <DrawerPortal position={position} container={container}>
-          {overlay && <DrawerOverlay />}
-          <DialogPrimitive.Content
-            ref={ref}
-            className={cn(sheetVariants({ position, size }), className)}
-            {...props}
-          >
-            {children}
-            <DialogPrimitive.Close
-              type="button"
-              className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
+  ) => {
+    const dismissable = useDialogDismissable();
+    return (
+      <ClientOnly fallback={null}>
+        {() => (
+          <DrawerPortal position={position} container={container}>
+            {overlay && <DrawerOverlay />}
+            <DialogPrimitive.Content
+              ref={ref}
+              className={cn(sheetVariants({ position, size }), className)}
+              {...props}
             >
-              <LuX className="h-5 w-5" />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          </DialogPrimitive.Content>
-        </DrawerPortal>
-      )}
-    </ClientOnly>
-  )
+              {children}
+              {dismissable && (
+                <DialogPrimitive.Close
+                  type="button"
+                  className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
+                >
+                  <LuX className="h-5 w-5" />
+                  <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+              )}
+            </DialogPrimitive.Content>
+          </DrawerPortal>
+        )}
+      </ClientOnly>
+    );
+  }
 );
 DrawerContent.displayName = DialogPrimitive.Content.displayName;
 

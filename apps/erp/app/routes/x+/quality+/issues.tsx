@@ -7,9 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { getIssues, getIssueTypesList } from "~/modules/quality";
 import IssuesTable from "~/modules/quality/ui/Issue/IssuesTable";
 import type { Handle } from "~/utils/handle";
@@ -19,6 +20,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "issues");
 
 export const handle: Handle = {
+  realtime: ["nonConformance"],
   breadcrumb: msg`Issues`,
   to: path.to.issues
 };

@@ -9,8 +9,9 @@ import type { Json } from "@carbon/database";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { CURRENT_DEFINITION_FORMAT_VERSION } from "@carbon/ee/workflows";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import {
   getWorkflowVersion,
   getWorkflowVersions,

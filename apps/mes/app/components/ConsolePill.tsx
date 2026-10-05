@@ -36,7 +36,7 @@ export function ConsolePill({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border bg-card/90 backdrop-blur-md px-3 py-1.5 shadow-lg transition-all duration-200 hover:shadow-xl active:scale-[0.98] select-none"
+        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border bg-card/90 backdrop-blur-md px-3 py-1.5 shadow-lg transition-[box-shadow,transform] duration-200 hover:shadow-xl active:scale-[0.98] select-none"
       >
         <Avatar size="xs" name={user.name} src={user.avatarUrl ?? undefined} />
         <span className="text-xs font-medium max-w-[130px] truncate">

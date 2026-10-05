@@ -9,20 +9,14 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  data,
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import {
   getTrainingAssignment,
   getTrainingAssignmentStatus,

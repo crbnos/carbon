@@ -128,7 +128,7 @@ ALTER TABLE "companySettings"
     CHECK ("forecastConsumptionForwardPeriods" >= 0);
 ```
 
-(Precedent for the CHECK-on-ALTER shape: `rescheduleToleranceDays` in `20261003203300_mrp-planning-actions.sql:109-110`. `NUMERIC` bare — no precision spec. `ADD COLUMN ... DEFAULT` is metadata-only, no table rewrite.)
+(Precedent for the CHECK-on-ALTER shape: `rescheduleToleranceDays` in `20261005090300_mrp-planning-actions.sql:109-110`. `NUMERIC` bare — no precision spec. `ADD COLUMN ... DEFAULT` is metadata-only, no table rewrite.)
 
 3. Section 2 — `openSalesOrderLines`: `DROP VIEW IF EXISTS "openSalesOrderLines";` then recreate by copying the 20260811123619 definition **verbatim**, adding ONE column directly after the existing `END AS "quantityToSend",` line:
 

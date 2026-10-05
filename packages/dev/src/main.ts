@@ -9,6 +9,7 @@ import { initWorktree } from "./commands/init.js";
 import { listWorktrees } from "./commands/list.js";
 import { migrate } from "./commands/migrate.js";
 import { newWorktree } from "./commands/new.js";
+import { prune } from "./commands/prune.js";
 import { reload } from "./commands/reload.js";
 import { removeWorktreeCmd } from "./commands/remove.js";
 import { reset } from "./commands/reset.js";
@@ -77,11 +78,23 @@ const main = defineCommand({
           description:
             "With --run, also remove Docker volumes on teardown (headless: don't leak data volumes across dispatches)"
         },
+        full: {
+          type: "boolean",
+          default: false,
+          description:
+            "Also start Studio, Postgres-Meta, the edge runtime and imgproxy (off by default; `crbn reload studio` / `crbn reload imgproxy` starts one on a running stack)"
+        },
         minimal: {
           type: "boolean",
           default: false,
           description:
-            "Skip non-essential services (Studio, Postgres-Meta, Inbucket) to reduce memory footprint (useful for headless/CI builds)"
+            "Also skip Inbucket, for headless/CI builds that sign in by bypass"
+        },
+        hibernate: {
+          type: "boolean",
+          default: true,
+          description:
+            "Stop the containers after 30 min without ERP/MES traffic, and the dev servers after 2 h; the next request starts them again (--no-hibernate to keep them up; CRBN_IDLE_MINUTES / CRBN_APPS_IDLE_MINUTES change the waits)"
         }
       },
       run: ({ args }) =>
@@ -95,7 +108,9 @@ const main = defineCommand({
           portless: args.portless !== false,
           run: typeof args.run === "string" ? args.run : undefined,
           volumes: args.volumes === true,
-          minimal: args.minimal === true
+          full: args.full === true,
+          minimal: args.minimal === true,
+          hibernate: args.hibernate !== false
         })
     }),
     down: defineCommand({
@@ -122,7 +137,14 @@ const main = defineCommand({
     }),
     status: defineCommand({
       meta: { description: "Show port assignment + container health" },
-      run: () => status()
+      args: {
+        json: {
+          type: "boolean",
+          default: false,
+          description: "Print the slot and containers as JSON"
+        }
+      },
+      run: ({ args }) => status({ json: args.json === true })
     }),
     reload: defineCommand({
       meta: {
@@ -303,18 +325,59 @@ const main = defineCommand({
     }),
     list: defineCommand({
       meta: { description: "List worktrees with stack status" },
-      run: () => listWorktrees()
+      args: {
+        json: {
+          type: "boolean",
+          default: false,
+          description: "Print the worktrees as JSON"
+        }
+      },
+      run: ({ args }) => listWorktrees({ json: args.json === true })
     }),
     remove: defineCommand({
-      meta: { description: "Pick a worktree to delete (with stack teardown)" },
+      meta: {
+        description:
+          "Delete worktrees with their stacks — pick interactively, or name them: `crbn remove <branch-or-path...>`"
+      },
       args: {
+        worktree: {
+          type: "positional",
+          required: false,
+          description: "Branch name(s) or path(s) to remove; skips the picker"
+        },
         prune: {
           type: "boolean",
           default: false,
           description: "Also delete the git branch after removing the worktree"
         }
       },
-      run: ({ args }) => removeWorktreeCmd({ prune: args.prune === true })
+      run: ({ args, rawArgs }) =>
+        removeWorktreeCmd({
+          prune: args.prune === true,
+          targets: rawArgs.filter((a) => a && !a.startsWith("-"))
+        })
+    }),
+    prune: defineCommand({
+      meta: {
+        description:
+          "Destroy stacks no worktree can reach: slots whose directory is gone, and stacks with no slot (volumes wiped; confirms first)"
+      },
+      args: {
+        all: {
+          type: "boolean",
+          default: false,
+          description:
+            "Destroy EVERY crbn stack on this machine, running ones included. Worktrees, branches and live slots are kept; the next `crbn up` rebuilds the database"
+        },
+        tree: {
+          type: "boolean",
+          default: false,
+          description:
+            "Also clean up git worktrees: forget ones whose directory is gone; with --all, remove this repo's linked worktrees too (never the main checkout, the current one, or one with uncommitted changes; branches are kept)"
+        }
+      },
+      run: ({ args }) =>
+        prune({ all: args.all === true, tree: args.tree === true })
     }),
     copy: defineCommand({
       meta: {

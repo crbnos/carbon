@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { useStore as useValue } from "@nanostores/react";
-import { atom, computed } from "nanostores";
-import { useNanoStore } from "~/hooks";
+import { fetchAllFromTable } from "@carbon/database";
+import { type LiveList, useLiveList } from "@carbon/query";
+import { useMemo } from "react";
+import { useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 
 export type Item = ListItem & {
@@ -17,26 +18,72 @@ export type Item = ListItem & {
   thumbnailPath: string | null;
 };
 
-const $itemsStore = atom<Item[]>([]);
+// The one place the item list's columns are written. The thumbnail falls back
+// to the model's when the item has none of its own.
+const ITEM_COLUMNS =
+  "id, readableIdWithRevision, name, type, replenishmentSystem, itemTrackingType, active, thumbnailPath, modelUpload:modelUploadId(thumbnailPath)";
 
-const $partsStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Part")
-);
+type ItemRow = Item & { modelUpload?: { thumbnailPath: string | null } | null };
 
-const $toolsStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Tool")
-);
+const toItem = ({ modelUpload, ...item }: ItemRow): Item => ({
+  ...item,
+  thumbnailPath: item.thumbnailPath ?? modelUpload?.thumbnailPath ?? null
+});
 
-const $serivceStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Service")
-);
+export const itemsList: LiveList<Item> = {
+  name: "mesItems",
+  table: "item",
+  async fetchAll(carbon, companyId) {
+    const items = await fetchAllFromTable<ItemRow>(
+      carbon,
+      "item",
+      ITEM_COLUMNS,
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .order("readableId", { ascending: true })
+          .order("revision", { ascending: false })
+    );
+    if (items.error) throw new Error("Failed to fetch items");
+    return (items.data ?? []).map(toItem);
+  },
+  async fetchByIds(carbon, companyId, ids) {
+    const items = await carbon
+      .from("item")
+      .select(ITEM_COLUMNS)
+      .eq("companyId", companyId)
+      .in("id", ids);
+    if (items.error) throw new Error("Failed to fetch items");
+    return ((items.data ?? []) as unknown as ItemRow[]).map(toItem);
+  },
+  // A model's thumbnail is rendered after upload, on its own row: re-read the
+  // items that show it.
+  related: [
+    {
+      table: "modelUpload",
+      async fetch(carbon, companyId, ids) {
+        const items = await carbon
+          .from("item")
+          .select(ITEM_COLUMNS)
+          .eq("companyId", companyId)
+          .in("modelUploadId", ids);
+        if (items.error) throw new Error("Failed to fetch items");
+        return ((items.data ?? []) as unknown as ItemRow[]).map(toItem);
+      }
+    }
+  ],
+  sort: (a, b) =>
+    a.readableIdWithRevision.localeCompare(b.readableIdWithRevision)
+};
 
-const $materialsStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Material")
-);
+export const useItems = () => useLiveList(itemsList, useUser().company.id);
 
-export const useItems = () => useNanoStore<Item[]>($itemsStore, "items");
-export const useParts = () => useValue($partsStore);
-export const useTools = () => useValue($toolsStore);
-export const useServices = () => useValue($serivceStore);
-export const useMaterials = () => useValue($materialsStore);
+const useItemsOfType = (type: Item["type"]) => {
+  const [items] = useItems();
+  return useMemo(() => items.filter((i) => i.type === type), [items, type]);
+};
+
+export const useParts = () => useItemsOfType("Part");
+export const useTools = () => useItemsOfType("Tool");
+export const useServices = () => useItemsOfType("Service");
+export const useMaterials = () => useItemsOfType("Material");

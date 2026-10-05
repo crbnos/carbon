@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="explain-source" content=".ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md" />
+<meta name="explain-source-hash" content="4d8339e93dbb001ace309331fc30e994c0f99591" />
+<title>Client cache and realtime</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --panel: #ffffff; --ink: #262323; --faint: #6b6764;
+    --hairline: #e3e2de; --accent: #1e84b0; --accent-soft: #dff5ff;
+    --warn: #a3520f; --warn-soft: #fff1e0; --ok: #2c7a14; --ok-soft: #e4f8da;
+    --code-bg: #efefeb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --panel: #1c1c1f; --ink: #ececea; --faint: #a3a19c;
+      --hairline: #2e2e33; --accent: #5cc2ee; --accent-soft: #10303f;
+      --warn: #f0a35e; --warn-soft: #3a2614; --ok: #8fd672; --ok-soft: #1b3112;
+      --code-bg: #26262a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 48px 16px 96px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 8px 0 12px; }
+  h2 { font-size: 20px; margin: 56px 0 12px; padding-top: 24px; border-top: 1px solid var(--hairline); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p, li { max-width: 72ch; }
+  a { color: var(--accent); }
+  code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+         background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  .kicker { color: var(--faint); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+  .tldr { font-size: 18px; border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 0; }
+  .callout { border-radius: 10px; padding: 12px 16px; margin: 16px 0; border: 1px solid var(--hairline); }
+  .callout.example { background: var(--accent-soft); }
+  .callout.warn { background: var(--warn-soft); }
+  .callout .label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 8px 0 8px 44px; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 8px; width: 28px; height: 28px;
+                        border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+                        font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+  figure { margin: 20px 0; background: var(--panel); border: 1px solid var(--hairline);
+           border-radius: 12px; padding: 16px; overflow-x: auto; }
+  figcaption { color: var(--faint); font-size: 14px; margin-top: 8px; }
+  /* SVG diagram primitives — use these classes, never inline colors */
+  svg.diagram { display: block; width: 100%; height: auto; min-width: 560px; }
+  svg .box { fill: var(--panel); stroke: var(--hairline); stroke-width: 1.5; }
+  svg .box.hot { stroke: var(--accent); stroke-width: 2.5; fill: var(--accent-soft); }
+  svg .box.new { stroke: var(--ok); stroke-width: 2; fill: var(--ok-soft); }
+  svg .box.risk { stroke: var(--warn); stroke-width: 2; fill: var(--warn-soft); }
+  svg .lane { fill: none; stroke: var(--hairline); stroke-dasharray: 4 4; }
+  svg .edge { fill: none; stroke: var(--faint); stroke-width: 1.5; }
+  svg .edge.hot { stroke: var(--accent); stroke-width: 2.5; }
+  svg text { fill: var(--ink); font: 14px ui-sans-serif, system-ui, sans-serif; }
+  svg text.small { fill: var(--faint); font-size: 12px; }
+  svg text.mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  svg marker path { fill: var(--faint); }
+  svg marker.hot path { fill: var(--accent); }
+  /* Tabs (before / after) */
+  .tabs { border: 1px solid var(--hairline); border-radius: 12px; background: var(--panel); margin: 16px 0; }
+  .tabs [role=tablist] { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--hairline); }
+  .tabs button { font: inherit; font-size: 14px; border: 0; background: none; color: var(--faint);
+                 padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  .tabs button[aria-selected=true] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .tabs [role=tabpanel] { padding: 12px 16px; }
+  .tabs [role=tabpanel][hidden] { display: none; }
+  /* Decisions */
+  details { border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel); margin: 8px 0; }
+  details > summary { cursor: pointer; padding: 10px 14px; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; color: var(--faint); margin-right: 8px; display: inline-block; transition: transform .15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > div { padding: 0 14px 12px 34px; }
+  .choice { font-weight: 600; }
+  .rejected { color: var(--faint); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+         border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
+  .tag.human { background: var(--ok-soft); color: var(--ok); }
+  .tag.assumed { background: var(--warn-soft); color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; border-bottom: 1px solid var(--hairline); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--faint); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  ul.checks { list-style: none; padding-left: 0; }
+  ul.checks li { padding: 6px 0 6px 28px; position: relative; }
+  ul.checks li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+  dl.terms dt { font-weight: 600; margin-top: 12px; }
+  dl.terms dd { margin: 2px 0 0 0; color: var(--faint); max-width: 72ch; }
+  footer { margin-top: 64px; color: var(--faint); font-size: 13px; border-top: 1px solid var(--hairline); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <p class="kicker">Spec · in-progress · 2026-10-04 · <code>.ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md</code></p>
+    <h1>Client query cache and realtime broadcast</h1>
+    <p class="tldr">Cached lists never go stale, pages miss changes, and each cold load fetches five whole tables. The ERP and the MES get one client cache and one realtime system that Postgres drives by broadcast. Operational pages update live in both apps, and a cold load with no change fetches no table.</p>
+  </header>
+
+  <section>
+    <h2>The picture</h2>
+    <figure>
+      <svg class="diagram" viewBox="0 0 800 470" role="img" aria-label="Five rows show each old mechanism on the left and the mechanism that replaces it on the right.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker>
+        </defs>
+        <text x="40" y="53">Reference lists</text><rect class="box risk" x="240" y="20" width="160" height="56" rx="8" /><text x="320" y="45" text-anchor="middle">27 clientLoaders</text><text class="small" x="320" y="64" text-anchor="middle">hand-written</text><path class="edge" d="M400,48 L438,48" marker-end="url(#arrow)" /><rect class="box new" x="440" y="20" width="160" height="56" rx="8" /><text x="520" y="53" text-anchor="middle">cachedClientLoader</text>
+<text x="40" y="143">Reference lists</text><rect class="box risk" x="240" y="110" width="160" height="56" rx="8" /><text x="320" y="135" text-anchor="middle">78 clientActions</text><text class="small" x="320" y="154" text-anchor="middle">invalidations</text><path class="edge" d="M400,138 L438,138" marker-end="url(#arrow)" /><rect class="box new" x="440" y="110" width="160" height="56" rx="8" /><text x="520" y="135" text-anchor="middle">Root middleware</text><text class="small" x="520" y="154" text-anchor="middle">invalidation</text>
+<text x="40" y="233">Page updates</text><rect class="box risk" x="240" y="200" width="160" height="56" rx="8" /><text x="320" y="225" text-anchor="middle">postgres_changes</text><text class="small" x="320" y="244" text-anchor="middle">per page</text><path class="edge" d="M400,228 L438,228" marker-end="url(#arrow)" /><rect class="box new" x="440" y="200" width="160" height="56" rx="8" /><text x="520" y="225" text-anchor="middle">Broadcast trigger</text><text class="small" x="520" y="244" text-anchor="middle">per table</text><path class="edge" d="M600,228 L638,228" marker-end="url(#arrow)" /><rect class="box new" x="640" y="200" width="160" height="56" rx="8" /><text x="720" y="225" text-anchor="middle">handle.realtime</text><text class="small" x="720" y="244" text-anchor="middle">on the route</text>
+<text x="40" y="323">Realtime lists</text><rect class="box risk" x="240" y="290" width="160" height="56" rx="8" /><text x="320" y="315" text-anchor="middle">nanostores</text><text class="small" x="320" y="334" text-anchor="middle">5 table fetches</text><path class="edge" d="M400,318 L438,318" marker-end="url(#arrow)" /><rect class="box hot" x="440" y="290" width="160" height="56" rx="8" /><text x="520" y="315" text-anchor="middle">useLiveList</text><text class="small" x="520" y="334" text-anchor="middle">in query cache</text><path class="edge" d="M600,318 L638,318" marker-end="url(#arrow)" /><rect class="box new" x="640" y="290" width="160" height="56" rx="8" /><text x="720" y="315" text-anchor="middle">Checksum</text><text class="small" x="720" y="334" text-anchor="middle">skips the fetch</text>
+<text x="40" y="413">Component hooks</text><rect class="box risk" x="240" y="380" width="160" height="56" rx="8" /><text x="320" y="405" text-anchor="middle">useFetcher</text><text class="small" x="320" y="424" text-anchor="middle">with effects</text><path class="edge" d="M400,408 L438,408" marker-end="url(#arrow)" /><rect class="box new" x="440" y="380" width="160" height="56" rx="8" /><text x="520" y="405" text-anchor="middle">useLoaderQuery</text><text class="small" x="520" y="424" text-anchor="middle">and useAction</text>
+
+      </svg>
+      <figcaption>Read each row left to right. The orange box is the old mechanism. The green boxes are new, and the blue box is changed.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>The problem</h2>
+    <p>The 27 cached <code>api+</code> routes read with <code>getQueryData</code>, which ignores <code>staleTime</code> and <code>invalidateQueries</code>. So a cached list never goes stale. 78 route files each export a <code>clientAction</code> that names the keys to invalidate.</p>
+    <p>A page can miss the changes of a table it shows. <code>RealtimeDataProvider</code> reads five whole tables from the browser on each cold load, about 950 ms each.</p>
+    <p><code>postgres_changes</code> does one permission check for each subscriber for each change, on one thread for all tenants.</p>
+    <div class="callout example">
+      <span class="label">Example</span>
+      <p>Jane Doe completes an operation for job J-001 in the MES. The ERP job page has no subscription on <code>jobOperation</code> or <code>job</code>. So the planner sees the old status until a reload.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <h3>Part 1 — Query cache</h3>
+    <ol class="steps">
+      <li>A cached <code>api+</code> route exports <code>cachedClientLoader&lt;typeof loader&gt;()</code>.</li>
+      <li>The loader reads with <code>fetchQuery</code>, so <code>staleTime</code> and in-flight dedupe apply.</li>
+      <li>One root middleware runs after each request.</li>
+      <li>If the method is <code>GET</code> or the path is <code>/refresh-session</code>, the middleware does nothing.</li>
+      <li>Otherwise the middleware marks every <code>LOADER</code> entry stale.</li>
+    </ol>
+    <h3>Part 2 — Realtime by broadcast</h3>
+    <ol class="steps">
+      <li>A statement trigger calls <code>broadcast_table_changes</code>.</li>
+      <li>The function sends <code>{ table, op, ids }</code> to the private topic <code>company:&lt;companyId&gt;:&lt;table&gt;</code>.</li>
+      <li>A policy on <code>realtime.messages</code> lets only an employee of that company join the topic.</li>
+      <li>A route declares its tables in <code>handle.realtime</code>.</li>
+      <li><code>useRouteRealtime()</code> in the shell subscribes to one channel for each declared table.</li>
+      <li>On a message, the hook starts a 300 ms debounce timer.</li>
+      <li>If a fetcher is submitting when the timer ends, the hook waits for it.</li>
+      <li>The hook marks the <code>LOADER</code> entries stale. Then it revalidates the page.</li>
+    </ol>
+    <details>
+      <summary>Reference lists and notifications</summary>
+      <div>
+        <p>The tables behind the cached reference lists use <code>broadcast_reference_changes</code>. It sends <code>{ table, op }</code> to one shared topic, <code>company:&lt;companyId&gt;:reference</code>. The shell marks the <code>LOADER</code> entries stale on each message.</p>
+        <p><code>useNotifications</code> subscribes to <code>user:&lt;userId&gt;:notification</code>. On an <code>INSERT</code> or <code>UPDATE</code>, the hook reads the rows with those ids through PostgREST. On a <code>DELETE</code>, the hook removes the rows with those ids.</p>
+        <p><code>useRealtime(table, filter?)</code> stays for a component that is not a route. If the filter names <code>id</code>, the hook compares the message ids with the filter ids. If the filter names another column, the hook wakes on any change to the table.</p>
+      </div>
+    </details>
+    <h3>Part 3 — Live lists, cold load</h3>
+    <ol class="steps">
+      <li><code>useLiveList</code> reads the list and its checksum from IndexedDB.</li>
+      <li>The hook puts the list in the query cache.</li>
+      <li>The hook calls the <code>list_checksums</code> function.</li>
+      <li>If the checksum matches, the app fetches nothing.</li>
+      <li>If the checksum differs, the hook fetches the list in full.</li>
+      <li>The hook writes the list and the new checksum to IndexedDB.</li>
+    </ol>
+    <details>
+      <summary>What a broadcast message does to a list</summary>
+      <div>
+        <p>If <code>ids</code> is null, the hook runs the checksum steps again. If <code>op</code> is <code>DELETE</code>, the hook removes those rows from the cache. Otherwise the hook reads those rows through PostgREST, merges them, sorts, and writes the list to IndexedDB. A reconnect runs the checksum steps again.</p>
+      </div>
+    </details>
+    <h3>Part 4 — Component hooks</h3>
+    <ol class="steps">
+      <li><code>useLoaderQuery(url)</code> reads an <code>api+</code> URL through <code>useQuery</code>, on the same key as the loader.</li>
+      <li><code>useAction({ onSuccess, onError })</code> wraps <code>useFetcher</code>. It returns <code>submit</code>, <code>isPending</code>, <code>data</code> and <code>pending</code>.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Before and after</h2>
+    <div class="tabs" data-tabs>
+      <div role="tablist">
+        <button role="tab" aria-selected="true">Before</button>
+        <button role="tab" aria-selected="false">After</button>
+      </div>
+      <div role="tabpanel">
+        <ol>
+          <li>Reference lists: a cached route keeps its first result for the whole session.</li>
+          <li>Mutations: each of 78 routes names the keys to invalidate. A route that forgets one leaves a stale dropdown.</li>
+          <li>Page updates: the ERP job page does not show an operation that the MES completed, until a reload.</li>
+          <li>Realtime lists: each cold load reads <code>item</code>, <code>supplier</code>, <code>customer</code>, <code>employees</code> and <code>itemSupersession</code> in full.</li>
+          <li>Components: 137 call sites load with a fetcher in a mount effect. 435 submit call sites use <code>useFetcher</code>.</li>
+        </ol>
+      </div>
+      <div role="tabpanel" hidden>
+        <ol>
+          <li>Reference lists: an entry goes stale after <code>staleTime</code>, after a mutation, and after a change by another user.</li>
+          <li>Mutations: one root middleware marks every loader entry stale. No route names a key.</li>
+          <li>Page updates: the ERP job page shows the completed operation within 3 seconds, with no reload.</li>
+          <li>Realtime lists: a cold load with a matching checksum sends 1 <code>list_checksums</code> request and reads no table.</li>
+          <li>Components: five pickers on one page share one request. <code>useAction</code> gives the pending state with no effect.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decisions</h2>
+    <details><summary>How does the cache name an entry? <span class="choice">By URL: <code>[LOADER, companyId, pathname, search]</code>.</span></summary><div><p>Why: React Router's own client-cache guide keys by URL. A route author writes no key.</p></div></details>
+<details><summary>What goes stale after a mutation? <span class="choice">Every <code>LOADER</code> entry.</span></summary><div><p>Why: It costs one extra fetch when a list is next used. It removes 78 hand-written invalidations and the key registry.</p></div></details>
+<details><summary>Does the cache hold page data? <span class="choice">No.</span></summary><div><p>Why: A route with a <code>clientLoader</code> leaves the combined <code>.data</code> request. <code>dataStrategy</code> is closed in framework mode.</p></div></details>
+<details><summary>Which realtime transport? <span class="choice">Broadcast from the database.</span></summary><div><p>Why: Realtime checks permission one time at join. <code>postgres_changes</code> checks each change for each subscriber on one thread.</p></div></details>
+<details><summary>What does a message hold? <span class="choice"><code>{ table, op, ids }</code>, with ids null above 100 rows.</span></summary><div><p>Why: The client reads rows through PostgREST, so table RLS still decides what a user sees.</p></div></details>
+<details><summary>How fine is a topic? <span class="choice">One topic for each company for each table.</span><span class="tag human">human</span></summary><div><p>Why: A caller with a parent-column filter wakes on any change to the table. The debounce bounds the cost.</p></div></details>
+<details><summary>Which tables get a trigger? <span class="choice">Only tables that a route or a live list declares.</span><span class="tag human">human</span></summary><div><p>Why: A table that no page watches gets no write overhead and stores no messages.</p></div></details>
+<details><summary>Which pages update live? <span class="choice">Operational pages in the ERP, all of the MES, and the cached reference lists.</span><span class="tag human">human</span></summary><div><p>Why: Settings and admin pages change rarely. They reload on navigation as today.</p></div></details>
+<details><summary>How do reference lists hear a change? <span class="choice">One shared topic, <code>company:&lt;companyId&gt;:reference</code>.</span></summary><div><p>Why: One channel for each client covers every reference table. A topic for each table would hold about 30 channels open.</p></div></details>
+<details><summary>Where does a trigger attach to a table? <span class="choice">In <code>event-system/attachments.ts</code>, applied by <code>set_event_triggers</code>.</span><span class="tag human">human</span></summary><div><p>Why: Each attach call replaces the whole list of a table. One typed manifest removes the clobber risk. No migration attaches a trigger.</p></div></details>
+<details><summary>Where do the interceptor bodies live? <span class="choice">In managed files under <code>event-system/handlers/</code>.</span><span class="tag human">human</span></summary><div><p>Why: The 63 interceptors and <code>apply_item_stock_quantities</code> leave the migrations. <code>authz sync</code> and <code>authz migration</code> own them.</p></div></details>
+<details><summary>How does a missed declaration show? <span class="choice">The new <code>realtime-table-has-trigger</code> check fails the build.</span></summary><div><p>Why: <code>postgres_changes</code> fails silently for an unpublished table.</p></div></details>
+<details><summary>When do tables leave the publication? <span class="choice">In this PR.</span><span class="tag human">human</span></summary><div><p>Why: A tab on the old build goes quiet until a reload. It shows no error.</p></div></details>
+<details><summary>What stays on <code>postgres_changes</code>? <span class="choice">Nothing.</span><span class="tag human">human</span></summary><div><p>Why: The publication ends empty. No second realtime system stays in the code.</p></div></details>
+<details><summary>How do notifications travel? <span class="choice">A private topic for each user: <code>user:&lt;userId&gt;:notification</code>.</span><span class="tag human">human</span></summary><div><p>Why: A company topic would wake every employee for each notification of each other employee.</p></div></details>
+<details><summary>How does a cold load avoid the table fetches? <span class="choice">A change log names the rows that changed.</span><span class="tag human">human</span></summary><div><p>Why: The client reads only the rows that changed since its stored copy. A checksum refetches a whole list when one row changes.</p></div></details>
+<details><summary>Who may the checksum function read for? <span class="choice"><code>SECURITY INVOKER</code>: the calling user.</span></summary><div><p>Why: The hash must cover the rows that this user can read. The same RLS applies to the list fetch.</p></div></details>
+<details><summary>Where do the lists live? <span class="choice">The query cache, key <code>["live", companyId, &lt;list&gt;]</code>.</span></summary><div><p>Why: One store holds the server data. nanostores has no other user after this change.</p></div></details>
+<details><summary>How far does <code>useAction</code> go? <span class="choice">Pending state and callbacks only.</span><span class="tag human">human</span></summary><div><p>Why: Mutations stay plain router actions. Optimistic cache writes are out of scope.</p></div></details>
+<details><summary>Where does the shared code live? <span class="choice"><code>@carbon/react</code>.</span></summary><div><p>Why: Both apps need the hooks. The <code>no-duplicated-app-file</code> check forbids a copy in each app.</p></div></details>
+<details><summary>What breaks for existing users? <span class="choice">One thing: the publication drop.</span></summary><div><p>Why: The API, the MCP tools and the webhooks do not change.</p></div></details>
+
+  </section>
+
+  <section>
+    <h2>Data model</h2>
+    <p>The change adds no table and no column. It adds four functions, two policies on <code>realtime.messages</code>, and one statement trigger set for each watched table.</p>
+    <figure>
+      <svg class="diagram" viewBox="0 0 800 190" role="img" aria-label="Three broadcast functions send to three kinds of topic, and two policies guard who may join.">
+        <rect class="box new" x="40" y="20" width="220" height="150" rx="8" />
+        <text class="mono" x="56" y="46">functions</text>
+        <text class="small mono" x="56" y="72">broadcast_table_changes</text>
+        <text class="small mono" x="56" y="94">broadcast_reference_changes</text>
+        <text class="small mono" x="56" y="116">broadcast_user_changes</text>
+        <text class="small mono" x="56" y="138">list_checksums</text>
+        <path class="edge" d="M260,95 L298,95" marker-end="url(#arrow2)" />
+        <defs><marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker></defs>
+        <rect class="box new" x="300" y="20" width="220" height="150" rx="8" />
+        <text class="mono" x="316" y="46">topics</text>
+        <text class="small mono" x="316" y="72">company:&lt;id&gt;:&lt;table&gt;</text>
+        <text class="small mono" x="316" y="94">company:&lt;id&gt;:reference</text>
+        <text class="small mono" x="316" y="116">user:&lt;id&gt;:notification</text>
+        <path class="edge" d="M560,95 L522,95" marker-end="url(#arrow2)" />
+        <rect class="box new" x="560" y="20" width="220" height="150" rx="8" />
+        <text class="mono" x="576" y="46">realtime.messages</text>
+        <text class="small" x="576" y="72">policy: employee of company</text>
+        <text class="small" x="576" y="94">policy: the user's own id</text>
+      </svg>
+      <figcaption>The functions send to the topics. The two policies decide who may join a topic.</figcaption>
+    </figure>
+    <ul>
+      <li><code>itemSupersession</code> and <code>itemStockQuantities</code> have no <code>id</code> column. Their messages carry <code>ids: null</code>.</li>
+      <li><code>implementationHub</code> has no <code>companyId</code> column. The function reads the company from <code>id</code> for this table.</li>
+      <li><code>itemLedger</code> keeps its existing handler, <code>apply_item_stock_quantities</code>, beside the new one.</li>
+      <li>The 3 broadcast functions are managed files. They ship through <code>authz migration</code>.</li>
+      <li>The authz manifest owns the 2 policies on <code>realtime.messages</code>, under the key <code>"realtime.messages"</code>.</li>
+      <li>The migration drops each moved table from the <code>supabase_realtime</code> publication.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Done when</h2>
+    <ul class="checks">
+      <li>An operator completes an operation in the MES. The ERP job page shows it as complete within 3 seconds, with no reload.</li><li>A user adds a customer type. The picker on another open form shows it after the save, with no reload.</li><li>A second user in the same company adds a customer type. The first user's picker shows it within 3 seconds.</li><li>A cold load with a matching checksum sends 1 <code>list_checksums</code> request and 0 requests to the five list tables.</li><li>A cold load after another user renames a customer refetches <code>customer</code> only.</li><li>A user deletes an item while a second user's tab is closed. The second user's list lacks that item after the next load.</li><li>A notification for user A shows in user A's bell within 3 seconds. User B cannot join <code>user:&lt;A&gt;:notification</code>.</li><li>The <code>supabase_realtime</code> publication holds 0 tables.</li><li>A user in company A cannot join <code>company:&lt;B&gt;:item</code>. The subscribe call returns an error.</li><li>A user switches company. No list and no cached loader entry from the first company appears.</li><li>An update that changes only <code>updatedAt</code> on <code>item</code> sends no message.</li><li>A bulk update of 10,000 <code>item</code> rows sends 1 message for each company, with <code>ids</code> null.</li><li>A realtime message during a fetcher submit does not cancel that fetcher's redirect (MES "Complete Batch").</li><li>No file under <code>apps</code> or <code>packages</code> imports nanostores.</li><li>No file under <code>apps</code> or <code>packages</code> contains <code>postgres_changes</code>.</li><li>No route exports a <code>clientAction</code> that only invalidates.</li><li>The <code>realtime-table-has-trigger</code> check fails when a route declares a table that <code>REALTIME_TABLES</code> lacks.</li><li><code>event-dispatch.test.ts</code> fails when the ignored-column list in <code>broadcast_table_changes.sql</code> differs from <code>auditConfig.skipFields</code>.</li><li>The local stack and the self-hosted compose stack (Realtime v2.89.0) both deliver a broadcast on a private channel.</li><li>The typechecks for <code>erp</code>, <code>mes</code>, <code>@carbon/react</code>, <code>@carbon/database</code> and <code>@carbon/checks</code> pass, one at a time.</li><li><code>pnpm run lint</code> and <code>pnpm run test</code> pass.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Terms</h2>
+    <dl class="terms">
+      <dt>Reference list</dt><dd>A list that a cached <code>api+</code> loader returns, for example customer types.</dd>
+      <dt>Realtime list</dt><dd>One of four lists that the app keeps current: items, customers, suppliers, people.</dd>
+      <dt><code>LOADER</code> entry</dt><dd>A query cache entry with the key <code>[LOADER, companyId, pathname, search]</code>.</dd>
+      <dt>Topic</dt><dd>The name of a private channel that a client joins to get broadcast messages.</dd>
+      <dt>Publication</dt><dd><code>supabase_realtime</code>, the list of tables that <code>postgres_changes</code> can deliver.</dd>
+      <dt>Checksum</dt><dd>A hash of the ids and list columns of one list, for the rows this user can read.</dd>
+      <dt>Cold load</dt><dd>The first load of the app in a tab.</dd>
+      <dt><code>handle.realtime</code></dt><dd>The list of tables that a route shows, declared on the route.</dd>
+    </dl>
+  </section>
+
+  <footer>
+    Generated by <code>/explain</code> from <code>.ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md</code>.
+    If this page and the source disagree, the source is correct.
+  </footer>
+
+</main>
+<script>
+  // Tabs: no dependencies. Works for every [data-tabs] block on the page.
+  document.querySelectorAll("[data-tabs]").forEach(function (root) {
+    var tabs = root.querySelectorAll("[role=tab]");
+    var panels = root.querySelectorAll("[role=tabpanel]");
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener("click", function () {
+        tabs.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); });
+        panels.forEach(function (p, j) { p.hidden = i !== j; });
+      });
+    });
+  });
+</script>
+</body>
+</html>

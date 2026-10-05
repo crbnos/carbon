@@ -11,13 +11,12 @@ import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { annotateRequestSpan } from "@carbon/logger/tracing.server";
-import { Edition, getClientIp, Plan } from "@carbon/utils";
+import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
 } from "@supabase/supabase-js";
 import { createHash } from "crypto";
-import { redirect } from "react-router";
 import {
   CarbonEdition,
   IS_LOCAL_DEV,
@@ -473,12 +472,17 @@ export async function sendMagicLink(
   // for — in local dev crbn writes the ERP url (or a localhost fallback) into
   // .env.local, so an MES started outside `crbn up` would send its first-login
   // magic link back to the wrong origin. MES passes getMESUrl().
-  origin?: string
+  origin?: string,
+  // Where the user was headed before they were sent to log in.
+  redirectTo?: string
 ) {
+  const destination = safePath(redirectTo, "");
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${origin ?? VERCEL_URL}/callback`
+      emailRedirectTo: `${origin ?? VERCEL_URL}/callback${
+        destination ? `?redirectTo=${encodeURIComponent(destination)}` : ""
+      }`
     }
   });
 }

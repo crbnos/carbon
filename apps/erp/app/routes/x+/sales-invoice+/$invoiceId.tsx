@@ -8,14 +8,14 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMappingService } from "@carbon/ee/accounting";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
@@ -36,9 +36,21 @@ import {
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "salesInvoice", column: "id", param: "invoiceId" },
+    { table: "salesInvoiceLine", column: "invoiceId", param: "invoiceId" },
+    // What is applied to this invoice, and the payments behind it: voiding a
+    // payment changes the payment row only.
+    {
+      table: "invoiceSettlement",
+      column: "targetSalesInvoiceId",
+      param: "invoiceId"
+    },
+    { table: "payment", column: "targetSalesInvoiceId", param: "invoiceId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Sales Invoices`, to: path.to.invoicingSales },
     (data) => data?.salesInvoice?.invoiceId
@@ -138,9 +150,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  throw redirect(
-    request.headers.get("Referer") ?? new URL(request.url).pathname
-  );
+  throw redirect(requestReferrer(request) ?? new URL(request.url).pathname);
 }
 
 export default function SalesInvoiceRoute() {

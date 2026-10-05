@@ -14,7 +14,7 @@ import {
   ToggleGroupItem
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { LuBox, LuDroplet, LuFilter, LuLayers, LuWrench } from "react-icons/lu";
 import { MultiSelect } from "~/components/Form";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";

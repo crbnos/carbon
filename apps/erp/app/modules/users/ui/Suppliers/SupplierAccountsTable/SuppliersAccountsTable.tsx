@@ -164,7 +164,7 @@ const SupplierAccountsTable = memo(
           accessorKey: "supplier.supplierTypeId",
           header: t`Supplier Type`,
           cell: ({ row }) => (
-            // @ts-ignore
+            // @ts-expect-error
             <Enumerable value={row.original.supplier?.supplierType?.name} />
           ),
           meta: {

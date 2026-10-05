@@ -11,8 +11,8 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   insertManualInventoryAdjustment,
   inventoryAdjustmentValidator

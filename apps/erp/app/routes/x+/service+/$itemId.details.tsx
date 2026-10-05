@@ -8,10 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ServiceSummary } from "~/modules/items";
@@ -183,18 +184,17 @@ export default function ServiceDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 tags={tags}
               />
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 replenishmentSystem={
                   serviceData.serviceSummary?.replenishmentSystem

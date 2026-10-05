@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -151,9 +152,15 @@ const ProductionPlanningTable = ({
   const unitOfMeasures = useUnitOfMeasure();
   const itemPostingGroups = useItemPostingGroups();
 
-  const mrpFetcher = useFetcher<typeof mrpAction>();
+  const mrpFetcher = useAction<typeof mrpAction>({
+    onSettled: (data) => {
+      if (data) {
+        clearOrdersCache();
+        setOrdersMap({}); // Reset local state to force recalculation
+      }
+    }
+  });
   const mrpScheduleDescription = useMrpScheduleDescription();
-  const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
   const user = useUser();
@@ -226,14 +233,7 @@ const ProductionPlanningTable = ({
     },
     [actionsFetcher, locationId]
   );
-
-  // Clear cache when MRP completes
-  useEffect(() => {
-    if (mrpFetcher.state === "idle" && mrpFetcher.data) {
-      clearOrdersCache();
-      setOrdersMap({}); // Reset local state to force recalculation
-    }
-  }, [mrpFetcher.state, mrpFetcher.data]);
+  const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
   // Clear local state when data changes (e.g., filters, search)
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -567,7 +567,7 @@ const ProductionPlanningTable = ({
             <ItemThumbnail
               size="sm"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.type}
             />
 

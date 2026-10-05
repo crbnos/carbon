@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -30,7 +31,7 @@ import {
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlignJustify,
   LuBookMarked,
@@ -46,7 +47,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -59,6 +60,7 @@ import {
   SupplierAvatarGroup,
   Table
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
@@ -165,15 +167,14 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           const itemPostingGroup = itemPostingGroups.find(
             (group) => group.value === itemPostingGroupId
           );
-          const label = itemPostingGroup?.label;
-          return label ? <Badge variant="secondary">{label}</Badge> : null;
+          return <Enumerable value={itemPostingGroup?.label ?? null} />;
         },
         meta: {
           filter: {
             type: "static",
             options: itemPostingGroups.map((group) => ({
               value: group.value,
-              label: <Badge variant="secondary">{group.label}</Badge>
+              label: <Enumerable value={group.label} />
             }))
           },
           icon: <LuGroup />
@@ -399,13 +400,13 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
     translateReplenishment
   ]);
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
     (
@@ -454,7 +455,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
                         )
                       }
                     >
-                      <span>{group.label}</span>
+                      <Enumerable value={group.label} />
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>

@@ -9,6 +9,7 @@ import {
   carbonClient,
   error,
   getMESUrl,
+  getRedirectTo,
   isAuthProviderEnabled,
   magicLinkValidator,
   RATE_LIMIT
@@ -33,6 +34,7 @@ import { getUserByEmail } from "@carbon/auth/users.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -46,26 +48,20 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { Edition, getClientIp } from "@carbon/utils";
+import { Edition, getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
   startAuthentication
 } from "@simplewebauthn/browser";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuCircleAlert, LuFingerprint } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useSearchParams
-} from "react-router";
+import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 
 import { path } from "~/utils/path";
 
@@ -82,7 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
   if (authSession) {
     if (await verifyAuthSession(authSession)) {
-      throw redirect(path.to.authenticatedRoot);
+      throw redirect(getRedirectTo(request));
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
@@ -131,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, botToken } = validation.data;
+  const { email, botToken, redirectTo } = validation.data;
 
   const botError = await verifyBotProtection({
     token: botToken,
@@ -180,7 +176,7 @@ export async function action({ request }: ActionFunctionArgs) {
       await lockout.reset(email);
       logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
       const sessionCookie = await setAuthSession(request, { authSession });
-      return redirect(path.to.authenticatedRoot, {
+      return redirect(redirectTo || path.to.authenticatedRoot, {
         headers: [["Set-Cookie", sessionCookie]]
       });
     }
@@ -217,7 +213,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, getMESUrl());
+    const magicLink = await sendMagicLink(email, getMESUrl(), redirectTo);
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -243,6 +239,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
+  // A signed-out user lands here however the session ended (sign out, expiry,
+  // a revoked account), so this is where the lists kept on the device go.
+  useEffect(() => {
+    import("localforage")
+      .then((storage) => storage.default.clear())
+      .catch((error) =>
+        getLogger("mes", "login").warn("stored lists not cleared", { error })
+      );
+  }, []);
+
   const { t } = useLingui();
   const {
     hasOutlookAuth,

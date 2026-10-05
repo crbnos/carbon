@@ -6,6 +6,7 @@
 
 use crate::config;
 use crate::error::ApiError;
+use crate::telemetry;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -66,6 +67,14 @@ fn client() -> &'static reqwest::Client {
 /// action consumes it unchanged. The hash + size guard are over the
 /// DECOMPRESSED bytes, so the result-cache key tracks geometry, not container.
 pub async fn download_hashed(
+    url: &str,
+    dest: &std::path::Path,
+    progress: Option<&crate::progress::JobProgress>,
+) -> Result<u128, ApiError> {
+    telemetry::outbound("download source", url, download(url, dest, progress)).await
+}
+
+async fn download(
     url: &str,
     dest: &std::path::Path,
     progress: Option<&crate::progress::JobProgress>,
@@ -202,11 +211,15 @@ pub async fn upload(
     body: impl Into<reqwest::Body>,
     content_type: &str,
 ) -> Result<(), ApiError> {
+    telemetry::outbound("upload artifact", url, put(url, body.into(), content_type)).await
+}
+
+async fn put(url: &str, body: reqwest::Body, content_type: &str) -> Result<(), ApiError> {
     let resp = client()
         .put(url)
         .header("Content-Type", content_type)
         .header("x-upsert", "true") // retried jobs re-upload to the same path
-        .body(body.into())
+        .body(body)
         .send()
         .await
         .map_err(|e| {
@@ -232,6 +245,10 @@ pub async fn upload(
 /// POST a JSON body (the completion-callback delivery). Short timeout; the
 /// caller owns retries.
 pub async fn post_json(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
+    telemetry::outbound("callback", url, post(url, body)).await
+}
+
+async fn post(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
     let resp = client()
         .post(url)
         .header("Content-Type", "application/json")

@@ -3,9 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { useStore as useValue } from "@nanostores/react";
-import { atom, computed } from "nanostores";
-import { useNanoStore } from "~/hooks";
+import { fetchAllFromTable } from "@carbon/database";
+import { type LiveList, useLiveList } from "@carbon/query";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { useMemo } from "react";
+import { useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 
 export type Item = ListItem & {
@@ -48,26 +50,92 @@ export function latestRevisionByReadableId<
   return Array.from(byKey.values());
 }
 
-const $itemsStore = atom<Item[]>([]);
+// The one place the item list's columns are written: the full fetch and the
+// re-read of changed rows both select exactly this.
+const ITEM_COLUMNS =
+  "id, readableId, revision, readableIdWithRevision, unitOfMeasureCode, name, type, replenishmentSystem, active, itemTrackingType";
 
-const $partsStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Part")
-);
+type ItemRow = Omit<Item, "supersessionMode" | "successorItemId">;
 
-const $toolsStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Tool")
-);
+// A phase-out rule lives on its own table; the pickers read it off the item.
+async function withSupersession(
+  carbon: SupabaseClient<Database>,
+  companyId: string,
+  items: ItemRow[],
+  ids?: string[]
+): Promise<Item[]> {
+  const supersessions = await fetchAllFromTable<{
+    itemId: string;
+    supersessionMode: Database["public"]["Enums"]["supersessionMode"];
+    successorItemId: string | null;
+  }>(
+    carbon,
+    "itemSupersession",
+    "itemId, supersessionMode, successorItemId",
+    (query) => {
+      const scoped = query.eq("companyId", companyId);
+      return ids ? scoped.in("itemId", ids) : scoped;
+    }
+  );
+  const byItem = new Map((supersessions.data ?? []).map((s) => [s.itemId, s]));
+  return items.map((item) => ({
+    ...item,
+    supersessionMode: byItem.get(item.id)?.supersessionMode ?? null,
+    successorItemId: byItem.get(item.id)?.successorItemId ?? null
+  }));
+}
 
-const $serivceStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Service")
-);
+export const itemsList: LiveList<Item> = {
+  name: "items",
+  table: "item",
+  async fetchAll(carbon, companyId) {
+    const items = await fetchAllFromTable<ItemRow>(
+      carbon,
+      "item",
+      ITEM_COLUMNS,
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .order("readableId", { ascending: true })
+          .order("revision", { ascending: false })
+    );
+    if (items.error) throw new Error("Failed to fetch items");
+    return withSupersession(carbon, companyId, items.data ?? []);
+  },
+  async fetchByIds(carbon, companyId, ids) {
+    const items = await carbon
+      .from("item")
+      .select(ITEM_COLUMNS)
+      .eq("companyId", companyId)
+      .in("id", ids);
+    if (items.error) throw new Error("Failed to fetch items");
+    return withSupersession(
+      carbon,
+      companyId,
+      (items.data ?? []) as ItemRow[],
+      ids
+    );
+  },
+  // A supersession rule is logged under its item's id.
+  related: [
+    {
+      table: "itemSupersession",
+      fetch: (carbon, companyId, ids) =>
+        itemsList.fetchByIds(carbon, companyId, ids)
+    }
+  ],
+  sort: (a, b) =>
+    a.readableIdWithRevision.localeCompare(b.readableIdWithRevision)
+};
 
-const $materialsStore = computed($itemsStore, (item) =>
-  item.filter((i) => i.type === "Material")
-);
+export const useItems = () => useLiveList(itemsList, useUser().company.id);
 
-export const useItems = () => useNanoStore<Item[]>($itemsStore, "items");
-export const useParts = () => useValue($partsStore);
-export const useTools = () => useValue($toolsStore);
-export const useServices = () => useValue($serivceStore);
-export const useMaterials = () => useValue($materialsStore);
+const useItemsOfType = (type: Item["type"]) => {
+  const [items] = useItems();
+  return useMemo(() => items.filter((i) => i.type === type), [items, type]);
+};
+
+export const useParts = () => useItemsOfType("Part");
+export const useTools = () => useItemsOfType("Tool");
+export const useServices = () => useItemsOfType("Service");
+export const useMaterials = () => useItemsOfType("Material");

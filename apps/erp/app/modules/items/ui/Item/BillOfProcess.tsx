@@ -7,6 +7,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -19,6 +20,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  ClientOnly,
   Count,
   cn,
   DropdownMenu,
@@ -47,8 +49,8 @@ import { Editor } from "@carbon/react/Editor";
 import { getItemById, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -901,7 +903,6 @@ const BillOfProcess = ({
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
-          // @ts-ignore
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
         />
@@ -1836,7 +1837,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
@@ -2528,16 +2529,15 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationStepAction>();
-  const duplicateFetcher = useFetcher();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const duplicateFetcher = useFetcher();
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
@@ -3332,15 +3332,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -3771,12 +3770,18 @@ function OperationPreview({
         {step.type ? <Badge variant="secondary">{step.type}</Badge> : null}
       </div>
       <p className="text-sm font-medium">{step.name ?? t`Step`}</p>
-      {descriptionHtml ? (
-        <div
-          className="prose prose-sm max-w-none text-sm dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-        />
-      ) : null}
+      {/* generateHTML returns nothing on the server, so the server never
+          renders this block: rendering it during hydration would not match. */}
+      <ClientOnly>
+        {() =>
+          descriptionHtml ? (
+            <div
+              className="prose prose-sm max-w-none text-sm dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            />
+          ) : null
+        }
+      </ClientOnly>
 
       <div className="flex flex-col gap-1 border-t pt-3">
         <Subheading variant="heavy">
@@ -3932,15 +3937,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);

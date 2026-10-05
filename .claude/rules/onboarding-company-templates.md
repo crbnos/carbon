@@ -554,7 +554,7 @@ the floor in the same change; adding a table means measuring and adding it.
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.
 
-It runs from `.husky/pre-commit` whenever a staged file is under `packages/database/`
+It runs from `scripts/git-hooks/pre-commit` whenever a staged file is under `packages/database/`
 (a few seconds for all four); `CARBON_SKIP_DATASET_CHECK=1` skips both layers. Layer 2 exits
 0 with a warning when the database is unreachable, has no `user` table, or has no users — a
 hook that fails for reasons you cannot fix is a hook you learn to bypass, and every one of
@@ -600,9 +600,9 @@ answers "does every screen have rows".
 ## What is NOT how this works
 
 There is no archive, no `.carbon.json.gz`, no `company-templates` storage bucket in this
-path — that was an earlier unfinished design. `packages/database/supabase/backups/` is
-unused; its README lists the dormant code left behind. Backup export/restore for real
-customer companies is a separate feature and is unaffected.
+path — that was an earlier unfinished design, and `packages/database/supabase/backups/`
+was deleted with it. Backup export/restore for real customer companies is a separate
+feature and is unaffected.
 
 ## Local development note
 

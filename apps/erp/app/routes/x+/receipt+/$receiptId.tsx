@@ -6,13 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { Outlet, useParams } from "react-router";
 import {
   getBatchProperties,
   getReceipt,
@@ -27,6 +27,10 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "receipt", column: "id", param: "receiptId" },
+    { table: "receiptLine", column: "receiptId", param: "receiptId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Receipts`, to: path.to.receipts },
     (data) => data?.receipt?.receiptId

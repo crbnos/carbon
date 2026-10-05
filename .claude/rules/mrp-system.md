@@ -209,11 +209,11 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | Table | PK | Key cols | Notes |
 |-------|----|----|-------|
 | `period` | `id` | `startDate`, `endDate`, `periodType` | enum `'Week'\|'Day'\|'Month'`; no companyId (uniform RLS) |
-| `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20261003203301`), never user-edited |
+| `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20261005090301`), never user-edited |
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261003203300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261005090300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 
@@ -231,7 +231,7 @@ no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
 ## Planning split functions
 
 Latest definition of BOTH, and of `get_inventory_quantities`:
-`20261003203301_demand-forecast-consumption.sql`. `get_production_planning`
+`20261005090301_demand-forecast-consumption.sql`. `get_production_planning`
 supersedes `20260715195226`; `get_purchasing_planning` and
 `get_inventory_quantities` are forked from the guarded `20260925121735` bodies
 and open with `assert_company_access`.
@@ -263,13 +263,13 @@ to child demand. Note current `methodType` enum is
 Newest defs: `openPurchaseOrderLines` in `20260811123616_widen-purchasing-scale.sql`,
 `openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
-`openSalesOrderLines` in `20261003203301_demand-forecast-consumption.sql`.
+`openSalesOrderLines` in `20261005090301_demand-forecast-consumption.sql`.
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,
 `itemTrackingType`.
 
 - `openSalesOrderLines` — `salesOrderLineType != 'Service'`, status IN
   `('To Ship','To Ship and Invoice')`. Newest def:
-  `20261003203301_demand-forecast-consumption.sql`. Make to Order lines ARE
+  `20261005090301_demand-forecast-consumption.sql`. Make to Order lines ARE
   included, but their `quantityToSend` is netted down by the remaining output
   (`quantity − quantityReceivedToInventory − quantityShipped`) of live jobs
   linked via `job.salesOrderLineId` (statuses Planned/Ready/In Progress/Paused —
@@ -530,7 +530,7 @@ never offered a Cancel, Defer or Expedite.
   The earlier single list mixed both: an edit to an existing order sat unsaved
   until Order was pressed and was dropped by Close.
 - **Grid RPCs are wrappers.** `get_purchasing_planning_grid` /
-  `get_production_planning_grid` (`20261003203304_planning-horizon.sql`) select
+  `get_production_planning_grid` (`20261005090304_planning-horizon.sql`) select
   `p.*` from the base RPC and add `itemPostingGroupId` (**Item Group** column +
   filter), `planningHorizonDays`, `timeFenceDate`, `firstNegativeDate` (**1st
   Negative On Hand**: the start of the first week whose projection is below

@@ -9,11 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
@@ -291,7 +292,6 @@ export default function ToolDetailsRoute() {
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}
-                  // @ts-ignore
                   initialValues={manufacturingInitialValues}
                   withConfiguration={false}
                 />
@@ -311,9 +311,8 @@ export default function ToolDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 tags={tags}
                 revisionStatus={revisionStatus}
@@ -324,9 +323,9 @@ export default function ToolDetailsRoute() {
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}

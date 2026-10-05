@@ -16,6 +16,7 @@ import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestMiddleware } from "@carbon/logger/middleware.server";
 import { timedMiddleware } from "@carbon/logger/tracing.server";
+import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -25,14 +26,17 @@ import {
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import {
+  colorSchemeHintScript,
   getPreferenceHeaders,
   isSearchParamOnlyNavigation,
   modeValidator,
+  prefetchCacheMiddleware,
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
 import { useContext, useState } from "react";
@@ -59,7 +63,9 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import { path } from "~/utils/path";
 import "@carbon/lib/shims";
+import { MotionConfig } from "motion/react";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
@@ -68,9 +74,16 @@ export const middleware = timedMiddleware({
   request: requestMiddleware,
   security: securityMiddleware,
   formBody: formBodyMiddleware,
-  flash: flashMiddleware
+  flash: flashMiddleware,
+  prefetchCache: prefetchCacheMiddleware
 });
-export const clientMiddleware = [flashClientMiddleware];
+export const clientMiddleware = [
+  flashClientMiddleware,
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.refreshSession]
+  })
+];
 
 export const links: LinksFunction = () => {
   return [
@@ -154,7 +167,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         VERCEL_URL,
         XERO_CLIENT_ID
       },
-      mode: getMode(request),
+      ...getMode(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
       theme: getTheme(request)
@@ -242,9 +255,13 @@ export function Document({
     >
       <head>
         <meta charSet="utf-8" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Before any paint: records the OS color scheme for a `system` user
+            and reloads once if the server rendered the wrong mode. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: colorSchemeHintScript }}
         />
         <Meta />
         <Links />
@@ -312,10 +329,19 @@ export default function App() {
       <OperatingSystemContextProvider platform={prefs.platform}>
         <LocaleProvider locale={appLanguage} catalog={catalog}>
           <I18nProvider locale={prefs.locale}>
-            <TooltipProvider delayDuration={200}>
-              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
-                <Outlet />
-              </Document>
+            <TooltipProvider>
+              <MotionConfig reducedMotion="user">
+                <Document
+                  mode={mode}
+                  theme={theme}
+                  lang={appLanguage}
+                  env={env}
+                >
+                  <Outlet />
+                  {/* Renders nothing outside development; the package strips itself. */}
+                  <ReactQueryDevtools buttonPosition="bottom-right" />
+                </Document>
+              </MotionConfig>
             </TooltipProvider>
           </I18nProvider>
         </LocaleProvider>

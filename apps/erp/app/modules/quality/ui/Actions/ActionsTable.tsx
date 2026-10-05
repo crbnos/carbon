@@ -155,7 +155,7 @@ const ActionsTable = memo(
           header: t`Due Date`,
           cell: ({ row }) => {
             const isOverdue =
-              // @ts-ignore
+              // @ts-expect-error
               !["Completed", "Skipped"].includes(row.original.status) &&
               row.original.nonConformanceStatus !== "Closed" &&
               row.original.dueDate &&

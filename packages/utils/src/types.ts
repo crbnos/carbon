@@ -13,6 +13,9 @@ export enum Edition {
 
 export type Mode = "light" | "dark";
 
+/** What the user chose; `system` follows the operating system. */
+export type ModePreference = Mode | "system";
+
 export const modeValidator = z.object({
   mode: z.enum(["light", "dark", "system"])
 });

@@ -32,8 +32,8 @@ case "$name" in
     paths=("${node[@]}")
     ;;
   edge-functions)
-    file=docker/edge-functions/Dockerfile
-    paths=(docker/edge-functions packages/database/supabase/functions)
+    file=packages/database/supabase/edge-runtime/Dockerfile
+    paths=(packages/database/supabase/edge-runtime packages/database/supabase/functions)
     ;;
   assembler)
     file=apps/assembler/Dockerfile

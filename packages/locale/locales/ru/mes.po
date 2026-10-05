@@ -168,13 +168,16 @@ msgid "All scrap"
 msgstr "Весь брак"
 
 msgid "All steps"
-msgstr ""
+msgstr "Все шаги"
 
 msgid "Allocate failed units"
 msgstr "Распределить неудачные единицы"
 
 msgid "Allocate units"
 msgstr "Распределить единицы"
+
+msgid "Appearance"
+msgstr "Внешний вид"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Вы уверены, что хотите удалить этот шаг?"
@@ -310,8 +313,14 @@ msgstr "Очистить станцию по умолчанию"
 msgid "Clock In"
 msgstr "Начало работы"
 
+msgid "Clock out"
+msgstr "Окончание работы"
+
 msgid "Clock Out"
 msgstr "Окончание работы"
+
+msgid "Clocked in"
+msgstr "На работе"
 
 msgid "Clocked in since <0/>"
 msgstr "Отметился в системе с <0/>"
@@ -417,8 +426,8 @@ msgstr "Текущая работа"
 msgid "Customer"
 msgstr "Покупатель"
 
-msgid "Dark Mode"
-msgstr "Тёмная тема"
+msgid "Dark"
+msgstr "Темный"
 
 msgid "Date"
 msgstr "Дата"
@@ -520,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "Дублированный номер серии"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "Дублировать или копировать"
 
 msgid "Duplicate serial number"
 msgstr "Дублированный серийный номер"
@@ -719,7 +728,7 @@ msgid "in {0}"
 msgstr "через {0}"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "В открытом меню"
 
 msgid "In Progress"
 msgstr "В работе"
@@ -810,6 +819,9 @@ msgstr "Покинуть эту страницу"
 
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
+
+msgid "Light"
+msgstr "Светлый"
 
 msgid "lines"
 msgstr "строки"
@@ -1150,7 +1162,7 @@ msgstr "Открытые производственные заказы"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "Открыть под-узел {0}: {1}"
 
 msgid "Operations"
 msgstr "Операции"
@@ -1241,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "Отбор вместо {substitutedFrom}, номенклатура в производственном заказе, для {substitutedAssemblies} сборок"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "Закрепить или открепить"
 
 msgid "Pin Out"
 msgstr "Выход по PIN"
@@ -1371,7 +1383,7 @@ msgid "Remove part"
 msgstr "Убрать деталь"
 
 msgid "Rename"
-msgstr ""
+msgstr "Переименовать"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Открыть заново узел и создать единицу для замены"
@@ -1562,8 +1574,8 @@ msgstr "Сеанс заблокирован"
 msgid "Set Clock Out"
 msgstr "Установить окончание работы"
 
-msgid "Set clock-out time"
-msgstr "Установить время ухода"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "Установите время окончания работы или подтвердите, что вы все еще работаете."
 
 msgid "Set up in Carbon"
 msgstr "Настроить в Carbon"
@@ -1661,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "Единица хранения"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "Под-узел"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "Под-узел {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "Под-узел {0} · {1} — показывается отдельно"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
@@ -1686,6 +1698,9 @@ msgstr "Требуется поддержка"
 
 msgid "Switch Operator"
 msgstr "Сменить оператора"
+
+msgid "System"
+msgstr "Система"
 
 msgid "Tag"
 msgstr "Тег"
@@ -1867,7 +1882,7 @@ msgstr "Используется автоматически при заверш�
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "Использует {0} · {1}"
 
 msgid "Value"
 msgstr "Значение"
@@ -1879,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "Просмотреть заявку на техобслуживание"
 
 msgid "View or open"
-msgstr ""
+msgstr "Просмотр или открытие"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."
@@ -1904,9 +1919,6 @@ msgstr "Рабочие инструкции"
 
 msgid "Yes"
 msgstr "Да"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Вы начали работу в <0/>. Ниже вы можете изменить время окончания работы или подтвердить, что вы все еще работаете."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"

@@ -5,10 +5,14 @@
 # SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, plus user secrets passed through.
 ###
 
+# `restart: on-failure` on every service: a crashed container comes back, but
+# the stack does NOT restart with the Docker daemon. A stack is only useful
+# with its `crbn up` running, and `unless-stopped` brought every stack whose
+# terminal had died back to life on each Docker start.
 services:
   postgres:
     image: supabase/postgres:15.14.1.112
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -73,7 +77,7 @@ services:
 
   gotrue:
     image: supabase/gotrue:v2.189.0
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -129,7 +133,7 @@ services:
 
   postgrest:
     image: postgrest/postgrest:v13.0.8
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -155,7 +159,7 @@ services:
 
   realtime:
     image: supabase/realtime:v2.89.0
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -190,7 +194,7 @@ services:
 
   storage:
     image: supabase/storage-api:v1.58.4
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -231,7 +235,8 @@ services:
   # storage volume with no RLS.
   imgproxy:
     image: darthsim/imgproxy:v3.8.0
-    restart: unless-stopped
+    restart: on-failure
+    profiles: ["full"]
     deploy:
       resources:
         limits:
@@ -253,7 +258,7 @@ services:
 
   meta:
     image: supabase/postgres-meta:v0.96.5
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -273,7 +278,7 @@ services:
 
   studio:
     image: supabase/studio:2026.04.28-sha-89d08a2
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -302,19 +307,26 @@ services:
 
   inbucket:
     image: inbucket/inbucket:3.1.1
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
           memory: ${MEM_INBUCKET:-64m}
           cpus: ${CPU_INBUCKET:-0.25}
-    profiles: ["full"]
+    profiles: ["mail"]
     ports:
       - "${PORT_INBUCKET}:9000"
+    # The image declares /config and /storage as volumes; left unmounted, each
+    # `down` strands two anonymous volumes. /config is empty in the image.
+    tmpfs:
+      - /config
+    volumes:
+      - inbucket:/storage
 
   edge-runtime:
     image: supabase/edge-runtime:v1.74.0
-    restart: unless-stopped
+    restart: on-failure
+    profiles: ["full"]
     deploy:
       resources:
         limits:
@@ -345,7 +357,7 @@ services:
 
   kong:
     image: kong:2.8.1
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -365,6 +377,7 @@ services:
         required: false
       edge-runtime:
         condition: service_started
+        required: false
     ports:
       - "${PORT_API}:8000"
     environment:
@@ -387,7 +400,7 @@ services:
 
   inngest:
     image: inngest/inngest:v1.19.4
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -413,3 +426,4 @@ volumes:
   pgconfig:
   storage:
   inngest:
+  inbucket:

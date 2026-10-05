@@ -130,6 +130,18 @@ Start at the first selected phase whose artifact is missing or stale:
   (and its changelog), re-gate (or re-record in autonomous mode), then resume.
 - Skipping a phase is a logged decision, not a silent omission — it goes in the
   run record with a reason.
+- Everything this pipeline writes is in STE-80 from the first draft: research,
+  spec, plan, the run record, and every phase hand-off message to the human.
+  STE-80 is the author's job. Never ask the human to check the style.
+- STE-80 is a gate at every phase transition, in both autonomous modes. Before
+  you announce the next phase, do the STE-80 review pass
+  (`.claude/rules/writing-ste.md` → Enforcement) on every research, spec or
+  plan file the phase wrote or changed. Log "STE-80 pass done" for each file
+  in the run record's Phase log.
+- Subagent results are raw material. Rewrite them in STE-80 before they go into
+  an artifact. After a subagent edits an artifact, do the review pass on it
+  yourself. Never accept the subagent's own "clean" claim
+  (`.claude/rules/writing-ste.md` → Enforcement).
 
 ## Alternative: the conductor
 

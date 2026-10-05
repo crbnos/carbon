@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RealtimeTable } from "@carbon/database/realtime-tables";
 import { useRealtime } from "./useRealtime";
 
 /**
@@ -9,13 +10,12 @@ import { useRealtime } from "./useRealtime";
  *
  * Use for append-heavy tables (e.g. `itemLedger`) where one business action
  * inserts many rows at once: a 300-row posting should produce one revalidation,
- * not a burst spread over the default window. Subscribe with a
- * `companyId=eq.<id>` filter so new inserts (not just changes to already-loaded
- * rows) trigger a refetch.
+ * not a burst spread over the default window. The topic is already the
+ * company's, so no filter is needed to follow every change to the table.
  */
 export function useDebouncedRealtime(
-  table: string,
-  filter: string | undefined,
+  table: RealtimeTable,
+  filter?: string,
   debounceMs = 1500
 ) {
   return useRealtime(table, filter, debounceMs);

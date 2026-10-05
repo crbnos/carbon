@@ -22,6 +22,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: ["purchaseInvoice", "payment"],
   breadcrumb: msg`Payables`,
   to: path.to.payables,
   module: "invoicing"

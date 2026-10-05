@@ -105,6 +105,12 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "finalize-purchasing-rfq": {
+    "create": "purchasing",
+  },
+  "finalize-supplier-quote": {
+    "create": "purchasing",
+  },
   "get-method": {
     "update": "production",
   },

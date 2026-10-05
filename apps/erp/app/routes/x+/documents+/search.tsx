@@ -7,12 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateDownloadToken } from "@carbon/auth/download-token.server";
 import { flash } from "@carbon/auth/session.server";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { useResolved } from "~/hooks/useResolved";
 import type { Document } from "~/modules/documents";
 import {

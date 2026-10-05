@@ -5,9 +5,10 @@
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import { redirect, redirectExternal } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { getKanban } from "~/modules/inventory";
 import { getActiveJobOperationByJobId } from "~/modules/production";
 import { path } from "~/utils/path";
@@ -69,5 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return data({ error: result.error }, { status: 400 });
   }
 
-  throw redirect(result.data);
+  throw result.data.startsWith("/")
+    ? redirect(result.data)
+    : redirectExternal(result.data);
 }

@@ -63,16 +63,15 @@ catalog:
   '@emoji-mart/data': 1.2.1
   '@emoji-mart/react': 1.1.1
   '@internationalized/date': 3.12.0
-  '@lingui/cli': 5.9.4
-  '@lingui/core': 5.9.4
-  '@lingui/macro': 5.9.4
-  '@lingui/react': 5.9.4
-  '@lingui/vite-plugin': 5.9.4
+  '@lingui/cli': 6.9.0
+  '@lingui/conf': 6.9.0
+  '@lingui/core': 6.9.0
+  '@lingui/react': 6.9.0
+  '@lingui/vite-plugin': 6.9.0
   '@marsidev/react-turnstile': 1.5.0
   '@logtape/logtape': 2.2.3
   '@logtape/redaction': 2.2.3
   '@logtape/testing': 2.2.3
-  '@nanostores/react': 0.7.3
   '@orpc/client': 1.15.0
   '@orpc/contract': 1.15.0
   '@orpc/openapi': 1.15.0
@@ -89,9 +88,10 @@ catalog:
   '@react-aria/i18n': 3.12.16
   '@react-email/components': 0.3.3
   '@react-pdf/renderer': 3.4.5
-  '@react-router/dev': 7.18.0
-  '@react-router/remix-routes-option-adapter': 7.18.0
-  '@react-router/serve': 7.18.0
+  '@react-aria/optimize-locales-plugin': 2.0.2
+  '@react-router/dev': 7.18.4
+  '@react-router/remix-routes-option-adapter': 7.18.4
+  '@react-router/serve': 7.18.4
   '@shikijs/langs': 4.2.0
   '@shikijs/themes': 4.2.0
   '@shikijs/types': 4.2.0
@@ -103,6 +103,8 @@ catalog:
   '@tailwindcss/container-queries': 0.2.2
   '@tailwindcss/typography': 0.5.19
   '@tailwindcss/vite': 4.3.0
+  '@tanstack/react-query': 5.104.0
+  '@tanstack/react-query-devtools': 5.104.0
   '@tiptap/core': 2.27.2
   '@tiptap/extension-color': 2.27.2
   '@tiptap/extension-list-item': 2.27.2
@@ -120,6 +122,8 @@ catalog:
   '@types/react': 18.3.28
   '@types/react-dom': 18.3.7
   '@types/node': '24'
+  '@vitejs/devtools': 0.7.6
+  '@vitejs/devtools-rolldown': 0.7.6
   '@vercel/analytics': 1.6.1
   '@vercel/functions': 3.9.9
   '@vercel/react-router': 1.2.6
@@ -131,14 +135,13 @@ catalog:
   cross-env: 7.0.3
   dompurify: 3.4.0
   fast-xml-parser: 5.3.1
-  framer-motion: 11.18.2
   intl-parse-accept-language: 1.0.0
   isbot: '5'
   jose: 6.0.11
   kysely: 0.28.17
   match-sorter: 8.1.0
+  motion: 12.38.0
   nanoid: 5.1.16
-  nanostores: 0.9.5
   nodemon: 3.1.14
   non.geist: 1.0.4
   npm-run-all: 4.1.5
@@ -150,7 +153,7 @@ catalog:
   react-icons: 5.6.0
   react-pdf: 10.4.1
   react-resizable-panels: 2.1.9
-  react-router: 7.18.0
+  react-router: 7.18.4
   remix-flat-routes: 0.8.5
   rimraf: 5.0.10
   sst: 4.6.9
@@ -163,8 +166,7 @@ catalog:
   tsup: 8.5.1
   tsx: 4.21.0
   typescript: 5.8.3
-  vite: 8.0.16
-  vite-plugin-babel-macros: 1.0.6
+  vite: 8.3.1
   vitest: 4.1.6
   wait-on: 7.2.0
   zbsearch: 4.0.0

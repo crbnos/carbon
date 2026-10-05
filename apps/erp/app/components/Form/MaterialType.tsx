@@ -4,10 +4,10 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type { getMaterialTypeList } from "~/modules/items";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { path } from "~/utils/path";
@@ -104,21 +104,13 @@ const MaterialType = (props: MaterialTypeSelectProps) => {
 };
 
 export const useMaterialTypes = (substanceId?: string, formId?: string) => {
-  const materialTypes =
-    useFetcher<Awaited<ReturnType<typeof getMaterialTypeList>>>();
-
-  useMount(() => {
-    if (substanceId && formId) {
-      materialTypes.load(path.to.api.materialTypes(substanceId, formId));
-    }
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (substanceId && formId) {
-      materialTypes.load(path.to.api.materialTypes(substanceId, formId));
-    }
-  }, [substanceId, formId]);
+  const materialTypes = useLoaderQuery<
+    Awaited<ReturnType<typeof getMaterialTypeList>>
+  >(
+    substanceId && formId
+      ? path.to.api.materialTypes(substanceId, formId)
+      : null
+  );
 
   const options = useMemo(() => {
     return (materialTypes.data?.data ?? []).map((c) => ({

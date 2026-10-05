@@ -71,6 +71,30 @@ export function getRequestOrigin(input: RequestLike): string | null {
   return host ? `${getRequestProtocol(input)}://${host}` : null;
 }
 
+/**
+ * The Referer header, reduced to a SAME-ORIGIN relative path (or null). Many
+ * actions redirect back here — returning the raw header would let a crafted
+ * request bounce the user to an attacker origin (CWE-601 open redirect), so a
+ * cross-origin or unparsable referer yields null and callers fall back to
+ * their fixed route.
+ *
+ * Compared with the origin the client addressed (`getRequestOrigin`), not
+ * `request.url`'s: behind the proxy that is the internal scheme and host, which
+ * never matches a real Referer.
+ */
+export function requestReferrer(request: Request): string | null {
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  try {
+    const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
+    const url = new URL(referer, origin);
+    if (url.origin !== origin) return null;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return null;
+  }
+}
+
 export const getPreferenceHeaders = (request: Request) => {
   const acceptLanguage = request.headers.get("accept-language");
   const cookieHeader = request.headers.get("cookie");

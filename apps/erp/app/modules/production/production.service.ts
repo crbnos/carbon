@@ -1462,20 +1462,24 @@ export async function getJobMaterialShortfallByItem(
         .filter((id) => !onHandByItem.has(id))
     )
   );
-  for (const successorId of successorIds) {
-    const quantities = await client.rpc("get_inventory_quantities", {
-      location_id: locationId,
-      company_id: companyId,
-      item_id: successorId
-    });
-    const row = quantities.data?.[0];
+  const successorQuantities = await async.map(
+    successorIds,
+    async (successorId) =>
+      await client.rpc("get_inventory_quantities", {
+        location_id: locationId,
+        company_id: companyId,
+        item_id: successorId
+      })
+  );
+  successorIds.forEach((successorId, index) => {
+    const row = successorQuantities[index]?.data?.[0];
     onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
     incomingByItem.set(
       successorId,
       Number(row?.quantityOnPurchaseOrder ?? 0) +
         Number(row?.quantityOnProductionOrder ?? 0)
     );
-  }
+  });
 
   // Remaining demand for those items across every active job at this location.
   const { data } = await client

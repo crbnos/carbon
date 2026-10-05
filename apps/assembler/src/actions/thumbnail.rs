@@ -9,7 +9,7 @@
 //! uploaded.
 
 use crate::jobs::{Done, Output};
-use crate::{admission, http, AppState};
+use crate::{admission, http, telemetry, AppState};
 use serde_json::json;
 use std::time::Instant;
 
@@ -17,6 +17,9 @@ pub struct ThumbnailReq {
     pub source_url: String,
     /// Side of the square image in pixels (clamped by the renderer).
     pub size: u32,
+    /// Where the camera stands: model towards camera, Z up. The viewer's home
+    /// direction unless the caller captured another.
+    pub direction: [f32; 3],
     /// Storage path recorded in the completion pointer; the signed PUT URL is
     /// late-minted per poll, key `thumbnail`.
     pub path: Option<String>,
@@ -26,7 +29,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
+    telemetry::spawn_job(&job_id.clone(), "thumbnail", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -42,13 +45,13 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
             return;
         }
         let src_str = src.to_string_lossy().to_string();
-        let size = req.size;
+        let (size, direction) = (req.size, req.direction);
 
         let res = {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&src).await))
                 .await;
-            tokio::task::spawn_blocking(move || render(&src_str, size)).await
+            telemetry::in_span("compute", tokio::task::spawn_blocking(move || render(&src_str, size, direction))).await
         };
         let _ = tokio::fs::remove_file(&src).await;
 
@@ -91,9 +94,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
     });
 }
 
-fn render(path: &str, size: u32) -> Result<Vec<u8>, String> {
+fn render(path: &str, size: u32, direction: [f32; 3]) -> Result<Vec<u8>, String> {
     let file = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
     // SAFETY: the temp file is ours alone and outlives the map; nothing writes it.
     let glb = unsafe { memmap2::Mmap::map(&file) }.map_err(|e| format!("mmap {path}: {e}"))?;
-    thumbnail::render_png(&glb, size).map_err(|e| e.0)
+    thumbnail::render_png(&glb, size, direction).map_err(|e| e.0)
 }

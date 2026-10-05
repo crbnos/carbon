@@ -12,12 +12,9 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import {
   customerContactValidator,
   getCustomerContact,
@@ -26,7 +23,6 @@ import {
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { customerContactsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -101,20 +97,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.customerContacts(customerId),
     await flash(request, success("Customer contact updated"))
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { customerId } = params;
-  if (customerId) {
-    window.clientCache?.setQueryData(
-      customerContactsQuery(customerId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function EditCustomerContactRoute() {

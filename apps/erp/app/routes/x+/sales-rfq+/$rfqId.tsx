@@ -10,7 +10,7 @@ import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
@@ -19,7 +19,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams, useSubmit } from "react-router";
+import { Outlet, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
@@ -40,6 +40,10 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "sales-rfq");
 
 export const handle: Handle = {
+  realtime: [
+    { table: "salesRfq", column: "id", param: "rfqId" },
+    { table: "salesRfqLine", column: "salesRfqId", param: "rfqId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.salesRfqs },
     (data) => data?.rfqSummary?.rfqId

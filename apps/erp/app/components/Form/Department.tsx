@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import type { getDepartmentsList } from "~/modules/people";
 import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
@@ -64,12 +64,9 @@ Department.displayName = "Department";
 export default Department;
 
 export const useDepartments = () => {
-  const departmentFetcher =
-    useFetcher<Awaited<ReturnType<typeof getDepartmentsList>>>();
-
-  useMount(() => {
-    departmentFetcher.load(path.to.api.departments);
-  });
+  const departmentFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getDepartmentsList>>
+  >(path.to.api.departments);
 
   const options = useMemo(
     () =>

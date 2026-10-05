@@ -25,7 +25,9 @@ export const BACKUP_VERSION = 1;
  * Tables whose contents must never travel in a backup — credentials,
  * integration tokens and webhook targets stay with the source company.
  * (`apiKeyRateLimit` dangles without its stripped `apiKey` and is an UNLOGGED
- * operational counter, never user data. `employeePin` holds console PIN
+ * operational counter, never user data. `tableChange` is the same kind of
+ * table: an UNLOGGED log of which rows changed, whose transaction ids mean
+ * nothing in another database. `employeePin` holds console PIN
  * hashes — a 4-digit PIN's bcrypt hash is brute-forced offline in minutes, so
  * it is a credential; being secret also keeps an in-place restore from wiping
  * every operator's PIN. `ssoConnection` / `ssoDomain` are the company's login
@@ -36,6 +38,7 @@ export const BACKUP_VERSION = 1;
 export const SECRET_TABLES = [
   "apiKey",
   "apiKeyRateLimit",
+  "tableChange",
   "companyIntegration",
   "employeePin",
   "webhook",

@@ -6,12 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getUnitOfMeasure,
   unitOfMeasureValidator,
@@ -20,7 +18,6 @@ import {
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -77,14 +74,9 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(uomsQuery(getCompanyId()).queryKey, null);
-  return await serverAction();
-}
-
 export default function EditUnitOfMeasuresRoute() {
   const { unitOfMeasure } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: unitOfMeasure?.id ?? undefined,
@@ -97,7 +89,7 @@ export default function EditUnitOfMeasuresRoute() {
     <UnitOfMeasureForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

@@ -168,13 +168,16 @@ msgid "All scrap"
 msgstr "Alles Ausschuss"
 
 msgid "All steps"
-msgstr ""
+msgstr "Alle Schritte"
 
 msgid "Allocate failed units"
 msgstr "Fehlerhafte Einheiten zuordnen"
 
 msgid "Allocate units"
 msgstr "Einheiten zuordnen"
+
+msgid "Appearance"
+msgstr "Darstellung"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Möchten Sie diesen Schritt wirklich löschen?"
@@ -310,8 +313,14 @@ msgstr "Standardstation löschen"
 msgid "Clock In"
 msgstr "Einstempeln"
 
+msgid "Clock out"
+msgstr "Ausstempeln"
+
 msgid "Clock Out"
 msgstr "Ausstempeln"
+
+msgid "Clocked in"
+msgstr "Eingstempelt"
 
 msgid "Clocked in since <0/>"
 msgstr "Eingecheckt seit <0/>"
@@ -417,8 +426,8 @@ msgstr "Aktuelle Arbeit"
 msgid "Customer"
 msgstr "Kunde"
 
-msgid "Dark Mode"
-msgstr "Dunkelmodus"
+msgid "Dark"
+msgstr "Dunkel"
 
 msgid "Date"
 msgstr "Datum"
@@ -520,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "Doppelte Losnummer"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "Duplizieren oder Kopieren"
 
 msgid "Duplicate serial number"
 msgstr "Doppelte Seriennummer"
@@ -719,7 +728,7 @@ msgid "in {0}"
 msgstr "in {0}"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "In einem offenen Menü"
 
 msgid "In Progress"
 msgstr "In Bearbeitung"
@@ -810,6 +819,9 @@ msgstr "Diese Seite verlassen"
 
 msgid "Let's build something"
 msgstr "Lassen Sie uns etwas bauen"
+
+msgid "Light"
+msgstr "Hell"
 
 msgid "lines"
 msgstr "Zeilen"
@@ -1150,7 +1162,7 @@ msgstr "Offene Fertigungsaufträge"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "Untergruppe {0} öffnen: {1}"
 
 msgid "Operations"
 msgstr "Arbeitsgänge"
@@ -1241,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel im Fertigungsauftrag, für {substitutedAssemblies} Baugruppen"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "Anheften oder Lösen"
 
 msgid "Pin Out"
 msgstr "Abmelden"
@@ -1371,7 +1383,7 @@ msgid "Remove part"
 msgstr "Teil entfernen"
 
 msgid "Rename"
-msgstr ""
+msgstr "Umbenennen"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
@@ -1562,8 +1574,8 @@ msgstr "Sitzung gesperrt"
 msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
 
-msgid "Set clock-out time"
-msgstr "Ausstempelzeit festlegen"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "Legen Sie die Uhrzeit fest, zu der Sie mit der Arbeit aufgehört haben, oder bestätigen Sie, dass Sie noch arbeiten."
 
 msgid "Set up in Carbon"
 msgstr "In Carbon einrichten"
@@ -1661,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "Lagereinheit"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "Untergruppe"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "Untergruppe {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "Untergruppe {0} · {1} — isoliert angezeigt"
 
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
@@ -1686,6 +1698,9 @@ msgstr "Unterstützung erforderlich"
 
 msgid "Switch Operator"
 msgstr "Werker wechseln"
+
+msgid "System"
+msgstr "System"
 
 msgid "Tag"
 msgstr "Tag"
@@ -1867,7 +1882,7 @@ msgstr "Wird automatisch bei Fertigstellung verwendet"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "Verwendet {0} · {1}"
 
 msgid "Value"
 msgstr "Wert"
@@ -1879,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "Instandhaltungseinsatz anzeigen"
 
 msgid "View or open"
-msgstr ""
+msgstr "Anzeigen oder Öffnen"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Wir haben Ihnen einen Magic Link zur Anmeldung an Ihrem Konto gesendet."
@@ -1904,9 +1919,6 @@ msgstr "Arbeitsanweisungen"
 
 msgid "Yes"
 msgstr "Ja"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie haben sich um <0/> angemeldet. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausstempeln vergessen?"

@@ -6,18 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, Outlet, useLoaderData } from "react-router";
 import {
   getEffectiveWorkCenterId,
   getStorageUnit,
@@ -28,7 +20,6 @@ import {
 import { getWorkCentersList } from "~/modules/resources";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -106,31 +97,9 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({
-  request,
-  serverAction
-}: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-
-  const formData = await request.clone().formData();
-  const validation = await validator(storageUnitValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  if (companyId && validation.data.locationId) {
-    window.clientCache?.setQueryData(
-      storageUnitsQuery(companyId, validation.data.locationId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
-}
-
 export default function EditStorageUnitRoute() {
   const { storageUnit, inheritedWorkCenter } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: storageUnit?.id ?? undefined,
@@ -150,7 +119,7 @@ export default function EditStorageUnitRoute() {
         initialValues={initialValues}
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
-        onClose={() => navigate(-1)}
+        onClose={() => closeRoute()}
       />
       <Outlet />
     </>

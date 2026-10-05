@@ -9,9 +9,9 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect, useParams } from "react-router";
+import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Shipment, ShipmentLine } from "~/modules/inventory";
 import {
@@ -290,7 +290,7 @@ export default function ShipmentDetailsRoute() {
     <>
       <ShipmentForm
         key={initialValues.sourceDocumentId}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
         status={routeData.shipment.status}
         shipmentLines={routeData.shipmentLines}

@@ -7,12 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { isUniqueViolation } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
+import { isUniqueViolation, redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { data, useNavigate, useParams } from "react-router";
 import {
   insertSupplierContact,
   supplierContactValidator
@@ -21,7 +18,6 @@ import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContac
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -123,20 +119,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.supplierContacts(supplierId),
         await flash(request, success("Supplier contact created"))
       );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { supplierId } = params;
-  if (supplierId) {
-    window.clientCache?.setQueryData(
-      supplierContactsQuery(supplierId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function SupplierContactsNewRoute() {

@@ -37,3 +37,75 @@ export function redirectBeforeLoaders<Args extends { request: Request }>(
     return next();
   };
 }
+
+const HOME = "/";
+
+type RedirectTarget = FormDataEntryValue | null | undefined;
+
+// Never a real host: only what a target resolves to against it is compared.
+const BASE = "https://own.invalid";
+
+function isOwnPath(to: RedirectTarget): to is string {
+  if (typeof to !== "string" || !to.startsWith("/")) return false;
+  // Resolved the way a browser resolves a Location header, rather than by
+  // listing the spellings of another origin: `//host`, `/\host`, and `/` then
+  // a tab or newline then `/host` (browsers drop those characters) all leave.
+  try {
+    return new URL(to, BASE).origin === BASE;
+  } catch {
+    return false;
+  }
+}
+
+/** `to` when it is a path on this origin, otherwise `fallback`. */
+export function safePath(to: RedirectTarget, fallback: string = HOME): string {
+  return isOwnPath(to) ? to : fallback;
+}
+
+function redirectResponse(url: string, init: number | ResponseInit = 302) {
+  const responseInit = typeof init === "number" ? { status: init } : init;
+  const headers = new Headers(responseInit.headers);
+  headers.set("Location", url);
+  return new Response(null, {
+    ...responseInit,
+    status: responseInit.status ?? 302,
+    headers
+  });
+}
+
+/**
+ * The only `redirect` a loader or action uses (`no-raw-redirect` check). It
+ * goes to a path on this origin; anything else — an absolute URL, `//host`, an
+ * empty value — lands on the home page, so a destination read from a query
+ * string, a form or a database row cannot send the browser off-site.
+ *
+ * Leaving the origin on purpose (an OAuth provider, Stripe, the other app) is
+ * `redirectExternal`.
+ */
+export function redirect(to: RedirectTarget, init?: number | ResponseInit) {
+  if (!isOwnPath(to)) {
+    if (to) console.warn("redirect: refused a target off this origin", { to });
+    return redirectResponse(HOME, init);
+  }
+  return redirectResponse(to, init);
+}
+
+/**
+ * A redirect that leaves this origin. The URL must be one the server built —
+ * never a value a request supplied — and must be http(s).
+ */
+export function redirectExternal(url: string, init?: number | ResponseInit) {
+  let protocol: string | undefined;
+  try {
+    protocol = new URL(url).protocol;
+  } catch {
+    // not an absolute URL
+  }
+  if (protocol !== "https:" && protocol !== "http:") {
+    console.warn("redirectExternal: refused a URL that is not http(s)", {
+      url
+    });
+    return redirectResponse(HOME, init);
+  }
+  return redirectResponse(url, init);
+}

@@ -6,12 +6,9 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   GroupForm,
   getGroupMembers,
@@ -20,7 +17,6 @@ import {
   upsertGroupMembers
 } from "~/modules/users";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -104,11 +100,6 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.groups,
     await flash(request, success("Group updated successfully"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function UsersGroupRoute() {

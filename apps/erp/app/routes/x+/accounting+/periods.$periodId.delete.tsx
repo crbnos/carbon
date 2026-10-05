@@ -18,18 +18,12 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
-import { formatPeriodLabel } from "@carbon/utils";
+import { formatPeriodLabel, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuTrash, LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
 import {
   deleteAccountingPeriod,
   getAccountingPeriodDeletability

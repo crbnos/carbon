@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { redis } from "@carbon/kv";
-import { Edition } from "@carbon/utils";
+import { Edition, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
-import { createCookieSessionStorage, redirect } from "react-router";
+import { createCookieSessionStorage } from "react-router";
 
 import {
   CarbonEdition,

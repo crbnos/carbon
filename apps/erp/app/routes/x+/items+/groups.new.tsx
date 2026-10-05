@@ -6,12 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
 import {
   itemPostingGroupValidator,
   upsertItemPostingGroup
@@ -19,7 +17,6 @@ import {
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -84,16 +81,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    itemPostingGroupsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
-}
-
 export default function NewItemPostingGroupsRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     description: ""
@@ -101,7 +90,7 @@ export default function NewItemPostingGroupsRoute() {
 
   return (
     <ItemPostingGroupForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

@@ -131,7 +131,7 @@ type CompaniesRow = Database["public"]["Views"]["companies"]["Row"];
 const logoUrl = (path: string | null) =>
   path ? `${PUBLIC_STORAGE_URL_PREFIX}${path}` : null;
 
-function withLogoUrls(company: CompaniesRow) {
+export function withLogoUrls(company: CompaniesRow) {
   return {
     ...company,
     logoLight: logoUrl(company.logoLight),

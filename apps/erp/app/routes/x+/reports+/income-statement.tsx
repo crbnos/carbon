@@ -9,13 +9,14 @@ import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import {
   financialReportParamsValidator,
   getCompaniesInGroup,

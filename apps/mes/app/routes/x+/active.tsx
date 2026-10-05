@@ -19,6 +19,11 @@ import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
+
+export const handle: Handle = {
+  realtime: ["jobOperation", "productionEvent"]
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});

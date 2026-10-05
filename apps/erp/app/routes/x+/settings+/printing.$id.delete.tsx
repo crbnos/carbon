@@ -8,8 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { deletePrinterRoute } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

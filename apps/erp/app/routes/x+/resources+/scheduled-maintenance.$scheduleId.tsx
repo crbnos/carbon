@@ -7,8 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getMaintenanceSchedule,
   maintenanceScheduleValidator,
@@ -89,7 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditMaintenanceScheduleRoute() {
   const { schedule } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: schedule.id ?? undefined,
@@ -118,7 +120,7 @@ export default function EditMaintenanceScheduleRoute() {
     <MaintenanceScheduleForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

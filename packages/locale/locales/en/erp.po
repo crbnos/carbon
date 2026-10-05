@@ -2117,6 +2117,9 @@ msgstr "API keys for programmatic access to your Carbon data."
 msgid "API, webhooks, and integrations"
 msgstr "API, webhooks, and integrations"
 
+msgid "Appearance"
+msgstr "Appearance"
+
 msgid "Applied"
 msgstr "Applied"
 
@@ -2280,7 +2283,7 @@ msgstr "Are you sure you want to activate this gauge?."
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 
@@ -2653,8 +2656,8 @@ msgstr "Are you sure you want to leave this page?"
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Are you sure you want to permanently delete {0}?"
 
@@ -3948,8 +3951,14 @@ msgstr "Click to upload a PDF drawing"
 msgid "Clock In"
 msgstr "Clock In"
 
+msgid "Clock out"
+msgstr "Clock out"
+
 msgid "Clock Out"
 msgstr "Clock Out"
+
+msgid "Clocked in"
+msgstr "Clocked in"
 
 msgid "Clocked in since <0/>"
 msgstr "Clocked in since <0/>"
@@ -5523,9 +5532,6 @@ msgstr "Daily Usage"
 
 msgid "Dark"
 msgstr "Dark"
-
-msgid "Dark Mode"
-msgstr "Dark Mode"
 
 msgid "Dashboard"
 msgstr "Dashboard"
@@ -10290,12 +10296,6 @@ msgstr "Lifetime Usage (Units)"
 msgid "Light"
 msgstr "Light"
 
-msgid "Light Mode"
-msgstr "Light Mode"
-
-msgid "Light or dark mode"
-msgstr "Light or dark mode"
-
 msgid "Lights Out (24×7)"
 msgstr "Lights Out (24×7)"
 
@@ -12291,11 +12291,17 @@ msgstr "No stock"
 msgid "No stock at this location"
 msgstr "No stock at this location"
 
+msgid "No stock on hand at this location."
+msgstr "No stock on hand at this location."
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "No stockout projected in the next 48 weeks"
 
 msgid "No storage unit"
 msgstr "No storage unit"
+
+msgid "No storage units or tracking numbers match."
+msgstr "No storage units or tracking numbers match."
 
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
@@ -16292,6 +16298,9 @@ msgstr "Search records…"
 msgid "Search related items..."
 msgstr "Search related items..."
 
+msgid "Search storage units and tracking numbers"
+msgstr "Search storage units and tracking numbers"
+
 msgid "Search suppliers..."
 msgstr "Search suppliers..."
 
@@ -16720,9 +16729,6 @@ msgstr "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of 
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
 
-msgid "Set clock-out time"
-msgstr "Set clock-out time"
-
 msgid "Set Console PIN"
 msgstr "Set Console PIN"
 
@@ -16740,6 +16746,9 @@ msgstr "Set Pricing"
 
 msgid "Set Quantity"
 msgstr "Set Quantity"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "Set the time you stopped working, or acknowledge that you're still working."
 
 msgid "Set up authenticator app"
 msgstr "Set up authenticator app"
@@ -19804,9 +19813,6 @@ msgstr "Tracked material is pre-selected by pick order (FEFO), even without a pi
 msgid "Tracking"
 msgstr "Tracking"
 
-msgid "Tracking ID"
-msgstr "Tracking ID"
-
 msgid "Tracking method"
 msgstr "Tracking method"
 
@@ -20193,6 +20199,9 @@ msgstr "Untitled line"
 
 msgid "Untitled step"
 msgstr "Untitled step"
+
+msgid "Untracked"
+msgstr "Untracked"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Unused picked material flushed back from the work center to the warehouse."
@@ -21535,18 +21544,13 @@ msgstr "You can change the UI style any time through the theme setting"
 msgid "You can only see this key once. Store it safely."
 msgstr "You can only see this key once. Store it safely."
 
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr ""
-"You completed {leftoverQuantity} more \n"
+msgstr "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

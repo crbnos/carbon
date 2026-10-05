@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -1280,14 +1281,14 @@ function CreateUnitModal({
   onCreated: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean }>();
-  const [name, setName] = useState("");
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      onCreated();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onCreated();
+      }
     }
-  }, [fetcher.state, fetcher.data, onCreated]);
+  });
+  const [name, setName] = useState("");
 
   const onSubmit = () => {
     if (!name.trim()) return;
@@ -1372,17 +1373,17 @@ function EditUnitModal({
   onUpdated: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean }>();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onUpdated();
+      }
+    }
+  });
   const [name, setName] = useState(unit.name);
   const [memberIds, setMemberIds] = useState<string[]>(
     unit.componentNodeIds ?? []
   );
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      onUpdated();
-    }
-  }, [fetcher.state, fetcher.data, onUpdated]);
 
   const memberSet = useMemo(() => new Set(memberIds), [memberIds]);
   // Distinct components in the unit, so removal is per component type ("drop this cap"),

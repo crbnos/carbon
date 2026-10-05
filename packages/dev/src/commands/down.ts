@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { intro, log, outro, tasks } from "@clack/prompts";
+import { intro, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { syncAppPortlessConfigs } from "../env.js";
 import { currentBranch } from "../git.js";
 import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
 import { flushDb, stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
+import { tasks } from "../ui.js";
 import {
   getSlot,
   getWorktreeRoot,

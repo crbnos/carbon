@@ -1327,8 +1327,9 @@ export type ChangeNoticeItemDiff = {
   // read-only diff viewer can render the BOP as a tree.
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Record<string, unknown>>[];
-  // Supplier parts on a Revision/New Part draft item. Drafts start with none
-  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  // Supplier parts on a draft item. A Revision draft starts with a copy of its
+  // source revision's, so its entries are a real diff against the source; a
+  // Replacement Part / New Part draft starts with none, so its are all `added`.
   supplierParts: MethodDiffEntry<Record<string, unknown>>[];
 };
 

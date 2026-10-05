@@ -14,7 +14,7 @@ import {
   MenuItem,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -35,13 +35,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Link,
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData
-} from "react-router";
+import { Link, Outlet, useFetcher, useLoaderData } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import {

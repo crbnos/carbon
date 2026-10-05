@@ -104,7 +104,6 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
       {deleteLocationModal.isOpen && location?.id && (
         <ConfirmDelete
           action={path.to.deleteCustomerLocation(customerId, location.id)}
-          // @ts-ignore
           name={location?.address?.city ?? ""}
           text="Are you sure you want to delete this location?"
           onCancel={deleteLocationModal.onClose}

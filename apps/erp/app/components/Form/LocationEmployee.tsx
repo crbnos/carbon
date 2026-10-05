@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
+import { useMemo } from "react";
 import type { getLocationEmployees } from "~/modules/production";
 import { path } from "~/utils/path";
 import Avatar from "../Avatar";
@@ -29,7 +29,7 @@ const LocationEmployee = ({
     <Combobox
       options={options}
       emptyMessage={emptyMessage}
-      isLoading={locationEmployeeFetcher.state === "loading"}
+      isLoading={locationEmployeeFetcher.isFetching}
       {...props}
       label={props?.label ?? t`Employee`}
       placeholder={props?.placeholder ?? t`Select Employee`}
@@ -42,15 +42,9 @@ LocationEmployee.displayName = "LocationEmployee";
 export default LocationEmployee;
 
 export const useLocationEmployees = (locationId?: string) => {
-  const locationEmployeeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getLocationEmployees>>>();
-
-  useEffect(() => {
-    if (locationId) {
-      locationEmployeeFetcher.load(path.to.api.locationEmployees(locationId));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationId]);
+  const locationEmployeeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getLocationEmployees>>
+  >(locationId ? path.to.api.locationEmployees(locationId) : null);
 
   const options = useMemo(
     () =>

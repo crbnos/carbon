@@ -21,7 +21,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AiOutlineNumber } from "react-icons/ai";
 import { BiText } from "react-icons/bi";
@@ -75,7 +75,7 @@ const CustomFieldCategoryDetail = ({
       Array.isArray(customFieldTable.fields)
         ? customFieldTable.fields.reduce<
             Record<string, CustomFieldAndDataType>
-            // @ts-ignore
+            // @ts-expect-error
           >((acc, field) => {
             if (!field) return acc;
             const customField = field as CustomFieldAndDataType;

@@ -168,13 +168,16 @@ msgid "All scrap"
 msgstr "Wszystkie braki"
 
 msgid "All steps"
-msgstr ""
+msgstr "Wszystkie kroki"
 
 msgid "Allocate failed units"
 msgstr "Przydziel jednostki z błędami"
 
 msgid "Allocate units"
 msgstr "Przydziel jednostki"
+
+msgid "Appearance"
+msgstr "Wygląd"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Czy na pewno chcesz usunąć ten krok?"
@@ -310,8 +313,14 @@ msgstr "Wyczyść domyślną stację"
 msgid "Clock In"
 msgstr "Rozpoczęcie pracy"
 
+msgid "Clock out"
+msgstr "Zakończenie pracy"
+
 msgid "Clock Out"
 msgstr "Zakończenie pracy"
+
+msgid "Clocked in"
+msgstr "Zalogowany"
 
 msgid "Clocked in since <0/>"
 msgstr "Zalogowany od <0/>"
@@ -417,8 +426,8 @@ msgstr "Bieżąca praca"
 msgid "Customer"
 msgstr "Klient"
 
-msgid "Dark Mode"
-msgstr "Tryb ciemny"
+msgid "Dark"
+msgstr "Ciemny"
 
 msgid "Date"
 msgstr "Data"
@@ -520,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "Zduplikowany numer partii"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "Duplikuj lub kopiuj"
 
 msgid "Duplicate serial number"
 msgstr "Zduplikowany numer seryjny"
@@ -719,7 +728,7 @@ msgid "in {0}"
 msgstr "za {0}"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "W otwartym menu"
 
 msgid "In Progress"
 msgstr "W toku"
@@ -810,6 +819,9 @@ msgstr "Opuść tę stronę"
 
 msgid "Let's build something"
 msgstr "Zbudujmy coś"
+
+msgid "Light"
+msgstr "Jasny"
 
 msgid "lines"
 msgstr "linie"
@@ -1150,7 +1162,7 @@ msgstr "Otwarte zlecenia produkcyjne"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "Otwórz podzestawienie {0}: {1}"
 
 msgid "Operations"
 msgstr "Operacje"
@@ -1241,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "kompletacja zamiast {substitutedFrom}, artykułu w zleceniu produkcyjnym, dla {substitutedAssemblies} montaży"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "Przypnij lub odepnij"
 
 msgid "Pin Out"
 msgstr "Wyloguj PIN"
@@ -1371,7 +1383,7 @@ msgid "Remove part"
 msgstr "Usuń część"
 
 msgid "Rename"
-msgstr ""
+msgstr "Zmień nazwę"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
@@ -1562,8 +1574,8 @@ msgstr "Sesja zablokowana"
 msgid "Set Clock Out"
 msgstr "Ustaw zakończenie pracy"
 
-msgid "Set clock-out time"
-msgstr "Ustaw czas zakończenia zmiany"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "Ustaw czas, w którym przestałeś pracować, lub potwierdź, że nadal pracujesz."
 
 msgid "Set up in Carbon"
 msgstr "Skonfiguruj w aplikacji Carbon"
@@ -1661,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "Podzestawienie"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "Podzestawienie {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "Podzestawienie {0} · {1} — wyświetlane osobno"
 
 msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
@@ -1686,6 +1698,9 @@ msgstr "Wymagane wsparcie"
 
 msgid "Switch Operator"
 msgstr "Zmień operatora"
+
+msgid "System"
+msgstr "System"
 
 msgid "Tag"
 msgstr "Tag"
@@ -1867,7 +1882,7 @@ msgstr "Używane automatycznie przy zakończeniu"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "Używa {0} · {1}"
 
 msgid "Value"
 msgstr "Wartość"
@@ -1879,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "Wyświetl zlecenie utrzymania ruchu"
 
 msgid "View or open"
-msgstr ""
+msgstr "Wyświetl lub otwórz"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Wysłaliśmy Ci link do logowania na Twoje konto."
@@ -1904,9 +1919,6 @@ msgstr "Instrukcje robocze"
 
 msgid "Yes"
 msgstr "Tak"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Zalogowałeś się o <0/>. Możesz edytować czas wylogowania poniżej lub potwierdzić, że nadal pracujesz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Pracujesz od {hoursElapsed} godzin. Zapomniałeś o zakończeniu pracy?"

@@ -71,7 +71,6 @@ export default function GroupsRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      {/* @ts-ignore */}
       <GroupsTable data={groups} count={count} />
       <Outlet />
     </VStack>

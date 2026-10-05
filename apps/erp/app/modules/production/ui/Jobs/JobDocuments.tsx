@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob, storage } from "@carbon/files";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -146,8 +146,7 @@ const useJobDocuments = ({
         `private/${getPath(file, bucket as "job" | "parts")}`
       );
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Failed to process file operation", { error });
@@ -490,7 +489,7 @@ const JobDocuments = ({
                                   ? "parts"
                                   : "job"
                               )}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={type}
                             >
                               {file.name}

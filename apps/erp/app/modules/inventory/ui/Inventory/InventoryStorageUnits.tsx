@@ -19,52 +19,44 @@ import {
   CardHeader,
   CardTitle,
   Copy,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  cn,
   HStack,
   IconButton,
+  InputGroup,
+  InputLeftElement,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
+  Input as SearchInput,
   toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { groupBy } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { groupBy, round } from "@carbon/utils";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import {
   LuCheck,
   LuChevronDown,
   LuChevronRight,
-  LuEllipsisVertical,
   LuPencil,
   LuPrinter,
-  LuQrCode
+  LuQrCode,
+  LuSearch
 } from "react-icons/lu";
 import { Outlet, useFetcher } from "react-router";
 import type { z } from "zod";
 import { DateTime } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
 import { Input, Location, Select, TextArea } from "~/components/Form";
 import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, usePrinting } from "~/hooks";
+import { usePermissions, usePrinting, useQuantityFormatter } from "~/hooks";
 import type {
   ItemStorageUnitQuantities,
   itemTrackingTypes,
@@ -118,27 +110,81 @@ const InventoryStorageUnits = ({
     [itemStorageUnitQuantities]
   );
 
-  // One visual row per (storage unit, lot): fragments of the same batch in the
-  // same bin collapse into a group row with the summed quantity, expandable to
-  // the underlying tracked entities.
-  const storageUnitGroups = useMemo(() => {
-    const grouped = groupBy(
-      visibleStorageUnitQuantities.map((item, index) => ({ item, index })),
-      // Untracked/unnumbered rows get a per-row key so they stay singletons.
-      ({ item, index }) =>
-        `${item.storageUnitId}::${item.readableId ?? item.trackedEntityId ?? `row-${index}`}`
+  const storageUnitLabel = useCallback(
+    (item: ItemStorageUnitQuantities) =>
+      storageUnits.find((s) => s.value === item.storageUnitId)?.label ??
+      item.storageUnitName ??
+      item.storageUnitId ??
+      null,
+    [storageUnits]
+  );
+
+  const [search, setSearch] = useState("");
+
+  // Matches a storage unit's name or a lot/serial number.
+  const matchingStorageUnitQuantities = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return visibleStorageUnitQuantities;
+    return visibleStorageUnitQuantities.filter((item) =>
+      [storageUnitLabel(item), item.readableId, item.trackedEntityId].some(
+        (value) => value?.toLowerCase().includes(term)
+      )
     );
-    return Object.entries(grouped)
-      .map(([key, rows]) => ({ key, members: rows.map((r) => r.item) }))
-      .sort((a, b) => {
-        const unitA = a.members[0].storageUnitName ?? "";
-        const unitB = b.members[0].storageUnitName ?? "";
-        if (unitA !== unitB) return unitA.localeCompare(unitB);
-        return (a.members[0].readableId ?? "").localeCompare(
-          b.members[0].readableId ?? ""
+  }, [visibleStorageUnitQuantities, search, storageUnitLabel]);
+
+  // Rows are grouped twice: by storage unit, then by lot within it. Fragments
+  // of the same batch in the same bin collapse into one lot row with the summed
+  // quantity, expandable to the underlying tracked entities.
+  const storageUnitGroups = useMemo(() => {
+    const sumQuantity = (members: ItemStorageUnitQuantities[]) =>
+      round(members.reduce((sum, m) => sum + m.quantity, 0));
+
+    const byUnit = groupBy(
+      matchingStorageUnitQuantities.map((item, index) => ({ item, index })),
+      ({ item }) => item.storageUnitId ?? ""
+    );
+
+    return Object.entries(byUnit)
+      .map(([storageUnitId, rows]) => {
+        const byLot = groupBy(
+          rows,
+          // Untracked/unnumbered rows get a per-row key so they stay singletons.
+          ({ item, index }) =>
+            item.readableId ?? item.trackedEntityId ?? `row-${index}`
         );
+        const lots = Object.entries(byLot)
+          .map(([lotKey, lotRows]) => {
+            const members = lotRows.map((r) => r.item);
+            return {
+              key: `${storageUnitId}::${lotKey}`,
+              members,
+              quantity: sumQuantity(members)
+            };
+          })
+          // Largest first; serials all hold one, so they fall back to number order.
+          .sort(
+            (a, b) =>
+              b.quantity - a.quantity ||
+              (a.members[0].readableId ?? "").localeCompare(
+                b.members[0].readableId ?? ""
+              )
+          );
+        const first = rows[0].item;
+        return {
+          storageUnitId,
+          name: storageUnitId ? storageUnitLabel(first) : null,
+          quantity: sumQuantity(rows.map((r) => r.item)),
+          lots
+        };
+      })
+      .sort((a, b) => {
+        // Stock with no storage unit goes last.
+        if (!a.name || !b.name) return a.name ? -1 : b.name ? 1 : 0;
+        return a.name.localeCompare(b.name);
       });
-  }, [visibleStorageUnitQuantities]);
+  }, [matchingStorageUnitQuantities, storageUnitLabel]);
+
+  const formatQuantity = useQuantityFormatter();
 
   const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(
     new Set()
@@ -155,15 +201,6 @@ const InventoryStorageUnits = ({
       return next;
     });
   };
-
-  const showExpirationColumn = useMemo(
-    () =>
-      visibleStorageUnitQuantities.some(
-        (item) =>
-          item.trackedEntityId && trackedEntityExpirations[item.trackedEntityId]
-      ),
-    [visibleStorageUnitQuantities, trackedEntityExpirations]
-  );
 
   const [quantity, setQuantity] = useState(1);
   const [selectedStorageUnitId, setSelectedStorageUnitId] = useState<
@@ -268,80 +305,117 @@ const InventoryStorageUnits = ({
     setPendingPrintEntityId(null);
   };
 
-  const renderStorageUnitRow = (
-    item: ItemStorageUnitQuantities,
-    key: string
-  ) => (
-    <Tr key={key}>
-      <Td>
-        {storageUnits.find((s) => s.value === item.storageUnitId)?.label ||
-          item.storageUnitName ||
-          item.storageUnitId}
-      </Td>
+  const unitOfMeasureLabel = itemUnitOfMeasure?.label ?? itemUnitOfMeasureCode;
 
-      <Td>
-        <span>{item.quantity}</span>
-      </Td>
-      <Td>
-        {item.trackedEntityId && (
-          <HStack>
-            {item.readableId && <span>{item.readableId}</span>}
-            <Copy
-              icon={<LuQrCode />}
-              text={item.trackedEntityId}
-              withTextInTooltip
-            />
-          </HStack>
-        )}
-      </Td>
-      {showExpirationColumn && (
-        <Td>
-          {item.trackedEntityId &&
-            trackedEntityExpirations[item.trackedEntityId] && (
-              <span>
-                <DateTime
-                  value={trackedEntityExpirations[item.trackedEntityId]}
-                  variant="date"
-                />
-              </span>
-            )}
-        </Td>
+  // Expired lots read red, and lots inside 30 days amber.
+  const expirationClassName = (value: string) => {
+    const daysLeft = parseDate(value.slice(0, 10)).compare(
+      today(getLocalTimeZone())
+    );
+    if (daysLeft < 0) return "text-destructive";
+    if (daysLeft <= 30) return "text-amber-600 dark:text-amber-400";
+    return "text-muted-foreground";
+  };
+
+  // One grid for every row, so quantities and actions line up down the card.
+  const rowClassName =
+    "group/row -mx-2 grid h-9 grid-cols-[minmax(0,1fr)_auto_5.25rem] items-center gap-3 rounded-md px-2";
+
+  const renderQuantity = (value: number, className?: string) => (
+    <span
+      className={cn(
+        "text-right tabular-nums",
+        value < 0 && "text-destructive",
+        className
       )}
-      <Td className="flex flex-shrink-0 justify-end items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton
-              aria-label={t`Actions`}
-              variant="ghost"
-              icon={<LuEllipsisVertical />}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuItem
-              onClick={() =>
-                openAdjustmentModal(
-                  item.storageUnitId,
-                  item.trackedEntityId,
-                  item.readableId,
-                  item.quantity
-                )
-              }
-            >
-              <DropdownMenuIcon icon={<LuPencil />} />
-              <Trans>Update Quantity</Trans>
-            </DropdownMenuItem>
-            {item.trackedEntityId && (
-              <DropdownMenuItem
-                onClick={() => handlePrintLabel(item.trackedEntityId!)}
-              >
-                <DropdownMenuIcon icon={<LuPrinter />} />
-                <Trans>Print Label</Trans>
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </Td>
-    </Tr>
+    >
+      {formatQuantity(value)}
+    </span>
+  );
+
+  const renderTracking = (
+    item: ItemStorageUnitQuantities,
+    expiration: string | null | undefined
+  ) => (
+    <span className="flex min-w-0 items-baseline gap-2">
+      {item.trackedEntityId ? (
+        <span className="truncate font-mono text-xs">
+          {item.readableId ?? item.trackedEntityId}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">
+          <Trans>Untracked</Trans>
+        </span>
+      )}
+      {expiration && (
+        <span
+          className={cn("shrink-0 text-xs", expirationClassName(expiration))}
+        >
+          <Trans>
+            Expires <DateTime value={expiration} variant="date" />
+          </Trans>
+        </span>
+      )}
+    </span>
+  );
+
+  const renderActions = (item: ItemStorageUnitQuantities) => (
+    <HStack
+      spacing={0}
+      className="justify-end opacity-0 transition-opacity duration-150 ease-out group-hover/row:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+    >
+      {item.trackedEntityId && (
+        <Copy
+          icon={<LuQrCode />}
+          text={item.trackedEntityId}
+          withTextInTooltip
+        />
+      )}
+      {item.trackedEntityId && (
+        <IconButton
+          aria-label={t`Print Label`}
+          title={t`Print Label`}
+          variant="ghost"
+          size="sm"
+          icon={<LuPrinter />}
+          onClick={() => handlePrintLabel(item.trackedEntityId!)}
+        />
+      )}
+      <IconButton
+        aria-label={t`Update Quantity`}
+        title={t`Update Quantity`}
+        variant="ghost"
+        size="sm"
+        icon={<LuPencil />}
+        onClick={() =>
+          openAdjustmentModal(
+            item.storageUnitId,
+            item.trackedEntityId,
+            item.readableId,
+            item.quantity
+          )
+        }
+      />
+    </HStack>
+  );
+
+  const renderStockRow = (
+    item: ItemStorageUnitQuantities,
+    key: string,
+    indent: string
+  ) => (
+    <div key={key} className={cn(rowClassName, "hover:bg-muted/60")}>
+      <div className={cn("min-w-0", indent)}>
+        {renderTracking(
+          item,
+          item.trackedEntityId
+            ? trackedEntityExpirations[item.trackedEntityId]
+            : null
+        )}
+      </div>
+      {renderQuantity(item.quantity)}
+      {renderActions(item)}
+    </div>
   );
 
   return (
@@ -349,130 +423,138 @@ const InventoryStorageUnits = ({
       <Card className="w-full">
         <HStack className="w-full justify-between">
           <CardHeader>
-            <CardTitle>
-              <HStack className="gap-2 items-center">
-                <Trans>Storage Units</Trans>
-                <Enumerable
-                  value={
-                    unitOfMeasures.find(
-                      (uom) => uom.value === itemUnitOfMeasureCode
-                    )?.label || itemUnitOfMeasureCode
-                  }
-                />
-              </HStack>
+            <CardTitle className="whitespace-nowrap">
+              <Trans>Storage Units</Trans>
             </CardTitle>
           </CardHeader>
           <CardAction>
-            <Button onClick={() => openAdjustmentModal()}>
-              <Trans>Update Inventory</Trans>
-            </Button>
+            <HStack>
+              {/* A search box over a handful of rows is clutter. */}
+              {visibleStorageUnitQuantities.length > 8 && (
+                <InputGroup size="sm" className="w-40">
+                  <InputLeftElement>
+                    <LuSearch className="h-4 w-4" />
+                  </InputLeftElement>
+                  <SearchInput
+                    aria-label={t`Search storage units and tracking numbers`}
+                    placeholder={t`Search...`}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </InputGroup>
+              )}
+              <Button onClick={() => openAdjustmentModal()}>
+                <Trans>Update Inventory</Trans>
+              </Button>
+            </HStack>
           </CardAction>
         </HStack>
         <CardContent>
-          <Table className="table-fixed">
-            <Thead>
-              <Tr>
-                <Th>
-                  <Trans>Storage Unit</Trans>
-                </Th>
+          {storageUnitGroups.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {search.trim() ? (
+                <Trans>No storage units or tracking numbers match.</Trans>
+              ) : (
+                <Trans>No stock on hand at this location.</Trans>
+              )}
+            </p>
+          )}
+          <div className="text-sm">
+            {storageUnitGroups.map((unit) => {
+              const unitLabel = unit.name ?? (
+                <span className="text-muted-foreground">
+                  <Trans>No storage unit</Trans>
+                </span>
+              );
+              const [onlyLot] = unit.lots;
+              // A bin holding one untracked row needs no lot rows under it.
+              const isSingleUntrackedRow =
+                unit.lots.length === 1 &&
+                onlyLot.members.length === 1 &&
+                !onlyLot.members[0].trackedEntityId;
 
-                <Th>
-                  <Trans>Quantity</Trans>
-                </Th>
-                <Th>
-                  <Trans>Tracking ID</Trans>
-                </Th>
-                {showExpirationColumn && (
-                  <Th>
-                    <Trans>Expiration Date</Trans>
-                  </Th>
-                )}
-                <Th className="flex flex-shrink-0 justify-end" />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {storageUnitGroups.map((group) => {
-                if (group.members.length === 1) {
-                  return renderStorageUnitRow(group.members[0], group.key);
-                }
-                const isExpanded = expandedGroupKeys.has(group.key);
-                const first = group.members[0];
-                // Batch quantities are decimals — clamp float noise on the sum.
-                const summedQuantity =
-                  Math.round(
-                    group.members.reduce((sum, m) => sum + m.quantity, 0) * 1e6
-                  ) / 1e6;
-                const expirations = group.members
-                  .map((m) =>
-                    m.trackedEntityId
-                      ? trackedEntityExpirations[m.trackedEntityId]
-                      : null
-                  )
-                  .filter((d): d is string => Boolean(d));
-                const earliestExpiration =
-                  expirations.length > 0
-                    ? expirations.reduce((min, d) => (d < min ? d : min))
-                    : null;
-                return (
-                  <Fragment key={group.key}>
-                    <Tr>
-                      <Td>
-                        <HStack className="gap-1">
-                          <IconButton
-                            aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                            variant="ghost"
-                            icon={
-                              isExpanded ? (
-                                <LuChevronDown />
-                              ) : (
-                                <LuChevronRight />
-                              )
-                            }
-                            onClick={() => toggleGroup(group.key)}
-                          />
-                          <span>
-                            {storageUnits.find(
-                              (s) => s.value === first.storageUnitId
-                            )?.label ||
-                              first.storageUnitName ||
-                              first.storageUnitId}
-                          </span>
-                        </HStack>
-                      </Td>
-                      <Td>
-                        <span>{summedQuantity}</span>
-                      </Td>
-                      <Td>
-                        <HStack>
-                          {first.readableId && <span>{first.readableId}</span>}
-                          <span className="text-xs text-muted-foreground">
-                            ×{group.members.length}
-                          </span>
-                        </HStack>
-                      </Td>
-                      {showExpirationColumn && (
-                        <Td>
-                          {earliestExpiration && (
-                            <span>
-                              <DateTime
-                                value={earliestExpiration}
-                                variant="date"
+              return (
+                <div
+                  key={unit.storageUnitId}
+                  className="border-t py-1.5 first:border-t-0"
+                >
+                  <div
+                    className={cn(
+                      rowClassName,
+                      isSingleUntrackedRow && "hover:bg-muted/60"
+                    )}
+                  >
+                    <span className="truncate font-medium">{unitLabel}</span>
+                    {renderQuantity(unit.quantity, "font-medium")}
+                    {isSingleUntrackedRow ? (
+                      renderActions(onlyLot.members[0])
+                    ) : (
+                      // The unit sits beside the total so the digits stay in one column.
+                      <span className="truncate text-xs text-muted-foreground">
+                        {unitOfMeasureLabel}
+                      </span>
+                    )}
+                  </div>
+                  {!isSingleUntrackedRow &&
+                    unit.lots.map((lot) => {
+                      const first = lot.members[0];
+                      if (lot.members.length === 1) {
+                        return renderStockRow(first, lot.key, "pl-7");
+                      }
+                      const isExpanded = expandedGroupKeys.has(lot.key);
+                      const earliestExpiration = lot.members
+                        .map((m) =>
+                          m.trackedEntityId
+                            ? trackedEntityExpirations[m.trackedEntityId]
+                            : null
+                        )
+                        .filter((d): d is string => Boolean(d))
+                        .sort()[0];
+                      return (
+                        <Fragment key={lot.key}>
+                          <div className={rowClassName}>
+                            <div className="flex min-w-0 items-center">
+                              {/* The chevron sits in the gutter the other lots leave empty. */}
+                              <IconButton
+                                aria-label={
+                                  isExpanded ? t`Collapse` : t`Expand`
+                                }
+                                aria-expanded={isExpanded}
+                                variant="ghost"
+                                size="sm"
+                                className="-ml-0.5 mr-0.5 size-7 shrink-0"
+                                icon={
+                                  isExpanded ? (
+                                    <LuChevronDown />
+                                  ) : (
+                                    <LuChevronRight />
+                                  )
+                                }
+                                onClick={() => toggleGroup(lot.key)}
                               />
-                            </span>
-                          )}
-                        </Td>
-                      )}
-                      <Td className="flex flex-shrink-0 justify-end items-center" />
-                    </Tr>
-                    {isExpanded &&
-                      group.members.map((item, index) =>
-                        renderStorageUnitRow(item, `${group.key}:${index}`)
-                      )}
-                  </Fragment>
-                );
-              })}
-            </Tbody>
-          </Table>
+                              {renderTracking(first, earliestExpiration)}
+                              <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                                ×{lot.members.length}
+                              </span>
+                            </div>
+                            {renderQuantity(lot.quantity)}
+                            <span />
+                          </div>
+                          {isExpanded &&
+                            lot.members.map((item, index) =>
+                              renderStockRow(
+                                item,
+                                `${lot.key}:${index}`,
+                                "pl-14"
+                              )
+                            )}
+                        </Fragment>
+                      );
+                    })}
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
       {adjustmentModal.isOpen && (

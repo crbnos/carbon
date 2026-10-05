@@ -2,11 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  type Database,
-  getCompanyTimeZone,
-  getLocationTimeZone
-} from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -52,6 +48,7 @@ import {
   toOperationWithJobInfo
 } from "./priority-calculator.ts";
 import type {
+  AssemblyNode,
   BaseOperation,
   Job,
   JobOperationDependency,
@@ -86,6 +83,64 @@ export function isDistinctFromAny(values: Record<string, unknown>) {
   return sql<boolean>`(${sql.join(comparisons, sql` or `)})`;
 }
 
+const PLACEMENT_CASTS = {
+  startDate: "date",
+  projectedCompletionAt: "timestamptz",
+  dueDate: "date",
+  priority: "float8",
+  workCenterId: "text",
+  hasConflict: "boolean",
+  conflictReason: "text"
+} as const;
+
+type PlacementColumn = keyof typeof PLACEMENT_CASTS;
+type PlacementWrite = Partial<Record<PlacementColumn, unknown>>;
+
+const PLACEMENT_COLUMNS = Object.keys(PLACEMENT_CASTS) as PlacementColumn[];
+
+/**
+ * Write the placements of operations that all set the same columns, in one
+ * statement. Every UPDATE is queued for the audit/search handlers, so a row
+ * whose placement is unchanged is not written at all.
+ */
+async function updatePlacements(
+  trx: Kysely<DB>,
+  rows: { id: string; placement: PlacementWrite }[],
+  userId: string
+) {
+  const columns = PLACEMENT_COLUMNS.filter(
+    (column) => rows[0]!.placement[column] !== undefined
+  );
+  const value = (column: PlacementColumn) =>
+    sql`v.${sql.ref(column)}::${sql.raw(PLACEMENT_CASTS[column])}`;
+
+  await sql`
+    update "jobOperation" as o
+    set ${sql.join([
+      ...columns.map((c) => sql`${sql.ref(c)} = ${value(c)}`),
+      sql`"updatedAt" = ${datetime.timestamp()}`,
+      sql`"updatedBy" = ${userId}`
+    ])}
+    from (values ${sql.join(
+      rows.map(
+        (row) =>
+          sql`(${sql.join([row.id, ...columns.map((c) => row.placement[c])])})`
+      )
+    )}) as v(${sql.join(["id", ...columns].map((c) => sql.ref(c)))})
+    where o."id" = v."id"
+      and ${
+        columns.length === 0
+          ? sql`true`
+          : sql`(${sql.join(
+              columns.map(
+                (c) => sql`o.${sql.ref(c)} is distinct from ${value(c)}`
+              ),
+              sql` or `
+            )})`
+      }
+  `.execute(trx);
+}
+
 /**
  * Unified Scheduling Engine
  * Orchestrates all scheduling operations for both initial scheduling and rescheduling
@@ -107,6 +162,8 @@ export class SchedulingEngine {
   private timezone: string = "UTC";
 
   private assemblyHandler: AssemblyHandler;
+  private assemblyTree: Promise<AssemblyNode | null> | null = null;
+  private allOperations: Promise<BaseOperation[]> | null = null;
   private workCenterSelector: WorkCenterSelector | null = null;
   private materialManager: MaterialManager;
   private reservationsWritten = 0;
@@ -212,7 +269,7 @@ export class SchedulingEngine {
     // "Today" (conflict detection, fallback anchor) follows the job site's
     // wall clock — scheduling is operational, not ledger-scoped.
     this.timezone = job.locationId
-      ? await getLocationTimeZone(this.db, job.locationId, this.companyId)
+      ? await this.provider.getLocationTimeZone(job.locationId)
       : await getCompanyTimeZone(this.db, this.companyId);
 
     // Initialize work center selector with location
@@ -259,12 +316,27 @@ export class SchedulingEngine {
     }
 
     // Build assembly tree and get depth
-    const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
-      this.jobId
-    );
+    const assemblyTree = await this.loadAssemblyTree();
     if (assemblyTree) {
       this.assemblyDepth = this.assemblyHandler.getAssemblyDepth(assemblyTree);
     }
+  }
+
+  /**
+   * The job's assembly tree and its full operation list are read once per
+   * run: nothing in a run changes the method structure or which operations
+   * exist, and each read was a round trip per phase per job.
+   */
+  private loadAssemblyTree(): Promise<AssemblyNode | null> {
+    this.assemblyTree ??= this.assemblyHandler.buildAssemblyTree(this.jobId);
+    return this.assemblyTree;
+  }
+
+  private loadAllOperations(): Promise<BaseOperation[]> {
+    this.allOperations ??= this.provider.getOperations(this.jobId, {
+      includeDone: true
+    });
+    return this.allOperations;
   }
 
   /**
@@ -283,43 +355,17 @@ export class SchedulingEngine {
     ];
     if (makeMethodIds.length === 0) return;
 
-    const makeMethods = await this.db
-      .selectFrom("jobMakeMethod")
-      .select(["id", "itemId"])
-      .where("id", "in", makeMethodIds)
-      .execute();
-
-    const itemIds = [
-      ...new Set(
-        makeMethods
-          .map((m) => m.itemId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    if (itemIds.length === 0) return;
-
-    const replenishments = await this.db
-      .selectFrom("itemReplenishment")
-      .select(["itemId", "leadTime"])
-      .where("itemId", "in", itemIds)
-      .execute();
+    const leadTimes = await this.provider.getMakeMethodLeadTimes(makeMethodIds);
 
     // NUMERIC columns can come back from pg as strings — coerce to a number.
     const toLeadTimeDays = (value: unknown): number => {
       const n = Number(value ?? 0);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    const leadTimeByItemId = new Map(
-      replenishments.map((r) => [r.itemId, toLeadTimeDays(r.leadTime)])
-    );
-    const leadTimeByMakeMethodId = new Map(
-      makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "") ?? 0])
-    );
 
     for (const op of this.operations) {
       if (op.jobMakeMethodId) {
-        op.assemblyLeadTime =
-          leadTimeByMakeMethodId.get(op.jobMakeMethodId) ?? 0;
+        op.assemblyLeadTime = toLeadTimeDays(leadTimes.get(op.jobMakeMethodId));
       }
     }
   }
@@ -330,14 +376,10 @@ export class SchedulingEngine {
    */
   async createDependencies(): Promise<void> {
     // Load all operations for dependency building (not just active ones)
-    const allOperations = await this.provider.getOperations(this.jobId, {
-      includeDone: true
-    });
+    const allOperations = await this.loadAllOperations();
 
     // Build assembly tree
-    const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
-      this.jobId
-    );
+    const assemblyTree = await this.loadAssemblyTree();
     if (!assemblyTree) {
       log.warning("No assembly tree found for job", { jobId: this.jobId });
       return;
@@ -476,7 +518,9 @@ export class SchedulingEngine {
             .execute();
         }
       });
+    }
 
+    if (this.persist) {
       // Unblock dependency-free operations to Ready (outside the rebuild txn so
       // the advisory lock is held only for the delete/insert). Two guards keep
       // this from RE-OPENING work that is already finished or in flight:
@@ -497,21 +541,36 @@ export class SchedulingEngine {
           this.job.status
         );
       if (jobIsOpen) {
-        for (const [opId, deps] of allDependencies) {
-          if (deps.size === 0) {
-            await this.db
-              .updateTable("jobOperation")
-              .set({ status: "Ready" })
-              .where("id", "=", opId)
-              .where("status", "not in", [
-                "Ready",
-                "Done",
-                "Canceled",
-                "In Progress",
-                "Paused"
-              ])
-              .execute();
-          }
+        const resettable = new Set(
+          allOperations
+            .filter(
+              (op) =>
+                ![
+                  "Ready",
+                  "Done",
+                  "Canceled",
+                  "In Progress",
+                  "Paused"
+                ].includes(op.status ?? "")
+            )
+            .map((op) => op.id)
+        );
+        const unblocked = [...allDependencies]
+          .filter(([opId, deps]) => deps.size === 0 && resettable.has(opId))
+          .map(([opId]) => opId);
+        if (unblocked.length > 0) {
+          await this.db
+            .updateTable("jobOperation")
+            .set({ status: "Ready" })
+            .where("id", "in", unblocked)
+            .where("status", "not in", [
+              "Ready",
+              "Done",
+              "Canceled",
+              "In Progress",
+              "Paused"
+            ])
+            .execute();
         }
       }
     }
@@ -766,7 +825,8 @@ export class SchedulingEngine {
             jobPriority: wcOp.jobPriority ?? 99,
             workCenterId: scheduled.workCenterId ?? null,
             durationHours: scheduled.durationHours ?? null,
-            createdAt: toIsoOrNull(wcOp.createdAt)
+            createdAt: toIsoOrNull(wcOp.createdAt),
+            projectedCompletionAt: scheduled.projectedCompletionAt ?? null
           };
         }
         // Operation from another job - use DB data
@@ -789,7 +849,8 @@ export class SchedulingEngine {
             machineUnit: wcOp.machineUnit ?? undefined,
             operationQuantity: wcOp.operationQuantity
           }),
-          createdAt: toIsoOrNull(wcOp.createdAt)
+          createdAt: toIsoOrNull(wcOp.createdAt),
+          projectedCompletionAt: toIsoOrNull(wcOp.projectedCompletionAt)
         };
       });
 
@@ -807,7 +868,8 @@ export class SchedulingEngine {
           jobPriority: this.job?.priority ?? 99,
           workCenterId: op.workCenterId,
           durationHours: op.durationHours ?? null,
-          createdAt: toIsoOrNull(op.createdAt)
+          createdAt: toIsoOrNull(op.createdAt),
+          projectedCompletionAt: op.projectedCompletionAt ?? null
         });
       }
     }
@@ -827,14 +889,10 @@ export class SchedulingEngine {
    */
   async assignMaterials(): Promise<void> {
     // Load all operations (including Done) to find first ops correctly
-    const allOperations = await this.provider.getOperations(this.jobId, {
-      includeDone: true
-    });
+    const allOperations = await this.loadAllOperations();
 
     // Build assembly tree
-    const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
-      this.jobId
-    );
+    const assemblyTree = await this.loadAssemblyTree();
     if (!assemblyTree) {
       return;
     }
@@ -844,13 +902,8 @@ export class SchedulingEngine {
       this.assemblyHandler.getAllJobMakeMethodIds(assemblyTree);
 
     // Get materials that need assignment
-    const materials = await this.db
-      .selectFrom("jobMaterial")
-      .select(["id", "jobMakeMethodId"])
-      .where("jobMakeMethodId", "in", makeMethodIds)
-      .where("methodType", "=", "Make to Order")
-      .where("jobOperationId", "is", null)
-      .execute();
+    const materials =
+      await this.provider.getUnassignedMakeToOrderMaterials(makeMethodIds);
 
     // Group non-rework operations by jobMakeMethodId
     const operationsByMethod = new Map<string, BaseOperation[]>();
@@ -864,6 +917,7 @@ export class SchedulingEngine {
     }
 
     // Assign first operation of each method to its materials
+    const materialIdsByFirstOp = new Map<string, string[]>();
     for (const material of materials) {
       if (!material.jobMakeMethodId) continue;
 
@@ -871,16 +925,21 @@ export class SchedulingEngine {
       const sortedOps = [...methodOps].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
-      const firstOp = sortedOps[0];
+      const firstOpId = sortedOps[0]?.id;
+      if (!firstOpId || !material.id) continue;
+      const ids = materialIdsByFirstOp.get(firstOpId) ?? [];
+      ids.push(material.id);
+      materialIdsByFirstOp.set(firstOpId, ids);
+    }
 
-      // Dry-run writes nothing (expedite what-if).
-      if (firstOp?.id && this.persist) {
-        await this.db
-          .updateTable("jobMaterial")
-          .set({ jobOperationId: firstOp.id })
-          .where("id", "=", material.id)
-          .execute();
-      }
+    // Dry-run writes nothing (expedite what-if).
+    if (!this.persist) return;
+    for (const [jobOperationId, ids] of materialIdsByFirstOp) {
+      await this.db
+        .updateTable("jobMaterial")
+        .set({ jobOperationId })
+        .where("id", "in", ids)
+        .execute();
     }
   }
 
@@ -917,6 +976,10 @@ export class SchedulingEngine {
     // re-inserted) would free this job's capacity to other jobs' replans
     // while its operations already carry the new plan.
     await this.db.transaction().execute(async (trx) => {
+      const placements = new Map<
+        string,
+        { id: string; placement: PlacementWrite }[]
+      >();
       for (const op of this.scheduledOperations.values()) {
         const originalOp = this.operations.find((o) => o.id === op.id);
         const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
@@ -936,7 +999,7 @@ export class SchedulingEngine {
         const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
         const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
 
-        const placement = {
+        const placement: PlacementWrite = {
           startDate: op.startDate,
           projectedCompletionAt: op.projectedCompletionAt ?? null,
           ...(writeDueDate ? { dueDate: needBy } : {}),
@@ -945,19 +1008,17 @@ export class SchedulingEngine {
           hasConflict: op.hasConflict,
           conflictReason: op.conflictReason
         };
+        // Rows that write the same columns go in one statement.
+        const shape = PLACEMENT_COLUMNS.filter(
+          (column) => placement[column] !== undefined
+        ).join();
+        const group = placements.get(shape);
+        if (group) group.push({ id: op.id, placement });
+        else placements.set(shape, [{ id: op.id, placement }]);
+      }
 
-        // Every UPDATE is queued for the audit/search handlers, so an op whose
-        // placement is unchanged must not be written at all.
-        await trx
-          .updateTable("jobOperation")
-          .set({
-            ...placement,
-            updatedAt: datetime.timestamp(),
-            updatedBy: this.userId
-          })
-          .where("id", "=", op.id)
-          .where(isDistinctFromAny(placement))
-          .execute();
+      for (const rows of placements.values()) {
+        await updatePlacements(trx, rows, this.userId);
       }
 
       // Rebuild this job's live capacity reservations from this run's

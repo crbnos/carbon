@@ -222,7 +222,7 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.
 - **Hooks:** `hooks/useOperation.tsx` (modal disclosures, live progress via
-  `useInterval` + `useRealtimeChannel`, active-event detection, serial selection),
+  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection, serial selection),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 
 ## Tabs

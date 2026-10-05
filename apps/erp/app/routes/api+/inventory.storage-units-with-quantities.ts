@@ -3,13 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type {
-  ClientLoaderFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import { cachedClientLoader } from "@carbon/query/cache";
+import type { LoaderFunctionArgs } from "react-router";
 import { getStorageUnitsListForLocation } from "~/modules/inventory";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.service";
-import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -69,35 +66,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return await getStorageUnitsListForLocation(client, companyId, locationId);
 }
 
-export async function clientLoader({
-  request,
-  serverLoader
-}: ClientLoaderFunctionArgs) {
-  const companyId = getCompanyId();
-
-  if (!companyId) {
-    return await serverLoader<typeof loader>();
-  }
-
-  const url = new URL(request.url);
-  const locationId = url.searchParams.get("locationId");
-  const itemId = url.searchParams.get("itemId");
-
-  const queryKey = storageUnitsQuery(
-    companyId,
-    locationId ?? null,
-    itemId ?? null
-  ).queryKey;
-  const data =
-    window?.clientCache?.getQueryData<Awaited<ReturnType<typeof loader>>>(
-      queryKey
-    );
-
-  if (!data) {
-    const serverData = await serverLoader<typeof loader>();
-    window?.clientCache?.setQueryData(queryKey, serverData);
-    return serverData;
-  }
-
-  return data;
-}
+// On-hand moves with every receipt, pick and shipment, by anyone: the cached
+// value is shown at once and always read again.
+export const clientLoader = cachedClientLoader<typeof loader>({ staleTime: 0 });

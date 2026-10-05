@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BarProgress,
@@ -44,7 +45,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
   DateTime,
@@ -209,7 +210,7 @@ const JobsTable = memo((props: JobsTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.job(row.original.id!)}>
@@ -656,13 +657,13 @@ const JobsTable = memo((props: JobsTableProps) => {
     return [...defaultColumns, ...customColumns];
   }, [params, customColumns, trackedEntities, batchesByJobId]);
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
     (selectedRows: typeof data, field: "delete", value?: string) => {

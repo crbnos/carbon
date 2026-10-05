@@ -4,10 +4,9 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
-import { labelSizes } from "@carbon/utils";
+import { labelSizes, redirect } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getCompany,
   getCompanySettings,

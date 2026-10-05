@@ -7,17 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getEmployeeType } from "~/modules/users";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -94,11 +90,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.employeeTypes,
     await flash(request, success("Successfully deleted employee type"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function DeleteEmployeeTypeRoute() {

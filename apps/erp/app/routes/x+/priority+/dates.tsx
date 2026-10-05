@@ -26,7 +26,7 @@ import {
   useLocalStorage,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import {
   endOfMonth,
   endOfWeek,
@@ -45,12 +45,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useSearchParams
-} from "react-router";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { SearchFilter } from "~/components";
 import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -30,7 +31,7 @@ import {
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlignJustify,
   LuBookMarked,
@@ -54,7 +55,7 @@ import {
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -558,13 +559,13 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
     translateTrackingType
   ]);
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
     (

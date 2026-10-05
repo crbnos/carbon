@@ -8,6 +8,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -24,9 +25,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import {
   finishValidator,
   nonScrapQuantityValidator,
@@ -78,7 +78,13 @@ export function QuantityModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<ProductionQuantity>();
+  const fetcher = useAction<ProductionQuantity>({
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+      }
+    }
+  });
   const [quantity, setQuantity] = useState(parentIsSerial ? 1 : 0);
   const [confirmedUnissued, setConfirmedUnissued] = useState(false);
   const submitted = useRef(false);
@@ -94,12 +100,6 @@ export function QuantityModal({
     complete: operation.quantityComplete,
     reworked: operation.quantityReworked ?? 0
   };
-
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
 
   const titleMap = {
     scrap: t`Log scrap for ${operation.itemReadableId}`,
@@ -170,11 +170,10 @@ export function QuantityModal({
           method="post"
           validator={validatorMap[type]}
           defaultValues={{
-            // @ts-ignore
+            // @ts-expect-error
             trackedEntityId:
               parentIsSerial || parentIsBatch ? trackedEntityId : undefined,
             jobOperationId: operation.id,
-            // @ts-ignore
             quantity: type === "finish" ? undefined : 0,
             setupProductionEventId: setupProductionEvent?.id,
             laborProductionEventId: laborProductionEvent?.id,

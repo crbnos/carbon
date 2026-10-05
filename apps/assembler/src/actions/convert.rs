@@ -9,7 +9,7 @@
 
 use crate::cache::{CachedConvert, ResultCache};
 use crate::jobs::{Done, Output};
-use crate::{admission, config, http, progress, AppState};
+use crate::{admission, config, http, progress, telemetry, AppState};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
@@ -35,7 +35,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     let progress_store = state.progress.clone();
     let admission = state.admission.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
+    telemetry::spawn_job(&job_id.clone(), "convert", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -85,7 +85,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                 let tmp_str = tmp.to_string_lossy().to_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
-                let res = tokio::task::spawn_blocking(move || {
+                let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
                     // Compacted retained raws are BinXCAF (`.xbf`) — binary, no
                     // STEP header to unit-detect (already mm); running the lossy
                     // text scan on them is wasted work at best.
@@ -119,7 +119,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                             },
                         )
                     })
-                })
+                }))
                 .await;
                 let _ = tokio::fs::remove_file(&tmp).await;
                 match res {

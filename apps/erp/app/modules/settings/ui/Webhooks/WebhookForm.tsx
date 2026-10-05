@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Boolean, Input, Select, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -17,7 +18,6 @@ import {
   HStack,
   Separator,
   toast,
-  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -153,12 +153,9 @@ const WebhookForm = ({
 export default WebhookForm;
 
 export const useWebhookTables = () => {
-  const tablesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getWebhookTables>>>();
-
-  useMount(() => {
-    tablesFetcher.load(path.to.api.webhookTables);
-  });
+  const tablesFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getWebhookTables>>
+  >(path.to.api.webhookTables);
 
   const tables = tablesFetcher.data?.data ?? [];
 

@@ -4,6 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -17,7 +18,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import {
   LuCopy,
   LuInfo,
@@ -60,13 +61,13 @@ const PurchaseInvoiceProperties = () => {
     purchaseInvoice: PurchaseInvoice;
   }>(path.to.purchaseInvoice(invoiceId));
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
 

@@ -5,6 +5,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -43,8 +44,8 @@ import { Editor } from "@carbon/react/Editor";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -549,9 +550,8 @@ const QuoteBillOfProcess = ({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={{
                 type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+                bounce: 0,
+                duration: 0.3
               }}
             >
               <OperationForm
@@ -1147,15 +1147,14 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationStepAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
 
@@ -1536,15 +1535,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -2527,7 +2525,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
@@ -2556,15 +2554,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);

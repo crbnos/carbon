@@ -8,9 +8,9 @@ import { flash } from "@carbon/auth/session.server";
 import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { pluckUnique } from "@carbon/utils";
+import { pluckUnique, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useRouteData } from "~/hooks";
 import {
@@ -51,8 +51,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   let locationId = searchParams.get("location");
 
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
+  // Three waits at most: what needs no location is read while the
+  // default location is, and everything that needs it is read together.
+  const [userDefaults, shelfLife, bomHasShelfLifeManagedInput, rulesData] =
+    await Promise.all([
+      locationId ? null : getUserDefaults(client, userId, companyId),
+      getItemShelfLife(client, itemId),
+      getBomHasShelfLifeManagedInput(client, itemId, companyId),
+      getStorageRulesDataForTarget(client, {
+        targetType: "item",
+        targetId: itemId,
+        companyId
+      })
+    ]);
+
+  if (userDefaults) {
     if (userDefaults.error) {
       throw redirect(
         path.to.part(itemId),
@@ -80,9 +93,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
-  ]);
+  let [partInventory, quantities, itemStorageUnitQuantities] =
+    await Promise.all([
+      getPickMethod(client, itemId, companyId, locationId),
+      getItemQuantities(client, itemId, companyId, locationId),
+      getItemStorageUnitQuantities(client, itemId, companyId, locationId)
+    ]);
 
   if (partInventory.error || !partInventory.data) {
     const insertPickMethod = await upsertPickMethod(client, {
@@ -115,23 +131,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const [
-    quantities,
-    itemStorageUnitQuantities,
-    shelfLife,
-    bomHasShelfLifeManagedInput,
-    rulesData
-  ] = await Promise.all([
-    getItemQuantities(client, itemId, companyId, locationId),
-    getItemStorageUnitQuantities(client, itemId, companyId, locationId),
-    getItemShelfLife(client, itemId),
-    getBomHasShelfLifeManagedInput(client, itemId, companyId),
-    getStorageRulesDataForTarget(client, {
-      targetType: "item",
-      targetId: itemId,
-      companyId
-    })
-  ]);
   if (quantities.error) {
     throw redirect(
       path.to.items,

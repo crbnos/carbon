@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -411,22 +412,20 @@ export function BatchBuilder({
     processes
   ]);
 
-  const candidatesFetcher = useFetcher<CandidatesResponse>();
   const submitFetcher = useFetcher<{
     success?: boolean;
     message?: string;
     batchId?: string | null;
   }>();
 
-  // Load candidates whenever the scope is complete. Only the scope drives the
-  // fetch — the fetcher's `.load` identity is unstable and must not be a dep.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — scope-only trigger
-  useEffect(() => {
-    if (!locationId || !processId) return;
-    candidatesFetcher.load(
-      path.to.api.batchableOperations(locationId, processId)
-    );
-  }, [locationId, processId]);
+  // Candidates for the scope, once it is complete. `staleTime: 0`: operations
+  // move on the shop floor, so each scope change asks again.
+  const candidatesFetcher = useLoaderQuery<CandidatesResponse>(
+    locationId && processId
+      ? path.to.api.batchableOperations(locationId, processId)
+      : null,
+    { staleTime: 0 }
+  );
 
   // A scope change invalidates the current selection and filters.
   const resetComposition = useCallback(() => {
@@ -827,7 +826,7 @@ export function BatchBuilder({
   const isSubmitting = submitFetcher.state !== "idle";
   // Output lots are planned here; a batch never reaches the floor without them.
   const lotPlanIncomplete = outputLotsProblem(selected, outputLots) !== null;
-  const isLoading = candidatesFetcher.state !== "idle";
+  const isLoading = candidatesFetcher.isFetching;
 
   const locationOptions = useMemo(
     () =>

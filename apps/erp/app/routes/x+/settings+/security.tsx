@@ -44,12 +44,13 @@ import {
   Switch,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useEffect, useState } from "react";
 import { LuShieldCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
+import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";

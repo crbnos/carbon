@@ -146,6 +146,26 @@
  * - ring: v4 default is 1px, restore 3px default
  */
 @layer base {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Reduced motion keeps the fades and drops the movement: the enter/exit
+     utilities read these variables, so zoom and slide collapse to nothing. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      --tw-enter-scale: 1 !important;
+      --tw-exit-scale: 1 !important;
+      --tw-enter-translate-x: 0 !important;
+      --tw-enter-translate-y: 0 !important;
+      --tw-exit-translate-x: 0 !important;
+      --tw-exit-translate-y: 0 !important;
+    }
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;

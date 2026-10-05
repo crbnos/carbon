@@ -30,12 +30,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";

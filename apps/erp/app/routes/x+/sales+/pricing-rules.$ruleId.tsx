@@ -6,8 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   duplicatePricingRule,
   getPricingRule,
@@ -103,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditPricingRuleRoute() {
   const { pricingRule } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   if (!pricingRule) return null;
 
@@ -134,7 +136,7 @@ export default function EditPricingRuleRoute() {
     <PricingRuleForm
       key={pricingRule.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

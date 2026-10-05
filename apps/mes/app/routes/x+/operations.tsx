@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { useChangedRows } from "@carbon/query";
 import {
   Button,
   CarbonPulse,
@@ -24,10 +25,9 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -38,7 +38,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuFactory, LuSettings2, LuTriangleAlert, LuX } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect, useFetcher, useLoaderData } from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
@@ -59,7 +59,12 @@ import {
 import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["job", "jobOperation"]
+};
 
 const log = getLogger("mes");
 
@@ -427,7 +432,7 @@ export default function ScheduleRoute() {
   return (
     <ClientOnly
       fallback={
-        <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
+        <div className="flex h-dvh w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
           <CarbonPulse />
         </div>
       }
@@ -850,84 +855,59 @@ function useProgressByOperation(
     }
   }, [productionEventsByOperation]);
 
-  useRealtimeChannel({
-    topic: `kanban-schedule:${companyId}`,
-    dependencies: [items.length],
-    setup(channel) {
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=in.(${items.map((item) => item.id).join(",")})`
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "UPDATE": {
-                const { new: updated } = payload;
-                setItems((prevItems: Item[]) =>
-                  sortItems(
-                    prevItems.map((item: Item) => {
-                      if (item.id === updated.id) {
-                        return {
-                          ...item,
-                          columnId: updated.workCenterId,
-                          priority: updated.priority
-                        };
-                      }
-                      return item;
-                    })
-                  )
-                );
-                break;
-              }
-              case "DELETE": {
-                const { old: deleted } = payload;
-                setItems((prevItems: Item[]) =>
-                  sortItems(
-                    prevItems.filter((item: Item) => item.id !== deleted.id)
-                  )
-                );
-                break;
-              }
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `companyId=eq.${companyId}`
-          },
-          (payload) => {
-            if (payload.new) {
-              const event = payload.new as Event;
-              if (items.some((item) => item.id === event.jobOperationId)) {
-                setProductionEventsByOperation((prev) => ({
-                  ...prev,
-                  [event.jobOperationId]: [
-                    ...(prev[event.jobOperationId] ?? []),
-                    event
-                  ]
-                }));
-              }
-            } else if (payload.old) {
-              const event = payload.old as Event;
-              if (items.some((item) => item.id === event.jobOperationId)) {
-                setProductionEventsByOperation((prev) => ({
-                  ...prev,
-                  [event.jobOperationId]: (
-                    prev[event.jobOperationId] ?? []
-                  ).filter((e) => e.id !== event.id)
-                }));
-              }
-            }
-          }
+  useChangedRows<{ id: string; workCenterId: string; priority: number }>({
+    companyId,
+    table: "jobOperation",
+    columns: "id, workCenterId, priority",
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        setItems((prevItems: Item[]) =>
+          sortItems(prevItems.filter((item: Item) => !ids.includes(item.id)))
         );
+        return;
+      }
+      const changed = new Map(rows.map((row) => [row.id, row]));
+      setItems((prevItems: Item[]) =>
+        sortItems(
+          prevItems.map((item: Item) => {
+            const updated = changed.get(item.id);
+            return updated
+              ? {
+                  ...item,
+                  columnId: updated.workCenterId,
+                  priority: updated.priority
+                }
+              : item;
+          })
+        )
+      );
+    }
+  });
+
+  useChangedRows<Event>({
+    companyId,
+    table: "productionEvent",
+    onChange: ({ op, ids, rows }) => {
+      setProductionEventsByOperation((prev) => {
+        if (op === "DELETE") {
+          return Object.fromEntries(
+            Object.entries(prev).map(([operationId, events]) => [
+              operationId,
+              events.filter((event) => !ids.includes(event.id))
+            ])
+          );
+        }
+        const next = { ...prev };
+        for (const row of rows) {
+          if (!row.jobOperationId) continue;
+          if (!items.some((item) => item.id === row.jobOperationId)) continue;
+          const events = next[row.jobOperationId] ?? [];
+          next[row.jobOperationId] = events.some((event) => event.id === row.id)
+            ? events.map((event) => (event.id === row.id ? row : event))
+            : [...events, row];
+        }
+        return next;
+      });
     }
   });
 

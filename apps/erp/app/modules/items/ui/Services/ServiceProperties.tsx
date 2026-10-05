@@ -4,6 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { InputControlled, Select, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -18,9 +19,9 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect } from "react";
+import { Suspense, useCallback } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
-import { Await, Link, useFetcher, useParams } from "react-router";
+import { Await, Link, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon } from "~/components";
@@ -97,13 +98,13 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
 
   const supplierParts = routeData?.supplierParts ?? [];
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (

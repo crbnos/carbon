@@ -20,10 +20,14 @@ import { inngest } from "../../client";
 // Re-runs absorb new children into an existing unread digest for the same
 // group instead of creating a new digest each pass — that keeps the topbar
 // to one entry per topic regardless of how often the cron fires.
-const DIGEST_THRESHOLD = 5;
+// The threshold and the age below are repeated in
+// `util.notification_digest_has_work` (the migration that defines it). Change
+// both: a stricter rule there leaves these digests unmade.
+// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+export const DIGEST_THRESHOLD = 5;
 // Minutes. Set to 0 for instant testing; production target is ~60 so users
 // get a chance to see live notifications before they roll up.
-const DIGEST_MIN_AGE_MIN = 60;
+export const DIGEST_MIN_AGE_MIN = 60;
 const DIGEST_MAX_CANDIDATES = 5000;
 
 type Candidate = {
@@ -63,8 +67,11 @@ function bucketKey(userId: string, companyId: string, topic: string): string {
 }
 
 export const notificationDigestFunction = inngest.createFunction(
-  { id: "notification-digest", retries: 2 },
-  { cron: "*/15 * * * *" },
+  // Woken by the database, not the clock: pg_cron asks every 15 minutes
+  // whether a run would write anything (`util.notification_digest_has_work`)
+  // and only then sends this event.
+  { id: "notification-digest", retries: 2, concurrency: { limit: 1 } },
+  { event: "carbon/notification-digest.process" },
   async ({ step, logger }) => {
     const client = getCarbonServiceRole();
 

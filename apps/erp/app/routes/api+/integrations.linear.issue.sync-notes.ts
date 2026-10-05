@@ -17,7 +17,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunction } from "react-router";
 import { data } from "react-router";
 import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import { getActionTaskWithParent } from "~/services/action-task.server";
+import { getActionTaskWithParent } from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-sync-notes");
 

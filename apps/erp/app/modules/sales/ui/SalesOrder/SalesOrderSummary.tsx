@@ -35,7 +35,7 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import {
   LuChevronRight,
@@ -387,9 +387,9 @@ function LineItems({
         return (
           <motion.div
             key={line.id}
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="border-b border-input py-6 w-full"
           >
             <HStack spacing={4} className="items-start">

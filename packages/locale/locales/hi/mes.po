@@ -168,13 +168,16 @@ msgid "All scrap"
 msgstr "सभी स्क्रैप"
 
 msgid "All steps"
-msgstr ""
+msgstr "सभी चरण"
 
 msgid "Allocate failed units"
 msgstr "विफल इकाइयों को आवंटित करें"
 
 msgid "Allocate units"
 msgstr "इकाइयों को आवंटित करें"
+
+msgid "Appearance"
+msgstr "दिखावट"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "क्या आप वाकई इस चरण को हटाना चाहते हैं?"
@@ -310,8 +313,14 @@ msgstr "स्टेशन डिफ़ॉल्ट को साफ़ कर�
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
 
+msgid "Clock out"
+msgstr "कार्य समाप्त"
+
 msgid "Clock Out"
 msgstr "कार्य समाप्त"
+
+msgid "Clocked in"
+msgstr "समय दर्ज"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से घड़ी चालू है"
@@ -417,8 +426,8 @@ msgstr "वर्तमान कार्य"
 msgid "Customer"
 msgstr "ग्राहक"
 
-msgid "Dark Mode"
-msgstr "डार्क मोड"
+msgid "Dark"
+msgstr "गहरा"
 
 msgid "Date"
 msgstr "तारीख"
@@ -520,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "डुप्लिकेट बैच संख्या"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "डुप्लिकेट करें या कॉपी करें"
 
 msgid "Duplicate serial number"
 msgstr "डुप्लिकेट सीरियल नंबर"
@@ -719,7 +728,7 @@ msgid "in {0}"
 msgstr "{0} में"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "खुले मेनू में"
 
 msgid "In Progress"
 msgstr "प्रगति में"
@@ -810,6 +819,9 @@ msgstr "इस पृष्ठ को छोड़ें"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
+
+msgid "Light"
+msgstr "हल्का"
 
 msgid "lines"
 msgstr "लाइनें"
@@ -1150,7 +1162,7 @@ msgstr "खुली जॉब्स"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "सब-असेंबली {0} खोलें: {1}"
 
 msgid "Operations"
 msgstr "ऑपरेशन"
@@ -1241,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर आइटम, {substitutedAssemblies} असेंबलीज के लिए"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "पिन करें या अनपिन करें"
 
 msgid "Pin Out"
 msgstr "पिन आउट"
@@ -1371,7 +1383,7 @@ msgid "Remove part"
 msgstr "पार्ट निकालें"
 
 msgid "Rename"
-msgstr ""
+msgstr "नाम बदलें"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "सब-असेंबली को फिर से खोलें और एक रिप्लेसमेंट इकाई बनाएँ"
@@ -1562,8 +1574,8 @@ msgstr "सत्र लॉक किया गया"
 msgid "Set Clock Out"
 msgstr "कार्य समाप्ति सेट करें"
 
-msgid "Set clock-out time"
-msgstr "घड़ी बंद करने का समय सेट करें"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "वह समय निर्धारित करें जब आपने काम करना बंद किया, या स्वीकार करें कि आप अभी भी काम कर रहे हैं।"
 
 msgid "Set up in Carbon"
 msgstr "Carbon में सेट अप करें"
@@ -1661,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "सब-असेंबली"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "सब-असेंबली {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
@@ -1686,6 +1698,9 @@ msgstr "समर्थन आवश्यक"
 
 msgid "Switch Operator"
 msgstr "ऑपरेटर स्विच करें"
+
+msgid "System"
+msgstr "सिस्टम"
 
 msgid "Tag"
 msgstr "टैग"
@@ -1867,7 +1882,7 @@ msgstr "पूर्णता पर स्वचालित रूप से �
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "{0} · {1} का उपयोग करता है"
 
 msgid "Value"
 msgstr "मान"
@@ -1879,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "रखरखाव कार्य देखें"
 
 msgid "View or open"
-msgstr ""
+msgstr "देखें या खोलें"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
@@ -1904,9 +1919,6 @@ msgstr "कार्य निर्देश"
 
 msgid "Yes"
 msgstr "हां"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आप <0/> पर घड़ी में आए हैं। आप नीचे अपने घड़ी से बाहर का समय संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"

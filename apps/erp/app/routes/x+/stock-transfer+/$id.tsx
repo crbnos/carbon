@@ -7,13 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { Outlet, useLoaderData, useParams } from "react-router";
 import { PanelProvider } from "~/components/Layout";
 import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
@@ -23,6 +23,10 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "stockTransfer", column: "id", param: "id" },
+    { table: "stockTransferLine", column: "stockTransferId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Stock Transfers`, to: path.to.stockTransfers },
     (data) => data?.stockTransfer?.stockTransferId

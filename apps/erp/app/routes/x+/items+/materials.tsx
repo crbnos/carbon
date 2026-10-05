@@ -6,9 +6,10 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { getMaterials } from "~/modules/items";
 import { MaterialsTable } from "~/modules/items/ui/Materials";
 import { getTagsList } from "~/modules/shared";
@@ -17,6 +18,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["item"],
   breadcrumb: msg`Materials`,
   to: path.to.materials
 };

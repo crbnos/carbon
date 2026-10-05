@@ -6,13 +6,11 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   batchRuleInitialValues,
@@ -24,7 +22,6 @@ import {
 } from "~/modules/resources";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -149,18 +146,10 @@ export async function action({ request }: ActionFunctionArgs) {
   return modal ? createProcess : redirect(path.to.processes);
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    processesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
-}
-
 export default function ProcessRoute() {
   const { process } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const initialValues = {
     id: process.id!,
@@ -168,7 +157,7 @@ export default function ProcessRoute() {
     processType: process.processType ?? "Process",
     defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
     workCenters: process.workCenters ?? [],
-    // @ts-ignore
+    // @ts-expect-error
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
     completeAllOnScan: process.completeAllOnScan ?? false,

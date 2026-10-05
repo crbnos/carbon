@@ -22,6 +22,7 @@ import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuRefreshCw } from "react-icons/lu";
 import { useUser } from "~/hooks";
+import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
 import { getPrivateUrl } from "~/utils/path";
 
 const logger = getLogger("erp", "itemthumnailupload");
@@ -100,44 +101,20 @@ export function ItemThumbnailUpload({
   const onRegenerate = useCallback(async () => {
     if (!modelId || !carbon) return;
     setIsRegenerating(true);
+    toast.info(t`Regenerating thumbnail…`);
     try {
-      // Snapshot the current model thumbnail so we can detect the new one.
-      const before = await carbon
-        .from("modelUpload")
-        .select("thumbnailPath")
-        .eq("id", modelId)
-        .maybeSingle();
-      const beforePath = before.data?.thumbnailPath ?? null;
-
-      const body = new FormData();
-      body.append("modelUploadId", modelId);
-      const res = await fetch("/api/model/thumbnail", {
-        method: "POST",
-        body
+      const path = await regenerateModelThumbnail({
+        carbon,
+        modelId,
+        isActive: () => mountedRef.current
       });
-      if (!res.ok) throw new Error(`thumbnail ${res.status}`);
-      toast.info(t`Regenerating thumbnail…`);
-
-      // The render runs async in the background. Poll for the fresh path (unique
-      // per generation) and swap the image in when it lands; bounded so it never
-      // spins forever.
-      const deadline = Date.now() + 90_000;
-      while (mountedRef.current && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 3000));
-        if (!mountedRef.current) return;
-        const cur = await carbon
-          .from("modelUpload")
-          .select("thumbnailPath")
-          .eq("id", modelId)
-          .maybeSingle();
-        const curPath = cur.data?.thumbnailPath ?? null;
-        if (curPath && curPath !== beforePath) {
-          setThumbnailPath(getPrivateUrl(curPath));
-          toast.success(t`Thumbnail updated`);
-          return;
-        }
+      if (!mountedRef.current) return;
+      if (path) {
+        setThumbnailPath(getPrivateUrl(path));
+        toast.success(t`Thumbnail updated`);
+      } else {
+        toast.info(t`Thumbnail is still generating`);
       }
-      if (mountedRef.current) toast.info(t`Thumbnail is still generating`);
     } catch {
       if (mountedRef.current) toast.error(t`Failed to regenerate thumbnail`);
     } finally {

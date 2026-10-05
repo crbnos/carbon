@@ -16,7 +16,7 @@ fn main() {
         .unwrap_or(thumbnail::DEFAULT_SIZE);
     let glb = std::fs::read(input).expect("read GLB");
     let started = std::time::Instant::now();
-    let png = thumbnail::render_png(&glb, size).expect("render");
+    let png = thumbnail::render_png(&glb, size, thumbnail::DEFAULT_DIRECTION).expect("render");
     eprintln!("{} bytes in {:?}", png.len(), started.elapsed());
     std::fs::write(output, png).expect("write PNG");
 }

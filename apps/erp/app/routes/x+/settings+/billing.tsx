@@ -28,18 +28,12 @@ import {
   VStack
 } from "@carbon/react";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, redirectExternal } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  Form,
-  redirect,
-  useLoaderData,
-  useNavigation
-} from "react-router";
+import { data, Form, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 import { usePermissions, useUser } from "~/hooks";
 import type { Handle } from "~/utils/handle";
@@ -137,7 +131,7 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         priceIds
       });
-      return redirect(billingPortalUrl, 301);
+      return redirectExternal(billingPortalUrl, 301);
     } catch (err) {
       logger.error("Failed to get billing portal URL", { error: err });
       return data(

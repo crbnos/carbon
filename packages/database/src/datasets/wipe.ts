@@ -62,6 +62,10 @@ const PRESERVED_TABLES = new Set([
   "oauthCode",
   "oauthToken",
   "searchIndexRegistry",
+  // The change log open clients read to learn what the wipe just deleted: every
+  // delete below writes to it, so it can never be empty afterwards. It prunes
+  // itself by age, and backups already leave it alone (STRUCTURAL_TABLES).
+  "tableChange",
   "tableView",
   "userAttributeCategory",
   "userModulePreference",

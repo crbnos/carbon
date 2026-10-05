@@ -68,7 +68,19 @@ import { isPickingListLocked } from "~/services/models";
 import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    { table: "pickingList", column: "id", param: "pickingListId" },
+    {
+      table: "pickingListLine",
+      column: "pickingListId",
+      param: "pickingListId"
+    }
+  ]
+};
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
   isUnaffectedByNavigation(args, { params: ["pickingListId"] })

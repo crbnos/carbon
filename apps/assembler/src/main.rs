@@ -30,6 +30,7 @@ mod http;
 mod jobs;
 mod progress;
 mod run;
+mod telemetry;
 
 use axum::{
     extract::{Path, Query, State},
@@ -103,6 +104,7 @@ pub async fn build_state() -> AppState {
 }
 
 async fn serve() {
+    telemetry::init();
     http::clear_stale_sources();
     let state = build_state().await;
     let admission = state.admission.clone();
@@ -137,6 +139,7 @@ async fn serve() {
         // entirely with `Accept-Encoding: identity`. Skip bodies under 1KB
         // (pointer-sized job envelopes) where a frame would cost more than it saves.
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(1024)))
+        .layer(axum::middleware::from_fn(telemetry::http_span))
         .with_state(state);
 
     eprintln!(
@@ -167,6 +170,7 @@ async fn serve() {
     // in shutdown_signal force-exits a wedged one.
     eprintln!("assembler draining in-flight jobs");
     admission.drain().await;
+    telemetry::shutdown();
     eprintln!("assembler drained cleanly; exiting");
 }
 
@@ -194,6 +198,7 @@ async fn shutdown_signal() {
     tokio::spawn(async move {
         tokio::time::sleep(grace).await;
         eprintln!("assembler shutdown grace elapsed; forcing exit");
+        telemetry::shutdown();
         std::process::exit(0);
     });
 }
@@ -398,6 +403,7 @@ async fn lambda_dispatch(
             spec["token"] = k.into();
         }
     }
+    telemetry::inject(&mut spec);
     if let Err(m) = dispatch::self_invoke(&spec).await {
         state
             .jobs
@@ -790,7 +796,8 @@ async fn create_thumbnail(
     respond(&state, &headers, &job_id, "thumbnail", sync).await
 }
 
-/// `output: { path?, size? }` — shared by the HTTP body and the run-job spec.
+/// `output: { path?, size?, direction? }` — shared by the HTTP body and the
+/// run-job spec. `direction` is `[x, y, z]`, model towards camera.
 pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::ThumbnailReq {
     actions::thumbnail::ThumbnailReq {
         source_url: source_url.to_string(),
@@ -798,6 +805,21 @@ pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::Th
             .as_u64()
             .map_or(thumbnail::DEFAULT_SIZE, |s| s.min(u32::MAX as u64) as u32),
         path: output["path"].as_str().map(str::to_string),
+        direction: view_direction(&output["direction"]),
+    }
+}
+
+/// Three finite numbers that are not all zero, else the viewer's home direction.
+fn view_direction(value: &Value) -> [f32; 3] {
+    let parsed: Option<Vec<f32>> = value
+        .as_array()
+        .filter(|a| a.len() == 3)
+        .and_then(|a| a.iter().map(|n| n.as_f64().map(|n| n as f32)).collect());
+    match parsed.as_deref() {
+        Some(&[x, y, z]) if [x, y, z].iter().all(|c| c.is_finite()) && (x, y, z) != (0.0, 0.0, 0.0) => {
+            [x, y, z]
+        }
+        _ => thumbnail::DEFAULT_DIRECTION,
     }
 }
 

@@ -22,12 +22,21 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
 import { LuChevronsUpDown, LuHouse } from "react-icons/lu";
-import { Form, Link } from "react-router";
+import { Form, Link, useLocation, useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
 import type { Company } from "~/modules/settings";
 import { path } from "~/utils/path";
 
+// Switching company keeps a page that exists in every company (a list, a
+// settings page). A record's page does not, so that goes to the home page.
+export function useCompanySwitchRedirect() {
+  const params = useParams();
+  const { pathname, search } = useLocation();
+  return Object.keys(params).length === 0 ? `${pathname}${search}` : undefined;
+}
+
 const CompanySwitcher = () => {
+  const switchRedirect = useCompanySwitchRedirect();
   const { t } = useLingui();
   const routeData = useRouteData<{ company: Company; companies: Company[] }>(
     path.to.authenticatedRoot
@@ -154,6 +163,13 @@ const CompanySwitcher = () => {
                     method="post"
                     action={path.to.companySwitch(c.companyId!)}
                   >
+                    {switchRedirect && (
+                      <input
+                        type="hidden"
+                        name="redirectTo"
+                        value={switchRedirect}
+                      />
+                    )}
                     <DropdownMenuItem
                       className="flex items-center justify-between w-full"
                       asChild

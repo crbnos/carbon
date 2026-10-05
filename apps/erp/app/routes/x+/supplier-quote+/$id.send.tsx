@@ -9,12 +9,12 @@ import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getSupplierContact,
   getSupplierInteractionDocuments,
-  getSupplierInteractionLineDocuments,
+  getSupplierInteractionLineAttachments,
   getSupplierQuote,
   getSupplierQuoteLines,
   sendSupplierQuote,
@@ -157,32 +157,13 @@ export async function action(args: ActionFunctionArgs) {
         const lines = await getSupplierQuoteLines(client, id);
 
         if (lines.data) {
-          for (const line of lines.data) {
-            const docs = await getSupplierInteractionLineDocuments(
+          attachments.push(
+            ...(await getSupplierInteractionLineAttachments(
               client,
               companyId,
-              line.id ?? ""
-            );
-
-            for (const doc of docs) {
-              const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;
-              const { data, error } = await storage(client)
-                .company(companyId)
-                .createSignedUrl(storagePath, 3600);
-
-              if (data) {
-                attachments.push({
-                  filename: doc.name,
-                  path: data.signedUrl
-                });
-              } else {
-                logger.error("Failed to create signed URL for attachment", {
-                  storagePath,
-                  error
-                });
-              }
-            }
-          }
+              lines.data.flatMap((line) => (line.id ? [line.id] : []))
+            ))
+          );
         }
 
         const requestUrl = new URL(request.url);

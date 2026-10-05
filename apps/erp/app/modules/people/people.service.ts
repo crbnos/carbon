@@ -335,42 +335,37 @@ export async function getPeople(
       attributeCategories.data.reduce<PersonAttributes>((acc, category) => {
         if (!category.userAttribute || !Array.isArray(category.userAttribute))
           return acc;
-        category.userAttribute.forEach(
-          // @ts-ignore
-          (attribute) => {
-            if (
-              attribute.userAttributeValue &&
-              Array.isArray(attribute.userAttributeValue) &&
-              !Array.isArray(attribute.attributeDataType)
-            ) {
-              const userAttributeId = attribute.id;
-              const userAttributeValue = attribute.userAttributeValue.find(
-                // @ts-ignore
-                (attributeValue) => attributeValue.userId === userId
-              );
-              const value =
-                typeof userAttributeValue?.valueBoolean === "boolean"
-                  ? userAttributeValue.valueBoolean
-                  : userAttributeValue?.valueDate ||
-                    userAttributeValue?.valueNumeric ||
-                    userAttributeValue?.valueText ||
-                    userAttributeValue?.valueUser ||
-                    userAttributeValue?.valueFile;
+        category.userAttribute.forEach((attribute) => {
+          if (
+            attribute.userAttributeValue &&
+            Array.isArray(attribute.userAttributeValue) &&
+            !Array.isArray(attribute.attributeDataType)
+          ) {
+            const userAttributeId = attribute.id;
+            const userAttributeValue = attribute.userAttributeValue.find(
+              (attributeValue) => attributeValue.userId === userId
+            );
+            const value =
+              typeof userAttributeValue?.valueBoolean === "boolean"
+                ? userAttributeValue.valueBoolean
+                : userAttributeValue?.valueDate ||
+                  userAttributeValue?.valueNumeric ||
+                  userAttributeValue?.valueText ||
+                  userAttributeValue?.valueUser ||
+                  userAttributeValue?.valueFile;
 
-              if (value && userAttributeValue?.id) {
-                acc[userAttributeId] = {
-                  userAttributeValueId: userAttributeValue.id,
-                  // @ts-ignore
-                  dataType: attribute.attributeDataType?.id as DataType,
-                  value,
-                  user: !Array.isArray(userAttributeValue.user)
-                    ? userAttributeValue.user
-                    : undefined
-                };
-              }
+            if (value && userAttributeValue?.id) {
+              acc[userAttributeId] = {
+                userAttributeValueId: userAttributeValue.id,
+                dataType: attribute.attributeDataType?.id as DataType,
+                value,
+                user: !Array.isArray(userAttributeValue.user)
+                  ? userAttributeValue.user
+                  : undefined
+              };
             }
           }
-        );
+        });
         return acc;
       }, {});
 

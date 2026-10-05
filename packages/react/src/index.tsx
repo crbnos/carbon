@@ -148,6 +148,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "./Dropdown";
+import { Enumerable } from "./Enumerable";
 import { File } from "./File";
 import {
   FormControl,
@@ -402,6 +403,7 @@ export {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Badge,
+  Enumerable,
   BadgeCloseButton,
   Button,
   Card,

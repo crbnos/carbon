@@ -9,8 +9,8 @@ import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionDispositionValidator } from "~/services/models";
 import {

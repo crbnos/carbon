@@ -5,8 +5,8 @@
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "react-router";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 

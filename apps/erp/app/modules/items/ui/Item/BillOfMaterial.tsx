@@ -33,7 +33,7 @@ import {
 } from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -1126,7 +1126,7 @@ function MaterialForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div

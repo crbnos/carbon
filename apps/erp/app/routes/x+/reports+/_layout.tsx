@@ -7,6 +7,8 @@ import { Outlet } from "react-router";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
 export const handle: Handle = {
   // Report pages live in their own full-screen namespace, not under the
   // accounting module layout, so surface the full Accounting > Reports trail

@@ -20,11 +20,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { plmReleaseControl } from "~/modules/items";
 import {
@@ -36,7 +37,6 @@ import {
   updateMetricSettings,
   updatePlmReleaseControlSetting
 } from "~/modules/settings";
-
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

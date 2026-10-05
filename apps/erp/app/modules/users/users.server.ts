@@ -29,8 +29,8 @@ import {
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "react-router";
 import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users";

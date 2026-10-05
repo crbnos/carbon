@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
@@ -14,8 +14,9 @@ import {
   PrefetchLink,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
-import { type ActionFunctionArgs, redirect, useLoaderData } from "react-router";
+import { type ActionFunctionArgs, useLoaderData } from "react-router";
 import {
   OnboardingCard,
   OnboardingCardContent,
@@ -34,7 +35,7 @@ import { addressValidator, getCompany } from "~/modules/settings";
 import {
   getOnboardingDraft,
   setOnboardingDraft
-} from "~/services/onboarding-draft.server";
+} from "~/modules/shared/shared.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -74,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
     company: companyData
   });
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root), {
+  throw redirect(next || path.to.onboarding.root, {
     headers: [["Set-Cookie", draftCookie]]
   });
 }
