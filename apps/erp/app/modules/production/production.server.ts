@@ -9,6 +9,8 @@ import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
+import { isJobLocked } from "./production.models";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
@@ -231,4 +233,118 @@ export async function releaseBatchMemberJobs({
     userId,
     purchaseOrdersBySupplierId: purchaseOrders
   });
+}
+
+/**
+ * Write the priorities (and work center) a drop on the schedule board gives
+ * several operations of one column, as one all-or-nothing statement. The
+ * checks are the single-operation update's, made once for the set: every
+ * operation exists and is open, its job is unlocked and at the work center's
+ * location, and the work center runs its process.
+ */
+export async function reorderScheduleOperations(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    columnId: string;
+    updates: { id: string; priority: number }[];
+  }
+): Promise<
+  | { success: true; workCenterChanged: boolean }
+  | { success: false; message: string }
+> {
+  const { companyId, userId, columnId, updates } = args;
+  const invalid = {
+    success: false as const,
+    message: "Invalid scheduling request"
+  };
+  const ids = updates.map((u) => u.id);
+
+  const [operations, workCenter] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id, jobId, processId, status, workCenterId")
+      .eq("companyId", companyId)
+      .in("id", ids),
+    client
+      .from("workCenter")
+      .select("id, active, locationId")
+      .eq("id", columnId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (
+    operations.error ||
+    workCenter.error ||
+    !workCenter.data?.active ||
+    operations.data.length !== ids.length ||
+    operations.data.some((o) => o.status === "Done" || o.status === "Canceled")
+  ) {
+    return invalid;
+  }
+
+  const destination = workCenter.data;
+  const jobIds = [...new Set(operations.data.map((o) => o.jobId))];
+  const processIds = [...new Set(operations.data.map((o) => o.processId))];
+  const [jobs, processes] = await Promise.all([
+    client
+      .from("job")
+      .select("id, locationId, status")
+      .eq("companyId", companyId)
+      .in("id", jobIds),
+    client
+      .from("workCenterProcess")
+      .select("processId")
+      .eq("workCenterId", destination.id)
+      .eq("companyId", companyId)
+      .in("processId", processIds)
+  ]);
+  if (
+    jobs.error ||
+    processes.error ||
+    jobs.data.length !== jobIds.length ||
+    jobs.data.some(
+      (j) => isJobLocked(j.status) || j.locationId !== destination.locationId
+    ) ||
+    new Set(processes.data.map((p) => p.processId)).size !== processIds.length
+  ) {
+    return invalid;
+  }
+
+  try {
+    await db.transaction().execute(async (trx) => {
+      const written = await sql<{ id: string }>`
+        UPDATE "jobOperation" AS o
+        SET "workCenterId" = ${destination.id},
+          "priority" = v."priority"::float8,
+          "updatedBy" = ${userId},
+          "updatedAt" = ${datetime.timestamp()}
+        FROM (VALUES ${sql.join(
+          updates.map((u) => sql`(${u.id}, ${u.priority})`)
+        )}) AS v("id", "priority")
+        WHERE o."id" = v."id"
+          AND o."companyId" = ${companyId}
+          AND o."status" NOT IN ('Done', 'Canceled')
+        RETURNING o."id"
+      `.execute(trx);
+      // An operation that finished or left since the read: none are written.
+      if (written.rows.length !== ids.length) {
+        throw new Error("Operation unavailable");
+      }
+    });
+  } catch (err) {
+    return {
+      success: false,
+      message: getErrorMessage(err, "Failed to reorder operations")
+    };
+  }
+
+  return {
+    success: true,
+    workCenterChanged: operations.data.some(
+      (o) => o.workCenterId !== destination.id
+    )
+  };
 }

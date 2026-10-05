@@ -60,7 +60,6 @@ import {
   isDateColumnId
 } from "../date-utils";
 import type { JobItem } from "../types";
-import { useScheduleToday } from "../useScheduleToday";
 
 interface Progress {
   totalDuration: number;
@@ -133,8 +132,13 @@ const JobCardBody = memo(function JobCardBody({
   const { t } = useLingui();
   const submit = useSubmit();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { displaySettings, selectedGroup, setSelectedGroup, tags, columnIds } =
-    useKanban();
+  const {
+    displaySettings,
+    selectedGroup,
+    setSelectedGroup,
+    columnIds,
+    scheduleToday
+  } = useKanban();
 
   const isHighlighted = selectedGroup === item.jobReadableId;
 
@@ -150,7 +154,6 @@ const JobCardBody = memo(function JobCardBody({
   const [customers] = useCustomers();
 
   const customer = customers.find((s) => s.id === item.customerId);
-  const scheduleToday = useScheduleToday();
   const dueDate = getDateOnly(item.dueDate);
   const isDueDateValid = Boolean(dueDate && isDateColumnId(dueDate));
   const dueDateValue = isDueDateValid && dueDate ? dueDate : null;

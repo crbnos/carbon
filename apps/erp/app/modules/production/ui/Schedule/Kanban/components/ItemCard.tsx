@@ -60,7 +60,6 @@ import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import type { Item, OperationItem } from "../types";
 import { isBatchItem } from "../types";
-import { useScheduleToday } from "../useScheduleToday";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 interface Progress {
@@ -190,8 +189,8 @@ const OperationCardBody = memo(function OperationCardBody({
 }) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings, setSelectedGroup, tags } = useKanban();
-  const scheduleToday = useScheduleToday();
+  const { displaySettings, setSelectedGroup, tags, scheduleToday } =
+    useKanban();
 
   const isOverdue =
     item.deadlineType !== "No Deadline" && item.dueDate

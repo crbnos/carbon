@@ -45,7 +45,6 @@ import {
 } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import type { BatchItem, OperationItem } from "../types";
-import { useScheduleToday } from "../useScheduleToday";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 // The order a batch summary reports its members' statuses in: the most "live"
@@ -108,8 +107,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
 }: BatchItemCardProps & SortableCardProps) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings } = useKanban();
-  const scheduleToday = useScheduleToday();
+  const { displaySettings, scheduleToday } = useKanban();
   const fetcher = useFetcher();
   const isCompleting = item.batchStatus === "Completing";
   // Planned = composed but not yet on the floor. Visually distinct (dashed
