@@ -51,7 +51,7 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
-import { getImplementationSignals } from "~/services/implementation-signals.server";
+import { getImplementationSignals } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";

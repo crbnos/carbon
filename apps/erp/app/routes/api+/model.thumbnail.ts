@@ -19,6 +19,11 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!modelUploadId) {
     return data({ success: false }, { status: 400 });
   }
+  // The viewer's current camera, when the thumbnail is captured from it.
+  const direction = parseDirection(formData.get("direction"));
+  if (direction === null) {
+    return data({ success: false }, { status: 400 });
+  }
 
   // Confirm the model belongs to this tenant before firing.
   const model = await client
@@ -43,6 +48,33 @@ export async function action({ request }: ActionFunctionArgs) {
     .eq("modelUploadId", modelUploadId)
     .eq("companyId", companyId);
 
-  await trigger("model-thumbnail", { modelId: modelUploadId, companyId });
+  await trigger("model-thumbnail", {
+    modelId: modelUploadId,
+    companyId,
+    ...(direction && { direction })
+  });
   return { success: true };
+}
+
+/** `undefined` when absent, `null` when present but not three finite numbers. */
+function parseDirection(
+  value: FormDataEntryValue | null
+): [number, number, number] | undefined | null {
+  if (value === null) return undefined;
+  if (typeof value !== "string") return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return null;
+  }
+  if (
+    !Array.isArray(parsed) ||
+    parsed.length !== 3 ||
+    !parsed.every((n) => typeof n === "number" && Number.isFinite(n)) ||
+    parsed.every((n) => n === 0)
+  ) {
+    return null;
+  }
+  return [parsed[0], parsed[1], parsed[2]];
 }

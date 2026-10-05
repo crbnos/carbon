@@ -12,7 +12,6 @@ paths:
   - "apps/erp/app/routes/api+/settings.backup-summary.ts"
   - "apps/erp/app/routes/api+/settings.backup-restore-status.$restoreRunId.ts"
   - "apps/erp/app/services/onboarding.server.ts"
-  - "apps/erp/app/services/onboarding-draft.server.ts"
   - "packages/jobs/src/scripts/check-backups.ts"
   - "packages/jobs/manifests/**"
 ---

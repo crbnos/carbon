@@ -14,7 +14,7 @@
 
 use crate::formats::{self, Format};
 use crate::jobs::{Done, Output};
-use crate::{admission, http, AppState};
+use crate::{admission, http, telemetry, AppState};
 use serde_json::json;
 use std::time::{Duration, Instant};
 
@@ -87,7 +87,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
+    telemetry::spawn_job(&job_id.clone(), "optimize", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -116,9 +116,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&tmp).await))
                 .await;
-            tokio::task::spawn_blocking(move || {
+            telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
                 run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
-            })
+            }))
             .await
         };
         let _ = tokio::fs::remove_file(&tmp).await;

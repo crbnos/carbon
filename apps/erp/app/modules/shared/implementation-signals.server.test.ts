@@ -18,9 +18,20 @@ vi.mock("@carbon/onboarding/server", () => ({
   detectImplementationSignals: detect
 }));
 
-const { getImplementationSignals } = await import(
-  "./implementation-signals.server"
-);
+// shared.server.ts also holds the sales-order/return PDF and email helpers;
+// stub their imports so this test loads only what it exercises.
+vi.mock("@carbon/documents/email", () => ({}));
+vi.mock("@carbon/jobs", () => ({}));
+vi.mock("~/modules/accounting", () => ({}));
+vi.mock("~/modules/sales", () => ({}));
+vi.mock("~/modules/users/users.server", () => ({}));
+vi.mock("~/routes/file+/purchase-return-order+/$id[.]pdf", () => ({}));
+vi.mock("~/routes/file+/sales-return-order+/$id[.]pdf", () => ({}));
+vi.mock("../documents/documents.service", () => ({}));
+vi.mock("~/modules/shared/shared.service", () => ({}));
+vi.mock("~/modules/settings", () => ({}));
+
+const { getImplementationSignals } = await import("./shared.server");
 
 const client = {} as Parameters<typeof getImplementationSignals>[0];
 const signals = (overrides: Record<string, boolean>) => ({
