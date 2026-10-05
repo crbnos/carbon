@@ -474,8 +474,8 @@ never offered a Cancel, Defer or Expedite.
   suggested date, so a Defer counts from where its order sits today and an
   Expedite from when it is needed — and the grids surface only rows with
   `horizonDate <= today + days`. That is what lets a planner move ONE row's
-  fence in the **Time Fence** column (`useTimeFenceOverrides`, page state, gone
-  on reload, never written to the item) without an MRP run. Named
+  fence in the **Planning Horizon** column (`useTimeFenceOverrides`, page state,
+  gone on reload, never written to the item) without an MRP run. Named
   `planningHorizonDays` on purpose: `planningTimeFenceDays` is reserved by the
   MRP v2 spec for the auto-firm fence, a different concept.
   - The fence comparison exists twice and must stay one inclusive `<=` on ISO
@@ -490,7 +490,7 @@ never offered a Cancel, Defer or Expedite.
     button EXTENDS the row's fence to the last suggested order rather than
     copying rows in — the fence is the one piece of state, so the order list
     and the grid row follow together. The drawer marks the fence on the chart
-    and carries the same Time Fence control as the grid cell.
+    and carries the same Planning Horizon control as the grid cell.
   - Moving a row's fence DROPS that item's entry in the grid's `ordersMap`
     (`onFenceChange`): the drawer's draft list is kept per item once opened,
     and a stale one would neither show the newly included orders nor offer

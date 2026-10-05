@@ -2874,9 +2874,6 @@ msgstr "Attribue cette unité à un poste de travail pour les matériaux du bord
 msgid "Assumptions"
 msgstr "Hypothèses"
 
-msgid "At"
-msgstr "À"
-
 msgid "At each gate"
 msgstr "À chaque étape"
 
@@ -13688,11 +13685,17 @@ msgstr "Temps planifié"
 msgid "Planning"
 msgstr "Planification"
 
+msgid "Planning horizon"
+msgstr "Horizon de planification"
+
 msgid "Planning Horizon"
 msgstr "Horizon de Planification"
 
 msgid "Planning Horizon (Days)"
 msgstr "Horizon de Planification (Jours)"
+
+msgid "Planning Horizon:"
+msgstr "Horizon de Planification :"
 
 msgid "Planning Ownership"
 msgstr "Responsabilité de planification"
@@ -17797,8 +17800,8 @@ msgstr "Ordres de fabrication Suggérés"
 msgid "Suggested Orders"
 msgstr "Commandes Suggérées"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "Les ordres suggérés requis après le délai limite de cet article. Étendre le délai limite pour les inclure."
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "Les ordres suggérés requis après l'horizon de planification de cet article. Étendre l'horizon pour les inclure."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Commandes suggérées que vous n'avez pas encore passées."
@@ -19536,15 +19539,6 @@ msgstr "serré"
 
 msgid "Tightened"
 msgstr "Renforcé"
-
-msgid "Time fence"
-msgstr "Délai limite"
-
-msgid "Time Fence"
-msgstr "Délai Limite"
-
-msgid "Time Fence:"
-msgstr "Horizon de temps :"
 
 msgid "Time of day"
 msgstr "Heure du jour"

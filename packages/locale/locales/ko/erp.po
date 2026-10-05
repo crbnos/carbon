@@ -2874,9 +2874,6 @@ msgstr "라인사이드 자재를 위해 이 보관 단위를 작업장에 할�
 msgid "Assumptions"
 msgstr "가정사항"
 
-msgid "At"
-msgstr "에"
-
 msgid "At each gate"
 msgstr "각 게이트마다"
 
@@ -13688,11 +13685,17 @@ msgstr "계획된 시간"
 msgid "Planning"
 msgstr "계획"
 
+msgid "Planning horizon"
+msgstr "계획 호라이즌"
+
 msgid "Planning Horizon"
 msgstr "계획 호라이즌"
 
 msgid "Planning Horizon (Days)"
 msgstr "계획 호라이즌(일)"
+
+msgid "Planning Horizon:"
+msgstr "계획 호라이즌:"
 
 msgid "Planning Ownership"
 msgstr "계획 소유권"
@@ -17797,8 +17800,8 @@ msgstr "제안된 작업 지시"
 msgid "Suggested Orders"
 msgstr "제안된 주문"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "이 품목의 시간 펜스 이후에 필요한 제안된 주문입니다. 펜스를 확장하여 포함하세요."
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "이 품목의 계획 호라이즌 이후에 필요한 제안된 주문입니다. 호라이즌을 확장하여 포함하세요."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."
@@ -19536,15 +19539,6 @@ msgstr "빠듯함"
 
 msgid "Tightened"
 msgstr "까다로운 검사"
-
-msgid "Time fence"
-msgstr "시간 펜스"
-
-msgid "Time Fence"
-msgstr "시간 펜스"
-
-msgid "Time Fence:"
-msgstr "시간 펜스:"
 
 msgid "Time of day"
 msgstr "하루 중 시간"

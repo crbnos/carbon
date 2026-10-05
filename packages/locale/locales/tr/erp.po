@@ -2874,9 +2874,6 @@ msgstr "Bu birimi hat yanı malzemesi için bir iş merkezine atar; böylece ope
 msgid "Assumptions"
 msgstr "Varsayımlar"
 
-msgid "At"
-msgstr "Saatte"
-
 msgid "At each gate"
 msgstr "Her kapıda"
 
@@ -13688,11 +13685,17 @@ msgstr "Planlanan Zaman"
 msgid "Planning"
 msgstr "Planlama"
 
+msgid "Planning horizon"
+msgstr "Planlama ufku"
+
 msgid "Planning Horizon"
 msgstr "Planlama Ufku"
 
 msgid "Planning Horizon (Days)"
 msgstr "Planlama Ufku (Gün)"
+
+msgid "Planning Horizon:"
+msgstr "Planlama Ufku:"
 
 msgid "Planning Ownership"
 msgstr "Planlama Sahipliği"
@@ -17797,8 +17800,8 @@ msgstr "Önerilen İş Emirleri"
 msgid "Suggested Orders"
 msgstr "Önerilen Siparişler"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "Önerilen siparişler bu stok kartının zaman çitinden sonra gereklidir. Çiti genişleterek bunları dahil edin."
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "Önerilen siparişler bu stok kartının planlama ufkundan sonra gereklidir. Ufku genişleterek bunları dahil edin."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."
@@ -19536,15 +19539,6 @@ msgstr "dar"
 
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
-
-msgid "Time fence"
-msgstr "Zaman Çiti"
-
-msgid "Time Fence"
-msgstr "Zaman Çiti"
-
-msgid "Time Fence:"
-msgstr "Zaman Çiti:"
 
 msgid "Time of day"
 msgstr "Günün saati"

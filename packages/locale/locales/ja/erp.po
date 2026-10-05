@@ -2874,9 +2874,6 @@ msgstr "この保管ユニットをラインサイド材料用の作業区に割
 msgid "Assumptions"
 msgstr "前提条件"
 
-msgid "At"
-msgstr "時刻"
-
 msgid "At each gate"
 msgstr "各ゲートで"
 
@@ -13688,11 +13685,17 @@ msgstr "予定時間"
 msgid "Planning"
 msgstr "計画"
 
+msgid "Planning horizon"
+msgstr "計画期間"
+
 msgid "Planning Horizon"
 msgstr "計画期間"
 
 msgid "Planning Horizon (Days)"
 msgstr "計画期間（日数）"
+
+msgid "Planning Horizon:"
+msgstr "計画期間:"
 
 msgid "Planning Ownership"
 msgstr "計画所有権"
@@ -17797,8 +17800,8 @@ msgstr "提案製造指図"
 msgid "Suggested Orders"
 msgstr "提案注文"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "この品目のタイムフェンスの後に必要な提案注文があります。それらを含めるためにフェンスを拡張してください。"
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "この品目の計画期間の後に必要な提案注文があります。それらを含めるために計画期間を延長してください。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
@@ -19536,15 +19539,6 @@ msgstr "逼迫"
 
 msgid "Tightened"
 msgstr "きつい検査"
-
-msgid "Time fence"
-msgstr "タイムフェンス"
-
-msgid "Time Fence"
-msgstr "タイムフェンス"
-
-msgid "Time Fence:"
-msgstr "タイムフェンス："
 
 msgid "Time of day"
 msgstr "時間"

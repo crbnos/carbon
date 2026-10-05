@@ -95,7 +95,7 @@ type PurchasingPlanningOrderDrawerProps = {
   /** True when the fence was moved on screen, away from the saved horizon. */
   isTimeFenceOverridden: boolean;
   /** Move this row's fence without leaving the drawer — the same on-screen
-   *  override as the grid's Time Fence cell. `null` returns to the saved
+   *  override as the grid's Planning Horizon cell. `null` returns to the saved
    *  horizon. The suggested orders re-split around the new date. */
   onTimeFenceChange: (date: string | null) => void;
   /** The item's change actions on existing orders, inside the fence. Each one

@@ -2874,9 +2874,6 @@ msgstr "इकाई को लाइनसाइड सामग्री क�
 msgid "Assumptions"
 msgstr "मान्यताएँ"
 
-msgid "At"
-msgstr "पर"
-
 msgid "At each gate"
 msgstr "हर गेट पर"
 
@@ -13688,11 +13685,17 @@ msgstr "योजनाबद्ध समय"
 msgid "Planning"
 msgstr "योजना"
 
+msgid "Planning horizon"
+msgstr "योजना क्षितिज"
+
 msgid "Planning Horizon"
 msgstr "योजना क्षितिज"
 
 msgid "Planning Horizon (Days)"
 msgstr "योजना क्षितिज (दिन)"
+
+msgid "Planning Horizon:"
+msgstr "योजना क्षितिज:"
 
 msgid "Planning Ownership"
 msgstr "योजना स्वामित्व"
@@ -17797,8 +17800,8 @@ msgstr "सुझाई गई जॉब्स"
 msgid "Suggested Orders"
 msgstr "सुझाए गए आदेश"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "इस आइटम की समय बाड़ के बाद आवश्यक सुझाए गए आदेश। उन्हें शामिल करने के लिए बाड़ को विस्तारित करें।"
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "इस आइटम के योजना क्षितिज के बाद आवश्यक सुझाए गए आदेश। उन्हें शामिल करने के लिए क्षितिज को विस्तारित करें।"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"
@@ -19536,15 +19539,6 @@ msgstr "तंग"
 
 msgid "Tightened"
 msgstr "कठोर"
-
-msgid "Time fence"
-msgstr "समय बाड़"
-
-msgid "Time Fence"
-msgstr "समय बाड़"
-
-msgid "Time Fence:"
-msgstr "समय बाड़ा:"
 
 msgid "Time of day"
 msgstr "दिन का समय"

@@ -2874,9 +2874,6 @@ msgstr "Weist diese Einheit einem Arbeitsplatz zum Linienlager zu, sodass Werker
 msgid "Assumptions"
 msgstr "Annahmen"
 
-msgid "At"
-msgstr "Um"
-
 msgid "At each gate"
 msgstr "Bei jedem Gate"
 
@@ -13688,11 +13685,17 @@ msgstr "Geplante Zeit"
 msgid "Planning"
 msgstr "Planung"
 
+msgid "Planning horizon"
+msgstr "Planungshorizont"
+
 msgid "Planning Horizon"
 msgstr "Planungshorizont"
 
 msgid "Planning Horizon (Days)"
 msgstr "Planungshorizont (Tage)"
+
+msgid "Planning Horizon:"
+msgstr "Planungshorizont:"
 
 msgid "Planning Ownership"
 msgstr "Planungseigentümer"
@@ -17797,8 +17800,8 @@ msgstr "Vorgeschlagene Fertigungsaufträge"
 msgid "Suggested Orders"
 msgstr "Vorgeschlagene Bestellungen"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "Vorgeschlagene Bestellungen erforderlich nach dem Zeitzaun dieses Artikels. Erweitern Sie den Zaun, um sie einzuschließen."
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "Vorgeschlagene Bestellungen erforderlich nach dem Planungshorizont dieses Artikels. Erweitern Sie den Horizont, um sie einzuschließen."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Vorgeschlagene Bestellungen, die Sie noch nicht aufgegeben haben."
@@ -19536,15 +19539,6 @@ msgstr "knapp"
 
 msgid "Tightened"
 msgstr "Verschärft"
-
-msgid "Time fence"
-msgstr "Zeitzaun"
-
-msgid "Time Fence"
-msgstr "Zeitzaun"
-
-msgid "Time Fence:"
-msgstr "Planfenster:"
 
 msgid "Time of day"
 msgstr "Tageszeit"

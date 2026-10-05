@@ -57,8 +57,9 @@ export function useTimeFenceOverrides() {
 }
 
 /**
- * The grid's Time Fence cell: the row's fence date with a calendar to move it.
- * Clearing the picker drops the override and returns to the saved horizon.
+ * The grid's Planning Horizon cell: the row's fence date with a calendar to
+ * move it. Clearing the picker drops the override and returns to the saved
+ * horizon.
  */
 export const TimeFenceCell = memo(function TimeFenceCell({
   fenceDate,
@@ -75,7 +76,7 @@ export const TimeFenceCell = memo(function TimeFenceCell({
 
   return (
     <DatePicker
-      aria-label={t`Time fence`}
+      aria-label={t`Planning horizon`}
       closeOnSelect
       value={fenceDate ? parseDate(fenceDate) : null}
       onChange={(value) => onChange(value ? value.toString() : null)}

@@ -741,7 +741,7 @@ export const ItemPlanningChart = ({
                       stroke={chartColors.zero}
                       strokeDasharray="2 4"
                       label={{
-                        value: t`Time fence`,
+                        value: t`Planning horizon`,
                         // Recharts mirrors the names on a vertical line:
                         // "insideTopLeft" is the side AWAY from the y-axis,
                         // so the label never lands on the tick numbers.

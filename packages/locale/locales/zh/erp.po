@@ -2874,9 +2874,6 @@ msgstr "将此库位分配给工作中心以进行线边物料管理，使操作
 msgid "Assumptions"
 msgstr "假设"
 
-msgid "At"
-msgstr "在"
-
 msgid "At each gate"
 msgstr "在每个关卡"
 
@@ -13688,11 +13685,17 @@ msgstr "已计划时间"
 msgid "Planning"
 msgstr "计划"
 
+msgid "Planning horizon"
+msgstr "计划周期"
+
 msgid "Planning Horizon"
 msgstr "计划周期"
 
 msgid "Planning Horizon (Days)"
 msgstr "计划周期（天）"
+
+msgid "Planning Horizon:"
+msgstr "计划周期："
 
 msgid "Planning Ownership"
 msgstr "计划所有权"
@@ -17797,8 +17800,8 @@ msgstr "建议工单"
 msgid "Suggested Orders"
 msgstr "建议订单"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "此物料的时间栅栏之后需要的建议订单。扩展栅栏以包含它们。"
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "此物料的计划周期之后需要的建议订单。延长计划周期以包含它们。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -19536,15 +19539,6 @@ msgstr "紧张"
 
 msgid "Tightened"
 msgstr "加严检验"
-
-msgid "Time fence"
-msgstr "时间栅栏"
-
-msgid "Time Fence"
-msgstr "时间栅栏"
-
-msgid "Time Fence:"
-msgstr "计划界限："
 
 msgid "Time of day"
 msgstr "一天中的时间"

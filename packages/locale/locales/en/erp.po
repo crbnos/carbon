@@ -2874,9 +2874,6 @@ msgstr "Assigns this unit to a work center for lineside material, so operators s
 msgid "Assumptions"
 msgstr "Assumptions"
 
-msgid "At"
-msgstr "At"
-
 msgid "At each gate"
 msgstr "At each gate"
 
@@ -13688,11 +13685,17 @@ msgstr "Planned time"
 msgid "Planning"
 msgstr "Planning"
 
+msgid "Planning horizon"
+msgstr "Planning horizon"
+
 msgid "Planning Horizon"
 msgstr "Planning Horizon"
 
 msgid "Planning Horizon (Days)"
 msgstr "Planning Horizon (Days)"
+
+msgid "Planning Horizon:"
+msgstr "Planning Horizon:"
 
 msgid "Planning Ownership"
 msgstr "Planning Ownership"
@@ -17797,8 +17800,8 @@ msgstr "Suggested Jobs"
 msgid "Suggested Orders"
 msgstr "Suggested Orders"
 
-msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
-msgstr "Suggested orders required after this item's time fence. Extend the fence to include them."
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."
@@ -19536,15 +19539,6 @@ msgstr "tight"
 
 msgid "Tightened"
 msgstr "Tightened"
-
-msgid "Time fence"
-msgstr "Time fence"
-
-msgid "Time Fence"
-msgstr "Time Fence"
-
-msgid "Time Fence:"
-msgstr "Time Fence:"
 
 msgid "Time of day"
 msgstr "Time of day"

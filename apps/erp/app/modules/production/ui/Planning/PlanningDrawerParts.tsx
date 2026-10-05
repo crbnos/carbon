@@ -91,7 +91,7 @@ export function PlanningPolicySummary({
       <PlanningSummaryRow label={<Trans>Reorder Policy:</Trans>}>
         <ItemReorderPolicy reorderingPolicy={item.reorderingPolicy} />
       </PlanningSummaryRow>
-      <PlanningSummaryRow label={<Trans>Time Fence:</Trans>}>
+      <PlanningSummaryRow label={<Trans>Planning Horizon:</Trans>}>
         <div className="flex-none">
           <TimeFenceCell
             fenceDate={fenceDate}
@@ -184,8 +184,8 @@ export function BeyondFenceButton({
       </TooltipTrigger>
       <TooltipContent>
         <Trans>
-          Suggested orders required after this item's time fence. Extend the
-          fence to include them.
+          Suggested orders required after this item's planning horizon. Extend
+          the horizon to include them.
         </Trans>
       </TooltipContent>
     </Tooltip>

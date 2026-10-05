@@ -58,7 +58,7 @@ const LABELS = {
   onHand: msg`On Hand`,
   firstNegativeDate: msg`1st Negative On Hand`,
   latestOrderDate: msg`Latest Order Date`,
-  timeFence: msg`Time Fence`,
+  timeFence: msg`Planning Horizon`,
   type: msg`Type`
 };
 

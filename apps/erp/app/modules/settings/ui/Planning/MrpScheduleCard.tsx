@@ -112,7 +112,7 @@ export function MrpScheduleCard({
             {schedule === "Daily" && (
               <Select
                 name="mrpRunTime"
-                label={t`At`}
+                label={t`Time of day`}
                 helperText={t`In your company's time zone (${companyTimeZone}).`}
                 options={timeOptions}
               />

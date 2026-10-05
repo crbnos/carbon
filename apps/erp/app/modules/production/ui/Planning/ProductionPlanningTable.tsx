@@ -364,8 +364,8 @@ const ProductionPlanningTable = ({
     []
   );
 
-  // The drawer's own Time Fence control: the same on-screen override as the
-  // grid cell, for the row the drawer is open on.
+  // The drawer's own Planning Horizon control: the same on-screen override as
+  // the grid cell, for the row the drawer is open on.
   const selectedItemId = selectedItem?.id;
   const onSelectedFenceChange = useCallback(
     (date: string | null) => {
