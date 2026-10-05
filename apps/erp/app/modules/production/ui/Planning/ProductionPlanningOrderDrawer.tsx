@@ -12,30 +12,28 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  HStack,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  toast,
-  VStack
+  toast
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LuCalendarRange, LuExternalLink } from "react-icons/lu";
+import { LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { PlanningAction, ProductionOrder } from "~/modules/production";
 import {
   isJobEditableFromPlanning,
   type jobStatus
 } from "~/modules/production/production.models";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
-import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
+import {
+  BeyondFenceButton,
+  PlanningPolicySummary,
+  periodIdFor
+} from "~/modules/production/ui/Planning/PlanningDrawerParts";
 import type {
   OpenOrderField,
   OpenOrderRow
@@ -53,18 +51,6 @@ import { JobStatus } from "../Jobs";
 
 /** An existing job in the planned-order shape the chart reads. */
 type OpenProductionOrder = ProductionOrder & { existingId: string };
-
-type Period = { id: string; startDate: string; endDate: string };
-
-/** The planning period a date falls in: the first for a missing or past date,
- *  the last for one beyond the planning window. */
-function periodIdFor(periods: Period[], date: string | null | undefined) {
-  if (!date || date < periods[0].startDate) return periods[0].id;
-  return (
-    periods.find((p) => date >= p.startDate && date <= p.endDate)?.id ??
-    periods[periods.length - 1].id
-  );
-}
 
 type ProductionPlanningOrderDrawerProps = {
   /**
@@ -350,28 +336,9 @@ export const ProductionPlanningOrderDrawer = memo(
       (id: string, orders: ProductionOrder[]) => {
         const ordersWithPeriods = orders.map((order) => {
           // If no due date or due date is before first period, use first period
-          if (
-            !order.dueDate ||
-            parseDate(order.dueDate) < parseDate(periods[0].startDate)
-          ) {
-            return {
-              ...order,
-              periodId: periods[0].id
-            };
-          }
-
-          // Find matching period based on due date
-          const period = periods.find((p) => {
-            const dueDate = parseDate(order.dueDate!);
-            const startDate = parseDate(p.startDate);
-            const endDate = parseDate(p.endDate);
-            return dueDate >= startDate && dueDate <= endDate;
-          });
-
-          // If no matching period found (date is after last period), use last period
           return {
             ...order,
-            periodId: period?.id ?? periods[periods.length - 1].id
+            periodId: periodIdFor(periods, order.dueDate)
           };
         });
 
@@ -425,110 +392,12 @@ export const ProductionPlanningOrderDrawer = memo(
           </DrawerHeader>
           <DrawerBody>
             <div className="flex flex-col gap-4  w-full">
-              {/* A line between every row, whichever rows the policy shows. */}
-              <VStack
-                spacing={0}
-                className="text-sm border rounded-lg px-4 py-2 divide-y divide-border [&>*]:py-2"
-              >
-                <HStack className="justify-between w-full">
-                  <span className="text-muted-foreground">
-                    <Trans>Reorder Policy:</Trans>
-                  </span>
-                  <ItemReorderPolicy reorderingPolicy={row.reorderingPolicy} />
-                </HStack>
-                <HStack className="justify-between w-full">
-                  <span className="text-muted-foreground">
-                    <Trans>Time Fence:</Trans>
-                  </span>
-                  <div className="flex-none">
-                    <TimeFenceCell
-                      fenceDate={timeFenceDate}
-                      isOverridden={isTimeFenceOverridden}
-                      onChange={onTimeFenceChange}
-                    />
-                  </div>
-                </HStack>
-                {row.reorderingPolicy === "Maximum Quantity" && (
-                  <>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Reorder Point:</Trans>
-                      </span>
-                      <span>{row.reorderPoint}</span>
-                    </HStack>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Maximum Inventory:</Trans>
-                      </span>
-                      <span>{row.maximumInventoryQuantity}</span>
-                    </HStack>
-                  </>
-                )}
-
-                {row.reorderingPolicy === "Demand-Based Reorder" && (
-                  <>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Accumulation Period:</Trans>
-                      </span>
-                      <span>
-                        <Plural
-                          value={row.demandAccumulationPeriod}
-                          one="# week"
-                          other="# weeks"
-                        />
-                      </span>
-                    </HStack>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Safety Stock:</Trans>
-                      </span>
-                      <span>{row.demandAccumulationSafetyStock}</span>
-                    </HStack>
-                  </>
-                )}
-
-                {row.reorderingPolicy === "Fixed Reorder Quantity" && (
-                  <>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Reorder Point:</Trans>
-                      </span>
-                      <span>{row.reorderPoint}</span>
-                    </HStack>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Reorder Quantity:</Trans>
-                      </span>
-                      <span>{row.reorderQuantity}</span>
-                    </HStack>
-                  </>
-                )}
-                {row.lotSize > 0 && (
-                  <HStack className="justify-between w-full">
-                    <span className="text-muted-foreground">
-                      <Trans>Lot Size:</Trans>
-                    </span>
-                    <span>{row.lotSize}</span>
-                  </HStack>
-                )}
-                {row.minimumOrderQuantity > 0 && (
-                  <HStack className="justify-between w-full">
-                    <span className="text-muted-foreground">
-                      <Trans>Minimum Order:</Trans>
-                    </span>
-                    <span>{row.minimumOrderQuantity}</span>
-                  </HStack>
-                )}
-                {row.maximumOrderQuantity > 0 && (
-                  <HStack className="justify-between w-full">
-                    <span className="text-muted-foreground">
-                      <Trans>Maximum Order:</Trans>
-                    </span>
-                    <span>{row.maximumOrderQuantity}</span>
-                  </HStack>
-                )}
-              </VStack>
+              <PlanningPolicySummary
+                item={row}
+                fenceDate={timeFenceDate}
+                isFenceOverridden={isTimeFenceOverridden}
+                onFenceChange={onTimeFenceChange}
+              />
 
               <DeferredDrawerSections>
                 <SuggestedOrdersGrid<ProductionOrder>
@@ -536,28 +405,11 @@ export const ProductionPlanningOrderDrawer = memo(
                   titleAction={
                     lastBeyondFenceDate &&
                     timeFenceDate && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<LuCalendarRange />}
-                            onClick={onIncludeBeyondFence}
-                          >
-                            <Plural
-                              value={beyondFenceOrders.length}
-                              one={`# More After ${fenceLabel}`}
-                              other={`# More After ${fenceLabel}`}
-                            />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <Trans>
-                            Suggested orders required after this item's time
-                            fence. Extend the fence to include them.
-                          </Trans>
-                        </TooltipContent>
-                      </Tooltip>
+                      <BeyondFenceButton
+                        count={beyondFenceOrders.length}
+                        fenceLabel={fenceLabel}
+                        onClick={onIncludeBeyondFence}
+                      />
                     )
                   }
                   orders={orders}

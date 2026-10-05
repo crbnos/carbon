@@ -63,10 +63,6 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# {fenceLabel} 이후 더 많음} other {# {fenceLabel} 이후 더 많음}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#주}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, other {{fenceLabel} 이후 # 개}}"
+
 msgid "{days}d"
 msgstr "{days}일"
 
@@ -536,6 +534,9 @@ msgstr "1개 부품이 건너뜀 — 만들 것이 없음"
 
 msgid "1 problem — not published"
 msgstr "1개 문제 — 게시됨 아님"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 구매 = {conversionFactor} 재고 관리"
 
 msgid "1 suggested batch"
 msgstr "제안된 배치 1개"

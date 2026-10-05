@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {在 {fenceLabel} 之后还有 # 个} other {在 {fenceLabel} 之后还有 # 个}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#周}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, other {{fenceLabel}之后还有 # 个}}"
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -536,6 +534,9 @@ msgstr "1 个零件已跳过 — 没有需要生产的"
 
 msgid "1 problem — not published"
 msgstr "1个问题——未发布"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 采购 = {conversionFactor} 库存管理"
 
 msgid "1 suggested batch"
 msgstr "1 个建议生产批次"

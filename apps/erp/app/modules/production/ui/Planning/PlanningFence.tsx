@@ -22,7 +22,7 @@ import { effectiveFenceDate } from "./planning-fence";
 // fence on screen to look further out (or closer in); that lives in page state
 // only, never on the item, and is gone after a reload.
 
-type FenceRow = { id: string; timeFenceDate: string | null };
+export type FenceRow = { id: string; timeFenceDate: string | null };
 
 /**
  * Per-row fence overrides, keyed by item id. `fenceDateFor` is the row's

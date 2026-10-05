@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# Tag Puffer} other {# Tage Puffer}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# Tag zu kurz} other {# Tage zu kurz}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# Weitere nach {fenceLabel}} other {# Weitere nach {fenceLabel}}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# Arbeitsgang hat keine Zeitstandards} other {# Arbeitsgänge haben keine Zeitstandards}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehme
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher können sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# Woche} other {# Wochen}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# weitere nach {fenceLabel}} other {# weitere nach {fenceLabel}}}"
+
 msgid "{days}d"
 msgstr "{days}T"
 
@@ -536,6 +534,9 @@ msgstr "1 Teil übersprungen — es gibt nichts zu produzieren"
 
 msgid "1 problem — not published"
 msgstr "1 Problem — nicht veröffentlicht"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Einkauf = {conversionFactor} Bestände"
 
 msgid "1 suggested batch"
 msgstr "1 empfohlenes Los"

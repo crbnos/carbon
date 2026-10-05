@@ -389,6 +389,16 @@ never offered a Cancel, Defer or Expedite.
   disagree. Red once the day has passed (the order's `isASAP`); "-" when
   nothing needs ordering. The tooltip shows the required date and lead time;
   the CSV carries the ISO date. Cell: `ui/Planning/LatestOrderDate.tsx`.
+- **Shared, not copied.** The two grids differ only in their own columns (item
+  link, supplier, lead time, quantity to order, the Order button) and wiring.
+  Everything else lives once in `production/ui/Planning/`: `usePlanningActions`
+  (the worklist fetcher and toast, fenced and filtered actions, the batched
+  submit, and the `actionHandlers` the action lines and drawers spread),
+  `planningColumns` (the shared column definitions, typed to each grid's row)
+  and `PlanningDrawerParts` (`PlanningPolicySummary` with a slot for the
+  purchasing drawer's supplier rows, `BeyondFenceButton`, `periodIdFor`).
+  Change the shared piece; a copy in one grid drifts, as the untranslated
+  labels in one drawer did.
 - **One "today": the location's.** Every planning surface that marks a date
   late — the Latest Order Date cell, the expanded action lines
   (`PlanningActionLines`), the drawers and the order sizing

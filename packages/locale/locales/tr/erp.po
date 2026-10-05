@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# Daha {fenceLabel} Sonrasında} other {# Daha {fenceLabel} Sonrasında}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı 
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle yedeklenemez. Bunu atlayarak diğer her şeyi yedekleyebilirsiniz.} other {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle yedeklenemez. Bunları atlayarak diğer her şeyi yedekleyebilirsiniz.}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# hafta} other {# hafta}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesap
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# daha {fenceLabel} sonra} other {# daha {fenceLabel} sonra}}"
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -536,6 +534,9 @@ msgstr "1 parça atlandı — yapılacak bir şey yok"
 
 msgid "1 problem — not published"
 msgstr "1 sorun — yayınlanmadı"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Satın Alma = {conversionFactor} Envanter"
 
 msgid "1 suggested batch"
 msgstr "1 önerilen parti"

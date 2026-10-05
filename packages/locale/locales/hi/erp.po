@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# दिन का अतिरिक्त समय} 
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# दिन की कमी} other {# दिन की कमी}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# {fenceLabel} के बाद अधिक} other {# {fenceLabel} के बाद अधिक}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए इसे बैकअप नहीं किया जा सकता। इसे छोड़ने से सब कुछ और बैकअप हो जाता है।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए उन्हें बैकअप नहीं किया जा सकता। उन्हें छोड़ने से सब कुछ और बैकअप हो जाता है।}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# शेष राशि वाला खाता}
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# अधिक {fenceLabel} के बाद} other {# अधिक {fenceLabel} के बाद}}"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -536,6 +534,9 @@ msgstr "1 पार्ट छोड़ा गया — कुछ भी बन�
 
 msgid "1 problem — not published"
 msgstr "1 समस्या — प्रकाशित नहीं"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 खरीद = {conversionFactor} इन्वेंटरी"
 
 msgid "1 suggested batch"
 msgstr "1 सुझाया गया बैच"

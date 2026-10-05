@@ -22,25 +22,16 @@ import {
   Td,
   Th,
   Thead,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   Tr,
   toast,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from "@carbon/react";
 import { formatDate, RoundingMode, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  LuCalendarRange,
-  LuCircleCheck,
-  LuCirclePlus,
-  LuExternalLink
-} from "react-icons/lu";
+import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -49,10 +40,13 @@ import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { PlanningAction } from "~/modules/production";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
-import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
+import {
+  BeyondFenceButton,
+  PlanningPolicySummary,
+  periodIdFor
+} from "~/modules/production/ui/Planning/PlanningDrawerParts";
 import type {
   OpenOrderField,
   OpenOrderRow
@@ -82,18 +76,6 @@ type OpenPurchaseOrder = PlannedOrder & {
   existingLineId: string;
   conversionFactor: number;
 };
-
-type Period = { id: string; startDate: string; endDate: string };
-
-/** The planning period a date falls in: the first for a missing or past date,
- *  the last for one beyond the planning window. */
-function periodIdFor(periods: Period[], date: string | null | undefined) {
-  if (!date || date < periods[0].startDate) return periods[0].id;
-  return (
-    periods.find((p) => date >= p.startDate && date <= p.endDate)?.id ??
-    periods[periods.length - 1].id
-  );
-}
 
 type PurchasingPlanningOrderDrawerProps = {
   /**
@@ -465,28 +447,10 @@ export const PurchasingPlanningOrderDrawer = memo(
           // server validator rejects as "No suppliers provided" — the Order
           // button already guards that selectedSupplier is set.
           const supplierId = selectedSupplier ?? order.supplierId;
-          if (
-            !order.dueDate ||
-            parseDate(order.dueDate) < parseDate(periods[0].startDate)
-          ) {
-            return {
-              ...order,
-              supplierId,
-              periodId: periods[0].id
-            };
-          }
-
-          const period = periods.find((p) => {
-            const dueDate = parseDate(order.dueDate!);
-            const startDate = parseDate(p.startDate);
-            const endDate = parseDate(p.endDate);
-            return dueDate >= startDate && dueDate <= endDate;
-          });
-
           return {
             ...order,
             supplierId,
-            periodId: period?.id ?? periods[periods.length - 1].id
+            periodId: periodIdFor(periods, order.dueDate)
           };
         });
 
@@ -727,31 +691,12 @@ export const PurchasingPlanningOrderDrawer = memo(
                   </div>
                 </TabsContent>
                 <TabsContent value="ordering" className="flex flex-col gap-4">
-                  {/* A line between every row, whichever rows the policy shows. */}
-                  <VStack
-                    spacing={0}
-                    className="text-sm border rounded-lg px-4 py-2 divide-y divide-border [&>*]:py-2"
+                  <PlanningPolicySummary
+                    item={selectedItem}
+                    fenceDate={timeFenceDate}
+                    isFenceOverridden={isTimeFenceOverridden}
+                    onFenceChange={onTimeFenceChange}
                   >
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Reorder Policy:</Trans>
-                      </span>
-                      <ItemReorderPolicy
-                        reorderingPolicy={selectedItem.reorderingPolicy}
-                      />
-                    </HStack>
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        <Trans>Time Fence:</Trans>
-                      </span>
-                      <div className="flex-none">
-                        <TimeFenceCell
-                          fenceDate={timeFenceDate}
-                          isOverridden={isTimeFenceOverridden}
-                          onChange={onTimeFenceChange}
-                        />
-                      </div>
-                    </HStack>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
                         <Trans>Supplier:</Trans>
@@ -784,95 +729,15 @@ export const PurchasingPlanningOrderDrawer = memo(
                           <span className="text-muted-foreground">
                             <Trans>Conversion:</Trans>
                           </span>
-                          <span>1 Purchase = {conversionFactor} Inventory</span>
+                          <span>
+                            <Trans>
+                              1 Purchase = {conversionFactor} Inventory
+                            </Trans>
+                          </span>
                         </HStack>
                       ) : null;
                     })()}
-                    {selectedItem.reorderingPolicy === "Maximum Quantity" && (
-                      <>
-                        <HStack className="justify-between w-full">
-                          <span className="text-muted-foreground">
-                            <Trans>Reorder Point:</Trans>
-                          </span>
-                          <span>{selectedItem.reorderPoint}</span>
-                        </HStack>
-                        <HStack className="justify-between w-full">
-                          <span className="text-muted-foreground">
-                            <Trans>Maximum Inventory:</Trans>
-                          </span>
-                          <span>{selectedItem.maximumInventoryQuantity}</span>
-                        </HStack>
-                      </>
-                    )}
-
-                    {selectedItem.reorderingPolicy ===
-                      "Demand-Based Reorder" && (
-                      <>
-                        <HStack className="justify-between w-full">
-                          <span className="text-muted-foreground">
-                            <Trans>Accumulation Period:</Trans>
-                          </span>
-                          <span>
-                            <Plural
-                              value={selectedItem.demandAccumulationPeriod}
-                              one="# week"
-                              other="# weeks"
-                            />
-                          </span>
-                        </HStack>
-                        <HStack className="justify-between w-full">
-                          <span className="text-muted-foreground">
-                            <Trans>Safety Stock:</Trans>
-                          </span>
-                          <span>
-                            {selectedItem.demandAccumulationSafetyStock}
-                          </span>
-                        </HStack>
-                      </>
-                    )}
-
-                    {selectedItem.reorderingPolicy ===
-                      "Fixed Reorder Quantity" && (
-                      <>
-                        <HStack className="justify-between w-full">
-                          <span className="text-muted-foreground">
-                            <Trans>Reorder Point:</Trans>
-                          </span>
-                          <span>{selectedItem.reorderPoint}</span>
-                        </HStack>
-                        <HStack className="justify-between w-full">
-                          <span className="text-muted-foreground">
-                            <Trans>Reorder Quantity:</Trans>
-                          </span>
-                          <span>{selectedItem.reorderQuantity}</span>
-                        </HStack>
-                      </>
-                    )}
-                    {selectedItem.lotSize > 0 && (
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          <Trans>Lot Size:</Trans>
-                        </span>
-                        <span>{selectedItem.lotSize}</span>
-                      </HStack>
-                    )}
-                    {selectedItem.minimumOrderQuantity > 0 && (
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          <Trans>Minimum Order:</Trans>
-                        </span>
-                        <span>{selectedItem.minimumOrderQuantity}</span>
-                      </HStack>
-                    )}
-                    {selectedItem.maximumOrderQuantity > 0 && (
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          <Trans>Maximum Order:</Trans>
-                        </span>
-                        <span>{selectedItem.maximumOrderQuantity}</span>
-                      </HStack>
-                    )}
-                  </VStack>
+                  </PlanningPolicySummary>
 
                   <DeferredDrawerSections>
                     <SuggestedOrdersGrid<PlannedOrder>
@@ -880,28 +745,11 @@ export const PurchasingPlanningOrderDrawer = memo(
                       titleAction={
                         lastBeyondFenceDate &&
                         timeFenceDate && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                leftIcon={<LuCalendarRange />}
-                                onClick={onIncludeBeyondFence}
-                              >
-                                <Plural
-                                  value={beyondFenceOrders.length}
-                                  one={`# More After ${fenceLabel}`}
-                                  other={`# More After ${fenceLabel}`}
-                                />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <Trans>
-                                Suggested orders required after this item's time
-                                fence. Extend the fence to include them.
-                              </Trans>
-                            </TooltipContent>
-                          </Tooltip>
+                          <BeyondFenceButton
+                            count={beyondFenceOrders.length}
+                            fenceLabel={fenceLabel}
+                            onClick={onIncludeBeyondFence}
+                          />
                         )
                       }
                       orders={orders}

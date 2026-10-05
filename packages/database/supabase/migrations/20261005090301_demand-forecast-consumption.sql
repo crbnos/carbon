@@ -156,15 +156,11 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
   ) AS $$
 BEGIN
   -- Tenant guard: SECURITY DEFINER bypasses RLS and PostgREST lets any caller
-  -- supply an arbitrary company_id. Require company membership (user JWT or
-  -- API key — get_companies_with_employee_role() covers both) unless the
-  -- caller is service_role (the ERP route uses bypassRls) or a direct
-  -- Postgres connection (edge functions), which are already privileged.
-  IF session_user = 'authenticator' AND COALESCE(auth.role(), '') <> 'service_role' THEN
-    IF NOT (company_id = ANY (COALESCE(get_companies_with_employee_role(), ARRAY[]::text[]))) THEN
-      RAISE EXCEPTION 'Insufficient permissions';
-    END IF;
-  END IF;
+  -- supply an arbitrary company_id. The shared guard every SECURITY DEFINER
+  -- read opens with (20260925121735_rpc-function-guards.sql), as
+  -- get_purchasing_planning below does: service_role and direct connections
+  -- pass, anyone else must belong to the company.
+  PERFORM assert_company_access(company_id);
 
   RETURN QUERY
   WITH RECURSIVE

@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# dzień luzu} few {# dni luzu} many {# dni luzu} other
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# dzień za krótko} few {# dni za krótko} many {# dni za krótko} other {# dni za krótko}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# Więcej Po {fenceLabel}} other {# Więcej Po {fenceLabel}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operacja nie ma standardów czasu} few {# operacje nie mają standardów czasu} many {# operacji nie ma standardów czasu} other {# operacji nie ma standardów czasu}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego nie można go zabezpieczyć. Pominięcie go pozwala na zabezpieczenie wszystkiego innego.} other {# wierszy łączy się z danymi spoza tej firmy, dlatego nie można ich zabezpieczyć. Pominięcie ich pozwala na zabezpieczenie wszystkiego innego.}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# tydzień} few {# tygodnie} many {# tygodni} other {# tygodnia}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# konto z saldem} other {# konta z saldem}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# więcej po {fenceLabel}} few {# więcej po {fenceLabel}} many {# więcej po {fenceLabel}} other {# więcej po {fenceLabel}}}"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -536,6 +534,9 @@ msgstr "1 część pominięta — nic do zrobienia"
 
 msgid "1 problem — not published"
 msgstr "1 problem — nie opublikowano"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Zakup = {conversionFactor} Zapasy"
 
 msgid "1 suggested batch"
 msgstr "1 sugerowana partia"

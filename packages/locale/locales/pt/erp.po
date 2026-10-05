@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# dia de folga} other {# dias de folga}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# dia de falta} other {# dias de falta}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# Mais Após {fenceLabel}} other {# Mais Após {fenceLabel}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operação não tem padrões de tempo} other {# operações não têm padrões de tempo}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# linha vincula dados fora desta empresa, portanto uma 
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# linha vincula dados fora desta empresa, portanto não pode ser feita backup dela. Ignorá-la faz backup de tudo mais.} other {# linhas vinculam dados fora desta empresa, portanto não podem ser feitas backup delas. Ignorá-las fazem backup de tudo mais.}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# semana} other {# semanas}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# conta com saldo} other {# contas com saldo}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# mais após {fenceLabel}} other {# mais após {fenceLabel}}}"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -536,6 +534,9 @@ msgstr "1 peça ignorada — nada para fabricar"
 
 msgid "1 problem — not published"
 msgstr "1 problema — não publicado"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Compra = {conversionFactor} Inventário"
 
 msgid "1 suggested batch"
 msgstr "1 lote sugerido"

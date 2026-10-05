@@ -63,10 +63,6 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
 
-#. placeholder {0}: beyondFenceOrders.length
-msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-msgstr "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -79,8 +75,7 @@ msgstr "{0, plural, one {# row links to data outside this company, so a safety c
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 
-#. placeholder {0}: row.demandAccumulationPeriod
-#. placeholder {0}: selectedItem.demandAccumulationPeriod
+#. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# week} other {# weeks}}"
 
@@ -332,6 +327,9 @@ msgstr "{count, plural, one {# account with a balance} other {# accounts with a 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -536,6 +534,9 @@ msgstr "1 part skipped — nothing to make"
 
 msgid "1 problem — not published"
 msgstr "1 problem — not published"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Purchase = {conversionFactor} Inventory"
 
 msgid "1 suggested batch"
 msgstr "1 suggested batch"
