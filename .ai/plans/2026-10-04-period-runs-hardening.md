@@ -33,7 +33,7 @@ Terms used in this plan:
 - [x] Task 5: Add the migration for per-month depreciation lines and one Draft per period (deviation: `periodEnd` stays NULLABLE — `db:check:backups` refused NOT NULL with no default; readers fall back to the run's `periodEnd`. Committed with Task 6, because the dataset check fails on the migration alone)
 - [x] Task 6: Regenerate the database types and fix the dataset tier (also: `insertDepreciationRun` / `replaceDepreciationRunLines` write the run's `periodEnd` until Task 7)
 - [x] Task 6b: Move the depreciation month arithmetic to `@internationalized/date` (found in Task 7; also corrected the existing test "uses lastPostedPeriodEnd to narrow the window", which pinned the skipped month)
-- [ ] Task 7: Build depreciation lines per asset per month
+- [x] Task 7: Build depreciation lines per asset per month (lines from before the migration read their run's `periodEnd`)
 - [ ] Task 8: Post depreciation one journal per line, dated per month
 - [ ] Task 9: Post revenue recognition one journal per month
 - [ ] Task 10: Show the period on depreciation lines and every journal in the Documents panels

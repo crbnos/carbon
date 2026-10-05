@@ -25,7 +25,9 @@ import {
   buildDepreciationLines,
   type DepreciationLine,
   depreciationRunLinesMatch,
-  isFutureRunPeriod
+  isFutureRunPeriod,
+  monthEndOf,
+  usageKey
 } from "./accounting.utils";
 
 /** The company's business day, `YYYY-MM-DD`. */
@@ -615,7 +617,7 @@ export async function buildDepreciationRunLines(
   // production sums every usage log since the last posted run.
   let usageQuery = client
     .from("fixedAssetUsageLog")
-    .select("fixedAssetId, unitsProduced")
+    .select("fixedAssetId, unitsProduced, periodEnd")
     .eq("companyId", companyId)
     .lte("periodEnd", periodEnd);
   if (lastPostedPeriodEnd) {
@@ -624,12 +626,12 @@ export async function buildDepreciationRunLines(
   const usageLogs = await usageQuery;
   if (usageLogs.error) return { data: null, error: usageLogs.error };
 
-  const usageMap = new Map<string, { unitsProduced: number }>();
+  // Units of Production usage per asset per month: each month's line uses
+  // the units logged in that month.
+  const usageMap = new Map<string, number>();
   for (const u of usageLogs.data) {
-    const current = usageMap.get(u.fixedAssetId)?.unitsProduced ?? 0;
-    usageMap.set(u.fixedAssetId, {
-      unitsProduced: current + Number(u.unitsProduced)
-    });
+    const key = usageKey(u.fixedAssetId, monthEndOf(u.periodEnd));
+    usageMap.set(key, (usageMap.get(key) ?? 0) + Number(u.unitsProduced));
   }
 
   const coveredAssetIds = new Set(
@@ -693,11 +695,18 @@ export async function replaceDepreciationRunLines(
 
     const before = await trx
       .selectFrom("depreciationRunLine")
-      .select(["fixedAssetId", "amount", "taxAmount"])
+      .select(["fixedAssetId", "periodEnd", "amount", "taxAmount"])
       .where("depreciationRunId", "=", depreciationRunId)
       .where("companyId", "=", companyId)
       .execute();
-    const changed = !depreciationRunLinesMatch(before, lines);
+    // A line from before per-month lines has no periodEnd: it is the run's.
+    const changed = !depreciationRunLinesMatch(
+      before.map((line) => ({
+        ...line,
+        periodEnd: line.periodEnd ?? run.periodEnd
+      })),
+      lines
+    );
 
     if (lines.length === 0) {
       await trx
@@ -719,7 +728,7 @@ export async function replaceDepreciationRunLines(
       .values(
         lines.map((line) => ({
           depreciationRunId,
-          periodEnd: run.periodEnd,
+          periodEnd: line.periodEnd,
           fixedAssetId: line.fixedAssetId,
           amount: line.amount,
           taxAmount: line.taxAmount,

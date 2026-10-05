@@ -7006,6 +7006,8 @@ export async function insertDepreciationRun(
     periodEnd: string;
     lines: Array<{
       fixedAssetId: string;
+      /** The month the line depreciates; defaults to the run's period. */
+      periodEnd?: string;
       amount: number;
       taxAmount?: number | null;
     }>;
@@ -7052,7 +7054,7 @@ export async function insertDepreciationRun(
   if (input.lines.length > 0) {
     const lineInserts = input.lines.map((line) => ({
       depreciationRunId: run.data.id,
-      periodEnd: input.periodEnd,
+      periodEnd: line.periodEnd ?? input.periodEnd,
       fixedAssetId: line.fixedAssetId,
       amount: line.amount,
       taxAmount: line.taxAmount,

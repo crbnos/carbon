@@ -85,7 +85,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     client
       .from("depreciationRunLine")
       .select(
-        "id, fixedAssetId, amount, taxAmount, fixedAsset:fixedAssetId(id, fixedAssetId, locationId, fixedAssetClassId, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent, usefulLifeMonths, fixedAssetClass:fixedAssetClassId(depreciationExpenseAccountId, accumulatedDepreciationAccountId))"
+        "id, fixedAssetId, periodEnd, amount, taxAmount, fixedAsset:fixedAssetId(id, fixedAssetId, locationId, fixedAssetClassId, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent, usefulLifeMonths, fixedAssetClass:fixedAssetClassId(depreciationExpenseAccountId, accumulatedDepreciationAccountId))"
       )
       .eq("depreciationRunId", depreciationRunId),
     client
@@ -134,7 +134,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
-  if (!depreciationRunLinesMatch(linesResult.data, proposal.data.lines)) {
+  if (
+    !depreciationRunLinesMatch(
+      linesResult.data.map((line) => ({
+        ...line,
+        periodEnd: line.periodEnd ?? run.data.periodEnd
+      })),
+      proposal.data.lines
+    )
+  ) {
     throw redirect(
       path.to.depreciationRun(depreciationRunId),
       await flash(

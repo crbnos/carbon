@@ -349,9 +349,16 @@ export function calculateMacrsDepreciation(args: {
 
 export type DepreciationLine = {
   fixedAssetId: string;
+  /** The month end this line depreciates; it posts in that month's period. */
+  periodEnd: string;
   amount: number;
   taxAmount: number | null;
 };
+
+/** The usage map key for one asset in one month. */
+export function usageKey(fixedAssetId: string, monthEnd: string): string {
+  return `${fixedAssetId}|${monthEnd}`;
+}
 
 /**
  * Whether a Draft depreciation run's stored lines are exactly what the period
@@ -361,16 +368,19 @@ export type DepreciationLine = {
 export function depreciationRunLinesMatch(
   stored: Array<{
     fixedAssetId: string;
+    periodEnd: string;
     amount: number | string;
     taxAmount: number | string | null;
   }>,
   computed: DepreciationLine[]
 ): boolean {
   if (stored.length !== computed.length) return false;
-  const byAsset = new Map(stored.map((line) => [line.fixedAssetId, line]));
-  if (byAsset.size !== stored.length) return false;
+  const byMonth = new Map(
+    stored.map((line) => [usageKey(line.fixedAssetId, line.periodEnd), line])
+  );
+  if (byMonth.size !== stored.length) return false;
   return computed.every((line) => {
-    const match = byAsset.get(line.fixedAssetId);
+    const match = byMonth.get(usageKey(line.fixedAssetId, line.periodEnd));
     if (!match || !equals(Number(match.amount), line.amount)) return false;
     if (match.taxAmount === null || line.taxAmount === null) {
       return match.taxAmount === null && line.taxAmount === null;
@@ -678,6 +688,14 @@ export function calculateTaxDepreciation(
   return null;
 }
 
+/**
+ * One line per asset per month, from the month after `lastPostedPeriodEnd` (or
+ * the asset's start month) through `periodEnd` — FAM's depreciation history
+ * record. Each month is calculated on its own, with the accumulated book and
+ * tax depreciation of the months before it, so a catch-up run posts each
+ * month in its own period at the amount a monthly run would have posted.
+ * `usageMap` holds Units of Production usage by `usageKey(asset, month)`.
+ */
 export function buildDepreciationLines(
   assets: Array<{
     id: string;
@@ -700,61 +718,85 @@ export function buildDepreciationLines(
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
   taxEnabled: boolean,
-  usageMap: Map<string, { unitsProduced: number }>,
+  usageMap: Map<string, number>,
   /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
   decimalPlaces: number
 ): DepreciationLine[] {
   const lines: DepreciationLine[] = [];
 
   for (const asset of assets) {
-    const usageLog = usageMap.get(asset.id);
-    const amount = calculateDepreciation(
-      {
-        acquisitionCost: Number(asset.acquisitionCost),
-        accumulatedDepreciation: Number(asset.accumulatedDepreciation),
-        residualValuePercent: Number(asset.residualValuePercent),
-        depreciationMethod: asset.depreciationMethod,
-        usefulLifeMonths: asset.usefulLifeMonths,
-        depreciationStartDate: asset.depreciationStartDate,
-        acquisitionDate: asset.acquisitionDate,
-        assetLifetimeUsage: asset.assetLifetimeUsage
-          ? Number(asset.assetLifetimeUsage)
-          : null
-      },
-      periodEnd,
-      lastPostedPeriodEnd,
-      decimalPlaces,
-      usageLog
-    );
+    const start = asset.depreciationStartDate ?? asset.acquisitionDate;
+    const firstMonth = lastPostedPeriodEnd
+      ? endOfMonth(parseDate(lastPostedPeriodEnd).add({ months: 1 }))
+      : start
+        ? endOfMonth(parseDate(start.slice(0, 10)))
+        : endOfMonth(parseDate(periodEnd));
 
-    let taxAmount: number | null = null;
-    if (taxEnabled) {
-      taxAmount = calculateTaxDepreciation(
+    let accumulated = Number(asset.accumulatedDepreciation);
+    let accumulatedTax = Number(asset.accumulatedTaxDepreciation ?? 0);
+    let previous = lastPostedPeriodEnd;
+
+    for (
+      let month = firstMonth;
+      month.toString() <= periodEnd;
+      month = endOfMonth(month.add({ months: 1 }))
+    ) {
+      const monthEnd = month.toString();
+      const units = usageMap.get(usageKey(asset.id, monthEnd)) ?? 0;
+      const amount = calculateDepreciation(
         {
           acquisitionCost: Number(asset.acquisitionCost),
-          accumulatedTaxDepreciation: Number(
-            asset.accumulatedTaxDepreciation ?? 0
-          ),
+          accumulatedDepreciation: accumulated,
+          residualValuePercent: Number(asset.residualValuePercent),
+          depreciationMethod: asset.depreciationMethod,
+          usefulLifeMonths: asset.usefulLifeMonths,
           depreciationStartDate: asset.depreciationStartDate,
           acquisitionDate: asset.acquisitionDate,
-          taxDepreciationMethod: asset.taxDepreciationMethod,
-          taxUsefulLifeMonths: asset.taxUsefulLifeMonths,
-          taxResidualValuePercent: asset.taxResidualValuePercent,
-          macrsPropertyClass: asset.macrsPropertyClass,
-          macrsConvention: asset.macrsConvention,
-          bonusDepreciationPercent: asset.bonusDepreciationPercent
+          assetLifetimeUsage: asset.assetLifetimeUsage
+            ? Number(asset.assetLifetimeUsage)
+            : null
         },
-        periodEnd,
-        lastPostedPeriodEnd,
-        decimalPlaces
+        monthEnd,
+        previous,
+        decimalPlaces,
+        { unitsProduced: units }
       );
-      if (taxAmount === null) {
-        taxAmount = amount;
-      }
-    }
 
-    if (amount > 0 || (taxAmount !== null && taxAmount > 0)) {
-      lines.push({ fixedAssetId: asset.id, amount, taxAmount });
+      let taxAmount: number | null = null;
+      if (taxEnabled) {
+        taxAmount = calculateTaxDepreciation(
+          {
+            acquisitionCost: Number(asset.acquisitionCost),
+            accumulatedTaxDepreciation: accumulatedTax,
+            depreciationStartDate: asset.depreciationStartDate,
+            acquisitionDate: asset.acquisitionDate,
+            taxDepreciationMethod: asset.taxDepreciationMethod,
+            taxUsefulLifeMonths: asset.taxUsefulLifeMonths,
+            taxResidualValuePercent: asset.taxResidualValuePercent,
+            macrsPropertyClass: asset.macrsPropertyClass,
+            macrsConvention: asset.macrsConvention,
+            bonusDepreciationPercent: asset.bonusDepreciationPercent
+          },
+          monthEnd,
+          previous,
+          decimalPlaces
+        );
+        if (taxAmount === null) {
+          taxAmount = amount;
+        }
+      }
+
+      if (amount > 0 || (taxAmount !== null && taxAmount > 0)) {
+        lines.push({
+          fixedAssetId: asset.id,
+          periodEnd: monthEnd,
+          amount,
+          taxAmount
+        });
+      }
+      accumulated += amount;
+      accumulatedTax += taxAmount ?? 0;
+      previous = monthEnd;
     }
   }
 

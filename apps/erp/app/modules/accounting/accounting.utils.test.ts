@@ -24,7 +24,8 @@ import {
   getNextRevenueRecognitionPeriodEnd,
   isFutureRunPeriod,
   monthEndOf,
-  runPostingTargets
+  runPostingTargets,
+  usageKey
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -204,17 +205,23 @@ describe("depreciationRunLineDisplay", () => {
 // ---------------------------------------------------------------------------
 
 describe("depreciationRunLinesMatch", () => {
+  const P = "2026-09-30";
   const computed = [
-    { fixedAssetId: "fa1", amount: 100, taxAmount: null },
-    { fixedAssetId: "fa2", amount: 50.5, taxAmount: null }
+    { fixedAssetId: "fa1", periodEnd: P, amount: 100, taxAmount: null },
+    { fixedAssetId: "fa2", periodEnd: P, amount: 50.5, taxAmount: null }
   ];
 
   it("matches the same assets and amounts in any order, numeric strings included", () => {
     expect(
       depreciationRunLinesMatch(
         [
-          { fixedAssetId: "fa2", amount: "50.50", taxAmount: null },
-          { fixedAssetId: "fa1", amount: 100, taxAmount: null }
+          {
+            fixedAssetId: "fa2",
+            periodEnd: P,
+            amount: "50.50",
+            taxAmount: null
+          },
+          { fixedAssetId: "fa1", periodEnd: P, amount: 100, taxAmount: null }
         ],
         computed
       )
@@ -224,7 +231,10 @@ describe("depreciationRunLinesMatch", () => {
   it("is stale when an asset was disposed since the draft", () => {
     expect(
       depreciationRunLinesMatch(
-        [...computed, { fixedAssetId: "fa3", amount: 10, taxAmount: null }],
+        [
+          ...computed,
+          { fixedAssetId: "fa3", periodEnd: P, amount: 10, taxAmount: null }
+        ],
         computed
       )
     ).toBe(false);
@@ -255,6 +265,15 @@ describe("depreciationRunLinesMatch", () => {
       )
     ).toBe(false);
     expect(depreciationRunLinesMatch(taxed, taxed)).toBe(true);
+  });
+
+  it("is stale when the same asset's line is for a different month", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [computed[0], { ...computed[1], periodEnd: "2026-08-31" }],
+        computed
+      )
+    ).toBe(false);
   });
 });
 
@@ -905,7 +924,16 @@ describe("buildDepreciationLines", () => {
     bonusDepreciationPercent: 0
   };
 
-  it("returns book and tax amounts when tax is enabled", () => {
+  const total = (lines: { amount: number; taxAmount: number | null }[]) =>
+    lines.reduce<{ amount: number; taxAmount: number }>(
+      (sum, line) => ({
+        amount: sum.amount + line.amount,
+        taxAmount: sum.taxAmount + (line.taxAmount ?? 0)
+      }),
+      { amount: 0, taxAmount: 0 }
+    );
+
+  it("returns one line per month, each with book and tax amounts when tax is enabled", () => {
     const lines = buildDepreciationLines(
       [baseAsset],
       "2025-12-31",
@@ -914,10 +942,25 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(1);
-    expect(lines[0].amount).toBeGreaterThan(0);
-    expect(lines[0].taxAmount).not.toBeNull();
-    expect(lines[0].taxAmount!).toBeGreaterThan(0);
+    expect(lines).toHaveLength(12);
+    expect(lines.map((line) => line.periodEnd)).toEqual([
+      "2025-01-31",
+      "2025-02-28",
+      "2025-03-31",
+      "2025-04-30",
+      "2025-05-31",
+      "2025-06-30",
+      "2025-07-31",
+      "2025-08-31",
+      "2025-09-30",
+      "2025-10-31",
+      "2025-11-30",
+      "2025-12-31"
+    ]);
+    for (const line of lines) {
+      expect(line.amount).toBeGreaterThan(0);
+      expect(line.taxAmount!).toBeGreaterThan(0);
+    }
   });
 
   it("returns null taxAmount when tax is disabled", () => {
@@ -929,9 +972,8 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(1);
-    expect(lines[0].amount).toBeGreaterThan(0);
-    expect(lines[0].taxAmount).toBeNull();
+    expect(lines).toHaveLength(12);
+    expect(lines.every((line) => line.taxAmount === null)).toBe(true);
   });
 
   it("skips assets with zero depreciation", () => {
@@ -965,9 +1007,9 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(1);
-    expect(lines[0].amount).toBe(0);
-    expect(lines[0].taxAmount!).toBeGreaterThan(0);
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.every((line) => line.amount === 0)).toBe(true);
+    expect(total(lines).taxAmount).toBeGreaterThan(0);
   });
 
   it("handles multiple assets", () => {
@@ -980,7 +1022,10 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(2);
+    expect(lines).toHaveLength(24);
+    expect(new Set(lines.map((line) => line.fixedAssetId))).toEqual(
+      new Set(["asset-1", "asset-2"])
+    );
   });
 
   it("book vs tax difference: MACRS produces more year-1 depreciation than SL", () => {
@@ -994,7 +1039,79 @@ describe("buildDepreciationLines", () => {
     );
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
-    expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+    expect(total(lines)).toEqual({ amount: 21600, taxAmount: 24000 });
+  });
+
+  it("splits a 3-month straight-line catch-up into 3 equal months", () => {
+    const lines = buildDepreciationLines(
+      [baseAsset],
+      "2025-12-31",
+      "2025-09-30",
+      false,
+      new Map(),
+      2
+    );
+    expect(
+      lines.map(({ periodEnd, amount }) => ({ periodEnd, amount }))
+    ).toEqual([
+      { periodEnd: "2025-10-31", amount: 1800 },
+      { periodEnd: "2025-11-30", amount: 1800 },
+      { periodEnd: "2025-12-31", amount: 1800 }
+    ]);
+  });
+
+  it("declines month by month on declining balance", () => {
+    const lines = buildDepreciationLines(
+      [{ ...baseAsset, depreciationMethod: "Declining Balance" }],
+      "2025-03-31",
+      null,
+      false,
+      new Map(),
+      2
+    );
+    expect(lines).toHaveLength(3);
+    expect(lines[1].amount).toBeLessThan(lines[0].amount);
+    expect(lines[2].amount).toBeLessThan(lines[1].amount);
+  });
+
+  it("charges units of production only in the months with logged usage", () => {
+    const lines = buildDepreciationLines(
+      [
+        {
+          ...baseAsset,
+          depreciationMethod: "Units of Production",
+          assetLifetimeUsage: 10000
+        }
+      ],
+      "2025-03-31",
+      null,
+      false,
+      new Map([
+        [usageKey("asset-1", "2025-01-31"), 100],
+        [usageKey("asset-1", "2025-03-31"), 50]
+      ]),
+      2
+    );
+    // 108,000 / 10,000 units = 10.80 a unit.
+    expect(
+      lines.map(({ periodEnd, amount }) => ({ periodEnd, amount }))
+    ).toEqual([
+      { periodEnd: "2025-01-31", amount: 1080 },
+      { periodEnd: "2025-03-31", amount: 540 }
+    ]);
+  });
+
+  it("takes MACRS bonus depreciation in the first month only", () => {
+    const lines = buildDepreciationLines(
+      [{ ...baseAsset, bonusDepreciationPercent: 50 }],
+      "2025-03-31",
+      null,
+      true,
+      new Map(),
+      2
+    );
+    // Bonus 60,000 in January, then 20% of the 60,000 basis over 12 months.
+    expect(lines.map((line) => line.taxAmount)).toEqual([61000, 1000, 1000]);
   });
 });
 
