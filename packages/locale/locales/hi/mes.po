@@ -1406,6 +1406,12 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "First due {0}"
 msgstr "पहली देय {0}"
 
+msgid "Fit"
+msgstr ""
+
+msgid "Fit the graph on screen"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
 
@@ -1916,9 +1922,6 @@ msgstr "कोई खुली जॉब नहीं"
 
 msgid "No open units to allocate"
 msgstr "आवंटित करने के लिए कोई खुली इकाई नहीं"
-
-msgid "No operations"
-msgstr ""
 
 msgid "No operators"
 msgstr "कोई ऑपरेटर नहीं"
@@ -3364,9 +3367,6 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
-msgstr ""
-
-msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

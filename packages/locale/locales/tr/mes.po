@@ -1406,6 +1406,12 @@ msgstr "Malzeme seçilmeden bitir?"
 msgid "First due {0}"
 msgstr "İlk vade {0}"
 
+msgid "Fit"
+msgstr ""
+
+msgid "Fit the graph on screen"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Tamamlamadan önce vurgulanan miktarları düzeltin."
 
@@ -1916,9 +1922,6 @@ msgstr "Açık iş emirleri yok"
 
 msgid "No open units to allocate"
 msgstr "Tahsis edilecek açık birim yok"
-
-msgid "No operations"
-msgstr ""
 
 msgid "No operators"
 msgstr "Operatör bulunamadı"
@@ -3364,9 +3367,6 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
-msgstr ""
-
-msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

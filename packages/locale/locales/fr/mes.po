@@ -1406,6 +1406,12 @@ msgstr "Terminer avec du matériel non prélevé?"
 msgid "First due {0}"
 msgstr "Première échéance {0}"
 
+msgid "Fit"
+msgstr ""
+
+msgid "Fit the graph on screen"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Corrigez les quantités surlignées avant de continuer."
 
@@ -1916,9 +1922,6 @@ msgstr "Aucun ordre de fabrication ouvert"
 
 msgid "No open units to allocate"
 msgstr "Aucune unité ouverte à allouer"
-
-msgid "No operations"
-msgstr ""
 
 msgid "No operators"
 msgstr "Aucun opérateur"
@@ -3364,9 +3367,6 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
-msgstr ""
-
-msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

@@ -1406,6 +1406,12 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 msgid "First due {0}"
 msgstr "첫 번째 기한 {0}"
 
+msgid "Fit"
+msgstr ""
+
+msgid "Fit the graph on screen"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "완료하기 전에 강조된 수량을 수정하세요."
 
@@ -1916,9 +1922,6 @@ msgstr "미결 작업 지시가 없습니다"
 
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
-
-msgid "No operations"
-msgstr ""
 
 msgid "No operators"
 msgstr "작업자 없음"
@@ -3364,9 +3367,6 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
-msgstr ""
-
-msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

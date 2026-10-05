@@ -1406,6 +1406,12 @@ msgstr "Finish with material unpicked?"
 msgid "First due {0}"
 msgstr "First due {0}"
 
+msgid "Fit"
+msgstr "Fit"
+
+msgid "Fit the graph on screen"
+msgstr "Fit the graph on screen"
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Fix the highlighted quantities before completing."
 
@@ -1916,9 +1922,6 @@ msgstr "No open jobs"
 
 msgid "No open units to allocate"
 msgstr "No open units to allocate"
-
-msgid "No operations"
-msgstr "No operations"
 
 msgid "No operators"
 msgstr "No operators"
@@ -3365,9 +3368,6 @@ msgstr "This is past its expiry date. Give a reason to issue it anyway."
 
 msgid "This is the current week"
 msgstr "This is the current week"
-
-msgid "This job has no operations yet."
-msgstr "This job has no operations yet."
 
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "This line asks for {0} {unit}."
