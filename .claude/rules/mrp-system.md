@@ -283,6 +283,16 @@ applying an Expedite, which writes the required date, moved the action and left
 the projected shortage and its Order suggestion in place. Never date a PO line
 anywhere else.
 
+A PROMISED date (the line's, else its delivery's `receiptPromisedDate`) is the
+supplier's, and planning writes only the required date, which a promise
+outranks. So an Expedite / Defer on a promised line is `requiresManualAction`
+("Review on PO", `OpenSupplyOrder.dateIsPromised`), and both planning routes
+refuse to move its date: Apply sends it to review, and the drawer's inline due
+date edit returns 409 (`promisedDateOf`, `purchasing+/planning.update.tsx`).
+Applying it used to mark the action done, move nothing, and get the same
+action back from the next run. Quantity actions on a promised line are
+unaffected.
+
 ### Reads and the horizon in `generatePlanningActions`
 
 - The two planning RPCs are read through `fetchAll` with `.order("id")`, like
@@ -290,6 +300,9 @@ anywhere else.
   `max_rows` (1000); an item missing from those rows has no candidates, and the
   diff then deletes its existing actions, dismissals and assignee overrides
   included.
+- `deriveChangeActions` measures Expedite / Defer from the order's EXPECTED date:
+  its due date, or today when it is overdue (`laterDate`). Measured from the old
+  due date, a late order read as early and got a Defer to a date already past.
 - `deriveChangeActions` gives NO verdict on an order due after the last planning
   week (`WEEKS_TO_PLAN` = 48; MRP itself plans 72). Its demand is not loaded, so
   it would otherwise read as "nothing needs it" and be offered for Cancel. Such
@@ -411,7 +424,9 @@ anywhere else.
     Quantity and due date are click-to-edit; the edits live in the planning
     grid's `ordersMap` and nothing is written until Order / Make. The Order By
     / Start By column is derived (due date less lead time).
-  - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs.
+  - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
+    at the page's location (both drawer reads filter on `locationId`, and
+    `updateLine` / `updateJob` refuse another location's record with 409).
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,
     which re-reads the record under the company and refuses a committed record

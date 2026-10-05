@@ -539,7 +539,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const target = await client
         .from("job")
-        .select("id, status")
+        .select("id, status, locationId")
         .eq("id", parsedJob.data.id)
         .eq("companyId", companyId)
         .maybeSingle();
@@ -547,6 +547,14 @@ export async function action({ request }: ActionFunctionArgs) {
         return data(
           { success: false, message: "Job not found" },
           { status: 404 }
+        );
+      }
+      // The drawer lists one location's jobs; a request for another
+      // location's job did not come from it.
+      if (target.data.locationId !== locationId) {
+        return data(
+          { success: false, message: "This job is for another location." },
+          { status: 409 }
         );
       }
       if (!isJobEditableFromPlanning(target.data.status)) {

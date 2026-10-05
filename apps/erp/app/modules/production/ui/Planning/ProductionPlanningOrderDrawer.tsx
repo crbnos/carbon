@@ -150,6 +150,8 @@ export const ProductionPlanningOrderDrawer = memo(
             "id, jobId, status, quantity, startDate, dueDate, deadlineType"
           )
           .eq("itemId", row.id)
+          // this page's location only: the rows are editable and charted here
+          .eq("locationId", locationId)
           .is("salesOrderId", null)
           .is("salesOrderLineId", null)
           .in("status", ["Draft", "Planned", "Ready", "In Progress", "Paused"]);
@@ -182,7 +184,7 @@ export const ProductionPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
-    }, [carbon, row.id, actionsKey]);
+    }, [carbon, row.id, locationId, actionsKey]);
 
     const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openJobs)) return openJobs;

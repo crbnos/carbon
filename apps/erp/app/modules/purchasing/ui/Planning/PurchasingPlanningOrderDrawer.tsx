@@ -184,6 +184,8 @@ export const PurchasingPlanningOrderDrawer = memo(
           .from("openPurchaseOrderLines")
           .select("*")
           .eq("itemId", selectedItem.id)
+          // this page's location only: the rows are editable and charted here
+          .eq("locationId", locationId)
           .in("status", [
             "To Review",
             "Needs Approval",
@@ -258,7 +260,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
-    }, [carbon, selectedItem.id, actionsKey]);
+    }, [carbon, selectedItem.id, locationId, actionsKey]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openOrders)) return openOrders;

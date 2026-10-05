@@ -35,6 +35,25 @@ import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchasing", "planning");
 
+/**
+ * The date the supplier promised for a PO line: the line's own, else its
+ * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
+ * gives MRP. MRP dates the line by this ahead of the required date, so a
+ * planning date change (which writes the required date) cannot move it.
+ */
+function promisedDateOf(line: {
+  promisedDate: string | null;
+  purchaseOrder: {
+    purchaseOrderDelivery: { receiptPromisedDate: string | null } | null;
+  } | null;
+}): string | null {
+  return (
+    line.promisedDate ??
+    line.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate ??
+    null
+  );
+}
+
 const itemsValidator = z
   .object({
     id: z.string(),
@@ -792,7 +811,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const target = await client
         .from("purchaseOrderLine")
-        .select("id, purchaseOrder!inner(id, status)")
+        .select(
+          "id, locationId, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
+        )
         .eq("id", parsedLine.data.id)
         .eq("companyId", companyId)
         .maybeSingle();
@@ -803,6 +824,18 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
+      // The drawer lists one location's orders; a request for another
+      // location's line did not come from it.
+      if (target.data.locationId !== locationId) {
+        return data(
+          {
+            success: false,
+            message: "This purchase order line is for another location."
+          },
+          { status: 409 }
+        );
+      }
+
       const targetStatus = target.data.purchaseOrder?.status;
       if (!isPurchaseOrderEditableFromPlanning(targetStatus)) {
         return data(
@@ -810,6 +843,20 @@ export async function action({ request }: ActionFunctionArgs) {
             success: false,
             message:
               "This purchase order is in approval or has been sent to the supplier. Change it on the order."
+          },
+          { status: 409 }
+        );
+      }
+
+      if (
+        parsedLine.data.field === "dueDate" &&
+        promisedDateOf(target.data) !== null
+      ) {
+        return data(
+          {
+            success: false,
+            message:
+              "The supplier has promised a date for this line. Change it on the order."
           },
           { status: 409 }
         );
@@ -919,7 +966,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const line = await client
           .from("purchaseOrderLine")
           .select(
-            "id, purchaseOrderId, conversionFactor, purchaseOrder!inner(id, status)"
+            "id, purchaseOrderId, conversionFactor, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
           )
           .eq("id", row.purchaseOrderLineId)
           .eq("companyId", companyId)
@@ -932,8 +979,12 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         const poStatus = line.data.purchaseOrder?.status;
-        if (!isPurchaseOrderEditableFromPlanning(poStatus)) {
-          // In approval or sent — surface "Review on PO" instead of editing
+        const datePromised =
+          (row.type === "Expedite" || row.type === "Defer") &&
+          promisedDateOf(line.data) !== null;
+        if (!isPurchaseOrderEditableFromPlanning(poStatus) || datePromised) {
+          // In approval or sent, or a date the supplier promised (which Apply's
+          // required date cannot move) — surface "Review on PO" instead.
           requiresManualAction.push({
             id: planningActionId,
             purchaseOrderId: line.data.purchaseOrderId

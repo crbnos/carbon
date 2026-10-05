@@ -336,6 +336,106 @@ describe("deriveChangeActions", () => {
       requiresManualAction: true
     });
   });
+
+  // An overdue order arrives today at the earliest. Measured from its old due
+  // date it read as early and was offered a Defer to a date already past.
+  it("raises nothing for an overdue order that is needed now", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      todayDate: "2026-10-07",
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p1", startDate: "2026-10-05", quantity: 10 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-09-23", // two weeks late
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toEqual([]);
+  });
+
+  it("measures an overdue order's Defer from today, never to a past date", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      todayDate: "2026-10-07",
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p4", startDate: "2026-10-26", quantity: 10 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-09-23",
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      type: "Defer",
+      suggestedDate: "2026-10-26",
+      reason: "Not needed until 19 days after its current date"
+    });
+  });
+
+  // Apply moves a PO line's required date; a supplier's promised date
+  // outranks it, so applying a date change there moved nothing and the same
+  // action came back every run.
+  it("sends a date change on a promised line to the PO for review", () => {
+    const promised = (dueDate: string, needStart: string, periodId: string) =>
+      deriveChangeActions({
+        ...base,
+        onHand: 0,
+        demandPeriods: [{ periodId, startDate: needStart, quantity: 10 }],
+        openOrders: [
+          {
+            purchaseOrderLineId: "pol-1",
+            quantity: 10,
+            dueDate,
+            requiresManualAction: false,
+            dateIsPromised: true
+          }
+        ]
+      });
+
+    expect(promised("2026-10-26", "2026-10-05", "p1")[0]).toMatchObject({
+      type: "Expedite",
+      requiresManualAction: true
+    });
+    expect(promised("2026-10-05", "2026-10-26", "p4")[0]).toMatchObject({
+      type: "Defer",
+      requiresManualAction: true
+    });
+  });
+
+  it("still lets a promised line's quantity be changed", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      onHand: 100,
+      demandPeriods: [
+        { periodId: "p1", startDate: "2026-10-05", quantity: 10 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-10-05",
+          requiresManualAction: false,
+          dateIsPromised: true
+        }
+      ]
+    });
+    expect(actions[0]).toMatchObject({
+      type: "Cancel",
+      requiresManualAction: false
+    });
+  });
 });
 
 describe("convertOrdersToIncreases", () => {

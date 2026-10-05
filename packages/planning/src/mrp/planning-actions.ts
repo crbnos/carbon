@@ -120,6 +120,11 @@ export function earlierDate(a: string, b: string): string {
   return daysBetween(a, b) <= 0 ? a : b;
 }
 
+/** The later of two ISO calendar dates. */
+export function laterDate(a: string, b: string): string {
+  return daysBetween(a, b) >= 0 ? a : b;
+}
+
 /**
  * The view only yields open POs ('Planned' | 'To Receive' | 'To Receive and
  * Invoice'); anything past 'Planned'/'Draft' has been sent to the supplier
@@ -142,6 +147,13 @@ export type OpenSupplyOrder = {
   /** the date the order is currently expected to land (ISO) */
   dueDate: string;
   requiresManualAction: boolean;
+  /**
+   * `dueDate` is the supplier's promise (a PO line's or its delivery's
+   * promised date). Apply moves only the required date, which a promise
+   * outranks, so a date change on such a line is the planner's to agree with
+   * the supplier: Expedite / Defer become "Review on PO".
+   */
+  dateIsPromised?: boolean;
   supplierId?: string | null;
 };
 
@@ -173,7 +185,8 @@ type ChangeCandidate = Omit<
  * the balance goes negative; each order's FIRST covered requirement dates it.
  * Emits at most ONE action per open order:
  *   consumed = 0                        → Cancel
- *   |due − firstNeed| > toleranceDays   → Expedite / Defer
+ *   |expected − firstNeed| > tolerance  → Expedite / Defer, where expected is
+ *                                          the due date, or today if overdue
  *   leftover quantity (no date action)  → Decrease
  */
 export function deriveChangeActions(
@@ -286,11 +299,21 @@ export function deriveChangeActions(
     }
 
     if (firstNeed) {
+      // An overdue order arrives today at the earliest, not on its old due
+      // date: measured from that date it read as "early" and was offered a
+      // Defer to a date already past.
+      const expectedDate = laterDate(order.dueDate, todayDate);
       // gap > 0: the order lands AFTER it is needed
-      const gap = daysBetween(order.dueDate, firstNeed.startDate);
+      const gap = daysBetween(expectedDate, firstNeed.startDate);
+      // Moving a promised date is agreed with the supplier, not applied.
+      const dateTarget = {
+        ...target,
+        requiresManualAction:
+          target.requiresManualAction || Boolean(order.dateIsPromised)
+      };
       if (gap > toleranceDays) {
         actions.push({
-          ...target,
+          ...dateTarget,
           type: "Expedite",
           periodId: firstNeed.periodId,
           suggestedQuantity: order.quantity,
@@ -303,7 +326,7 @@ export function deriveChangeActions(
       }
       if (gap < -toleranceDays) {
         actions.push({
-          ...target,
+          ...dateTarget,
           type: "Defer",
           periodId: firstNeed.periodId,
           suggestedQuantity: order.quantity,
@@ -761,6 +784,7 @@ export async function generatePlanningActions(
       quantity,
       dueDate,
       requiresManualAction: isCommittedPurchaseOrderStatus(line.status ?? ""),
+      dateIsPromised: Boolean(line.promisedDate),
       supplierId: line.supplierId
     });
   }
