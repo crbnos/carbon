@@ -131963,8 +131963,7 @@ export default {
         "depreciationRunId",
         "fixedAssetId",
         "amount",
-        "companyId",
-        "periodEnd"
+        "companyId"
       ],
       properties: {
         id: {
