@@ -10,13 +10,10 @@ import { redirect } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  depreciationRunValidator,
-  insertDepreciationRun
+  createDepreciationRun,
+  depreciationRunValidator
 } from "~/modules/accounting";
-import {
-  buildDepreciationRunLines,
-  futureRunPeriodError
-} from "~/modules/accounting/accounting.server";
+import { futureRunPeriodError } from "~/modules/accounting/accounting.server";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
@@ -84,36 +81,18 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const proposal = await buildDepreciationRunLines(client, {
+  // Never an empty run: with nothing to depreciate this refuses.
+  const result = await createDepreciationRun(client, {
     companyId,
     companyGroupId,
-    periodEnd
-  });
-  if (!proposal.data) {
-    throw redirect(
-      path.to.depreciationRuns,
-      await flash(
-        request,
-        error(proposal.error, "Failed to calculate depreciation")
-      )
-    );
-  }
-  const { lines } = proposal.data;
-
-  const result = await insertDepreciationRun(client, {
     periodEnd,
-    lines,
-    companyId,
-    createdBy: userId
+    userId
   });
 
-  if (result.error || !result.data) {
+  if (result.error) {
     throw redirect(
       path.to.depreciationRuns,
-      await flash(
-        request,
-        error(result.error, "Failed to create depreciation run")
-      )
+      await flash(request, error(result.error, result.error.message))
     );
   }
 

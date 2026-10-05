@@ -61,7 +61,13 @@ import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
   RUN_JOURNAL_SOURCES
 } from "./accounting.models";
-import { diffJournalLines } from "./accounting.utils";
+import {
+  buildDepreciationLines,
+  type DepreciationLine,
+  diffJournalLines,
+  monthEndOf,
+  usageKey
+} from "./accounting.utils";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -7108,6 +7114,178 @@ export async function insertDepreciationRun(
     },
     error: null
   };
+}
+
+/**
+ * What a depreciation run for `periodEnd` should hold, from the assets as they
+ * are now: every Active asset no OTHER run of the period covers (`runId` is
+ * the run being checked or rebuilt, absent for a new one), depreciated from
+ * the last run posted before the period, with Units of Production summing the
+ * usage logged since then. New, Repeat, Recalculate and the check at Post all
+ * read it, so a Draft that still matches is exactly what a fresh run would
+ * propose. `laterPostedRunId` is set when a run for a LATER period is already
+ * posted: this period's depreciation is then counted in it, and a run here
+ * would post those months twice.
+ */
+export async function buildDepreciationRunLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    periodEnd: string;
+    runId?: string;
+  }
+): Promise<
+  | {
+      data: { lines: DepreciationLine[]; laterPostedRunId: string | null };
+      error: null;
+    }
+  | { data: null; error: unknown }
+> {
+  const { companyId, companyGroupId, periodEnd, runId } = args;
+
+  let covered = client
+    .from("depreciationRunLine")
+    .select("fixedAssetId, depreciationRun!inner(periodEnd)")
+    .eq("companyId", companyId)
+    .eq("depreciationRun.periodEnd", periodEnd);
+  if (runId) covered = covered.neq("depreciationRunId", runId);
+
+  const [settings, lastPosted, laterPosted, coveredLines, assets, decimals] =
+    await Promise.all([
+      client
+        .from("companySettings")
+        .select("assetTaxDepreciationEnabled")
+        .eq("id", companyId)
+        .single(),
+      client
+        .from("depreciationRun")
+        .select("periodEnd")
+        .eq("companyId", companyId)
+        .eq("status", "Posted")
+        .lt("periodEnd", periodEnd)
+        .order("periodEnd", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      client
+        .from("depreciationRun")
+        .select("depreciationRunId")
+        .eq("companyId", companyId)
+        .eq("status", "Posted")
+        .gt("periodEnd", periodEnd)
+        .order("periodEnd")
+        .limit(1)
+        .maybeSingle(),
+      covered,
+      client
+        .from("fixedAsset")
+        .select("*")
+        .eq("companyId", companyId)
+        .eq("status", "Active"),
+      getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
+    ]);
+
+  if (lastPosted.error) return { data: null, error: lastPosted.error };
+  if (laterPosted.error) return { data: null, error: laterPosted.error };
+  if (coveredLines.error) return { data: null, error: coveredLines.error };
+  if (assets.error) return { data: null, error: assets.error };
+
+  const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
+
+  // A run can cover several months (a picked later period), so units of
+  // production sums every usage log since the last posted run.
+  let usageQuery = client
+    .from("fixedAssetUsageLog")
+    .select("fixedAssetId, unitsProduced, periodEnd")
+    .eq("companyId", companyId)
+    .lte("periodEnd", periodEnd);
+  if (lastPostedPeriodEnd) {
+    usageQuery = usageQuery.gt("periodEnd", lastPostedPeriodEnd);
+  }
+  const usageLogs = await usageQuery;
+  if (usageLogs.error) return { data: null, error: usageLogs.error };
+
+  // Units of Production usage per asset per month: each month's line uses
+  // the units logged in that month.
+  const usageMap = new Map<string, number>();
+  for (const u of usageLogs.data) {
+    const key = usageKey(u.fixedAssetId, monthEndOf(u.periodEnd));
+    usageMap.set(key, (usageMap.get(key) ?? 0) + Number(u.unitsProduced));
+  }
+
+  const coveredAssetIds = new Set(
+    coveredLines.data.map((line) => line.fixedAssetId)
+  );
+
+  const lines = buildDepreciationLines(
+    assets.data
+      .filter((asset) => !coveredAssetIds.has(asset.id))
+      .map((asset) => ({
+        ...asset,
+        accumulatedTaxDepreciation: Number(
+          asset.accumulatedTaxDepreciation ?? 0
+        )
+      })),
+    periodEnd,
+    lastPostedPeriodEnd,
+    settings.data?.assetTaxDepreciationEnabled ?? false,
+    usageMap,
+    decimals
+  );
+
+  return {
+    data: {
+      lines,
+      laterPostedRunId: laterPosted.data?.depreciationRunId ?? null
+    },
+    error: null
+  };
+}
+
+/**
+ * Creates a Draft depreciation run for `periodEnd` holding what
+ * `buildDepreciationRunLines` says is due. Never an empty run: with nothing
+ * to depreciate it returns an error and writes nothing. New Run and the
+ * period close checklist both create through it.
+ */
+export async function createDepreciationRun(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    periodEnd: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { id: string; depreciationRunId: string }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const proposal = await buildDepreciationRunLines(client, args);
+  if (!proposal.data) {
+    return {
+      data: null,
+      error: { message: "Failed to calculate depreciation" }
+    };
+  }
+  if (proposal.data.lines.length === 0) {
+    return {
+      data: null,
+      error: { message: "Nothing to depreciate for this period" }
+    };
+  }
+  const result = await insertDepreciationRun(client, {
+    periodEnd: args.periodEnd,
+    lines: proposal.data.lines,
+    companyId: args.companyId,
+    createdBy: args.userId
+  });
+  if (result.error || !result.data) {
+    return {
+      data: null,
+      error: { message: "Failed to create depreciation run" }
+    };
+  }
+  return { data: result.data, error: null };
 }
 
 /** @mcp delete */

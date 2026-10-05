@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  buildDepreciationRunLines,
-  replaceDepreciationRunLines
-} from "~/modules/accounting/accounting.server";
+import { buildDepreciationRunLines } from "~/modules/accounting";
+import { replaceDepreciationRunLines } from "~/modules/accounting/accounting.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

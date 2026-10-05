@@ -22,20 +22,17 @@ import {
   applyCtaToReportPeriodSeries,
   getAccountLedger,
   getAccountLedgerSummary,
-  getBaseCurrencyDecimalPlaces,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
   getOrCreateAccountingPeriod
 } from "./accounting.service";
 import {
   acquisitionLines,
-  buildDepreciationLines,
   type DepreciationLine,
   depreciationRunLinesMatch,
   isFutureRunPeriod,
   monthEndOf,
-  runPostingTargets,
-  usageKey
+  runPostingTargets
 } from "./accounting.utils";
 
 /** The company's business day, `YYYY-MM-DD`. */
@@ -543,132 +540,6 @@ export async function postAssetRegistration(
         .execute();
     }
   });
-}
-
-/**
- * What a depreciation run for `periodEnd` should hold, from the assets as they
- * are now: every Active asset no OTHER run of the period covers (`runId` is
- * the run being checked or rebuilt, absent for a new one), depreciated from
- * the last run posted before the period, with Units of Production summing the
- * usage logged since then. New, Repeat, Recalculate and the check at Post all
- * read it, so a Draft that still matches is exactly what a fresh run would
- * propose. `laterPostedRunId` is set when a run for a LATER period is already
- * posted: this period's depreciation is then counted in it, and a run here
- * would post those months twice.
- */
-export async function buildDepreciationRunLines(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    companyGroupId: string;
-    periodEnd: string;
-    runId?: string;
-  }
-): Promise<
-  | {
-      data: { lines: DepreciationLine[]; laterPostedRunId: string | null };
-      error: null;
-    }
-  | { data: null; error: unknown }
-> {
-  const { companyId, companyGroupId, periodEnd, runId } = args;
-
-  let covered = client
-    .from("depreciationRunLine")
-    .select("fixedAssetId, depreciationRun!inner(periodEnd)")
-    .eq("companyId", companyId)
-    .eq("depreciationRun.periodEnd", periodEnd);
-  if (runId) covered = covered.neq("depreciationRunId", runId);
-
-  const [settings, lastPosted, laterPosted, coveredLines, assets, decimals] =
-    await Promise.all([
-      client
-        .from("companySettings")
-        .select("assetTaxDepreciationEnabled")
-        .eq("id", companyId)
-        .single(),
-      client
-        .from("depreciationRun")
-        .select("periodEnd")
-        .eq("companyId", companyId)
-        .eq("status", "Posted")
-        .lt("periodEnd", periodEnd)
-        .order("periodEnd", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      client
-        .from("depreciationRun")
-        .select("depreciationRunId")
-        .eq("companyId", companyId)
-        .eq("status", "Posted")
-        .gt("periodEnd", periodEnd)
-        .order("periodEnd")
-        .limit(1)
-        .maybeSingle(),
-      covered,
-      client
-        .from("fixedAsset")
-        .select("*")
-        .eq("companyId", companyId)
-        .eq("status", "Active"),
-      getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
-    ]);
-
-  if (lastPosted.error) return { data: null, error: lastPosted.error };
-  if (laterPosted.error) return { data: null, error: laterPosted.error };
-  if (coveredLines.error) return { data: null, error: coveredLines.error };
-  if (assets.error) return { data: null, error: assets.error };
-
-  const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
-
-  // A run can cover several months (a picked later period), so units of
-  // production sums every usage log since the last posted run.
-  let usageQuery = client
-    .from("fixedAssetUsageLog")
-    .select("fixedAssetId, unitsProduced, periodEnd")
-    .eq("companyId", companyId)
-    .lte("periodEnd", periodEnd);
-  if (lastPostedPeriodEnd) {
-    usageQuery = usageQuery.gt("periodEnd", lastPostedPeriodEnd);
-  }
-  const usageLogs = await usageQuery;
-  if (usageLogs.error) return { data: null, error: usageLogs.error };
-
-  // Units of Production usage per asset per month: each month's line uses
-  // the units logged in that month.
-  const usageMap = new Map<string, number>();
-  for (const u of usageLogs.data) {
-    const key = usageKey(u.fixedAssetId, monthEndOf(u.periodEnd));
-    usageMap.set(key, (usageMap.get(key) ?? 0) + Number(u.unitsProduced));
-  }
-
-  const coveredAssetIds = new Set(
-    coveredLines.data.map((line) => line.fixedAssetId)
-  );
-
-  const lines = buildDepreciationLines(
-    assets.data
-      .filter((asset) => !coveredAssetIds.has(asset.id))
-      .map((asset) => ({
-        ...asset,
-        accumulatedTaxDepreciation: Number(
-          asset.accumulatedTaxDepreciation ?? 0
-        )
-      })),
-    periodEnd,
-    lastPostedPeriodEnd,
-    settings.data?.assetTaxDepreciationEnabled ?? false,
-    usageMap,
-    decimals
-  );
-
-  return {
-    data: {
-      lines,
-      laterPostedRunId: laterPosted.data?.depreciationRunId ?? null
-    },
-    error: null
-  };
 }
 
 /**
