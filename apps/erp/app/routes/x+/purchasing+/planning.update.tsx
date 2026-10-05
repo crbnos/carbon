@@ -348,6 +348,16 @@ export async function action({ request }: ActionFunctionArgs) {
         // Track readable id too so the client can present a clickable toast.
         const poCache = new Map<string, { id: string; readableId: string }>();
 
+        // Whether purchasing is blocked, for every item ordered, in one read
+        const purchasingRows = await client
+          .from("itemReplenishment")
+          .select("itemId, purchasingBlocked")
+          .in("itemId", Array.from(itemIds))
+          .eq("companyId", companyId);
+        const purchasingByItem = new Map(
+          (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+        );
+
         for (const [supplierId, ordersInGroup] of ordersBySupplier) {
           const supplier = suppliersById.get(supplierId);
           if (!supplier) {
@@ -459,12 +469,14 @@ export async function action({ request }: ActionFunctionArgs) {
               (sp) => sp.itemId === itemId && sp.supplierId === supplierId
             );
 
-            const purchasing = await client
-              .from("itemReplenishment")
-              .select("purchasingBlocked")
-              .eq("itemId", itemId)
-              .eq("companyId", companyId)
-              .single();
+            const purchasing = {
+              data: purchasingByItem.get(itemId),
+              error:
+                purchasingRows.error ??
+                (purchasingByItem.has(itemId)
+                  ? null
+                  : { message: "No replenishment record" })
+            };
 
             if (purchasing.error) {
               logger.error("Failed to retrieve item replenishment", {

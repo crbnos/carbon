@@ -176,6 +176,23 @@ export async function action({ request }: ActionFunctionArgs) {
         let processedItems = 0;
         let errors: string[] = [];
 
+        // Manufacturing data for every item being ordered, in one read
+        const manufacturingRows = await client
+          .from("itemReplenishment")
+          .select(
+            "itemId, manufacturingBlocked, scrapPercentage, requiresConfiguration"
+          )
+          .in(
+            "itemId",
+            itemsToOrder.flatMap((item) =>
+              item.orders.length > 0 ? [item.id] : []
+            )
+          )
+          .eq("companyId", companyId);
+        const manufacturingByItem = new Map(
+          (manufacturingRows.data ?? []).map((row) => [row.itemId, row])
+        );
+
         for (const item of itemsToOrder) {
           const orders = item.orders;
 
@@ -188,15 +205,14 @@ export async function action({ request }: ActionFunctionArgs) {
           const jobIds: string[] = [];
           const supplyForecastByPeriod: Record<string, number> = {};
 
-          // Get manufacturing data for this item
-          const manufacturing = await client
-            .from("itemReplenishment")
-            .select(
-              "manufacturingBlocked, scrapPercentage, requiresConfiguration"
-            )
-            .eq("itemId", item.id)
-            .eq("companyId", companyId)
-            .single();
+          const manufacturing = {
+            data: manufacturingByItem.get(item.id),
+            error:
+              manufacturingRows.error ??
+              (manufacturingByItem.has(item.id)
+                ? null
+                : { message: "No replenishment record" })
+          };
 
           if (manufacturing.error) {
             const errorMsg = `Failed to retrieve manufacturing data for item ${item.id}: ${manufacturing.error.message}`;

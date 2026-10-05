@@ -45,15 +45,31 @@ async function processToActive(
   const archivedIdsToMoveToDraft: string[] = [];
   const canTransitionToActive = (s: string | null) =>
     s === "Draft" || s === "Archived";
-  for (const doc of docList) {
-    if (!canTransitionToActive(doc.status)) continue;
-    const approvalRequired = await isApprovalRequired(
+  // The same answer for every document: read once, and only when one needs it.
+  const transitioning = docList.filter((doc) =>
+    canTransitionToActive(doc.status)
+  );
+  const approvalRequired =
+    transitioning.length > 0 &&
+    (await isApprovalRequired(
       serviceRole,
       "qualityDocument",
       companyId,
       undefined
+    ));
+  let approvers: Promise<string[]> | undefined;
+  const getApprovers = () => {
+    approvers ??= getApprovalRuleByAmount(
+      serviceRole,
+      "qualityDocument",
+      companyId,
+      undefined
+    ).then((rule) =>
+      rule.data ? getApproverUserIdsForRule(serviceRole, rule.data) : []
     );
-    if (!approvalRequired) continue;
+    return approvers;
+  };
+  for (const doc of approvalRequired ? transitioning : []) {
     const hasPending = await hasPendingApproval(
       serviceRole,
       "qualityDocument",
@@ -72,15 +88,7 @@ async function processToActive(
       amount: undefined
     });
 
-    const rule = await getApprovalRuleByAmount(
-      serviceRole,
-      "qualityDocument",
-      companyId,
-      undefined
-    );
-    const approverIds = rule.data
-      ? await getApproverUserIdsForRule(serviceRole, rule.data)
-      : [];
+    const approverIds = await getApprovers();
 
     if (approverIds.length > 0) {
       try {
