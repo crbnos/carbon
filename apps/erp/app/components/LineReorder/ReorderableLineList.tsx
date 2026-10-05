@@ -23,6 +23,10 @@ import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { DragHandleBindings, ReorderableLine } from "./types";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+
 type ReorderableLineListProps<T extends ReorderableLine> = {
   lines: T[];
   activeLine: T | null;
@@ -41,7 +45,7 @@ export function ReorderableLineList<T extends ReorderableLine>({
   renderOverlay
 }: ReorderableLineListProps<T>) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 

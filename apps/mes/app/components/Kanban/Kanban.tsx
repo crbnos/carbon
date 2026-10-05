@@ -25,6 +25,10 @@ import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import type { Column, DisplaySettings, Item } from "./types";
 import { coordinateGetter, hasDraggableData } from "./utils";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };
+
 interface Progress {
   totalDuration: number;
   progress: number;
@@ -74,9 +78,7 @@ const Kanban = ({
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   const announcements: Announcements = {

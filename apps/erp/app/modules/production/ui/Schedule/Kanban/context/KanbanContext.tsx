@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ReactNode } from "react";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { DisplaySettings } from "../types";
 
 interface KanbanContextType {
@@ -33,18 +33,24 @@ export function KanbanProvider({
   tags,
   columnIds
 }: KanbanProviderProps) {
+  // The board passes its display settings as a fresh object on every render;
+  // every card reads this context, so an unstable value re-renders them all.
+  const settingsKey = JSON.stringify(displaySettings);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by value
+  const stableSettings = useMemo(() => displaySettings, [settingsKey]);
+  const value = useMemo(
+    () => ({
+      displaySettings: stableSettings,
+      selectedGroup,
+      setSelectedGroup,
+      tags,
+      columnIds
+    }),
+    [stableSettings, selectedGroup, setSelectedGroup, tags, columnIds]
+  );
+
   return (
-    <KanbanContext.Provider
-      value={{
-        displaySettings,
-        selectedGroup,
-        setSelectedGroup,
-        tags,
-        columnIds
-      }}
-    >
-      {children}
-    </KanbanContext.Provider>
+    <KanbanContext.Provider value={value}>{children}</KanbanContext.Provider>
   );
 }
 

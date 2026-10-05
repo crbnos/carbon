@@ -31,6 +31,12 @@ import { BoardContainer } from "../Kanban/components/ColumnCard";
 import { hasDraggableData } from "../Kanban/utils";
 import { assignmentMatchesShift } from "./peopleShared";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates
+};
+
 const UNASSIGNED = "unassigned";
 
 type WeekEmployee = {
@@ -277,7 +283,7 @@ const PeopleWeekBoard = ({
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   // shift-less rows resolve through the person's own shift, like the hours do

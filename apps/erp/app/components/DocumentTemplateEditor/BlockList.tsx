@@ -67,6 +67,10 @@ import {
 } from "./context";
 import { HEADER_LOGO_ID, useHeaderConfig } from "./useHeaderConfig";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+
 const ADD_OPTIONS: {
   type: AddableBlockType;
   icon: ReactNode;
@@ -133,7 +137,7 @@ export function BlockList() {
     ? bodyBlocks.filter((b) => b.id !== summaryBlock.id)
     : bodyBlocks;
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 

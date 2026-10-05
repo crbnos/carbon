@@ -177,9 +177,7 @@ export default function ConfigurationParametersForm({
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   return (
@@ -1337,3 +1335,8 @@ export function hasDraggableData<T extends Active | Over>(
 
   return false;
 }
+
+// Declared after `coordinateGetter`. A module constant: a new options object
+// makes a new sensor, and with it new listeners for every draggable on every
+// render.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };

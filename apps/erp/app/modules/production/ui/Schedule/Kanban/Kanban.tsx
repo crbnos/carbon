@@ -71,6 +71,10 @@ type KanbanDragState = {
 
 const KanbanDragPreviewContext = createContext<KanbanDragState | null>(null);
 
+// A new options object makes a new sensor, and with it new listeners for
+// every card on every render of the board.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };
+
 function PreviewItemCard({
   item,
   isOverlay,
@@ -437,9 +441,7 @@ const Kanban = ({
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   function getDraggingItemData(itemId: UniqueIdentifier, columnId: string) {

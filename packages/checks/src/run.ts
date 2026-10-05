@@ -29,6 +29,7 @@ import {
   SHARED_APP_DIRS
 } from "./conformance/no-duplicated-app-file";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -172,7 +173,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noInterpolatedErrorLog,
       noRawRedirect
     ]),
-    ...scanAll(loadTypescriptFiles(root), [noRawRevalidator]),
+    ...scanAll(loadTypescriptFiles(root), [
+      noRawRevalidator,
+      noInlineSensorOptions
+    ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders
     ]),
