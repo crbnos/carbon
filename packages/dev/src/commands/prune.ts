@@ -131,11 +131,13 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
         : slots[slug]!.worktreeRoot
     ])
   );
-  log.warn(
-    projects
-      .map((p) => `${pc.bold(p)}  ${pc.dim(reasons.get(p) ?? "no slot")}`)
-      .join("\n")
-  );
+  if (projects.length > 0) {
+    log.warn(
+      projects
+        .map((p) => `${pc.bold(p)}  ${pc.dim(reasons.get(p) ?? "no slot")}`)
+        .join("\n")
+    );
+  }
 
   if (trees.length > 0) {
     log.warn(
