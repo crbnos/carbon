@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { writeFileSync } from "node:fs";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
@@ -40,7 +41,12 @@ import {
   sleepStack,
   tailServiceLogs
 } from "../services/compose.js";
-import { stackStateDir, watchIdle } from "../services/hibernate.js";
+import {
+  activityFile,
+  stackStateDir,
+  startWaker,
+  watchIdle
+} from "../services/hibernate.js";
 import {
   applyBootstrapSql,
   applyMigrations,
@@ -318,15 +324,48 @@ export async function up(opts: UpOpts = {}) {
     !borrowSlug &&
     idleMinutes > 0 &&
     reactRouterApps(selectedApps).length > 0;
+  // Deep sleep parks the dev servers: the watcher aborts them, listens on
+  // their ports itself, and on the next request starts the containers and lets
+  // the app loop below spawn them again.
+  const deepMinutes = Number(process.env.CRBN_APPS_IDLE_MINUTES ?? 120);
+  const appPorts = reactRouterApps(selectedApps).flatMap((id) => {
+    const key = APP_PORT_KEY[id];
+    return key ? [ctx.ports[key]] : [];
+  });
+  const parking: AppParking = { parked: false };
+  let wakers: Array<() => Promise<void>> = [];
+  const wakeContainers = async () => {
+    await bootStack(root, slug, size);
+    await waitForPostgres(ctx.ports.PORT_DB);
+    await waitForApi(ctx.ports.PORT_API, ctx.jwt.anonKey);
+  };
   const stopWatching = hibernates
     ? watchIdle({
         dir: stateDir,
         idleMs: idleMinutes * 60_000,
+        deepMs: deepMinutes * 60_000,
         sleep: () => sleepStack(root, slug),
-        wake: async () => {
-          await bootStack(root, slug, size);
-          await waitForPostgres(ctx.ports.PORT_DB);
-          await waitForApi(ctx.ports.PORT_API, ctx.jwt.anonKey);
+        deepen: async () => {
+          parking.parked = true;
+          parking.stop?.abort();
+          await parking.exited;
+          wakers = appPorts.map((port) =>
+            startWaker(port, () => writeFileSync(activityFile(stateDir), ""))
+          );
+        },
+        wake: async (from) => {
+          try {
+            await wakeContainers();
+          } finally {
+            // Whatever happened to the containers, never leave the apps
+            // parked behind a listener that can no longer wake them.
+            if (from === "deep") {
+              await Promise.all(wakers.map((stop) => stop()));
+              wakers = [];
+              parking.parked = false;
+              parking.resume?.();
+            }
+          }
         },
         log: (line) => process.stderr.write(`${pc.cyan("•")} ${line}\n`)
       })
@@ -337,12 +376,23 @@ export async function up(opts: UpOpts = {}) {
       selectedApps,
       ctx.ports,
       portless,
-      stripeChild
+      stripeChild,
+      parking
     );
   } finally {
     stopWatching?.();
+    await Promise.all(wakers.map((stop) => stop()));
   }
 }
+
+// Shared between the idle watcher and the app loop. `parked` means the dev
+// servers were stopped on purpose and will be started again.
+type AppParking = {
+  parked: boolean;
+  stop?: AbortController;
+  exited?: Promise<void>;
+  resume?: () => void;
+};
 
 // Kill the detached stripe listener's whole process group (apps-mode teardown).
 function killStripe(child?: ExecaChildProcess) {
@@ -721,7 +771,8 @@ async function runAppsThenTeardown(
   selectedApps: AppId[],
   ports: PortMap,
   portless: boolean,
-  stripeChild?: ExecaChildProcess
+  stripeChild?: ExecaChildProcess,
+  parking: AppParking = { parked: false }
 ) {
   const apps = reactRouterApps(selectedApps);
   if (apps.length === 0) {
@@ -732,7 +783,31 @@ async function runAppsThenTeardown(
       whenAuxAppExits()
     ]);
   } else {
-    await spawnApps({ root, apps, ports, portless });
+    for (;;) {
+      parking.stop = new AbortController();
+      parking.exited = spawnApps({
+        root,
+        apps,
+        ports,
+        portless,
+        signal: parking.stop.signal
+      });
+      await parking.exited;
+      // Exited on their own or on Ctrl+C: tear down. Parked: wait for the
+      // wake (or a Ctrl+C, which spawnApps is no longer listening for).
+      if (!parking.parked) break;
+      const interrupted = await new Promise<boolean>((resolve) => {
+        const detach = onShutdown(() => {
+          detach();
+          resolve(true);
+        });
+        parking.resume = () => {
+          detach();
+          resolve(false);
+        };
+      });
+      if (interrupted) break;
+    }
   }
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.

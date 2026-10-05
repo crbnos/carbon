@@ -37,7 +37,7 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn up --borrow` | Reuse another worktree's running containers (DB, API, etc). |
 | `crbn up --no-apps` | Services only (postgres, kong, supabase, inngest, mail). |
 | `crbn up --full` | Also start Studio, Postgres-Meta, the edge runtime and imgproxy (HEIC conversion). They are off by default; `crbn reload studio` or `crbn reload imgproxy` starts one on a running stack. |
-| `crbn up --no-hibernate` | Keep the containers up. By default they stop after 30 min without ERP/MES traffic and start again on the next request (about 8 s); `CRBN_IDLE_MINUTES` changes the wait. |
+| `crbn up --no-hibernate` | Keep everything up. By default the containers stop after 30 min without ERP/MES traffic (the next request wakes them in about 8 s), and the dev servers stop after 2 h (that wake takes about 40 s). `CRBN_IDLE_MINUTES` and `CRBN_APPS_IDLE_MINUTES` change the waits. |
 | `crbn up --no-migrate` | Skip database migrations. |
 | `crbn up --no-regen` | Skip type/swagger regeneration. |
 | `crbn up --pull` | Force `docker compose pull` even if images exist locally. |

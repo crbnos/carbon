@@ -15,6 +15,7 @@ import {
   ensureDockerRunning,
   stopStack
 } from "../services/compose.js";
+import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   applyMigrations,
   ensureConfigRow,
@@ -60,6 +61,8 @@ export async function migrate(opts: { regen?: boolean } = {}) {
   } catch {
     // .env.local missing or PORT_DB not set — will need to provision.
   }
+
+  if (await wakeIfAsleep(slug)) log.info("woke the hibernated stack");
 
   // If postgres is already reachable, migrate against the running DB.
   if (portDb && (await tryConnect("127.0.0.1", portDb, 500))) {

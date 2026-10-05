@@ -9,13 +9,14 @@ import { execa } from "execa";
 import { isAbsolute, join, resolve } from "pathe";
 import { requireNumberEnv, tryConnect } from "../helpers.js";
 import { confirmRestore } from "../prompts.js";
+import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   applyMigrations,
   serviceSchemasReady,
   syncAuthz
 } from "../services/migrations.js";
 import { tasks } from "../ui.js";
-import { getWorktreeRoot } from "../worktree.js";
+import { getWorktreeRoot, resolveSlug } from "../worktree.js";
 
 export type RestoreMode = "local" | "prod";
 
@@ -116,6 +117,7 @@ export async function restore(opts: RestoreOptions) {
   // postgres-only stack the dump's `CREATE TABLE auth.users` no-ops onto the
   // image's stub, and the restore fails late — after the data has landed but
   // before the email scrub — leaving unscrubbed production addresses on disk.
+  await wakeIfAsleep(resolveSlug(root));
   if (!(await tryConnect("127.0.0.1", portDb, 500))) {
     cancel("postgres is not reachable — run `crbn up` first, then retry");
     process.exit(1);
