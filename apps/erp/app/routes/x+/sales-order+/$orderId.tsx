@@ -80,9 +80,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [salesOrder, lines] = await Promise.all([
+  // Three steps at most: what needs only the order id is read with the order,
+  // what needs the order's or the invoice lines' values follows together, and
+  // the originating quote waits for the opportunity.
+  const serviceRole = getCarbonServiceRole();
+  const [salesOrder, lines, companySettings, invoiceLines] = await Promise.all([
     getSalesOrder(client, orderId),
-    getSalesOrderLines(client, orderId)
+    getSalesOrderLines(client, orderId),
+    getCompanySettings(serviceRole, companyId),
+    getSalesOrderInvoiceLines(client, orderId)
   ]);
 
   if (salesOrder.error) {
@@ -92,14 +98,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const opportunity = await getOpportunity(
-    client,
-    salesOrder.data?.opportunityId ?? null
-  );
-
   if (companyId !== salesOrder.data?.companyId) {
     throw redirect(path.to.salesOrders);
   }
+
+  const invoiceIds = Array.from(
+    new Set(
+      (invoiceLines.data ?? []).map((line) => line.invoiceId).filter(Boolean)
+    )
+  ) as string[];
+
+  const [opportunity, customer, invoices, payments] = await Promise.all([
+    getOpportunity(client, salesOrder.data?.opportunityId ?? null),
+    salesOrder.data?.customerId
+      ? getCustomer(client, salesOrder.data.customerId)
+      : null,
+    invoiceIds.length > 0
+      ? getSalesOrderInvoicesByIds(client, invoiceIds)
+      : null,
+    invoiceIds.length > 0
+      ? getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
+      : null
+  ]);
 
   if (opportunity.error) {
     throw new Error(
@@ -121,18 +141,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  const [quote, customer, companySettings, invoiceLines] = await Promise.all([
-    opportunity.data.quotes[0]?.id
-      ? getQuote(client, opportunity.data.quotes[0].id)
-      : Promise.resolve(null),
-    salesOrder.data?.customerId
-      ? getCustomer(client, salesOrder.data.customerId)
-      : Promise.resolve(null),
-    getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
-  ]);
-
   if (invoiceLines.error) {
     throw redirect(
       path.to.salesOrder(orderId),
@@ -143,22 +151,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const invoiceIds = Array.from(
-    new Set(
-      (invoiceLines.data ?? []).map((line) => line.invoiceId).filter(Boolean)
-    )
-  ) as string[];
+  const quote = opportunity.data.quotes[0]?.id
+    ? await getQuote(client, opportunity.data.quotes[0].id)
+    : null;
 
   let invoicedAmount = 0;
   let paidAmount = 0;
   let currencyMismatchCount = 0;
 
-  if (invoiceIds.length > 0) {
-    const [invoices, payments] = await Promise.all([
-      getSalesOrderInvoicesByIds(client, invoiceIds),
-      getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
-    ]);
-
+  if (invoices && payments) {
     if (invoices.error) {
       throw redirect(
         path.to.salesOrder(orderId),
