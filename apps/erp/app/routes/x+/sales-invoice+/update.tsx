@@ -73,10 +73,14 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
 
+      // A customer with no currency keeps the invoice's own. The contact and
+      // location belonged to the previous invoice customer.
       return await client
         .from("salesInvoice")
         .update({
-          customerId: value ?? undefined,
+          invoiceCustomerId: value ?? undefined,
+          invoiceCustomerContactId: null,
+          invoiceCustomerLocationId: null,
           updatedBy: userId,
           updatedAt: new Date().toISOString()
         })
