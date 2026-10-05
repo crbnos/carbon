@@ -37,14 +37,14 @@ vi.mock("@lingui/core/macro", () => ({
       : String(strings)
 }));
 
-const { deleteUnsentPurchaseOrderLine, updatePurchaseOrderLineSchedule } =
-  await import("../app/modules/purchasing/purchasing.service");
+const { updatePurchaseOrderLineSchedule } = await import(
+  "../app/modules/purchasing/purchasing.service"
+);
 
-// Planning's Cancel on an unsent PO line used shortClosePurchaseOrderLine,
-// which recomputes the header status from the lines: a one-line Draft PO came
-// out "Completed" without ever being sent. The replacement deletes the line,
-// and every guard has to be in the one DELETE so a finalize or a receipt that
-// lands after the route read the PO cannot slip in between.
+// The drawer's inline edit of one open PO line: a quantity or a required date,
+// with the Draft / Planned guard inside the one UPDATE so a PO sent after the
+// route read it is left alone. (Planning's Cancel, which deletes a line, is
+// set-based with the rest of Apply — apply-purchasing-planning-actions.test.ts.)
 
 class RecordingDriver extends DummyDriver {
   readonly sent: CompiledQuery[] = [];
@@ -82,51 +82,6 @@ function database(returnedIds: string[]) {
 
 const args = { lineId: "pol1", purchaseOrderId: "po1", companyId: "c1" };
 
-describe("deleteUnsentPurchaseOrderLine", () => {
-  it("deletes only an unreceived, uninvoiced line of a Draft or Planned PO, in one statement", async () => {
-    const { db, driver } = database(["pol1"]);
-    await deleteUnsentPurchaseOrderLine(db, args);
-
-    expect(driver.sent).toHaveLength(1);
-    const [{ sql, parameters }] = driver.sent;
-    expect(sql).toMatch(/^delete from "purchaseOrderLine"/);
-    expect(sql).not.toMatch(/update "purchaseOrder"/);
-    expect(sql).toContain('coalesce("quantityReceived", $');
-    expect(sql).toContain('coalesce("quantityInvoiced", $');
-    // An allowlist: a PO in approval is held back as well as a sent one.
-    expect(sql).toMatch(
-      /"purchaseOrderId" in \(select "id" from "purchaseOrder" where "id" = \$\d+ and "companyId" = \$\d+ and "status" in \(\$\d+, \$\d+\)\)/
-    );
-    // The two zeros per guard: coalesce's fallback and the compared value.
-    expect(parameters).toEqual([
-      "pol1",
-      "po1",
-      "c1",
-      0,
-      0,
-      0,
-      0,
-      "po1",
-      "c1",
-      "Draft",
-      "Planned"
-    ]);
-  });
-
-  it("reports the line deleted", async () => {
-    const { db } = database(["pol1"]);
-    expect(await deleteUnsentPurchaseOrderLine(db, args)).toBe(true);
-  });
-
-  it("reports nothing deleted when a guard held the row back", async () => {
-    const { db } = database([]);
-    expect(await deleteUnsentPurchaseOrderLine(db, args)).toBe(false);
-  });
-});
-
-// Planning's Apply read the PO's status, then wrote the line in a separate
-// request: a PO sent or put in approval in between was still edited. The
-// status condition is now part of the UPDATE itself.
 describe("updatePurchaseOrderLineSchedule", () => {
   const dateChange = {
     lineId: "pol1",

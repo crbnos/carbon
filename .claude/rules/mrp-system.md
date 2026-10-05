@@ -330,6 +330,10 @@ never offered a Cancel, Defer or Expedite.
 
 ### Reads and the horizon in `generatePlanningActions`
 
+- The generator's reads are grouped: the responsible-employee resolver and
+  the two open-supply views in one `Promise.all`, then the three demand
+  tables, on-hand and the open jobs in a second (five Kysely reads at once,
+  the job pool's size). They were six waits in a row.
 - The two planning RPCs are read through `fetchAll` with `.order("id")`, like
   every other read in the run. A bare `client.rpc(...)` stops at PostgREST's
   `max_rows` (1000); an item missing from those rows has no candidates, and the
@@ -443,11 +447,29 @@ never offered a Cancel, Defer or Expedite.
   to the existing `planning.update.tsx` cases (`apply`/`dismiss`/`reopen`/`assign`).
   **Cancel** on a job runs `cancelJob` (`production.server.ts`), the job status
   route's own path: picked material back, picking lists closed, then
-  Cancelled. On a PO line it DELETES the line (`deleteUnsentPurchaseOrderLine`),
-  in one statement that also requires a Draft / Planned PO and nothing
-  received or invoiced; when that guard holds the row back the action goes back to Open
-  as "Review on PO". Never `shortClosePurchaseOrderLine` — it recomputes the
-  header status from the lines and turned an unsent Draft into "Completed".
+  Cancelled. On a PO line it DELETES the line, in one statement that also
+  requires a Draft / Planned PO and nothing received or invoiced; when that
+  guard holds the row back the action goes back to Open as "Review on PO".
+  Never `shortClosePurchaseOrderLine` — it recomputes the header status from
+  the lines and turned an unsent Draft into "Completed".
+  **Apply is set-based.** Purchasing: `applyPurchasingPlanningActions(db, …)`
+  runs the whole batch in ONE Kysely transaction — the claim, one
+  `UPDATE … FROM (VALUES …)` for dates, one for quantities, one `DELETE` for
+  cancels, and the un-claim of refused rows — about five round trips for any
+  batch size, all-or-nothing. Production: `applyProductionPlanningDateActions`
+  does the same for Expedite / Defer (claim, the jobs, the jobs already on
+  the target dates, one UPDATE of due date + priority via the pure
+  `nextJobPriority`), then the route sends ONE `schedule-inputs-changed`
+  event for the batch (a "reorder" event re-stamps the whole company whatever
+  its job id). Increase / Decrease / Cancel on jobs call server functions
+  with their own transactions, so they stay per job — grouped by job, three
+  jobs at a time (`async.map`), each claimed right before its own change.
+  The claim and release inside a transaction live in
+  `modules/production/planning-action-claims.ts`, shared by both services;
+  the release reopens the row, or deletes it when an MRP run has meanwhile
+  written a fresh Open row for the same need (the natural-key index).
+  Tests: `apps/erp/test/apply-purchasing-planning-actions.test.ts`,
+  `apply-production-planning-date-actions.test.ts`.
   **Every Apply write carries its own Draft / Planned condition**
   (`updatePlanningJob`, `updatePurchaseOrderLineSchedule`, the Cancel delete),
   so a job released or a PO sent between the route's status read and the write
@@ -565,9 +587,9 @@ never offered a Cancel, Defer or Expedite.
   (`getPlanningActionsByIds`, `markPlanningActionsActioned`,
   `dismissPlanningActions`, `reopenDismissedPlanningActions`,
   `assignPlanningActions` take the `db` handle): the ids are bound
-  parameters, never a URL. Apply claims each action right BEFORE its own
-  change, not the batch up front: a request that dies in the loop strands at
-  most one Actioned row with nothing applied.
+  parameters, never a URL. The set-based Apply claims and changes a batch in
+  one transaction; the per-job path claims each action right BEFORE its own
+  change, so a request that dies there strands at most the actions in flight.
   - Purchasing quantities are in PURCHASE units (the line's
     `purchaseQuantity`; the open-lines view reports inventory units), and an
     action's suggested quantity is converted and rounded up as Apply does. The

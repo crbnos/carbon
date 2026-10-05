@@ -4,11 +4,12 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { scrapAllowance } from "@carbon/utils";
+import { async, scrapAllowance } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
+  applyProductionPlanningDateActions,
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
@@ -40,7 +41,7 @@ type PlanningActionRow = NonNullable<
 async function notifyScheduleChange(
   companyId: string,
   reason: string,
-  jobId: string
+  jobId?: string
 ): Promise<boolean> {
   try {
     await notifyScheduleInputsChanged(companyId, "reorder", reason, jobId);
@@ -846,14 +847,70 @@ export async function action({ request }: ActionFunctionArgs) {
         toClaim.push(target);
       }
 
-      // Atomic claim BEFORE mutating: the conditional Open→Actioned update is
-      // the lock — of two concurrent applies only one gets a row back, so a
-      // target is never changed twice. A failed change gives its claim back.
-      // Each action is claimed right before its own change, not the batch up
-      // front: a request that dies in the loop (the function's time limit on
-      // a large batch) then strands at most ONE claimed row, which the next
-      // MRP run re-emits as a fresh Open action (the natural-key index
-      // ignores Actioned rows).
+      // Dates: ONE transaction for every Expedite / Defer — the claim, two
+      // reads and one UPDATE for the whole batch, then ONE scheduler event
+      // (a "reorder" event re-stamps the whole company whatever its job id;
+      // one per action sent the same company-wide replan N times).
+      const dateActions = toClaim.filter(
+        ({ row }) =>
+          (row.type === "Expedite" || row.type === "Defer") && row.suggestedDate
+      );
+      if (dateActions.length > 0) {
+        let outcome: Awaited<
+          ReturnType<typeof applyProductionPlanningDateActions>
+        >;
+        try {
+          outcome = await applyProductionPlanningDateActions(db, {
+            companyId,
+            userId,
+            actions: dateActions.map(({ planningActionId, row }) => ({
+              planningActionId,
+              jobId: row.jobId!,
+              suggestedDate: row.suggestedDate
+            }))
+          });
+        } catch (err) {
+          logger.error("Failed to reschedule jobs for planning actions", {
+            companyId,
+            userId,
+            planningActionIds: dateActions.map((t) => t.planningActionId),
+            error: err
+          });
+          return data(
+            {
+              success: false,
+              message: `Failed to reschedule jobs: ${
+                err instanceof Error ? err.message : "unknown error"
+              }`
+            },
+            { status: 500 }
+          );
+        }
+        applied.push(...outcome.applied);
+        requiresManualAction.push(...outcome.refused);
+        for (const id of outcome.alreadyApplied) {
+          errors.push(`Planning action ${id} was already applied`);
+        }
+        if (outcome.applied.length > 0) {
+          const notified = await notifyScheduleChange(
+            companyId,
+            `Planning rescheduled ${outcome.applied.length} job(s)`
+          );
+          if (!notified) {
+            warnings.push(
+              `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
+            );
+          }
+        }
+      }
+
+      // Quantities and cancels call server functions with their own
+      // transactions (recalculate, the cancel sweep), so they stay one job at
+      // a time — but a few jobs at once, since each targets a different job.
+      // Each action is claimed right before its own change: a request that
+      // dies here strands at most the actions in flight, which the next MRP
+      // run re-emits as fresh Open actions (the natural-key index ignores
+      // Actioned rows).
       const claim = async (planningActionId: string): Promise<boolean> => {
         const claimed = await markPlanningActionsActioned(db, {
           ids: [planningActionId],
@@ -880,109 +937,93 @@ export async function action({ request }: ActionFunctionArgs) {
         return true;
       };
 
-      for (const { planningActionId, row } of toClaim) {
-        if (!(await claim(planningActionId))) continue;
-        const jobId = row.jobId!;
-
-        if (row.type === "Cancel") {
-          // The job status route's cancel: picked material goes back and the
-          // job's picking lists close before the status changes.
-          const failed = await cancelJob({
-            client,
-            db: getDatabaseClient(),
-            jobId: jobId,
-            companyId,
-            userId
-          });
-          if (failed) {
-            await releaseClaim(planningActionId);
-            errors.push(
-              `Failed to cancel job for planning action ${planningActionId}: ${failed.message}`
-            );
-            continue;
-          }
-        } else if (row.type === "Expedite" || row.type === "Defer") {
-          const update = await updatePlanningJob(client, {
-            id: jobId,
-            companyId,
-            updatedBy: userId,
-            dueDate: row.suggestedDate
-          });
-          if (update.error) {
-            await releaseClaim(planningActionId);
-            errors.push(
-              `Failed to reschedule job for planning action ${planningActionId}: ${update.error.message}`
-            );
-            continue;
-          }
-          if (!update.updated) {
-            // Released (or finished) since it was read.
-            await releaseClaim(planningActionId);
-            requiresManualAction.push({
-              id: planningActionId,
-              jobId: jobId
-            });
-            continue;
-          }
-          const notified = await notifyScheduleChange(
-            companyId,
-            "Planning action rescheduled a job",
-            jobId
-          );
-          if (!notified) {
-            warnings.push(
-              `Planning action ${planningActionId}: the due date is saved, but the schedule was not refreshed`
-            );
-          }
-        } else {
-          const update = await updatePlanningJob(client, {
-            id: jobId,
-            companyId,
-            updatedBy: userId,
-            quantity: Number(row.suggestedQuantity)
-          });
-          if (update.error) {
-            await releaseClaim(planningActionId);
-            errors.push(
-              `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
-            );
-            continue;
-          }
-          if (!update.updated) {
-            // Released (or finished) since it was read.
-            await releaseClaim(planningActionId);
-            requiresManualAction.push({
-              id: planningActionId,
-              jobId: jobId
-            });
-            continue;
-          }
-          const recalc = await recalculateJobRequirements(
-            client,
-            getDatabaseClient(),
-            { id: jobId, companyId, userId }
-          );
-          if (recalc.error) {
-            // The quantity change stands (and the action stays Actioned):
-            // undoing it would be a second write that can fail the same way.
-            logger.error(
-              "Failed to recalculate job requirements after a planning action",
-              {
-                companyId,
-                userId,
-                jobId: jobId,
-                planningActionId,
-                error: recalc.error
-              }
-            );
-            warnings.push(
-              `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
-            );
-          }
-        }
-
-        applied.push(planningActionId);
+      const perJobActions = toClaim.filter(
+        ({ row }) =>
+          row.type === "Cancel" ||
+          row.type === "Increase" ||
+          row.type === "Decrease"
+      );
+      // Two actions on one job (an Increase and a Cancel) must not run at
+      // once: group by job, run the groups 3 at a time, each group in order.
+      const byJob = new Map<string, typeof perJobActions>();
+      for (const target of perJobActions) {
+        const list = byJob.get(target.row.jobId!) ?? [];
+        list.push(target);
+        byJob.set(target.row.jobId!, list);
       }
+      await async.map(
+        [...byJob.values()],
+        async (group) => {
+          for (const { planningActionId, row } of group) {
+            if (!(await claim(planningActionId))) continue;
+            const jobId = row.jobId!;
+
+            if (row.type === "Cancel") {
+              // The job status route's cancel: picked material goes back and
+              // the job's picking lists close before the status changes.
+              const failed = await cancelJob({
+                client,
+                db,
+                jobId,
+                companyId,
+                userId
+              });
+              if (failed) {
+                await releaseClaim(planningActionId);
+                errors.push(
+                  `Failed to cancel job for planning action ${planningActionId}: ${failed.message}`
+                );
+                continue;
+              }
+            } else {
+              const update = await updatePlanningJob(client, {
+                id: jobId,
+                companyId,
+                updatedBy: userId,
+                quantity: Number(row.suggestedQuantity)
+              });
+              if (update.error) {
+                await releaseClaim(planningActionId);
+                errors.push(
+                  `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
+                );
+                continue;
+              }
+              if (!update.updated) {
+                // Released (or finished) since it was read.
+                await releaseClaim(planningActionId);
+                requiresManualAction.push({ id: planningActionId, jobId });
+                continue;
+              }
+              const recalc = await recalculateJobRequirements(client, db, {
+                id: jobId,
+                companyId,
+                userId
+              });
+              if (recalc.error) {
+                // The quantity change stands (and the action stays Actioned):
+                // undoing it would be a second write that can fail the same way.
+                logger.error(
+                  "Failed to recalculate job requirements after a planning action",
+                  {
+                    companyId,
+                    userId,
+                    jobId,
+                    planningActionId,
+                    error: recalc.error
+                  }
+                );
+                warnings.push(
+                  `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
+                );
+              }
+            }
+
+            applied.push(planningActionId);
+          }
+        },
+        { concurrency: 3 }
+      );
 
       // Committed targets are not failures, but "Applied 0" with a success
       // toast is a lie — surface the manual-review count, and only report

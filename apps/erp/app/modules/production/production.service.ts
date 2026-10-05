@@ -67,6 +67,10 @@ import type {
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
 import { updateSortOrder } from "../shared/sort-order";
+import {
+  claimPlanningActions,
+  releasePlanningActionClaims
+} from "./planning-action-claims";
 import type {
   assemblyInstructionStatuses,
   assemblyStepStatuses,
@@ -458,16 +462,6 @@ export async function calculateJobPriority(
 ): Promise<number> {
   const { jobId, dueDate, deadlineType, companyId, locationId } = params;
 
-  // Define deadline type priority order (lower number = higher priority)
-  const deadlineTypePriority: Record<string, number> = {
-    ASAP: 0,
-    "Hard Deadline": 1,
-    "Soft Deadline": 2,
-    "No Deadline": 3
-  };
-
-  const currentJobPriority = deadlineTypePriority[deadlineType];
-
   // Query all jobs with the same dueDate (or null if dueDate is null)
   let query = client
     .from("job")
@@ -489,45 +483,50 @@ export async function calculateJobPriority(
 
   const { data: existingJobs } = await query;
 
-  if (!existingJobs || existingJobs.length === 0) {
-    // No existing jobs with this due date, start at priority 0
-    return 0;
-  }
+  return nextJobPriority(existingJobs ?? [], deadlineType);
+}
 
-  // Find the position where this job should be inserted based on deadlineType
-  let insertBeforeIndex = existingJobs.length; // Default to end of list
+const DEADLINE_TYPE_PRIORITY: Record<string, number> = {
+  ASAP: 0,
+  "Hard Deadline": 1,
+  "Soft Deadline": 2,
+  "No Deadline": 3
+};
 
-  for (let i = 0; i < existingJobs.length; i++) {
-    const existingJobPriority =
-      deadlineTypePriority[existingJobs[i].deadlineType];
+/**
+ * The priority of a job placed among `siblings` — the jobs that share its due
+ * date (or lack of one) at its location, in priority order. Fractional
+ * indexing: before the first job whose deadline type ranks lower than this
+ * one's, else at the end. Pure, so a batch can place several jobs on one date
+ * in turn by appending each result to the siblings it passes for the next.
+ */
+export function nextJobPriority(
+  siblings: { priority: number | null; deadlineType: string }[],
+  deadlineType: (typeof deadlineTypes)[number]
+): number {
+  if (siblings.length === 0) return 0;
 
-    // If the current job has higher priority (lower number) than this existing job,
-    // we should insert before this job
-    if (currentJobPriority < existingJobPriority) {
+  const currentJobPriority = DEADLINE_TYPE_PRIORITY[deadlineType];
+  let insertBeforeIndex = siblings.length;
+  for (let i = 0; i < siblings.length; i++) {
+    if (
+      currentJobPriority < DEADLINE_TYPE_PRIORITY[siblings[i]!.deadlineType]
+    ) {
       insertBeforeIndex = i;
       break;
     }
   }
 
-  // Calculate the priority value using fractional indexing
-  let newPriority: number;
-
   if (insertBeforeIndex === 0) {
-    // Insert at the beginning - use half of the first job's priority
-    const firstPriority = existingJobs[0].priority ?? 0;
-    newPriority = firstPriority > 0 ? firstPriority / 2 : -1;
-  } else if (insertBeforeIndex === existingJobs.length) {
-    // Insert at the end - add 1 to the last job's priority
-    const lastPriority = existingJobs[existingJobs.length - 1].priority ?? 0;
-    newPriority = lastPriority + 1;
-  } else {
-    // Insert between two jobs - average their priorities
-    const beforePriority = existingJobs[insertBeforeIndex - 1].priority ?? 0;
-    const afterPriority = existingJobs[insertBeforeIndex].priority ?? 0;
-    newPriority = (beforePriority + afterPriority) / 2;
+    const firstPriority = siblings[0]!.priority ?? 0;
+    return firstPriority > 0 ? firstPriority / 2 : -1;
   }
-
-  return newPriority;
+  if (insertBeforeIndex === siblings.length) {
+    return (siblings[siblings.length - 1]!.priority ?? 0) + 1;
+  }
+  const beforePriority = siblings[insertBeforeIndex - 1]!.priority ?? 0;
+  const afterPriority = siblings[insertBeforeIndex]!.priority ?? 0;
+  return (beforePriority + afterPriority) / 2;
 }
 
 /** @mcp delete */
@@ -10881,6 +10880,162 @@ export async function assignPlanningActions(
       .returning("id")
       .execute()
   );
+}
+
+export type ProductionPlanningDateAction = {
+  planningActionId: string;
+  jobId: string;
+  /** the new due date, ISO */
+  suggestedDate: string;
+};
+
+export type ProductionPlanningDateApplyResult = {
+  /** changed and marked Actioned */
+  applied: string[];
+  /** marked Actioned by another apply since the page loaded; nothing changed */
+  alreadyApplied: string[];
+  /** the job left Draft / Planned since it was read: the action stays Open */
+  refused: { id: string; jobId: string }[];
+};
+
+/**
+ * Apply a batch of Expedite / Defer actions to their jobs in ONE transaction,
+ * set-based: the claim, two reads (the jobs, and the jobs that share their
+ * new due dates) and one UPDATE for every date and priority. It used to be a
+ * job read, a sibling read, an update and a scheduler event per action.
+ *
+ * Priority follows `updateJob`'s rule (`nextJobPriority`): a moved job is
+ * ranked among the jobs already on its new date. Several jobs moved to one
+ * date in the same batch are placed one after the other, each seeing the ones
+ * placed before it, as the sequential writes did.
+ *
+ * The Draft / Planned condition is part of the UPDATE: a job released after
+ * it was read is left alone, its action goes back to Open, and the caller
+ * sends the planner to the job. The caller tells the scheduler ONCE after the
+ * batch — a "reorder" event re-stamps the whole company whatever its job id.
+ */
+export async function applyProductionPlanningDateActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    actions: ProductionPlanningDateAction[];
+  }
+): Promise<ProductionPlanningDateApplyResult> {
+  const { companyId, userId, actions } = args;
+  const result: ProductionPlanningDateApplyResult = {
+    applied: [],
+    alreadyApplied: [],
+    refused: []
+  };
+  if (actions.length === 0) return result;
+  const now = datetime.timestamp();
+
+  await db.transaction().execute(async (trx) => {
+    const claimed = await claimPlanningActions(trx, {
+      ids: actions.map((a) => a.planningActionId),
+      companyId,
+      userId,
+      now
+    });
+    const held = actions.filter((a) => claimed.has(a.planningActionId));
+    for (const action of actions) {
+      if (!claimed.has(action.planningActionId)) {
+        result.alreadyApplied.push(action.planningActionId);
+      }
+    }
+    if (held.length === 0) return;
+
+    const jobIds = [...new Set(held.map((a) => a.jobId))];
+    const jobs = await trx
+      .selectFrom("job")
+      .select(["id", "locationId", "deadlineType"])
+      .where("id", "in", jobIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    const jobById = new Map(jobs.map((job) => [job.id, job]));
+
+    // The jobs already on each target date, per location — the siblings a
+    // moved job is ranked among. One read for every date in the batch.
+    const targetDates = [...new Set(held.map((a) => a.suggestedDate))];
+    const siblingRows = await trx
+      .selectFrom("job")
+      .select(["id", "locationId", "dueDate", "priority", "deadlineType"])
+      .where("companyId", "=", companyId)
+      .where("dueDate", "in", targetDates)
+      .where("id", "not in", jobIds)
+      .orderBy("priority", "asc")
+      .execute();
+    const siblingsByKey = new Map<
+      string,
+      { priority: number | null; deadlineType: string }[]
+    >();
+    for (const row of siblingRows) {
+      const key = `${row.locationId}\u001f${row.dueDate}`;
+      const list = siblingsByKey.get(key) ?? [];
+      list.push({ priority: row.priority, deadlineType: row.deadlineType });
+      siblingsByKey.set(key, list);
+    }
+
+    const values: { jobId: string; dueDate: string; priority: number }[] = [];
+    for (const action of held) {
+      const job = jobById.get(action.jobId);
+      if (!job) continue; // refused below: no row changed
+      const key = `${job.locationId}\u001f${action.suggestedDate}`;
+      const siblings = siblingsByKey.get(key) ?? [];
+      const priority = nextJobPriority(siblings, job.deadlineType);
+      siblings.push({ priority, deadlineType: job.deadlineType });
+      siblings.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+      siblingsByKey.set(key, siblings);
+      values.push({
+        jobId: action.jobId,
+        dueDate: action.suggestedDate,
+        priority
+      });
+    }
+
+    const changedJobs = new Set<string>();
+    if (values.length > 0) {
+      const rows = await sql<{ id: string }>`
+        UPDATE "job" AS j
+        SET "dueDate" = v."dueDate"::date,
+            "priority" = v."priority"::numeric,
+            "updatedBy" = ${userId},
+            "updatedAt" = ${now}
+        FROM (VALUES ${sql.join(
+          values.map((v) => sql`(${v.jobId}, ${v.dueDate}, ${v.priority})`)
+        )}) AS v("id", "dueDate", "priority")
+        WHERE j."id" = v."id"
+          AND j."companyId" = ${companyId}
+          AND j."status" IN (${sql.join(
+            PLANNING_EDITABLE_JOB_STATUSES.map((status) => sql`${status}`)
+          )})
+        RETURNING j."id"
+      `.execute(trx);
+      for (const row of rows.rows) changedJobs.add(row.id);
+    }
+
+    const refusedIds: string[] = [];
+    for (const action of held) {
+      if (changedJobs.has(action.jobId)) {
+        result.applied.push(action.planningActionId);
+      } else {
+        refusedIds.push(action.planningActionId);
+        result.refused.push({
+          id: action.planningActionId,
+          jobId: action.jobId
+        });
+      }
+    }
+    await releasePlanningActionClaims(trx, {
+      ids: refusedIds,
+      companyId,
+      userId,
+      now
+    });
+  });
+
+  return result;
 }
 
 /** The actions an Apply was sent, in one read (an Apply used to read each). */

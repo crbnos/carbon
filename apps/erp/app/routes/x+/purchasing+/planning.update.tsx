@@ -6,13 +6,7 @@ import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
-import {
-  applyRate,
-  RoundingMode,
-  round,
-  SCALE,
-  taxableBase
-} from "@carbon/utils";
+import { applyRate, SCALE, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -20,12 +14,10 @@ import {
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
-  markPlanningActionsActioned,
-  releasePlanningActionClaim,
   reopenDismissedPlanningActions
 } from "~/modules/production";
 import {
-  deleteUnsentPurchaseOrderLine,
+  applyPurchasingPlanningActions,
   insertPurchaseOrder,
   isPurchaseOrderEditableFromPlanning,
   plannedOrderValidator,
@@ -982,26 +974,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }[] = [];
       const errors: string[] = [];
 
-      // A claim that is not given back leaves the action Actioned with nothing
-      // applied, so a failed release is reported, never swallowed.
-      const releaseClaim = async (planningActionId: string) => {
-        const released = await releasePlanningActionClaim(client, {
-          id: planningActionId,
-          companyId,
-          userId
-        });
-        if (released.error) {
-          logger.error("Failed to release a planning action claim", {
-            companyId,
-            planningActionId,
-            error: released.error
-          });
-          errors.push(
-            `Planning action ${planningActionId} could not be reopened: ${released.error}`
-          );
-        }
-      };
-
       // Cancel DELETES the PO line, which the purchase order screen gates on
       // `delete`. Read once, only when a Cancel is in the batch.
       let canDeleteLines: boolean | undefined;
@@ -1015,8 +987,8 @@ export async function action({ request }: ActionFunctionArgs) {
         return canDeleteLines;
       };
 
-      // Two reads for the whole batch, then one claim and one change per
-      // action: each line gets its own value, and Cancel deletes the line.
+      // Two reads for the whole batch to decide what is eligible, then ONE
+      // transaction that applies all of it (applyPurchasingPlanningActions).
       // The batch used to read the action and read its line one at a time —
       // three round trips per action before anything changed.
       const actionRows = await getPlanningActionsByIds(db, {
@@ -1155,133 +1127,59 @@ export async function action({ request }: ActionFunctionArgs) {
         toClaim.push({ planningActionId, row, line });
       }
 
-      // Atomic claim BEFORE mutating: the conditional Open→Actioned update is
-      // the lock — of two concurrent applies only one gets a row back, so a
-      // target is never changed twice. A failed change gives its claim back.
-      // Each action is claimed right before its own change, not the batch up
-      // front: a request that dies in the loop (the function's time limit on
-      // a large batch) then strands at most ONE claimed row, which the next
-      // MRP run re-emits as a fresh Open action (the natural-key index
-      // ignores Actioned rows).
-      const claim = async (planningActionId: string): Promise<boolean> => {
-        const claimed = await markPlanningActionsActioned(db, {
-          ids: [planningActionId],
+      // One transaction for the whole batch, set-based: the claim, the dates,
+      // the quantities and the cancels are one statement each, and a refused
+      // write un-claims its action inside the same transaction. A failure
+      // rolls everything back; the previous loop applied one action at a time
+      // and could run into the request's time limit with the rest unapplied.
+      let outcome: Awaited<ReturnType<typeof applyPurchasingPlanningActions>>;
+      try {
+        outcome = await applyPurchasingPlanningActions(db, {
           companyId,
-          userId
-        });
-        if (claimed.error) {
-          logger.error("Failed to claim a planning action", {
-            companyId,
+          companyGroupId,
+          userId,
+          actions: toClaim.map(({ planningActionId, row, line }) => ({
             planningActionId,
-            error: claimed.error
-          });
-          errors.push(
-            `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
-          );
-          return false;
-        }
-        if (claimed.data.length === 0) {
-          errors.push(
-            `Planning action ${planningActionId} was already applied`
-          );
-          return false;
-        }
-        return true;
-      };
-
-      for (const { planningActionId, row, line } of toClaim) {
-        if (!(await claim(planningActionId))) continue;
-
-        if (row.type === "Cancel") {
-          // The PO is unsent, so cancelling the line removes it. Deleting the
-          // line also deletes this action (its foreign key cascades).
-          let deleted: boolean;
-          try {
-            deleted = await deleteUnsentPurchaseOrderLine(db, {
-              lineId: line.id,
-              purchaseOrderId: line.purchaseOrderId,
-              companyId
-            });
-          } catch (err) {
-            await releaseClaim(planningActionId);
-            errors.push(
-              `Failed to delete PO line for planning action ${planningActionId}: ${
-                err instanceof Error ? err.message : "unknown error"
-              }`
-            );
-            continue;
-          }
-          if (!deleted) {
-            // Since it was read, the PO was sent or the line received or
-            // invoiced: not ours to delete any more.
-            await releaseClaim(planningActionId);
-            requiresManualAction.push({
-              id: planningActionId,
-              purchaseOrderId: line.purchaseOrderId
-            });
-            continue;
-          }
-        } else if (row.type === "Expedite" || row.type === "Defer") {
-          const update = await updatePurchaseOrderLineSchedule(client, db, {
+            type: row.type as
+              | "Expedite"
+              | "Defer"
+              | "Increase"
+              | "Decrease"
+              | "Cancel",
             lineId: line.id,
-            companyId,
-            companyGroupId,
-            userId,
-            requiredDate: row.suggestedDate
-          });
-          if (update.error) {
-            await releaseClaim(planningActionId);
-            errors.push(
-              `Failed to reschedule PO line for planning action ${planningActionId}: ${update.error.message}`
-            );
-            continue;
-          }
-          if (!update.updated) {
-            // Sent or put in approval since it was read.
-            await releaseClaim(planningActionId);
-            requiresManualAction.push({
-              id: planningActionId,
-              purchaseOrderId: line.purchaseOrderId
-            });
-            continue;
-          }
-        } else {
-          // increase / decrease — suggestedQuantity is in INVENTORY units;
-          // the line stores PURCHASE units
-          const conversionFactor = line.conversionFactor ?? 1;
-          const purchaseQuantity =
-            conversionFactor > 0
-              ? round(
-                  Number(row.suggestedQuantity) / conversionFactor,
-                  0,
-                  RoundingMode.Up
-                )
-              : Number(row.suggestedQuantity);
-          const update = await updatePurchaseOrderLineSchedule(client, db, {
-            lineId: line.id,
-            companyId,
-            companyGroupId,
-            userId,
-            purchaseQuantity
-          });
-          if (update.error) {
-            await releaseClaim(planningActionId);
-            errors.push(
-              `Failed to update PO line quantity for planning action ${planningActionId}: ${update.error.message}`
-            );
-            continue;
-          }
-          if (!update.updated) {
-            await releaseClaim(planningActionId);
-            requiresManualAction.push({
-              id: planningActionId,
-              purchaseOrderId: line.purchaseOrderId
-            });
-            continue;
-          }
-        }
-
-        applied.push(planningActionId);
+            purchaseOrderId: line.purchaseOrderId,
+            suggestedDate: row.suggestedDate ?? null,
+            suggestedQuantity:
+              row.suggestedQuantity === null ||
+              row.suggestedQuantity === undefined
+                ? null
+                : Number(row.suggestedQuantity)
+          }))
+        });
+      } catch (err) {
+        logger.error("Failed to apply planning actions", {
+          companyId,
+          userId,
+          planningActionIds: toClaim.map((t) => t.planningActionId),
+          error: err
+        });
+        return data(
+          {
+            success: false,
+            message: `Failed to apply planning actions: ${
+              err instanceof Error ? err.message : "unknown error"
+            }`
+          },
+          { status: 500 }
+        );
+      }
+      applied.push(...outcome.applied);
+      requiresManualAction.push(...outcome.refused);
+      for (const id of outcome.alreadyApplied) {
+        errors.push(`Planning action ${id} was already applied`);
+      }
+      for (const failure of outcome.failed) {
+        errors.push(`Planning action ${failure.id}: ${failure.message}`);
       }
 
       // Committed targets are not failures, but "Applied 0" with a success

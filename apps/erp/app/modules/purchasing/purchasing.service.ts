@@ -14,6 +14,7 @@ import {
   EPSILON,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
+  RoundingMode,
   round
 } from "@carbon/utils";
 import type {
@@ -34,6 +35,10 @@ import {
   getExchangeRate
 } from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
+import {
+  claimPlanningActions,
+  releasePlanningActionClaims
+} from "../production/planning-action-claims";
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
@@ -2192,56 +2197,285 @@ export async function shortClosePurchaseOrderLine(
   });
 }
 
-/**
- * Delete the line a planning Cancel action targets, while its purchase order is
- * one planning may change (Draft / Planned — not sent, not in approval) and
- * nothing on the line has been received or invoiced. A PO reopened as a revision is back in Draft with that history on
- * its lines, and deleting such a line would erase it.
- *
- * Every condition is in the one DELETE, so a finalize or a receipt that lands
- * after the caller read the PO cannot slip in between the check and the delete.
- * Returns whether the line was deleted; false means it is no longer safe to
- * delete and needs a person to look at the PO.
- *
- * Not `shortClosePurchaseOrderLine`: that recomputes the header status from the
- * lines, which is only meaningful on a released PO — it turned an unsent
- * one-line Draft into "Completed".
- */
-export async function deleteUnsentPurchaseOrderLine(
-  db: Kysely<KyselyDatabase>,
-  {
-    lineId,
-    purchaseOrderId,
-    companyId
-  }: {
-    lineId: string;
-    purchaseOrderId: string;
-    companyId: string;
-  }
-): Promise<boolean> {
-  const deleted = await db
-    .deleteFrom("purchaseOrderLine")
-    .where("id", "=", lineId)
-    .where("purchaseOrderId", "=", purchaseOrderId)
-    .where("companyId", "=", companyId)
-    .where((eb) =>
-      eb.and([
-        eb(eb.fn.coalesce("quantityReceived", eb.val(0)), "=", 0),
-        eb(eb.fn.coalesce("quantityInvoiced", eb.val(0)), "=", 0)
-      ])
-    )
-    .where("purchaseOrderId", "in", (eb) =>
-      eb
-        .selectFrom("purchaseOrder")
-        .select("id")
-        .where("id", "=", purchaseOrderId)
-        .where("companyId", "=", companyId)
-        .where("status", "in", [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES])
-    )
-    .returning("id")
-    .execute();
+// ── Planning actions: Apply, set-based ──────────────────────────────────────
 
-  return deleted.length > 0;
+export type PurchasingPlanningApplyAction = {
+  planningActionId: string;
+  type: "Expedite" | "Defer" | "Increase" | "Decrease" | "Cancel";
+  lineId: string;
+  purchaseOrderId: string;
+  /** Expedite / Defer: the new required date */
+  suggestedDate: string | null;
+  /** Increase / Decrease: the new quantity, in INVENTORY units */
+  suggestedQuantity: number | null;
+};
+
+export type PurchasingPlanningApplyResult = {
+  /** changed and marked Actioned */
+  applied: string[];
+  /** marked Actioned by another apply since the page loaded; nothing changed */
+  alreadyApplied: string[];
+  /** the write was refused (PO sent or in approval, line received or invoiced
+   *  since it was read): the action stays Open for review on the PO */
+  refused: { id: string; purchaseOrderId: string }[];
+  /** could not be computed (a currency with no precision): the action stays Open */
+  failed: { id: string; message: string }[];
+};
+
+/**
+ * Apply a batch of planning actions to their purchase order lines in ONE
+ * transaction, set-based: every date change is one statement, every quantity
+ * change one, every cancel one, and the claim one — about five round trips
+ * for any batch size. It used to be one claim and one to three round trips
+ * per action, in sequence, which made a large batch run into the request's
+ * time limit with the rest of it still unapplied.
+ *
+ * Order inside the transaction:
+ *   1. claim: every Open action flips to Actioned; one that does not flip was
+ *      applied by someone else since the page loaded, and its line is left
+ *      alone — a stale page never overwrites a later manual edit.
+ *   2. write: each claimed action's change, with the same guards as the
+ *      single-line writers (a Draft / Planned PO; nothing received or invoiced
+ *      on a line to cancel). A refused write un-claims its action.
+ *   3. un-claim: back to Open — or deleted when an MRP run has meanwhile written
+ *      a fresh Open row for the same need (the natural-key index), as
+ *      `releasePlanningActionClaim` does.
+ * A failure anywhere rolls the whole batch back: nothing is half-applied.
+ *
+ * A quantity change restates the line's tax pair (`taxPairForQuantity`): the
+ * extended price is generated from the quantity, the tax amount is stored.
+ * `suggestedQuantity` is in INVENTORY units; the line stores PURCHASE units,
+ * converted by the line's own `conversionFactor` and rounded up to a whole
+ * purchase unit, as the drawer shows it.
+ */
+export async function applyPurchasingPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    actions: PurchasingPlanningApplyAction[];
+  }
+): Promise<PurchasingPlanningApplyResult> {
+  const { companyId, companyGroupId, userId, actions } = args;
+  const result: PurchasingPlanningApplyResult = {
+    applied: [],
+    alreadyApplied: [],
+    refused: [],
+    failed: []
+  };
+  if (actions.length === 0) return result;
+
+  const now = datetime.timestamp();
+  const editableStatuses = [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES];
+
+  await db.transaction().execute(async (trx) => {
+    // 1. claim
+    const claimed = await claimPlanningActions(trx, {
+      ids: actions.map((a) => a.planningActionId),
+      companyId,
+      userId,
+      now
+    });
+    const held = actions.filter((a) => claimed.has(a.planningActionId));
+    for (const action of actions) {
+      if (!claimed.has(action.planningActionId)) {
+        result.alreadyApplied.push(action.planningActionId);
+      }
+    }
+
+    const editablePurchaseOrders = trx
+      .selectFrom("purchaseOrder")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("status", "in", editableStatuses);
+
+    const changedLines = new Set<string>();
+
+    // 2a. dates
+    const dates = held.filter(
+      (a) => (a.type === "Expedite" || a.type === "Defer") && a.suggestedDate
+    );
+    if (dates.length > 0) {
+      const rows = await sql<{ id: string }>`
+        UPDATE "purchaseOrderLine" AS l
+        SET "requiredDate" = v."requiredDate"::date,
+            "updatedBy" = ${userId},
+            "updatedAt" = ${now}
+        FROM (VALUES ${sql.join(
+          dates.map((a) => sql`(${a.lineId}, ${a.suggestedDate})`)
+        )}) AS v("id", "requiredDate")
+        WHERE l."id" = v."id"
+          AND l."companyId" = ${companyId}
+          AND l."purchaseOrderId" IN (${editablePurchaseOrders})
+        RETURNING l."id"
+      `.execute(trx);
+      for (const row of rows.rows) changedLines.add(row.id);
+    }
+
+    // 2b. quantities — the tax pair is computed here, in TypeScript, from one
+    //     read of the lines' pricing and one of their currencies
+    const quantities = held.filter(
+      (a) =>
+        (a.type === "Increase" || a.type === "Decrease") &&
+        a.suggestedQuantity !== null
+    );
+    if (quantities.length > 0) {
+      const lineIds = [...new Set(quantities.map((a) => a.lineId))];
+      const lines = await trx
+        .selectFrom("purchaseOrderLine as pol")
+        .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+        .select([
+          "pol.id",
+          "pol.supplierUnitPrice",
+          "pol.supplierShippingCost",
+          "pol.purchaseQuantity",
+          "pol.taxPercent",
+          "pol.supplierTaxAmount",
+          "pol.conversionFactor",
+          "po.currencyCode"
+        ])
+        .where("pol.id", "in", lineIds)
+        .where("pol.companyId", "=", companyId)
+        .execute();
+      const lineById = new Map(lines.map((line) => [line.id, line]));
+      const codes = [
+        ...new Set(
+          lines.flatMap((l) => (l.currencyCode ? [l.currencyCode] : []))
+        )
+      ];
+      const currencies =
+        codes.length > 0
+          ? await trx
+              .selectFrom("currencies")
+              .select(["code", "decimalPlaces"])
+              .where("companyGroupId", "=", companyGroupId)
+              .where("code", "in", codes)
+              .execute()
+          : [];
+      const decimalsByCode = new Map(
+        currencies.flatMap((c) =>
+          c.code && c.decimalPlaces != null ? [[c.code, c.decimalPlaces]] : []
+        )
+      );
+
+      const values: {
+        lineId: string;
+        quantity: number;
+        percent: number;
+        amount: number;
+      }[] = [];
+      const unheld: string[] = [];
+      for (const action of quantities) {
+        const line = lineById.get(action.lineId);
+        const decimals = line?.currencyCode
+          ? decimalsByCode.get(line.currencyCode)
+          : undefined;
+        if (!line || decimals === undefined) {
+          result.failed.push({
+            id: action.planningActionId,
+            message: line
+              ? `Currency ${line.currencyCode ?? "(none)"} has no precision`
+              : "Purchase order line not found"
+          });
+          unheld.push(action.planningActionId);
+          continue;
+        }
+        const conversionFactor = Number(line.conversionFactor) || 1;
+        const quantity =
+          conversionFactor > 0
+            ? round(
+                Number(action.suggestedQuantity) / conversionFactor,
+                0,
+                RoundingMode.Up
+              )
+            : Number(action.suggestedQuantity);
+        const pair = taxPairForQuantity(line, quantity, decimals);
+        values.push({
+          lineId: action.lineId,
+          quantity,
+          percent: pair.percent,
+          amount: pair.amount
+        });
+      }
+      // a failed computation never holds its claim
+      for (const id of unheld) claimed.delete(id);
+
+      if (values.length > 0) {
+        const rows = await sql<{ id: string }>`
+          UPDATE "purchaseOrderLine" AS l
+          SET "purchaseQuantity" = v."purchaseQuantity"::numeric,
+              "taxPercent" = v."taxPercent"::numeric,
+              "supplierTaxAmount" = v."supplierTaxAmount"::numeric,
+              "updatedBy" = ${userId},
+              "updatedAt" = ${now}
+          FROM (VALUES ${sql.join(
+            values.map(
+              (v) =>
+                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount})`
+            )
+          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount")
+          WHERE l."id" = v."id"
+            AND l."companyId" = ${companyId}
+            AND l."purchaseOrderId" IN (${editablePurchaseOrders})
+          RETURNING l."id"
+        `.execute(trx);
+        for (const row of rows.rows) changedLines.add(row.id);
+      }
+    }
+
+    // 2c. cancels — a Draft / Planned PO and nothing received or invoiced on
+    //     the line, in the one DELETE, so a finalize or a receipt that lands
+    //     after the caller read the PO cannot slip in between. Not
+    //     shortClosePurchaseOrderLine: that recomputes the header status from
+    //     the lines and turned an unsent one-line Draft into "Completed". The
+    //     delete cascades to the action rows themselves, so these need no
+    //     claim to keep and nothing to un-claim.
+    const cancels = held.filter((a) => a.type === "Cancel");
+    if (cancels.length > 0) {
+      const deleted = await trx
+        .deleteFrom("purchaseOrderLine")
+        .where(
+          "id",
+          "in",
+          cancels.map((a) => a.lineId)
+        )
+        .where("companyId", "=", companyId)
+        .where((eb) =>
+          eb.and([
+            eb(eb.fn.coalesce("quantityReceived", eb.val(0)), "=", 0),
+            eb(eb.fn.coalesce("quantityInvoiced", eb.val(0)), "=", 0)
+          ])
+        )
+        .where("purchaseOrderId", "in", editablePurchaseOrders)
+        .returning("id")
+        .execute();
+      for (const row of deleted) changedLines.add(row.id);
+    }
+
+    // 3. settle: applied, or refused and un-claimed
+    const refusedIds: string[] = [];
+    for (const action of held) {
+      if (result.failed.some((f) => f.id === action.planningActionId)) continue;
+      if (changedLines.has(action.lineId)) {
+        result.applied.push(action.planningActionId);
+      } else {
+        refusedIds.push(action.planningActionId);
+        result.refused.push({
+          id: action.planningActionId,
+          purchaseOrderId: action.purchaseOrderId
+        });
+      }
+    }
+    await releasePlanningActionClaims(trx, {
+      ids: [...refusedIds, ...result.failed.map((f) => f.id)],
+      companyId,
+      userId,
+      now
+    });
+  });
+
+  return result;
 }
 
 /** @mcp upsert */

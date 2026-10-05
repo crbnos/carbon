@@ -891,35 +891,78 @@ export async function generatePlanningActions(
     return { inserted: 0, updated: 0, deleted: 0 };
   }
 
-  const resolveAssignee = await loadResponsibleEmployeeResolver(db, companyId);
+  // Every read below is independent of the others, so they run together in
+  // two groups instead of one after another (they were six waits in a row).
+  // Two groups, not one: the job pool has five connections, and the resolver
+  // alone takes five Kysely reads — the PostgREST views ride alongside it.
+  const [resolveAssignee, openPoLines, openJobs] = await Promise.all([
+    loadResponsibleEmployeeResolver(db, companyId),
+    // ── open supply (real documents change actions target)
+    fetchAll<Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]>(() =>
+      client
+        .from("openPurchaseOrderLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openProductionOrders"]["Row"]>(() =>
+      client
+        .from("openProductionOrders")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+  if (openPoLines.error) throw openPoLines.error;
+  if (openJobs.error) throw openJobs.error;
+  const poLineRows = openPoLines.data ?? [];
+  const jobRows = openJobs.data ?? [];
 
   // ── demand per (item, location, period): actual + forecast + projection
-  //    (net of consumption), the same union the planning RPCs read
-  const [demandActuals, demandForecasts, demandProjections] = await Promise.all(
-    [
-      db
-        .selectFrom("demandActual")
-        .select(["itemId", "locationId", "periodId", "actualQuantity"])
-        .where("companyId", "=", companyId)
-        .execute(),
-      db
-        .selectFrom("demandForecast")
-        .select(["itemId", "locationId", "periodId", "forecastQuantity"])
-        .where("companyId", "=", companyId)
-        .execute(),
-      db
-        .selectFrom("demandProjection")
-        .select([
-          "itemId",
-          "locationId",
-          "periodId",
-          "forecastQuantity",
-          "consumedQuantity"
-        ])
-        .where("companyId", "=", companyId)
-        .execute()
-    ]
-  );
+  //    (net of consumption), the same union the planning RPCs read; on-hand;
+  //    and the open jobs' status and good-unit quantity, which the
+  //    openProductionOrders view does not expose — one read of the company's
+  //    open jobs (the view's own statuses), no id list.
+  const [
+    demandActuals,
+    demandForecasts,
+    demandProjections,
+    inventoryRows,
+    openJobRows
+  ] = await Promise.all([
+    db
+      .selectFrom("demandActual")
+      .select(["itemId", "locationId", "periodId", "actualQuantity"])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("demandForecast")
+      .select(["itemId", "locationId", "periodId", "forecastQuantity"])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("demandProjection")
+      .select([
+        "itemId",
+        "locationId",
+        "periodId",
+        "forecastQuantity",
+        "consumedQuantity"
+      ])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("itemStockQuantities")
+      .select(["itemId", "locationId", "quantityOnHand"])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("job")
+      .select(["id", "status", "quantity", "quantityReceivedToInventory"])
+      .where("companyId", "=", companyId)
+      .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
+      .execute()
+  ]);
 
   const demandByItemLocation = new Map<string, Map<string, number>>();
   const addDemand = (
@@ -957,12 +1000,6 @@ export async function generatePlanningActions(
     );
   }
 
-  // ── on-hand
-  const inventoryRows = await db
-    .selectFrom("itemStockQuantities")
-    .select(["itemId", "locationId", "quantityOnHand"])
-    .where("companyId", "=", companyId)
-    .execute();
   const onHandByItemLocation = new Map<string, number>();
   for (const row of inventoryRows) {
     if (row.itemId && row.locationId) {
@@ -973,45 +1010,10 @@ export async function generatePlanningActions(
     }
   }
 
-  // ── open supply (real documents change actions target)
-  const openPoLines = await fetchAll<
-    Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]
-  >(() =>
-    client
-      .from("openPurchaseOrderLines")
-      .select("*")
-      .eq("companyId", companyId)
-      .order("id")
-  );
-
-  const openJobs = await fetchAll<
-    Database["public"]["Views"]["openProductionOrders"]["Row"]
-  >(() =>
-    client
-      .from("openProductionOrders")
-      .select("*")
-      .eq("companyId", companyId)
-      .order("id")
-  );
-
-  if (openPoLines.error) throw openPoLines.error;
-  if (openJobs.error) throw openJobs.error;
-  const poLineRows = openPoLines.data ?? [];
-  const jobRows = openJobs.data ?? [];
-
-  // openProductionOrders exposes neither the job's status nor its good-unit
-  // quantity. One read of the company's open jobs (the view's own statuses)
-  // gives both — no id list, whatever the number of jobs.
   const jobById = new Map<
     string,
     { status: string; quantity: number; quantityReceivedToInventory: number }
   >();
-  const openJobRows = await db
-    .selectFrom("job")
-    .select(["id", "status", "quantity", "quantityReceivedToInventory"])
-    .where("companyId", "=", companyId)
-    .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
-    .execute();
   for (const row of openJobRows) {
     if (!row.status) continue;
     jobById.set(row.id, {
