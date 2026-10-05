@@ -316,7 +316,7 @@ export default function App() {
                 >
                   <Outlet />
                   {/* Renders nothing outside development; the package strips itself. */}
-                  <ReactQueryDevtools buttonPosition="bottom-left" />
+                  <ReactQueryDevtools buttonPosition="bottom-right" />
                 </Document>
               </MotionConfig>
             </TooltipProvider>
