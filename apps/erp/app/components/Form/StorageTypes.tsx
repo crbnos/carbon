@@ -6,7 +6,7 @@ import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { getStorageTypesList } from "~/modules/inventory";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { path } from "~/utils/path";
@@ -57,9 +57,6 @@ export const useStorageTypes = () => {
   const storageTypes = useLoaderQuery<
     Awaited<ReturnType<typeof getStorageTypesList>>
   >(path.to.api.storageTypes);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {}, []);
 
   const options = useMemo(() => {
     return (storageTypes.data?.data ?? []).map((c) => ({
