@@ -1643,8 +1643,8 @@ msgstr "添加关于您的决定的任何备注..."
 msgid "Add Approval Requirement"
 msgstr "添加审批要求"
 
-msgid "Add at least one product."
-msgstr "至少添加一个产品"
+msgid "Add at least one service."
+msgstr "至少添加一项服务。"
 
 msgid "Add Authenticator App"
 msgstr "添加身份验证器应用"
@@ -1785,12 +1785,6 @@ msgstr "添加前驱物料"
 msgid "Add Printer"
 msgstr "添加打印机"
 
-msgid "Add products to plan the invoices."
-msgstr "添加产品来规划发票"
-
-msgid "Add products to plan the revenue."
-msgstr "添加产品来规划收入"
-
 msgid "Add Property"
 msgstr "添加属性"
 
@@ -1817,6 +1811,12 @@ msgstr "添加选择器"
 
 msgid "Add Services"
 msgstr "添加服务"
+
+msgid "Add services to plan the invoices."
+msgstr "添加服务以规划发票。"
+
+msgid "Add services to plan the revenue."
+msgstr "添加服务以规划收入。"
 
 msgid "Add Shipment"
 msgstr "添加发货"
@@ -15239,9 +15239,6 @@ msgstr "生产物料"
 msgid "Produced item"
 msgstr "生产物料"
 
-msgid "Product"
-msgstr "产品"
-
 msgid "Product issues during hypercare"
 msgstr "超级护理期间的产品问题"
 
@@ -15286,9 +15283,6 @@ msgstr "生产差异"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "生产：车间应用和排程"
-
-msgid "Products"
-msgstr "产品"
 
 msgid "Profile"
 msgstr "个人资料"

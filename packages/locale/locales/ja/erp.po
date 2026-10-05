@@ -1643,8 +1643,8 @@ msgstr "あなたの決定についてのメモを追加してください..."
 msgid "Add Approval Requirement"
 msgstr "承認要求事項を追加"
 
-msgid "Add at least one product."
-msgstr "少なくとも1つの製品を追加してください。"
+msgid "Add at least one service."
+msgstr "少なくとも1つの外注サービスを追加してください。"
 
 msgid "Add Authenticator App"
 msgstr "認証器アプリを追加"
@@ -1785,12 +1785,6 @@ msgstr "前任品目を追加"
 msgid "Add Printer"
 msgstr "プリンターを追加"
 
-msgid "Add products to plan the invoices."
-msgstr "請求をプランするために製品を追加してください。"
-
-msgid "Add products to plan the revenue."
-msgstr "売上高をプランするために製品を追加してください。"
-
 msgid "Add Property"
 msgstr "プロパティを追加"
 
@@ -1817,6 +1811,12 @@ msgstr "セレクターを追加"
 
 msgid "Add Services"
 msgstr "外注サービスを追加"
+
+msgid "Add services to plan the invoices."
+msgstr "請求書を計画するために外注サービスを追加してください。"
+
+msgid "Add services to plan the revenue."
+msgstr "売上高を計画するために外注サービスを追加してください。"
 
 msgid "Add Shipment"
 msgstr "出荷を追加"
@@ -15239,9 +15239,6 @@ msgstr "製造品目"
 msgid "Produced item"
 msgstr "製造品目"
 
-msgid "Product"
-msgstr "製品"
-
 msgid "Product issues during hypercare"
 msgstr "ハイパーケア中の製品の問題"
 
@@ -15286,9 +15283,6 @@ msgstr "生産差異"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "生産: ショップフロアアプリとスケジューリング"
-
-msgid "Products"
-msgstr "製品"
 
 msgid "Profile"
 msgstr "プロフィール"

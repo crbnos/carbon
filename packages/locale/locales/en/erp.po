@@ -1643,8 +1643,8 @@ msgstr "Add any notes about your decision..."
 msgid "Add Approval Requirement"
 msgstr "Add Approval Requirement"
 
-msgid "Add at least one product."
-msgstr "Add at least one product."
+msgid "Add at least one service."
+msgstr "Add at least one service."
 
 msgid "Add Authenticator App"
 msgstr "Add Authenticator App"
@@ -1785,12 +1785,6 @@ msgstr "Add Predecessor"
 msgid "Add Printer"
 msgstr "Add Printer"
 
-msgid "Add products to plan the invoices."
-msgstr "Add products to plan the invoices."
-
-msgid "Add products to plan the revenue."
-msgstr "Add products to plan the revenue."
-
 msgid "Add Property"
 msgstr "Add Property"
 
@@ -1817,6 +1811,12 @@ msgstr "Add Selector"
 
 msgid "Add Services"
 msgstr "Add Services"
+
+msgid "Add services to plan the invoices."
+msgstr "Add services to plan the invoices."
+
+msgid "Add services to plan the revenue."
+msgstr "Add services to plan the revenue."
 
 msgid "Add Shipment"
 msgstr "Add Shipment"
@@ -15239,9 +15239,6 @@ msgstr "produced item"
 msgid "Produced item"
 msgstr "Produced item"
 
-msgid "Product"
-msgstr "Product"
-
 msgid "Product issues during hypercare"
 msgstr "Product issues during hypercare"
 
@@ -15286,9 +15283,6 @@ msgstr "Production variance"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "Production: shop-floor app and scheduling"
-
-msgid "Products"
-msgstr "Products"
 
 msgid "Profile"
 msgstr "Profile"

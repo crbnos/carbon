@@ -25,7 +25,7 @@ export default function ContractSetupProductsRoute() {
   return (
     <ContractSetupBody>
       <ContractSetupSection
-        title={<Trans>Products</Trans>}
+        title={<Trans>Services</Trans>}
         description={
           <Trans>
             The services this contract bills: one-time fees and recurring

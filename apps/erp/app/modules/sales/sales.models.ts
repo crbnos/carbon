@@ -1676,8 +1676,8 @@ export const contractBillingTimings = [
 ] as const satisfies readonly Enums["contractBillingTiming"][];
 
 export const contractRenewals = [
-  "Renew",
-  "End"
+  "End",
+  "Renew"
 ] as const satisfies readonly Enums["contractRenewal"][];
 
 export const contractRevenueMethods = [

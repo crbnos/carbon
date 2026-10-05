@@ -1643,8 +1643,8 @@ msgstr "अपने निर्णय के बारे में कोई 
 msgid "Add Approval Requirement"
 msgstr "अनुमोदन आवश्यकता जोड़ें"
 
-msgid "Add at least one product."
-msgstr "कम से कम एक उत्पाद जोड़ें।"
+msgid "Add at least one service."
+msgstr "कम से कम एक सेवा जोड़ें।"
 
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
@@ -1785,12 +1785,6 @@ msgstr "पूर्ववर्ती जोड़ें"
 msgid "Add Printer"
 msgstr "प्रिंटर जोड़ें"
 
-msgid "Add products to plan the invoices."
-msgstr "चालान की योजना बनाने के लिए उत्पाद जोड़ें।"
-
-msgid "Add products to plan the revenue."
-msgstr "राजस्व की योजना बनाने के लिए उत्पाद जोड़ें।"
-
 msgid "Add Property"
 msgstr "प्रॉपर्टी जोड़ें"
 
@@ -1817,6 +1811,12 @@ msgstr "सिलेक्टर जोड़ें"
 
 msgid "Add Services"
 msgstr "सेवा जोड़ें"
+
+msgid "Add services to plan the invoices."
+msgstr "चालान की योजना बनाने के लिए सेवाएं जोड़ें।"
+
+msgid "Add services to plan the revenue."
+msgstr "राजस्व की योजना बनाने के लिए सेवाएं जोड़ें।"
 
 msgid "Add Shipment"
 msgstr "शिपमेंट जोड़ें"
@@ -15239,9 +15239,6 @@ msgstr "उत्पादित आइटम"
 msgid "Produced item"
 msgstr "उत्पादित आइटम"
 
-msgid "Product"
-msgstr "उत्पाद"
-
 msgid "Product issues during hypercare"
 msgstr "हाइपरकेयर के दौरान उत्पाद समस्याएं"
 
@@ -15286,9 +15283,6 @@ msgstr "उत्पादन विचलन"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "उत्पादन: शॉप-फ्लोर ऐप और शेड्यूलिंग"
-
-msgid "Products"
-msgstr "उत्पाद"
 
 msgid "Profile"
 msgstr "प्रोफ़ाइल"

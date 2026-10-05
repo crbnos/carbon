@@ -1643,8 +1643,8 @@ msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
 msgid "Add Approval Requirement"
 msgstr "Onay Gereklilik Ekle"
 
-msgid "Add at least one product."
-msgstr "En az bir ürün ekleyin."
+msgid "Add at least one service."
+msgstr "En az bir hizmet ekleyin."
 
 msgid "Add Authenticator App"
 msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
@@ -1785,12 +1785,6 @@ msgstr "Öncülü Ekle"
 msgid "Add Printer"
 msgstr "Yazıcı Ekle"
 
-msgid "Add products to plan the invoices."
-msgstr "Faturaları planlamak için ürün ekleyin."
-
-msgid "Add products to plan the revenue."
-msgstr "Hasılatı planlamak için ürün ekleyin."
-
 msgid "Add Property"
 msgstr "Özellik Ekle"
 
@@ -1817,6 +1811,12 @@ msgstr "Seçici Ekle"
 
 msgid "Add Services"
 msgstr "Hizmet Ekle"
+
+msgid "Add services to plan the invoices."
+msgstr "Faturaları planlamak için hizmetler ekleyin."
+
+msgid "Add services to plan the revenue."
+msgstr "Hasılatı planlamak için hizmetler ekleyin."
 
 msgid "Add Shipment"
 msgstr "Sevkiyat Ekle"
@@ -15239,9 +15239,6 @@ msgstr "üretilen stok kartı"
 msgid "Produced item"
 msgstr "Üretilen stok kartı"
 
-msgid "Product"
-msgstr "Ürün"
-
 msgid "Product issues during hypercare"
 msgstr "Hypercare sırasında ürün sorunları"
 
@@ -15286,9 +15283,6 @@ msgstr "Üretim sapması"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "Üretim: atölye uygulaması ve planlama"
-
-msgid "Products"
-msgstr "Ürünler"
 
 msgid "Profile"
 msgstr "Profil"

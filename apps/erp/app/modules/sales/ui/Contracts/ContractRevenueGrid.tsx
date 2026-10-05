@@ -266,7 +266,7 @@ const ContractRevenueGrid = ({
         <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-6 py-12 text-center">
           <p className="text-sm text-muted-foreground">
             {lines.length === 0 ? (
-              <Trans>Add products to plan the revenue.</Trans>
+              <Trans>Add services to plan the revenue.</Trans>
             ) : (
               <Trans>
                 Nothing to recognize yet. Revenue follows what the invoices
@@ -449,7 +449,7 @@ export const ContractRecognitionGrid = ({
     () => [
       {
         accessorKey: "name",
-        header: t`Product`,
+        header: t`Service`,
         cell: ({ row }) => (
           <span className="block max-w-[260px] truncate font-medium">
             {row.original.name}

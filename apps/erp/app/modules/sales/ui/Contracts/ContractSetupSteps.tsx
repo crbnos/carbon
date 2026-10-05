@@ -34,7 +34,7 @@ const ContractSetupSteps = ({
   const { t } = useLingui();
   const labels: Record<ContractSetupStep, string> = {
     details: t`Details`,
-    products: t`Products`,
+    products: t`Services`,
     invoicing: t`Invoicing`,
     revenue: t`Revenue`,
     review: t`Review`

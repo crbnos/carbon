@@ -68,7 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(insert.error, insert.error.message || "Failed to add products")
+        error(insert.error, insert.error.message || "Failed to add services")
       )
     );
   }
@@ -79,8 +79,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       request,
       success(
         insert.data.length === 1
-          ? "Added 1 product to the contract"
-          : `Added ${insert.data.length} products to the contract`
+          ? "Added 1 service to the contract"
+          : `Added ${insert.data.length} services to the contract`
       )
     )
   );

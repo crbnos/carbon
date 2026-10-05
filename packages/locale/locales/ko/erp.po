@@ -1643,8 +1643,8 @@ msgstr "결정에 대한 메모를 추가하세요..."
 msgid "Add Approval Requirement"
 msgstr "승인 요구사항 추가"
 
-msgid "Add at least one product."
-msgstr "최소 1개의 제품을 추가하세요."
+msgid "Add at least one service."
+msgstr "최소 1개의 서비스를 추가하세요."
 
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
@@ -1785,12 +1785,6 @@ msgstr "선행 품목 추가"
 msgid "Add Printer"
 msgstr "프린터 추가"
 
-msgid "Add products to plan the invoices."
-msgstr "송장 계획을 위해 제품을 추가하세요."
-
-msgid "Add products to plan the revenue."
-msgstr "매출 계획을 위해 제품을 추가하세요."
-
 msgid "Add Property"
 msgstr "속성 추가"
 
@@ -1817,6 +1811,12 @@ msgstr "선택자 추가"
 
 msgid "Add Services"
 msgstr "서비스 추가"
+
+msgid "Add services to plan the invoices."
+msgstr "송장을 계획하기 위해 서비스를 추가하세요."
+
+msgid "Add services to plan the revenue."
+msgstr "매출을 계획하기 위해 서비스를 추가하세요."
 
 msgid "Add Shipment"
 msgstr "출하 추가"
@@ -15239,9 +15239,6 @@ msgstr "생산된 품목"
 msgid "Produced item"
 msgstr "생산된 품목"
 
-msgid "Product"
-msgstr "제품"
-
 msgid "Product issues during hypercare"
 msgstr "하이퍼케어 기간 중 발생한 제품 이슈"
 
@@ -15286,9 +15283,6 @@ msgstr "생산 차이"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "생산: 현장 앱 및 스케줄링"
-
-msgid "Products"
-msgstr "제품"
 
 msgid "Profile"
 msgstr "프로필"

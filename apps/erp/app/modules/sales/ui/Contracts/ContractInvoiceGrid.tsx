@@ -317,7 +317,7 @@ const ContractInvoiceGrid = ({
         <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-6 py-12 text-center">
           <p className="text-sm text-muted-foreground">
             {lines.length === 0 ? (
-              <Trans>Add products to plan the invoices.</Trans>
+              <Trans>Add services to plan the invoices.</Trans>
             ) : (
               <Trans>No invoices planned. Add one to bill these lines.</Trans>
             )}

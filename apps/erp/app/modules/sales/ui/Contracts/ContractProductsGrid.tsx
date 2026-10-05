@@ -148,7 +148,7 @@ const ContractProductsGrid = ({
     () => [
       {
         accessorKey: "name",
-        header: t`Product`,
+        header: t`Service`,
         cell: ({ row }) => (
           <div className="flex max-w-[240px] flex-col">
             <span className="truncate font-medium">{row.original.name}</span>

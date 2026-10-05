@@ -283,16 +283,16 @@ const ContractDetailsForm = ({
                 onChange={setRenewal}
                 options={[
                   {
-                    value: "Renew",
-                    title: labels.renewal.Renew,
-                    description: t`A new term of the same length starts when this one ends.`,
-                    icon: <LuRefreshCw />
-                  },
-                  {
                     value: "End",
                     title: labels.renewal.End,
                     description: t`The contract ends on its end date and invoicing stops.`,
                     icon: <LuCircleStop />
+                  },
+                  {
+                    value: "Renew",
+                    title: labels.renewal.Renew,
+                    description: t`A new term of the same length starts when this one ends.`,
+                    icon: <LuRefreshCw />
                   }
                 ]}
               />

@@ -1643,8 +1643,8 @@ msgstr "Добавьте примечания о вашем решении..."
 msgid "Add Approval Requirement"
 msgstr "Добавить требование утверждения"
 
-msgid "Add at least one product."
-msgstr "Добавьте как минимум один товар."
+msgid "Add at least one service."
+msgstr "Добавьте хотя бы одну услугу."
 
 msgid "Add Authenticator App"
 msgstr "Добавить приложение-аутентификатор"
@@ -1785,12 +1785,6 @@ msgstr "Добавить предшественника"
 msgid "Add Printer"
 msgstr "Добавить принтер"
 
-msgid "Add products to plan the invoices."
-msgstr "Добавить товары для планирования счетов-фактур."
-
-msgid "Add products to plan the revenue."
-msgstr "Добавить товары для планирования выручки."
-
 msgid "Add Property"
 msgstr "Добавить свойство"
 
@@ -1817,6 +1811,12 @@ msgstr "Добавить селектор"
 
 msgid "Add Services"
 msgstr "Добавить Услуги"
+
+msgid "Add services to plan the invoices."
+msgstr "Добавьте услуги для планирования счетов-фактур."
+
+msgid "Add services to plan the revenue."
+msgstr "Добавьте услуги для планирования выручки."
 
 msgid "Add Shipment"
 msgstr "Добавить отгрузку"
@@ -15239,9 +15239,6 @@ msgstr "произведенная номенклатура"
 msgid "Produced item"
 msgstr "Произведенная номенклатура"
 
-msgid "Product"
-msgstr "Продукт"
-
 msgid "Product issues during hypercare"
 msgstr "Проблемы с продуктом во время гиперпомощи"
 
@@ -15286,9 +15283,6 @@ msgstr "Отклонение производства"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "Производство: приложение для цеха и планирование"
-
-msgid "Products"
-msgstr "Продукты"
 
 msgid "Profile"
 msgstr "Профиль"

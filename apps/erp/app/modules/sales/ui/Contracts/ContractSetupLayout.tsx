@@ -37,7 +37,7 @@ export const ContractSetupFrame = ({
       className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full flex-col overflow-y-auto bg-card scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
     >
       <header className="w-full border-b border-border">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pt-8 md:px-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-8 md:px-8">
           <div className="flex min-w-0 flex-col gap-1">
             <Heading size="h3" className="truncate">
               {title}
@@ -58,7 +58,7 @@ export const ContractSetupFrame = ({
 
 /** A step's content: centred, capped and generously spaced. */
 export const ContractSetupBody = ({ children }: { children: ReactNode }) => (
-  <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-4 py-10 md:px-8">
+  <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-4 py-10 md:px-8">
     {children}
   </div>
 );
@@ -112,7 +112,7 @@ export const ContractSetupFooter = ({
   actions: ReactNode;
 }) => (
   <div className="sticky bottom-0 z-10 w-full border-t border-border bg-card">
-    <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-3 md:px-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3 md:px-8">
       <div className="min-w-0 text-sm">{summary}</div>
       <div className="flex shrink-0 items-center gap-2">{actions}</div>
     </div>

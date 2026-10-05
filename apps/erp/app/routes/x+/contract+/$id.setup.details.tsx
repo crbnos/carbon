@@ -26,7 +26,7 @@ import {
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-/** Saves a Draft's details from setup step 1 and moves on to Products. A
+/** Saves a Draft's details from setup step 1 and moves on to Services. A
  *  different customer brings its own invoicing defaults: the bill-to,
  *  contact, addresses and payment terms of the old one would be wrong. */
 export async function action({ request, params }: ActionFunctionArgs) {

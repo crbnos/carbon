@@ -81,7 +81,7 @@ export default function ContractSetupReviewRoute() {
           <ul className="flex w-full max-w-3xl flex-col gap-3 text-sm">
             {lines.length === 0 && (
               <Gap to={path.to.contractSetup(id, "products")}>
-                <Trans>Add at least one product.</Trans>
+                <Trans>Add at least one service.</Trans>
               </Gap>
             )}
             {invoiceGaps.map(([lineId, residual]) => (

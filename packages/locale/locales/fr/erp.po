@@ -1643,8 +1643,8 @@ msgstr "Ajoutez des notes sur votre décision..."
 msgid "Add Approval Requirement"
 msgstr "Ajouter une exigence d'approbation"
 
-msgid "Add at least one product."
-msgstr "Ajoutez au moins un produit."
+msgid "Add at least one service."
+msgstr "Ajouter au moins une prestation."
 
 msgid "Add Authenticator App"
 msgstr "Ajouter une application d'authentification"
@@ -1785,12 +1785,6 @@ msgstr "Ajouter un prédécesseur"
 msgid "Add Printer"
 msgstr "Ajouter une imprimante"
 
-msgid "Add products to plan the invoices."
-msgstr "Ajoutez des produits pour planifier les factures."
-
-msgid "Add products to plan the revenue."
-msgstr "Ajoutez des produits pour planifier les revenus."
-
 msgid "Add Property"
 msgstr "Ajouter une propriété"
 
@@ -1817,6 +1811,12 @@ msgstr "Ajouter un sélecteur"
 
 msgid "Add Services"
 msgstr "Ajouter Prestations"
+
+msgid "Add services to plan the invoices."
+msgstr "Ajouter des prestations pour planifier les factures."
+
+msgid "Add services to plan the revenue."
+msgstr "Ajouter des prestations pour planifier les revenus."
 
 msgid "Add Shipment"
 msgstr "Ajouter Expédition"
@@ -15239,9 +15239,6 @@ msgstr "article produit"
 msgid "Produced item"
 msgstr "Article produit"
 
-msgid "Product"
-msgstr "Produit"
-
 msgid "Product issues during hypercare"
 msgstr "Problèmes de produit pendant l'hypercare"
 
@@ -15286,9 +15283,6 @@ msgstr "Écart de production"
 
 msgid "Production: shop-floor app and scheduling"
 msgstr "Production : application d'atelier et planification"
-
-msgid "Products"
-msgstr "Produits"
 
 msgid "Profile"
 msgstr "Profil"

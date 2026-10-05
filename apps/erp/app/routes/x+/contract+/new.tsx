@@ -187,7 +187,7 @@ export default function NewContractRoute() {
     closeDate: companyToday,
     startDate: companyToday,
     duration: "12" as const,
-    renewal: "Renew" as const,
+    renewal: "End" as const,
     renewalUplift: 0,
     // What a new contract bills on until the Invoicing step says otherwise.
     billingFrequency: "Month" as const,
