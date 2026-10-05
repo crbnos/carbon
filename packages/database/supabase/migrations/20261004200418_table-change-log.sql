@@ -9,8 +9,9 @@
 
 -- UNLOGGED: it skips WAL, so the extra insert on each write to a list table is
 -- cheap. The price is that a crash empties it. A reader detects that by the
--- server's start time (the "epoch" below) and falls back to a full fetch, so
--- nothing is ever silently missed.
+-- "epoch" below and falls back to a full fetch
+-- (20261005053648_table-change-epoch.sql replaced the server's start time,
+-- which a backend crash does not change, with a token the same crash empties).
 CREATE UNLOGGED TABLE IF NOT EXISTS "tableChange" (
   "id" BIGINT GENERATED ALWAYS AS IDENTITY,
   "companyId" TEXT NOT NULL,

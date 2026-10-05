@@ -38,11 +38,11 @@ pnpm --filter @carbon/query test
 | `useLoaderQuery(url)` | Read an `api+` URL in a component: one shared request per URL, refetched when invalidated. Replaces `useFetcher` + `fetcher.load` in a mount effect |
 | `cachedApiQuery(url)` | The same read from an event handler or an effect |
 | `useAction({ onSuccess, onError, onSettled })` | A mutation fetcher with callbacks. `onSettled` runs whenever a submission finishes, also when the action redirects and returns no data; `onSuccess` / `onError` need data |
-| `setClientCompanyId` / `getCompanyId` | The shell layout sets the company during render; the `companyId` cookie is httpOnly and unreadable in the browser |
+| `setClientCompanyId(companyId, userId)` / `getCompanyId` | The shell layout sets both during render; the `companyId` cookie is httpOnly and unreadable in the browser. A different user empties the cache; leaving a company drops its loader entries |
 | `createInvalidationMiddleware({ getCache, skipPaths })` | Root `clientMiddleware`; skip POSTs that change no data (`/refresh-session`) |
 | `RouteRealtime`, `useRealtimeTable`, `useTableChanges`, `useRealtimeRevalidator` | Realtime over private broadcast topics. Revalidation waits for a submitting fetcher. A route entry `{ table, column, param }` and a `<name>Id=eq.` filter follow one record's rows only (`matchesFilter`) |
-| `useRealtimeChannel` | One channel with retry, reconnect on focus, `private` and `onSubscribed(isReconnect)` |
-| `LiveLists`, `useLiveList`, `LiveList` | Whole lists kept in the cache (items, customers, suppliers, people). IndexedDB first; then `table_changes_since(cursor)` names the rows that changed since the stored copy and only those are re-read. The full list is fetched once per device, and again only when the log cannot answer (no cursor, a server restart, a cursor older than 7 days, more than 500 changed rows). Broadcasts patch it while the tab is open |
+| `useRealtimeChannel` | One channel with retry, `private` and `onSubscribed(isReconnect)`. It reconnects when the tab returns after 10 s hidden or with a channel that is not joined — every reconnect reloads the page's data, so a glance at another tab does not |
+| `LiveLists`, `useLiveList`, `LiveList` | Whole lists kept in the cache (items, customers, suppliers, people). IndexedDB first (the stored copy is keyed by company AND user: it is that user's RLS view); then `table_changes_since(cursor)` names the rows that changed since the stored copy and only those are re-read. The full list is fetched once per device, and again only when the log cannot answer (no cursor, a server restart, a cursor older than 7 days, more than 500 changed rows). Broadcasts patch it while the tab is open |
 
 ## Cross-References
 

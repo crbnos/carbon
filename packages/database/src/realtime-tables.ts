@@ -45,6 +45,15 @@ export const REALTIME_REFERENCE_TABLES = tablesWith(
 /** Tables on a per-user topic, `user:<userId>:<table>`. */
 export const REALTIME_USER_TABLES = tablesWith("broadcast_user_changes");
 
+/**
+ * The names the change log (`tableChange`) records changes under: the tables
+ * with `log_table_changes`, and "employee" for `log_user_changes`. A writer
+ * that runs with triggers off (a restore) logs a reset for each itself.
+ */
+export const CHANGE_LOGGED_TABLES: string[] = [
+  ...new Set<string>([...tablesWith("log_table_changes"), "employee"])
+];
+
 export type RealtimeTable = TablesWith<"broadcast_table_changes">;
 
 type Tables = Database["public"]["Tables"];

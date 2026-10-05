@@ -2088,7 +2088,7 @@ async function readUsedIn(
       itemId,
       error
     });
-    return NOT_USED;
+    return structuredClone(NOT_USED);
   }
   return data as unknown as ItemUsedIn;
 }

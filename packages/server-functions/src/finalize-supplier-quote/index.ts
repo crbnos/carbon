@@ -6,7 +6,7 @@ import { many, selectRows } from "@carbon/database/rows";
 import { datetime, groupBy } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError, ServerFnError } from "../errors";
+import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
 
 export const finalizeSupplierQuoteInput = z.object({
   supplierQuoteId: z.string()
@@ -36,17 +36,6 @@ const finalizeSupplierQuote = defineServerFn({
       }
       const supplierId = quote.supplierId;
 
-      await trx
-        .updateTable("supplierQuote")
-        .set({
-          status: "Active",
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .where("id", "=", supplierQuoteId)
-        .where("companyId", "=", companyId)
-        .execute();
-
       const lines = await selectRows(
         trx,
         "supplierQuoteLine",
@@ -70,6 +59,39 @@ const finalizeSupplierQuote = defineServerFn({
         prices.data,
         (price) => price.supplierQuoteLineId
       );
+
+      // Every line needs one quantity with a price and a lead time: a price
+      // list entry without either is worse than none.
+      const unpriced = lines.find(
+        (line) =>
+          !(pricesByLine[line.id] ?? []).some(
+            (price) => price.supplierUnitPrice && price.leadTime
+          )
+      );
+      if (unpriced) {
+        const item = unpriced.itemId
+          ? await trx
+              .selectFrom("item")
+              .select("readableIdWithRevision")
+              .where("id", "=", unpriced.itemId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : undefined;
+        throw new InvalidInputError(
+          `Line ${item?.readableIdWithRevision ?? unpriced.id} must have at least one quantity with price and lead time`
+        );
+      }
+
+      await trx
+        .updateTable("supplierQuote")
+        .set({
+          status: "Active",
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .where("id", "=", supplierQuoteId)
+        .where("companyId", "=", companyId)
+        .execute();
 
       const pricedLines = lines.flatMap((line) => {
         const linePrices = pricesByLine[line.id] ?? [];

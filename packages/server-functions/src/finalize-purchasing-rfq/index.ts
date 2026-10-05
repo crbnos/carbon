@@ -31,7 +31,8 @@ export type FinalizedSupplierQuote = {
 /**
  * Sends a purchasing RFQ out: one Draft supplier quote per RFQ supplier, each
  * with its share link and a line per RFQ line that names an item, then the RFQ
- * is marked Requested. One transaction — a failure leaves no quotes behind.
+ * is marked Requested. One transaction — a failure leaves no quotes behind,
+ * and only a Draft RFQ is finalized, so a repeated request creates nothing.
  */
 const finalizePurchasingRfq = defineServerFn({
   name: "finalize-purchasing-rfq",
@@ -39,13 +40,20 @@ const finalizePurchasingRfq = defineServerFn({
   permissions: { create: "purchasing" },
   async run({ db, companyId, userId }, { rfqId }) {
     const quotes = await db.transaction().execute(async (trx) => {
+      // Locked: a second submit waits here, then finds the RFQ Requested.
       const rfq = await trx
         .selectFrom("purchasingRfq")
-        .select("id")
+        .select(["id", "status"])
         .where("id", "=", rfqId)
         .where("companyId", "=", companyId)
+        .forUpdate()
         .executeTakeFirst();
       if (!rfq) throw new NotFoundError("RFQ not found");
+      if (rfq.status !== "Draft") {
+        throw new InvalidInputError(
+          `Only a draft RFQ can be finalized; this one is ${rfq.status}`
+        );
+      }
 
       const suppliers = await trx
         .selectFrom("purchasingRfqSupplier")

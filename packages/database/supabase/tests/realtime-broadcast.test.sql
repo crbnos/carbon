@@ -42,6 +42,7 @@ DECLARE
   company_a text := current_setting('test.company_a');
   company_b text := current_setting('test.company_b');
   user_a text := current_setting('test.user_a');
+  user_b text := current_setting('test.user_b');
   item_topic text := 'company:' || company_a || ':item';
   base int;
   sent int;
@@ -53,7 +54,7 @@ BEGIN
   SELECT count(*) INTO base FROM realtime.messages WHERE topic = 'company:' || company_a || ':customer';
 
   -- INSERT: one message, the new id, on the company's topic for the table.
-  INSERT INTO "customer" (name, "companyId", "readableId") VALUES ('Realtime customer', company_a, 'RT-0') RETURNING id INTO customer_id;
+  INSERT INTO "customer" (name, "companyId", "readableId", "accountManagerId") VALUES ('Realtime customer', company_a, 'RT-0', user_a) RETURNING id INTO customer_id;
   SELECT count(*) - base INTO sent FROM realtime.messages WHERE topic = 'company:' || company_a || ':customer';
   SELECT payload INTO message FROM realtime.messages
   WHERE topic = 'company:' || company_a || ':customer' AND payload->'ids' = jsonb_build_array(customer_id);
@@ -64,10 +65,15 @@ BEGIN
   IF EXISTS (SELECT 1 FROM realtime.messages WHERE topic = 'company:' || company_b || ':customer' AND payload->'ids' ? customer_id) THEN
     RAISE EXCEPTION 'FAIL: a write in company A reached company B''s topic';
   END IF;
-  -- The message names the records the row belongs to: every "<name>Id" column
-  -- that holds a value, so a client can filter on one (`quoteLineId=eq.…`).
-  IF message->'parents'->'readableId' <> jsonb_build_array('RT-0') OR message->'parents' ? 'companyId' THEN
-    RAISE EXCEPTION 'FAIL: customer INSERT did not name its "<name>Id" columns: %', message;
+  -- The message names the records the row belongs to: each foreign key
+  -- "<name>Id" column that holds a value, so a client can filter on one
+  -- (`quoteLineId=eq.…`).
+  IF message->'parents'->'accountManagerId' <> jsonb_build_array(user_a) OR message->'parents' ? 'companyId' THEN
+    RAISE EXCEPTION 'FAIL: customer INSERT did not name its foreign keys: %', message;
+  END IF;
+  -- A column that only ends in "Id" is the row's own data and is not sent.
+  IF message->'parents' ? 'readableId' OR message::text LIKE '%RT-0%' THEN
+    RAISE EXCEPTION 'FAIL: customer INSERT sent the customer number: %', message;
   END IF;
   IF EXISTS (SELECT 1 FROM realtime.messages WHERE topic LIKE 'company:' || company_a || ':%' AND NOT private) THEN
     RAISE EXCEPTION 'FAIL: a broadcast was sent on a public topic';
@@ -81,13 +87,13 @@ BEGIN
   END IF;
 
   -- A real UPDATE, then a DELETE: one message each.
-  UPDATE "customer" SET name = 'Realtime customer 2', "readableId" = 'RT-MOVED' WHERE id = customer_id;
+  UPDATE "customer" SET name = 'Realtime customer 2', "accountManagerId" = user_b WHERE id = customer_id;
   -- A row moved to another parent names the one it left as well as the one it joined.
   SELECT payload INTO message FROM realtime.messages
   WHERE topic = 'company:' || company_a || ':customer' AND payload->>'op' = 'UPDATE'
     AND payload->'ids' = jsonb_build_array(customer_id)
   ORDER BY inserted_at DESC LIMIT 1;
-  IF NOT (message->'parents'->'readableId' @> '["RT-0", "RT-MOVED"]'::jsonb) THEN
+  IF NOT (message->'parents'->'accountManagerId' @> jsonb_build_array(user_a, user_b)) THEN
     RAISE EXCEPTION 'FAIL: an UPDATE did not name the old and the new parent: %', message;
   END IF;
 
@@ -280,6 +286,40 @@ BEGIN
 END;
 $$;
 RESET ROLE;
+
+-- A crash empties the log and its epoch together (both are UNLOGGED). Until
+-- the purge writes a new epoch every cursor is answered with reset, and a
+-- cursor issued under the old epoch is reset afterwards as well.
+DO $$
+DECLARE
+  company_a text := current_setting('test.company_a');
+  before jsonb;
+  during jsonb;
+  after jsonb;
+BEGIN
+  PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('test.user_a'), 'role', 'authenticated')::text, true);
+  before := table_changes_since(company_a);
+  IF (table_changes_since(company_a, before->>'xid', before->>'epoch', (before->>'at')::timestamptz)->>'reset')::boolean THEN
+    RAISE EXCEPTION 'FAIL: a fresh cursor was answered with reset';
+  END IF;
+
+  DELETE FROM util."tableChangeEpoch";
+  DELETE FROM "tableChange";
+  during := table_changes_since(company_a, before->>'xid', before->>'epoch', (before->>'at')::timestamptz);
+  IF NOT (during->>'reset')::boolean OR during->>'epoch' IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL: an emptied log was not answered with reset: %', during;
+  END IF;
+  IF NOT (table_changes_since(company_a, during->>'xid', during->>'epoch', (during->>'at')::timestamptz)->>'reset')::boolean THEN
+    RAISE EXCEPTION 'FAIL: a cursor issued without an epoch was trusted';
+  END IF;
+
+  PERFORM util.purge_table_changes();
+  after := table_changes_since(company_a, before->>'xid', before->>'epoch', (before->>'at')::timestamptz);
+  IF NOT (after->>'reset')::boolean OR after->>'epoch' IS NULL OR after->>'epoch' = before->>'epoch' THEN
+    RAISE EXCEPTION 'FAIL: the purge did not start a new epoch: %', after;
+  END IF;
+END;
+$$;
 
 \echo realtime-broadcast: all checks passed
 ROLLBACK;

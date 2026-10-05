@@ -7,12 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  finalizeSupplierQuote,
-  getSupplierQuote,
-  getSupplierQuoteLinePricesByQuoteId,
-  getSupplierQuoteLines
-} from "~/modules/purchasing";
+import { finalizeSupplierQuote, getSupplierQuote } from "~/modules/purchasing";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { upsertExternalLink } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
@@ -73,74 +68,12 @@ export async function action(args: ActionFunctionArgs) {
   if (externalLink.data && quote.data.externalLinkId !== externalLink.data.id) {
     await client
       .from("supplierQuote")
-      .update({
-        externalLinkId: externalLink.data.id,
-        status: "Active"
-      })
+      .update({ externalLinkId: externalLink.data.id })
       .eq("id", id);
   }
 
-  // Validate that all quantities have price and lead time
-  const [quoteLines, quoteLinePrices] = await Promise.all([
-    getSupplierQuoteLines(client, id),
-    getSupplierQuoteLinePricesByQuoteId(client, id)
-  ]);
-
-  if (quoteLines.error) {
-    throw redirect(
-      path.to.supplierQuote(id),
-      await flash(
-        request,
-        error(quoteLines.error, "Failed to get supplier quote lines")
-      )
-    );
-  }
-
-  if (quoteLinePrices.error) {
-    throw redirect(
-      path.to.supplierQuote(id),
-      await flash(
-        request,
-        error(quoteLinePrices.error, "Failed to get supplier quote line prices")
-      )
-    );
-  }
-
-  // Check that each line has at least one quantity with price and lead time
-  // (not all quantities need them, just at least one per line)
-  const lines = quoteLines.data ?? [];
-  const prices = quoteLinePrices.data ?? [];
-
-  for (const line of lines) {
-    if (!line.id) continue;
-    const linePrices = prices.filter((p) => p.supplierQuoteLineId === line.id);
-
-    // Check if at least one quantity has both valid price and lead time
-    const hasValidPriceAndLeadTime = linePrices.some(
-      (price) =>
-        price.supplierUnitPrice !== null &&
-        price.supplierUnitPrice !== 0 &&
-        price.leadTime !== null &&
-        price.leadTime !== 0
-    );
-
-    if (!hasValidPriceAndLeadTime) {
-      throw redirect(
-        path.to.supplierQuote(id),
-        await flash(
-          request,
-          error(
-            null,
-            `Line ${line.itemReadableId} must have at least one quantity with price and lead time`
-          )
-        )
-      );
-    }
-  }
-
-  // TODO: Add PDF generation for supplier quotes when available
-  // TODO: Add document creation for supplier quotes when PDF is available
-
+  // The function checks that every line is priced, marks the quote Active and
+  // writes the supplier's price list, in one transaction.
   const finalize = await finalizeSupplierQuote(client, getDatabaseClient(), {
     supplierQuoteId: id,
     companyId,

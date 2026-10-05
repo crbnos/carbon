@@ -20,9 +20,13 @@ uses `postgres_changes`: the `supabase_realtime` publication is empty, and the
 
 A statement-level trigger sends ONE message per company per statement:
 `{ table, op, ids, parents }`, with `ids` and `parents` null past 100 rows.
-`parents` holds each `<name>Id` column of the changed rows and its values
-(`{ jobId: ["job_…"] }`), so a page that shows one record can ignore changes
-to another's rows; a column with more than 20 values is left out. Only ids
+`parents` holds each FOREIGN KEY `<name>Id` column of the changed rows and its
+values (`{ jobId: ["job_…"] }`), plus the columns its ancestors add, so a page
+that shows one record can ignore changes to another's rows; a column with more
+than 20 values is left out. A column that only ends in `Id` (`readableId`, an
+order's own number, `taxId`) is the row's data and is never sent — any employee
+of the company may join any table's topic, so a filter on such a column cannot
+work and matches every change. Only ids
 leave the database — the client re-reads what it needs through PostgREST, so
 table RLS still decides what each user sees.
 
@@ -143,9 +147,13 @@ company) is the only reader, and the backup engine skips the table.
   — not the table's id or a timestamp. A sequence value is taken before commit,
   so "the highest id I saw" skips a row whose transaction commits late. With
   xmin a few rows are named twice; re-reading them is harmless.
-- **`reset`** when there is no cursor, the server restarted since it was issued
-  (the epoch is the postmaster start time: a crash empties an unlogged table),
-  or the cursor is older than the retention less a day.
+- **`reset`** when there is no cursor, the log was emptied since it was issued,
+  or the cursor is older than the retention less a day. The epoch is a token in
+  `util."tableChangeEpoch"`, an UNLOGGED table the same crash recovery empties
+  (the postmaster start time does not change when a backend crashes). With no
+  token every call resets, until the hourly `util.purge_table_changes()` writes
+  a new one. A writer that runs with triggers off (company restore) inserts a
+  null-`rowId` row per `CHANGE_LOGGED_TABLES` entry itself.
 - **`table_changes_since` must stay `STABLE`**: the read of the log and
   `pg_current_snapshot()` then share one snapshot. As `VOLATILE`, a change
   committed between the two is skipped for good.
