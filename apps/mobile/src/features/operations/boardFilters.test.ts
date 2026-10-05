@@ -6,16 +6,26 @@ import type { OperationCard, WorkCenterColumn } from "@carbon/mes-core";
 import { describe, expect, it } from "vitest";
 import {
   activeFilterCount,
+  type BoardFilters,
   columnsWithResults,
   EMPTY_FILTERS,
   filterColumns,
   filterOperations,
-  toggleFilter
+  toggleFilter,
+  UNASSIGNED
 } from "./boardFilters";
 
-const op = (id: string, tags?: string[]) =>
-  ({ id, tags }) as unknown as OperationCard;
+const op = (
+  id: string,
+  tags?: string[],
+  rest?: { columnType?: string; assignee?: string | null }
+) => ({ id, tags, ...rest }) as unknown as OperationCard;
 const col = (id: string) => ({ id, title: id }) as WorkCenterColumn;
+/** Every test names only the lists it cares about; the rest stay empty. */
+const picked = (some: Partial<BoardFilters>): BoardFilters => ({
+  ...EMPTY_FILTERS,
+  ...some
+});
 
 describe("toggleFilter", () => {
   it("adds and removes without mutating", () => {
@@ -46,14 +56,67 @@ describe("filterOperations", () => {
     // Web's filter is an `in` test. Requiring every tag would make choosing a
     // second tag narrow the board to nothing, which reads as a broken filter.
     const all = [op("a", ["rush"]), op("b", ["rework"]), op("c", ["other"])];
-    const picked = { workCenterIds: [], tags: ["rush", "rework"] };
-    expect(filterOperations(all, picked).map((o) => o.id)).toEqual(["a", "b"]);
+    const chosen = picked({ tags: ["rush", "rework"] });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["a", "b"]);
   });
 
   it("drops an operation with no tags once a tag is chosen", () => {
     const all = [op("a", ["rush"]), op("b"), op("c", [])];
-    const picked = { workCenterIds: [], tags: ["rush"] };
-    expect(filterOperations(all, picked).map((o) => o.id)).toEqual(["a"]);
+    const chosen = picked({ tags: ["rush"] });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["a"]);
+  });
+
+  it("matches a process by the card's columnType", () => {
+    // The board's columns are work centres and their TYPE is the process, so
+    // the process id arrives under `columnType`. Reading `processId` instead
+    // finds nothing and silently empties the board.
+    const all = [
+      op("a", [], { columnType: "p1" }),
+      op("b", [], { columnType: "p2" })
+    ];
+    const chosen = picked({ processIds: ["p1"] });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["a"]);
+  });
+
+  it("drops an operation with no process once a process is chosen", () => {
+    const all = [op("a", [], { columnType: "p1" }), op("b")];
+    const chosen = picked({ processIds: ["p1"] });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["a"]);
+  });
+
+  it("matches an assignee", () => {
+    const all = [
+      op("a", [], { assignee: "u1" }),
+      op("b", [], { assignee: "u2" })
+    ];
+    const chosen = picked({ assignees: ["u1"] });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["a"]);
+  });
+
+  it("finds unassigned work, which is the question a lead asks", () => {
+    const all = [
+      op("a", [], { assignee: "u1" }),
+      op("b", [], { assignee: null }),
+      op("c")
+    ];
+    const chosen = picked({ assignees: [UNASSIGNED] });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["b", "c"]);
+  });
+
+  it("stacks the filters, so each one narrows the last", () => {
+    // Web's filters are AND across keys and OR within one. A card matching
+    // the process but not the assignee must not survive.
+    const all = [
+      op("a", ["rush"], { columnType: "p1", assignee: "u1" }),
+      op("b", ["rush"], { columnType: "p1", assignee: "u2" }),
+      op("c", ["rush"], { columnType: "p2", assignee: "u1" })
+    ];
+    const chosen = picked({
+      tags: ["rush"],
+      processIds: ["p1"],
+      assignees: ["u1"]
+    });
+    expect(filterOperations(all, chosen).map((o) => o.id)).toEqual(["a"]);
   });
 });
 
@@ -67,17 +130,24 @@ describe("filterColumns", () => {
     // An empty column still takes a screen width on a phone, and the point of
     // choosing two work centres is to stop swiping past the other five.
     const cols = [col("a"), col("b"), col("c")];
-    const picked = { workCenterIds: ["a", "c"], tags: [] };
-    expect(filterColumns(cols, picked).map((c) => c.id)).toEqual(["a", "c"]);
+    const chosen = picked({ workCenterIds: ["a", "c"] });
+    expect(filterColumns(cols, chosen).map((c) => c.id)).toEqual(["a", "c"]);
   });
 });
 
 describe("activeFilterCount", () => {
-  it("counts both lists, so the badge matches what is applied", () => {
+  it("counts every list, so the badge matches what is applied", () => {
     expect(activeFilterCount(EMPTY_FILTERS)).toBe(0);
-    expect(activeFilterCount({ workCenterIds: ["a"], tags: ["x", "y"] })).toBe(
-      3
-    );
+    expect(
+      activeFilterCount(
+        picked({
+          workCenterIds: ["a"],
+          tags: ["x", "y"],
+          processIds: ["p"],
+          assignees: ["u"]
+        })
+      )
+    ).toBe(5);
   });
 });
 

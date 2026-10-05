@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { WorkCenterColumn } from "@carbon/mes-core";
+import type { OperationsScreen, WorkCenterColumn } from "@carbon/mes-core";
 import { useLingui } from "@lingui/react/macro";
 import { Check } from "lucide-react-native";
 import { forwardRef } from "react";
@@ -14,15 +14,18 @@ import {
   activeFilterCount,
   type BoardFilters,
   EMPTY_FILTERS,
-  toggleFilter
+  toggleFilter,
+  UNASSIGNED
 } from "./boardFilters";
+import { useBoardPeople } from "./useBoardPeople";
 
 /**
- * Web's board filter popover, as a sheet.
+ * Web's board filter popover, as a sheet: work centre, process, tag and
+ * assignee, the same four and in the same order.
  *
- * Work centre and tag only — the two whose options arrive with their display
- * names. Process and assignee come over the wire as bare ids, and a picker of
- * uuids is worse than no picker.
+ * Every section is skipped when it has no options. A plant that tags nothing
+ * should not be shown an empty Tag heading, and a server too old to send
+ * `processes` simply has no Process section rather than a broken one.
  *
  * Rows are 56pt with a tick rather than a checkbox: a tick is legible at a
  * glance across a machine, and the whole row is the target.
@@ -63,16 +66,31 @@ export const BoardFilterSheet = forwardRef<
   SheetHandle,
   {
     columns: WorkCenterColumn[];
+    processes: OperationsScreen["processes"];
     availableTags: string[];
+    /** Whether any card on the board has no assignee. */
+    hasUnassigned: boolean;
     filters: BoardFilters;
     onChange: (filters: BoardFilters) => void;
   }
 >(function BoardFilterSheet(
-  { columns, availableTags, filters, onChange },
+  { columns, processes, availableTags, hasUnassigned, filters, onChange },
   ref
 ) {
   const { t } = useLingui();
   const count = activeFilterCount(filters);
+  // The roster is only needed to NAME an assignee, so it is fetched with the
+  // sheet rather than with the board.
+  const people = useBoardPeople(true);
+
+  // `id` and `name` are both nullable on the wire; a process missing either
+  // cannot be offered as a choice, so it is dropped rather than rendered as a
+  // blank row. Web filters the same way.
+  const processOptions = (processes ?? []).flatMap((process) =>
+    process.id && process.name ? [{ id: process.id, name: process.name }] : []
+  );
+
+  const peopleOptions = people.data ?? [];
 
   return (
     <Sheet ref={ref} title={t`Filter`}>
@@ -91,6 +109,22 @@ export const BoardFilterSheet = forwardRef<
           ))}
         </View>
 
+        {processOptions.length ? (
+          <View className="gap-1">
+            <Muted className="text-sm font-semibold">{t`Process`}</Muted>
+            {processOptions.map((process) => (
+              <FilterRow
+                key={process.id}
+                label={process.name}
+                selected={filters.processIds.includes(process.id)}
+                onPress={() =>
+                  onChange(toggleFilter(filters, "processIds", process.id))
+                }
+              />
+            ))}
+          </View>
+        ) : null}
+
         {availableTags.length ? (
           <View className="gap-1">
             <Muted className="text-sm font-semibold">{t`Tag`}</Muted>
@@ -100,6 +134,31 @@ export const BoardFilterSheet = forwardRef<
                 label={tag}
                 selected={filters.tags.includes(tag)}
                 onPress={() => onChange(toggleFilter(filters, "tags", tag))}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        {peopleOptions.length || hasUnassigned ? (
+          <View className="gap-1">
+            <Muted className="text-sm font-semibold">{t`Assignee`}</Muted>
+            {hasUnassigned ? (
+              <FilterRow
+                label={t`Unassigned`}
+                selected={filters.assignees.includes(UNASSIGNED)}
+                onPress={() =>
+                  onChange(toggleFilter(filters, "assignees", UNASSIGNED))
+                }
+              />
+            ) : null}
+            {peopleOptions.map((person) => (
+              <FilterRow
+                key={person.id}
+                label={person.name}
+                selected={filters.assignees.includes(person.id)}
+                onPress={() =>
+                  onChange(toggleFilter(filters, "assignees", person.id))
+                }
               />
             ))}
           </View>

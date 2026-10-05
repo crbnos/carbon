@@ -3504,6 +3504,9 @@ msgstr "Введите сообщение..."
 msgid "Unable to unlock"
 msgstr "Не удалось разблокировать"
 
+msgid "Unassigned"
+msgstr ""
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr ""

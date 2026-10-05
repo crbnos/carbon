@@ -3504,6 +3504,9 @@ msgstr "एक संदेश लिखें..."
 msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
 
+msgid "Unassigned"
+msgstr ""
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr ""

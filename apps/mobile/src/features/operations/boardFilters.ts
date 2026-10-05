@@ -5,14 +5,16 @@
 import type { OperationCard, WorkCenterColumn } from "@carbon/mes-core";
 
 /**
- * The board's filters.
+ * The board's filters: the same four web MES offers
+ * (`apps/mes/app/routes/x+/operations.tsx`) — work centre, process, tag and
+ * assignee.
  *
- * Web MES filters the board on Work Center, Process, Tag and Assignee
- * (`apps/mes/app/routes/x+/operations.tsx`). This covers the two whose option
- * lists arrive with their display NAMES already — work centres are the
- * columns, tags are `availableTags`. Process and assignee come over the wire
- * as bare ids, so offering them would mean a picker of uuids; they need the
- * server to send names first.
+ * Each is a list of IDS, and each id's display name comes from somewhere
+ * different: a work centre is a column, a tag is already its own label, a
+ * process is named by the screen payload's `processes`, and an assignee is
+ * named by a lookup (`useBoardPeople`) because the payload carries only the
+ * user id. Keeping the filters as ids means this file never has to know
+ * which of those four it is looking at.
  *
  * Applied client-side rather than by refetching. Every operation for the
  * location is already in hand, so filtering is instant and a shop floor's
@@ -22,13 +24,25 @@ import type { OperationCard, WorkCenterColumn } from "@carbon/mes-core";
 
 export type BoardFilters = {
   workCenterIds: string[];
+  processIds: string[];
   tags: string[];
+  assignees: string[];
 };
 
-export const EMPTY_FILTERS: BoardFilters = { workCenterIds: [], tags: [] };
+export const EMPTY_FILTERS: BoardFilters = {
+  workCenterIds: [],
+  processIds: [],
+  tags: [],
+  assignees: []
+};
 
 export function activeFilterCount(filters: BoardFilters) {
-  return filters.workCenterIds.length + filters.tags.length;
+  return (
+    filters.workCenterIds.length +
+    filters.processIds.length +
+    filters.tags.length +
+    filters.assignees.length
+  );
 }
 
 /** Toggles one value in one of the lists, which is what each row does. */
@@ -53,11 +67,42 @@ function matchesTags(operation: OperationCard, tags: string[]) {
   return own.some((tag) => tags.includes(tag));
 }
 
+/**
+ * A process filter matches the card's own process.
+ *
+ * The field is `columnType` — the board's columns are work centres and their
+ * TYPE is the process, which is the name web has always sent it under.
+ */
+function matchesProcess(operation: OperationCard, processIds: string[]) {
+  if (processIds.length === 0) return true;
+  return processIds.includes(operation.columnType ?? "");
+}
+
+/**
+ * An assignee filter matches the card's assignee.
+ *
+ * `UNASSIGNED` is a real choice rather than an omission: "what is nobody
+ * working on" is the question a lead asks of a board, and leaving it out
+ * would make the filter answer only half of it. The sentinel cannot collide
+ * with a user id, which is a nanoid.
+ */
+export const UNASSIGNED = "__unassigned__";
+
+function matchesAssignee(operation: OperationCard, assignees: string[]) {
+  if (assignees.length === 0) return true;
+  return assignees.includes(operation.assignee || UNASSIGNED);
+}
+
 export function filterOperations(
   operations: OperationCard[],
   filters: BoardFilters
 ) {
-  return operations.filter((operation) => matchesTags(operation, filters.tags));
+  return operations.filter(
+    (operation) =>
+      matchesTags(operation, filters.tags) &&
+      matchesProcess(operation, filters.processIds) &&
+      matchesAssignee(operation, filters.assignees)
+  );
 }
 
 /**

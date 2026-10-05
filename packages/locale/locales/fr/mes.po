@@ -3504,6 +3504,9 @@ msgstr "Saisissez un message..."
 msgid "Unable to unlock"
 msgstr "Impossible de déverrouiller"
 
+msgid "Unassigned"
+msgstr ""
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr ""

@@ -3504,6 +3504,9 @@ msgstr "メッセージを入力..."
 msgid "Unable to unlock"
 msgstr "ロック解除できません"
 
+msgid "Unassigned"
+msgstr ""
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr ""

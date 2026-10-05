@@ -3504,6 +3504,9 @@ msgstr "Scrivi un messaggio..."
 msgid "Unable to unlock"
 msgstr "Impossibile sbloccare"
 
+msgid "Unassigned"
+msgstr ""
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr ""

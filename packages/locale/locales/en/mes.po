@@ -3504,6 +3504,9 @@ msgstr "Type a message..."
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
 
+msgid "Unassigned"
+msgstr "Unassigned"
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr "Undo {0}"

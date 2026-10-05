@@ -295,6 +295,14 @@ export const operationCard = z
     quantityScrapped: z.number().nullable().optional(),
     quantityReworked: z.number().nullable().optional(),
     columnId: z.string().nullable().optional(),
+    /**
+     * The operation's process, named `columnType` because the board's column
+     * TYPE is its process — web groups by it under that name and the server
+     * has always sent it. Declared here so the board can filter on it.
+     */
+    columnType: z.string().nullable().optional(),
+    /** The user id this operation is assigned to, or null for unassigned. */
+    assignee: z.string().nullable().optional(),
     /** Free-text tags, which the board filters on exactly as web does. */
     tags: z.array(z.string()).nullable().optional(),
     thumbnailPath: z.string().nullable().optional(),
@@ -348,7 +356,26 @@ export const operationsScreen = z
      * Null when the caller has no assignment to dismiss.
      */
     peopleDate: z.string().nullable().optional(),
-    availableTags: z.array(z.string())
+    availableTags: z.array(z.string()),
+    /**
+     * Every process at the location, so the board can offer a Process filter
+     * with NAMES. The cards carry only the id (`columnType`).
+     *
+     * Optional because a server older than this declaration still answers
+     * without it — and `id`/`name` are nullable there, which is why the row
+     * is filtered before it becomes an option rather than rendered as a
+     * blank. Web does the same filter in `routes/x+/operations.tsx`.
+     */
+    processes: z
+      .array(
+        z
+          .object({
+            id: z.string().nullable().optional(),
+            name: z.string().nullable().optional()
+          })
+          .passthrough()
+      )
+      .optional()
   })
   .passthrough();
 export type OperationsScreen = z.infer<typeof operationsScreen>;

@@ -3504,6 +3504,9 @@ msgstr "Bir mesaj yaz..."
 msgid "Unable to unlock"
 msgstr "Kilit açılamıyor"
 
+msgid "Unassigned"
+msgstr ""
+
 #. placeholder {0}: step.name
 msgid "Undo {0}"
 msgstr ""

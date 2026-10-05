@@ -268,6 +268,12 @@ export default function Operations() {
     () => columnsWithResults(filterColumns(allColumns, filters), items, search),
     [allColumns, filters, items, search]
   );
+  // Offered only when the board actually holds unassigned work; computed from
+  // the UNFILTERED cards so choosing it cannot make the choice disappear.
+  const hasUnassigned = useMemo(
+    () => (query.data?.items ?? []).some((item) => !item.assignee),
+    [query.data?.items]
+  );
   const filterCount = activeFilterCount(filters);
 
   const byColumn = useMemo(() => {
@@ -528,7 +534,9 @@ export default function Operations() {
       <BoardFilterSheet
         ref={filterSheet}
         columns={allColumns}
+        processes={query.data?.processes}
         availableTags={query.data?.availableTags ?? []}
+        hasUnassigned={hasUnassigned}
         filters={filters}
         onChange={setFilters}
       />
