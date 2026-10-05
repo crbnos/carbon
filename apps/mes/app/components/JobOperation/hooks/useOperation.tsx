@@ -11,7 +11,6 @@ import {
   parseAbsolute,
   toZoned
 } from "@internationalized/date";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { useRealtime, useUrlParams, useUser } from "~/hooks";
@@ -68,7 +67,6 @@ export function useOperation({
   const user = useUser();
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const actionsSheet = useDisclosure();
   const scrapModal = useDisclosure();

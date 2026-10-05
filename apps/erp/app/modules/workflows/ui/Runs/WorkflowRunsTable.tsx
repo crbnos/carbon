@@ -17,7 +17,6 @@ import {
   LuZap
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
-import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { WorkflowRun } from "../../workflows.service";
 import { useWorkflowEventLabel } from "../Builder/catalog";
@@ -34,7 +33,6 @@ type WorkflowRunsTableProps = {
 
 const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
   const { t } = useLingui();
-  const { company } = useUser();
   // A fresh closure each render, so the columns memo reads it through a ref rather than
   // rebuilding every column on every render.
   const eventLabel = useWorkflowEventLabel();
@@ -161,7 +159,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
 
   return (
     <>
-      {hasInFlight && <RunsLiveUpdates companyId={company.id} />}
+      {hasInFlight && <RunsLiveUpdates />}
       <Table<WorkflowRunListItem>
         data={data}
         columns={columns}
