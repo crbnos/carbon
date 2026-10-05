@@ -6,6 +6,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getDatabaseErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import {
@@ -59,10 +60,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createCustomerPart.error) {
     const flashMessage =
-      // 23505 means the unique constraint on ("customerId", "itemId") was violated
-      createCustomerPart.error.code == "23505"
-        ? "Customer Part record already defined for customer"
-        : "Failed to create customer part";
+      // duplicate = the unique constraint on ("customerId", "itemId")
+      getDatabaseErrorMessage(
+        createCustomerPart.error,
+        "Failed to create customer part",
+        { duplicate: "Customer Part record already defined for customer" }
+      );
 
     throw redirect(
       path.to.partSales(itemId),

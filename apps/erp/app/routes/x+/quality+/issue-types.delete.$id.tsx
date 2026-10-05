@@ -5,6 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDatabaseErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type {
   ActionFunctionArgs,
@@ -54,10 +55,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { error: deleteIssueTypeError } = await deleteIssueType(client, id);
   if (deleteIssueTypeError) {
-    const errorMessage =
-      deleteIssueTypeError.code === "23503"
-        ? "Non-conformance type is used elsewhere, cannot delete"
-        : "Failed to delete issue type";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteIssueTypeError,
+      "Failed to delete issue type",
+      { referenced: "Non-conformance type is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.issueTypes}?${getParams(request)}`,

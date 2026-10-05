@@ -7,6 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import { isUniqueViolation } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
@@ -174,7 +175,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     if (error) {
       logger.error("Failed to update serial tracking", { error });
       // Check if error is due to unique constraint violation
-      if (error.message?.includes("duplicate key value")) {
+      if (isUniqueViolation(error)) {
         return data(
           { error: "Serial number already exists for this item" },
           { status: 400 }

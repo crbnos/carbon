@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { isUniqueViolation } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
@@ -65,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (insertIssueType.error?.code === "23505") {
+  if (isUniqueViolation(insertIssueType.error)) {
     return validationError({
       fieldErrors: { name: "An issue type with this name already exists" }
     });

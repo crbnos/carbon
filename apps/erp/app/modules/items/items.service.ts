@@ -13,7 +13,7 @@ import type {
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
-import { datetime } from "@carbon/utils";
+import { datetime, isUniqueViolation } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -7228,7 +7228,7 @@ export async function createChangeNoticeDraftMethod(
       }
       // 23505 = unique_violation (makeMethod_unique_itemId_version); a parallel
       // CO grabbed this number first — recompute the next free version + retry.
-      if (res.error?.code === "23505") {
+      if (isUniqueViolation(res.error)) {
         const latest = await getActiveMakeMethodId(client, itemId, companyId);
         nextVersion = (latest?.maxVersion ?? nextVersion) + 1;
         continue;

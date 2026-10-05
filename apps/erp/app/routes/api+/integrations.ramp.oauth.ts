@@ -16,6 +16,7 @@ import {
   resolveConnectedProviderName
 } from "@carbon/ee/ramp.server";
 import { getLogger } from "@carbon/logger";
+import { isUniqueViolation } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
@@ -179,10 +180,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // The one-active-per-role trigger raises 23505. Ramp's authorization
     // already succeeded at this point, so the honest report is "another spend
     // integration holds the slot", not a generic save failure.
-    if (
-      typeof (error as { code?: unknown })?.code === "string" &&
-      (error as { code: string }).code === "23505"
-    ) {
+    if (isUniqueViolation(error)) {
       logger.error("Ramp connect refused — a spend integration is active", {
         companyId
       });

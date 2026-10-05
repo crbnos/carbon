@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { isForeignKeyViolation } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { deleteItem } from "~/modules/items";
@@ -39,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 function friendlyDeleteItemError(err: { code?: string; message?: string }) {
-  if (err.code === "23503") {
+  if (isForeignKeyViolation(err)) {
     if (err.message?.includes("trackedEntity_itemId_fkey")) {
       return "Item has tracked entities linked to it and cannot be deleted. Deactivate the item instead.";
     }

@@ -5,6 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDatabaseErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
@@ -55,10 +56,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     dispatchId
   );
   if (deleteError) {
-    const errorMessage =
-      deleteError.code === "23503"
-        ? "Dispatch has related records, cannot delete"
-        : "Failed to delete maintenance dispatch";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteError,
+      "Failed to delete maintenance dispatch",
+      { referenced: "Dispatch has related records, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.maintenanceDispatches}?${getParams(request)}`,

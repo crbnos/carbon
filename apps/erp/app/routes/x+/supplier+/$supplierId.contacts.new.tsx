@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { isUniqueViolation } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
@@ -70,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createSupplierContact.error) {
     let errorMessage = "Failed to create supplier contact";
-    if (createSupplierContact.error?.message?.includes("duplicate key value")) {
+    if (isUniqueViolation(createSupplierContact.error)) {
       const contact = await client
         .from("contact")
         .select("id")

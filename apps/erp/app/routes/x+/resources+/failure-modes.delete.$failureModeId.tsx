@@ -5,6 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDatabaseErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
@@ -52,10 +53,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     failureModeId
   );
   if (deleteFailureModeError) {
-    const errorMessage =
-      deleteFailureModeError.code === "23503"
-        ? "Failure mode is used elsewhere, cannot delete"
-        : "Failed to delete failure mode";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteFailureModeError,
+      "Failed to delete failure mode",
+      { referenced: "Failure mode is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,

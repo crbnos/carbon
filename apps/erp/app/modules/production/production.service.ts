@@ -20,6 +20,7 @@ import {
   datetime,
   getErrorMessage,
   groupBy,
+  isUniqueViolation,
   nameSimilarity,
   scrapAllowance,
   tiptapToText,
@@ -10711,7 +10712,7 @@ export async function releasePlanningActionClaim(
     userId: args.userId
   });
   if (!reopened.error) return { error: null };
-  if (reopened.error.code !== "23505") {
+  if (!isUniqueViolation(reopened.error)) {
     return { error: reopened.error.message };
   }
 
