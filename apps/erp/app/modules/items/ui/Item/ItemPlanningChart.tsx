@@ -256,11 +256,17 @@ export const ItemPlanningChart = ({
       }
 
       if (groupedData[periodId]) {
-        // Convert purchase quantity to inventory quantity for display
-        // Inventory Quantity = Purchase Quantity × Conversion Factor
-        const purchaseQuantityDelta =
+        // A DRAFT order is in purchase units: convert its quantity to
+        // inventory units (× conversionFactor). An EXISTING order arrives
+        // already converted, with `existingQuantity` in inventory units too
+        // (see the purchasing drawer's chartOrders and mergePlannedOrders) —
+        // converting it again drew an edit from 5 to 6 boxes of 10 as +100.
+        const quantityDelta =
           (order.quantity ?? 0) - (order.existingQuantity ?? 0);
-        const inventoryQuantityDelta = purchaseQuantityDelta * conversionFactor;
+        const inventoryQuantityDelta =
+          order.existingId || order.existingLineId
+            ? quantityDelta
+            : quantityDelta * conversionFactor;
 
         // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
         groupedData[periodId]["Planned"] += inventoryQuantityDelta;

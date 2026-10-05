@@ -107,6 +107,22 @@ describe("computePlanningOrders", () => {
       expect(orders).toEqual([]);
     });
 
+    // The form refuses 0, but an import or API write can store it, and a
+    // step of 0 never ended the window loop — the planning page hung.
+    it("treats a stored accumulation period of 0 (or null) as one week", () => {
+      for (const demandAccumulationPeriod of [0, Number.NaN]) {
+        const orders = computePlanningOrders({
+          reorderingPolicy: "Demand-Based Reorder",
+          periods: weeklyPeriods(["2026-10-05", "2026-10-12"]),
+          projections: [-5, -5],
+          todayDate: TODAY,
+          params: params({ demandAccumulationPeriod })
+        });
+        expect(orders.map((o) => o.periodId)).toEqual(["p1"]);
+        expect(orders[0]?.quantity).toBe(5);
+      }
+    });
+
     it("applies max OQ, min OQ, and order multiple", () => {
       // Shortfall 100, capped to maxOQ 30
       const capped = computePlanningOrders({

@@ -514,7 +514,11 @@ never offered a Cancel, Defer or Expedite.
   row that does not exist yet cannot autosave:
   - **Suggested Orders / Suggested Jobs** (`SuggestedOrdersGrid`) — a DRAFT.
     Quantity and due date are click-to-edit; the edits live in the planning
-    grid's `ordersMap` and nothing is written until Order / Make. The Order By
+    grid's `ordersMap` and nothing is written until Order / Make. The drafts
+    survive a loader reload (Apply, Dismiss, Assign inside the drawer
+    revalidate it) and are dropped only when the page scope changes (the
+    search params), MRP recalculates, or an order is placed — clearing on
+    every `data` change wiped the planner's edits mid-task. The Order By
     / Start By column is derived (due date less lead time).
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
     at the page's location (both drawer reads filter on `locationId`, and

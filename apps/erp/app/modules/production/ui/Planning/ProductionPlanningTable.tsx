@@ -39,7 +39,7 @@ import {
   LuSquareChartGantt,
   LuUserCheck
 } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link, useFetcher, useSearchParams } from "react-router";
 import {
   EmployeeAvatarGroup,
   exportOnlyColumn,
@@ -155,11 +155,18 @@ const ProductionPlanningTable = ({
   });
   const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
-  // Clear local state when data changes (e.g., filters, search)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // The drawer's draft orders are page state keyed by item. They are dropped
+  // when the page's scope changes (location, filters, search, sort, page) and
+  // when MRP recalculates (mrpFetcher above) or an order is placed (below) —
+  // NOT on every reload of the loader: Apply, Dismiss and Assign inside the
+  // drawer revalidate it, and that used to wipe the planner's edits in the
+  // suggested-orders table above them.
+  const [searchParams] = useSearchParams();
+  const pageScope = searchParams.toString();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
   useEffect(() => {
     setOrdersMap({});
-  }, [data]);
+  }, [pageScope]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -172,6 +179,8 @@ const ProductionPlanningTable = ({
     }
 
     if (bulkUpdateFetcher.data?.success === true) {
+      // The drafts became jobs; the next open re-seeds from the new split.
+      setOrdersMap({});
       const {
         jobs = [],
         updatedJobCount = 0,

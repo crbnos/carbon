@@ -99,11 +99,16 @@ export function computePlanningOrders(
       // window dips below safety stock, and size it to lift the end-of-window
       // projection back to safety. Mirrors the SQL `calculate_quantity_to_order`
       // DBR branch exactly.
-      for (let i = 0; i < periods.length; i += demandAccumulationPeriod) {
-        const windowEnd = Math.min(
-          i + demandAccumulationPeriod,
-          periods.length
-        );
+      //
+      // A window of at least one week: the form refuses 0, but an import or
+      // an API write can store it (or null, which arrives as NaN), and a step
+      // of 0 never ends this loop — one such item froze the planning page.
+      const windowLength = Math.max(
+        1,
+        round(Number(demandAccumulationPeriod) || 1, 0, RoundingMode.Down)
+      );
+      for (let i = 0; i < periods.length; i += windowLength) {
+        const windowEnd = Math.min(i + windowLength, periods.length);
 
         // Track first dip (for the order's trigger date) AND walk end-of-window
         // projection (for sizing).
