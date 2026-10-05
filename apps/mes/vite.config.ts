@@ -6,6 +6,7 @@ import {
   applyDotenvToProcessEnv,
   clientOnlyAlias,
   linguiWithoutIdQuery,
+  precompressedAssets,
   stackActivity,
 } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
@@ -112,6 +113,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       tailwindcss(),
       linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),
+      precompressedAssets({ command, mode }),
       // react-aria ships strings for ~34 locales; keep the ones the app translates.
       optimizeLocales.vite({ locales: getConfig().locales }),
       // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser, which

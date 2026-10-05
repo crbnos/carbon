@@ -1,0 +1,27 @@
+{
+  "name": "@carbon/serve",
+  "dependencies": {
+    "@fastify/compress": "catalog:",
+    "@fastify/static": "catalog:",
+    "fastify": "catalog:",
+    "react-router": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@types/node": "20.19.39",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "sideEffects": false,
+  "type": "module"
+}

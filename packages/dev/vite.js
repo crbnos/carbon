@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import fs from "node:fs";
+import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
+import { brotliCompress, constants } from "node:zlib";
 import { loadEnv } from "vite";
 
 /**
@@ -131,4 +134,126 @@ export function stackActivity() {
       });
     },
   };
+}
+
+/**
+ * Compresses the client build once, at build time, and keeps only the
+ * result: each asset becomes a `.br` at Brotli's highest setting and the
+ * original is removed. `@carbon/serve` sends the `.br` as it is, where the
+ * stock server compressed the same never-changing file again on every
+ * request, at a setting weak enough to do that fast.
+ *
+ * Every production build does this except Vercel's: Vercel serves the
+ * files from its own CDN, compresses them there, and would have nothing to
+ * send once the originals were gone. Client build only: nobody downloads
+ * the server bundle.
+ *
+ * The plugin is native code, imported only when it is going to run, so
+ * `vite dev` never loads it.
+ *
+ * @param {{ command: "build" | "serve", mode: string }} env what Vite
+ *   hands a config function
+ * @returns {Promise<import("vite").Plugin[]>}
+ */
+export async function precompressedAssets({ command, mode }) {
+  if (command !== "build" || mode !== "production" || process.env.VERCEL) {
+    return [];
+  }
+  const { compression, defineAlgorithm } = await import(
+    "@medicomind/rolldown-compression"
+  );
+  /** @type {string | undefined} */
+  let clientDirectory;
+  return [
+    {
+      ...compression({
+        // Under this a response is one packet either way.
+        threshold: 1024,
+        algorithms: [defineAlgorithm("brotli", { quality: 11 })],
+        // From disk, after everything is written. In memory the plugin
+        // sees each chunk before Vite has finished it — the preload lists
+        // are still `__VITE_PRELOAD__` — and the `.br` it wrote was of code
+        // that throws the first time it lazy-loads anything.
+        stream: true,
+      }),
+      applyToEnvironment: (environment) => environment.name === "client",
+    },
+    {
+      // The originals go last, once the server build is done. The plugin's
+      // own `deleteOriginalAssets` takes them out of the bundle while React
+      // Router still reads it, and the build fails on "Chunk not found".
+      name: "carbon:keep-compressed-only",
+      applyToEnvironment: (environment) => environment.name === "ssr",
+      configResolved(config) {
+        const outDir = config.environments?.client?.build?.outDir;
+        if (outDir) clientDirectory = path.resolve(config.root, outDir);
+      },
+      closeBundle: {
+        order: "post",
+        sequential: true,
+        async handler(error) {
+          if (error || !clientDirectory) return;
+          // React Router writes its route manifest after the client
+          // build's plugins have run, so the largest script in the build
+          // was the one file left without a `.br`.
+          await compressRemaining(clientDirectory);
+          const removed = await removeCompressedOriginals(clientDirectory);
+          this.info(`kept only the Brotli copy of ${removed} client asset(s)`);
+        },
+      },
+    },
+  ];
+}
+
+/** @param {Buffer} source */
+const brotli = (source) =>
+  promisify(brotliCompress)(source, {
+    params: {
+      [constants.BROTLI_PARAM_QUALITY]: 11,
+      [constants.BROTLI_PARAM_SIZE_HINT]: source.length,
+    },
+  });
+
+/**
+ * Writes a `.br` beside every script and stylesheet under `directory` that
+ * is worth compressing and has none.
+ *
+ * @param {string} directory
+ */
+export async function compressRemaining(directory) {
+  const entries = await readdir(directory, {
+    recursive: true,
+    withFileTypes: true,
+  });
+  const files = new Set(entries.map((e) => path.join(e.parentPath, e.name)));
+  for (const file of files) {
+    if (!/\.(js|css)$/.test(file) || files.has(`${file}.br`)) continue;
+    const source = await readFile(file);
+    if (source.length < 1024) continue;
+    await writeFile(`${file}.br`, await brotli(source));
+  }
+}
+
+/**
+ * Deletes every file under `directory` that has a `.br` beside it.
+ *
+ * @param {string} directory
+ * @returns {Promise<number>} how many were removed
+ */
+export async function removeCompressedOriginals(directory) {
+  let removed = 0;
+  for (const entry of await readdir(directory, {
+    recursive: true,
+    withFileTypes: true,
+  })) {
+    if (!entry.isFile() || !entry.name.endsWith(".br")) continue;
+    const original = path.join(entry.parentPath, entry.name.slice(0, -3));
+    try {
+      await unlink(original);
+      removed++;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  return removed;
 }
