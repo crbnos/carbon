@@ -1400,11 +1400,17 @@ msgstr "Pierwszy termin {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Popraw podświetlone ilości przed sfinalizowaniem."
 
+msgid "Focus"
+msgstr ""
+
 msgid "Follow the device"
 msgstr ""
 
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniano o zakończeniu pracy?"
+
+msgid "Full"
+msgstr ""
 
 msgid "Gauge"
 msgstr "Przyrząd pomiarowy"
@@ -2290,9 +2296,6 @@ msgstr "Wstrzymaj"
 msgid "Pause {0}"
 msgstr ""
 
-msgid "Pause the build"
-msgstr ""
-
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr ""
@@ -2411,7 +2414,7 @@ msgstr ""
 msgid "Planned"
 msgstr "Planowane"
 
-msgid "Play the build"
+msgid "Play"
 msgstr ""
 
 msgid "Please record all steps for this operation before closing."
@@ -2843,6 +2846,9 @@ msgstr "Złomowanie numeru seryjnego {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
 msgstr "Złomowanie wybranego numeru seryjnego"
+
+msgid "Scrub the build"
+msgstr ""
 
 msgid "Search"
 msgstr "Szukaj"

@@ -1400,11 +1400,17 @@ msgstr "First due {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Fix the highlighted quantities before completing."
 
+msgid "Focus"
+msgstr "Focus"
+
 msgid "Follow the device"
 msgstr "Follow the device"
 
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
+
+msgid "Full"
+msgstr "Full"
 
 msgid "Gauge"
 msgstr "Gauge"
@@ -2290,9 +2296,6 @@ msgstr "Pause"
 msgid "Pause {0}"
 msgstr "Pause {0}"
 
-msgid "Pause the build"
-msgstr "Pause the build"
-
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr "per {0}"
@@ -2411,8 +2414,8 @@ msgstr "PINs are set per employee in the ERP, under People."
 msgid "Planned"
 msgstr "Planned"
 
-msgid "Play the build"
-msgstr "Play the build"
+msgid "Play"
+msgstr "Play"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "Please record all steps for this operation before closing."
@@ -2843,6 +2846,9 @@ msgstr "Scrapping serial {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
 msgstr "Scrapping the selected serial"
+
+msgid "Scrub the build"
+msgstr "Scrub the build"
 
 msgid "Search"
 msgstr "Search"

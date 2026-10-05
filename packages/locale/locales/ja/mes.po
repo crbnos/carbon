@@ -1400,11 +1400,17 @@ msgstr "最初の期日 {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "完了する前に、ハイライトされた数量を修正してください。"
 
+msgid "Focus"
+msgstr ""
+
 msgid "Follow the device"
 msgstr ""
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
+
+msgid "Full"
+msgstr ""
 
 msgid "Gauge"
 msgstr "測定器"
@@ -2290,9 +2296,6 @@ msgstr "一時停止"
 msgid "Pause {0}"
 msgstr ""
 
-msgid "Pause the build"
-msgstr ""
-
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr ""
@@ -2411,7 +2414,7 @@ msgstr ""
 msgid "Planned"
 msgstr "計画済み"
 
-msgid "Play the build"
+msgid "Play"
 msgstr ""
 
 msgid "Please record all steps for this operation before closing."
@@ -2843,6 +2846,9 @@ msgstr "シリアル {trackedEntityReadableId} をスクラップ中"
 
 msgid "Scrapping the selected serial"
 msgstr "選択したシリアルをスクラップ中"
+
+msgid "Scrub the build"
+msgstr ""
 
 msgid "Search"
 msgstr "検索"

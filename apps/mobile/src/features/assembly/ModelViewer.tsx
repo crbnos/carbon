@@ -5,9 +5,8 @@
 import type { AssemblyPlaybackStep } from "@carbon/mes-core";
 import { indexAssemblyGraph } from "@carbon/viewer/graph";
 import { useLingui } from "@lingui/react/macro";
-import { Pause, Play } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import type {
   CameraManipulator,
   Entity,
@@ -25,7 +24,8 @@ import {
   useModel
 } from "react-native-filament";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { useThemeColors } from "~/components/useThemeColor";
+import type { ModelScope } from "./ModelControls";
+import { ModelControls } from "./ModelControls";
 import type { AssemblyGraphNode } from "./modelVisibility";
 import {
   buildSubtreeIndex,
@@ -35,6 +35,7 @@ import {
   mentionedNodeIds,
   visibleNodeIds
 } from "./modelVisibility";
+import { STEP_DWELL_MS, stepHoldMs, timeline } from "./playback";
 import type { StepView } from "./stepCamera";
 import { defaultView, stepView } from "./stepCamera";
 import {
@@ -87,15 +88,6 @@ const GHOST_OPACITY = 0.3;
  * moves the camera barely at all without this.
  */
 const ZOOM_SENSITIVITY = 12;
-
-/**
- * The beat held on a seated step before the next one starts.
- *
- * Most steps in real data carry no authored motion, so their synthesized
- * insertion is short; without a pause the whole assembly plays in a couple
- * of seconds and reads as a flicker rather than a sequence.
- */
-const STEP_DWELL_MS = 600;
 
 /**
  * Every entity one component id names in a copy of the model: the id itself,
@@ -308,7 +300,12 @@ function LoadedScene({
   // playing overrides the index locally, and the moment the operator moves
   // on their own the playhead is dropped and the view follows them again.
   const [playIndex, setPlayIndex] = useState<number | null>(null);
-  const activeStepIndex = playIndex ?? operatorStepIndex;
+  // Seeking moves the playhead WITHOUT running the clock, so prev/next and
+  // a scrub land on a step and hold there — which is what every player
+  // does, and what lets an operator read one step before moving on.
+  const [seekIndex, setSeekIndex] = useState<number | null>(null);
+  const [scope, setScope] = useState<ModelScope>("build");
+  const activeStepIndex = playIndex ?? seekIndex ?? operatorStepIndex;
   const playing = playIndex !== null;
 
   // Adjusted during render rather than in an effect. React documents this
@@ -321,6 +318,7 @@ function LoadedScene({
   if (lastOperatorStep.current !== operatorStepIndex) {
     lastOperatorStep.current = operatorStepIndex;
     if (playIndex !== null) setPlayIndex(null);
+    if (seekIndex !== null) setSeekIndex(null);
   }
 
   // The live camera manipulator, published by CameraRig. A ref because the
@@ -358,15 +356,44 @@ function LoadedScene({
     return planned ?? defaultView(center, radius);
   }, [steps, activeStepIndex, center, radius]);
 
-  const visible = useMemo(
+  // What is drawn SOLID and what is drawn ghosted, per web's three scopes
+  // (`VIEW_LABELS` in `@carbon/viewer`'s AssemblyPlayer):
+  //
+  // - build — the assembly as built so far, later parts ghosted so the
+  //   operator can see where this one is going
+  // - focus — THIS step solid and everything already installed ghosted, so
+  //   a part being fitted into a crowded assembly can still be seen
+  // - full  — every component solid, which is the model as shipped
+  //
+  // All three are the same two instances with different membership; none
+  // of them reloads or re-materialises anything.
+  const builtSoFar = useMemo(
     () => visibleNodeIds(steps, activeStepIndex),
     [steps, activeStepIndex]
   );
-  const mentioned = useMemo(() => mentionedNodeIds(steps), [steps]);
-  const future = useMemo(
-    () => futureNodeIds(steps, activeStepIndex),
+  const thisStep = useMemo(
+    () => new Set(steps[activeStepIndex]?.componentNodeIds ?? []),
     [steps, activeStepIndex]
   );
+  const everything = useMemo(() => mentionedNodeIds(steps), [steps]);
+  const visible = useMemo(() => {
+    if (scope === "full") return everything;
+    if (scope === "focus") return thisStep;
+    return builtSoFar;
+  }, [scope, everything, thisStep, builtSoFar]);
+  const mentioned = useMemo(() => mentionedNodeIds(steps), [steps]);
+  const future = useMemo(() => {
+    // Nothing is ghosted when every part is solid.
+    if (scope === "full") return new Set<string>();
+    // Focus inverts it: what is ALREADY installed becomes the faint
+    // backdrop, which is the whole point of the mode.
+    if (scope === "focus") {
+      const behind = new Set(builtSoFar);
+      for (const id of thisStep) behind.delete(id);
+      return behind;
+    }
+    return futureNodeIds(steps, activeStepIndex);
+  }, [scope, steps, activeStepIndex, builtSoFar, thisStep]);
   const subtrees = useMemo(() => buildSubtreeIndex(graphRoot), [graphRoot]);
   // The viewer's own graph index, for the fallback motion synthesis. Built
   // from the same graph.json the subtree index uses.
@@ -590,20 +617,65 @@ function LoadedScene({
     };
   }, [copies, motion, step, transformManager]);
 
-  // Auto-advance, the way web's player does: when a step's insertion has
-  // played, move to the next and keep going; stop on the last rather than
-  // looping. The dwell is what makes it readable — back to back, the steps
-  // of a small assembly go by faster than anyone can follow.
+  // Every step's duration, so the scrubber's segments are as wide as the
+  // steps are long and the clock has a total to count towards. Computed for
+  // ALL steps because the bar shows all of them — the scene only ever needs
+  // the active one.
+  const holds = useMemo(
+    () =>
+      steps.map((candidate, index) =>
+        stepHoldMs(
+          displayMotionFor({
+            motion: candidate.motion as Parameters<
+              typeof displayMotionFor
+            >[0]["motion"],
+            componentNodeIds: [
+              ...expandToLeaves(candidate.componentNodeIds, subtrees, leafIds)
+            ],
+            flagged: Boolean(
+              (candidate.warnings as { flagged?: boolean } | null)?.flagged
+            ),
+            index,
+            graphIndex,
+            presentNodeIds: expandToLeaves(
+              presentNodeIdsBefore(steps, index),
+              subtrees,
+              leafIds
+            )
+          })
+        )
+      ),
+    [steps, graphIndex, subtrees, leafIds]
+  );
+  const { starts, total } = useMemo(() => timeline(holds), [holds]);
+
+  // Stamped during render, like the playback reset above and for the same
+  // reason: this is "a prop changed, re-derive", not an effect. The control
+  // bar's clock counts from it, so it must be the moment the step actually
+  // went on screen — a timestamp taken in an effect is a frame late.
+  const stepStartedAt = useRef(Date.now());
+  const lastTimedStep = useRef(activeStepIndex);
+  if (lastTimedStep.current !== activeStepIndex) {
+    lastTimedStep.current = activeStepIndex;
+    stepStartedAt.current = Date.now();
+  }
+
+  // Auto-advance, the way web's player does: when a step has played, move to
+  // the next and keep going; stop on the last rather than looping.
   useEffect(() => {
     if (!playing) return;
     const next = activeStepIndex + 1;
-    if (next >= steps.length) return;
+    if (next >= steps.length) {
+      // Settle on the last step rather than looping, as web does.
+      const end = setTimeout(() => setPlayIndex(null), holds[activeStepIndex]);
+      return () => clearTimeout(end);
+    }
     const timer = setTimeout(
       () => setPlayIndex(next),
-      motionDurationMs(motion) + STEP_DWELL_MS
+      holds[activeStepIndex] ?? STEP_DWELL_MS
     );
     return () => clearTimeout(timer);
-  }, [playing, activeStepIndex, steps.length, motion]);
+  }, [playing, activeStepIndex, steps.length, holds]);
 
   return (
     // The gestures sit OUTSIDE FilamentView, wrapping it: FilamentView is a
@@ -634,52 +706,37 @@ function LoadedScene({
           <DefaultLight />
           <ModelRenderer model={model} />
         </FilamentView>
-        <PlayButton
+        <ModelControls
           playing={playing}
-          // From the operator's step, so Play always shows the build from
-          // where they actually are rather than from wherever it last
-          // stopped.
-          onPress={() =>
+          stepIndex={activeStepIndex}
+          stepCount={steps.length}
+          holds={holds}
+          starts={starts}
+          total={total}
+          stepStartedAt={stepStartedAt.current}
+          scope={scope}
+          onScope={setScope}
+          onPlayPause={() => {
+            if (playing) {
+              // Pausing parks the playhead where it stopped, rather than
+              // snapping back to the operator's step.
+              setSeekIndex(activeStepIndex);
+              setPlayIndex(null);
+              return;
+            }
+            // Replay from the top once the build has finished, so the
+            // button is never a no-op on the last step.
+            setSeekIndex(null);
             setPlayIndex(
-              playing ? null : Math.min(operatorStepIndex, steps.length - 1)
-            )
-          }
+              activeStepIndex >= steps.length - 1 ? 0 : activeStepIndex
+            );
+          }}
+          onSeek={(index) => {
+            setPlayIndex(null);
+            setSeekIndex(Math.min(Math.max(index, 0), steps.length - 1));
+          }}
         />
       </View>
     </ModelGestures>
-  );
-}
-
-/**
- * Play / pause the build.
- *
- * Overlaid on the model rather than placed under it: the viewport is the
- * whole tab, and a control in a bar below would cost a row of the only thing
- * on screen worth looking at. Bottom-left keeps it clear of the right-handed
- * grip that orbits the model.
- */
-function PlayButton({
-  playing,
-  onPress
-}: {
-  playing: boolean;
-  onPress: () => void;
-}) {
-  const { t } = useLingui();
-  const colors = useThemeColors();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: playing }}
-      accessibilityLabel={playing ? t`Pause the build` : t`Play the build`}
-      className="absolute bottom-4 left-4 h-14 w-14 items-center justify-center rounded-full border border-border bg-card/90 active:opacity-70"
-    >
-      {playing ? (
-        <Pause size={24} color={colors.foreground} fill={colors.foreground} />
-      ) : (
-        <Play size={24} color={colors.foreground} fill={colors.foreground} />
-      )}
-    </Pressable>
   );
 }

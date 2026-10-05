@@ -1400,11 +1400,17 @@ msgstr "पहली देय {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
 
+msgid "Focus"
+msgstr ""
+
 msgid "Follow the device"
 msgstr ""
 
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
+
+msgid "Full"
+msgstr ""
 
 msgid "Gauge"
 msgstr "गेज"
@@ -2290,9 +2296,6 @@ msgstr "रोकें"
 msgid "Pause {0}"
 msgstr ""
 
-msgid "Pause the build"
-msgstr ""
-
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr ""
@@ -2411,7 +2414,7 @@ msgstr ""
 msgid "Planned"
 msgstr "नियोजित"
 
-msgid "Play the build"
+msgid "Play"
 msgstr ""
 
 msgid "Please record all steps for this operation before closing."
@@ -2843,6 +2846,9 @@ msgstr "सीरीयल को स्क्रैप किया जा र�
 
 msgid "Scrapping the selected serial"
 msgstr "चयनित सीरीयल को स्क्रैप किया जा रहा है"
+
+msgid "Scrub the build"
+msgstr ""
 
 msgid "Search"
 msgstr "खोजें"

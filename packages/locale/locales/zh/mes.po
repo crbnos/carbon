@@ -1400,11 +1400,17 @@ msgstr "最早应交期 {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "完成前请修正突出显示的数量。"
 
+msgid "Focus"
+msgstr ""
+
 msgid "Follow the device"
 msgstr ""
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
+
+msgid "Full"
+msgstr ""
 
 msgid "Gauge"
 msgstr "量具"
@@ -2290,9 +2296,6 @@ msgstr "暂停"
 msgid "Pause {0}"
 msgstr ""
 
-msgid "Pause the build"
-msgstr ""
-
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr ""
@@ -2411,7 +2414,7 @@ msgstr ""
 msgid "Planned"
 msgstr "已计划"
 
-msgid "Play the build"
+msgid "Play"
 msgstr ""
 
 msgid "Please record all steps for this operation before closing."
@@ -2843,6 +2846,9 @@ msgstr "报废序列号 {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
 msgstr "报废所选序列号"
+
+msgid "Scrub the build"
+msgstr ""
 
 msgid "Search"
 msgstr "搜索"
