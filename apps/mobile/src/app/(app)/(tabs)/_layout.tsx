@@ -20,6 +20,7 @@ import { TabSideRail } from "~/components/TabSideRail";
 import { useLayout } from "~/components/useLayout";
 import { useThemeColors } from "~/components/useThemeColor";
 import { OperatorHeader } from "~/features/console/OperatorHeader";
+import { useActiveQuery } from "~/features/operations/useQueueQueries";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
 /**
@@ -65,6 +66,7 @@ export default function TabsLayout() {
   // The operator header renders above the rail in shared-terminal mode and
   // already covers the top of the screen, so the rail must not inset again.
   const { terminalToken } = useAuth();
+  const activeCount = useActiveQuery().data?.operations?.length ?? 0;
 
   return (
     <View className="flex-1">
@@ -132,6 +134,11 @@ export default function TabsLayout() {
           options={{
             title: t`Active`,
             href: isSplit ? undefined : null,
+            // Web badges this one with the live event count. The query is
+            // already mounted by every queue screen and shares ONE cache
+            // entry, so the badge costs no extra request and can never
+            // disagree with the list it counts.
+            tabBarBadge: activeCount || undefined,
             tabBarIcon: ({ color, size }) => (
               <Activity color={color} size={size} />
             )

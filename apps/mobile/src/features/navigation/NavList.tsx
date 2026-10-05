@@ -12,12 +12,18 @@ import {
   History,
   type LucideIcon,
   PackageCheck,
+  PowerOff,
   ScanLine
 } from "lucide-react-native";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { PressableScale } from "~/components/PressableScale";
 import { Muted } from "~/components/ui";
 import { useThemeColors } from "~/components/useThemeColor";
+import { useActiveQuery } from "~/features/operations/useQueueQueries";
+import { EndShiftDialog } from "~/features/timecard/EndShiftDialog";
+import { useTimecardQuery } from "~/features/timecard/useTimecardQuery";
+import { useAuth } from "~/lib/auth/AuthProvider";
 
 /**
  * Every destination the tablet's rail shows, as a list — the phone's way in.
@@ -35,12 +41,29 @@ import { useThemeColors } from "~/components/useThemeColor";
  * bar overflows.
  *
  * Grouped as web's sidebar is grouped, so the two apps teach each other.
+ *
+ * It renders on a TABLET too, even though the rail already carries most of
+ * it. Some entries are not rail icons and cannot be: End Operations stops
+ * every running timer in the plant, and an unlabelled icon for that sitting
+ * between Scan and Time is an accident waiting to happen. Those live here,
+ * where they have a name and a sentence.
  */
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  badge?: number;
+};
 
 export function NavList() {
   const { t } = useLingui();
+  const { operator } = useAuth();
+  const activeCount = useActiveQuery().data?.operations?.length ?? 0;
+  // Week 0: the open entry is this week's by definition, and the dialog needs
+  // it to say what clocking out will close.
+  const openEntry = useTimecardQuery(0).data?.openEntry ?? null;
+  const [endingOperations, setEndingOperations] = useState(false);
 
   const groups: { label: string; items: NavItem[] }[] = [
     {
@@ -56,7 +79,12 @@ export function NavList() {
           label: t`Assigned to Me`,
           icon: ClipboardList
         },
-        { href: "/(app)/(tabs)/active", label: t`Active`, icon: Activity },
+        {
+          href: "/(app)/(tabs)/active",
+          label: t`Active`,
+          icon: Activity,
+          badge: activeCount
+        },
         { href: "/(app)/(tabs)/recent", label: t`Recent`, icon: History },
         {
           href: "/(app)/(tabs)/picking",
@@ -83,7 +111,51 @@ export function NavList() {
           ))}
         </View>
       ))}
+
+      {/*
+        An ACTION, not a destination — web's sidebar has it as a button too.
+        It closes every open production event without completing anything,
+        which is why it is spelled out in a confirmation rather than fired
+        from a row, and why it is not an unlabelled icon on the rail.
+      */}
+      <View className="gap-1">
+        <ActionRow
+          label={t`End Operations`}
+          icon={PowerOff}
+          onPress={() => setEndingOperations(true)}
+        />
+      </View>
+
+      <EndShiftDialog
+        open={endingOperations}
+        openEntry={openEntry}
+        operatorPinnedIn={Boolean(operator)}
+        onClose={() => setEndingOperations(false)}
+      />
     </View>
+  );
+}
+
+function ActionRow({
+  label,
+  icon: Icon,
+  onPress
+}: {
+  label: string;
+  icon: LucideIcon;
+  onPress: () => void;
+}) {
+  const colors = useThemeColors();
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="min-h-[56px] flex-row items-center gap-3 rounded-lg border border-border bg-card px-4"
+    >
+      <Icon size={20} color={colors.mutedForeground} />
+      <Text className="flex-1 text-base text-foreground">{label}</Text>
+    </PressableScale>
   );
 }
 
@@ -103,6 +175,13 @@ function NavRow({ item }: { item: NavItem }) {
     >
       <Icon size={20} color={colors.mutedForeground} />
       <Text className="flex-1 text-base text-foreground">{item.label}</Text>
+      {item.badge ? (
+        <View className="h-6 min-w-[24px] items-center justify-center rounded-full bg-primary px-1.5">
+          <Text className="text-xs font-semibold text-primary-foreground">
+            {item.badge > 99 ? "99+" : item.badge}
+          </Text>
+        </View>
+      ) : null}
       <ChevronRight size={18} color={colors.mutedForeground} />
     </PressableScale>
   );

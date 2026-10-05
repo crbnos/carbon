@@ -15,7 +15,6 @@ import {
   Screen,
   WarningNote
 } from "~/components/ui";
-import { useLayout } from "~/components/useLayout";
 import { useBecomeTerminal } from "~/features/console/commands";
 import { NavList } from "~/features/navigation/NavList";
 import { analyticsDecision } from "~/lib/analytics/policy";
@@ -103,7 +102,6 @@ export default function More() {
     operator
   } = useAuth();
   const { current } = useInstances();
-  const { isSplit } = useLayout();
   const { locale, theme, setLocale, setTheme } = usePreferences();
   const idle = useIdleLock();
   const analytics = analyticsDecision(me);
@@ -124,11 +122,14 @@ export default function More() {
           Navigation FIRST, settings below. On a phone this screen is the only
           way to reach the destinations the bottom bar has no room for, so it
           is a navigation screen that also holds settings rather than the
-          other way round. On a tablet the rail already shows all of them, so
-          the list is hidden there and this is the settings screen it has
-          always been.
+          other way round.
+
+          It renders on a TABLET too. The rail carries most of the same
+          destinations, but not all of them can be an icon — End Operations
+          stops every running timer in the plant, and that does not belong on
+          an unlabelled rail between Scan and Time.
         */}
-        {isSplit ? null : <NavList />}
+        <NavList />
 
         <Card className="gap-1">
           <Muted className="text-sm">

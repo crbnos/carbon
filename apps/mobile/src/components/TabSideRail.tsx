@@ -4,7 +4,7 @@
 
 import { Image } from "expo-image";
 import type { BottomTabBarProps } from "expo-router/tabs";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useThemeColors } from "./useThemeColor";
 
 /**
@@ -73,6 +73,24 @@ export const RAIL_WIDTH = 68;
  * are a different kind of thing from the four queues above them.
  */
 const GROUP_ENDS = new Set(["picking", "timecard"]);
+
+/**
+ * A count on an icon, as web puts one on Active and Maintenance.
+ *
+ * Top-RIGHT of the icon rather than beside it, because there is no beside:
+ * the rail is 68pt and the icon fills it. Clamped at 99 so a plant with a
+ * hundred running operations does not widen the rail by itself.
+ */
+function Badge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <View className="absolute -right-1 -top-1 h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1">
+      <Text className="text-[11px] font-semibold text-primary-foreground">
+        {count > 99 ? "99+" : count}
+      </Text>
+    </View>
+  );
+}
 
 export function TabSideRail({
   state,
@@ -166,7 +184,15 @@ export function TabSideRail({
                 focused ? "bg-muted" : "active:opacity-60"
               }`}
             >
-              {options.tabBarIcon?.({ focused, color, size: 24 })}
+              <View>
+                {options.tabBarIcon?.({ focused, color, size: 24 })}
+                {/*
+                  `tabBarBadge` is the navigator's own prop, so a screen asks
+                  for a count the way it would with the library's bar and
+                  this rail is not a special case to remember.
+                */}
+                <Badge count={Number(options.tabBarBadge ?? 0)} />
+              </View>
             </Pressable>
           );
 
