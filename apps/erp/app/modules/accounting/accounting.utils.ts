@@ -261,6 +261,8 @@ export function getMacrsPercentage(
   return table[yearIndex];
 }
 
+const QUARTER_OF_MONTH = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
+
 export function calculateMacrsDepreciation(args: {
   adjustedBasis: number;
   propertyClass: MacrsPropertyClass;
@@ -313,7 +315,8 @@ export function calculateMacrsDepreciation(args: {
   // convention (half-year or mid-quarter), so year 1 = the full first calendar year amount.
   // Year 1 is spread across months from placed-in-service through Dec 31.
   // Subsequent years are spread evenly across 12 calendar months.
-  const quarterPlaced = Math.ceil(startDate.month / 3);
+  // Calendar quarter of the month placed in service (1–4).
+  const quarterPlaced = QUARTER_OF_MONTH[startDate.month - 1];
   const startYear = startDate.year;
   const periodEndYear = periodEndDate.year;
   const lastYearToCalc = periodEndYear - startYear + 1;
