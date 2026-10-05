@@ -7,9 +7,11 @@ import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCountries } from "~/modules/shared";
 
+import { keptForADay } from "~/modules/shared/shared.server";
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});
-  return await getCountries(client);
+  return keptForADay(await getCountries(client));
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>({

@@ -19,6 +19,13 @@ import { defineConfig, PluginOption } from "vite";
 export default defineConfig(({ command, isSsrBuild, mode }) => {
   applyDotenvToProcessEnv(mode, import.meta.dirname);
 
+  // One id per build, the same in the client and server bundles. `path.to.api`
+  // puts it on the reference lists the browser keeps for a day, so a deploy
+  // is never served the copy cached under the previous one. The commit on
+  // Vercel; elsewhere the build's own start time, which also changes per build.
+  process.env.VITE_BUILD_ID ??=
+    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? Date.now().toString(36);
+
   /**
    * SSR dependencies that must be bundled into the server output rather than
    * left as bare `import`s. Defined once and applied to BOTH `ssr.noExternal`

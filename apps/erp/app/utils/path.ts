@@ -17,6 +17,9 @@ const file = "/file"; // from ~/routes/file+ folder
 const share = "/share"; // from ~/routes/shared+ folder
 const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
 const selectCompany = "/select-company"; // from ~/routes/select-company+ folder
+// Set per build in vite.config.ts (absent under vitest). On a URL whose response
+// the browser keeps for a day (`keptForADay`), it makes each deploy ask again.
+const build = `v=${import.meta.env?.VITE_BUILD_ID ?? "dev"}`;
 export const MES_URL = getMESUrl();
 export const ERP_URL = getAppUrl();
 
@@ -114,7 +117,7 @@ export const path = {
         ),
       chat: `${api}/ai/chat`,
       costCenters: `${api}/accounting/cost-centers`,
-      countries: `${api}/countries`,
+      countries: `${api}/countries?${build}`,
       createCsvLookup: `${api}/csv/create-lookup`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
@@ -130,7 +133,7 @@ export const path = {
         generatePath(`${api}/sales/digital-quote/${id}`),
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
-      docs: `${api}/docs`,
+      docs: `${api}/docs?${build}`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
@@ -335,7 +338,7 @@ export const path = {
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,
-      timezones: `${api}/timezones`,
+      timezones: `${api}/timezones?${build}`,
       unitOfMeasures: `${api}/items/uoms`,
       userSelectGroupEmails: (groupId: string) =>
         generatePath(`${api}/users/select/groups/${groupId}/emails`),
@@ -356,7 +359,7 @@ export const path = {
           `${api}/users/select/search?q=${encodeURIComponent(q)}&type=${type ?? ""}`
         ),
       webhookStripe: `${api}/webhook/stripe`,
-      webhookTables: `${api}/webhook/tables`,
+      webhookTables: `${api}/webhook/tables?${build}`,
       workCenters: `${api}/resources/work-centers`,
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`)

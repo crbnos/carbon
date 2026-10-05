@@ -19,7 +19,7 @@ import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
-import { createCookieSessionStorage } from "react-router";
+import { createCookieSessionStorage, data } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import {
   getCustomerContact,
@@ -875,4 +875,20 @@ export async function clearOnboardingDraft(request: Request): Promise<string> {
   );
   session.set(ONBOARDING_DRAFT_KEY, undefined);
   return onboardingDraftStorage.commitSession(session);
+}
+
+// For a list that is the same for every company and changes only with a deploy
+// or the database's own reference data. `private`: the route still needs a
+// session, so no shared cache may hold it.
+export const DAY_CACHE_HEADERS = { "Cache-Control": "private, max-age=86400" };
+
+/**
+ * A global `{ data, error }` list the browser keeps for a day, across page
+ * loads. An empty or failed read is not kept: it would stick for the day.
+ */
+export function keptForADay<T extends { data: unknown[] | null }>(result: T) {
+  return data(
+    result,
+    result.data?.length ? { headers: DAY_CACHE_HEADERS } : undefined
+  );
 }
