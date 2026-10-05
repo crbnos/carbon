@@ -1944,8 +1944,6 @@ export const path = {
     purchasingRfq: (id: string) => generatePath(`${x}/purchasing-rfq/${id}`),
     purchasingRfqCompare: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/compare`),
-    purchasingRfqConvert: (id: string) =>
-      generatePath(`${x}/purchasing-rfq/${id}/convert`),
     purchasingRfqDetails: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/details`),
     purchasingRfqFavorite: `${x}/purchasing/rfqs/favorite`,
