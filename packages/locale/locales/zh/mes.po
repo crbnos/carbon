@@ -2850,6 +2850,9 @@ msgstr "搜索量具..."
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "搜索..."
 

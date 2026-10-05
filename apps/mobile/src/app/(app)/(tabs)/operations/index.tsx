@@ -21,6 +21,7 @@ import {
   Button,
   EmptyState,
   ErrorNote,
+  Field,
   Heading,
   Muted,
   Screen,
@@ -34,12 +35,14 @@ import { BoardFilterSheet } from "~/features/operations/BoardFilterSheet";
 import {
   activeFilterCount,
   type BoardFilters,
+  columnsWithResults,
   EMPTY_FILTERS,
   filterColumns,
   filterOperations
 } from "~/features/operations/boardFilters";
 import { OperationCard } from "~/features/operations/OperationCard";
 import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
+import { filterOperationCards } from "~/features/operations/queues";
 import {
   loadStationFilter,
   saveStationFilter
@@ -212,6 +215,7 @@ export default function Operations() {
     };
   }, [scope]);
   const [filters, setFilters] = useState<BoardFilters>(EMPTY_FILTERS);
+  const [search, setSearch] = useState("");
   const filterSheet = useRef<SheetHandle>(null);
   // The server applies the station default unless told otherwise, so asking
   // for the whole floor is the DEFAULT request this screen makes.
@@ -247,13 +251,22 @@ export default function Operations() {
       .map((l) => `${l.name} (${counts.get(l.id)})`);
   }, [me, locationId]);
   const allColumns = query.data?.columns ?? [];
-  const columns = useMemo(
-    () => filterColumns(allColumns, filters),
-    [allColumns, filters]
-  );
+  // Search runs AFTER the filters and over the same card fields the operator
+  // queues search on (`filterOperationCards`), so one term behaves the same
+  // everywhere in the app. Client-side like the filters: every operation for
+  // the location is already in hand, so it is instant and does not put a
+  // spinner between an operator and the board on shop-floor Wi-Fi.
   const items = useMemo(
-    () => filterOperations(query.data?.items ?? [], filters),
-    [query.data?.items, filters]
+    () =>
+      filterOperationCards(
+        filterOperations(query.data?.items ?? [], filters),
+        search
+      ),
+    [query.data?.items, filters, search]
+  );
+  const columns = useMemo(
+    () => columnsWithResults(filterColumns(allColumns, filters), items, search),
+    [allColumns, filters, items, search]
   );
   const filterCount = activeFilterCount(filters);
 
@@ -313,6 +326,21 @@ export default function Operations() {
         a sixth bottom tab — see `QueueSwitcher`.
       */}
       <QueueSwitcher current="board" />
+
+      {/* Its own row, as on web, where search sits beside the filter button.
+          Here it gets the full width instead: the row below already carries
+          the filter button and, on a phone, the work-centre strip. */}
+      <View className="px-4">
+        <Field
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t`Search`}
+          accessibilityLabel={t`Search the board`}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+      </View>
 
       <View className="flex-row items-center gap-2 pl-4">
         <Pressable

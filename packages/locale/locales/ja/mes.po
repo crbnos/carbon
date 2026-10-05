@@ -2850,6 +2850,9 @@ msgstr "測定器を検索..."
 msgid "Search operators..."
 msgstr "作業者を検索..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "検索..."
 

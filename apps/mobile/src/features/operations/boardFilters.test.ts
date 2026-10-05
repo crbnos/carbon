@@ -6,6 +6,7 @@ import type { OperationCard, WorkCenterColumn } from "@carbon/mes-core";
 import { describe, expect, it } from "vitest";
 import {
   activeFilterCount,
+  columnsWithResults,
   EMPTY_FILTERS,
   filterColumns,
   filterOperations,
@@ -77,5 +78,31 @@ describe("activeFilterCount", () => {
     expect(activeFilterCount({ workCenterIds: ["a"], tags: ["x", "y"] })).toBe(
       3
     );
+  });
+});
+
+describe("columnsWithResults", () => {
+  const columns = [{ id: "cnc" }, { id: "assembly" }, { id: "paint" }];
+  const searched = [
+    { id: "1", columnId: "cnc" },
+    { id: "2", columnId: "cnc" }
+  ] as OperationCard[];
+
+  it("drops the work centres a search left empty", () => {
+    expect(columnsWithResults(columns, searched, "bracket")).toEqual([
+      { id: "cnc" }
+    ]);
+  });
+
+  it("keeps every column when the search is cleared", () => {
+    expect(columnsWithResults(columns, [], "")).toEqual(columns);
+  });
+
+  it("treats a whitespace-only term as no search", () => {
+    expect(columnsWithResults(columns, [], "   ")).toEqual(columns);
+  });
+
+  it("shows nothing rather than everything when a search matches nothing", () => {
+    expect(columnsWithResults(columns, [], "nope")).toEqual([]);
   });
 });

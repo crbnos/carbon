@@ -2850,6 +2850,9 @@ msgstr "Search gauges..."
 msgid "Search operators..."
 msgstr "Search operators..."
 
+msgid "Search the board"
+msgstr "Search the board"
+
 msgid "Search..."
 msgstr "Search..."
 

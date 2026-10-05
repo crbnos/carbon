@@ -2850,6 +2850,9 @@ msgstr "계측기 검색..."
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "검색..."
 

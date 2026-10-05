@@ -2850,6 +2850,9 @@ msgstr "Prüfmittel suchen..."
 msgid "Search operators..."
 msgstr "Werker suchen..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "Suchen..."
 

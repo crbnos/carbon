@@ -2850,6 +2850,9 @@ msgstr "Szukaj przyrządów pomiarowych..."
 msgid "Search operators..."
 msgstr "Szukaj operatorów..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "Szukaj..."
 

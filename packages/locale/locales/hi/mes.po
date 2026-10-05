@@ -2850,6 +2850,9 @@ msgstr "गेज खोजें..."
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "खोजें..."
 

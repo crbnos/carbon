@@ -2850,6 +2850,9 @@ msgstr "Ölçüm aletlerini ara..."
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
+msgid "Search the board"
+msgstr ""
+
 msgid "Search..."
 msgstr "Ara..."
 

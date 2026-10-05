@@ -74,3 +74,25 @@ export function filterColumns(
   if (filters.workCenterIds.length === 0) return columns;
   return columns.filter((column) => filters.workCenterIds.includes(column.id));
 }
+
+/**
+ * Columns worth showing for a search.
+ *
+ * Searching the board is not the same as searching a list: the columns are
+ * work centres, and a term that matches two operations would otherwise leave
+ * the operator paging through a row of empty work centres to find them. So
+ * while a search is active the board shows only the columns that still hold
+ * something — and when it is cleared, every column comes back.
+ *
+ * Takes the ALREADY-searched operations, so the caller cannot apply the term
+ * to the cards and the columns inconsistently.
+ */
+export function columnsWithResults<T extends { id: string }>(
+  columns: T[],
+  searched: OperationCard[],
+  searchTerm: string
+): T[] {
+  if (searchTerm.trim() === "") return columns;
+  const withResults = new Set(searched.map((item) => item.columnId ?? ""));
+  return columns.filter((column) => withResults.has(column.id));
+}
