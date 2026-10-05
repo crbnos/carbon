@@ -102,18 +102,18 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
   const { deadSlugs, projects } = planPrune(slots, await listCarbonStacks(), {
     all: opts.all
   });
-  // Ports of the slots that survive this prune; every other crbn route is
-  // dead. A worktree this run removes gives up its slot too.
+  // Routes whose port no surviving slot owns. `gone` adds the slots of
+  // worktrees this run actually removed — not the ones it only meant to.
   const dead = new Set(deadSlugs);
-  const leaving = new Set(
-    trees.map((tree) => slugForWorktreePath(tree.path, slots))
-  );
-  const livePorts = new Set(
-    Object.entries(slots)
-      .filter(([slug]) => !dead.has(slug) && !leaving.has(slug))
-      .flatMap(([, slot]) => Object.values(slot.ports))
-  );
-  const routes = findStaleAliases(livePorts);
+  const staleRoutes = (gone = new Set<string>()) =>
+    findStaleAliases(
+      new Set(
+        Object.entries(slots)
+          .filter(([slug]) => !dead.has(slug) && !gone.has(slug))
+          .flatMap(([, slot]) => Object.values(slot.ports))
+      )
+    );
+  const routes = staleRoutes();
 
   if (projects.length === 0 && trees.length === 0) {
     await forgetMissingTrees();
@@ -167,6 +167,7 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
   }
   await forgetMissingTrees();
   let removedTrees = 0;
+  const removedSlugs = new Set<string>();
   for (const tree of trees) {
     // Checked again, and removed only by git itself: a file saved while the
     // prompt was open makes the tree dirty, and it must then be kept.
@@ -174,19 +175,24 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
       log.info(`kept ${tree.path}: it changed while confirming`);
       continue;
     }
-    const slug = slugForWorktreePath(tree.path, slots);
-    if (slug) await killOrphanedApps(slots[slug]!.ports);
     if (!(await removeCleanWorktree(tree.path))) {
       log.info(`kept ${tree.path}: git would not remove it`);
       continue;
     }
     removedTrees++;
-    if (slug) removeSlot(slug);
+    // Only once the tree is really gone: a kept worktree keeps its dev
+    // servers, its slot and its routes.
+    const slug = slugForWorktreePath(tree.path, slots);
+    if (!slug) continue;
+    await killOrphanedApps(slots[slug]!.ports);
+    removeSlot(slug);
+    removedSlugs.add(slug);
   }
   await pruneStaleRoutes();
-  await removeAliases(routes);
+  const cleared = staleRoutes(removedSlugs);
+  await removeAliases(cleared);
 
   outro(
-    `removed ${projects.length} stack(s) and ${removedTrees} worktree(s), released ${deadSlugs.length} slot(s), cleared ${routes.length} stale portless route(s)`
+    `removed ${projects.length} stack(s) and ${removedTrees} worktree(s), released ${deadSlugs.length} slot(s), cleared ${cleared.length} stale portless route(s)`
   );
 }
