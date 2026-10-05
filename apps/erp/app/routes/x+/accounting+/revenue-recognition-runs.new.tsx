@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, redirect } from "@carbon/utils";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 
 import { revenueRecognitionRunValidator } from "~/modules/accounting";
@@ -49,7 +50,12 @@ export async function action({ request }: ActionFunctionArgs) {
       datetime.today(await getCompanyTimeZone(client, companyId)).toString()
     );
   } else {
-    periodEnd = validation.data.periodEnd;
+    // Schedule rows fall on month ends, so a picked day means its month: a
+    // mid-month date would leave that month's rows out ("Nothing to
+    // recognize"). Depreciation runs snap the same way.
+    periodEnd = endOfMonth(
+      parseDate(validation.data.periodEnd.slice(0, 10))
+    ).toString();
   }
 
   const futureError = await futureRunPeriodError(client, companyId, periodEnd);

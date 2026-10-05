@@ -498,6 +498,18 @@ describe("getNextRevenueRecognitionPeriodEnd", () => {
       "2026-02-28"
     );
   });
+
+  // A month that has not started cannot run, so after a run for the current
+  // month the default stays on it — a second run picks up rows that fell due
+  // after the first posted.
+  it("never proposes a month that has not started", () => {
+    expect(getNextRevenueRecognitionPeriodEnd("2026-10-31", "2026-10-04")).toBe(
+      "2026-10-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd("2026-09-30", "2026-10-04")).toBe(
+      "2026-10-31"
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

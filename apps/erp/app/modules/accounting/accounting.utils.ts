@@ -474,7 +474,11 @@ export function getNextRevenueRecognitionPeriodEnd(
   const base = lastPeriodEnd
     ? parseDate(lastPeriodEnd).add({ months: 1 })
     : parseDate(todayIso).subtract({ months: 1 });
-  return endOfMonth(base).toString();
+  const next = endOfMonth(base).toString();
+  // A month that has not started cannot run (isFutureRunPeriod). After a run
+  // for the current month, stay on it: a period can take more than one run.
+  const currentMonthEnd = endOfMonth(parseDate(todayIso)).toString();
+  return next > currentMonthEnd ? currentMonthEnd : next;
 }
 
 /**
