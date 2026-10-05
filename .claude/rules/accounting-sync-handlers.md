@@ -649,7 +649,7 @@ is dead config for Rillet only, left in place for the capped providers.
   three return types, `'Revenue Recognition'`, `'Asset Transfer'` and
   `'Lease'`: a new journal type never starts pushing to a customer's external
   ledger unasked (plan decision 1 of
-  `.ai/plans/2026-09-22-revenue-recognition-and-rentals.md`). **`'Lease'`**
+  `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md`). **`'Lease'`**
   (migration `20260922225541_fleet-rental-lease-enums.sql`, `packages/ee/src/accounting/core/models.ts`,
   `individual` granularity) carries only a sales-type lease's commencement
   (Dr Net Investment in Leases / Dr COGS / Dr accumulated depreciation, Cr

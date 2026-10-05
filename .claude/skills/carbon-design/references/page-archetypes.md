@@ -179,7 +179,7 @@ page using it (on mobile it is a drawer).
   `external` rows) and **Activity** (the inline `AuditLogFeed`), Activity only for
   audit-logged entities. Cross-link buttons and the ⋯ History item do not exist here.
 Exemplar: `routes/x+/shipment+/$shipmentId.tsx` + `modules/inventory/ui/Shipments/Shipment{Header,Documents,Form}.tsx`.
-Rollout notes: `.ai/plans/2026-10-02-document-page-layout.md`.
+Rollout notes: `.ai/plans/implemented/2026-10-02-document-page-layout.md`.
 
 ## 8. Archetype F — Settings preference page
 

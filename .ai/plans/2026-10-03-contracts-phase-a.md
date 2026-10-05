@@ -4,7 +4,7 @@
 > Phase B (separate plan, not here) builds the line-level revenue engine: `customerContractRevenue`, the contract branches of `post-sales-invoice` / `post-memo` that relieve Contract Assets, `synthesizeContractRevenue`, the posting effect of Even Period and *Recognize revenue from*, and the contract position view.
 
 **Spec:** .ai/specs/2026-10-02-contracts.md
-**Interview record:** .ai/runs/2026-10-02-grill-subscriptions.md (Q1–Q11, U1–U4, G1–G9, Handoff "Split")
+**Interview record:** .ai/runs/2026-10-02-contracts.md (Q1–Q11, U1–U4, G1–G9, Handoff "Split")
 **Research:** .ai/research/subscription-recurring-invoicing.md
 **Builds on:** .ai/plans/2026-10-02-rental-invoice-automation.md (shared recurring-invoicing layer, executed; only Task 21's email check is still pending)
 **Branch:** revenue-recognition-rentals-spec. Rentals and the shared layer are not on `main` yet, and this plan builds on both.
@@ -118,7 +118,7 @@ Every acceptance criterion in the spec is covered except these, which belong to 
 
 **Steps:**
 1. `git status` must be clean apart from files this plan's author committed. Run `git fetch origin && git merge origin/main` if `main` has moved. STOP and report any conflict in `post-sales-invoice`, `post-memo`, `convert`, `recurring-billing.ts`, `automate-invoice.ts`, `sales.models.ts`, `sales.service.ts`, `sales.server.ts` or the `$invoiceId.post.tsx` route.
-2. Record a baseline of the commands below in the run log `.ai/runs/2026-10-03-contracts-phase-a.md`. Later tasks compare against these results, not against zero.
+2. Record a baseline of the commands below in the run log `.ai/runs/2026-10-02-contracts.md`. Later tasks compare against these results, not against zero.
 
 **Verify:**
 ```bash
@@ -1719,7 +1719,7 @@ Email-dependent checks (actual delivery, digest) are recorded as pending when SM
 
 **Verify:**
 ```bash
-grep -c "PASS" .ai/runs/2026-10-03-contracts-phase-a.md
+grep -c "PASS" .ai/runs/2026-10-02-contracts.md
 # Expected: ≥ 13 (or each FAIL has a follow-up)
 ```
 

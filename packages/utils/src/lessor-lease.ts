@@ -18,7 +18,7 @@ import {
 // Lessor lease math (ASC 842) shared by activation, the recognition run and
 // the app (re-exported to Node through @carbon/utils). Pure: numbers and
 // `YYYY-MM-DD` strings in, numbers out — no database, no JS `Date`.
-// Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §4.
+// Spec: .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md §4.
 
 export type Timing = "Advance" | "Arrears";
 

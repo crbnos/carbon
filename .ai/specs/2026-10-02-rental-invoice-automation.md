@@ -4,8 +4,8 @@
 > Author: barbinbrad (with Claude)
 > Date: 2026-10-02
 > Research: `.ai/research/rental-invoice-automation.md`
-> Amends: `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` Decision 10 ("propose-only Draft invoices") — reversed for rentals, see D1
-> Shared layer (2026-10-02): this automation is the source-agnostic **recurring-invoicing layer** — one mode list (`invoiceAutomation`), one company default + per-document override, one pipeline in `packages/jobs/src/invoicing/` (`automateSalesInvoice`), one daily `recurring-billing` job and one "Recurring invoicing" digest. Rental agreements are its first source; AR contracts (`.ai/specs/2026-10-02-contracts.md`) plug in as the second and add the `Post and Send via Stripe` mode. Names were generalized before any code existed; behaviour for rentals is unchanged. Decisions: `.ai/runs/2026-10-02-grill-subscriptions.md` (U1–U4, G4b, G7).
+> Amends: `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` Decision 10 ("propose-only Draft invoices") — reversed for rentals, see D1
+> Shared layer (2026-10-02): this automation is the source-agnostic **recurring-invoicing layer** — one mode list (`invoiceAutomation`), one company default + per-document override, one pipeline in `packages/jobs/src/invoicing/` (`automateSalesInvoice`), one daily `recurring-billing` job and one "Recurring invoicing" digest. Rental agreements are its first source; AR contracts (`.ai/specs/2026-10-02-contracts.md`) plug in as the second and add the `Post and Send via Stripe` mode. Names were generalized before any code existed; behaviour for rentals is unchanged. Decisions: `.ai/runs/2026-10-02-contracts.md` (U1–U4, G4b, G7).
 
 ## TLDR
 
@@ -244,7 +244,7 @@ Follow the `carbon-design` skill for badge and filter conventions. Wrap all stri
 
 ## Implementation decisions
 
-Folded in from `.ai/plans/2026-10-02-rental-invoice-automation.md` ("Plan-level decisions") and its execution log (`.ai/runs/2026-10-02-rental-invoice-automation-exec.md`). Where these disagree with sections above, these win.
+Folded in from `.ai/plans/2026-10-02-rental-invoice-automation.md` ("Plan-level decisions") and its execution log (`.ai/runs/2026-10-02-rental-invoice-automation.md`). Where these disagree with sections above, these win.
 
 1. **Email goes out through `sendEmail` directly**, not `trigger("send-email")`: the queued job forces From to `DEFAULT_FROM` and only queues, so a delivery error would never reach `sendError`. The manual post route keeps `trigger("send-email")`, so its `sentAt` means "queued". A send with no SMTP transport stamps `sendError` ("Email sending is not configured"), never `sentAt`.
 2. **`checkPartyContactRequirement` lives in `@carbon/lib`** (`./party-contact`, `./party-contact.server`); the ERP files re-export it.

@@ -4,8 +4,8 @@
 > Author: Brad (with Claude)
 > Date: 2026-10-02
 > Research: `.ai/research/subscription-recurring-invoicing.md` (SAP, NetSuite, Business Central, D365 F&O, Acumatica, Odoo, Xero, QuickBooks, Stripe, Chargebee, Maxio; Rillet and Stripe API data models; Rillet's Contract screens)
-> Interview record: `.ai/runs/2026-10-02-grill-subscriptions.md` (Q1–Q11, U1–U4, G1–G9)
-> Builds on: `.ai/specs/2026-10-02-rental-invoice-automation.md` (the shared recurring-invoicing layer — this spec is its second source), `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` (revenue recognition run, Contract Assets accrual, rental revenue posting model)
+> Interview record: `.ai/runs/2026-10-02-contracts.md` (Q1–Q11, U1–U4, G1–G9)
+> Builds on: `.ai/specs/2026-10-02-rental-invoice-automation.md` (the shared recurring-invoicing layer — this spec is its second source), `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` (revenue recognition run, Contract Assets accrual, rental revenue posting model)
 > Delivers from the billing side: the "revenue arrangement" of `.ai/specs/2026-07-04-revenue-recognition.md` Phases 2–3 (without SSP allocation)
 > Supersedes: the earlier "Subscriptions" draft of this file (same path history)
 > Coordinates with: `.ai/specs/2026-10-03-projects.md` (branch `projects-wbs-research-spec`) — its Phase 4 adds Time & Materials / Cost Plus lines; the two one-way doors it needs are taken here (project on the line; revenue *method*)
@@ -420,7 +420,7 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
 
 ## Open Questions
 
-> All resolved with Brad on 2026-10-02 before this version was written (`.ai/runs/2026-10-02-grill-subscriptions.md`).
+> All resolved with Brad on 2026-10-02 before this version was written (`.ai/runs/2026-10-02-contracts.md`).
 
 - [x] **Line content** — **Answer:** Service items only (Q1), now One-time + Recurring (G3); usage later.
 - [x] **Frequencies; rate unit vs rhythm** — **Answer:** rates per Day / Week / Month / Quarter / Year; invoiced every Week / Month / Quarter / Year (Q2, Q2b).
@@ -446,7 +446,7 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
 - 2026-10-02: Created as "Subscriptions" after research and a 14-question interview.
 - 2026-10-02: Re-scoped to **Contracts** after reviewing Rillet's Contract (G1–G9) and unifying with rental invoice automation into one recurring-invoicing layer (U1–U4): independent invoice and revenue schedules, editable invoice schedule, per-line revenue patterns and the line-level revenue engine, one-time lines, contract types, discounts, migration revenue; delivery, sender and the daily job now come from the shared layer.
 - 2026-10-03: Two one-way doors taken for the Projects spec (`2026-10-03-projects.md`): an optional **project** on the contract and line, written as the Project dimension on revenue-side journal lines (amends decision 24); **revenue pattern renamed revenue method** (`revenueMethod` / `contractRevenueMethod`) and `customerContractRevenue` framed as the per-line revenue ledger, so *As Invoiced* and *Percent Complete* are later enum values rather than a post-data rename.
-- 2026-10-04: **Phase A implemented** (`.ai/plans/2026-10-03-contracts-phase-a.md`, run log `.ai/runs/2026-10-03-contracts-phase-a.md`). The plan refined this spec with 15 decisions. Brad reviewed them on 2026-10-03. He changed decision 3 to a real invoice line discount and confirmed decision 5.
+- 2026-10-04: **Phase A implemented** (`.ai/plans/2026-10-03-contracts-phase-a.md`, run log `.ai/runs/2026-10-02-contracts.md`). The plan refined this spec with 15 decisions. Brad reviewed them on 2026-10-03. He changed decision 3 to a real invoice line discount and confirmed decision 5.
   1. **No `customerContractRevenue` table in Phase A.** The Revenue section is a preview that `contract-revenue.ts` computes from the lines. The Service deferral of each invoice line posts the revenue.
   2. **The invoice schedule persists only after the first edit, or at Confirm.** While a Draft is unedited, the loader computes the schedule from the lines. The first edit writes the `customerContractInvoice` rows with `isEdited = true`. Confirm refuses an edited schedule that no longer conserves the total of each line.
   3. **Sales invoice lines get a real discount.** `salesInvoiceLine.discountPercent` is a fraction from 0 to 1, with generated `netUnitPrice` / `convertedNetUnitPrice`. It discounts the merchandise (`quantity × unitPrice`) only. Tax applies to the discounted merchandise. Every amount calculation applies it: the `salesInvoices` view, posting, documents, the ERP invoice UI, Stripe, the accounting providers and rental utilization. A contract invoice line carries the list `unitPrice` and the `discountPercent` of its contract line.
@@ -478,7 +478,7 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
   1. **Creation is a wizard.** It has five steps: Details, Products, Invoicing, Revenue and Review. This overrides "one page, not Rillet's wizard" in UI Changes. After Confirm, the contract page stays the place to work on a contract.
   2. **Next on Details saves the Draft.** Each later step edits that Draft through the real endpoints. Each step is a route: `/x/contract/:id/setup/<step>`.
   3. **The conservation rule stays.** The invoice grid and the revenue grid only move money. The invoices of each line must add up to its total, and its revenue must equal what it bills. Confirm waits until both residuals are zero.
-  4. **The contract has a ship-to address** (`customerContract.shipToCustomerLocationId`). The decision was to copy it onto drafted invoices. The code does not copy it, because `salesInvoice` has no column for a customer ship-to address. This is an open follow-up.
+  4. **The contract has a ship-to address** (`customerContract.shipToCustomerLocationId`). `create-contract-invoices` copies it onto each drafted invoice's `salesInvoiceShipment.customerLocationId` (added for this, in `20261004014728_sales-invoice-discount-and-ship-to.sql`).
   5. **Phase B ships now.** Carbon stores the revenue schedule of each line as the **revenue plan**, one amount per month. A person can edit it while the contract is a Draft. This overrides "read-only" and the out-of-scope item "hand-edited revenue schedules". The GL engine posts from the revenue plan.
 
   The plan refined the design with 13 decisions. The code implements them as follows:
@@ -503,6 +503,6 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
   1. **The run recognizes Ended contracts too.** The synthesizer and the close check read every contract that is not a Draft. So the catch-up months of a cancelled contract still post.
   2. **One lock serializes every writer.** Invoice posting, its VOID, `post-memo` and the synthesizer all take the advisory lock `contract-position:<companyId>`.
   3. **Run posting refuses an incomplete run.** `postRevenueRecognitionRun` refuses a run while a due contract month has no schedule row. The user must recalculate the run first.
-  4. **Drafted invoices do not get the ship-to address.** See decision 4.
+  4. ~~Drafted invoices do not get the ship-to address.~~ Fixed: see decision 4.
   5. **The position view is missing.** The loader does not send the ledger position. The Revenue section of a confirmed contract still shows the preview.
 - 2026-10-04: **The contract line field `kind` is now `revenueType`** (enum `contractRevenueType`, migration `20261004202351_contract-line-revenue-type.sql`). The UI label is "Revenue Type". The new name says what the field decides (`.claude/rules/conventions-database.md`). The Data Model above uses the new names.

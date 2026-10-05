@@ -6,7 +6,7 @@
 // Customer" actions and the daily recurring-billing job, so a human and the
 // scheduler bill exactly the same periods. Posting stays with
 // post-sales-invoice (and invoice automation): this only drafts invoices.
-// Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3
+// Spec: .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md §3
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";

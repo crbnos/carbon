@@ -1,6 +1,6 @@
 # Revenue Recognition Core + Rental Fleet — implementation plan
 
-**Spec:** .ai/specs/2026-09-22-revenue-recognition-and-rentals.md
+**Spec:** .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md
 **Research:** .ai/research/2026-09-21-sell-vs-rent-rental-revenue-recognition.md
 **Branch:** revenue-recognition-rentals-spec (rebase onto `origin/main` first — Task 1)
 
@@ -28,7 +28,7 @@ Four phases, one plan. Phase A (recognition core) and Phase B (fleet bridge + Ma
 - Hook fix (commit `1f771c7211`, outside the task list): the pre-commit backup check staged the regenerated `packages/jobs/manifests/schema.json` a second time as a root-level `manifests/schema.json` on every migration commit (Tasks 2, 19, 25). A hook runs with `GIT_DIR` exported and no `GIT_WORK_TREE`, so git took `pnpm --filter`'s cwd (`packages/jobs`) as the work tree. `check-backups.ts` now runs its `git add` from the repo root; the stray copy is dropped.
 - Task 24: `trackedActivityInput` has no `entityType` column (input rows are `{ trackedActivityId, trackedEntityId, quantity }`); `fixedAssetTransfer.locationId` is NOT NULL so `attachJob` takes the job's location and `capitalizeCip` the asset's (else the newest attached job's, else a 400); capitalizing stock straight into a construction-in-progress class also writes a `fixedAssetCipCost` row (`sourceType 'Manual'`, the transfer id as source document) so a later `capitalizeCip` sweeps that cost too; the function answers `{ id, transferId, fixedAssetId, fixedAssetReadableId }` (row ids plus readable numbers), with `id`/`transferId` null for an `attachJob` that found no WIP; zero-value transfers skip the journal (the line builders refuse a zero cost) but still move the unit and the asset.
 - Task 29: `getFixedAssetClassesList` does not select `isConstructionInProgress`, so the capitalize loader reads the classes it needs directly (non-CIP, the class named Rental Fleet preselected); the fleet status badge lives in its own `FleetStatus.tsx` beside the table; `path.ts` and the sidebar Fleet entry were written ahead of the two parallel subagents so neither edited a shared file; the capital-cost panel on a work center shows a dash for assets without a straight-line monthly amount and sums only those that have one.
-- Task 18 (browser, evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-a.md`): checks 1, 2, 4 pass; 3 and 5 partial. The plan's "six rows of 200.00" was wrong: spec §1 prorates a dated line by days and `spreadStraightLine` does (204.40 / 197.80 / 204.40 / 204.40 / 184.62 / 204.40, Σ 1,200.00), so the schedule is correct as built. `post-sales-invoice` re-stamps `postingDate`/`dateIssued` to today (pre-existing), so a back- or forward-dated invoice cannot be posted as dated from the UI. Closing October was blocked by four seeded Draft documents (environment, not a defect); Lock was exercised and posting into a Locked period works. Follow-ups fixed right after: the runs page had no period-end picker and `getNextPeriodEnd` used JS `Date`; the run page's Source column showed a raw line id; the close task had no "What this task means" text. The observation that `salesInvoice.subtotal`/`totalAmount` read 0 after posting is not a defect: those header columns are legacy (set once at creation), and invoice totals are computed in the `salesInvoices` view since migration `20260604120000`, where both invoices read 500 and 1,200.
+- Task 18 (browser, evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`): checks 1, 2, 4 pass; 3 and 5 partial. The plan's "six rows of 200.00" was wrong: spec §1 prorates a dated line by days and `spreadStraightLine` does (204.40 / 197.80 / 204.40 / 204.40 / 184.62 / 204.40, Σ 1,200.00), so the schedule is correct as built. `post-sales-invoice` re-stamps `postingDate`/`dateIssued` to today (pre-existing), so a back- or forward-dated invoice cannot be posted as dated from the UI. Closing October was blocked by four seeded Draft documents (environment, not a defect); Lock was exercised and posting into a Locked period works. Follow-ups fixed right after: the runs page had no period-end picker and `getNextPeriodEnd` used JS `Date`; the run page's Source column showed a raw line id; the close task had no "What this task means" text. The observation that `salesInvoice.subtotal`/`totalAmount` read 0 after posting is not a defect: those header columns are legacy (set once at creation), and invoice totals are computed in the `salesInvoices` view since migration `20260604120000`, where both invoices read 500 and 1,200.
 - Task 30: two more stale statements outside the plan's file list said a work center and an asset are never linked (`docs/content/docs/reference/work-centers.mdx`, `docs/content/guides/fixed-assets-acquire.mdx`); both corrected in the same commit, and the agent knowledge base (`kb/`) regenerated per `.claude/rules/agent-knowledge-base.md`.
 - Task 33: no view selects `payment.*`, so nothing had to be recreated for the two deposit columns; `rentalBillingPeriod` carries the full audit set per the conventions; the tables file was validated in a rolled-back transaction before `crbn migrate` applied it. Environment: a Docker Desktop restart recreated the Postgres volume between Phase B checks (b) and (c), so the dev company was re-seeded with a new id and every Phase A/B test record was lost; Phase A evidence stands as committed, Phase B (c)–(f) reran on the fresh company.
 - Task 35 (+ a Task 22 gap): the dev bootstrap (`packages/database/src/datasets/bootstrap.ts`) inserts the seeded asset classes without `isConstructionInProgress`, so a company seeded by `crbn up`/`db:seed:dev` got a Construction in Progress class that was not flagged (the onboarding edge function was already correct). Fixed alongside the RA sequence seed; the re-seeded dev company was patched by hand (class flag + RA sequence row).
@@ -46,9 +46,9 @@ Four phases, one plan. Phase A (recognition core) and Phase B (fleet bridge + Ma
 - Task 55: docs describe the built behaviour; the reference page is ~2,900 words (about double the style budget) — the sales-type part could split to its own page. `accounting-sync-handlers.md` now states that journal types shipped off by default are enabled per type. The docs agent found that Sell to Customer did not check the end date (the remaining rent kept billing after the unit was sold); fixed in the same pass — exercise is refused before `endDate`.
 - Self-review (Task 56, code part): the two composite pointer FKs `payment_rentalAgreementId_fkey` and `revenueRecognitionSchedule_rentalLeaseScheduleLineId_fkey` had a bare `ON DELETE SET NULL`, which also nulls `companyId` (lesson on composite SET NULL) — deleting a Draft agreement holding a deposit failed. `20260923122421_rental-fk-set-null-column.sql` names the pointer column; proven with a rolled-back delete.
 - Self-review fixes (Task 56, code part): invoice line delete now requires the line to be on the URL's invoice and that invoice to be Draft (in the transaction, `FOR UPDATE`); a charge's kind is server-side only (`rentalAgreementChargeValidator` has no `kind`; the Purchase Option insert is the server-only `insertRentalPurchaseOptionCharge`, invisible to the MCP scanner); the Draft-only guards live in the service writers too, and the rental agreement / line / charge writers pick their fields instead of spreading input (an MCP call could otherwise set `status` and skip activation); the out-of-service and deliver availability reads use the service role so a missing permission cannot fail them open; no billing period is cut past a sales-type lease's end date (activation caps at it, return does not re-cut); a sales-type return closes on the lease schedule and keeps interest rows dated on or before the return; future-dated returns are refused; a sales-type lease must run whole billing periods (shared `salesTypeRequirementError`, shown in the Activate preview); exercising a purchase option settles the line's remaining net investment (shortfall → COGS, excess → lease revenue).
-- Task 46 (browser, evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-c.md`): scenarios re-based to September 2026 (future-dated returns are refused and Deliver stamps today). All accounting checks pass — Calendar Month advance 800.00 (16/30 × 1,500) deferral → run; arrears accrual → invoice consumes it; mileage charge; deposit 3,000 → apply 500 → refund 2,500 (2110 nets 0); 28-day best-rate returns 300 / 1,000 / 1,500 / 2,000; early-return −1,200; holdover; out-of-service return; return-to-inventory refusal; close task; utilization; the line-delete and deposit-FK fixes. Four defects found and fixed in the same pass: agreement create/edit failed (the explicit field list sent `exchangeRate: null` into a NOT NULL DEFAULT column — regression from the self-review fix); reloading `/details` hit a component-less route; the Return form never posted for an operating unit (`isSalesType=""` fails `zfd.checkbox`); a re-cut Arrears period kept its old `dueOn` (`RecutPeriod` now carries it). Not run: the next period's proposal on Oct 1 (date-bound). Environment residue in the dev company: a Draft deposit PAY-…-000004 with no agreement, four blank-serial VEH-100 units in stock.
-- Task 56 (browser, evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-d.md`): all runnable checks pass — scenario A (36 × 1,000 arrears, 6 %, option 5,000 certain, fair value 38,000; started 2026-08-01 so month 1 is due): commencement Dr 1160 37,049.24 / Dr 5010 30,000 / Cr 4070 37,049.24 / Cr 1370 30,000, selling profit 7,049.24, 36 schedule lines (185.25 / 814.75 / 36,234.49 … 5,000.00), month-1 invoice Cr 1160 1,000, run posts 185.25 interest, report ties to 1160; scenario B (three 11-month leases ended 2026-08-31): sell to customer with shortfall and excess settlements (1160 nets 0, line Sold), return to fleet and to inventory; classification rules, whole-period refusal, override with audit; the Phase C UI fixes re-confirmed. Fixed from the pass: an Advance lease closing on zero wrote a −0.00001 Interest row (one-unit drift now gets no row); the override's audit comment/doc claimed the entry needs the audit log on (it is always written); the Close dialog now says "returned or sold". Not run: months 2–36 / end-of-term sale of scenario A (date-bound); a non-zero accumulated-depreciation commencement leg (a seeded Draft depreciation run DR000001 blocks depreciation in the dev company). Return to inventory debits the item's own inventory account (1210 for a Buy item), not always Finished Goods as the spec text says.
-- Task 31 (browser, re-run on the recreated stack; evidence appended to `.ai/runs/2026-09-22-revenue-recognition-phase-b.md`): (c) CIP postings pass — attach job Dr 1390 / Cr 1230 170, completion sweep 85, PO receipt cost row 6,000, capitalize into Machinery & Equipment Dr 1350 / Cr 1390 6,255, the in-service month's run charges 52.13; (e) out of service passes, including the On Rent refusal; (f) return to inventory Dr 1210 41,440 / Dr 1380 560 / Cr 1370 42,000 passes. Fixed from the pass: editing an asset dropped its work center (the details action's field list omitted `workCenterId`); an Under Construction asset could not be purchased (the PO / purchase invoice asset pickers and the Purchase action were Draft-only, though posting already adds CIP cost rows for it). Follow-up, fixed afterwards: a serial returned to stock was costed FIFO when later sold (`shared/calculate-cogs.ts` took the oldest layers, not the shipped serial's). `costLedger.trackedEntityId` (migration `20260923223639`) now stamps the layer `bookAdjustment` books for a serial unit, and `calculateCOGS` relieves the leaving unit's own layer first (`shared/cost-layer-order.ts`); callers pass the serial ids from `bookAdjustment`, `post-shipment` and `issue`. Receipt and job-output layers stay unstamped (many units per layer). A docs audit after that found the Net Investment in Leases report never counted the principal of a schedule line with no Interest row (a 0 % lease, the last line of an Advance lease closing on zero, which the drift fix no longer writes a row for), so it overstated 1160; `earnsInterest` (`shared/lessor-lease.ts`) is now the one rule for both `interestRows` and the report, which counts such a line once its date passes.
+- Task 46 (browser, evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`): scenarios re-based to September 2026 (future-dated returns are refused and Deliver stamps today). All accounting checks pass — Calendar Month advance 800.00 (16/30 × 1,500) deferral → run; arrears accrual → invoice consumes it; mileage charge; deposit 3,000 → apply 500 → refund 2,500 (2110 nets 0); 28-day best-rate returns 300 / 1,000 / 1,500 / 2,000; early-return −1,200; holdover; out-of-service return; return-to-inventory refusal; close task; utilization; the line-delete and deposit-FK fixes. Four defects found and fixed in the same pass: agreement create/edit failed (the explicit field list sent `exchangeRate: null` into a NOT NULL DEFAULT column — regression from the self-review fix); reloading `/details` hit a component-less route; the Return form never posted for an operating unit (`isSalesType=""` fails `zfd.checkbox`); a re-cut Arrears period kept its old `dueOn` (`RecutPeriod` now carries it). Not run: the next period's proposal on Oct 1 (date-bound). Environment residue in the dev company: a Draft deposit PAY-…-000004 with no agreement, four blank-serial VEH-100 units in stock.
+- Task 56 (browser, evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`): all runnable checks pass — scenario A (36 × 1,000 arrears, 6 %, option 5,000 certain, fair value 38,000; started 2026-08-01 so month 1 is due): commencement Dr 1160 37,049.24 / Dr 5010 30,000 / Cr 4070 37,049.24 / Cr 1370 30,000, selling profit 7,049.24, 36 schedule lines (185.25 / 814.75 / 36,234.49 … 5,000.00), month-1 invoice Cr 1160 1,000, run posts 185.25 interest, report ties to 1160; scenario B (three 11-month leases ended 2026-08-31): sell to customer with shortfall and excess settlements (1160 nets 0, line Sold), return to fleet and to inventory; classification rules, whole-period refusal, override with audit; the Phase C UI fixes re-confirmed. Fixed from the pass: an Advance lease closing on zero wrote a −0.00001 Interest row (one-unit drift now gets no row); the override's audit comment/doc claimed the entry needs the audit log on (it is always written); the Close dialog now says "returned or sold". Not run: months 2–36 / end-of-term sale of scenario A (date-bound); a non-zero accumulated-depreciation commencement leg (a seeded Draft depreciation run DR000001 blocks depreciation in the dev company). Return to inventory debits the item's own inventory account (1210 for a Buy item), not always Finished Goods as the spec text says.
+- Task 31 (browser, re-run on the recreated stack; evidence appended to `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`): (c) CIP postings pass — attach job Dr 1390 / Cr 1230 170, completion sweep 85, PO receipt cost row 6,000, capitalize into Machinery & Equipment Dr 1350 / Cr 1390 6,255, the in-service month's run charges 52.13; (e) out of service passes, including the On Rent refusal; (f) return to inventory Dr 1210 41,440 / Dr 1380 560 / Cr 1370 42,000 passes. Fixed from the pass: editing an asset dropped its work center (the details action's field list omitted `workCenterId`); an Under Construction asset could not be purchased (the PO / purchase invoice asset pickers and the Purchase action were Draft-only, though posting already adds CIP cost rows for it). Follow-up, fixed afterwards: a serial returned to stock was costed FIFO when later sold (`shared/calculate-cogs.ts` took the oldest layers, not the shipped serial's). `costLedger.trackedEntityId` (migration `20260923223639`) now stamps the layer `bookAdjustment` books for a serial unit, and `calculateCOGS` relieves the leaving unit's own layer first (`shared/cost-layer-order.ts`); callers pass the serial ids from `bookAdjustment`, `post-shipment` and `issue`. Receipt and job-output layers stay unstamped (many units per layer). A docs audit after that found the Net Investment in Leases report never counted the principal of a schedule line with no Interest row (a 0 % lease, the last line of an Advance lease closing on zero, which the drift fix no longer writes a row for), so it overstated 1160; `earnsInterest` (`shared/lessor-lease.ts`) is now the one rule for both `interestRows` and the report, which counts such a line once its date passes.
 
 ## Progress
 - [x] Task 1: Rebase onto main and prove the baseline is green
@@ -657,11 +657,11 @@ pnpm exec turbo run typecheck --filter=erp
    - New recognition run for period end 2026-10-31 → one Deferral line 200.00; Post → journal `Revenue Recognition` Dr 2160 200 / Cr 4010 200; run Posted; a second run for the same period is refused / empty.
    - Lock October → posting a run still works; Close October → posting fails with the period error.
    - Period close checklist for October shows "Recognize revenue for the period" failing before the run posts and passing after.
-2. Record evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-a.md`.
+2. Record evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`.
 
 **Verify:**
 ```bash
-ls .ai/runs/2026-09-22-revenue-recognition-phase-a.md
+ls .ai/runs/2026-09-22-revenue-recognition-and-rentals.md
 # Expected: file exists with the five checks marked pass
 ```
 
@@ -988,11 +988,11 @@ pnpm --filter docs build 2>&1 | tail -3
 
 **Steps:**
 1. `/auth` then `/test`: (a) create a serialized item VEH-100, a job for 2 units with Complete to = Rental Fleet, run its operations, Complete → two Active assets at the WIP cost, VEH-100 on-hand unchanged, tracked entities Consumed with the Fixed Asset attribute, journal `Asset Transfer`; (b) capitalize a stocked serial from the item inventory page → Dr 1370 / Cr 1220 at carrying cost, on-hand −1, inventory tie-out unchanged; (c) CIP: asset W-1 in the CIP class, attach an in-progress job (WIP 2,500) → Dr 1390 / Cr 1230 2,500 and a cost row; complete the job → second row; Fixed Asset PO line 6,000 invoiced → third row; Capitalize to Machinery & Equipment in-service 2026-11-01 → Dr 1350 / Cr 1390 10,000, Active, excluded from the October run, 83.33 in November; (d) link W-1 to a work center → capital-cost section shows it; (e) take VIN-001 out of service → `In Maintenance`, still depreciates, Return to service → Available; (f) Return VIN-001 to inventory at NBV → Dr 1220 / Dr 1380 / Cr 1370, entity Available, sell it on a normal sales order → revenue + COGS at NBV.
-2. Evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-b.md`.
+2. Evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`.
 
 **Verify:**
 ```bash
-ls .ai/runs/2026-09-22-revenue-recognition-phase-b.md
+ls .ai/runs/2026-09-22-revenue-recognition-and-rentals.md
 # Expected: file exists with (a)–(f) marked pass
 ```
 
@@ -1328,11 +1328,11 @@ pnpm --filter docs build 2>&1 | tail -3
 
 **Steps:**
 1. `/auth` then `/test` the spec's Phase C acceptance criteria in order: rate ladder on VEH-100; RA-000001 Calendar Month Advance (822.58 first period, deferral, October run releases it, November 1,500 proposed once); the Arrears twin (accrual in October, invoice consumes it); a 120.00 mileage charge; deposit 3,000 → apply 500 → refund 2,500 (2110 nets to 0); 28 Days Best Rate returns after 3 / 10 / 20 / 35 days (300 / 1,000 Week / 1,500 Month / 2,000); Advance early return on day 3 → −1,200 credit line posting Dr 2160 / Cr AR and the Planned row at 300; return on day 20 → no adjustment; holdover past the end date; return with out-of-service ticked → `In Maintenance`; Return to inventory blocked while on rent; close checklist fails on an un-accrued month and passes after the run; utilization report numbers for Q4.
-2. Evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-c.md`.
+2. Evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`.
 
 **Verify:**
 ```bash
-ls .ai/runs/2026-09-22-revenue-recognition-phase-c.md
+ls .ai/runs/2026-09-22-revenue-recognition-and-rentals.md
 # Expected: exists with every check marked pass
 ```
 
@@ -1500,7 +1500,7 @@ pnpm exec turbo run typecheck --filter=erp && pnpm run lint
 **Depends on:** 53, 54
 **Files:**
 - Modify: `docs/content/docs/reference/rental-agreements.mdx` (classification, sales-type commencement, purchase option, residual return), `apps/erp/app/modules/sales/AGENTS.md`, `apps/erp/app/modules/accounting/AGENTS.md` (`rentalLeaseScheduleLine`, net investment report), `.claude/rules/accounting-sync-handlers.md` (`'Lease'` policy), glossary terms `sales-type-lease`, `net-investment-in-leases`, `purchase-option`
-- Modify: `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` changelog — record the plan-level decisions 1–7 and any deviation found during execution; move to `.ai/specs/implemented/` only after Task 56 passes
+- Modify: `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` changelog — record the plan-level decisions 1–7 and any deviation found during execution; move to `.ai/specs/implemented/` only after Task 56 passes
 
 **Verify:**
 ```bash
@@ -1518,12 +1518,49 @@ pnpm --filter docs build 2>&1 | tail -3
 **Steps:**
 1. `/auth` then `/test`: RA-000002 per the spec's Sales-type AC (36 × 1,000 Arrears, option 5,000 reasonably certain, fair value 38,000, life 120, 6 %, unit from stock at 30,000): activation journal Dr 1160 37,049.24 / Dr 5010 30,000.00 / Cr 4070 37,049.24 / Cr 1220 30,000.00, `sellingProfit` 7,049.24, entity Consumed with Rental Agreement + Customer attributes, 36 schedule lines (month 1 = 185.25 / 814.75 / 36,234.49); October run posts Dr 1160 185.25 / Cr 4150 185.25; the month-1 invoice posts Dr AR 1,000 / Cr 1160 1,000; after payment 36 the closing balance is 5,000.00 ± 0.01; Sell to customer bills 5,000.00 → Dr AR / Cr 1160 → NI 0.00, line Sold. Classification AC: option not certain + fair value 60,000 → Operating; open-ended → Operating; option-certain without `endDate` rejected; override needs a reason and writes an audit entry. Net investment report ties to the 1160 balance.
 2. Run `/self-review` on the branch; fix Must-fix items; run every verification command in this plan once more; `pnpm db:check:datasets && pnpm db:check:backups`.
-3. Evidence in `.ai/runs/2026-09-22-revenue-recognition-phase-d.md`.
+3. Evidence in `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`.
 
 **Verify:**
 ```bash
-ls .ai/runs/2026-09-22-revenue-recognition-phase-d.md && pnpm exec turbo run typecheck --filter=erp && pnpm run lint
+ls .ai/runs/2026-09-22-revenue-recognition-and-rentals.md && pnpm exec turbo run typecheck --filter=erp && pnpm run lint
 # Expected: file exists with every check marked pass; exit 0 twice
 ```
 
 **Out of scope:** everything listed as out of scope in the spec's §0.
+
+## Follow-up — rental agreement document layout (2026-09-28)
+
+Brad (2026-09-28): the agreement has line items, so lay it out like a sales order /
+quote. Terms stay in the center (no editable properties panel). Ships in the rentals PR.
+
+### Shape
+
+- `x+/rental-agreement+/$id.tsx` — `PanelProvider` + top-bar header + `ResizablePanels`
+  (explorer + center `<Outlet />`, no properties panel). Model: `sales-return-order+/$id.tsx`.
+- Header (`RentalAgreementHeader`) — top bar like `SalesReturnOrderHeader`: explorer toggle,
+  id → details, copy, more menu (Delete), status + Past end date, actions
+  (Invoice / Cancel / Close / Activate, same confirms as today).
+- Explorer (`RentalAgreementExplorer`, new) — one row per unit (thumbnail, unit id, item,
+  status); click → `/$lineId/details`; row menu Delete (Draft); footer **Add Unit** opens
+  the unit form as a modal (Draft).
+- `/details` — `RentalAgreementSummary` (stat row + customer / term / billing rows), Units
+  table, Charges, Billing Periods, Deposits, then the terms form (`RentalAgreementForm`).
+- `/$lineId/details` — the unit page: status + Deliver / Return / Sell, the unit form as a
+  card (editable while Draft), then that unit's charges and billing periods.
+
+### Tasks
+
+- [x] `RentalAgreementLineForm` takes `type: "card" | "modal"`; the modal closes on submit.
+- [x] Charge and Return forms take an `action`, close on submit, open from the page
+      (no route navigation — a modal route would blank the center behind it).
+- [x] `useRentalLineActions` — one home for Deliver / Return / Sell / Delete confirms,
+      used by the units table, the explorer and the unit page.
+- [x] Header → top bar; stat card → `RentalAgreementSummary`.
+- [x] `RentalAgreementExplorer`.
+- [x] `$id.tsx` shell; `$id.details.tsx` renders the summary + terms form;
+      `$id.$lineId.details.tsx` renders the unit page.
+- [x] Line-scoped actions redirect to `requestReferrer(request)` (fall back to details) so
+      acting from the unit page stays there; line delete keeps details.
+- [x] Docs: sales `AGENTS.md` ("one scrolling page"), rental-agreements docs page.
+- [x] Verify: biome, `turbo run typecheck --filter=erp`, sales vitest (41 pass)
+- [x] Browser check — the agreement UI passed in the rental invoice automation browser run (`.ai/plans/2026-10-02-rental-invoice-automation.md` Task 21, 2026-10-03)

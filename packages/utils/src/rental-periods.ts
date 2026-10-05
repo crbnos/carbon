@@ -14,7 +14,7 @@ import {
 // Rental billing math shared by the posting functions, the app and the jobs
 // package (re-exported to Node through @carbon/utils). Pure: `YYYY-MM-DD`
 // strings and numbers in, period specs out — no database, no JS `Date`.
-// Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3.
+// Spec: .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md §3.
 
 /** A rate card: an item's or a customer's day, week and month rates. A null
  *  tier is not offered. A rental unit bills ONE of them — its frequency — at

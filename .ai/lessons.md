@@ -448,6 +448,17 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/database/supabase/migrations/` — any `CREATE OR REPLACE FUNCTION` fork; reviews of migrations that redefine shared functions (`complete_job_to_inventory`, `backflush_job_materials`, `get_inventory_quantities`, sync interceptors).
 
+**Also after a merge (2026-09-28):** a branch's migration that added the Make to Asset branch to
+`complete_job_to_inventory` and main's `20260925121735_rpc-function-guards` (forked from the
+definition before it, to add one guard line) merged cleanly — different files. In timestamp
+order main's copy ran last, so every fresh or local database lost the asset branch; production
+pushes with `--include-all`, which applies the older branch file AFTER main's, so there the
+guard went missing instead. `check-clobbers` compares against the merge base and reported
+nothing. After merging main, list main's migrations newer than your branch's oldest and grep
+them for every function and view your migrations define; for any hit, write a NEW migration
+dated after both that carries both changes (here, since folded into
+`20261004190626_complete-job-to-asset.sql`).
+
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
 **Context:** Service-job fulfillment (advance the linked salesOrderLine on completion) was first implemented in the ERP `$jobId.complete.tsx` action after the RPC call. In e2e it never ran: the operator finished the last operation, and `sync_update_job_operation_quantities` → `sync_finish_job_operation` (DB interceptors) called `complete_job_to_inventory` directly — the ERP route was never involved.
@@ -1558,7 +1569,6 @@ full-screen ERP route.
 
 **Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` / `generatePickingList`, `get_picking_schedule`, `packages/ee/src/planning/mrp/mrp.ts` (redirected BOM children), any consumer of `jobMaterial.substitutedFromItemId`.
 
-
 ## A post-insert fix-up pass must be scoped to the rows the flow inserted, not to the parent entity
 
 **Context:** `pullConsumeFirstPredecessors` in `get-method` ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
@@ -1687,7 +1697,6 @@ full-screen ERP route.
 **Rule:** Use the user's explicit adoption premise to size compatibility work. For this spec, correct the monetary contract directly; do not add legacy-accounting machinery. An unused accounting module does not imply permission to delete operational records or reset a database.
 
 **Applies to:** `.ai/specs/2026-09-07-accounting-posting-corrections.md` and its implementation; other modules require their own adoption evidence.
-
 
 ## Accounting review: carrying balances and source principal
 
@@ -2552,26 +2561,6 @@ a row whose policy also covers the other rows the transaction writes.
 **Applies to:** any service that takes both `client` and `db` and writes with
 `db` on behalf of an API or MCP caller.
 
-## A merge can clobber a branch's SQL function with a later-dated copy from main (2026-09-28)
-
-**Context:** `20260922230906_complete-job-to-asset` (branch) added the Make to Asset
-branch to `complete_job_to_inventory`; main's `20260925121735_rpc-function-guards`
-redefined the same function, forked from the definition before it, to add one guard
-line. Both merged cleanly — they are different files.
-
-**Problem:** In timestamp order main's copy runs last, so every fresh or local database
-silently lost the asset branch (a Make to Asset job received its units into inventory).
-Production pushes with `--include-all`, which applies the older branch file AFTER main's,
-so there the guard goes missing instead. `check-clobbers` compares against the merge
-base and reported nothing.
-
-**Rule:** After merging main, list main's migrations newer than your branch's oldest and
-grep them for every function and view your migrations define. For any hit, write a NEW
-migration dated after both that carries both changes; never edit either original.
-
-**Applies to:** any branch that redefines a SQL function or view main also touches —
-`complete_job_to_inventory`, the event dispatchers, the document line views.
-
 ---
 
 **Context:** Merging `origin/main` into a branch that had renamed `cardTransaction`
@@ -2896,7 +2885,6 @@ tag until proven otherwise.
 
 **Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
 
-
 ## A cast that silences excess-property errors hides failed writes
 
 **Context:** supabase-js 2.117 types reject keys a table does not have (`RejectExcessProperties`). The upgrade wrapped ~75 failing write payloads in `unchecked()` (a cast to `never`) to get typecheck green.
@@ -2906,7 +2894,6 @@ tag until proven otherwise.
 **Rule:** Never cast a typed payload past the table's type. When the compiler names an extra key, destructure it out at the write, where every caller is covered, and say where the value actually lives. `unchecked()` is only for a column or table chosen at runtime (`{ [field]: value }`, `.from(table)`). To list every extra key at once rather than one per error, probe with `Exclude<keyof Payload, keyof Database["public"]["Tables"][T]["Update"]>`.
 
 **Applies to:** every `{module}.service.ts` write, MES `services/*.service.ts`, `packages/utils/src/object.ts` (`unchecked`).
-
 
 ## A function redefined by forking its last migration picks up whatever that fork did
 
@@ -2918,7 +2905,6 @@ tag until proven otherwise.
 
 **Applies to:** `packages/database/src/event-system/functions/`, `packages/database/src/authz/helpers/`, `no-authz-ddl-in-migrations` (`@carbon/checks`).
 
-
 ## Work a request does not await is frozen with the instance on Vercel
 
 **Context:** Work-event capture (PostHog) and the GTM forward were started and not awaited, so the response would not wait for them.
@@ -2928,7 +2914,6 @@ tag until proven otherwise.
 **Rule:** Anything a request leaves running goes through `async.background(task, onError)` from `@carbon/utils`. Each app registers the host's `waitUntil` once with `async.onBackground` in `entry.server.tsx`, which keeps the instance up until that work settles. Never a bare unawaited promise, a `void` IIFE, or a `.then` chain.
 
 **Applies to:** `apps/{erp,mes}/app/entry.server.tsx`, `packages/lib/src/telemetry/capture.ts`, `packages/stripe/src/stripe.server.ts`, any new fire-and-forget call.
-
 
 ## React Router's instrumentation API can observe a request, not change it
 
@@ -2940,7 +2925,6 @@ tag until proven otherwise.
 
 **Applies to:** `packages/logger/src/middleware.server.ts`, `packages/logger/src/tracing.server.ts`, both apps' `root.tsx`.
 
-
 ## A limiter must hand a freed slot to the next waiter, not decrement and let it race
 
 **Context:** `async.limit` first released a slot by decrementing the active count and waking the first queued call.
@@ -2950,7 +2934,6 @@ tag until proven otherwise.
 **Rule:** When a slot frees and a call is queued, pass the slot to it directly and leave the count unchanged; decrement only when the queue is empty. A queued call never increments. Test it by starting a new call in the same tick a running one finishes and asserting the queued one runs first.
 
 **Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.
-
 
 ## "Come back here" must carry the query string
 
@@ -2962,7 +2945,6 @@ tag until proven otherwise.
 
 **Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
 
-
 ## A `resolve.alias` stub reaches the server bundle too
 
 **Context:** Both apps aliased `unpdf/pdfjs` to a throwing stub to keep unpdf's 1.5 MB engine out of the browser bundle, where react-pdf's `pdfjs-dist` is used instead.
@@ -2973,7 +2955,6 @@ tag until proven otherwise.
 
 **Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.
 
-
 ## A published schema default is a promise the server has to keep
 
 **Context:** API and MCP input schemas are generated from the form validators, whose `.default(0)` was written for a form that submits every field. The dispatcher applied none of them.
@@ -2983,7 +2964,6 @@ tag until proven otherwise.
 **Rule:** A default is filled or it is not published (`defaultsPolicy` / `publishDefaults`): always for a read, a create or an action, on create only for an upsert, never for an update. Before publishing or filling one, read what the service does when the field is absent, and compare with the column's own database default.
 
 **Applies to:** `scripts/lib/service-metadata.ts`, `apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`, any validator default that reaches an API schema.
-
 
 ## Every sales invoice needs an opportunity
 
@@ -3023,7 +3003,6 @@ of `salesInvoice`; backfilled by `20261002194333_sales-invoice-opportunity-backf
 **Rule:** When a page shows rows that the server computes and does not store, give each row a reference by position, not an id. Contracts use `planned:<invoiceDate>` for an invoice and `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]` for a row. The server writes the rows first, then resolves each reference against them. Test the first edit from the computed state with a database test, not from stored rows (`contract-lifecycle.test.ts`, fix commit `56fa0f7b8e`).
 
 **Applies to:** `post-customer-contract` `edit-schedule`, `ContractInvoices` / `ContractInvoiceSplitModal`, and any future editable preview that persists on first edit.
-
 
 ## Two sessions in one worktree share every uncommitted file
 

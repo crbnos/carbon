@@ -1,6 +1,6 @@
 # Revenue Recognition Core + Rental Fleet (Sell vs. Rent Manufactured Units)
 
-> Status: in-progress (open questions resolved 2026-09-22; N1–N6 accepted by Brad, N7–N16 recommended and not vetoed — see Open Questions; plan: `.ai/plans/2026-09-22-revenue-recognition-and-rentals.md`)
+> Status: implemented (2026-10-04). Phases A–D built and browser-verified (`.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`); plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md`. Open questions resolved 2026-09-22 (N1–N6 accepted by Brad, N7–N16 recommended and not vetoed).
 > Author: Claude (with Brad Barbin)
 > Date: 2026-09-22
 > Tracking issues: crbnos/carbon#1048 (revenue recognition — this spec is its Phase 1), crbnos/carbon#1056 (leases — this spec supersedes the lessor slice), crbnos/carbon#1041 (fixed assets — this spec defines the inventory→asset bridge the make/CIP work reuses), crbnos/carbon#1060 (program tracker)
@@ -720,7 +720,20 @@ Added 2026-09-22 when the tier-1 items were folded in (recommended, **pending ve
 - [x] **N15 — Out of service is two columns on `fixedAsset` with no maintenance-module integration in v1.** — **Recommended:** yes; the flag covers the daily need, and dispatch integration needs the maintenance module to accept assets as targets.
 - [x] **N16 — The schedule/run substrate keeps the `revenueRecognition*` names.** — **Recommended:** keep for now and rename to a generic accounting schedule/run in the same PR that schedules lessee accounting or prepaid amortization, if either lands within the year. Brad did not opt into the rename when asked.
 
+## Known gaps
+
+Recorded at the Phase D close-out and still open:
+
+- The MCP invoice-delete tools leave rental stamps behind.
+- Voiding a purchase-option invoice on a Closed agreement returns the line to On Rent.
+- A posted final invoice with an unposted last interest month leaves the return's closing net investment a month apart from the ledger.
+- Rental revenue legs are invisible to readers keyed on the invoice document type.
+- Intercompany elimination does not know the deferred-revenue or rental accounts.
+- Provider sync of Rental lines is unverified.
+
 ## Changelog
+
+- 2026-10-04: Implemented; moved to `implemented/`. The branch's migrations were folded into one file per change: enums `20260922225541_fleet-rental-lease-enums.sql`; tables `20260922190418_revenue-recognition-core.sql`, `20260922225830_fleet-bridge.sql`, `20260923003525_rental-agreements.sql` (now also `customerItemRentalRate`, `rentalLeaseScheduleLine`, the single-rate line and the named SET NULL FKs), `20260923223639_serial-cost-layer.sql`; `complete_job_to_inventory` in `20261004190626_complete-job-to-asset.sql`; RLS in `20261004015235_revenue-recognition-rentals-contracts-rls.sql`. Migration names in the entries below are the pre-fold ones.
 
 - 2026-10-04: Note added: capital projects (`2026-10-03-projects.md`) build on this spec's CIP asset, ledger, job sweep and `capitalizeCip`. Projects owns the widened CIP sources, the late-cost rule and the remaining-life depreciation change.
 - 2026-10-02: Decision 10's propose-only posture reversed for rentals by `.ai/specs/2026-10-02-rental-invoice-automation.md`.
@@ -738,6 +751,6 @@ Added 2026-09-22 when the tier-1 items were folded in (recommended, **pending ve
   - §2: a job attached to an asset outside a construction-in-progress class is refused; a fractional-quantity or short serial job is refused rather than capitalizing a different count. Capitalizing stock into a CIP class also writes a `fixedAssetCipCost` row. A unit on rent cannot be taken out of service.
   - §3: billing periods run from the agreement start, not the line's delivery date; the daily pass rolls every live operating line's periods forward (open-ended and holdover). Cancel deletes the Pending lines (the line status enum has no Cancelled). An Accrual row is the accrued slice (billing period ∩ month ∩ on-rent days), accrued while no POSTED invoice covers it. An early-return credit writes negative Deferral rows instead of shrinking the originals. Rental revenue legs carry `documentType 'Rental Agreement'`. There is no revenue recognition flag; deferral follows `accountingEnabled`.
   - §4: `presentValue` returns `pvRent` alongside `pvPayments`, which includes a reasonably certain option (the plan's 32,871.02 pin was the rent alone). A 28 Days lease is valued over whole 28-day periods at annual × 28/365; a mid-month Calendar Month start values one fewer period than it bills. Commencement is fleet-only (activation refuses a line without a fleet unit), so the from-inventory leg is not built; a commenced unit's asset is Disposed, so the Fleet register reads Sold while it is on lease. Interest rows are written only with accounting on. A sales-type line never rolls holdover periods. A Purchase Option invoice marks the line Sold only when it is a Sales-Type line On Rent; VOID reverts it. Sales-type return before `endDate`, and cancel of a commenced sales-type line, are refused ("Early termination of a sales-type lease is a manual journal"); the residual goes to the class named "Rental Fleet" (else the class the unit left) or to inventory. The override audit entry is `entityType "rentalAgreement"` with the reason as a diff entry, written with the service role and only when audit logging is on. The net investment report counts principal once the run has posted the schedule line's interest.
-  - Open follow-ups: MCP invoice-delete tools leave rental stamps behind; voiding a purchase-option invoice on a Closed agreement returns the line to On Rent; a posted final invoice with an unposted last interest month leaves the return's closing NI a month apart from the ledger; rental revenue legs are invisible to readers keyed on the invoice document type; intercompany elimination does not know the deferred-revenue or rental accounts; provider sync of Rental lines is unverified.
+  - Open follow-ups: see Known gaps.
 - 2026-09-22 (later): Folded in the tier-1 items from the likelihood-of-use ranking (Brad: "let's include all the 1's"): Make to Asset (the job→asset branch of `complete_job_to_inventory`) plus the #1041 CIP contract and the work-center link; the day / week / month rate ladder with per-period best rate and the 28 Days cycle (early-return adjustments, holdover); the out-of-service flag with the `In Maintenance` fleet status. New pending-veto items N10–N16.
 - 2026-09-22: Created after research (`.ai/research/2026-09-21-sell-vs-rent-rental-revenue-recognition.md`) and Brad's answers to the eight open questions; nine questions surfaced while writing recorded with recommended answers pending veto. Phases #1048 (this is Phase 1), supersedes the lessor slice of #1056, defines the inventory→asset bridge for #1041.

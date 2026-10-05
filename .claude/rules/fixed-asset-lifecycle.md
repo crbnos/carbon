@@ -40,7 +40,7 @@ Schema lives in these migrations (newest wins):
 `20260922225541_fleet-rental-lease-enums.sql`, `20260922225830_fleet-bridge.sql`,
 `20260923003525_rental-agreements.sql` (rentals, the sales-type lease schedule and the
 `fleetAssets` view) and `20261004190626_complete-job-to-asset.sql`. Design:
-`.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` §2 and §4.
+`.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` §2 and §4.
 
 ## Tables (current schema)
 

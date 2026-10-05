@@ -19,6 +19,8 @@ Routes: /x/contract/new, /x/contract/:id/details, /x/contract/:id/lines/new,
 
 ## Steps
 ### 1. New contract (/x/contract/new)
+> Stale since Phase B: /x/contract/new is now a five-step setup wizard, not one
+> page. Re-record this step on the next /test run.
 Name = first textbox; Customer = first combobox (option by name); the date groups
 are Close Date, Start Date, then First Invoice / Billed Through / Recognize Revenue
 From — click the month spinbutton and `type` MM, DD, YYYY into the three
@@ -35,7 +37,7 @@ paymentTermId, currencyCode, invoiceAutomation) — `fetch(...).url` is the new
 contract's details URL.
 
 ### 2. Lines (/x/contract/:id/lines/new)
-Service combobox (first) → option; Kind combobox ("One-time" hides Per); Quantity,
+Service combobox (first) → option; Revenue Type combobox ("One-time" hides Per); Quantity,
 Rate, Discount (%) textboxes (fill + blur); Per combobox (Month/Year/Day). The
 Revenue fields are collapsed — click the "Revenue" button to show Revenue Method.
 requestSubmit the form containing `input[name=customerContractId]`. Same fields
