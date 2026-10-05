@@ -1002,7 +1002,11 @@ export async function postDepreciationRun(
     }
 
     for (const [fixedAssetId, { asset, amount, taxAmount }] of byAsset) {
-      const newAccumulated = Number(asset.accumulatedDepreciation) + amount;
+      // Round at persist: a catch-up run adds many months, and float sums
+      // stored 20187.59999999999 for 30 months of 672.92.
+      const newAccumulated = round(
+        Number(asset.accumulatedDepreciation) + amount
+      );
       const cost = Number(asset.acquisitionCost);
       const residualValue = cost * (Number(asset.residualValuePercent) / 100);
       const nbv = cost - newAccumulated;
@@ -1018,7 +1022,7 @@ export async function postDepreciationRun(
 
       if (taxEnabled && taxAmount > 0) {
         const currentTax = Number(asset.accumulatedTaxDepreciation ?? 0);
-        assetUpdate.accumulatedTaxDepreciation = currentTax + taxAmount;
+        assetUpdate.accumulatedTaxDepreciation = round(currentTax + taxAmount);
       }
 
       await trx
