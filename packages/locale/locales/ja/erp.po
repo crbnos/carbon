@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "反対仕訳"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "実行を戻す"
 
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
@@ -21217,11 +21217,11 @@ msgstr "これにより、他のサイズのすべてのメソッドマテリア
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "これは{0}の仕訳を逆仕訳し、下書き状態に戻します。その後、再計算、転記、または削除できます。"
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "これは{0}の仕訳を逆仕訳し、各資産から減価償却を取り消し、下書き状態に戻します。その後、再計算、転記、または削除できます。"
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "{previewCount}名の人員に対して、超勤時間 +{hoursInput}h を設定します。"

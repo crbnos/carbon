@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "Ters Kayıt Yap"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "Çalıştırmayı Tersine Çevir"
 
 msgid "Reverse the related journal entries"
 msgstr "İlgili muhasebe fişi kayıtlarını ters kayıt yap"
@@ -21217,11 +21217,11 @@ msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değişt
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Bu işlem {0}'un muhasebe fişlerini tersine çevirecek ve Taslak durumuna döndürecektir. Daha sonra yeniden hesaplayabilir, muhasebeleştirebilir veya silebilirsiniz."
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Bu işlem {0}'un muhasebe fişlerini tersine çevirecek, varlıkların amortismanını geri alacak ve Taslak durumuna döndürecektir. Daha sonra yeniden hesaplayabilir, muhasebeleştirebilir veya silebilirsiniz."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Bu, {previewCount} personel için +{hoursInput}s fazla mesai ayarlayacaktır."

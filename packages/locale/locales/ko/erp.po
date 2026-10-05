@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "역분개 항목"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "역 처리"
 
 msgid "Reverse the related journal entries"
 msgstr "관련 전표를 역분개합니다."
@@ -21217,11 +21217,11 @@ msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩�
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "이것은 {0}의 전표를 역전하고 초안으로 돌려놓습니다. 그 후 재계산하거나 전기하거나 삭제할 수 있습니다."
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "이것은 {0}의 전표를 역전하고 각 자산에서 감가상각을 제거한 후 초안으로 돌려놓습니다. 그 후 재계산하거나 전기하거나 삭제할 수 있습니다."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "이것은 {previewCount} 인원에 대해 +{hoursInput}h의 초과근무를 설정합니다."

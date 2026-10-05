@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "Écriture de contrepassation"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "Annuler l'exécution"
 
 msgid "Reverse the related journal entries"
 msgstr "Inverser les écritures comptables associées"
@@ -21217,11 +21217,11 @@ msgstr "Cela remplacera tous les matériaux de méthode d'autres tailles par cet
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Cela va annuler les écritures comptables de {0} et le ramener en Brouillon. Vous pouvez alors le recalculer, le comptabiliser ou le supprimer."
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Cela va annuler les écritures comptables de {0}, retirer l'amortissement de chaque actif et le ramener en Brouillon. Vous pouvez alors le recalculer, le comptabiliser ou le supprimer."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour {previewCount} personnes."

@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "Stornierungseintrag"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "Lauf stornieren"
 
 msgid "Reverse the related journal entries"
 msgstr "Stornieren Sie die zugehörigen Buchungssatzeinträge"
@@ -21217,11 +21217,11 @@ msgstr "Dies ersetzt alle Methodenmaterialien anderer Größen durch diese Grö�
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Dies wird die Buchungssätze von {0} stornieren und es auf Entwurf zurücksetzen. Sie können es dann neu berechnen, buchen oder löschen."
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Dies wird die Buchungssätze von {0} stornieren, die Abschreibung von jedem Anlagevermögen zurückbuchen und es auf Entwurf zurücksetzen. Sie können es dann neu berechnen, buchen oder löschen."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Dies setzt +{hoursInput}h Überzeit für {previewCount} Personen."

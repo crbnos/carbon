@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "冲销凭证"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "冲销"
 
 msgid "Reverse the related journal entries"
 msgstr "反转相关凭证条目"
@@ -21217,11 +21217,11 @@ msgstr "这将用此尺寸替换其他尺寸的所有方法原材料。"
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "这将冲销{0}的凭证，并将其返回至草稿状态。之后您可以重新计算、过账或删除。"
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "这将冲销{0}的凭证，撤销每项资产的折旧，并将其返回至草稿状态。之后您可以重新计算、过账或删除。"
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "这将为 {previewCount} 人设置 +{hoursInput} 小时加班。"

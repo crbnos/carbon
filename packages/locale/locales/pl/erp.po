@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "Wpis odwrotny"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "Cofnij przebieg"
 
 msgid "Reverse the related journal entries"
 msgstr "Wycofaj powiązane wpisy w dowodach księgowych"
@@ -21217,11 +21217,11 @@ msgstr "To zastąpi wszystkie materiały metody innych rozmiarów tym rozmiarem.
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Wycofa dowody księgowe {0} i przywróci go do wersji roboczej. Możesz wtedy go przeliczać, zaksięgować lub usunąć."
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Wycofa dowody księgowe {0}, cofnie amortyzację z każdego ze środków trwałych i przywróci go do wersji roboczej. Możesz wtedy go przeliczać, zaksięgować lub usunąć."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Spowoduje to ustawienie +{hoursInput}h nadgodzin dla {previewCount} osób."

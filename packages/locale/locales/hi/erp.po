@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "प्रविष्टि को प्रतिवर्तित करें"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "रन को उलटें"
 
 msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
@@ -21217,11 +21217,11 @@ msgstr "यह अन्य आकारों की सभी विधि स
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "यह {0} के जर्नल को उलटेगा और इसे ड्राफ्ट में वापस करेगा। आप फिर इसे पुनर्गणना कर सकते हैं, पोस्ट कर सकते हैं या हटा सकते हैं।"
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "यह {0} के जर्नल को उलटेगा, हर संपत्ति से इसका मूल्यह्रास वापस लेगा और इसे ड्राफ्ट में वापस करेगा। आप फिर इसे पुनर्गणना कर सकते हैं, पोस्ट कर सकते हैं या हटा सकते हैं।"
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "यह +{hoursInput}h अतिरिक्त समय {previewCount} लोगों के लिए सेट करेगा।"

@@ -17050,7 +17050,7 @@ msgid "Reverse Entry"
 msgstr "Asiento de reversión"
 
 msgid "Reverse Run"
-msgstr ""
+msgstr "Revertir ejecución"
 
 msgid "Reverse the related journal entries"
 msgstr "Revertir los asientos de diario relacionados"
@@ -21217,11 +21217,11 @@ msgstr "Esto reemplazará todos los materiales de método de otros tamaños con 
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Esto revertirá los asientos de {0} y lo devolverá a Borrador. Luego puede recalcular, contabilizar o eliminarlo."
 
 #. placeholder {0}: run.depreciationRunId
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
-msgstr ""
+msgstr "Esto revertirá los asientos de {0}, quitará su depreciación de cada activo y lo devolverá a Borrador. Luego puede recalcular, contabilizar o eliminarlo."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Esto establecerá +{hoursInput}h de tiempo extra para {previewCount} personas."
