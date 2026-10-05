@@ -546,6 +546,9 @@ msgstr "available"
 msgid "Available"
 msgstr "Available"
 
+msgid "Back"
+msgstr "Back"
+
 msgid "Back to batch"
 msgstr "Back to batch"
 
@@ -914,6 +917,9 @@ msgstr "Could not load operations"
 
 msgid "Could not load the issue types."
 msgstr "Could not load the issue types."
+
+msgid "Could not load the job"
+msgstr "Could not load the job"
 
 msgid "Could not load the jobs"
 msgstr "Could not load the jobs"
@@ -1911,6 +1917,9 @@ msgstr "No open jobs"
 msgid "No open units to allocate"
 msgstr "No open units to allocate"
 
+msgid "No operations"
+msgstr "No operations"
+
 msgid "No operators"
 msgstr "No operators"
 
@@ -2166,12 +2175,17 @@ msgstr "Open a job in this batch"
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
 
+#. placeholder {0}: job.jobId
+msgid "Open job {0}"
+msgstr "Open job {0}"
+
 msgid "Open Jobs"
 msgstr "Open Jobs"
 
 msgid "Open More"
 msgstr "Open More"
 
+#. placeholder {0}: operation.description ?? ""
 #. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
 msgid "Open operation {0}"
 msgstr "Open operation {0}"
@@ -3351,6 +3365,9 @@ msgstr "This is past its expiry date. Give a reason to issue it anyway."
 
 msgid "This is the current week"
 msgstr "This is the current week"
+
+msgid "This job has no operations yet."
+msgstr "This job has no operations yet."
 
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "This line asks for {0} {unit}."

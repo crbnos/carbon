@@ -546,6 +546,9 @@ msgstr "가용"
 msgid "Available"
 msgstr "가용"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "배치로 돌아가기"
 
@@ -913,6 +916,9 @@ msgid "Could not load operations"
 msgstr ""
 
 msgid "Could not load the issue types."
+msgstr ""
+
+msgid "Could not load the job"
 msgstr ""
 
 msgid "Could not load the jobs"
@@ -1911,6 +1917,9 @@ msgstr "미결 작업 지시가 없습니다"
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
 
+msgid "No operations"
+msgstr ""
+
 msgid "No operators"
 msgstr "작업자 없음"
 
@@ -2166,12 +2175,17 @@ msgstr "이 배치에서 작업 지시 열기"
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 
+#. placeholder {0}: job.jobId
+msgid "Open job {0}"
+msgstr ""
+
 msgid "Open Jobs"
 msgstr "작업 지시 열기"
 
 msgid "Open More"
 msgstr ""
 
+#. placeholder {0}: operation.description ?? ""
 #. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
 msgid "Open operation {0}"
 msgstr ""
@@ -3350,6 +3364,9 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
+msgstr ""
+
+msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

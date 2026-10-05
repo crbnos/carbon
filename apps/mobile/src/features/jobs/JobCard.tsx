@@ -4,8 +4,10 @@
 
 import type { OpenJob } from "@carbon/mes-core";
 import { useLingui } from "@lingui/react/macro";
+import { router } from "expo-router";
 import { Hash, Package, User } from "lucide-react-native";
 import { Text, View } from "react-native";
+import { PressableScale } from "~/components/PressableScale";
 import { StatusBadge } from "~/components/StatusBadge";
 import { Card, Muted } from "~/components/ui";
 import { useThemeColors } from "~/components/useThemeColor";
@@ -20,9 +22,9 @@ import { useThemeColors } from "~/components/useThemeColor";
  * that identify a job (its number and the part) on one line and lets the
  * rest wrap.
  *
- * It is NOT pressable. Web's job number links to the job DAG, which has no
- * mobile screen; a card that highlights on touch and then does nothing is
- * worse than one that plainly does not respond.
+ * Tapping it opens the job's operations, which is what web's job number
+ * does — it links to the job DAG, where tapping a node opens that operation.
+ * This app shows that as a list rather than a graph; `job/[id].tsx` says why.
  */
 export function JobCard({
   job,
@@ -36,47 +38,53 @@ export function JobCard({
   const colors = useThemeColors();
 
   return (
-    <Card className="gap-2">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="min-w-0 flex-1">
-          <Muted className="text-xs">{job.itemReadableIdWithRevision}</Muted>
-          <Text className="text-base font-semibold text-foreground">
-            {job.jobId}
-          </Text>
-          {job.name ? (
-            <Muted className="text-sm" numberOfLines={2}>
-              {job.name}
-            </Muted>
-          ) : null}
-        </View>
-        {/* `job`, not `jobOperation`: these are jobs, and the two maps
+    <PressableScale
+      onPress={() => router.push(`/(app)/job/${job.id}` as never)}
+      accessibilityRole="button"
+      accessibilityLabel={t`Open job ${job.jobId}`}
+    >
+      <Card className="gap-2">
+        <View className="flex-row items-start justify-between gap-3">
+          <View className="min-w-0 flex-1">
+            <Muted className="text-xs">{job.itemReadableIdWithRevision}</Muted>
+            <Text className="text-base font-semibold text-foreground">
+              {job.jobId}
+            </Text>
+            {job.name ? (
+              <Muted className="text-sm" numberOfLines={2}>
+                {job.name}
+              </Muted>
+            ) : null}
+          </View>
+          {/* `job`, not `jobOperation`: these are jobs, and the two maps
             disagree — a job is Planned/Ready/Completed where an operation is
             Waiting/In Progress/Done. */}
-        {job.status ? <StatusBadge entity="job" status={job.status} /> : null}
-      </View>
+          {job.status ? <StatusBadge entity="job" status={job.status} /> : null}
+        </View>
 
-      <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
-        <Fact
-          icon={<Package size={14} color={colors.mutedForeground} />}
-          label={t`Quantity`}
-          value={`${job.quantityComplete ?? 0} / ${job.quantity ?? 0}`}
-        />
-        {trackingId ? (
+        <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
           <Fact
-            icon={<Hash size={14} color={colors.mutedForeground} />}
-            label={t`Tracking`}
-            value={trackingId}
+            icon={<Package size={14} color={colors.mutedForeground} />}
+            label={t`Quantity`}
+            value={`${job.quantityComplete ?? 0} / ${job.quantity ?? 0}`}
           />
-        ) : null}
-        {job.assignee ? (
-          <Fact
-            icon={<User size={14} color={colors.mutedForeground} />}
-            label={t`Assignee`}
-            value={job.assignee}
-          />
-        ) : null}
-      </View>
-    </Card>
+          {trackingId ? (
+            <Fact
+              icon={<Hash size={14} color={colors.mutedForeground} />}
+              label={t`Tracking`}
+              value={trackingId}
+            />
+          ) : null}
+          {job.assignee ? (
+            <Fact
+              icon={<User size={14} color={colors.mutedForeground} />}
+              label={t`Assignee`}
+              value={job.assignee}
+            />
+          ) : null}
+        </View>
+      </Card>
+    </PressableScale>
   );
 }
 

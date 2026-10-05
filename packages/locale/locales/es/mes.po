@@ -546,6 +546,9 @@ msgstr "disponible"
 msgid "Available"
 msgstr "Disponible"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "Volver al lote de producción"
 
@@ -913,6 +916,9 @@ msgid "Could not load operations"
 msgstr ""
 
 msgid "Could not load the issue types."
+msgstr ""
+
+msgid "Could not load the job"
 msgstr ""
 
 msgid "Could not load the jobs"
@@ -1911,6 +1917,9 @@ msgstr "Sin órdenes de trabajo abiertas"
 msgid "No open units to allocate"
 msgstr "No hay unidades abiertas para asignar"
 
+msgid "No operations"
+msgstr ""
+
 msgid "No operators"
 msgstr "Sin operadores"
 
@@ -2166,12 +2175,17 @@ msgstr "Abrir una orden de trabajo en este lote de producción"
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir un NCR para la disposición de MRB"
 
+#. placeholder {0}: job.jobId
+msgid "Open job {0}"
+msgstr ""
+
 msgid "Open Jobs"
 msgstr "Órdenes de trabajo abiertas"
 
 msgid "Open More"
 msgstr ""
 
+#. placeholder {0}: operation.description ?? ""
 #. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
 msgid "Open operation {0}"
 msgstr ""
@@ -3350,6 +3364,9 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
+msgstr ""
+
+msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

@@ -479,6 +479,52 @@ export const jobsScreen = z
   .passthrough();
 export type JobsScreen = z.infer<typeof jobsScreen>;
 
+/**
+ * One operation of a job, for the job's own screen.
+ *
+ * Narrower than `operationCard`: this list exists to get an operator INTO an
+ * operation, so it carries what identifies one and what says how far along
+ * it is, and nothing else.
+ */
+export const jobOperationSummary = z
+  .object({
+    id: z.string(),
+    description: z.string().nullable().optional(),
+    status: z.string().nullable().optional(),
+    order: z.number().nullable().optional(),
+    operationType: z.string().nullable().optional(),
+    workCenterId: z.string().nullable().optional(),
+    quantityComplete: z.number().nullable().optional(),
+    operationQuantity: z.number().nullable().optional()
+  })
+  .passthrough();
+export type JobOperationSummary = z.infer<typeof jobOperationSummary>;
+
+export const jobScreen = z
+  .object({
+    job: z
+      .object({
+        id: z.string(),
+        jobId: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        quantity: z.number().nullable().optional(),
+        quantityComplete: z.number().nullable().optional(),
+        dueDate: z.string().nullable().optional()
+      })
+      .passthrough(),
+    operations: z.array(jobOperationSummary),
+    /**
+     * `operationId` depends on `dependsOnId`. Web draws this as the edges of
+     * a graph; a client that cannot draw one still needs it to put the
+     * operations in the order they actually run.
+     */
+    dependencies: z.array(
+      z.object({ operationId: z.string(), dependsOnId: z.string() })
+    )
+  })
+  .passthrough();
+export type JobScreen = z.infer<typeof jobScreen>;
+
 export const operationQueueScreen = z
   .object({
     operations: z.array(operationQueueItem)

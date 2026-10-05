@@ -546,6 +546,9 @@ msgstr "उपलब्ध"
 msgid "Available"
 msgstr "उपलब्ध"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "बैच पर वापस"
 
@@ -913,6 +916,9 @@ msgid "Could not load operations"
 msgstr ""
 
 msgid "Could not load the issue types."
+msgstr ""
+
+msgid "Could not load the job"
 msgstr ""
 
 msgid "Could not load the jobs"
@@ -1911,6 +1917,9 @@ msgstr "कोई खुली जॉब नहीं"
 msgid "No open units to allocate"
 msgstr "आवंटित करने के लिए कोई खुली इकाई नहीं"
 
+msgid "No operations"
+msgstr ""
+
 msgid "No operators"
 msgstr "कोई ऑपरेटर नहीं"
 
@@ -2166,12 +2175,17 @@ msgstr "इस बैच में एक जॉब खोलें"
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
 
+#. placeholder {0}: job.jobId
+msgid "Open job {0}"
+msgstr ""
+
 msgid "Open Jobs"
 msgstr "खुली जॉब्स"
 
 msgid "Open More"
 msgstr ""
 
+#. placeholder {0}: operation.description ?? ""
 #. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
 msgid "Open operation {0}"
 msgstr ""
@@ -3350,6 +3364,9 @@ msgid "This is past its expiry date. Give a reason to issue it anyway."
 msgstr ""
 
 msgid "This is the current week"
+msgstr ""
+
+msgid "This job has no operations yet."
 msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)

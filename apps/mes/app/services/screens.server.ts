@@ -43,8 +43,10 @@ import {
   getJobOperationBatch,
   getJobOperationBatchMembers,
   getJobOperationById,
+  getJobOperationDependencies,
   getJobOperationForCompany,
   getJobOperationProcedure,
+  getJobOperations,
   getJobOperationsAssignedToEmployee,
   getKanbanByJobId,
   getModelUploadsByIds,
@@ -640,6 +642,56 @@ export async function getJobsScreen(
 }
 
 export type JobsScreen = Awaited<ReturnType<typeof getJobsScreen>>["data"];
+
+/**
+ * One job and the operations it is made of — `x+/job.$jobId.tsx`'s loader.
+ *
+ * The company check is FIRST and is not optional. Every read below is keyed
+ * on `jobId` alone with the service role, so without it an operator could
+ * read another tenant's job by its id. `mes-mobile-api.md` names this
+ * exactly: a route permission proves the CALLER may act in a company, never
+ * that the RECORD belongs to it.
+ *
+ * `dependencies` is what makes the operations a sequence rather than a bag.
+ * Web draws it as a graph; a caller that cannot draw one can still order by
+ * it.
+ */
+export async function getJobScreen(
+  client: SupabaseClient<Database>,
+  args: { jobId: string; companyId: string }
+) {
+  const job = await client
+    .from("job")
+    .select("id, jobId, status, quantity, quantityComplete, dueDate")
+    .eq("id", args.jobId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (!job.data) {
+    log.warn("Job not found in company", {
+      companyId: args.companyId,
+      jobId: args.jobId,
+      error: job.error
+    });
+    return failed({ kind: "not_found", message: "That job is not available" });
+  }
+
+  const [operations, dependencies] = await Promise.all([
+    getJobOperations(client, args.jobId),
+    getJobOperationDependencies(client, args.jobId)
+  ]);
+
+  return ok({
+    job: job.data,
+    operations: operations.data ?? [],
+    dependencies: dependencies.data ?? []
+  });
+}
+
+export type JobScreen = Extract<
+  Awaited<ReturnType<typeof getJobScreen>>,
+  { ok: true }
+>["data"];
 
 // ---------------------------------------------------------------------------
 // Operation detail
