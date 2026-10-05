@@ -17,6 +17,7 @@ import { DocumentPageHeader } from "~/components/DocumentPage";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { JournalEntry } from "~/modules/accounting";
+import { RUN_JOURNAL_SOURCES } from "~/modules/accounting";
 import { path } from "~/utils/path";
 import { journalEntryFormId, useJournalEntryCanPost } from "./JournalEntryForm";
 import JournalEntryStatus from "./JournalEntryStatus";
@@ -45,7 +46,11 @@ const JournalEntryHeader = () => {
   const isDraft = status === "Draft";
   const isPosted = status === "Posted";
 
-  const canReverse = isPosted && permissions.can("create", "accounting");
+  // A run's journal is reversed through its run (Reverse Run), not here.
+  const canReverse =
+    isPosted &&
+    permissions.can("create", "accounting") &&
+    !RUN_JOURNAL_SOURCES[journalEntry.sourceType ?? ""];
 
   return (
     <>

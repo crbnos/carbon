@@ -1119,3 +1119,10 @@ export const fixedAssetCapitalizeCipValidator = z.object({
 export const fixedAssetOutOfServiceValidator = z.object({
   reason: z.string().trim().min(1, { message: "Reason is required" })
 });
+
+/** Journal source types that only their period run may reverse: a plain
+ *  reversal would leave the revenue schedule or the assets behind. */
+export const RUN_JOURNAL_SOURCES: Record<string, string> = {
+  "Revenue Recognition": "revenue recognition",
+  "Asset Depreciation": "depreciation"
+};

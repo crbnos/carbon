@@ -40,7 +40,7 @@ Terms used in this plan:
 - [x] Task 11: Allow more than one revenue recognition run per period
 - [x] Task 12: Add Reverse Run for revenue recognition (also refuses while another Draft holds the period; resets contract ledger entries and revenue months)
 - [x] Task 13: Add Reverse Run for depreciation
-- [ ] Task 14: Refuse generic reversal of run journals
+- [x] Task 14: Refuse generic reversal of run journals (`RUN_JOURNAL_SOURCES` lives in `accounting.models.ts`, shared by the service and the header)
 - [ ] Task 15: Update AGENTS.md and the fixed-asset rule
 - [ ] Task 16: Verify in the browser
 

@@ -57,7 +57,10 @@ import type {
   projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
-import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "./accounting.models";
+import {
+  CONSTRUCTION_IN_PROGRESS_ENABLED,
+  RUN_JOURNAL_SOURCES
+} from "./accounting.models";
 import { diffJournalLines } from "./accounting.utils";
 import type {
   AccountLedgerLine,
@@ -6598,6 +6601,18 @@ export async function reverseJournalEntry(
     return {
       data: null,
       error: { message: "Can only reverse posted journal entries" }
+    };
+  }
+  // A run's journal is reversed through its run: reversing the journal alone
+  // leaves the revenue schedule rows Posted (that revenue could never be
+  // recognized again) or the asset's accumulated depreciation raised.
+  const runReversal = RUN_JOURNAL_SOURCES[original.data.sourceType ?? ""];
+  if (runReversal) {
+    return {
+      data: null,
+      error: {
+        message: `This journal belongs to a ${runReversal} run. Reverse the run instead, so its schedule and assets stay correct.`
+      }
     };
   }
 
