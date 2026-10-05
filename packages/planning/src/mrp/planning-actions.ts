@@ -36,7 +36,7 @@ import { getLogger } from "@carbon/logger";
 import { computePlanningOrders, datetime, equals, round } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
 import {
@@ -675,6 +675,147 @@ export function diffPlanningActions(args: {
   return { inserts, updates, deleteIds };
 }
 
+/**
+ * The Postgres type of every column a diff patch can set: the cast each
+ * `VALUES` column needs, since a bound parameter arrives untyped. A patch key
+ * missing here is a programming error and throws before anything is written.
+ */
+const PATCH_COLUMN_TYPES: Record<string, string> = {
+  periodId: "text",
+  horizonDate: "date",
+  latestOrderDate: "date",
+  status: '"planningActionStatus"',
+  suggestedQuantity: "numeric",
+  suggestedDate: "date",
+  isASAP: "boolean",
+  requiresManualAction: "boolean",
+  supplierId: "text",
+  policyName: "text",
+  reason: "text",
+  triggerValues: "jsonb",
+  assignee: "text"
+};
+
+/**
+ * Writes one run's diff inside the caller's transaction.
+ *
+ * The run read the actions before it computed this diff, so a row a planner
+ * applied in between still reads as Open or Dismissed here. Every DELETE and
+ * UPDATE therefore skips `Actioned` rows itself: without that, the run deleted
+ * an applied action (and its claim) or reopened it with a `status: "Open"`
+ * patch, offering it to be applied twice.
+ *
+ * Updates are grouped by the columns they change and sent as one
+ * `UPDATE … FROM (VALUES …)` per group and chunk. They were one statement per
+ * row — thousands of round trips on the weekly roll of the first period, with
+ * the transaction holding a connection of the job pool throughout. Each row
+ * keeps its own patch: writing every column would also move a dismissed row's
+ * stored quantity, and a changed need would then never cross the tolerance.
+ */
+export async function writePlanningActionDiff(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    diff: PlanningActionDiff;
+    updatedAt: string;
+  }
+): Promise<void> {
+  const { companyId, userId, diff, updatedAt } = args;
+
+  for (let i = 0; i < diff.deleteIds.length; i += BATCH_SIZE) {
+    await trx
+      .deleteFrom("planningAction")
+      .where("companyId", "=", companyId)
+      .where("status", "!=", "Actioned")
+      .where("id", "in", diff.deleteIds.slice(i, i + BATCH_SIZE))
+      .execute();
+  }
+
+  const groups = new Map<string, PlanningActionDiff["updates"]>();
+  for (const update of diff.updates) {
+    const shape = Object.keys(update.patch).sort().join(",");
+    const group = groups.get(shape);
+    if (group) group.push(update);
+    else groups.set(shape, [update]);
+  }
+
+  for (const [shape, rows] of groups) {
+    const columns = shape.split(",");
+    for (const column of columns) {
+      if (!PATCH_COLUMN_TYPES[column]) {
+        throw new Error(`No column type for planning action patch "${column}"`);
+      }
+    }
+    const assignments = sql.join(
+      columns.map(
+        (column) =>
+          sql`${sql.id(column)} = v.${sql.id(column)}::${sql.raw(
+            PATCH_COLUMN_TYPES[column]!
+          )}`
+      )
+    );
+    const valueColumns = sql.join(["id", ...columns].map((c) => sql.id(c)));
+
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const values = sql.join(
+        rows.slice(i, i + BATCH_SIZE).map(
+          (row) =>
+            sql`(${sql.join([
+              row.id,
+              ...columns.map((column) => {
+                const value = row.patch[column] ?? null;
+                return column === "triggerValues" && value !== null
+                  ? JSON.stringify(value)
+                  : value;
+              })
+            ])})`
+        )
+      );
+      await sql`
+        UPDATE "planningAction" AS t
+        SET ${assignments}, "updatedBy" = ${userId}, "updatedAt" = ${updatedAt}
+        FROM (VALUES ${values}) AS v(${valueColumns})
+        WHERE t."id" = v."id"
+          AND t."companyId" = ${companyId}
+          AND t."status" <> 'Actioned'
+      `.execute(trx);
+    }
+  }
+
+  for (let i = 0; i < diff.inserts.length; i += BATCH_SIZE) {
+    const chunk = diff.inserts.slice(i, i + BATCH_SIZE);
+    await trx
+      .insertInto("planningAction")
+      .values(
+        chunk.map((candidate) => ({
+          companyId,
+          itemId: candidate.itemId,
+          locationId: candidate.locationId,
+          periodId: candidate.periodId,
+          type: candidate.type,
+          suggestedQuantity: candidate.suggestedQuantity,
+          suggestedDate: candidate.suggestedDate,
+          horizonDate: candidate.horizonDate,
+          latestOrderDate: candidate.latestOrderDate,
+          isASAP: candidate.isASAP,
+          purchaseOrderLineId: candidate.purchaseOrderLineId,
+          jobId: candidate.jobId,
+          requiresManualAction: candidate.requiresManualAction,
+          supplierId: candidate.supplierId,
+          policyName: candidate.policyName,
+          reason: candidate.reason,
+          triggerValues: candidate.triggerValues
+            ? JSON.stringify(candidate.triggerValues)
+            : null,
+          assignee: candidate.assignee,
+          createdBy: userId
+        }))
+      )
+      .execute();
+  }
+}
+
 // ──────────────────────────────────────────────────────────────
 // Orchestrator
 // ──────────────────────────────────────────────────────────────
@@ -1171,61 +1312,14 @@ export async function generatePlanningActions(
     toleranceDays
   });
 
-  await db.transaction().execute(async (trx) => {
-    for (let i = 0; i < diff.deleteIds.length; i += BATCH_SIZE) {
-      const chunk = diff.deleteIds.slice(i, i + BATCH_SIZE);
-      await trx
-        .deleteFrom("planningAction")
-        .where("companyId", "=", companyId)
-        .where("id", "in", chunk)
-        .execute();
-    }
-
-    for (const update of diff.updates) {
-      await trx
-        .updateTable("planningAction")
-        .set({
-          ...update.patch,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("companyId", "=", companyId)
-        .where("id", "=", update.id)
-        .execute();
-    }
-
-    for (let i = 0; i < diff.inserts.length; i += BATCH_SIZE) {
-      const chunk = diff.inserts.slice(i, i + BATCH_SIZE);
-      await trx
-        .insertInto("planningAction")
-        .values(
-          chunk.map((candidate) => ({
-            companyId,
-            itemId: candidate.itemId,
-            locationId: candidate.locationId,
-            periodId: candidate.periodId,
-            type: candidate.type,
-            suggestedQuantity: candidate.suggestedQuantity,
-            suggestedDate: candidate.suggestedDate,
-            horizonDate: candidate.horizonDate,
-            latestOrderDate: candidate.latestOrderDate,
-            isASAP: candidate.isASAP,
-            purchaseOrderLineId: candidate.purchaseOrderLineId,
-            jobId: candidate.jobId,
-            requiresManualAction: candidate.requiresManualAction,
-            supplierId: candidate.supplierId,
-            policyName: candidate.policyName,
-            reason: candidate.reason,
-            triggerValues: candidate.triggerValues
-              ? JSON.stringify(candidate.triggerValues)
-              : null,
-            assignee: candidate.assignee,
-            createdBy: userId
-          }))
-        )
-        .execute();
-    }
-  });
+  await db.transaction().execute((trx) =>
+    writePlanningActionDiff(trx, {
+      companyId,
+      userId,
+      diff,
+      updatedAt: datetime.timestamp()
+    })
+  );
 
   logger.info("planning actions written", {
     companyId,

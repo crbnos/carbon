@@ -236,6 +236,11 @@ export function computePlanningOrders(
           const orderQuantity =
             reorderQuantity > 0 ? reorderQuantity : reorderPoint;
 
+          // Both left at 0 on a short item: ordering 0 covers nothing, so the
+          // loop emitted an "Order 0" for every short day and week. Nothing to
+          // size from — suggest nothing, as Maximum Quantity does.
+          if (orderQuantity <= 0) break;
+
           orders.push({
             startDate: startDate.toString(),
             dueDate: dueDate.toString(),

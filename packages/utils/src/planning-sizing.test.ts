@@ -202,6 +202,19 @@ describe("computePlanningOrders", () => {
       });
       expect(orders.map((o) => o.quantity)).toEqual([10]);
     });
+
+    // Both settings at their default 0 on a short item ordered 0, five times
+    // per short week, and every one became an "Order 0" planning action.
+    it("suggests nothing when both the reorder point and quantity are 0", () => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Fixed Reorder Quantity",
+        periods: weeklyPeriods(["2026-10-05", "2026-10-12"]),
+        projections: [-20, -20],
+        todayDate: TODAY,
+        params: params({ reorderPoint: 0, reorderQuantity: 0 })
+      });
+      expect(orders).toEqual([]);
+    });
   });
 
   describe("Maximum Quantity", () => {

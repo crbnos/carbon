@@ -199,7 +199,18 @@ Phase-7 write) and throws on failure.
      `generatePlanningActions` (`planning-actions.ts`), which diff-writes the
      `planningAction` worklist in its own transaction. Its errors propagate, so
      a run whose actions failed reports failure even though the forecast rows
-     are already committed.
+     are already committed. The write is `writePlanningActionDiff`
+     (RecordingDriver-tested in `planning-actions.write.test.ts`): its DELETE
+     and UPDATE skip `Actioned` rows themselves, because the run read the
+     actions before diffing and a row applied in between would otherwise be
+     deleted or reopened. Updates go as one `UPDATE … FROM (VALUES …)` per set
+     of changed columns (cast through `PATCH_COLUMN_TYPES`), never one per row,
+     and each row keeps its own patch — writing every column would drift a
+     dismissed row's stored quantity so a changed need never reopens it.
+     The shared sizing (`computePlanningOrders`, `@carbon/utils`) suggests
+     nothing when a policy's order quantity comes out 0 — a Fixed Reorder
+     Quantity item with reorder point and quantity both 0 used to emit an
+     "Order 0" action for every short week.
 
 ## Planning data model (tables — all in newest schema)
 
