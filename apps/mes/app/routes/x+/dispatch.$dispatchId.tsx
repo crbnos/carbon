@@ -21,7 +21,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { groupBy, isUnaffectedByNavigation } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
@@ -99,22 +99,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     replacementParts = parts.data ?? [];
   }
 
-  // Fetch tracked entities for each item
-  const itemTrackedEntities: Record<
-    string,
-    Awaited<
-      ReturnType<typeof getMaintenanceDispatchItemTrackedEntities>
-    >["data"]
-  > = {};
-  if (items.data) {
-    for (const item of items.data) {
-      const trackedEntities = await getMaintenanceDispatchItemTrackedEntities(
+  // Tracked entities for every item, in one read
+  const trackedEntities = items.data?.length
+    ? await getMaintenanceDispatchItemTrackedEntities(
         client,
-        item.id
-      );
-      itemTrackedEntities[item.id] = trackedEntities.data ?? [];
-    }
-  }
+        items.data.map((item) => item.id)
+      )
+    : null;
+  const trackedEntitiesByItem = groupBy(
+    trackedEntities?.data ?? [],
+    (row) => row.maintenanceDispatchItemId
+  );
+  const itemTrackedEntities = Object.fromEntries(
+    (items.data ?? []).map((item) => [
+      item.id,
+      trackedEntitiesByItem[item.id] ?? []
+    ])
+  );
 
   return {
     dispatch: dispatch.data,
