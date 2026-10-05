@@ -12,10 +12,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import {
   type Cursor,
+  expiredStoredKeys,
   type LoggedChanges,
   oldestCursor,
   planSync,
   removeRows,
+  staleStoredKeys,
+  storedAtKey,
+  storedListKey,
+  storedListKeys,
   upsertRows
 } from "./liveList";
 import type { BroadcastChange } from "./useRealtime";
@@ -68,6 +73,8 @@ type AnyRow = { id: string };
 export type LiveListStorage = {
   getItem: (key: string) => Promise<unknown>;
   setItem: (key: string, value: unknown) => Promise<unknown>;
+  removeItem: (key: string) => Promise<unknown>;
+  keys: () => Promise<string[]>;
 };
 
 type Stored = { rows: AnyRow[]; cursor: Cursor | null };
@@ -84,8 +91,16 @@ const storageKey = (companyId: string, name: string) => `${name}:${companyId}`;
 // The stored copy also carries the user: it is that user's view of the list
 // (table RLS chose the rows), and the next person at this browser starts from
 // the server rather than from someone else's rows.
-const storedKey = (companyId: string, userId: string, name: string) =>
-  `${storageKey(companyId, name)}:${userId}`;
+const storedKey = storedListKey;
+
+/** Remove a stored list and the write time kept beside it. */
+// How often an open page checks its stored lists and asks the log again.
+const BACKGROUND_CHECK_MS = 60 * 60 * 1000;
+
+const forget = (idb: LiveListStorage, key: string) =>
+  Promise.all([idb.removeItem(key), idb.removeItem(storedAtKey(key))]);
+// What Postgres answers when `table_changes_since` refuses the caller.
+const NOT_A_MEMBER = "42501";
 
 // A copy written before lists had a cursor is a bare array (or carries a
 // checksum instead): its rows are still good to show, with no cursor.
@@ -149,11 +164,17 @@ function Subscription({
 export function LiveLists({
   companyId,
   userId,
+  companyIds,
   lists,
   storage
 }: {
   companyId: string;
   userId: string;
+  /**
+   * Every company the user belongs to. Lists stored on this device for any
+   * other company, or for another user, are removed when the page loads.
+   */
+  companyIds: string[];
   lists: AnyLiveList[];
   storage: () => Promise<LiveListStorage>;
 }) {
@@ -163,6 +184,9 @@ export function LiveLists({
   // after a company switch belongs to the old company and is dropped.
   const active = useRef(companyId);
   active.current = companyId;
+  // Read when the page loads; a new array each render must not reload the lists.
+  const memberOf = useRef(companyIds);
+  memberOf.current = companyIds;
   // Each list's cursor, per company (a company switch keeps this mounted):
   // where the change log is asked to start next time.
   const cursors = useRef(new Map<string, Cursor | null>());
@@ -190,7 +214,8 @@ export function LiveLists({
   );
 
   /**
-   * Change a list's rows in the cache, then store them with the list's cursor.
+   * Change a list's rows in the cache and, when the change log was read, store
+   * them with the cursor it handed back.
    * The change is a function of the rows as they are NOW: two re-reads that
    * finish in either order both land, where a value computed before the read
    * would overwrite the other's rows.
@@ -208,17 +233,20 @@ export function LiveLists({
         liveListKey(companyId, list.name),
         (current) => change(current ?? [])
       );
-      if (cursor) cursors.current.set(storageKey(companyId, list.name), cursor);
-      const stored: Stored = {
-        rows: rows ?? [],
-        cursor: cursors.current.get(storageKey(companyId, list.name)) ?? null
-      };
+      // A broadcast's patch is not stored. It does not move the cursor, so the
+      // next load asks the log from the same place and re-reads these rows
+      // whether or not the stored copy had them; and storing means writing the
+      // whole list (about 150 ms of blocked page for 150,000 items) per change.
+      if (!cursor) return;
+      cursors.current.set(storageKey(companyId, list.name), cursor);
+      const stored: Stored = { rows: rows ?? [], cursor };
       // The stored copy only speeds up the next load.
       try {
-        await (await storage()).setItem(
-          storedKey(companyId, userId, list.name),
-          stored
-        );
+        const idb = await storage();
+        const key = storedKey(companyId, userId, list.name);
+        await idb.setItem(key, stored);
+        // An absolute instant, only ever compared with another one.
+        await idb.setItem(storedAtKey(key), Date.now());
       } catch (error) {
         logger.warn("live list not stored", { list: list.name, error });
       }
@@ -274,6 +302,18 @@ export function LiveLists({
         p_epoch: since?.epoch,
         p_at: since?.at
       });
+      if (error?.code === NOT_A_MEMBER) {
+        // The user left this company while the page was open: nothing of its
+        // lists stays in memory or on the device.
+        logger.warn("live lists dropped: no longer a member", { companyId });
+        const idb = await storage();
+        for (const list of lists) {
+          queryClient.setQueryData(liveListKey(companyId, list.name), []);
+          cursors.current.delete(storageKey(companyId, list.name));
+          await forget(idb, storedKey(companyId, userId, list.name));
+        }
+        return;
+      }
       if (error) throw error;
       if (active.current !== companyId) return;
       const log = data as unknown as LoggedChanges;
@@ -310,7 +350,45 @@ export function LiveLists({
         )
       );
     },
-    [carbon, companyId, rowsOf, readIds, commit, inTurn]
+    [
+      carbon,
+      companyId,
+      userId,
+      lists,
+      storage,
+      queryClient,
+      rowsOf,
+      readIds,
+      commit,
+      inTurn
+    ]
+  );
+
+  /** Remove the stored lists that are too old, another user's, or a company's the user has left. */
+  const prune = useCallback(
+    async (idb: LiveListStorage) => {
+      const names = lists.map((list) => list.name);
+      const keys = await idb.keys();
+      const stale = staleStoredKeys(keys, {
+        names,
+        userId,
+        companyIds: [companyId, ...memberOf.current]
+      });
+      const kept = storedListKeys(keys, names).filter(
+        (key) => !stale.includes(key)
+      );
+      const expired = expiredStoredKeys(
+        await Promise.all(
+          kept.map(
+            async (key) =>
+              [key, await idb.getItem(storedAtKey(key))] as [string, unknown]
+          )
+        ),
+        Date.now()
+      );
+      await Promise.all([...stale, ...expired].map((key) => forget(idb, key)));
+    },
+    [lists, userId, companyId]
   );
 
   // Cold load: IndexedDB first so pickers have options at once, then the log.
@@ -320,6 +398,7 @@ export function LiveLists({
       // Without storage (blocked, or no driver) the lists come from the server.
       try {
         const idb = await storage();
+        await prune(idb);
         await Promise.all(
           lists.map(async (list) => {
             const stored = readStored(
@@ -345,7 +424,33 @@ export function LiveLists({
     return () => {
       cancelled = true;
     };
-  }, [companyId, userId, ready, lists, storage, queryClient, rowsOf, sync]);
+  }, [
+    companyId,
+    userId,
+    ready,
+    lists,
+    storage,
+    queryClient,
+    rowsOf,
+    sync,
+    prune
+  ]);
+
+  // While the page stays open: a stored list still goes when it is a day old
+  // or stops being this user's, and the log is asked again, which also notices
+  // a user who has left the company. A hidden tab only tidies the device.
+  useEffect(() => {
+    if (!ready) return;
+    const timer = setInterval(() => {
+      (async () => {
+        await prune(await storage());
+        if (document.visibilityState === "visible") await sync(lists);
+      })().catch((error) =>
+        logger.warn("live list background check failed", { error })
+      );
+    }, BACKGROUND_CHECK_MS);
+    return () => clearInterval(timer);
+  }, [ready, lists, storage, sync, prune]);
 
   // Every (list, table) pair has its own topic, and so its own channel.
   const topicCount = lists.reduce(
