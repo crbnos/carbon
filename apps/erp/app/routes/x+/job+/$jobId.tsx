@@ -22,7 +22,6 @@ import { getConfigurationParameters } from "~/modules/items";
 import type { JobMethodTreeItem } from "~/modules/production";
 import {
   getJob,
-  getJobDocuments,
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
   getJobOrderStatusMap,
@@ -152,7 +151,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
-    files: getJobDocuments(client, companyId, job.data),
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),
     method: getJobMethodTree(client, jobId), // returns a promise
     orderStatus: getJobOrderStatus(
