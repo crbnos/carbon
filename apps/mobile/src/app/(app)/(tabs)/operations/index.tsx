@@ -17,7 +17,14 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeOut,
+  LinearTransition
+} from "react-native-reanimated";
 import type { SheetHandle } from "~/components/BottomSheet";
+import { DURATION, EASE } from "~/components/motion";
 import {
   Button,
   EmptyState,
@@ -162,20 +169,42 @@ function Column({
             {t`Nothing queued here.`}
           </Muted>
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const customerId = (item as { customerId?: unknown }).customerId;
           return (
-            <OperationCard
-              operation={item}
-              customerName={
-                typeof customerId === "string"
-                  ? customerNames.get(customerId)
-                  : null
-              }
-              onPress={() =>
-                router.push(`/(app)/(tabs)/operations/${item.id}` as never)
-              }
-            />
+            <Animated.View
+              entering={FadeInDown.duration(DURATION.quick)
+                .easing(Easing.bezier(...EASE.out))
+                // A short cascade, capped at the first handful. Staggering
+                // every card means the twenty-second one arrives a second
+                // late; capping it keeps the sense of the list dealing
+                // itself out without making anyone wait for it.
+                .delay(Math.min(index, 5) * 35)}
+              exiting={FadeOut.duration(DURATION.instant)}
+              // On the ITEM, not as the list's `itemLayoutAnimation`: that
+              // prop exists only on `Animated.FlatList`, and swapping the
+              // list for it would put `contentContainerClassName` on a
+              // component Uniwind does not patch, where it is dropped in
+              // silence. This is what makes a re-sort read as the cards
+              // moving rather than the list redrawing — the board re-sorts
+              // under its own refetch, and a card an operator is reaching
+              // for should not teleport.
+              layout={LinearTransition.duration(DURATION.settle).easing(
+                Easing.bezier(...EASE.inOut)
+              )}
+            >
+              <OperationCard
+                operation={item}
+                customerName={
+                  typeof customerId === "string"
+                    ? customerNames.get(customerId)
+                    : null
+                }
+                onPress={() =>
+                  router.push(`/(app)/(tabs)/operations/${item.id}` as never)
+                }
+              />
+            </Animated.View>
           );
         }}
       />

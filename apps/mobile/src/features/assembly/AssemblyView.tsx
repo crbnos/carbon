@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner-native";
 import { ActionDock } from "~/components/ActionDock";
 import { type SheetHandle, SheetRow } from "~/components/BottomSheet";
+import { Burst } from "~/components/Burst";
 import { HeroButton } from "~/components/HeroButton";
 import { TabBar, type TabDef, TabPanel } from "~/components/Tabs";
 import {
@@ -149,6 +150,8 @@ export function AssemblyView({
   const userId = operator?.userId ?? me?.user.id ?? null;
 
   const [selection, setSelection] = useState<UnitSelection>(null);
+  // Bumped on each completed unit; `Burst` re-rolls and replays from it.
+  const [burstCount, setBurst] = useState(0);
   const query = useAssemblyQuery(operationId, selection);
   const screen = query.data;
   const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
@@ -329,6 +332,12 @@ export function AssemblyView({
   // which is where the server lands when no unit is asked for.
   const afterUnitComplete = () => {
     if (!screen) return;
+    // The one celebratory moment in the app. A unit finished is the thing
+    // an assembler is actually here to do, and it is rare enough — minutes
+    // or hours apart — that marking it does not become wallpaper. The
+    // burst never blocks: it is absolutely positioned and
+    // `pointerEvents="none"`, so the next unit can be started through it.
+    setBurst((n) => n + 1);
     if (screen.requiresSerialTracking && !screen.isFirstOperation) {
       setSelection(null);
       unitSheet.current?.open();
@@ -964,6 +973,12 @@ export function AssemblyView({
       {issueTarget ? (
         <IssueSheet target={issueTarget} onClose={() => setIssuingId(null)} />
       ) : null}
+      {/*
+        Last child, so it paints over the screen rather than under the dock,
+        and outside every sheet so a sheet opening on completion does not
+        clip it. It catches no touches.
+      */}
+      <Burst trigger={burstCount} />
     </View>
   );
 }

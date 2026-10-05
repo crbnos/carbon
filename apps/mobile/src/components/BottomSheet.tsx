@@ -6,7 +6,8 @@ import {
   BottomSheetBackdrop,
   type BottomSheetBackdropProps,
   BottomSheetModal,
-  BottomSheetScrollView
+  BottomSheetScrollView,
+  useBottomSheetSpringConfigs
 } from "@gorhom/bottom-sheet";
 import type { LucideIcon } from "lucide-react-native";
 import {
@@ -18,6 +19,7 @@ import {
 } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SPRING } from "./motion";
 import { Heading } from "./ui";
 import { useThemeColors } from "./useThemeColor";
 
@@ -40,6 +42,7 @@ export const Sheet = forwardRef<
   { title?: string; children: ReactNode }
 >(function Sheet({ title, children }, ref) {
   const sheet = useRef<BottomSheetModal>(null);
+  const sheetSpring = useBottomSheetSpringConfigs(SPRING.gentle);
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
 
@@ -79,6 +82,17 @@ export const Sheet = forwardRef<
         backgroundColor: colors.mutedForeground,
         width: 48
       }}
+      // The sheet's own spring, from the app's one motion scale rather than
+      // the library's default. `gentle` does not overshoot: a sheet that
+      // bounces past its stop and back reads as rubber, and this one opens
+      // over a control the operator is still looking at.
+      //
+      // A spring rather than a duration because the sheet is also DRAGGED.
+      // A timing restarts from wherever a flung sheet happened to be and
+      // takes its full length to finish; a spring carries the fling's
+      // velocity into the settle, which is why the two feel like one
+      // movement instead of a drag followed by an animation.
+      animationConfigs={sheetSpring}
     >
       <BottomSheetScrollView contentContainerClassName="gap-1 px-4 pb-10 pt-2">
         {title ? <Heading className="px-2 pb-2">{title}</Heading> : null}

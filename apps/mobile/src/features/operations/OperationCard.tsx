@@ -17,7 +17,8 @@ import {
   TriangleAlert
 } from "lucide-react-native";
 import type { ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { PressableScale } from "~/components/PressableScale";
 import { Card } from "~/components/ui";
 import { useThemeColors } from "~/components/useThemeColor";
 import { formatDuration } from "./duration";
@@ -133,7 +134,7 @@ export function OperationCard({
     due !== null;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
@@ -145,7 +146,9 @@ export function OperationCard({
         // A conflict outranks the status border, exactly as web orders its
         // classes: an operation that cannot finish before its job is due is
         // the first thing a supervisor needs to see on this board.
-        className={`gap-3 active:opacity-80 ${cardTone(operation.status)} ${
+        // No `active:opacity-*`: the press is a scale now (`PressableScale`),
+        // and the two together read as the card flinching.
+        className={`gap-3 ${cardTone(operation.status)} ${
           more.hasConflict ? "border-2 border-red-500" : ""
         } ${selected ? "border-ring bg-accent" : ""}`}
       >
@@ -320,6 +323,6 @@ export function OperationCard({
           ) : null}
         </View>
       </Card>
-    </Pressable>
+    </PressableScale>
   );
 }

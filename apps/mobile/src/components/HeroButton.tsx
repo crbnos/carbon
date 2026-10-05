@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { LucideIcon } from "lucide-react-native";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { PressableScale } from "./PressableScale";
 import { useIsTablet } from "./useIsTablet";
 
 /**
@@ -75,7 +76,7 @@ export function HeroButton({
       // `flex-1` so it takes whatever the row's other controls leave; the
       // minimum keeps it the widest thing in the dock even beside two of them.
       <View className="min-w-[132px] flex-1 gap-1">
-        <Pressable
+        <PressableScale
           onPress={onPress}
           disabled={inactive}
           accessibilityRole="button"
@@ -107,7 +108,7 @@ export function HeroButton({
           >
             {label}
           </Text>
-        </Pressable>
+        </PressableScale>
         {inactive && disabledReason ? (
           <Text className="text-sm text-muted-foreground">
             {disabledReason}
@@ -119,7 +120,7 @@ export function HeroButton({
 
   return (
     <View className="items-center gap-2">
-      <Pressable
+      <PressableScale
         onPress={onPress}
         disabled={inactive}
         accessibilityRole="button"
@@ -143,7 +144,7 @@ export function HeroButton({
         ) : (
           <Icon size={52} color="#ffffff" />
         )}
-      </Pressable>
+      </PressableScale>
       <Text className="text-base font-semibold text-foreground">{label}</Text>
       {inactive && disabledReason ? (
         <Text className="max-w-[220px] text-center text-sm text-muted-foreground">

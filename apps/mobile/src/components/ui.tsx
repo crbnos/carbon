@@ -16,6 +16,7 @@ import {
   type ViewProps
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PressableScale } from "./PressableScale";
 
 /**
  * The shop-floor primitives.
@@ -190,11 +191,16 @@ export function Button({
 }) {
   const inactive = disabled || loading;
   return (
-    <Pressable
+    <PressableScale
       // 48pt minimum: a gloved thumb, not a mouse.
+      //
+      // The press shrinks rather than fades. `active:opacity-80` was here
+      // before and is gone deliberately: the two together read as the button
+      // flinching, and opacity on a dark field is the weaker signal of the
+      // pair under shop lighting.
       className={`min-h-[48px] flex-row items-center justify-center gap-2 rounded-lg px-5 ${
         BUTTON_VARIANTS[variant]
-      } ${inactive ? "opacity-50" : "active:opacity-80"} ${className ?? ""}`}
+      } ${inactive ? "opacity-50" : ""} ${className ?? ""}`}
       disabled={inactive}
       accessibilityRole="button"
       {...props}
@@ -206,7 +212,7 @@ export function Button({
           {children}
         </Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
