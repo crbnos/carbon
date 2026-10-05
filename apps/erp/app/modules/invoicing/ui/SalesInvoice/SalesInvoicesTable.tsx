@@ -8,6 +8,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  Status,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -134,10 +135,24 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "status",
         header: t`Status`,
-        cell: (item) => {
-          const status =
-            item.getValue<(typeof salesInvoiceStatusType)[number]>();
-          return <SalesInvoiceStatus status={status} />;
+        cell: ({ row }) => {
+          const invoice = row.original;
+          // A held draft, or a posted invoice whose email failed: the reason
+          // is the badge's tooltip. Filter on it with "Needs Review".
+          const reviewReason =
+            invoice.status === "Draft"
+              ? invoice.automationHoldReason
+              : invoice.sendError;
+          return (
+            <span className="flex items-center gap-1">
+              <SalesInvoiceStatus status={invoice.status} />
+              {invoice.needsReview && (
+                <Status color="yellow" tooltip={reviewReason ?? undefined}>
+                  <Trans>Needs Review</Trans>
+                </Status>
+              )}
+            </span>
+          );
         },
         meta: {
           filter: {
