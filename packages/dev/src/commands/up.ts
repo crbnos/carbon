@@ -11,7 +11,7 @@ import pc from "picocolors";
 import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
-import { onShutdown } from "../helpers.js";
+import { onShutdown, waitForPort } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
   assemblerDepsBuilt,
@@ -364,6 +364,13 @@ export async function up(opts: UpOpts = {}) {
               wakers = [];
               parking.parked = false;
               parking.resume?.();
+              // Awake means the dev servers are listening again: until then
+              // no request can reach them, and the idle clock must not run.
+              await Promise.all(
+                appPorts.map((port) =>
+                  waitForPort(port, 180_000).catch(() => undefined)
+                )
+              );
             }
           }
         },

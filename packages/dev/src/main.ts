@@ -368,9 +368,16 @@ const main = defineCommand({
           default: false,
           description:
             "Destroy EVERY crbn stack on this machine, running ones included. Worktrees, branches and live slots are kept; the next `crbn up` rebuilds the database"
+        },
+        tree: {
+          type: "boolean",
+          default: false,
+          description:
+            "Also clean up git worktrees: forget ones whose directory is gone; with --all, remove this repo's linked worktrees too (never the main checkout, the current one, or one with uncommitted changes; branches are kept)"
         }
       },
-      run: ({ args }) => prune({ all: args.all === true })
+      run: ({ args }) =>
+        prune({ all: args.all === true, tree: args.tree === true })
     }),
     copy: defineCommand({
       meta: {

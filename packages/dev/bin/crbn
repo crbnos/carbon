@@ -440,6 +440,7 @@ crbn — Carbon dev CLI
                                     --prune also deletes the git branch.
     crbn prune                      Destroy stacks whose worktree is gone.
     crbn prune --all                Destroy every stack on this machine (worktrees kept).
+    crbn prune --tree               Also forget missing worktrees; with --all, remove clean ones.
 
   Stack:
     crbn up                         Boot compose stack + apps.

@@ -26,6 +26,7 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn remove --prune` | Also delete the git branch after removing each worktree. |
 | `crbn prune` | Destroy stacks no worktree can reach: slots whose directory is gone, and stacks with no slot. Lists them and confirms first; volumes are wiped. |
 | `crbn prune --all` | Destroy every crbn stack on the machine, running ones included. Worktrees, branches and live slots are kept; the next `crbn up` rebuilds the database. |
+| `crbn prune --tree` | Also clean up git worktrees: forget ones whose directory is gone. With `--all`, remove this repo's linked worktrees too. The main checkout, the current worktree, and any with uncommitted changes or a detached HEAD are kept; branches are never deleted. |
 
 ### Stack
 

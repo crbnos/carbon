@@ -90,6 +90,11 @@ export async function addWorktree(opts: {
   }
 }
 
+// Drop git's records of worktrees whose directory no longer exists.
+export async function pruneWorktreeEntries(): Promise<void> {
+  await execa("git", ["worktree", "prune"], { reject: false });
+}
+
 export async function removeWorktree(
   path: string,
   force = false
