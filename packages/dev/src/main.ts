@@ -89,6 +89,12 @@ const main = defineCommand({
           default: false,
           description:
             "Also skip Inbucket, for headless/CI builds that sign in by bypass"
+        },
+        hibernate: {
+          type: "boolean",
+          default: true,
+          description:
+            "Stop the containers after 30 min without ERP/MES traffic and start them again on the next request (--no-hibernate to keep them up; CRBN_IDLE_MINUTES changes the wait)"
         }
       },
       run: ({ args }) =>
@@ -103,7 +109,8 @@ const main = defineCommand({
           run: typeof args.run === "string" ? args.run : undefined,
           volumes: args.volumes === true,
           full: args.full === true,
-          minimal: args.minimal === true
+          minimal: args.minimal === true,
+          hibernate: args.hibernate !== false
         })
     }),
     down: defineCommand({

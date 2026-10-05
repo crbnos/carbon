@@ -6,6 +6,7 @@ import {
   applyDotenvToProcessEnv,
   clientOnlyAlias,
   linguiWithoutIdQuery,
+  stackActivity,
 } from "@carbon/dev/vite";
 import { getConfig } from "@lingui/conf";
 import { lingui } from "@lingui/vite-plugin";
@@ -129,6 +130,7 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
       ],
     },
     plugins: [
+      stackActivity(),
       tailwindcss(),
       linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),

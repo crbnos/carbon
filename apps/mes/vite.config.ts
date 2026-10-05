@@ -6,6 +6,7 @@ import {
   applyDotenvToProcessEnv,
   clientOnlyAlias,
   linguiWithoutIdQuery,
+  stackActivity,
 } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
 import { getConfig } from "@lingui/conf";
@@ -107,6 +108,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       allowedHosts: [".ngrok-free.app", ".w.modal.host", ".w.modal.dev", ".dev", ".localhost", "host.docker.internal"],
     },
     plugins: [
+      stackActivity(),
       tailwindcss(),
       linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),
