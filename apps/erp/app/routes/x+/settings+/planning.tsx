@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Heading, ScrollArea, VStack } from "@carbon/react";
+import { parseTime } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -17,6 +18,7 @@ import {
   forecastConsumptionValidator,
   getCompanySettings,
   getItemPostingGroupResponsibilities,
+  mrpScheduleValidator,
   planningHorizonValidator,
   rescheduleToleranceValidator,
   setDefaultPlanningHorizonDays,
@@ -24,10 +26,12 @@ import {
   setForecastConsumptionWindow,
   setLocationResponsibleEmployee,
   setRescheduleToleranceDays,
+  updateMrpRunTimeSetting,
   upsertItemPostingGroupResponsibility
 } from "~/modules/settings";
 import {
   ForecastConsumptionCard,
+  MrpScheduleCard,
   PlanningHorizonCard,
   RescheduleToleranceCard,
   ResponsibleEmployeeCard
@@ -83,6 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companySettings.data.forecastConsumptionBackwardPeriods ?? 4,
     forecastConsumptionForwardPeriods:
       companySettings.data.forecastConsumptionForwardPeriods ?? 1,
+    mrpRunTime: companySettings.data.mrpRunTime ?? null,
     locations: locations.data ?? [],
     itemGroups: itemGroups.data ?? [],
     responsibilities: responsibilities.data ?? []
@@ -255,6 +260,28 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       return { success: true, message: "Forecast consumption updated" };
     }
+    case "setMrpSchedule": {
+      const validation =
+        await validator(mrpScheduleValidator).validate(formData);
+      if (validation.error) {
+        return {
+          success: false,
+          message: "Choose a time for the daily MRP run"
+        };
+      }
+      const { mrpSchedule, mrpRunTime } = validation.data;
+      const result = await updateMrpRunTimeSetting(
+        client,
+        companyId,
+        mrpSchedule === "Daily" && mrpRunTime
+          ? parseTime(mrpRunTime).toString()
+          : null
+      );
+      if (result.error) {
+        return { success: false, message: "Failed to update MRP schedule" };
+      }
+      return { success: true, message: "MRP schedule updated" };
+    }
     default:
       return { success: false, message: `Unknown intent '${String(intent)}'` };
   }
@@ -267,6 +294,7 @@ export default function PlanningSettingsRoute() {
     defaultPlanningHorizonDays,
     forecastConsumptionBackwardPeriods,
     forecastConsumptionForwardPeriods,
+    mrpRunTime,
     locations,
     itemGroups,
     responsibilities
@@ -285,6 +313,7 @@ export default function PlanningSettingsRoute() {
         <SettingsSectionHeader>
           <Trans>MRP Suggestions</Trans>
         </SettingsSectionHeader>
+        <MrpScheduleCard mrpRunTime={mrpRunTime} />
         <RescheduleToleranceCard
           rescheduleToleranceDays={rescheduleToleranceDays}
         />

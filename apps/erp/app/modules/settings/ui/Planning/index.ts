@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 export { ForecastConsumptionCard } from "./ForecastConsumptionCard";
+export { MrpScheduleCard } from "./MrpScheduleCard";
 export { PlanningHorizonCard } from "./PlanningHorizonCard";
 export { RescheduleToleranceCard } from "./RescheduleToleranceCard";
 export { ResponsibleEmployeeCard } from "./ResponsibleEmployeeCard";

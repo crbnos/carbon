@@ -26,9 +26,12 @@ Phase-7 write) and throws on failure.
    `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "*/15 * * * *" }, …)`
    — a tick every 15 minutes, on which a company is **due** either every 3
    hours (the default) or once a day at `companySettings.mrpRunTime` (a `TIME`
-   on the company's own clock, `company.timezone`; set in Settings → Production
-   → Planning, where the form offers whole hours — a schedule select plus an
-   hour select, `mrpScheduleValidator` — and the action writes `HH:00:00`). Setting a time REPLACES the 3-hourly runs for that company. The
+   on the company's own clock, `company.timezone`; set in Settings → Planning
+   → MRP Schedule (`MrpScheduleCard`, intent `setMrpSchedule`), where the form
+   offers whole hours plus the stored time when it is not on the hour — an
+   MCP-set 14:30 saves back unchanged rather than cut to 14:00 —
+   `mrpScheduleValidator`, normalised to `HH:MM:SS`; the Recalculate tooltip
+   names the company's timezone). Setting a time REPLACES the 3-hourly runs for that company. The
    rule is the pure `isMrpDue(tick, { timezone, mrpRunTime })`
    (`scheduled/mrp-companies.ts`, unit-tested): the default is "UTC hour
    divisible by 3, minute 0"; a daily time is due on the FIRST tick at or after
@@ -78,9 +81,11 @@ Phase-7 write) and throws on failure.
    (`scheduled/mrp-companies.ts`), unit-tested in its sibling `.test.ts`. Every
    tick with someone due logs `Companies scheduled for MRP` (company / due /
    scheduled counts), and a `warn` fires when companies were due but the plan
-   and planning-work filters left none. A tick with NOBODY due returns `[]` without a log — most
-   ticks are like that — so an empty `company` table no longer warns; read the
-   info log's `companies` count on a 3-hourly tick instead.
+   and planning-work filters left none. A tick with NOBODY due returns `[]`
+   without a log — most ticks are like that. An EMPTY `company` read warns
+   (`No companies found to plan for`) before that return: the read happens only
+   on a 3-hourly tick or when a company set a time, so empty there is a broken
+   work list — the `companyPlan` failure above — never a quiet tick.
 
    All three reads (`companySettings.mrpRunTime`, `company`, `companyPlan`) go
    through `fetchAllFromTable` with a stable `.order("id")` — the

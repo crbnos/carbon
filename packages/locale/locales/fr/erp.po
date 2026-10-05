@@ -11317,8 +11317,11 @@ msgstr "MRP (planification)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP s'exécute automatiquement toutes les 3 heures, mais vous pouvez l'exécuter manuellement ici."
 
-msgid "MRP runs automatically every day at {time}, but you can run it manually here."
-msgstr "Le MRP s'exécute automatiquement chaque jour à {time}, mais vous pouvez l'exécuter manuellement ici."
+msgid "MRP runs automatically every day at {time} ({timeZone}), but you can run it manually here."
+msgstr "MRP s'exécute automatiquement chaque jour à {time} ({timeZone}), mais vous pouvez l'exécuter manuellement ici."
+
+msgid "MRP Schedule"
+msgstr "Planification MRP"
 
 msgid "MRP Suggestions"
 msgstr "Suggestions MRP"

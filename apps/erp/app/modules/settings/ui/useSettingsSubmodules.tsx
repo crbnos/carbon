@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import {
   LuBlocks,
   LuBox,
+  LuCalendarClock,
   LuCircleCheck,
   LuClipboardCheck,
   LuCreditCard,
@@ -26,7 +27,6 @@ import {
   LuSheet,
   LuShieldCheck,
   LuShoppingCart,
-  LuUserCog,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -91,12 +91,6 @@ export default function useSettingsSubmodules() {
             icon: <LuImage />
           },
           {
-            name: t`Planning`,
-            to: path.to.planningSettings,
-            role: "employee",
-            icon: <LuUserCog />
-          },
-          {
             name: t`Printing`,
             to: path.to.printingSettings,
             role: "employee",
@@ -130,6 +124,12 @@ export default function useSettingsSubmodules() {
             to: path.to.peopleSettings,
             role: "employee",
             icon: <LuUsers />
+          },
+          {
+            name: t`Planning`,
+            to: path.to.planningSettings,
+            role: "employee",
+            icon: <LuCalendarClock />
           },
           {
             name: t`Purchasing`,

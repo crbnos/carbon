@@ -11317,8 +11317,11 @@ msgstr "MRP(계획)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
 
-msgid "MRP runs automatically every day at {time}, but you can run it manually here."
-msgstr "MRP은 매일 {time}에 자동으로 실행되지만, 여기서 수동으로 실행할 수 있습니다."
+msgid "MRP runs automatically every day at {time} ({timeZone}), but you can run it manually here."
+msgstr "MRP는 매일 {time}({timeZone})에 자동으로 실행되지만, 여기서 수동으로 실행할 수 있습니다."
+
+msgid "MRP Schedule"
+msgstr "MRP 일정"
 
 msgid "MRP Suggestions"
 msgstr "MRP 제안"

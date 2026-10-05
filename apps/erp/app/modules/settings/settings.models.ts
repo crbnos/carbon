@@ -242,22 +242,26 @@ export const jobCompletedValidator = z.object({
 
 export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
 
-// "Every 3 Hours" is the default cadence and ignores the hour; "Daily" runs
-// once a day at `mrpRunHour` on the company's own clock. The hour is a select
-// value, so it stays the string "0"…"23" here.
+// "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
+// once a day at `mrpRunTime` on the company's own clock. The form offers whole
+// hours, but the column (and the MCP tool) take any time — the cron checks
+// every 15 minutes — so the field is the stored "HH:MM[:SS]" string, and a
+// time like 14:30 saves back unchanged instead of being cut to 14:00.
 export const mrpScheduleValidator = z
   .object({
     mrpSchedule: z.enum(mrpScheduleTypes),
-    mrpRunHour: zfd.text(
+    mrpRunTime: zfd.text(
       z
         .string()
-        .regex(/^(1?\d|2[0-3])$/, { message: "Choose an hour" })
+        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
+          message: "Choose a time"
+        })
         .optional()
     )
   })
   .refine(
-    (data) => data.mrpSchedule !== "Daily" || data.mrpRunHour !== undefined,
-    { message: "Hour is required", path: ["mrpRunHour"] }
+    (data) => data.mrpSchedule !== "Daily" || data.mrpRunTime !== undefined,
+    { message: "Time is required", path: ["mrpRunTime"] }
   );
 
 export const kanbanOutputValidator = z.object({

@@ -20,7 +20,7 @@ export const mrpFunction = inngest.createFunction(
   { id: "mrp", retries: 2 },
   // Every MRP_TICK_MINUTES (mrp-companies.ts). Most ticks plan for nobody: a
   // company is due every 3 hours, or once a day at the time it set in
-  // Settings → Production (`companySettings.mrpRunTime`) — see `isMrpDue`.
+  // Settings → Planning (`companySettings.mrpRunTime`) — see `isMrpDue`.
   { cron: "*/15 * * * *" },
   async ({ event, step, logger }) => {
     const serviceRole = getCarbonServiceRole();
@@ -73,6 +73,16 @@ export const mrpFunction = inngest.createFunction(
         // Throwing, not returning: a return is a step that succeeds having
         // planned for nobody, and never spends the configured retries.
         throw companies.error;
+      }
+
+      if (companies.data.length === 0) {
+        // This read runs only on a 3-hourly tick or when a company set a time,
+        // so an empty result is a broken work list, not a quiet tick. It is
+        // how MRP once never ran on self-hosted installs, behind a green run.
+        logger.warn("No companies found to plan for", {
+          tick: tick.toAbsoluteString()
+        });
+        return [];
       }
 
       const runTimeByCompany = new Map(
