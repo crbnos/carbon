@@ -34,9 +34,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
-import { consumeForecast } from "./forecast-consumption.ts";
+import {
+  actualConsumesForecast,
+  consumeForecast
+} from "./forecast-consumption.ts";
 import { generatePlanningActions } from "./planning-actions.ts";
-import { purchaseOrderLineArrivalDate } from "./supply-date.ts";
+import {
+  jobCompletionDate,
+  purchaseOrderLineArrivalDate
+} from "./supply-date.ts";
 
 const logger = getLogger("planning", "mrp");
 
@@ -400,11 +406,7 @@ export async function runMrp(
       // supplyActual_locationId_fkey and aborting the whole run. Skip it.
       if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
 
-      const dueDate = line.dueDate
-        ? parseDate(line.dueDate)
-        : line.deadlineType === "No Deadline"
-          ? today.add({ days: 30 })
-          : today;
+      const dueDate = parseDate(jobCompletionDate(line, today.toString()));
 
       const period = findPeriod(dueDate, today, periods);
       if (!period) continue;
@@ -478,6 +480,8 @@ export async function runMrp(
     });
     // locationId␟itemId (makeLocationItemKey) -> periodIndex -> consuming qty
     const consumptionActuals = new Map<string, Map<number, number>>();
+    // Actuals dated before this are backlog and consume no forecast.
+    const firstPeriodStart = periods[0]?.startDate ?? today;
     const addConsumption = (
       locationId: string,
       itemId: string,
@@ -519,12 +523,14 @@ export async function runMrp(
       const period = findPeriod(promiseDate, today, periods);
       if (!period) continue;
 
-      addConsumption(
-        line.locationId,
-        line.itemId,
-        period.id,
-        quantityToConsume
-      );
+      if (actualConsumesForecast(promiseDate, firstPeriodStart)) {
+        addConsumption(
+          line.locationId,
+          line.itemId,
+          period.id,
+          quantityToConsume
+        );
+      }
       if (quantityToSend <= 0) continue;
 
       const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
@@ -564,13 +570,18 @@ export async function runMrp(
       const period = findPeriod(requiredDate, today, periods);
       if (!period) continue;
 
-      // Real dependent demand consumes component-level forecast too.
-      addConsumption(
-        line.locationId,
-        line.itemId,
-        period.id,
-        line.quantityToIssue
-      );
+      // Real dependent demand consumes component-level forecast too. Backlog
+      // is judged on the job's due date, not the lead-time-shifted required
+      // date: a job due this week whose material should have been ordered
+      // last week is this week's demand.
+      if (actualConsumesForecast(dueDate, firstPeriodStart)) {
+        addConsumption(
+          line.locationId,
+          line.itemId,
+          period.id,
+          line.quantityToIssue
+        );
+      }
 
       const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
       grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToIssue);

@@ -154,6 +154,12 @@ Phase-7 write) and throws on failure.
      Inventory screen's Demand Forecast grew by each past week's leftover).
      Unit tests: `forecast-consumption.test.ts`. Spec:
      `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md`.
+     Backlog consumes nothing (`actualConsumesForecast`): an SO line promised,
+     or a job material whose job is due, before the first period is still
+     demand in that period, but the forecast that predicted it was for a week
+     that is gone. Consuming this week's forecast with it left this week's
+     predicted customers unplanned. Job materials are judged on the job's due
+     date, not the lead-time-shifted required date.
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
    - **Inputs (on-hand)**: the `itemStockQuantities` table (trigger-maintained,
      `20260812002454`) — an indexed per-company read, replacing the old full
@@ -298,6 +304,14 @@ Applying it used to mark the action done, move nothing, and get the same
 action back from the next run. Quantity actions on a promised line are
 unaffected.
 
+### When a job finishes — one rule
+
+`jobCompletionDate` (same file, tested): the job's due date, else today + 30
+days for a `No Deadline` job (the default on a new job), else today. Both
+engines call it. The reschedule check used to skip an undated job that the
+projection counted as supply, so the two saw different supply and the job was
+never offered a Cancel, Defer or Expedite.
+
 ### Reads and the horizon in `generatePlanningActions`
 
 - The two planning RPCs are read through `fetchAll` with `.order("id")`, like
@@ -312,6 +326,12 @@ unaffected.
 - `deriveChangeActions` measures Expedite / Defer from the order's EXPECTED date:
   its due date, or today when it is overdue (`laterDate`). Measured from the old
   due date, a late order read as early and got a Defer to a date already past.
+- `deriveChangeActions` claims the policy floor (safety stock, reorder point,
+  minimum reserve) FIRST — from on-hand, then the earliest orders — and an
+  order holding part of it is never Cancelled, Decreased or Deferred. The floor
+  has no date and never Expedites an order by itself. It used to take what the
+  demand walk left, undated: an order holding safety stock was dated by a later
+  demand and deferred, which put stock under the floor until that date.
 - `deriveChangeActions` gives NO verdict on an order due after the last planning
   week (`WEEKS_TO_PLAN` = 48; MRP itself plans 72). Its demand is not loaded, so
   it would otherwise read as "nothing needs it" and be offered for Cancel. Such

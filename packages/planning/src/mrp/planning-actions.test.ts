@@ -319,6 +319,60 @@ describe("deriveChangeActions", () => {
     expect(actions).toEqual([]);
   });
 
+  // The floor used to take what the demand walk left, undated: an order
+  // holding safety stock was dated by a later demand and offered a Defer, and
+  // applying it put stock under the floor until that date.
+  it("never defers an order that holds the policy floor", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      policyFloor: 10,
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p5", startDate: "2026-11-02", quantity: 10 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 20,
+          dueDate: "2026-10-05",
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toEqual([]);
+  });
+
+  it("holds the floor with the earliest order and defers the later one", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      policyFloor: 10,
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p5", startDate: "2026-11-02", quantity: 10 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-b",
+          quantity: 10,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        },
+        {
+          purchaseOrderLineId: "pol-a",
+          quantity: 10,
+          dueDate: "2026-10-05",
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      type: "Defer",
+      purchaseOrderLineId: "pol-b",
+      suggestedDate: "2026-11-02"
+    });
+  });
+
   it("carries requiresManualAction from the committed target", () => {
     const actions = deriveChangeActions({
       ...base,

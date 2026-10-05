@@ -2,8 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
-import { consumeForecast } from "./forecast-consumption";
+import {
+  actualConsumesForecast,
+  consumeForecast
+} from "./forecast-consumption";
 
 const WINDOW = { backwardPeriods: 4, forwardPeriods: 1 };
 
@@ -139,5 +143,34 @@ describe("consumeForecast", () => {
     expect(remainderByPeriod.get(3)).toBe(6);
     expect(forecast.get(2)).toBe(-5);
     expect(actuals.get(3)).toBe(4);
+  });
+});
+
+// An overdue order was bucketed into the first period and consumed its
+// forecast: a late order for 80 against a forecast of 100 left 20 planned for
+// this week's predicted customers instead of 100.
+describe("actualConsumesForecast", () => {
+  const weekStart = parseDate("2026-10-05");
+
+  it("does not consume for backlog dated before the first period", () => {
+    expect(actualConsumesForecast(parseDate("2026-09-14"), weekStart)).toBe(
+      false
+    );
+    expect(actualConsumesForecast(parseDate("2026-10-04"), weekStart)).toBe(
+      false
+    );
+  });
+
+  it("consumes from the first period's start on, even before today", () => {
+    expect(actualConsumesForecast(parseDate("2026-10-05"), weekStart)).toBe(
+      true
+    );
+    expect(actualConsumesForecast(parseDate("2026-11-30"), weekStart)).toBe(
+      true
+    );
+  });
+
+  it("consumes for an undated actual, which is due now", () => {
+    expect(actualConsumesForecast(null, weekStart)).toBe(true);
   });
 });

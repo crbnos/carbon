@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CalendarDate } from "@internationalized/date";
+
 export type ConsumptionWindow = {
   /** How many periods BEFORE the actual's period may be consumed (0 = own period only). */
   backwardPeriods: number;
@@ -79,4 +81,18 @@ export function consumeForecast(args: {
   }
 
   return { consumedByPeriod, remainderByPeriod };
+}
+
+/**
+ * Whether an actual consumes forecast. An actual dated before the first
+ * planning period is backlog: the forecast that predicted it was for a week
+ * that is gone. MRP still plans it as demand in the first period, but it must
+ * not consume that period's forecast, or this week's predicted customers go
+ * unplanned. An undated actual counts as due now and consumes.
+ */
+export function actualConsumesForecast(
+  date: CalendarDate | null,
+  firstPeriodStart: CalendarDate
+): boolean {
+  return !date || date.compare(firstPeriodStart) >= 0;
 }

@@ -39,7 +39,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
-import { purchaseOrderLineArrivalDate } from "./supply-date.ts";
+import {
+  jobCompletionDate,
+  purchaseOrderLineArrivalDate
+} from "./supply-date.ts";
 
 const logger = getLogger("planning", "planning-actions");
 
@@ -166,8 +169,11 @@ export type DeriveChangeActionsInput = {
   periods: { id: string; startDate: string }[];
   /**
    * The reorder policy's terminal stock target (safety stock / reorder point).
-   * Orders covering the floor are legitimately held stock: floor coverage
-   * prevents Cancel/Decrease but never generates a date (Expedite/Defer) need.
+   * The floor is needed now, so it is claimed first: from on-hand, then the
+   * earliest orders. An order holding part of it is never Cancelled, Decreased
+   * or Deferred. The floor has no date of its own and never Expedites an order
+   * (a reorder point is a trigger to order, not a date stock is due), but
+   * demand that on-hand no longer covers once the floor is held can.
    */
   policyFloor: number;
   toleranceDays: number;
@@ -180,9 +186,10 @@ type ChangeCandidate = Omit<
 >;
 
 /**
- * SAP-style rescheduling check over one item+location. Walks demand
- * chronologically against on-hand, consuming open orders (earliest first) as
- * the balance goes negative; each order's FIRST covered requirement dates it.
+ * SAP-style rescheduling check over one item+location. Claims the policy
+ * floor, then walks demand chronologically, against on-hand and then open
+ * orders (earliest first) as the balance goes negative; each order's FIRST
+ * covered demand dates it, and an order holding the floor is never deferred.
  * Emits at most ONE action per open order:
  *   consumed = 0                        → Cancel
  *   |expected − firstNeed| > tolerance  → Expedite / Defer, where expected is
@@ -228,16 +235,17 @@ export function deriveChangeActions(
     .map((order) => ({
       order,
       consumed: 0,
+      holdsFloor: false,
       firstNeed: null as { periodId: string; startDate: string } | null
     }))
     .sort((a, b) => daysBetween(a.order.dueDate, b.order.dueDate));
 
-  // Chronological consumption walk: demand draws down on-hand first, then the
-  // earliest open orders. The first requirement an order covers is its need date.
+  // Chronological consumption walk: the policy floor first (it is needed now),
+  // then demand, each drawing down on-hand first, then the earliest open
+  // orders. The first requirement an order covers is its need date.
   let balance = onHand;
   let cursor = 0;
-  for (const demand of demandPeriods) {
-    balance -= demand.quantity;
+  const cover = (need: { periodId: string; startDate: string } | null) => {
     while (balance < 0 && cursor < orders.length) {
       const state = orders[cursor];
       if (!state) break;
@@ -249,30 +257,23 @@ export function deriveChangeActions(
       const take = Math.min(available, -balance);
       state.consumed += take;
       balance += take;
-      if (!state.firstNeed) {
-        state.firstNeed = {
-          periodId: demand.periodId,
-          startDate: demand.startDate
-        };
-      }
+      if (!need) state.holdsFloor = true;
+      else if (!state.firstNeed) state.firstNeed = need;
       if (state.consumed >= state.order.quantity) cursor++;
     }
-  }
-
-  // The policy floor consumes remaining order quantity WITHOUT dating it —
-  // stock held for safety/reorder targets is intentional, not cancellable.
-  let floorRemaining = Math.max(0, policyFloor - Math.max(balance, 0));
-  for (const state of orders) {
-    if (floorRemaining <= 0) break;
-    const available = state.order.quantity - state.consumed;
-    if (available <= 0) continue;
-    const take = Math.min(available, floorRemaining);
-    state.consumed += take;
-    floorRemaining -= take;
+  };
+  // Covered after the demand walk, the floor took whatever was left: an order
+  // that held safety stock was dated by a later demand and offered a Defer,
+  // and applying it put stock under the floor until that date.
+  balance -= Math.max(policyFloor, 0);
+  cover(null);
+  for (const demand of demandPeriods) {
+    balance -= demand.quantity;
+    cover({ periodId: demand.periodId, startDate: demand.startDate });
   }
 
   const actions: ChangeCandidate[] = [];
-  for (const { order, consumed, firstNeed } of orders) {
+  for (const { order, consumed, holdsFloor, firstNeed } of orders) {
     const target = {
       purchaseOrderLineId: order.purchaseOrderLineId ?? null,
       jobId: order.jobId ?? null,
@@ -324,7 +325,8 @@ export function deriveChangeActions(
         });
         continue;
       }
-      if (gap < -toleranceDays) {
+      // An order holding the floor is needed now, whatever demand follows.
+      if (gap < -toleranceDays && !holdsFloor) {
         actions.push({
           ...dateTarget,
           type: "Defer",
@@ -896,11 +898,13 @@ export async function generatePlanningActions(
   for (const job of jobRows) {
     if (!job.id || !job.itemId || !job.locationId) continue;
     const quantity = Number(job.quantityToReceive) || 0;
-    if (quantity <= 0 || !job.dueDate) continue;
+    if (quantity <= 0) continue;
     pushOrder(`${job.itemId}${KEY_SEP}${job.locationId}`, {
       jobId: job.id,
       quantity,
-      dueDate: job.dueDate,
+      // the same date the projection buckets this job on — an undated job is
+      // supply there, so it is supply here too
+      dueDate: jobCompletionDate(job, todayDate),
       requiresManualAction: isCommittedJobStatus(
         jobStatusById.get(job.id) ?? ""
       )
