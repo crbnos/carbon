@@ -19,8 +19,8 @@ import {
 } from "~/components/ui";
 import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { OperationCard } from "./OperationCard";
-import { QueueSwitcher, type QueueView } from "./QueueSwitcher";
 import { filterOperationCards, toOperationCard } from "./queues";
+import type { QueueView } from "./queueView";
 
 /**
  * The body of all three personal queues — Assigned, Active and Recent.
@@ -89,8 +89,6 @@ export function OperationQueue({
         <Heading>{title}</Heading>
       </View>
 
-      <QueueSwitcher current={view} />
-
       <View className="px-4">
         <Field
           value={search}
@@ -149,7 +147,7 @@ export function OperationQueue({
             <OperationCard
               operation={item}
               onPress={() =>
-                router.push(`/(app)/(tabs)/operations/${item.id}` as never)
+                router.push(`/(app)/operation/${item.id}` as never)
               }
             />
           )}

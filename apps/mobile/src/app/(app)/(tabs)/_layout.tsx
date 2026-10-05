@@ -5,8 +5,11 @@
 import { useLingui } from "@lingui/react/macro";
 import { Tabs } from "expo-router";
 import {
+  Activity,
+  CalendarDays,
   ClipboardList,
   Clock,
+  History,
   Menu,
   PackageCheck,
   ScanLine
@@ -102,7 +105,45 @@ export default function TabsLayout() {
           options={{
             title: t`Schedule`,
             tabBarIcon: ({ color, size }) => (
+              <CalendarDays color={color} size={size} />
+            )
+          }}
+        />
+        {/*
+          The three queues are web's own OPERATIONS items, so on a tablet they
+          are nav entries like everything else. On a PHONE the bar is full at
+          five and a sixth truncates every label — the bug that made the bar
+          unusable before — so there they are reached from More, which lists
+          every destination the rail shows. `href: null` removes a screen from
+          the bar without unrouting it, so More can still push to them.
+        */}
+        <Tabs.Screen
+          name="assigned"
+          options={{
+            title: t`Assigned`,
+            href: isSplit ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
               <ClipboardList color={color} size={size} />
+            )
+          }}
+        />
+        <Tabs.Screen
+          name="active"
+          options={{
+            title: t`Active`,
+            href: isSplit ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <Activity color={color} size={size} />
+            )
+          }}
+        />
+        <Tabs.Screen
+          name="recent"
+          options={{
+            title: t`Recent`,
+            href: isSplit ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <History color={color} size={size} />
             )
           }}
         />

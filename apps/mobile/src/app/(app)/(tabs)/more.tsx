@@ -15,7 +15,9 @@ import {
   Screen,
   WarningNote
 } from "~/components/ui";
+import { useLayout } from "~/components/useLayout";
 import { useBecomeTerminal } from "~/features/console/commands";
+import { NavList } from "~/features/navigation/NavList";
 import { analyticsDecision } from "~/lib/analytics/policy";
 import { useAuth } from "~/lib/auth/AuthProvider";
 import { useIdleLock } from "~/lib/idle/useIdleLock";
@@ -101,6 +103,7 @@ export default function More() {
     operator
   } = useAuth();
   const { current } = useInstances();
+  const { isSplit } = useLayout();
   const { locale, theme, setLocale, setTheme } = usePreferences();
   const idle = useIdleLock();
   const analytics = analyticsDecision(me);
@@ -117,6 +120,16 @@ export default function More() {
       </Heading>
 
       <ScrollView className="flex-1" contentContainerClassName="gap-4 pb-6">
+        {/*
+          Navigation FIRST, settings below. On a phone this screen is the only
+          way to reach the destinations the bottom bar has no room for, so it
+          is a navigation screen that also holds settings rather than the
+          other way round. On a tablet the rail already shows all of them, so
+          the list is hidden there and this is the settings screen it has
+          always been.
+        */}
+        {isSplit ? null : <NavList />}
+
         <Card className="gap-1">
           <Muted className="text-sm">
             <Trans>Signed in as</Trans>

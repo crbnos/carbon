@@ -353,7 +353,7 @@ export function AssemblyView({
       : undefined;
   useEffect(() => {
     if (wrongView === "operation") {
-      router.replace(`/(app)/(tabs)/operations/${operationId}`);
+      router.replace(`/(app)/operation/${operationId}`);
     } else if (wrongView === "inspection") {
       router.replace(`/(app)/inspection/${operationId}`);
     }

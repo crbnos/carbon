@@ -10,8 +10,8 @@ import { useAssignedQuery } from "~/features/operations/useQueueQueries";
  * Assigned to Me — web MES's `x+/assigned.tsx`, through
  * `GET /api/v1/operations/assigned` and so through the same read.
  *
- * A screen of this tab's stack, not a tab of its own: see `QueueSwitcher` for
- * why the three queues live behind a segmented control.
+ * A tab of its own, as web makes it: one of the four OPERATIONS items in
+ * its sidebar.
  */
 export default function Assigned() {
   const { t } = useLingui();

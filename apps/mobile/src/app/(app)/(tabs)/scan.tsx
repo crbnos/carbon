@@ -81,7 +81,7 @@ export default function Scan() {
       const path =
         scan.route === "picking"
           ? `/(app)/(tabs)/picking/${scan.id}`
-          : `/(app)/(tabs)/operations/${scan.id}`;
+          : `/(app)/operation/${scan.id}`;
       router.push(path as never);
     },
     [lookup, reset, serverUrl]

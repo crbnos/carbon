@@ -4,7 +4,7 @@
 
 import { Image } from "expo-image";
 import type { BottomTabBarProps } from "expo-router/tabs";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useThemeColors } from "./useThemeColor";
 
 /**
@@ -36,10 +36,21 @@ import { useThemeColors } from "./useThemeColor";
  * 56pt targets, above the floor for a gloved thumb.
  *
  * Dropping the labels costs discoverability that web recovers with a hover
- * tooltip, which a tablet has no equivalent for. Five destinations with
- * distinct icons is few enough to learn in a shift, and every one of them
- * still carries its `accessibilityLabel`, so VoiceOver reads the name the
- * label used to show.
+ * tooltip, which a tablet has no equivalent for. Every entry still carries
+ * its `accessibilityLabel`, so VoiceOver reads the name the label used to
+ * show — but this is the one deliberate departure from web worth revisiting:
+ * past about ten icons the rail is harder to learn than web's labelled list,
+ * and widening it to ~84pt for short labels is a small change if it proves
+ * so on the floor.
+ *
+ * **It scrolls, and it is grouped.** The list grew from five entries to the
+ * whole of web's sidebar, and more are coming (Jobs, Maintenance, the
+ * inventory adjustments). Thirteen 56pt items plus the mark is ~773pt of an
+ * iPad's ~776pt usable height — it fits by three points and nothing else
+ * ever would, so the rail scrolls rather than clipping its last entry on a
+ * smaller tablet. The separators are web's own groups (Operations, then the
+ * tools), and they are what keeps a scrolling column of bare icons
+ * scannable.
  *
  * The phone is untouched: it still gets the library's bottom bar, which is
  * correct there and already handles its own home-indicator inset.
@@ -52,6 +63,16 @@ import { useThemeColors } from "./useThemeColor";
 
 /** Icon-only, like web's collapsed rail, on a 56pt target. */
 export const RAIL_WIDTH = 68;
+
+/**
+ * Where web's sidebar groups end, named by the route that closes each one.
+ *
+ * Web labels its groups (Operations / Inventory Adjustments / Tools); a 68pt
+ * rail has no room for a label, so the grouping survives as a rule instead.
+ * On a column of bare icons that rule is the only thing saying Scan and Time
+ * are a different kind of thing from the four queues above them.
+ */
+const GROUP_ENDS = new Set(["picking", "timecard"]);
 
 export function TabSideRail({
   state,
@@ -97,54 +118,71 @@ export function TabSideRail({
       </View>
       <View className="mx-3 mb-2 h-px bg-border" />
 
-      {state.routes.map((route, index) => {
-        const options = descriptors[route.key]?.options;
-        if (!options) return null;
-        // `href={null}` on a Tabs.Screen hides it by setting this; expo-router
-        // writes the same style for a route that should not appear in the bar.
-        const itemStyle = StyleSheet.flatten(options.tabBarItemStyle);
-        if (itemStyle?.display === "none") return null;
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 8 }}
+      >
+        {state.routes.map((route, index) => {
+          const options = descriptors[route.key]?.options;
+          if (!options) return null;
+          // `href={null}` on a Tabs.Screen hides it by setting this; expo-router
+          // writes the same style for a route that should not appear in the bar.
+          const itemStyle = StyleSheet.flatten(options.tabBarItemStyle);
+          if (itemStyle?.display === "none") return null;
 
-        const focused = state.index === index;
-        const color = focused ? colors.foreground : colors.mutedForeground;
-        const label =
-          typeof options.tabBarLabel === "string"
-            ? options.tabBarLabel
-            : (options.title ?? route.name);
+          const focused = state.index === index;
+          const color = focused ? colors.foreground : colors.mutedForeground;
+          const label =
+            typeof options.tabBarLabel === "string"
+              ? options.tabBarLabel
+              : (options.title ?? route.name);
 
-        const onPress = () => {
-          // Emitted even for the focused tab: a nested stack listens for this
-          // to pop back to its root, which is how tapping Schedule from an
-          // operation returns to the board.
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true
-          });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
-          }
-        };
-
-        return (
-          <Pressable
-            key={route.key}
-            onPress={onPress}
-            onLongPress={() =>
-              navigation.emit({ type: "tabLongPress", target: route.key })
+          const onPress = () => {
+            // Emitted even for the focused tab: a nested stack listens for this
+            // to pop back to its root, which is how tapping Schedule from an
+            // operation returns to the board.
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true
+            });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name, route.params);
             }
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-            accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
-            testID={options.tabBarButtonTestID}
-            className={`mx-2 mb-1 h-14 items-center justify-center rounded-lg ${
-              focused ? "bg-muted" : "active:opacity-60"
-            }`}
-          >
-            {options.tabBarIcon?.({ focused, color, size: 24 })}
-          </Pressable>
-        );
-      })}
+          };
+
+          const item = (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              onLongPress={() =>
+                navigation.emit({ type: "tabLongPress", target: route.key })
+              }
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+              testID={options.tabBarButtonTestID}
+              className={`mx-2 mb-1 h-14 items-center justify-center rounded-lg ${
+                focused ? "bg-muted" : "active:opacity-60"
+              }`}
+            >
+              {options.tabBarIcon?.({ focused, color, size: 24 })}
+            </Pressable>
+          );
+
+          // The rule goes AFTER the group's last entry. Never after the final
+          // icon on screen — a trailing rule reads as a list that got cut off
+          // rather than as a boundary.
+          return GROUP_ENDS.has(route.name) ? (
+            <View key={route.key}>
+              {item}
+              <View className="mx-4 my-2 h-px bg-border" />
+            </View>
+          ) : (
+            item
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }

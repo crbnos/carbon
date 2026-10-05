@@ -48,7 +48,6 @@ import {
   filterOperations
 } from "~/features/operations/boardFilters";
 import { OperationCard } from "~/features/operations/OperationCard";
-import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
 import { filterOperationCards } from "~/features/operations/queues";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { WorkCenterStrip } from "~/features/operations/WorkCenterStrip";
@@ -201,7 +200,7 @@ function Column({
                     : null
                 }
                 onPress={() =>
-                  router.push(`/(app)/(tabs)/operations/${item.id}` as never)
+                  router.push(`/(app)/operation/${item.id}` as never)
                 }
               />
             </Animated.View>
@@ -330,13 +329,6 @@ export default function Operations() {
         </Heading>
         <WorkingAt />
       </View>
-
-      {/*
-        The board is one of web MES's four OPERATIONS items; the other three are
-        this operator's own queues. The switcher is how they are reached without
-        a sixth bottom tab — see `QueueSwitcher`.
-      */}
-      <QueueSwitcher current="board" />
 
       {/* Filter and Search share ONE row, as they do on web. They are the
           same two decisions about what the board shows, so they read as a

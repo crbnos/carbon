@@ -49,7 +49,7 @@ export function useAssignedQuery() {
 /**
  * The operations this operator has an open production event on.
  *
- * Mounted by `QueueSwitcher` on every queue screen as well as by the Active
+ * Mounted by every queue screen as well as by the Active
  * screen itself. Both observers share ONE cache entry (the key carries only
  * the instance, the company and the queue), so the badge and the list can never
  * show different numbers, and the second observer costs no extra request.
