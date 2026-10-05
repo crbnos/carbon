@@ -915,6 +915,9 @@ msgstr ""
 msgid "Could not load the issue types."
 msgstr ""
 
+msgid "Could not load the jobs"
+msgstr ""
+
 msgid "Could not load the lots"
 msgstr ""
 
@@ -1578,6 +1581,9 @@ msgstr "製造指図現品票"
 msgid "Jobs"
 msgstr "製造指図"
 
+msgid "Jobs released at this location will appear here."
+msgstr ""
+
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
@@ -1880,6 +1886,9 @@ msgstr "影響なし"
 
 msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
+
+msgid "No job matches \"{search}\"."
+msgstr ""
 
 msgid "No maintenance scheduled for today"
 msgstr "本日の保全予定はありません。"
@@ -2866,6 +2875,9 @@ msgid "Search operators..."
 msgstr "作業者を検索..."
 
 msgid "Search the board"
+msgstr ""
+
+msgid "Search the jobs"
 msgstr ""
 
 msgid "Search..."

@@ -915,6 +915,9 @@ msgstr ""
 msgid "Could not load the issue types."
 msgstr ""
 
+msgid "Could not load the jobs"
+msgstr ""
+
 msgid "Could not load the lots"
 msgstr ""
 
@@ -1578,6 +1581,9 @@ msgstr "Fertigungsauftrag-Laufkarte"
 msgid "Jobs"
 msgstr "Fertigungsaufträge"
 
+msgid "Jobs released at this location will appear here."
+msgstr ""
+
 msgid "Keep picking"
 msgstr "Kommissionierung fortsetzen"
 
@@ -1880,6 +1886,9 @@ msgstr "Keine Auswirkung"
 
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
+
+msgid "No job matches \"{search}\"."
+msgstr ""
 
 msgid "No maintenance scheduled for today"
 msgstr "Keine Instandhaltung für heute geplant"
@@ -2866,6 +2875,9 @@ msgid "Search operators..."
 msgstr "Werker suchen..."
 
 msgid "Search the board"
+msgstr ""
+
+msgid "Search the jobs"
 msgstr ""
 
 msgid "Search..."

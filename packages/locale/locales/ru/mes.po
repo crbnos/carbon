@@ -915,6 +915,9 @@ msgstr ""
 msgid "Could not load the issue types."
 msgstr ""
 
+msgid "Could not load the jobs"
+msgstr ""
+
 msgid "Could not load the lots"
 msgstr ""
 
@@ -1578,6 +1581,9 @@ msgstr "Маршрутный лист"
 msgid "Jobs"
 msgstr "Производственные заказы"
 
+msgid "Jobs released at this location will appear here."
+msgstr ""
+
 msgid "Keep picking"
 msgstr "Продолжить отбор"
 
@@ -1880,6 +1886,9 @@ msgstr "Без влияния"
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
+
+msgid "No job matches \"{search}\"."
+msgstr ""
 
 msgid "No maintenance scheduled for today"
 msgstr "На сегодня техобслуживание не запланировано"
@@ -2866,6 +2875,9 @@ msgid "Search operators..."
 msgstr "Поиск операторов..."
 
 msgid "Search the board"
+msgstr ""
+
+msgid "Search the jobs"
 msgstr ""
 
 msgid "Search..."

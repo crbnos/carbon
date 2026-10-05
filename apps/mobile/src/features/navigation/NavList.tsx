@@ -6,6 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import { router } from "expo-router";
 import {
   Activity,
+  Briefcase,
   CalendarDays,
   ChevronRight,
   ClipboardList,
@@ -86,6 +87,7 @@ export function NavList() {
           badge: activeCount
         },
         { href: "/(app)/(tabs)/recent", label: t`Recent`, icon: History },
+        { href: "/(app)/(tabs)/jobs", label: t`Jobs`, icon: Briefcase },
         {
           href: "/(app)/(tabs)/picking",
           label: t`Picking`,

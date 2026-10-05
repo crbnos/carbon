@@ -6,6 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Tabs } from "expo-router";
 import {
   Activity,
+  Briefcase,
   CalendarDays,
   ClipboardList,
   Clock,
@@ -151,6 +152,16 @@ export default function TabsLayout() {
             href: isSplit ? undefined : null,
             tabBarIcon: ({ color, size }) => (
               <History color={color} size={size} />
+            )
+          }}
+        />
+        <Tabs.Screen
+          name="jobs"
+          options={{
+            title: t`Jobs`,
+            href: isSplit ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <Briefcase color={color} size={size} />
             )
           }}
         />

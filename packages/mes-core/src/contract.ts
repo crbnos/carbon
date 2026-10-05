@@ -441,6 +441,44 @@ export type OperationQueueItem = z.infer<typeof operationQueueItem>;
  * and its location, for the board's "empty work centers" columns; the app
  * renders a flat list, so the endpoint does not ship them.
  */
+/**
+ * One open job at the location, as the app reads it.
+ *
+ * A deliberate SUBSET with `.passthrough()`, like `operationCard`: the web
+ * payload carries DB-derived fields the mobile list does not render, and an
+ * older app build must not fail because a newer server added one.
+ */
+export const openJob = z
+  .object({
+    id: z.string(),
+    jobId: z.string(),
+    status: z.string().nullable().optional(),
+    itemReadableIdWithRevision: z.string().nullable().optional(),
+    name: z.string().nullable().optional(),
+    quantity: z.number().nullable().optional(),
+    quantityComplete: z.number().nullable().optional(),
+    dueDate: z.string().nullable().optional(),
+    deadlineType: z.string().nullable().optional(),
+    assignee: z.string().nullable().optional(),
+    /** The key into `trackedEntities` below. */
+    jobMakeMethodId: z.string().nullable().optional()
+  })
+  .passthrough();
+export type OpenJob = z.infer<typeof openJob>;
+
+export const jobsScreen = z
+  .object({
+    jobs: z.array(openJob),
+    /**
+     * The serial or batch number each job is building, keyed by
+     * `jobMakeMethodId` — what an operator matches against the label in
+     * their hand. Empty when no job at the location is tracked.
+     */
+    trackedEntities: z.record(z.string(), z.string())
+  })
+  .passthrough();
+export type JobsScreen = z.infer<typeof jobsScreen>;
+
 export const operationQueueScreen = z
   .object({
     operations: z.array(operationQueueItem)

@@ -52,6 +52,7 @@ import {
   getNcrsByJobOperationId,
   getNextIncompleteSerialEntity,
   getNonConformanceActions,
+  getOpenJobs,
   getProcessesList,
   getProductionEventsForBatch,
   getProductionEventsForJobOperation,
@@ -59,6 +60,7 @@ import {
   getRecentJobOperationsByEmployee,
   getThumbnailPathByItemId,
   getToolsByOperationId,
+  getTrackedEntitiesByJobMakeMethodIds,
   getTrackedEntitiesByMakeMethodId,
   getUpstreamOperations,
   getWorkCenter,
@@ -593,6 +595,51 @@ export async function getRecentScreen(
 }
 
 export type RecentScreen = Awaited<ReturnType<typeof getRecentScreen>>["data"];
+
+/**
+ * `x+/jobs.tsx`'s loader — every open job at a location.
+ *
+ * Read with the SERVICE ROLE, exactly as the web route reads it. RLS on
+ * `job` requires `production_view` and the floor rule here is wider than a
+ * plain status filter (a job in a Released batch is floor-visible before its
+ * own job is released), so an RLS read would show an operator LESS than the
+ * browser does — the reason given at the top of this file for every screen
+ * read.
+ *
+ * `trackedEntities` is keyed by `jobMakeMethodId` and holds the serial or
+ * batch number the job is building, which is what an operator matches
+ * against the label in their hand. It is a SECOND query rather than an embed
+ * because the ids come from the jobs themselves, and it is skipped entirely
+ * when no job is tracked.
+ */
+export async function getJobsScreen(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  const jobs = await getOpenJobs(client, args);
+
+  if (jobs.error) {
+    log.error("Failed to load open jobs", {
+      companyId: args.companyId,
+      error: jobs.error
+    });
+  }
+
+  const jobMakeMethodIds = (jobs.data ?? []).reduce<string[]>((acc, job) => {
+    if (job.jobMakeMethodId) acc.push(job.jobMakeMethodId);
+    return acc;
+  }, []);
+
+  const trackedEntities = await getTrackedEntitiesByJobMakeMethodIds(
+    client,
+    jobMakeMethodIds,
+    args.companyId
+  );
+
+  return ok({ jobs: jobs.data ?? [], trackedEntities });
+}
+
+export type JobsScreen = Awaited<ReturnType<typeof getJobsScreen>>["data"];
 
 // ---------------------------------------------------------------------------
 // Operation detail

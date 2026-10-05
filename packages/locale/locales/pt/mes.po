@@ -915,6 +915,9 @@ msgstr ""
 msgid "Could not load the issue types."
 msgstr ""
 
+msgid "Could not load the jobs"
+msgstr ""
+
 msgid "Could not load the lots"
 msgstr ""
 
@@ -1578,6 +1581,9 @@ msgstr "Ficha de acompanhamento"
 msgid "Jobs"
 msgstr "Ordens de produção"
 
+msgid "Jobs released at this location will appear here."
+msgstr ""
+
 msgid "Keep picking"
 msgstr "Continuar separação"
 
@@ -1880,6 +1886,9 @@ msgstr "Sem Impacto"
 
 msgid "No issue types configured"
 msgstr "Nenhum tipo de problema configurado"
+
+msgid "No job matches \"{search}\"."
+msgstr ""
 
 msgid "No maintenance scheduled for today"
 msgstr "Nenhuma manutenção programada para hoje"
@@ -2866,6 +2875,9 @@ msgid "Search operators..."
 msgstr "Pesquisar operadores..."
 
 msgid "Search the board"
+msgstr ""
+
+msgid "Search the jobs"
 msgstr ""
 
 msgid "Search..."

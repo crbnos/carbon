@@ -94,7 +94,9 @@ export const keys = {
   operators: (s: Scope) => ["operators", s.instanceId, s.companyId] as const,
   scrapReasons: (s: Scope) =>
     ["scrap-reasons", s.instanceId, s.companyId] as const,
-  people: (s: Scope) => ["people", s.instanceId, s.companyId] as const
+  people: (s: Scope) => ["people", s.instanceId, s.companyId] as const,
+  jobs: (s: Scope, locationId: string) =>
+    ["jobs", s.instanceId, s.companyId, locationId] as const
 } as const;
 
 /** Everything cached for one instance, for a switch or a sign-out. */

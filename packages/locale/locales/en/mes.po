@@ -915,6 +915,9 @@ msgstr "Could not load operations"
 msgid "Could not load the issue types."
 msgstr "Could not load the issue types."
 
+msgid "Could not load the jobs"
+msgstr "Could not load the jobs"
+
 msgid "Could not load the lots"
 msgstr "Could not load the lots"
 
@@ -1578,6 +1581,9 @@ msgstr "Job Traveler"
 msgid "Jobs"
 msgstr "Jobs"
 
+msgid "Jobs released at this location will appear here."
+msgstr "Jobs released at this location will appear here."
+
 msgid "Keep picking"
 msgstr "Keep picking"
 
@@ -1880,6 +1886,9 @@ msgstr "No Impact"
 
 msgid "No issue types configured"
 msgstr "No issue types configured"
+
+msgid "No job matches \"{search}\"."
+msgstr "No job matches \"{search}\"."
 
 msgid "No maintenance scheduled for today"
 msgstr "No maintenance scheduled for today"
@@ -2867,6 +2876,9 @@ msgstr "Search operators..."
 
 msgid "Search the board"
 msgstr "Search the board"
+
+msgid "Search the jobs"
+msgstr "Search the jobs"
 
 msgid "Search..."
 msgstr "Search..."

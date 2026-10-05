@@ -4,7 +4,6 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getLogger } from "@carbon/logger";
 import {
   Button,
   Heading,
@@ -27,40 +26,21 @@ import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { userContext } from "~/context";
-import {
-  getOpenJobs,
-  getTrackedEntitiesByJobMakeMethodIds
-} from "~/services/operations.service";
+import { getJobsScreen } from "~/services/screens.server";
 import { path } from "~/utils/path";
-
-const log = getLogger("mes");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
-  const serviceRole = getCarbonServiceRole();
   const locationId = context.get(userContext)?.locationId;
 
-  const jobs = await getOpenJobs(serviceRole, { companyId, locationId });
+  // The SAME read `GET /api/v1/jobs` runs, so the tablet and the browser
+  // cannot disagree about which jobs are open at a location.
+  const screen = await getJobsScreen(getCarbonServiceRole(), {
+    companyId,
+    locationId
+  });
 
-  if (jobs.error) {
-    log.error("getOpenJobs error", { error: jobs.error });
-  }
-
-  const jobMakeMethodIds = (jobs.data ?? []).reduce<string[]>((acc, job) => {
-    if (job.jobMakeMethodId) acc.push(job.jobMakeMethodId);
-    return acc;
-  }, []);
-
-  const trackedEntities = await getTrackedEntitiesByJobMakeMethodIds(
-    serviceRole,
-    jobMakeMethodIds,
-    companyId
-  );
-
-  return {
-    jobs: jobs.data ?? [],
-    trackedEntities
-  };
+  return screen.ok ? screen.data : { jobs: [], trackedEntities: {} };
 }
 
 type Job = {
