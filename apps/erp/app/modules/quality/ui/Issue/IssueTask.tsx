@@ -296,11 +296,7 @@ export function TaskItem({
       showDragHandle={showDragHandle}
       dragControls={dragControls}
       statusBadge={
-        <IssueTaskStatus
-          task={task}
-          type="investigation"
-          isDisabled={isDisabled}
-        />
+        <IssueTaskStatus task={task} type={type} isDisabled={isDisabled} />
       }
       headerExtras={
         <>
