@@ -42,6 +42,8 @@ const registry = {
   "post-sales-invoice": () => import("./post-sales-invoice"),
   "post-shipment": () => import("./post-shipment"),
   "post-stock-transfer": () => import("./post-stock-transfer"),
+  "preview-revenue-recognition-run": () =>
+    import("./preview-revenue-recognition-run"),
   "propose-revenue-recognition-run": () =>
     import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),

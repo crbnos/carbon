@@ -318,6 +318,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "inventory",
   },
   "post-stock-transfer": {},
+  "preview-revenue-recognition-run": {
+    "view": "accounting",
+  },
   "propose-revenue-recognition-run": {
     "create": "accounting",
   },
