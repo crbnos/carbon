@@ -1066,8 +1066,14 @@ describe("computePeriodReadiness — run checks", () => {
       makeClient(
         script({
           heldRevenueRows: [
-            { amount: 40, run: { id: "R1", runId: "RR-000001" } },
-            { amount: 10, run: { id: "R1", runId: "RR-000001" } }
+            {
+              amount: 40,
+              run: { id: "R1", runId: "RR-000001", periodEnd: "2026-09-30" }
+            },
+            {
+              amount: 10,
+              run: { id: "R1", runId: "RR-000001", periodEnd: "2026-09-30" }
+            }
           ]
         })
       ),
@@ -1078,7 +1084,9 @@ describe("computePeriodReadiness — run checks", () => {
       failing: true,
       count: 3,
       amount: 75,
-      draftRuns: [{ id: "R1", readableId: "RR-000001" }]
+      draftRuns: [
+        { id: "R1", readableId: "RR-000001", periodEnd: "2026-09-30" }
+      ]
     });
   });
 
@@ -1108,6 +1116,7 @@ describe("computePeriodReadiness — run checks", () => {
             {
               id: "D1",
               depreciationRunId: "DEP-000001",
+              periodEnd: "2026-10-31",
               depreciationRunLine: [{ amount: 60 }, { amount: 40 }]
             }
           ]
@@ -1121,7 +1130,9 @@ describe("computePeriodReadiness — run checks", () => {
       count: 4,
       amount: 1000,
       due: { count: 3, amount: 900 },
-      draftRuns: [{ id: "D1", readableId: "DEP-000001" }]
+      draftRuns: [
+        { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
+      ]
     });
   });
 });

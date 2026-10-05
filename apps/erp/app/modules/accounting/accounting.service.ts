@@ -3011,7 +3011,7 @@ export type PeriodReadinessCheck = {
   /** Run checks only: what a new run for the period would hold now. */
   due?: RunPreview;
   /** Run checks only: the Draft runs the check is waiting on. */
-  draftRuns?: { id: string; readableId: string }[];
+  draftRuns?: { id: string; readableId: string; periodEnd: string }[];
 };
 
 // An operational document (receipt, shipment, invoice) that has not posted to
@@ -3357,7 +3357,7 @@ export async function computePeriodReadiness(
     // that is not posted yet, so the preview does not count it again.
     client
       .from("depreciationRun")
-      .select("id, depreciationRunId, depreciationRunLine(amount)")
+      .select("id, depreciationRunId, periodEnd, depreciationRunLine(amount)")
       .eq("companyId", companyId)
       .eq("status", "Draft")
       .gte("periodEnd", startDate)
@@ -3432,11 +3432,11 @@ export async function computePeriodReadiness(
   // overdue row from an earlier period is still unrecognized revenue.
   const heldRevenueRows = await fetchAllFromTable<{
     amount: number;
-    run: { id: string; runId: string };
+    run: { id: string; runId: string; periodEnd: string };
   }>(
     client,
     "revenueRecognitionRunLine",
-    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, status), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
+    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, periodEnd, status), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
     (query: any) =>
       query
         .eq("companyId", companyId)
@@ -3447,10 +3447,17 @@ export async function computePeriodReadiness(
   );
 
   // Revenue: what a new run would claim, plus what Draft runs hold.
-  const revenueDraftRuns = new Map<string, string>();
+  const revenueDraftRuns = new Map<
+    string,
+    { id: string; readableId: string; periodEnd: string }
+  >();
   let heldRevenueAmount = 0;
   for (const line of heldRevenueRows.data ?? []) {
-    revenueDraftRuns.set(line.run.id, line.run.runId);
+    revenueDraftRuns.set(line.run.id, {
+      id: line.run.id,
+      readableId: line.run.runId,
+      periodEnd: line.run.periodEnd
+    });
     heldRevenueAmount += Number(line.amount);
   }
   const heldRevenueCount = heldRevenueRows.error
@@ -3591,7 +3598,8 @@ export async function computePeriodReadiness(
       due: runPreview.depreciation,
       draftRuns: depreciationDraftRuns.map((run) => ({
         id: run.id,
-        readableId: run.depreciationRunId
+        readableId: run.depreciationRunId,
+        periodEnd: run.periodEnd
       }))
     },
     {
@@ -3603,10 +3611,7 @@ export async function computePeriodReadiness(
       count: revenueCount,
       amount: round(runPreview.revenue.amount + heldRevenueAmount),
       due: runPreview.revenue,
-      draftRuns: [...revenueDraftRuns].map(([id, readableId]) => ({
-        id,
-        readableId
-      }))
+      draftRuns: [...revenueDraftRuns.values()]
     },
     {
       autoCheckKey: "unmatched-ic",

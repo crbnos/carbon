@@ -25,7 +25,17 @@ Routes: /x/accounting/revenue-recognition-runs, /x/revenue-recognition-run/<id>,
 "Recalculate" button (`requestSubmit` its form). Toast "Recalculated <run>: N lines".
 ### 4. Reverse Run — "More options" (⋮) → menuitem "Reverse Run" → dialog button
 "Reverse Run" (`requestSubmit`). Toast "Reversed <run>. It is a draft again."
-### 5. Verify in the database — journals per month (`postingDate` = month end, in
+### 5. Close checklist — /x/accounting/periods/<periodId>/close. The two run
+tasks show "N entries to recognize · $X" / "N assets to depreciate · $X" and
+"Post draft run <id>" links. **Create Run** shows only when something is due
+and the period has no Draft run; it redirects to the new Draft.
+- Nothing due: the action refuses ("Nothing to depreciate for this period" /
+  "Nothing to recognize for this period") and creates no run. The button is
+  hidden then, so POST `intent=create-depreciation-run` to `<route>.data` with
+  curl and the browser's `carbon` cookie; decode the `set-cookie` flash.
+- To see depreciation due on dev data, reverse and delete the latest run
+  first, then Create Run and Post to restore it.
+### 6. Verify in the database — journals per month (`postingDate` = month end, in
 its own `accountingPeriod`), Active period unchanged, rows/assets restored.
 
 ## Selector Notes

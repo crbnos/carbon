@@ -26,7 +26,7 @@ Terms:
 - [x] Task 3: Add `getPeriodRunPreview` and feed it to the readiness checks
 - [x] Task 4: Show what is due and a Create run button on the close page
 - [x] Task 5: Update AGENTS.md and the fixed-asset rule
-- [ ] Task 6: Verify in the browser
+- [x] Task 6: Verify in the browser
 
 ## Dependencies
 

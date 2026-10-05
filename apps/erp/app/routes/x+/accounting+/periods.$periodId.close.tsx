@@ -422,6 +422,7 @@ export default function AccountingPeriodCloseRoute() {
                   key={task.id}
                   task={task}
                   closeStatus={period?.closeStatus}
+                  periodEnd={period?.endDate}
                 />
               ))}
             </Tbody>
@@ -447,10 +448,12 @@ export default function AccountingPeriodCloseRoute() {
 
 function PeriodCloseTaskRow({
   task,
-  closeStatus
+  closeStatus,
+  periodEnd
 }: {
   task: PeriodCloseTaskView;
   closeStatus?: PeriodCloseStatus;
+  periodEnd?: string;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<typeof action>();
@@ -496,7 +499,8 @@ function PeriodCloseTaskRow({
     !isLockTask && task.taskType !== "Auto" && status === "Open";
   const canSkip =
     !isLockTask && task.severity !== "Blocker" && status === "Open";
-  // The two run checks offer to create the run that would clear them.
+  // The two run checks offer to create the run that would clear them, unless
+  // the period already has a Draft run (recalculate that one instead).
   const createRunIntent =
     task.autoCheckKey === "unposted-revenue-schedules"
       ? "create-revenue-run"
@@ -508,7 +512,9 @@ function PeriodCloseTaskRow({
     createRunIntent !== null &&
     status === "Open" &&
     (due?.count ?? 0) > 0 &&
-    (task.autoCheck?.draftRuns ?? []).length === 0;
+    !(task.autoCheck?.draftRuns ?? []).some(
+      (run) => run.periodEnd === periodEnd
+    );
 
   return (
     <>
@@ -757,7 +763,7 @@ function PeriodRunDue({
   runType
 }: {
   due: { count: number; amount: number; error: string | null };
-  draftRuns: { id: string; readableId: string }[];
+  draftRuns: { id: string; readableId: string; periodEnd: string }[];
   runType: "revenue" | "depreciation";
 }) {
   const { t } = useLingui();
