@@ -19619,9 +19619,6 @@ msgstr "ट्रैक की गई सामग्री को पिकि�
 msgid "Tracking"
 msgstr "ट्रैकिंग"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "ट्रैकिंग विधि"
 
@@ -20008,6 +20005,9 @@ msgstr "बिना शीर्षक की पंक्ति"
 
 msgid "Untitled step"
 msgstr "बिना शीर्षक वाला चरण"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "अप्रयुक्त सामग्री को वर्क सेंटर से गोदाम में वापस भेजा गया।"

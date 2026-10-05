@@ -19619,9 +19619,6 @@ msgstr "追跡される材料は、ピッキングリストがない場合でも
 msgid "Tracking"
 msgstr "追跡"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "追跡方法"
 
@@ -20008,6 +20005,9 @@ msgstr "無題の行"
 
 msgid "Untitled step"
 msgstr "無題のステップ"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用のピッキング済み材料が作業区から倉庫に戻されました。"

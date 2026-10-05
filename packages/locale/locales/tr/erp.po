@@ -19619,9 +19619,6 @@ msgstr "İzlenen malzeme, toplama listesi olmasa bile toplama sırasına (FEFO) 
 msgid "Tracking"
 msgstr "Takip"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "İzleme yöntemi"
 
@@ -20008,6 +20005,9 @@ msgstr "Başlıksız satır"
 
 msgid "Untitled step"
 msgstr "Başlıksız Adım"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme."

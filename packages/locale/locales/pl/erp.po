@@ -19619,9 +19619,6 @@ msgstr "Materiał śledzony jest wstępnie wybierany według kolejności poboru 
 msgid "Tracking"
 msgstr "Śledzenie"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "Metoda śledzenia"
 
@@ -20008,6 +20005,9 @@ msgstr "Linia bez tytułu"
 
 msgid "Untitled step"
 msgstr "Krok bez tytułu"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Materiał pobrany, ale nieużywany, zwracany ze stanowiska roboczego do magazynu."

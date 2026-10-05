@@ -19619,9 +19619,6 @@ msgstr "追踪原材料按拣货顺序（先到期先出）预选，即使没有
 msgid "Tracking"
 msgstr "追踪"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "跟踪方法"
 
@@ -20008,6 +20005,9 @@ msgstr "未命名行"
 
 msgid "Untitled step"
 msgstr "未命名步骤"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
