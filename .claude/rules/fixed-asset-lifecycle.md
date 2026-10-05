@@ -181,11 +181,17 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   × (1 − residual %) / usefulLifeMonths)`), `setFixedAssetOutOfService`,
   `returnFixedAssetToService`, `invokeAssetTransfer`
   (`client.functions.invoke("post-asset-transfer", { body })`).
-- What a run should hold: `buildDepreciationRunLines()` (`accounting.server.ts`)
+- What a run should hold: `buildDepreciationRunLines()` (`accounting.service.ts`)
   — every Active asset no OTHER run of the period covers, depreciated from the
   last run posted before the period, Units of Production summing the usage
   logged since. New, Repeat, **Recalculate** (`replaceDepreciationRunLines`,
-  keeps the run's id and number, deletes a run left empty) and Post all use it.
+  keeps the run's id and number, deletes a run left empty), Post and the
+  period close check all use it. New and the close page's **Create Run**
+  create through `createDepreciationRun`, which refuses "Nothing to depreciate
+  for this period" instead of leaving an empty run. The close task
+  (`autoCheckKey 'draft-depreciation'`) fails while a new run would hold lines
+  (`getPeriodRunPreview`; empty when a later period is posted) or a Draft run
+  ends in the period.
   Post refuses a Draft whose lines no longer match it
   (`depreciationRunLinesMatch`, `accounting.utils.ts` — an asset disposed,
   added or re-valued since), and any run when a LATER period is already posted
@@ -533,9 +539,10 @@ Cost** panel (asset id → NBV, per-asset monthly depreciation for Straight Line
 assets, totals). Machine rates are still typed by hand.
 
 **Depreciate.** Manual, in two steps — **no scheduled/cron job exists**:
-1. `depreciation-runs.new` action fetches all `Active` assets, calls
-   `buildDepreciationLines()`, inserts a `depreciationRun` (Draft) +
-   `depreciationRunLine` per asset.
+1. `depreciation-runs.new` action calls `createDepreciationRun()`, which
+   builds the lines with `buildDepreciationRunLines()` and inserts a
+   `depreciationRun` (Draft) + one `depreciationRunLine` per asset per month.
+   With no lines it creates nothing.
 2. `$depreciationRunId.post` → `postDepreciationRun()`: per asset posts
    Debit `depreciationExpenseAccountId` / Credit `accumulatedDepreciationAccountId`
    (`sourceType: 'Asset Depreciation'`), bumps `accumulatedDepreciation`
