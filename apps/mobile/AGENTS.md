@@ -267,6 +267,27 @@ again.
   the second. Cleanups are also skipped on unmount via an `alive` ref: there
   is nothing to restore, and the asset is already released, so touching it
   throws "Pointer FilamentAssetWrapper has already been manually released".
+- **Orbit, pan and zoom are wired by hand**, because Filament has no
+  `OrbitControls`: one finger orbits, two pan, a pinch zooms, through
+  `grabBegin`/`grabUpdate`/`grabEnd`/`scroll` on the manipulator
+  (`ModelGestures`). Two of its edges are Filament's, not choices — strafe
+  is fixed at `grabBegin`, so a finger added mid-drag cannot switch orbiting
+  to panning, and every callback runs `runOnJS(true)` because the
+  manipulator is a JSI host object made on the JS thread while
+  gesture-handler defaults to the UI one. The detector wraps `FilamentView`
+  from OUTSIDE: it is a native surface, and a touch handler on it never sees
+  the gesture. The manipulator is published up from `CameraRig` through a
+  REF — it belongs to the camera, which remounts per step view, and holding
+  it in state would re-render the scene each time and reset the ghosts to
+  solid. Web's view cube and damped/inertial motion have no counterpart.
+- **Play drives its own playhead, never the operator's step.** Web's
+  `AssemblyPlayer` has a play control and this had none. Advancing the
+  operator's procedure step records progress, advances the unit and can
+  start the Labor timer, so a 3D preview must not write to it: playing
+  overrides the index locally and the operator moving drops it. That reset
+  is done DURING RENDER, not in an effect — an effect would take their index
+  as a dependency it never reads, and would land a frame late. It stops on
+  the last step rather than looping, as web does.
 - **Filament's `Mat4` methods PRE-multiply.** `m.translate(v)` is `T(v) · m`,
   not `m · T(v)` — verified on device, and the docblock ("multiplying the
   provided matrix with this matrix") is ambiguous enough to read either way.
