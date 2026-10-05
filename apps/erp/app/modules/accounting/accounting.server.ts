@@ -18,7 +18,8 @@ import {
   getAccountLedgerSummary,
   getBaseCurrencyDecimalPlaces,
   getConsolidatedBalances,
-  getConsolidatedPeriodSeries
+  getConsolidatedPeriodSeries,
+  getOrCreateAccountingPeriod
 } from "./accounting.service";
 import {
   acquisitionLines,
@@ -27,6 +28,7 @@ import {
   depreciationRunLinesMatch,
   isFutureRunPeriod,
   monthEndOf,
+  runPostingTargets,
   usageKey
 } from "./accounting.utils";
 
@@ -747,9 +749,89 @@ export async function replaceDepreciationRunLines(
   });
 }
 
+/**
+ * The period and posting date for each month a run covers: the month's own
+ * end, in its own period, so a catch-up run posts each month where it
+ * belongs — or the run's `periodEnd` when the month's period is Closed. Runs
+ * post as an "accounting" source, so a Locked period still accepts them.
+ */
+export async function resolveRunPostingPeriods(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; monthEnds: string[]; runPeriodEnd: string }
+): Promise<
+  | { data: RunPostingPeriods; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const { companyId, runPeriodEnd } = args;
+  const months = [...new Set(args.monthEnds)].sort();
+  if (months.length === 0) return { data: new Map(), error: null };
+
+  const existing = await client
+    .from("accountingPeriod")
+    .select("startDate, endDate, closeStatus, closedAt")
+    .eq("companyId", companyId)
+    .lte("startDate", runPeriodEnd)
+    .gte("endDate", months[0]);
+  if (existing.error) return { data: null, error: existing.error };
+
+  const closedMonths = new Set(
+    months.filter((month) =>
+      existing.data.some(
+        (period) =>
+          period.startDate <= month &&
+          period.endDate >= month &&
+          (period.closeStatus === "Closed" || period.closedAt !== null)
+      )
+    )
+  );
+  const targets = runPostingTargets({ months, runPeriodEnd, closedMonths });
+
+  // One call per distinct target month (it creates a missing period), never
+  // one per line.
+  const byTarget = new Map<
+    string,
+    { accountingPeriodId: string; postingDate: string }
+  >();
+  for (const target of new Set(targets.values())) {
+    const period = await getOrCreateAccountingPeriod(
+      client,
+      companyId,
+      target,
+      "accounting"
+    );
+    if (period.error || !period.data) {
+      return {
+        data: null,
+        error: period.error ?? {
+          message: `No accounting period for ${target}`
+        }
+      };
+    }
+    byTarget.set(target, {
+      accountingPeriodId: period.data,
+      postingDate: target
+    });
+  }
+
+  return {
+    data: new Map(
+      months.map((month) => [month, byTarget.get(targets.get(month)!)!])
+    ),
+    error: null
+  };
+}
+
+/** Each month a run covers → the period and posting date its journals use. */
+export type RunPostingPeriods = Map<
+  string,
+  { accountingPeriodId: string; postingDate: string }
+>;
+
 type DepreciationRunLine = {
   id: string;
   fixedAssetId: string;
+  /** The month this line depreciates; its journal posts in that month. */
+  periodEnd: string;
   amount: number;
   taxAmount: number;
   asset: {
@@ -770,8 +852,7 @@ export async function postDepreciationRun(
   args: {
     depreciationRunId: string;
     depreciationRunReadableId: string;
-    postingDate: string;
-    accountingPeriodId: string;
+    periods: RunPostingPeriods;
     lines: DepreciationRunLine[];
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
@@ -786,8 +867,7 @@ export async function postDepreciationRun(
   const {
     depreciationRunId,
     depreciationRunReadableId,
-    postingDate,
-    accountingPeriodId,
+    periods,
     lines,
     locationDimensionId,
     assetClassDimensionId,
@@ -801,10 +881,19 @@ export async function postDepreciationRun(
 
   const now = new Date().toISOString();
 
+  const periodOf = (monthEnd: string) => {
+    const period = periods.get(monthEnd);
+    if (!period) {
+      throw new Error(`No accounting period resolved for ${monthEnd}`);
+    }
+    return period;
+  };
+
   return db.transaction().execute(async (trx) => {
     for (const line of lines) {
       const { asset } = line;
       const amount = Number(line.amount);
+      const { accountingPeriodId, postingDate } = periodOf(line.periodEnd);
 
       const journalEntryId = await getNextSequence(
         trx,
@@ -886,7 +975,27 @@ export async function postDepreciationRun(
         .where("id", "=", line.id)
         .where("companyId", "=", companyId)
         .execute();
+    }
 
+    // One update per asset with every month's amount. Each line used to add
+    // its own amount to the same starting value, so with several months of
+    // one asset only the last month reached accumulatedDepreciation.
+    const byAsset = new Map<
+      string,
+      { asset: DepreciationRunLine["asset"]; amount: number; taxAmount: number }
+    >();
+    for (const line of lines) {
+      const sums = byAsset.get(line.fixedAssetId) ?? {
+        asset: line.asset,
+        amount: 0,
+        taxAmount: 0
+      };
+      sums.amount += Number(line.amount);
+      sums.taxAmount += Number(line.taxAmount ?? 0);
+      byAsset.set(line.fixedAssetId, sums);
+    }
+
+    for (const [fixedAssetId, { asset, amount, taxAmount }] of byAsset) {
       const newAccumulated = Number(asset.accumulatedDepreciation) + amount;
       const cost = Number(asset.acquisitionCost);
       const residualValue = cost * (Number(asset.residualValuePercent) / 100);
@@ -901,177 +1010,196 @@ export async function postDepreciationRun(
         assetUpdate.status = "Fully Depreciated";
       }
 
-      if (taxEnabled) {
-        const taxAmount = Number(line.taxAmount ?? 0);
-        if (taxAmount > 0) {
-          const currentTax = Number(asset.accumulatedTaxDepreciation ?? 0);
-          assetUpdate.accumulatedTaxDepreciation = currentTax + taxAmount;
-        }
+      if (taxEnabled && taxAmount > 0) {
+        const currentTax = Number(asset.accumulatedTaxDepreciation ?? 0);
+        assetUpdate.accumulatedTaxDepreciation = currentTax + taxAmount;
       }
 
       await trx
         .updateTable("fixedAsset")
         .set(assetUpdate)
-        .where("id", "=", line.fixedAssetId)
+        .where("id", "=", fixedAssetId)
         .where("companyId", "=", companyId)
         .execute();
     }
 
-    // Deferred tax liability journal entry
-    if (taxEnabled && taxRate && dtlAccountId && dtExpenseAccountId) {
-      const diffByGroup = new Map<
-        string,
-        { locationId: string | null; fixedAssetClassId: string; diff: number }
-      >();
+    // Deferred tax liability journal entry, one per month, linked to that
+    // month's lines so Reverse Run can find it.
+    const linesByMonth = new Map<string, DepreciationRunLine[]>();
+    for (const line of lines) {
+      const monthLines = linesByMonth.get(line.periodEnd) ?? [];
+      monthLines.push(line);
+      linesByMonth.set(line.periodEnd, monthLines);
+    }
 
-      for (const line of lines) {
-        const bookAmount = Number(line.amount);
-        const taxAmt = Number(line.taxAmount ?? bookAmount);
-        const diff = taxAmt - bookAmount;
-        const locId = line.asset.locationId ?? null;
-        const classId = line.asset.fixedAssetClassId;
-        const key = `${locId ?? ""}|${classId}`;
-        const existing = diffByGroup.get(key);
-        if (existing) {
-          existing.diff += diff;
-        } else {
-          diffByGroup.set(key, {
-            locationId: locId,
-            fixedAssetClassId: classId,
-            diff
-          });
+    for (const [monthEnd, monthLines] of linesByMonth) {
+      if (taxEnabled && taxRate && dtlAccountId && dtExpenseAccountId) {
+        const { accountingPeriodId, postingDate } = periodOf(monthEnd);
+        const diffByGroup = new Map<
+          string,
+          { locationId: string | null; fixedAssetClassId: string; diff: number }
+        >();
+
+        for (const line of monthLines) {
+          const bookAmount = Number(line.amount);
+          const taxAmt = Number(line.taxAmount ?? bookAmount);
+          const diff = taxAmt - bookAmount;
+          const locId = line.asset.locationId ?? null;
+          const classId = line.asset.fixedAssetClassId;
+          const key = `${locId ?? ""}|${classId}`;
+          const existing = diffByGroup.get(key);
+          if (existing) {
+            existing.diff += diff;
+          } else {
+            diffByGroup.set(key, {
+              locationId: locId,
+              fixedAssetClassId: classId,
+              diff
+            });
+          }
         }
-      }
 
-      const totalTemporaryDifference = [...diffByGroup.values()].reduce(
-        (sum, g) => sum + g.diff,
-        0
-      );
-      const dtlAmount = Math.abs(totalTemporaryDifference * (taxRate / 100));
-
-      if (dtlAmount > 0.01) {
-        const dtlEntryId = await getNextSequence(
-          trx,
-          "journalEntry",
-          companyId
+        const totalTemporaryDifference = [...diffByGroup.values()].reduce(
+          (sum, g) => sum + g.diff,
+          0
         );
+        const dtlAmount = Math.abs(totalTemporaryDifference * (taxRate / 100));
 
-        const dtlJournal = await trx
-          .insertInto("journal")
-          .values({
-            journalEntryId: dtlEntryId,
-            accountingPeriodId,
-            companyId,
-            description: `Deferred Tax: Depreciation ${depreciationRunReadableId}`,
-            postingDate,
-            sourceType: "Asset Depreciation",
-            status: "Posted",
-            postedAt: now,
-            postedBy: userId,
-            createdBy: userId
-          })
-          .returning(["id"])
-          .executeTakeFirstOrThrow();
+        if (dtlAmount > 0.01) {
+          const dtlEntryId = await getNextSequence(
+            trx,
+            "journalEntry",
+            companyId
+          );
 
-        const isLiability = totalTemporaryDifference > 0;
-
-        const significantEntries = [...diffByGroup.values()].filter(
-          (g) => Math.abs(g.diff * (taxRate / 100)) > 0.01
-        );
-
-        const dtlLineValues = significantEntries.flatMap((g) => {
-          const locAmount = Math.abs(g.diff * (taxRate / 100));
-          return [
-            {
-              journalId: dtlJournal.id,
-              accountId: isLiability ? dtExpenseAccountId : dtlAccountId,
-              description: isLiability
-                ? "Deferred Tax Expense"
-                : "Deferred Tax Liability",
-              amount: toStoredAmount(
-                locAmount,
-                0,
-                isLiability ? "Expense" : "Liability"
-              ),
-              journalLineReference: crypto.randomUUID(),
-              companyId
-            },
-            {
-              journalId: dtlJournal.id,
-              accountId: isLiability ? dtlAccountId : dtExpenseAccountId,
-              description: isLiability
-                ? "Deferred Tax Liability"
-                : "Deferred Tax Benefit",
-              amount: toStoredAmount(
-                0,
-                locAmount,
-                isLiability ? "Liability" : "Expense"
-              ),
-              journalLineReference: crypto.randomUUID(),
-              companyId
-            }
-          ];
-        });
-
-        if (dtlLineValues.length > 0) {
-          const dtlLineResults = await trx
-            .insertInto("journalLine")
-            .values(dtlLineValues)
+          const dtlJournal = await trx
+            .insertInto("journal")
+            .values({
+              journalEntryId: dtlEntryId,
+              accountingPeriodId,
+              companyId,
+              description: `Deferred Tax: Depreciation ${depreciationRunReadableId}`,
+              postingDate,
+              sourceType: "Asset Depreciation",
+              status: "Posted",
+              postedAt: now,
+              postedBy: userId,
+              createdBy: userId
+            })
             .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          await trx
+            .updateTable("depreciationRunLine")
+            .set({ deferredTaxJournalId: dtlJournal.id })
+            .where(
+              "id",
+              "in",
+              monthLines.map((line) => line.id)
+            )
+            .where("companyId", "=", companyId)
             .execute();
 
-          const dimensionValues: Array<{
-            journalLineId: string;
-            dimensionId: string;
-            valueId: string;
-            companyId: string;
-          }> = [];
+          const isLiability = totalTemporaryDifference > 0;
 
-          for (let i = 0; i < significantEntries.length; i++) {
-            const g = significantEntries[i];
-            const debitLineId = dtlLineResults[i * 2].id;
-            const creditLineId = dtlLineResults[i * 2 + 1].id;
+          const significantEntries = [...diffByGroup.values()].filter(
+            (g) => Math.abs(g.diff * (taxRate / 100)) > 0.01
+          );
 
-            if (locationDimensionId && g.locationId) {
-              dimensionValues.push(
-                {
-                  journalLineId: debitLineId,
-                  dimensionId: locationDimensionId,
-                  valueId: g.locationId,
-                  companyId
-                },
-                {
-                  journalLineId: creditLineId,
-                  dimensionId: locationDimensionId,
-                  valueId: g.locationId,
-                  companyId
-                }
-              );
-            }
+          const dtlLineValues = significantEntries.flatMap((g) => {
+            const locAmount = Math.abs(g.diff * (taxRate / 100));
+            return [
+              {
+                journalId: dtlJournal.id,
+                accountId: isLiability ? dtExpenseAccountId : dtlAccountId,
+                description: isLiability
+                  ? "Deferred Tax Expense"
+                  : "Deferred Tax Liability",
+                amount: toStoredAmount(
+                  locAmount,
+                  0,
+                  isLiability ? "Expense" : "Liability"
+                ),
+                journalLineReference: crypto.randomUUID(),
+                companyId
+              },
+              {
+                journalId: dtlJournal.id,
+                accountId: isLiability ? dtlAccountId : dtExpenseAccountId,
+                description: isLiability
+                  ? "Deferred Tax Liability"
+                  : "Deferred Tax Benefit",
+                amount: toStoredAmount(
+                  0,
+                  locAmount,
+                  isLiability ? "Liability" : "Expense"
+                ),
+                journalLineReference: crypto.randomUUID(),
+                companyId
+              }
+            ];
+          });
 
-            if (assetClassDimensionId && g.fixedAssetClassId) {
-              dimensionValues.push(
-                {
-                  journalLineId: debitLineId,
-                  dimensionId: assetClassDimensionId,
-                  valueId: g.fixedAssetClassId,
-                  companyId
-                },
-                {
-                  journalLineId: creditLineId,
-                  dimensionId: assetClassDimensionId,
-                  valueId: g.fixedAssetClassId,
-                  companyId
-                }
-              );
-            }
-          }
-
-          if (dimensionValues.length > 0) {
-            await trx
-              .insertInto("journalLineDimension")
-              .values(dimensionValues)
+          if (dtlLineValues.length > 0) {
+            const dtlLineResults = await trx
+              .insertInto("journalLine")
+              .values(dtlLineValues)
+              .returning(["id"])
               .execute();
+
+            const dimensionValues: Array<{
+              journalLineId: string;
+              dimensionId: string;
+              valueId: string;
+              companyId: string;
+            }> = [];
+
+            for (let i = 0; i < significantEntries.length; i++) {
+              const g = significantEntries[i];
+              const debitLineId = dtlLineResults[i * 2].id;
+              const creditLineId = dtlLineResults[i * 2 + 1].id;
+
+              if (locationDimensionId && g.locationId) {
+                dimensionValues.push(
+                  {
+                    journalLineId: debitLineId,
+                    dimensionId: locationDimensionId,
+                    valueId: g.locationId,
+                    companyId
+                  },
+                  {
+                    journalLineId: creditLineId,
+                    dimensionId: locationDimensionId,
+                    valueId: g.locationId,
+                    companyId
+                  }
+                );
+              }
+
+              if (assetClassDimensionId && g.fixedAssetClassId) {
+                dimensionValues.push(
+                  {
+                    journalLineId: debitLineId,
+                    dimensionId: assetClassDimensionId,
+                    valueId: g.fixedAssetClassId,
+                    companyId
+                  },
+                  {
+                    journalLineId: creditLineId,
+                    dimensionId: assetClassDimensionId,
+                    valueId: g.fixedAssetClassId,
+                    companyId
+                  }
+                );
+              }
+            }
+
+            if (dimensionValues.length > 0) {
+              await trx
+                .insertInto("journalLineDimension")
+                .values(dimensionValues)
+                .execute();
+            }
           }
         }
       }

@@ -7,11 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getOrCreateAccountingPeriod } from "~/modules/accounting";
 import {
   buildDepreciationRunLines,
   futureRunPeriodError,
-  postDepreciationRun
+  postDepreciationRun,
+  resolveRunPostingPeriods
 } from "~/modules/accounting/accounting.server";
 import { depreciationRunLinesMatch } from "~/modules/accounting/accounting.utils";
 import { getDatabaseClient } from "~/services/database.server";
@@ -163,20 +163,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     (d) => d.entityType === "FixedAssetClass"
   )?.id;
 
-  const postingDate = run.data.periodEnd;
+  // A line from before per-month lines has no periodEnd: it is the run's.
+  const lineMonth = (line: { periodEnd: string | null }) =>
+    line.periodEnd ?? run.data.periodEnd;
 
-  const accountingPeriod = await getOrCreateAccountingPeriod(
-    client,
+  // Each month posts in its own period (the run's when that month is Closed).
+  const periods = await resolveRunPostingPeriods(client, {
     companyId,
-    postingDate,
-    "accounting"
-  );
-  if (accountingPeriod.error) {
+    monthEnds: linesResult.data.map(lineMonth),
+    runPeriodEnd: run.data.periodEnd
+  });
+  if (!periods.data) {
     throw redirect(
       path.to.depreciationRun(depreciationRunId),
       await flash(
         request,
-        error(accountingPeriod.error, "Failed to get accounting period")
+        error(periods.error, "Failed to get accounting period")
       )
     );
   }
@@ -208,6 +210,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return {
       id: line.id,
       fixedAssetId: line.fixedAssetId,
+      periodEnd: lineMonth(line),
       amount: Number(line.amount),
       taxAmount: Number((line as any).taxAmount ?? 0),
       asset: {
@@ -232,8 +235,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await postDepreciationRun(getDatabaseClient(), {
       depreciationRunId,
       depreciationRunReadableId: run.data.depreciationRunId,
-      postingDate,
-      accountingPeriodId: accountingPeriod.data!,
+      periods: periods.data,
       lines,
       locationDimensionId,
       assetClassDimensionId,

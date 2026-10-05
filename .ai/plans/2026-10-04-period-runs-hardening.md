@@ -34,7 +34,7 @@ Terms used in this plan:
 - [x] Task 6: Regenerate the database types and fix the dataset tier (also: `insertDepreciationRun` / `replaceDepreciationRunLines` write the run's `periodEnd` until Task 7)
 - [x] Task 6b: Move the depreciation month arithmetic to `@internationalized/date` (found in Task 7; also corrected the existing test "uses lastPostedPeriodEnd to narrow the window", which pinned the skipped month)
 - [x] Task 7: Build depreciation lines per asset per month (lines from before the migration read their run's `periodEnd`)
-- [ ] Task 8: Post depreciation one journal per line, dated per month
+- [x] Task 8: Post depreciation one journal per line, dated per month
 - [ ] Task 9: Post revenue recognition one journal per month
 - [ ] Task 10: Show the period on depreciation lines and every journal in the Documents panels
 - [ ] Task 11: Allow more than one revenue recognition run per period
