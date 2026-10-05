@@ -2317,14 +2317,21 @@ export function AssemblyView({
                     <p className="text-lg font-medium leading-relaxed">
                       {step.name ?? `Step ${currentStep + 1}`}
                     </p>
-                    {stepDescriptionHtml ? (
-                      <div
-                        className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
-                        dangerouslySetInnerHTML={{
-                          __html: stepDescriptionHtml
-                        }}
-                      />
-                    ) : null}
+                    {/* generateHTML returns nothing on the server, so the
+                        server never renders this block: rendering it during
+                        hydration would not match. */}
+                    <ClientOnly>
+                      {() =>
+                        stepDescriptionHtml ? (
+                          <div
+                            className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
+                            dangerouslySetInnerHTML={{
+                              __html: stepDescriptionHtml
+                            }}
+                          />
+                        ) : null
+                      }
+                    </ClientOnly>
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
