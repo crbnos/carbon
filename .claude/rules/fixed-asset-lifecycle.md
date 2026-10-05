@@ -112,8 +112,12 @@ Schema lives in these migrations (newest wins):
   was DROP + CREATEd (it selects `j.*`).
 - **`depreciationRun`** — period batch. `depreciationRunId`, `periodEnd`,
   `status` CHECK `IN ('Draft','Posted')`, `postedAt`, `postedBy`.
-- **`depreciationRunLine`** — one row per asset per run: `amount`, `taxAmount`,
-  `journalId` (FK to posted GL entry).
+- **`depreciationRunLine`** — one row per asset per MONTH the run covers
+  (FAM's depreciation history record): `periodEnd` (the month; nullable so
+  older backups restore — readers fall back to the run's `periodEnd`),
+  `amount`, `taxAmount`, `journalId` (that month's journal) and
+  `deferredTaxJournalId` (that month's deferred tax journal, migration
+  `20261004224406`).
 - **`fixedAssetDisposal`** — disposal record: `disposalMethod`, `disposalDate`,
   `saleProceeds`, `netBookValueAtDisposal`, `gainLoss`, `journalId`.
 - **`fixedAssetUsageLog`** — Units of Production input: `periodStart`,
@@ -186,7 +190,23 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   (`depreciationRunLinesMatch`, `accounting.utils.ts` — an asset disposed,
   added or re-valued since), and any run when a LATER period is already posted
   (`laterPostedRunId`: those months are in it, so posting would count them
-  twice).
+  twice). `buildDepreciationLines` calculates each month on its own with the
+  accumulated book and tax depreciation carried forward; the month arithmetic
+  (`addOneMonth`, `getMonthsBetween`) runs on `@internationalized/date`
+  `CalendarDate` — the old JS `Date` version skipped the month after every
+  31-day month and shifted MACRS years west of UTC.
+- Posting: `postDepreciationRun` dates each line's journal by its month
+  (`resolveRunPostingPeriods`: the month's own period, the run's when that
+  month is Closed), updates each asset ONCE with the sum of its months, and
+  posts one deferred tax journal per month. No run may end after the
+  company's current month (`futureRunPeriodError`).
+- **Reverse Run** (`reverseDepreciationRun`, route `$depreciationRunId.reverse`)
+  — latest posted run only (refuses when a later period is posted, or an
+  asset on it has been Disposed since): reverses every month's journal and
+  deferred tax journal (`reverseRunJournals`), takes the amounts back off
+  accumulated book and tax depreciation, returns a Fully Depreciated asset
+  above its residual to Active, and returns the run to Draft. A plain
+  journal reversal of an `Asset Depreciation` journal is refused.
 - Server transactions (Kysely): `accounting.server.ts` — `postDisposal()`,
   `postDepreciationRun()` and `postAssetRegistration()` build journals and
   update asset rows. `postAssetRegistration` takes an optional `status`
@@ -213,7 +233,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `Work Center` / `Out of Service Since` detail rows.
 - Routes: `routes/x+/fixed-asset+/$fixedAssetId.{tsx,register,dispose,sell,purchase,details,delete,capitalize,return-to-inventory,attach-job,out-of-service}`,
   `routes/x+/fixed-asset+/capitalize.tsx` (no id: capitalize a stock unit);
-  `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,recalculate,delete}`;
+  `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,recalculate,reverse,delete}`;
   list/new at `routes/x+/accounting+/{fixed-assets,asset-classes,depreciation-runs}*`;
   the fleet register at `routes/x+/accounting+/fleet.tsx` (nav: Accounting →
   Fixed Assets → Assets / Fleet / Depreciation, `useAccountingSubmodules`).
