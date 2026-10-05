@@ -5,6 +5,7 @@
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
 import { paymentFixture } from "../post-payment/payment-test-fixture";
+import proposeRevenueRecognitionRun from "../propose-revenue-recognition-run";
 import {
   dropRecognitionRuns,
   holdInDraftRun
@@ -199,3 +200,84 @@ databaseTest("recalculating refuses a posted run", async () => {
     await f.cleanup();
   }
 });
+
+async function propose(f: Fixture, periodEnd: string) {
+  // The payment fixture seeds only the journal sequence.
+  await f.db
+    .insertInto("sequence")
+    .values({
+      table: "revenueRecognitionRun",
+      name: "Test runs",
+      prefix: "RR-",
+      companyId: f.companyId
+    })
+    .onConflict((oc) => oc.doNothing())
+    .execute();
+  const result = await proposeRevenueRecognitionRun(
+    ServerFnContext.system({
+      db: f.db,
+      companyId: f.companyId,
+      userId: "system"
+    }),
+    { periodEnd }
+  );
+  if (result.error) throw result.error;
+  return result.data;
+}
+
+databaseTest(
+  "a period with a posted run takes a second run for rows that fell due after it posted",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const ids = await deferrals(f, [
+        { key: "sep-15", scheduledDate: "2026-09-15", amount: 100 }
+      ]);
+      const firstRunId = await holdInDraftRun(f.db, f.companyId, [
+        ids["sep-15"]
+      ]);
+      await f.db
+        .updateTable("revenueRecognitionRun")
+        .set({ status: "Posted" })
+        .where("id", "=", firstRunId)
+        .execute();
+      const late = await deferrals(f, [
+        { key: "sep-30", scheduledDate: "2026-09-30", amount: 50 }
+      ]);
+
+      const second = await propose(f, "2026-09-30");
+
+      expect(second?.lineCount).toBe(1);
+      expect(second?.id).not.toBe(firstRunId);
+      expect(await runLines(f, second!.id)).toEqual([
+        { scheduleId: late["sep-30"], amount: 50 }
+      ]);
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a period with a Draft run is recalculated, not proposed again",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const ids = await deferrals(f, [
+        { key: "sep-15", scheduledDate: "2026-09-15", amount: 100 }
+      ]);
+      await holdInDraftRun(f.db, f.companyId, [ids["sep-15"]]);
+      await deferrals(f, [
+        { key: "sep-30", scheduledDate: "2026-09-30", amount: 50 }
+      ]);
+
+      await expect(propose(f, "2026-09-30")).rejects.toThrow(
+        "RR-TEST is already a draft for this period"
+      );
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);

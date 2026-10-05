@@ -60,19 +60,25 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Check for existing run at this period
-  const existing = await client
+  // A period can have more than one run (a second picks up rows that fell
+  // due after the first posted), but only one Draft at a time.
+  const existingDraft = await client
     .from("revenueRecognitionRun")
-    .select("id")
+    .select("id, runId")
     .eq("periodEnd", periodEnd)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .maybeSingle();
 
-  if (existing.data && existing.data.length > 0) {
+  if (existingDraft.data) {
     throw redirect(
-      path.to.revenueRecognitionRuns,
+      path.to.revenueRecognitionRun(existingDraft.data.id),
       await flash(
         request,
-        error(null, "A revenue recognition run already exists for this period")
+        error(
+          null,
+          `${existingDraft.data.runId} is already a draft for this period. Recalculate it instead.`
+        )
       )
     );
   }

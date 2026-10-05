@@ -564,6 +564,22 @@ async function createRevenueRecognitionRunProposal(
     const due = await selectDueScheduleRows(trx, args);
     if (due.length === 0) return null;
 
+    // One Draft per period (the partial unique index
+    // revenueRecognitionRun_one_draft_per_period is the backstop): a period
+    // that already has a Draft is recalculated, not proposed again.
+    const draft = await trx
+      .selectFrom("revenueRecognitionRun")
+      .select("runId")
+      .where("companyId", "=", companyId)
+      .where("periodEnd", "=", periodEnd)
+      .where("status", "=", "Draft")
+      .executeTakeFirst();
+    if (draft) {
+      throw new InvalidInputError(
+        `${draft.runId} is already a draft for this period. Recalculate it instead.`
+      );
+    }
+
     const runId = await getNextSequence(
       trx,
       "revenueRecognitionRun",

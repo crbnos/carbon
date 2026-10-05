@@ -71,16 +71,19 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
           const periodEnd = priorMonthEnd(datetime.today(tz).toString());
           const db = getJobDatabaseClient();
 
+          // A posted run for the period does not stop a second proposal:
+          // rows can fall due after it posted. Only a Draft does.
           const existing = await db
             .selectFrom("revenueRecognitionRun")
             .select("id")
             .where("companyId", "=", company.id)
             .where("periodEnd", "=", periodEnd)
+            .where("status", "=", "Draft")
             .executeTakeFirst();
 
           if (existing) {
             logger.info(
-              `Skipped ${company.name}: a run for ${periodEnd} already exists (${existing.id})`
+              `Skipped ${company.name}: a draft run for ${periodEnd} already exists (${existing.id})`
             );
             return;
           }
