@@ -26,7 +26,25 @@ import { Animated, Easing, View } from "react-native";
  *
  * Still deliberately not a spinner. A spinner says something may be wrong,
  * and this is the normal path on every launch.
+ *
+ * **It is held on screen deliberately.** `state === "loading"` in `index.tsx`
+ * is a SecureStore read that resolves in a few milliseconds, so without a
+ * floor this screen unmounts before a single frame of the animation runs —
+ * which is exactly why it was reported as "a plain image, there is no
+ * animation". Measured on a cold start, the app went white splash → Sign in
+ * with this screen never visibly rendering at all. `LAUNCH_HOLD_MS` is what
+ * buys it its own running time, so the durations below are not free: every
+ * launch costs that long, and shortening the animation shortens the wait.
  */
+
+/**
+ * How long the launch screen is held, which is the length of the animation
+ * below — the ring (90 delay + 560) and then the wordmark (200).
+ *
+ * Kept under a second on purpose. An operator opens this app many times a
+ * shift, and a brand moment they cannot skip stops being a brand moment.
+ */
+export const LAUNCH_HOLD_MS = 850;
 
 export function LaunchScreen() {
   // One driver for the mark, so the scale and the fade cannot drift apart.
@@ -39,7 +57,7 @@ export function LaunchScreen() {
       Animated.parallel([
         Animated.timing(mark, {
           toValue: 1,
-          duration: 520,
+          duration: 420,
           // `back` is the overshoot: it carries past the target and returns.
           // Tuned low (1.2) — the default reads as a bounce, and a logo that
           // bounces on every cold start is charming once and irritating by
@@ -53,7 +71,7 @@ export function LaunchScreen() {
         // mark rather than as a second thing arriving beside it.
         Animated.timing(ring, {
           toValue: 1,
-          duration: 760,
+          duration: 560,
           delay: 90,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true
@@ -61,7 +79,7 @@ export function LaunchScreen() {
       ]),
       Animated.timing(wordOpacity, {
         toValue: 1,
-        duration: 240,
+        duration: 200,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true
       })

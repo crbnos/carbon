@@ -5,8 +5,8 @@
 import type { OperationCard as OperationCardData } from "@carbon/mes-core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { router, useFocusEffect } from "expo-router";
-import { Factory, Search, SlidersHorizontal, X } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Search, SlidersHorizontal, X } from "lucide-react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -43,10 +43,6 @@ import {
 import { OperationCard } from "~/features/operations/OperationCard";
 import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
 import { filterOperationCards } from "~/features/operations/queues";
-import {
-  loadStationFilter,
-  saveStationFilter
-} from "~/features/operations/stationFilter";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { WorkCenterStrip } from "~/features/operations/WorkCenterStrip";
 import { useAuth } from "~/lib/auth/AuthProvider";
@@ -196,30 +192,15 @@ export default function Operations() {
   // The board opens on the WHOLE floor; the operator's manning-board station
   // is something they ask for. See `stationFilter.ts` for why this is the
   // opposite of web.
-  const { instanceId, companyId: scopeCompanyId } = useAuth();
-  const scope = useMemo(
-    () => ({
-      instanceId: instanceId ?? "unknown",
-      companyId: scopeCompanyId ?? ""
-    }),
-    [instanceId, scopeCompanyId]
-  );
-  const [onlyMyStation, setOnlyMyStation] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    void loadStationFilter(scope).then((on) => {
-      if (!cancelled) setOnlyMyStation(on);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [scope]);
   const [filters, setFilters] = useState<BoardFilters>(EMPTY_FILTERS);
   const [search, setSearch] = useState("");
   const filterSheet = useRef<SheetHandle>(null);
-  // The server applies the station default unless told otherwise, so asking
-  // for the whole floor is the DEFAULT request this screen makes.
-  const query = useOperationsQuery([], !onlyMyStation);
+  // ALWAYS the whole floor. The server narrows the board to the operator's
+  // manning-board station unless told otherwise, and the chip that used to
+  // toggle that is gone — so this screen asks for every work centre, every
+  // time, and the work-centre filter in the sheet is the only thing that
+  // narrows it.
+  const query = useOperationsQuery([], true);
   const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
 
   // The floor moves while the operator is on another screen.
@@ -228,11 +209,6 @@ export default function Operations() {
       void query.refetch();
     }, [query.refetch])
   );
-
-  // `myStation` rather than `peopleStation`: the latter is only set when the
-  // server APPLIED the station, and this board asks for the whole floor, so it
-  // would always be null here and the chip would never appear.
-  const stationName = query.data?.myStation?.name || null;
 
   const locationName =
     me?.locations.find((l) => l.id === locationId)?.name ?? "";
@@ -423,47 +399,6 @@ export default function Operations() {
               });
             }}
           />
-        </View>
-      ) : null}
-
-      {/* A TOGGLE, not a dismissal: off is the whole floor and on is just
-          this operator's station. It reads as a filter chip because that is
-          what it is — the previous version looked like a notice with a close
-          button, so an operator had no reason to think tapping it would bring
-          six work centres back. Only shown when the operator actually has a
-          station today. */}
-      {stationName ? (
-        <View className="px-4">
-          <Pressable
-            onPress={() => {
-              const next = !onlyMyStation;
-              setOnlyMyStation(next);
-              void saveStationFilter(scope, next);
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: onlyMyStation }}
-            accessibilityLabel={
-              onlyMyStation
-                ? t`Showing only ${stationName}. Show every work center`
-                : t`Show only my station, ${stationName}`
-            }
-            className={`min-h-[44px] flex-row items-center gap-2 rounded-lg border px-3 active:opacity-70 ${
-              onlyMyStation
-                ? "border-primary bg-primary/10"
-                : "border-border bg-card"
-            }`}
-          >
-            <Factory
-              size={16}
-              color={onlyMyStation ? colors.foreground : colors.mutedForeground}
-            />
-            <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
-              {stationName}
-            </Text>
-            {onlyMyStation ? (
-              <X size={16} color={colors.mutedForeground} />
-            ) : null}
-          </Pressable>
         </View>
       ) : null}
 

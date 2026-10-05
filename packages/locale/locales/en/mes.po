@@ -3046,14 +3046,8 @@ msgstr "Show description"
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
 
-msgid "Show only my station, {stationName}"
-msgstr "Show only my station, {stationName}"
-
 msgid "Show options"
 msgstr "Show options"
-
-msgid "Showing only {stationName}. Show every work center"
-msgstr "Showing only {stationName}. Show every work center"
 
 msgid "Showing the first 40. Scan a label to find another."
 msgstr "Showing the first 40. Scan a label to find another."

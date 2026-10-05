@@ -3046,13 +3046,7 @@ msgstr "설명 표시"
 msgid "Show keyboard shortcuts"
 msgstr "키보드 바로가기 표시"
 
-msgid "Show only my station, {stationName}"
-msgstr ""
-
 msgid "Show options"
-msgstr ""
-
-msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Showing the first 40. Scan a label to find another."

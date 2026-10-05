@@ -10,7 +10,8 @@ import "../../global.css";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import { useState } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Toaster } from "sonner-native";
@@ -24,7 +25,35 @@ import {
 } from "~/lib/preferences/PreferencesProvider";
 import { createQueryClient } from "~/lib/query/client";
 
+/**
+ * Hold the native splash until React is actually rendering.
+ *
+ * Without this, expo-splash-screen hides on its own schedule — which is
+ * BEFORE the app's own `LaunchScreen` is on screen long enough to be seen.
+ * Measured on a cold start: the splash covered everything to ~8.5s while the
+ * launch screen rendered, animated and was replaced underneath it, so the
+ * first thing visible was Sign in. The branded entrance existed and nobody
+ * could ever have seen it.
+ *
+ * At module scope, so it runs before the first render rather than one effect
+ * too late.
+ */
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Already hidden, or the module is unavailable in this runtime. Either way
+  // the splash is not ours to hold and the app must not block on it.
+});
+
 export default function RootLayout() {
+  // Hidden from the ROOT layout rather than from LaunchScreen, so it cannot
+  // depend on which route mounts first. `preventAutoHide` has no timeout: a
+  // path that never reaches the hide leaves the app on the splash for ever,
+  // and the root layout is the one component guaranteed to mount.
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {
+      // Nothing to do: it is already hidden, or was never ours to hide.
+    });
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

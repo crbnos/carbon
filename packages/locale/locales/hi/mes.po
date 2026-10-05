@@ -3046,13 +3046,7 @@ msgstr "विवरण दिखाएं"
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएं"
 
-msgid "Show only my station, {stationName}"
-msgstr ""
-
 msgid "Show options"
-msgstr ""
-
-msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Showing the first 40. Scan a label to find another."
