@@ -1231,130 +1231,29 @@ export async function getJobMaterialUsageForItem(
   return { byMaterialId, byJobId };
 }
 
-/** @mcp read */
+/**
+ * Where a material or consumable is used.
+ * @mcp read
+ */
 export async function getMaterialUsedIn(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
 ) {
-  const [
-    issues,
-    jobMaterials,
-    maintenanceDispatchItems,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes,
-    inspections,
-    jobMaterialUsage
-  ] = await Promise.all([
-    client
-      .from("nonConformanceItem")
-      .select(
-        "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("maintenanceDispatchItem")
-      .select(
-        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("methodMaterial")
-      .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("purchaseOrderLine")
-      .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("quoteMaterial")
-      .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-    client
-      .from("inspection")
-      .select("id, documentReadableId:inspectionId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    getJobMaterialUsageForItem(client, { itemId, companyId })
-  ]);
-
+  const usedIn = await readUsedIn(client, itemId, companyId);
   return {
-    issues: issues.data ?? [],
-    jobMaterials: jobMaterials.data ?? [],
-    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? [],
-    inspections: inspections.data ?? [],
-    jobMaterialUsage
+    issues: usedIn.issues,
+    jobMaterials: usedIn.jobMaterials,
+    maintenanceDispatchItems: usedIn.maintenanceDispatchItems,
+    methodMaterials: usedIn.methodMaterials,
+    purchaseOrderLines: usedIn.purchaseOrderLines,
+    receiptLines: usedIn.receiptLines,
+    quoteMaterials: usedIn.quoteMaterials,
+    salesOrderLines: usedIn.salesOrderLines,
+    shipmentLines: usedIn.shipmentLines,
+    supplierQuotes: usedIn.supplierQuotes,
+    inspections: usedIn.inspections,
+    jobMaterialUsage: usedIn.jobMaterialUsage
   };
 }
 
@@ -2113,162 +2012,97 @@ export async function getPartsList(
   );
 }
 
-/** @mcp read */
+// Every line's document exists: the foreign keys are NOT NULL.
+type UsedInDocument = {
+  id: string;
+  documentReadableId: string;
+  documentId: string;
+};
+type UsedInMethod = UsedInDocument & { methodType: string };
+
+export type ItemUsedIn = {
+  issues: UsedInDocument[];
+  jobMaterials: UsedInMethod[];
+  jobs: { id: string; documentReadableId: string }[];
+  maintenanceDispatchItems: UsedInDocument[];
+  methodMaterials: (UsedInMethod & {
+    version: number;
+    documentParentId: string;
+    itemType: Database["public"]["Enums"]["itemType"];
+  })[];
+  purchaseOrderLines: UsedInDocument[];
+  receiptLines: UsedInDocument[];
+  quoteLines: UsedInMethod[];
+  quoteMaterials: (UsedInMethod & { documentParentId: string })[];
+  salesOrderLines: UsedInMethod[];
+  shipmentLines: UsedInDocument[];
+  supplierQuotes: UsedInDocument[];
+  assemblyInstructions: {
+    id: string;
+    documentReadableId: string;
+    version: number;
+  }[];
+  inspections: { id: string; documentReadableId: string }[];
+  jobMaterialUsage: {
+    byMaterialId: Record<string, number>;
+    byJobId: Record<string, number>;
+  };
+};
+
+const NOT_USED: ItemUsedIn = {
+  issues: [],
+  jobMaterials: [],
+  jobs: [],
+  maintenanceDispatchItems: [],
+  methodMaterials: [],
+  purchaseOrderLines: [],
+  receiptLines: [],
+  quoteLines: [],
+  quoteMaterials: [],
+  salesOrderLines: [],
+  shipmentLines: [],
+  supplierQuotes: [],
+  assemblyInstructions: [],
+  inspections: [],
+  jobMaterialUsage: { byMaterialId: {}, byJobId: {} }
+};
+
+/**
+ * Every place an item is referenced, in one request (`get_item_used_in`). It
+ * was fifteen PostgREST requests fired at once: on a page load they took most
+ * of the request's eight call slots from the queries the page was waiting on.
+ * A failure is logged and reads as "not used", as each of the fifteen did.
+ */
+async function readUsedIn(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<ItemUsedIn> {
+  const { data, error } = await client.rpc("get_item_used_in", {
+    item_id: itemId,
+    company_id: companyId
+  });
+  if (error || !data) {
+    logger.error("Failed to read where an item is used", {
+      companyId,
+      itemId,
+      error
+    });
+    return NOT_USED;
+  }
+  return data as unknown as ItemUsedIn;
+}
+
+/**
+ * Where a part, tool or service is used.
+ * @mcp read
+ */
 export async function getPartUsedIn(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
-) {
-  const [
-    issues,
-    jobMaterials,
-    jobs,
-    maintenanceDispatchItems,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes,
-    assemblyInstructions,
-    inspections,
-    jobMaterialUsage
-  ] = await Promise.all([
-    client
-      .from("nonConformanceItem")
-      .select(
-        "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("job")
-      .select("id, documentReadableId:jobId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("maintenanceDispatchItem")
-      .select(
-        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("methodMaterial")
-      .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("purchaseOrderLine")
-      .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("quoteLine")
-      .select(
-        "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-
-    client
-      .from("quoteMaterial")
-      .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-    client
-      .from("assemblyInstruction")
-      .select("id, documentReadableId:name, version")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("inspection")
-      .select("id, documentReadableId:inspectionId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    getJobMaterialUsageForItem(client, { itemId, companyId })
-  ]);
-
-  return {
-    issues: issues.data ?? [],
-    jobMaterials: jobMaterials.data ?? [],
-    jobs: jobs.data ?? [],
-    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteLines: quoteLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? [],
-    assemblyInstructions: assemblyInstructions.data ?? [],
-    inspections: inspections.data ?? [],
-    jobMaterialUsage
-  };
+): Promise<ItemUsedIn> {
+  return readUsedIn(client, itemId, companyId);
 }
 
 /** @mcp read */
@@ -7880,7 +7714,14 @@ export type ChangeNoticeForItem = {
   createdAt: string;
 };
 
-/** @mcp read */
+/**
+ * Every change notice that touches an item or any other revision of it: as an
+ * affected item, as a component on a notice's draft method, as either side of
+ * a supersession, or as the revision a notice created. One request
+ * (`get_item_change_notices`); it was eight in five steps, awaited by every
+ * item page.
+ * @mcp read
+ */
 export async function findChangeNoticesForItem(
   client: SupabaseClient<Database>,
   args: {
@@ -7889,100 +7730,13 @@ export async function findChangeNoticesForItem(
     statuses?: Database["public"]["Enums"]["changeOrderStatus"][];
   }
 ): Promise<{ data: ChangeNoticeForItem[]; error: { message: string } | null }> {
-  const { itemId, companyId, statuses } = args;
-
-  // Resolve every revision (item row) sharing this part's readableId.
-  const item = await client
-    .from("item")
-    .select("readableId")
-    .eq("id", itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (item.error) return { data: [], error: item.error };
-  if (!item.data?.readableId) return { data: [], error: null };
-
-  const siblings = await client
-    .from("item")
-    .select("id, changeOrderId")
-    .eq("readableId", item.data.readableId)
-    .eq("companyId", companyId);
-  if (siblings.error) return { data: [], error: siblings.error };
-  const itemIds = (siblings.data ?? []).map((s) => s.id);
-  if (itemIds.length === 0) return { data: [], error: null };
-
-  // Collect referencing changeOrderIds from every relation. v2: instead of a
-  // staged-material mirror, "this item is a component in a CO's edited BOM" is
-  // found via methodMaterial rows on CO-owned draft methods (makeMethod with a
-  // non-null changeOrderId).
-  const [affected, componentMaterials, predecessors, successors] =
-    await Promise.all([
-      client
-        .from("changeOrderAffectedItem")
-        .select("changeOrderId")
-        .in("itemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("methodMaterial")
-        .select("makeMethodId")
-        .in("itemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("changeOrderSupersession")
-        .select("changeOrderId")
-        .in("predecessorItemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("changeOrderSupersession")
-        .select("changeOrderId")
-        .in("successorItemId", itemIds)
-        .eq("companyId", companyId)
-    ]);
-  if (affected.error) return { data: [], error: affected.error };
-  if (componentMaterials.error)
-    return { data: [], error: componentMaterials.error };
-  if (predecessors.error) return { data: [], error: predecessors.error };
-  if (successors.error) return { data: [], error: successors.error };
-
-  // Resolve which of those make methods are CO-owned drafts.
-  const makeMethodIds = [
-    ...new Set(
-      (componentMaterials.data ?? []).map((m) => m.makeMethodId).filter(Boolean)
-    )
-  ] as string[];
-  const coOwnedMethods = makeMethodIds.length
-    ? await client
-        .from("makeMethod")
-        .select("changeOrderId")
-        .in("id", makeMethodIds)
-        .not("changeOrderId", "is", null)
-        .eq("companyId", companyId)
-    : { data: [], error: null };
-  if (coOwnedMethods.error) return { data: [], error: coOwnedMethods.error };
-
-  const coIds = new Set<string>();
-  for (const a of affected.data ?? []) coIds.add(a.changeOrderId);
-  for (const m of coOwnedMethods.data ?? []) {
-    if (m.changeOrderId) coIds.add(m.changeOrderId);
-  }
-  for (const p of predecessors.data ?? []) coIds.add(p.changeOrderId);
-  for (const s of successors.data ?? []) coIds.add(s.changeOrderId);
-
-  // Reverse link: a released revision points at the CO that created it.
-  for (const s of siblings.data ?? []) {
-    if (s.changeOrderId) coIds.add(s.changeOrderId);
-  }
-
-  if (coIds.size === 0) return { data: [], error: null };
-
-  let query = client
-    .from("changeOrder")
-    .select("id, changeOrderId, name, status, changeOrderTypeId, createdAt")
-    .in("id", [...coIds])
-    .eq("companyId", companyId);
-  if (statuses && statuses.length > 0) query = query.in("status", statuses);
-  query = query.order("createdAt", { ascending: false });
-
-  const result = await query;
+  const result = await client.rpc("get_item_change_notices", {
+    item_id: args.itemId,
+    company_id: args.companyId,
+    ...(args.statuses && args.statuses.length > 0
+      ? { statuses: args.statuses }
+      : {})
+  });
   if (result.error) return { data: [], error: result.error };
   return { data: result.data ?? [], error: null };
 }

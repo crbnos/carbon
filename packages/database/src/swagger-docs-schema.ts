@@ -97182,6 +97182,88 @@ export default {
         tags: ["(rpc) is_claims_admin"]
       }
     },
+    "/rpc/get_item_change_notices": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: '"changeOrderStatus"[]',
+            in: "query",
+            name: "statuses",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_change_notices"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                statuses: {
+                  format: '"changeOrderStatus"[]',
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["item_id", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_change_notices"]
+      }
+    },
     "/rpc/xid": {
       post: {
         parameters: [
@@ -103481,6 +103563,74 @@ export default {
           }
         },
         tags: ["(rpc) delete_old_audit_logs"]
+      }
+    },
+    "/rpc/get_item_used_in": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_used_in"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["item_id", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_used_in"]
       }
     },
     "/rpc/get_job_quantity_on_hand": {

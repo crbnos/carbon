@@ -83635,6 +83635,21 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_item_change_notices: {
+        Args: {
+          company_id: string
+          item_id: string
+          statuses?: Database["public"]["Enums"]["changeOrderStatus"][]
+        }
+        Returns: {
+          changeOrderId: string
+          changeOrderTypeId: string
+          createdAt: string
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["changeOrderStatus"]
+        }[]
+      }
       get_item_ledger_balance: {
         Args: {
           company_id: string
@@ -83692,6 +83707,10 @@ export type Database = {
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string
         }[]
+      }
+      get_item_used_in: {
+        Args: { company_id: string; item_id: string }
+        Returns: Json
       }
       get_job_method: {
         Args: { jid: string }
