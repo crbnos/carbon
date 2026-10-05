@@ -226,7 +226,15 @@ export async function confirmPrune(count: number, trees = 0): Promise<boolean> {
   if (process.env.CARBON_DEV_YES === "1") return true;
   requireTerminal("Confirming a prune", CONFIRM_BY_ENV);
   const ok = await confirm({
-    message: `Destroy ${count} stack(s) and their volumes${trees ? `, and remove ${trees} worktree(s)` : ""}? (postgres, storage, inngest data will be wiped)`,
+    // Only what will happen: a worktree-only prune wipes no data.
+    message: `${[
+      count
+        ? `Destroy ${count} stack(s) and their volumes (postgres, storage, inngest data will be wiped)`
+        : "",
+      trees ? `${count ? "remove" : "Remove"} ${trees} worktree(s)` : ""
+    ]
+      .filter(Boolean)
+      .join(", and ")}?`,
     initialValue: false
   });
   if (isCancel(ok)) return false;

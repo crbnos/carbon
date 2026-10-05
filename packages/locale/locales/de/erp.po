@@ -19619,9 +19619,6 @@ msgstr "Verfolgte Materialien werden nach Kommissionierauftrag vorabausgewählt 
 msgid "Tracking"
 msgstr "Verfolgung"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "Verfolgungsmethode"
 
@@ -20008,6 +20005,9 @@ msgstr "Unbenannte Zeile"
 
 msgid "Untitled step"
 msgstr "Unbenannter Schritt"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Ungenutzte kommissionierte Materialien werden vom Arbeitsplatz zurück ins Lager geleitet."

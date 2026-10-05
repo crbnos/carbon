@@ -19619,9 +19619,6 @@ msgstr "Отслеживаемый материал предварительно
 msgid "Tracking"
 msgstr "Отслеживание"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "Метод отслеживания"
 
@@ -20008,6 +20005,9 @@ msgstr "Безымянная строка"
 
 msgid "Untitled step"
 msgstr "Шаг без названия"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."

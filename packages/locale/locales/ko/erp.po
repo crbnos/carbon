@@ -19619,9 +19619,6 @@ msgstr "추적 자재는 피킹 리스트가 없어도 피킹 순서(FEFO)에 �
 msgid "Tracking"
 msgstr "추적"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "추적 방법"
 
@@ -20008,6 +20005,9 @@ msgstr "제목 없는 라인"
 
 msgid "Untitled step"
 msgstr "제목 없는 단계"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "작업장에서 창고로 반환된 미사용 선택 재료."

@@ -19619,9 +19619,6 @@ msgstr "Il materiale tracciato è preselezionato per ordine di prelievo (FEFO), 
 msgid "Tracking"
 msgstr "Tracciamento"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "Metodo di tracciamento"
 
@@ -20008,6 +20005,9 @@ msgstr "Riga senza titolo"
 
 msgid "Untitled step"
 msgstr "Passo senza titolo"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Materiale prelevato non utilizzato reso dal centro di lavoro al deposito."

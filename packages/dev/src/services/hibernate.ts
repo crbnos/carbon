@@ -75,7 +75,7 @@ export function watchIdle(opts: {
   deepen?: () => Promise<void>;
   wake: (from: StackState) => Promise<void>;
   log: (line: string) => void;
-}): () => void {
+}): () => Promise<void> {
   const { dir, idleMs, log } = opts;
   const deepMs = opts.deepen ? (opts.deepMs ?? 0) : 0;
   const minutes = (ms: number) => Math.round(ms / 60_000);
@@ -86,9 +86,11 @@ export function watchIdle(opts: {
   let state: StackState = "awake";
   let since = Date.now();
   let busy = false;
+  let stopped = false;
+  let inFlight: Promise<void> = Promise.resolve();
 
   const tick = async () => {
-    if (busy) return;
+    if (busy || stopped) return;
     const step = nextStep(
       state,
       Date.now(),
@@ -140,9 +142,18 @@ export function watchIdle(opts: {
     }
   };
 
-  const timer = setInterval(() => void tick(), 1000);
-  return () => {
+  // Only a tick that can start a step replaces `inFlight`: one that returns at
+  // once because a step is running must not hide that step from the disposer.
+  const timer = setInterval(() => {
+    if (!busy) inFlight = tick();
+  }, 1000);
+  // Resolves once a step that was already running has finished: the caller
+  // tears the stack down next, and a wake still in progress would start the
+  // containers again behind it.
+  return async () => {
+    stopped = true;
     clearInterval(timer);
+    await inFlight;
     rmSync(asleepFile(dir), { force: true });
   };
 }
@@ -228,13 +239,20 @@ export function startWaker(port: number, onWake: () => void) {
   // The dev server's process tree can hold the port for a moment after its
   // parent has exited; keep trying until it lets go.
   let stopped = false;
+  let retry: NodeJS.Timeout | undefined;
   server.on("error", () => {
-    if (!stopped) setTimeout(() => server.listen(port, "127.0.0.1"), 250);
+    if (stopped) return;
+    retry = setTimeout(() => {
+      if (!stopped) server.listen(port, "127.0.0.1");
+    }, 250);
   });
   server.listen(port, "127.0.0.1");
   return () =>
     new Promise<void>((resolve) => {
+      // A retry left pending would bind the port after the stop and keep the
+      // respawned dev server off it.
       stopped = true;
+      clearTimeout(retry);
       server.closeAllConnections();
       if (server.listening) server.close(() => resolve());
       else resolve();

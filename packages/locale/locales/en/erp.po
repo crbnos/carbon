@@ -19619,9 +19619,6 @@ msgstr "Tracked material is pre-selected by pick order (FEFO), even without a pi
 msgid "Tracking"
 msgstr "Tracking"
 
-msgid "Tracking ID"
-msgstr "Tracking ID"
-
 msgid "Tracking method"
 msgstr "Tracking method"
 
@@ -20008,6 +20005,9 @@ msgstr "Untitled line"
 
 msgid "Untitled step"
 msgstr "Untitled step"
+
+msgid "Untracked"
+msgstr "Untracked"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Unused picked material flushed back from the work center to the warehouse."

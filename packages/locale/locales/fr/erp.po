@@ -19619,9 +19619,6 @@ msgstr "Le matériel suivi est pré-sélectionné par ordre de prélèvement (FE
 msgid "Tracking"
 msgstr "Suivi"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "Méthode de suivi"
 
@@ -20008,6 +20005,9 @@ msgstr "Ligne sans titre"
 
 msgid "Untitled step"
 msgstr "Étape sans titre"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Matière prélevée inutilisée renvoyée du poste de travail à l'entrepôt."

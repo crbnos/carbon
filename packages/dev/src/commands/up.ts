@@ -11,7 +11,7 @@ import pc from "picocolors";
 import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
-import { onShutdown, waitForPort } from "../helpers.js";
+import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
   assemblerDepsBuilt,
@@ -334,6 +334,7 @@ export async function up(opts: UpOpts = {}) {
   });
   const parking: AppParking = { parked: false };
   let wakers: Array<() => Promise<void>> = [];
+  let tearingDown = false;
   const wakeContainers = async () => {
     await bootStack(root, slug, size);
     await waitForPostgres(ctx.ports.PORT_DB);
@@ -366,17 +367,30 @@ export async function up(opts: UpOpts = {}) {
               parking.resume?.();
               // Awake means the dev servers are listening again: until then
               // no request can reach them, and the idle clock must not run.
-              await Promise.all(
-                appPorts.map((port) =>
-                  waitForPort(port, 180_000).catch(() => undefined)
-                )
-              );
+              // Unless the stack is being torn down — nothing will listen.
+              const deadline = Date.now() + 180_000;
+              while (!tearingDown && Date.now() < deadline) {
+                const open = await Promise.all(
+                  appPorts.map((port) => tryConnect("127.0.0.1", port, 500))
+                );
+                if (open.every(Boolean)) break;
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
             }
           }
         },
         log: (line) => process.stderr.write(`${pc.cyan("•")} ${line}\n`)
       })
     : undefined;
+  // Before `down()`, not after it: a request (the waking page polls every
+  // 1.5 s) can start a wake at any moment, and one that ran during or after
+  // the teardown would leave the containers up with no `crbn up` owning them.
+  const stopHibernation = async () => {
+    tearingDown = true;
+    await stopWatching?.();
+    await Promise.all(wakers.map((stop) => stop()));
+    wakers = [];
+  };
   try {
     await runAppsThenTeardown(
       root,
@@ -384,11 +398,11 @@ export async function up(opts: UpOpts = {}) {
       ctx.ports,
       portless,
       stripeChild,
-      parking
+      parking,
+      stopHibernation
     );
   } finally {
-    stopWatching?.();
-    await Promise.all(wakers.map((stop) => stop()));
+    await stopHibernation();
   }
 }
 
@@ -779,9 +793,11 @@ async function runAppsThenTeardown(
   ports: PortMap,
   portless: boolean,
   stripeChild?: ExecaChildProcess,
-  parking: AppParking = { parked: false }
+  parking: AppParking = { parked: false },
+  beforeTeardown?: () => Promise<void>
 ) {
   const apps = reactRouterApps(selectedApps);
+  let detachParked: (() => void) | undefined;
   if (apps.length === 0) {
     await Promise.race([
       new Promise<void>((resolve) => {
@@ -804,12 +820,14 @@ async function runAppsThenTeardown(
       // wake (or a Ctrl+C, which spawnApps is no longer listening for).
       if (!parking.parked) break;
       const interrupted = await new Promise<boolean>((resolve) => {
-        const detach = onShutdown(() => {
-          detach();
-          resolve(true);
-        });
+        // The listener is NOT removed from inside the signal: execa's cleanup
+        // hook re-raises a signal it finds nobody else listening for, and a
+        // wake has a docker child running. It stays until the teardown
+        // listener below is in place.
+        detachParked = onShutdown(() => resolve(true));
         parking.resume = () => {
-          detach();
+          detachParked?.();
+          detachParked = undefined;
           resolve(false);
         };
       });
@@ -823,7 +841,9 @@ async function runAppsThenTeardown(
   const detach = onShutdown(() => {
     process.stderr.write("\nfinishing teardown — please wait\n");
   });
+  detachParked?.();
   try {
+    await beforeTeardown?.();
     // Kill the stripe listener too — it's detached and would otherwise survive.
     killStripe(stripeChild);
     // silent: post-SIGINT stdin raw-mode triggers EIO in clack's spinner.

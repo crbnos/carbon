@@ -10,7 +10,7 @@ import {
   isDirty,
   mainCheckoutRoot,
   pruneWorktreeEntries,
-  removeWorktree,
+  removeCleanWorktree,
   type Worktree
 } from "../git.js";
 import { confirmPrune } from "../prompts.js";
@@ -102,11 +102,15 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
   const { deadSlugs, projects } = planPrune(slots, await listCarbonStacks(), {
     all: opts.all
   });
-  // Ports of the slots that survive this prune; every other crbn route is dead.
+  // Ports of the slots that survive this prune; every other crbn route is
+  // dead. A worktree this run removes gives up its slot too.
   const dead = new Set(deadSlugs);
+  const leaving = new Set(
+    trees.map((tree) => slugForWorktreePath(tree.path, slots))
+  );
   const livePorts = new Set(
     Object.entries(slots)
-      .filter(([slug]) => !dead.has(slug))
+      .filter(([slug]) => !dead.has(slug) && !leaving.has(slug))
       .flatMap(([, slot]) => Object.values(slot.ports))
   );
   const routes = findStaleAliases(livePorts);
@@ -162,16 +166,27 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
     if (dead.has(slug)) removeSlot(slug);
   }
   await forgetMissingTrees();
+  let removedTrees = 0;
   for (const tree of trees) {
+    // Checked again, and removed only by git itself: a file saved while the
+    // prompt was open makes the tree dirty, and it must then be kept.
+    if (await isDirty(tree.path)) {
+      log.info(`kept ${tree.path}: it changed while confirming`);
+      continue;
+    }
     const slug = slugForWorktreePath(tree.path, slots);
     if (slug) await killOrphanedApps(slots[slug]!.ports);
-    await removeWorktree(tree.path);
+    if (!(await removeCleanWorktree(tree.path))) {
+      log.info(`kept ${tree.path}: git would not remove it`);
+      continue;
+    }
+    removedTrees++;
     if (slug) removeSlot(slug);
   }
   await pruneStaleRoutes();
   await removeAliases(routes);
 
   outro(
-    `removed ${projects.length} stack(s) and ${trees.length} worktree(s), released ${deadSlugs.length} slot(s), cleared ${routes.length} stale portless route(s)`
+    `removed ${projects.length} stack(s) and ${removedTrees} worktree(s), released ${deadSlugs.length} slot(s), cleared ${routes.length} stale portless route(s)`
   );
 }

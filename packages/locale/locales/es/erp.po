@@ -19619,9 +19619,6 @@ msgstr "El material rastreado se preselecciona por orden de picking (FEFO), incl
 msgid "Tracking"
 msgstr "Seguimiento"
 
-msgid "Tracking ID"
-msgstr ""
-
 msgid "Tracking method"
 msgstr "Método de seguimiento"
 
@@ -20008,6 +20005,9 @@ msgstr "Línea sin título"
 
 msgid "Untitled step"
 msgstr "Paso sin título"
+
+msgid "Untracked"
+msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Material recogido no utilizado devuelto desde el centro de trabajo al almacén."
