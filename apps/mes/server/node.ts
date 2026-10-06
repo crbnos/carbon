@@ -7,8 +7,13 @@
 
 import path from "node:path";
 import { serve } from "@carbon/serve";
+import type { ServerBuild } from "react-router";
 
-const build = await import("../build/server/index.js");
+// By URL, not as a literal path: the build is not there when this file is
+// typechecked, and a literal one TypeScript would go looking for.
+const build: ServerBuild = await import(
+  new URL("../build/server/index.js", import.meta.url).href
+);
 
 await serve({
   build,
