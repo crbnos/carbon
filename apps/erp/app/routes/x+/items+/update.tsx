@@ -87,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return await client
         .from("item")
         .update({
-          [field]: value,
+          ...(field === "name" ? { name: value } : { description: value }),
           updatedBy: userId,
           updatedAt: datetime.timestamp()
         })

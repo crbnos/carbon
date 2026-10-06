@@ -472,7 +472,7 @@ export async function action({ request }: ActionFunctionArgs) {
         summary.errors.push(`${item.partNumber}: failed to read the base item`);
         continue;
       }
-      const inserted = await createRevision(client, {
+      const inserted = await createRevision(client, db, {
         item: full,
         revision: item.revision,
         createdBy: userId,

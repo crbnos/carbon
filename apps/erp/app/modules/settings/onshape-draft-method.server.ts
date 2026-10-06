@@ -15,6 +15,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { copyMakeMethod, upsertMakeMethodVersion } from "~/modules/items";
+import { getDatabaseClient } from "~/services/database.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -119,7 +120,7 @@ export async function ensureDraftMakeMethod(
   // The new version is an empty shell — `upsertMakeMethodVersion` copies the
   // method's own columns, not its BOM or routing. Without this the draft would
   // release as an assembly stripped of every line nobody pushed.
-  const copied = await copyMakeMethod(client, {
+  const copied = await copyMakeMethod(client, getDatabaseClient(), {
     sourceId: activeMethodId,
     targetId: draftId,
     companyId,
