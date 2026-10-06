@@ -2,17 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Reorder-quantity sizing shared by the MRP engine (@carbon/planning) and the
-// client planning calculator (ItemReorderPolicy.tsx). Ported 1:1 from the client
-// `calculateOrders` four-policy math, which itself mirrors the SQL
+// Reorder-quantity sizing used by the MRP engine (@carbon/planning) when it
+// writes Order / Make planning actions; the planning pages list those actions
+// rather than sizing again. The math mirrors the SQL
 // `calculate_quantity_to_order` (20260324120000_planning-quantity-to-order.sql).
 // A parity test pins this module against hand-computed SQL results
 // (planning-sizing.test.ts) — do NOT "improve" the math here without updating
-// all three copies together.
+// the SQL copy too.
 //
-// Pure and clock-free: `todayDate` is injected by the caller (client: local
-// today; server: datetime.today(companyTimeZone)) so this module never reads a
-// timezone. No React, no DB, no app imports.
+// Pure and clock-free: `todayDate` is injected by the caller
+// (datetime.today(companyTimeZone)) so this module never reads a timezone. No
+// React, no DB, no app imports.
 
 import { RoundingMode, round } from "@carbon/database/precision";
 import { parseDate } from "@internationalized/date";

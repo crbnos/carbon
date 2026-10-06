@@ -69,6 +69,7 @@ import type {
 import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  type PURCHASE_ORDER_REOPEN_STATUSES,
   taxPairForQuantity
 } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
@@ -131,11 +132,47 @@ export async function deletePurchaseOrder(
   return client.from("purchaseOrder").delete().eq("id", purchaseOrderId);
 }
 
+/**
+ * A purchase order raised by the planning pages skips the approval rule
+ * (`purchaseOrder.createdFromPlanning`, with the company's
+ * `skipApprovalForPlanningPurchaseOrders`). Any manual change to its lines
+ * forfeits that, so an MRP order cannot be padded to dodge approval: the line
+ * writers below clear the flag BEFORE they write — a failed clear stops the
+ * write, so a line never changes while the PO still skips approval. Planning
+ * restores the flag after its own line writes (`planning.update.tsx`).
+ */
+async function clearPlanningOrigin(
+  client: SupabaseClient<Database>,
+  where: { purchaseOrderId: string } | { purchaseOrderLineId: string }
+) {
+  let purchaseOrderId: string | null;
+  if ("purchaseOrderId" in where) {
+    purchaseOrderId = where.purchaseOrderId;
+  } else {
+    const line = await client
+      .from("purchaseOrderLine")
+      .select("purchaseOrderId")
+      .eq("id", where.purchaseOrderLineId)
+      .maybeSingle();
+    if (line.error) return { error: line.error };
+    purchaseOrderId = line.data?.purchaseOrderId ?? null;
+  }
+  if (!purchaseOrderId) return { error: null };
+  const cleared = await client
+    .from("purchaseOrder")
+    .update({ createdFromPlanning: false })
+    .eq("id", purchaseOrderId)
+    .eq("createdFromPlanning", true);
+  return { error: cleared.error };
+}
+
 /** @mcp delete */
 export async function deletePurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLineId: string
 ) {
+  const cleared = await clearPlanningOrigin(client, { purchaseOrderLineId });
+  if (cleared.error) return { data: null, error: cleared.error };
   return client
     .from("purchaseOrderLine")
     .delete()
@@ -616,8 +653,12 @@ export async function getPurchasingPlanning(
     );
   }
 
+  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
+  // from MRP's open new-supply actions), then the part number so a page is
+  // stable when many rows have nothing to order.
   query = setGenericQueryFilters(query, args, [
-    { column: "quantityToOrder", ascending: false }
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
   ]);
 
   return query;
@@ -1386,7 +1427,8 @@ export async function updatePurchaseOrderStatus(
 }
 
 /**
- * Reopens a released purchase order to Draft as its next revision.
+ * Reopens a released purchase order as its next revision — to Draft from the
+ * PO page, or to Planned from planning (see `PURCHASE_ORDER_REOPEN_STATUSES`).
  *
  * Compare-and-swap: the increment and the eligibility conditions are both in
  * SQL, so concurrent requests can't share a revision number and an ineligible
@@ -1398,17 +1440,19 @@ export async function reopenPurchaseOrderAsRevision(
   {
     id,
     companyId,
-    updatedBy
+    updatedBy,
+    status = "Draft"
   }: {
     id: string;
     companyId: string;
     updatedBy: string;
+    status?: (typeof PURCHASE_ORDER_REOPEN_STATUSES)[number];
   }
 ) {
   const result = await db
     .updateTable("purchaseOrder")
     .set((eb) => ({
-      status: "Draft" as const,
+      status,
       assignee: null,
       revisionId: eb("revisionId", "+", 1),
       updatedBy,
@@ -2068,6 +2112,12 @@ export async function upsertPurchaseOrderLine(
 ) {
   const normalized = normalizePurchaseOrderLineReferences(purchaseOrderLine);
 
+  // a manual line change forfeits the planning approval bypass
+  const cleared = await clearPlanningOrigin(client, {
+    purchaseOrderId: normalized.purchaseOrderId
+  });
+  if (cleared.error) return { data: null, error: cleared.error };
+
   if ("id" in normalized) {
     return client
       .from("purchaseOrderLine")
@@ -2246,7 +2296,11 @@ export type PurchasingPlanningApplyResult = {
  * extended price is generated from the quantity, the tax amount is stored.
  * `suggestedQuantity` is in INVENTORY units; the line stores PURCHASE units,
  * converted by the line's own `conversionFactor` and rounded up to a whole
- * purchase unit, as the drawer shows it.
+ * purchase unit, as the drawer shows it. It is what the line should still
+ * BRING — MRP reads a line's `quantityToReceive` — so what was already
+ * received is added back: a PO reopened from planning after a partial receipt
+ * would otherwise lose it (an Increase to 16 on a line with 5 received left
+ * only 11 to come).
  */
 export async function applyPurchasingPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -2334,22 +2388,33 @@ export async function applyPurchasingPlanningActions(
     );
     if (quantities.length > 0) {
       const lineIds = [...new Set(quantities.map((a) => a.lineId))];
-      const lines = await trx
-        .selectFrom("purchaseOrderLine as pol")
-        .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
-        .select([
-          "pol.id",
-          "pol.supplierUnitPrice",
-          "pol.supplierShippingCost",
-          "pol.purchaseQuantity",
-          "pol.taxPercent",
-          "pol.supplierTaxAmount",
-          "pol.conversionFactor",
-          "po.currencyCode"
-        ])
-        .where("pol.id", "in", lineIds)
-        .where("pol.companyId", "=", companyId)
-        .execute();
+      // A PO with no currency is in the company's base currency, as the PO
+      // line form reads it; refusing it failed every Increase / Decrease on
+      // such a PO with "Currency (none) has no precision".
+      const lines = (
+        await trx
+          .selectFrom("purchaseOrderLine as pol")
+          .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+          .innerJoin("company as c", "c.id", "po.companyId")
+          .select([
+            "pol.id",
+            "pol.supplierUnitPrice",
+            "pol.supplierShippingCost",
+            "pol.purchaseQuantity",
+            "pol.quantityReceived",
+            "pol.taxPercent",
+            "pol.supplierTaxAmount",
+            "pol.conversionFactor",
+            "po.currencyCode",
+            "c.baseCurrencyCode"
+          ])
+          .where("pol.id", "in", lineIds)
+          .where("pol.companyId", "=", companyId)
+          .execute()
+      ).map(({ baseCurrencyCode, ...line }) => ({
+        ...line,
+        currencyCode: line.currencyCode ?? baseCurrencyCode
+      }));
       const lineById = new Map(lines.map((line) => [line.id, line]));
       const codes = [
         ...new Set(
@@ -2394,14 +2459,21 @@ export async function applyPurchasingPlanningActions(
           continue;
         }
         const conversionFactor = Number(line.conversionFactor) || 1;
-        const quantity =
+        // MRP suggests a whole number of purchase units already
+        // (`quantityAfterApply`, @carbon/planning); the inner round strips
+        // float noise (1.1 / 0.1 = 11.000000000000002) that would otherwise
+        // ceil it a whole purchase unit up.
+        const toReceive =
           conversionFactor > 0
             ? round(
-                Number(action.suggestedQuantity) / conversionFactor,
+                round(Number(action.suggestedQuantity) / conversionFactor),
                 0,
                 RoundingMode.Up
               )
             : Number(action.suggestedQuantity);
+        const quantity = round(
+          (Number(line.quantityReceived) || 0) + toReceive
+        );
         const pair = taxPairForQuantity(line, quantity, decimals);
         values.push({
           lineId: action.lineId,
@@ -2460,6 +2532,22 @@ export async function applyPurchasingPlanningActions(
           ])
         )
         .where("purchaseOrderId", "in", editablePurchaseOrders)
+        // A draft invoice line holds an ON DELETE RESTRICT reference: deleting
+        // under it threw and rolled the whole batch back. Left alone, the
+        // action goes to review like any other refused Cancel.
+        .where(({ not, exists, selectFrom }) =>
+          not(
+            exists(
+              selectFrom("purchaseInvoiceLine")
+                .select("purchaseInvoiceLine.id")
+                .whereRef(
+                  "purchaseInvoiceLine.purchaseOrderLineId",
+                  "=",
+                  "purchaseOrderLine.id"
+                )
+            )
+          )
+        )
         .returning("id")
         .execute();
       for (const row of deleted) changedLines.add(row.id);
@@ -3656,7 +3744,18 @@ export async function updatePurchaseOrderLineSchedule(
       .single();
     if (line.error) return { updated: false, error: line.error };
 
-    const currencyCode = line.data.purchaseOrder?.currencyCode;
+    // A PO with no currency is in the company's base currency, as the PO
+    // line form reads it.
+    let currencyCode = line.data.purchaseOrder?.currencyCode ?? null;
+    if (!currencyCode) {
+      const company = await client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", args.companyId)
+        .single();
+      if (company.error) return { updated: false, error: company.error };
+      currencyCode = company.data.baseCurrencyCode;
+    }
     if (!currencyCode) {
       return {
         updated: false,

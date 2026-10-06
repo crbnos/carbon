@@ -193,6 +193,10 @@ describe("applyPurchasingPlanningActions", () => {
     const cancels = driver.sent.find(is.cancels)!;
     expect(cancels.sql).toContain('coalesce("quantityReceived"');
     expect(cancels.sql).toContain('coalesce("quantityInvoiced"');
+    // a draft invoice line's RESTRICT reference refuses the line, not the batch
+    expect(cancels.sql).toMatch(
+      /not exists \(select "purchaseInvoiceLine"\."id" from "purchaseInvoiceLine"/
+    );
   });
 
   // 55 inventory units at 10 per purchase unit is 5.5 → 6 purchase units, and
@@ -204,6 +208,38 @@ describe("applyPurchasingPlanningActions", () => {
     expect(write.parameters).toEqual(
       expect.arrayContaining(["pol-qty", 6, 0.1, 1.2])
     );
+  });
+
+  // MRP measures a line by what it still has to bring (`quantityToReceive`). A
+  // PO reopened from planning can carry a receipt: 55 inventory units still to
+  // come is 6 purchase units ON TOP of the 2 received — 8 on the line, tax
+  // 2 × 8 at 10% = 1.60. Writing 6 would have dropped what arrived.
+  it("adds what was already received to the quantity still to come", async () => {
+    const { db, driver } = database((q) =>
+      is.lines(q) ? [{ ...qtyLine, quantityReceived: 2 }] : everythingLands(q)
+    );
+    await applyPurchasingPlanningActions(db, { ...scope, actions: [increase] });
+    const write = driver.sent.find(is.quantities)!;
+    expect(write.parameters).toEqual(
+      expect.arrayContaining(["pol-qty", 8, 0.1, 1.6])
+    );
+  });
+
+  // A PO with no currency is in the company's base currency. It used to fail
+  // every quantity change with "Currency (none) has no precision".
+  it("prices a PO with no currency in the company's base currency", async () => {
+    const { db, driver } = database((q) =>
+      is.lines(q)
+        ? [{ ...qtyLine, currencyCode: null, baseCurrencyCode: "USD" }]
+        : everythingLands(q)
+    );
+    const result = await applyPurchasingPlanningActions(db, {
+      ...scope,
+      actions: [increase]
+    });
+    expect(result.failed).toEqual([]);
+    expect(result.applied).toEqual(["a-qty"]);
+    expect(driver.sent.find(is.currencies)!.parameters).toContain("USD");
   });
 
   // An MRP run between the page's read and the claim can move an Open action's

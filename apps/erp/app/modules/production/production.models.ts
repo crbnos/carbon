@@ -75,7 +75,8 @@ export const planningActionType = [
   "Defer",
   "Cancel",
   "Increase",
-  "Decrease"
+  "Decrease",
+  "Release"
 ] as const;
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;

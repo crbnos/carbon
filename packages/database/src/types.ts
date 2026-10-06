@@ -8006,6 +8006,7 @@ export type Database = {
           showCurrencyTrailingZeros: boolean
           showCustomerReadableId: boolean
           showSupplierReadableId: boolean
+          skipApprovalForPlanningPurchaseOrders: boolean
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
           updateLeadTimesOnReceipt: boolean
@@ -8067,6 +8068,7 @@ export type Database = {
           showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
+          skipApprovalForPlanningPurchaseOrders?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
@@ -8128,6 +8130,7 @@ export type Database = {
           showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
+          skipApprovalForPlanningPurchaseOrders?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
@@ -40409,6 +40412,41 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "planningAction_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -43112,6 +43150,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          createdFromPlanning: boolean
           currencyCode: string | null
           customFields: Json | null
           exchangeRate: number | null
@@ -43142,6 +43181,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          createdFromPlanning?: boolean
           currencyCode?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
@@ -43172,6 +43212,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          createdFromPlanning?: boolean
           currencyCode?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
@@ -84976,6 +85017,7 @@ export type Database = {
           minimumReserveQuantity: number
           name: string
           orderMultiple: number
+          orderQuantity: number
           planningHorizonDays: number
           quantityOnHand: number
           quantityToOrder: number
@@ -85235,6 +85277,7 @@ export type Database = {
           minimumReserveQuantity: number
           name: string
           orderMultiple: number
+          orderQuantity: number
           planningHorizonDays: number
           preferredSupplierId: string
           purchasingBlocked: boolean
@@ -86993,6 +87036,7 @@ export type Database = {
         | "Cancel"
         | "Increase"
         | "Decrease"
+        | "Release"
       pricingRuleAmountType: "Percentage" | "Fixed"
       pricingRuleType: "Discount" | "Markup" | "Configuration"
       procedureStatus: "Draft" | "Active" | "Archived"
@@ -88450,6 +88494,7 @@ export const Constants = {
         "Cancel",
         "Increase",
         "Decrease",
+        "Release",
       ],
       pricingRuleAmountType: ["Percentage", "Fixed"],
       pricingRuleType: ["Discount", "Markup", "Configuration"],

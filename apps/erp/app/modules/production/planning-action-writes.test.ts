@@ -14,6 +14,7 @@ import {
   type QueryResult
 } from "kysely";
 import { describe, expect, it, vi } from "vitest";
+import type { PlanningActionKind } from "./production.service";
 
 // Same module-graph stubs as production.service.test.ts: the functions under
 // test need neither the glossary nor the Lingui macro.
@@ -40,7 +41,8 @@ const {
   dismissPlanningActions,
   getPlanningActionsByIds,
   markPlanningActionsActioned,
-  reopenDismissedPlanningActions
+  reopenDismissedPlanningActions,
+  settleNewSupplyPlanningActions
 } = await import("./production.service");
 
 // The Postgres wire is the boundary: every statement is recorded as compiled
@@ -80,7 +82,12 @@ function database(changedIds: string[] = []) {
   return { db, driver };
 }
 
-const args = { ids: ["a1", "a2", "a3"], companyId: "c1", userId: "u1" };
+const args = {
+  ids: ["a1", "a2", "a3"],
+  companyId: "c1",
+  userId: "u1",
+  kind: "Make" as PlanningActionKind
+};
 
 // The routes reported the ids they were SENT ("Dismissed 5") while the update
 // skipped rows that had changed since the page loaded.
@@ -132,6 +139,32 @@ describe("planning action worklist writes return the rows they changed", () => {
     );
   });
 
+  // The writes run past row-level security, so the page's permission was the
+  // only check: a purchasing user could dismiss production's actions by id.
+  it.each([
+    ["dismiss", dismissPlanningActions],
+    ["reopen", reopenDismissedPlanningActions],
+    [
+      "assign",
+      (db: Kysely<KyselyDatabase>, a: typeof args) =>
+        assignPlanningActions(db, { ...a, assignee: "u2" })
+    ]
+  ] as const)("%s writes only its own page's actions", async (_, write) => {
+    const make = database(["a1"]);
+    await write(make.db, args);
+    expect(make.driver.sent[0]?.sql).toContain('"jobId" is not null');
+    expect(make.driver.sent[0]?.sql).not.toContain('"purchaseOrderLineId"');
+    expect(make.driver.sent[0]?.parameters).toContain("Make");
+
+    const buy = database(["a1"]);
+    await write(buy.db, { ...args, kind: "Buy" });
+    expect(buy.driver.sent[0]?.sql).toContain(
+      '"purchaseOrderLineId" is not null'
+    );
+    expect(buy.driver.sent[0]?.sql).not.toContain('"jobId"');
+    expect(buy.driver.sent[0]?.parameters).toContain("Order");
+  });
+
   it("sends nothing for an empty id list", async () => {
     const { db, driver } = database();
     const result = await dismissPlanningActions(db, { ...args, ids: [] });
@@ -173,5 +206,62 @@ describe("getPlanningActionsByIds", () => {
       data: null,
       error: { message: "connection refused" }
     });
+  });
+});
+
+// The page's Order button raised PO lines and jobs but never touched the
+// suggestions they answered, which stayed Open on the page until the next MRP
+// run re-derived the worklist.
+describe("settleNewSupplyPlanningActions", () => {
+  const settle = {
+    companyId: "c1",
+    locationId: "l1",
+    userId: "u1",
+    type: "Order" as const
+  };
+
+  it("settles each ordered (item, week) in one statement", async () => {
+    const { db, driver } = database(["a1", "a2"]);
+    const result = await settleNewSupplyPlanningActions(db, {
+      ...settle,
+      ordered: [
+        { itemId: "i1", periodId: "p1" },
+        { itemId: "i1", periodId: "p1" },
+        { itemId: "i2", periodId: "p2" }
+      ]
+    });
+    expect(result).toEqual({ data: [{ id: "a1" }, { id: "a2" }], error: null });
+    expect(driver.sent).toHaveLength(1);
+    const [statement] = driver.sent;
+    expect(statement?.sql).toMatch(/^update "planningAction"/);
+    // pairs, never a cross product: ordering i1 in p1 and i2 in p2 must not
+    // settle i1's p2 suggestion
+    expect(statement?.sql).toContain(
+      '("itemId" = $9 and "periodId" = $10) or ("itemId" = $11 and "periodId" = $12)'
+    );
+    expect(statement?.parameters).toEqual([
+      "Actioned",
+      "u1",
+      expect.any(String),
+      "c1",
+      "l1",
+      "Order",
+      "Open",
+      "Dismissed",
+      "i1",
+      "p1",
+      "i2",
+      "p2"
+    ]);
+  });
+
+  it("sends nothing when no order was placed", async () => {
+    const { db, driver } = database();
+    const result = await settleNewSupplyPlanningActions(db, {
+      ...settle,
+      ordered: []
+    });
+    expect(result).toEqual({ data: [], error: null });
+    expect(driver.sent).toHaveLength(0);
   });
 });

@@ -28,6 +28,7 @@ import {
   setForecastConsumptionWindow,
   setLocationResponsibleEmployee,
   setRescheduleToleranceDays,
+  setSkipApprovalForPlanningPurchaseOrders,
   updateMrpRunTimeSetting,
   upsertItemPostingGroupResponsibility
 } from "~/modules/settings";
@@ -35,6 +36,7 @@ import {
   ForecastConsumptionCard,
   MrpScheduleCard,
   PlanningHorizonCard,
+  PlanningPurchaseOrderApprovalCard,
   RescheduleToleranceCard,
   ResponsibleEmployeeCard
 } from "~/modules/settings/ui/Planning";
@@ -108,6 +110,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     forecastConsumptionForwardPeriods:
       companySettings.data.forecastConsumptionForwardPeriods ?? 1,
     mrpRunTime: companySettings.data.mrpRunTime ?? null,
+    skipApprovalForPlanningPurchaseOrders:
+      companySettings.data.skipApprovalForPlanningPurchaseOrders ?? true,
     locations: locations.data ?? [],
     itemGroups: itemGroups.data ?? [],
     responsibilities: responsibilities.data ?? []
@@ -200,6 +204,14 @@ export async function action({ request }: ActionFunctionArgs) {
           message: "Failed to update location ownership"
         };
       }
+      // No row back: the location is not this company's, or the user lacks
+      // resources_update and row-level security matched nothing.
+      if ((result.data?.length ?? 0) === 0) {
+        return {
+          success: false,
+          message: "You do not have permission to change this location"
+        };
+      }
       return { success: true, message: "Location ownership updated" };
     }
     case "setItemGroup": {
@@ -254,6 +266,27 @@ export async function action({ request }: ActionFunctionArgs) {
         };
       }
       return { success: true, message: "Item group ownership updated" };
+    }
+    case "setPlanningPurchaseOrderApproval": {
+      const enabled = formData.get("enabled") === "true";
+      const result = await setSkipApprovalForPlanningPurchaseOrders(client, {
+        companyId,
+        enabled
+      });
+      if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
+        return { success: false, message: "Failed to update the setting" };
+      }
+      return {
+        success: true,
+        message: enabled
+          ? "Planning purchase orders skip approval"
+          : "Planning purchase orders need approval"
+      };
     }
     case "setTolerance": {
       const validation = await validator(rescheduleToleranceValidator).validate(
@@ -371,6 +404,7 @@ export default function PlanningSettingsRoute() {
     forecastConsumptionBackwardPeriods,
     forecastConsumptionForwardPeriods,
     mrpRunTime,
+    skipApprovalForPlanningPurchaseOrders,
     locations,
     itemGroups,
     responsibilities
@@ -399,6 +433,11 @@ export default function PlanningSettingsRoute() {
         <ForecastConsumptionCard
           backwardPeriods={forecastConsumptionBackwardPeriods}
           forwardPeriods={forecastConsumptionForwardPeriods}
+        />
+        <PlanningPurchaseOrderApprovalCard
+          skipApprovalForPlanningPurchaseOrders={
+            skipApprovalForPlanningPurchaseOrders
+          }
         />
 
         <SettingsSectionHeader>

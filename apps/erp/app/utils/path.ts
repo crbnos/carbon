@@ -250,6 +250,8 @@ export const path = {
         generatePath(`${api}/production/kpi/${key}`),
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
+      purchaseOrderFinalize: (id: string) =>
+        generatePath(`${api}/purchasing/purchase-order/${id}/finalize`),
       purchasesReportLines: `${api}/accounting/purchase-lines`,
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),

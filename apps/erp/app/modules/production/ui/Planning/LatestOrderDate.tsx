@@ -4,46 +4,46 @@
 
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo } from "react";
-import { getNextPlannedOrder } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { ProductionPlanningItem } from "~/modules/production";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
 
 type PlanningRow = ProductionPlanningItem | PurchasingPlanningItem;
-type PlanningPeriod = { id: string; startDate: string };
 
 /** CSV value for the Latest Order Date column: the ISO date, or blank. */
-export function latestOrderDateExportValue(
-  row: PlanningRow,
-  periods: PlanningPeriod[],
-  todayIso: string
-) {
-  return getNextPlannedOrder(row, periods, todayIso)?.startDate ?? null;
+export function latestOrderDateExportValue(row: PlanningRow) {
+  return row.latestOrderDate ?? null;
 }
 
 /**
- * The last day the row's next planned order can be placed and still arrive on
- * time: the date the supply is required less the item's lead time. Red once
- * that day has passed — the order is already late. The tooltip shows the two
- * numbers it was derived from.
+ * The last day the row's next suggested order can be placed and still arrive
+ * on time: the earliest order-by date among the item's open new-supply
+ * actions, which the grid RPC returns as `latestOrderDate` and sorts by. Red
+ * once that day has passed — the order is already late. The tooltip shows the
+ * date the supply is required (the order-by date plus the lead time MRP took
+ * off it) and the lead time.
  */
 export const LatestOrderDateCell = memo(function LatestOrderDateCell({
   itemPlanning,
-  periods,
   todayIso
 }: {
   itemPlanning: PlanningRow;
-  periods: PlanningPeriod[];
   /** Today on the location's calendar — what "past due" is measured from. */
   todayIso: string;
 }) {
   const { locale } = useLocale();
-  const order = getNextPlannedOrder(itemPlanning, periods, todayIso);
-  if (!order) return <span>-</span>;
+  const latestOrderDate = itemPlanning.latestOrderDate;
+  if (!latestOrderDate) return <span>-</span>;
 
   const leadTime = itemPlanning.leadTime ?? 0;
+  const requiredDate = parseDate(latestOrderDate)
+    .add({ days: leadTime })
+    .toString();
+  // ISO dates: string order is chronological
+  const isPastDue = latestOrderDate < todayIso;
 
   return (
     <Tooltip>
@@ -51,10 +51,10 @@ export const LatestOrderDateCell = memo(function LatestOrderDateCell({
         <span
           className={cn(
             "whitespace-nowrap tabular-nums",
-            order.isASAP && "text-red-500 font-bold"
+            isPastDue && "text-red-500 font-bold"
           )}
         >
-          {formatDate(order.startDate, undefined, locale)}
+          {formatDate(latestOrderDate, undefined, locale)}
         </span>
       </TooltipTrigger>
       <TooltipContent>
@@ -63,7 +63,7 @@ export const LatestOrderDateCell = memo(function LatestOrderDateCell({
             <Trans>Required Date</Trans>
           </span>
           <span className="tabular-nums text-right">
-            {formatDate(order.dueDate, undefined, locale)}
+            {formatDate(requiredDate, undefined, locale)}
           </span>
           <span className="text-muted-foreground">
             <Trans>Lead Time</Trans>
@@ -71,7 +71,7 @@ export const LatestOrderDateCell = memo(function LatestOrderDateCell({
           <span className="tabular-nums text-right">
             <Plural value={leadTime} one="# day" other="# days" />
           </span>
-          {order.isASAP && (
+          {isPastDue && (
             <span className="col-span-2 text-red-500 font-medium">
               <Trans>Past due</Trans>
             </span>

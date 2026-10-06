@@ -10,43 +10,45 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Table as TableBase,
-  Tbody,
-  Td,
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
-  Tr
+  TooltipTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { BsExclamationSquareFill } from "react-icons/bs";
 import {
   LuBan,
   LuChevronsDown,
   LuChevronsUp,
+  LuCirclePlay,
   LuEllipsisVertical,
   LuEyeOff,
-  LuHammer,
   LuMinus,
   LuPlus,
   LuRotateCcw,
+  LuSend,
   LuShoppingCart,
   LuUserCheck,
   LuX
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink } from "~/components";
+import { Assignee, DateTime } from "~/components";
 import { useQuantityFormatter } from "~/hooks";
 import type { PlanningAction } from "~/modules/production";
 import type { planningActionType } from "~/modules/production/production.models";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { path } from "~/utils/path";
 import JobStatus from "../Jobs/JobStatus";
+import {
+  isPlanningActionLate,
+  type PlanningPurchaseOrder,
+  planningActionNeedsReview
+} from "./planning-review";
 
 // The MRP action worklist (spec §P1.7) rendered INSIDE the planning grid: one
 // persisted planningAction per line, shown in the expanded row of the item it
@@ -61,23 +63,40 @@ export function isNewSupplyAction(action: PlanningAction) {
   return NEW_SUPPLY_TYPES.has(action.type);
 }
 
-/** One-click Apply: an Open change action whose target is still uncommitted. */
+/** One-click Apply: an Open change action whose target is still uncommitted
+ *  — read from the order's live status, not MRP's stamp (see planning-review).
+ *  A Release is done on the order itself, never applied from here. */
 export function isApplyablePlanningAction(action: PlanningAction) {
   return (
     action.status === "Open" &&
-    !action.requiresManualAction &&
+    action.type !== "Release" &&
+    !planningActionNeedsReview(action) &&
     !isNewSupplyAction(action)
   );
 }
 
+/** The purchase order a planning action targets, for its order menu. */
+export function planningActionPurchaseOrder(
+  action: PlanningAction
+): PlanningPurchaseOrder | null {
+  if (!action.purchaseOrderId) return null;
+  return {
+    id: action.purchaseOrderId,
+    readableId: action.purchaseOrderReadableId,
+    status: action.purchaseOrderStatus,
+    orderDate: action.purchaseOrderDate
+  };
+}
+
 const TYPE_ICONS: Record<PlanningActionType, ReactNode> = {
   Order: <LuShoppingCart />,
-  Make: <LuHammer />,
+  Make: <LuCirclePlay />,
   Expedite: <LuChevronsUp />,
   Defer: <LuChevronsDown />,
   Increase: <LuPlus />,
   Decrease: <LuMinus />,
-  Cancel: <LuBan />
+  Cancel: <LuBan />,
+  Release: <LuSend />
 };
 
 const TYPE_ORDER: PlanningActionType[] = [
@@ -85,6 +104,7 @@ const TYPE_ORDER: PlanningActionType[] = [
   "Cancel",
   "Decrease",
   "Increase",
+  "Release",
   "Defer",
   "Order",
   "Make"
@@ -103,7 +123,8 @@ export function usePlanningActionTypeLabels(): Record<
       Defer: t`Defer`,
       Increase: t`Increase`,
       Decrease: t`Decrease`,
-      Cancel: t`Cancel`
+      Cancel: t`Cancel`,
+      Release: t`Release`
     }),
     [t]
   );
@@ -198,26 +219,11 @@ export function usePlanningActionTypeOptions(kind: "Buy" | "Make") {
   }, [kind, labels]);
 }
 
-function AsapIcon() {
-  const { t } = useLingui();
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span role="img" className="inline-flex shrink-0" aria-label={t`ASAP`}>
-          <BsExclamationSquareFill className="text-red-500 size-3.5" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>
-        <Trans>ASAP</Trans>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
+export { planningActionDot } from "./planning-review";
 
 /** The grid's Actions cell: one ICON chip per open action type (with a count
- *  when the item has several; the name is in its tooltip), the ASAP flag when
- *  any is urgent, and a muted chip for dismissed rows so they stay reachable
- *  from the expanded row. Icons only, so the cell is always ONE line — a
+ *  when the item has several; the name is in its tooltip) and a muted chip for
+ *  dismissed rows so they stay reachable from the expanded row. Icons only, so the cell is always ONE line — a
  *  labelled badge per type wrapped and made every busy row taller than its
  *  neighbours. The expanded row shows each action with its full badge. */
 export function PlanningActionsCell({
@@ -233,7 +239,6 @@ export function PlanningActionsCell({
   for (const action of open) {
     counts.set(action.type, (counts.get(action.type) ?? 0) + 1);
   }
-  const isASAP = open.some((a) => a.isASAP);
   const types = TYPE_ORDER.filter((type) => counts.has(type));
 
   return (
@@ -246,7 +251,6 @@ export function PlanningActionsCell({
           compact
         />
       ))}
-      {isASAP && <AsapIcon />}
       {dismissed > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -300,6 +304,16 @@ export type PlanningActionHandlers = {
   onDismiss: (ids: string[]) => void;
   onReopen: (ids: string[]) => void;
   onAssignToMe: (ids: string[]) => void;
+  /** Sets the assignee; an empty string unassigns. */
+  onAssign: (ids: string[], assignee: string) => void;
+  /** The purchasing page's commands on the order itself (Reopen, Reopen as
+   *  Revision, Finalize), added to the row's ⋯ menu. Null when there are
+   *  none; production passes nothing. */
+  purchaseOrderMenuItems?: (order: PlanningPurchaseOrder) => ReactNode;
+  /** Releases a Release action's order from the page (purchasing: the PO's
+   *  Finalize modal; production: the job release). Absent, the button links
+   *  to the order instead. */
+  onRelease?: (action: PlanningAction) => void;
 };
 
 /** The trailing controls of one action, wherever it is listed: ONE button
@@ -314,16 +328,26 @@ export function PlanningActionRowActions({
   onDismiss,
   onReopen,
   onAssignToMe,
-  onOrder
+  onOrder,
+  purchaseOrderMenuItems,
+  onRelease,
+  purchaseOrder
 }: PlanningActionHandlers & {
   action: PlanningAction;
   /** Opens the order drawer for a new-supply action. A host that lists change
    *  actions only (the order drawer itself) omits it. */
   onOrder?: () => void;
+  /** The order as the host read it; the action's own enrichment otherwise. */
+  purchaseOrder?: PlanningPurchaseOrder | null;
 }) {
   const { t } = useLingui();
   const isDismissed = action.status === "Dismissed";
-  const reviewPath = action.requiresManualAction ? reviewPathFor(action) : null;
+  const reviewPath = planningActionNeedsReview(action)
+    ? reviewPathFor(action)
+    : null;
+  const order = purchaseOrder ?? planningActionPurchaseOrder(action);
+  const orderMenuItems =
+    order && purchaseOrderMenuItems ? purchaseOrderMenuItems(order) : null;
   const isMine = action.assignee === currentUserId;
 
   return (
@@ -332,6 +356,27 @@ export function PlanningActionRowActions({
         <span className="text-xs text-muted-foreground">
           <Trans>Dismissed</Trans>
         </span>
+      ) : action.type === "Release" ? (
+        // released through the order's own path — from here when the page
+        // offers it, else on the order
+        onRelease ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            isDisabled={!canUpdate || isBusy}
+            onClick={() => onRelease(action)}
+          >
+            <Trans>Release</Trans>
+          </Button>
+        ) : (
+          reviewPathFor(action) && (
+            <Button asChild size="sm" variant="secondary">
+              <Link to={reviewPathFor(action)!}>
+                <Trans>Release</Trans>
+              </Link>
+            </Button>
+          )
+        )
       ) : reviewPath ? (
         <Button asChild size="sm" variant="secondary">
           <Link to={reviewPath}>
@@ -395,6 +440,12 @@ export function PlanningActionRowActions({
               <Trans>Dismiss</Trans>
             </DropdownMenuItem>
           )}
+          {orderMenuItems && (
+            <>
+              <DropdownMenuSeparator />
+              {orderMenuItems}
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -439,166 +490,218 @@ export function PlanningActionTypeWithReason({
   );
 }
 
-type PlanningActionLinesProps = {
+type PlanningActionLinesProps = PlanningActionHandlers & {
   actions: PlanningAction[];
   /** Today on the location's calendar — an action dated before it is late. */
   todayIso: string;
-  currentUserId: string;
-  canUpdate: boolean;
-  isBusy: boolean;
-  onApply: (ids: string[]) => void;
-  onDismiss: (ids: string[]) => void;
-  onReopen: (ids: string[]) => void;
-  onAssignToMe: (ids: string[]) => void;
   /** Opens the grid's order drawer for this item (Order / Make rows). */
   onOrder: () => void;
 };
 
-/** Expanded-row content: the item's planning actions as child lines, in the
- *  same recipe as Change Notices → affected items and Batches → members. */
+/** The order an action changes, as it reads in a sentence: its status icon
+ *  (why the row is Review rather than Apply, named on hover) and its number. */
+function PlanningActionTarget({ action }: { action: PlanningAction }) {
+  const documentId =
+    action.purchaseOrderReadableId ?? action.jobReadableId ?? null;
+  const documentPath = reviewPathFor(action);
+  return (
+    <span className="inline-flex items-center gap-1 align-middle">
+      <PurchasingStatus iconOnly status={action.purchaseOrderStatus} />
+      <JobStatus iconOnly status={action.jobStatus} />
+      {documentId && documentPath ? (
+        <Link to={documentPath} className="hover:underline">
+          {documentId}
+        </Link>
+      ) : (
+        <span>{documentId ?? "—"}</span>
+      )}
+    </span>
+  );
+}
+
+/** One action as a sentence: "Order 530 for Oct 4, 2026", "Expedite purchase
+ *  order PO00129 to Oct 4, 2026". The type's icon leads it and carries MRP's
+ *  reason as its tooltip. */
+function PlanningActionSentence({
+  action,
+  isLate
+}: {
+  action: PlanningAction;
+  isLate: boolean;
+}) {
+  const formatQuantity = useQuantityFormatter();
+  const labels = usePlanningActionTypeLabels();
+  const reason = action.reason ?? action.policyName ?? "";
+
+  const quantity = formatQuantity(action.suggestedQuantity);
+  const amount = <span className="tabular-nums">{quantity}</span>;
+  const date = (
+    <span className={cn(isLate && "text-red-500")}>
+      <DateTime value={action.suggestedDate} variant="date" />
+    </span>
+  );
+  const target = <PlanningActionTarget action={action} />;
+  const isJob = action.jobId !== null;
+
+  let sentence: ReactNode;
+  switch (action.type) {
+    case "Order":
+      sentence = (
+        <Trans>
+          Order {amount} for {date}
+        </Trans>
+      );
+      break;
+    case "Make":
+      sentence = (
+        <Trans>
+          Make {amount} for {date}
+        </Trans>
+      );
+      break;
+    case "Expedite":
+      sentence = isJob ? (
+        <Trans>
+          Expedite job {target} to {date}
+        </Trans>
+      ) : (
+        <Trans>
+          Expedite purchase order {target} to {date}
+        </Trans>
+      );
+      break;
+    case "Defer":
+      sentence = isJob ? (
+        <Trans>
+          Defer job {target} to {date}
+        </Trans>
+      ) : (
+        <Trans>
+          Defer purchase order {target} to {date}
+        </Trans>
+      );
+      break;
+    case "Increase":
+      sentence = isJob ? (
+        <Trans>
+          Increase job {target} to {amount}
+        </Trans>
+      ) : (
+        <Trans>
+          Increase purchase order {target} to {amount}
+        </Trans>
+      );
+      break;
+    case "Decrease":
+      sentence = isJob ? (
+        <Trans>
+          Decrease job {target} to {amount}
+        </Trans>
+      ) : (
+        <Trans>
+          Decrease purchase order {target} to {amount}
+        </Trans>
+      );
+      break;
+    case "Cancel":
+      sentence = isJob ? (
+        <Trans>Cancel job {target}</Trans>
+      ) : (
+        <Trans>Cancel purchase order {target}</Trans>
+      );
+      break;
+    case "Release":
+      sentence = isJob ? (
+        <Trans>
+          Release job {target} by {date}
+        </Trans>
+      ) : (
+        <Trans>
+          Release purchase order {target} by {date}
+        </Trans>
+      );
+      break;
+  }
+
+  const icon = (
+    <span
+      // focusable: the tooltip is the only place the reason is shown
+      tabIndex={0}
+      role="img"
+      aria-label={labels[action.type]}
+      className="inline-flex shrink-0 rounded-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4"
+    >
+      {TYPE_ICONS[action.type]}
+    </span>
+  );
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <Tooltip>
+        <TooltipTrigger asChild>{icon}</TooltipTrigger>
+        <TooltipContent className="max-w-[360px] whitespace-normal">
+          {labels[action.type]}
+          {reason && <div className="text-muted-foreground">{reason}</div>}
+          {action.reason && action.policyName && (
+            <div className="text-muted-foreground">{action.policyName}</div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+      <span className="truncate text-sm text-foreground">{sentence}</span>
+    </div>
+  );
+}
+
+/** Expanded-row content: the item's planning actions as child lines. Each is
+ *  two columns — the action as a sentence on the left, and its assignee and
+ *  controls pushed to the right. */
 export function PlanningActionLines({
   actions,
   todayIso,
-  currentUserId,
-  canUpdate,
-  isBusy,
-  onApply,
-  onDismiss,
-  onReopen,
-  onAssignToMe,
-  onOrder
+  onOrder,
+  ...handlers
 }: PlanningActionLinesProps) {
-  const formatQuantity = useQuantityFormatter();
-
   const sorted = useMemo(() => sortPlanningActions(actions), [actions]);
 
   if (sorted.length === 0) return null;
 
-  // The Table pins this block to the grid's visible width (`sticky left-0`),
-  // so a wide grid does not push the lines off-screen. There is no header
-  // row — the grid's own header already names the item, and a second header
-  // per expanded row read as clutter — so `table-fixed` takes its column
-  // widths from the `colgroup`, keeping cells aligned between rows; the widths
-  // are sized to their widest content (incl. the primitives' px-6). The
-  // reason is the type badge's tooltip — a sentence per row is a column no
-  // width comfortably fits. The
-  // grid lives in a half-width resizable pane, so the block is a container:
-  // below @4xl the assignee is avatar-only, and narrower than the columns'
-  // sum the block scrolls on its own rather than squeezing any column.
-  //
-  // `@container` is inline-size containment: the block has NO intrinsic width,
-  // so it must be stretched by its parent. In a shrink-to-fit parent (a flex
-  // column with `items-start`, e.g. VStack) it collapses to zero and the rows
-  // vanish — hence the explicit `w-full`.
-  const cell = "group-hover:bg-inherit";
-
   return (
-    <div className="w-full pl-[52px] pr-2 py-1 @container">
-      <div className="overflow-x-auto">
-        <TableBase full className="table-fixed">
-          <colgroup>
-            <col className="w-[200px]" />
-            {/* the status icon, the order id and `Hyperlink`'s hover "Open"
-                button */}
-            <col className="w-[264px]" />
-            <col className="w-[120px]" />
-            <col className="w-[170px]" />
-            <col />
-            <col className="w-[180px]" />
-          </colgroup>
-          <Tbody>
-            {sorted.map((action) => {
-              const isDismissed = action.status === "Dismissed";
-              const isLate = !isDismissed && action.suggestedDate < todayIso;
-              const documentId =
-                action.purchaseOrderReadableId ?? action.jobReadableId ?? null;
-              const documentPath = reviewPathFor(action);
+    <ul className="flex w-full flex-col divide-y divide-border py-1 pl-[52px] pr-2">
+      {sorted.map((action) => {
+        const isDismissed = action.status === "Dismissed";
+        // A Decrease / Defer / Cancel is never late (see isPlanningActionLate)
+        const isLate = isPlanningActionLate(action, todayIso);
 
-              return (
-                <Tr
-                  key={action.id}
-                  className={cn(isDismissed && "text-muted-foreground")}
-                >
-                  <Td className={cn(cell, "whitespace-nowrap")}>
-                    <PlanningActionTypeWithReason action={action} />
-                  </Td>
-                  <Td className={cn(cell, "overflow-hidden whitespace-nowrap")}>
-                    {documentId && documentPath ? (
-                      <HStack spacing={2} className="flex-nowrap">
-                        {/* why this row is Review or Apply, without a
-                            status column: the icon, its name on hover */}
-                        <PurchasingStatus
-                          iconOnly
-                          status={action.purchaseOrderStatus}
-                        />
-                        <JobStatus iconOnly status={action.jobStatus} />
-                        <Hyperlink to={documentPath}>{documentId}</Hyperlink>
-                      </HStack>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        <Trans>New supply</Trans>
-                      </span>
-                    )}
-                  </Td>
-                  <Td className={cn(cell, "tabular-nums whitespace-nowrap")}>
-                    {formatQuantity(action.suggestedQuantity)}
-                  </Td>
-                  <Td className={cn(cell, "whitespace-nowrap")}>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5",
-                        isLate && "text-red-500"
-                      )}
-                    >
-                      <DateTime value={action.suggestedDate} variant="date" />
-                      {action.isASAP && !isDismissed && <AsapIcon />}
-                    </span>
-                  </Td>
-                  <Td className={cn(cell, "overflow-hidden whitespace-nowrap")}>
-                    {action.assignee ? (
-                      <>
-                        <div className="@4xl:hidden">
-                          <EmployeeAvatar
-                            employeeId={action.assignee}
-                            size="xs"
-                            withName={false}
-                          />
-                        </div>
-                        <div className="hidden @4xl:block truncate">
-                          <EmployeeAvatar
-                            employeeId={action.assignee}
-                            size="xs"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        <span className="@4xl:hidden">—</span>
-                        <span className="hidden @4xl:inline">
-                          <Trans>Unassigned</Trans>
-                        </span>
-                      </span>
-                    )}
-                  </Td>
-                  <Td className={cell}>
-                    <PlanningActionRowActions
-                      action={action}
-                      currentUserId={currentUserId}
-                      canUpdate={canUpdate}
-                      isBusy={isBusy}
-                      onApply={onApply}
-                      onDismiss={onDismiss}
-                      onReopen={onReopen}
-                      onAssignToMe={onAssignToMe}
-                      onOrder={onOrder}
-                    />
-                  </Td>
-                </Tr>
-              );
-            })}
-          </Tbody>
-        </TableBase>
-      </div>
-    </div>
+        return (
+          <li
+            key={action.id}
+            className={cn(
+              "flex min-h-11 items-center justify-between gap-4 py-1",
+              isDismissed && "opacity-60"
+            )}
+          >
+            <PlanningActionSentence action={action} isLate={isLate} />
+            <div className="flex shrink-0 items-center gap-2">
+              <Assignee
+                id={action.id}
+                table="planningAction"
+                size="sm"
+                value={action.assignee ?? ""}
+                isReadOnly={!handlers.canUpdate || handlers.isBusy}
+                className="max-w-[200px] truncate"
+                onAssign={(assignee) =>
+                  handlers.onAssign([action.id], assignee)
+                }
+              />
+              <PlanningActionRowActions
+                action={action}
+                {...handlers}
+                onOrder={onOrder}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

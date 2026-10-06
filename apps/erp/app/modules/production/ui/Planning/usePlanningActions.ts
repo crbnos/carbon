@@ -12,6 +12,7 @@ import {
   useTimeFenceOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
+import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
 
 /**
  * The planning grids' MRP worklist state, shared by the production and
@@ -53,6 +54,8 @@ export function usePlanningActions({
   const actionsByItemId = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const action of planningActions) {
+      // a Release whose order moved on since MRP ran no longer applies
+      if (isStaleRelease(action)) continue;
       const list = map.get(action.itemId);
       if (list) list.push(action);
       else map.set(action.itemId, [action]);
@@ -121,7 +124,10 @@ export function usePlanningActions({
           action: "assign",
           planningActionIds: ids,
           assignee: currentUserId
-        })
+        }),
+      // An empty assignee unassigns.
+      onAssign: (ids: string[], assignee: string) =>
+        submitActions({ action: "assign", planningActionIds: ids, assignee })
     }),
     [currentUserId, canUpdate, isActionsBusy, submitActions]
   );
@@ -130,6 +136,7 @@ export function usePlanningActions({
     actionHandlers,
     isActionsBusy,
     timeFence,
+    actionsByItemId,
     fencedActionsByItemId,
     visibleActionsByItemId,
     submitActions

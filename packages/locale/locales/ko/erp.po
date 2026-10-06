@@ -269,6 +269,11 @@ msgstr "{0}개 값"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0}이 {name}으로 저장됩니다"
@@ -432,6 +437,9 @@ msgstr "{remaining}단계 남음"
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount}개 자원 · {reservationCount}개 예약 · {jobCount}개 작업 지시"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "권한 {scopeCount}개"
 
@@ -470,9 +478,6 @@ msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 �
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
-
-msgid "{updatedJobCount} jobs updated"
-msgstr "{updatedJobCount}개의 작업 지시 업데이트됨"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -537,9 +542,6 @@ msgstr "1개의 초안 분개"
 
 msgid "1 job created"
 msgstr "1개 작업이 생성됨"
-
-msgid "1 job updated"
-msgstr "1개 작업이 업데이트됨"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -2035,6 +2037,12 @@ msgstr "이 작업의 공정이 이 배치에서 실행됩니다"
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "공정이 작업장의 대기열에서 차지하는 위치 — 현장이 작업을 처리하는 순서입니다. 엔진은 배치 순서(가장 빠른 예상 시작)에 따라 번호를 매깁니다. 작업장 보드에서 카드 순서를 변경하면 날짜를 변경하지 않고 이를 재정의합니다."
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr ""
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr ""
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "Onshape 연동 중 예상치 못한 오류가 발생했습니다. 연동 설정을 저장하여 다시 시도하세요."
 
@@ -2775,9 +2783,6 @@ msgstr "기준:"
 
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "회사의 책임자로서 다른 직원에게 책임을 이전할 수 있습니다. 이렇게 하면 청구 및 행정 설정에 완전히 액세스할 수 있게 됩니다."
-
-msgid "ASAP"
-msgstr "긴급"
 
 msgid "Ascending"
 msgstr "오름차순"
@@ -3532,11 +3537,17 @@ msgstr "변경 통지 취소"
 msgid "Cancel Job"
 msgstr "작업 취소"
 
+msgid "Cancel job {target}"
+msgstr ""
+
 msgid "Cancel Order"
 msgstr "주문 취소"
 
 msgid "Cancel Purchase Order"
 msgstr "발주서 취소"
+
+msgid "Cancel purchase order {target}"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "반품 취소"
@@ -3588,6 +3599,12 @@ msgstr "품목 ID 없이 부품 버킷으로 이동할 수 없습니다"
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "주문할 수 없습니다 - 이 품목에 연결된 공급업체가 없습니다"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "주문할 수 없습니다 — {count}개 품목에 공급업체가 없습니다"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "주문할 수 없습니다 — 1개 품목에 공급업체가 없습니다"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "전기할 수 없습니다 — 출하에 만료됨 추적 항목이 포함되어 있습니다."
@@ -4890,8 +4907,10 @@ msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "{0}을 릴리스할 수 없음: {1}"
@@ -5724,6 +5743,12 @@ msgstr "정률법"
 msgid "Decrease"
 msgstr "감소"
 
+msgid "Decrease job {target} to {amount}"
+msgstr ""
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr ""
+
 msgid "Deep in the small hours, {name}."
 msgstr "{name}님, 한밤중이군요."
 
@@ -5846,6 +5871,12 @@ msgstr "기본값"
 
 msgid "Defer"
 msgstr "연기"
+
+msgid "Defer job {target} to {date}"
+msgstr ""
+
+msgid "Defer purchase order {target} to {date}"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "이연법인세비용"
@@ -7706,6 +7737,12 @@ msgstr "예상 입고일"
 msgid "Expedite"
 msgstr "앞당기기"
 
+msgid "Expedite job {target} to {date}"
+msgstr ""
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "매출채권 정산 시 회수 불가로 상각된 고객 잔액에 대한 비용 계정"
 
@@ -8915,7 +8952,7 @@ msgstr "일정을 짤 수 없는 공정이 있습니다"
 msgid "Headers"
 msgstr "헤더"
 
-msgid "healthy"
+msgid "Healthy"
 msgstr "정상"
 
 msgid "Help"
@@ -9357,9 +9394,6 @@ msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일로도 전달받을 주제를 선택하세요."
 
-msgid "inactive"
-msgstr "비활성"
-
 msgid "Inactive"
 msgstr "비활성"
 
@@ -9419,6 +9453,12 @@ msgstr "인코텀즈 위치"
 
 msgid "Increase"
 msgstr "증가"
+
+msgid "Increase job {target} to {amount}"
+msgstr ""
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr ""
 
 msgid "Indirect"
 msgstr "간접"
@@ -9990,6 +10030,9 @@ msgstr "작업 우선순위"
 
 msgid "Job readable"
 msgstr "작업 가독성"
+
+msgid "Job released"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "작업 이동표"
@@ -10682,6 +10725,12 @@ msgstr "유지보수 유형"
 
 msgid "Make"
 msgstr "제조"
+
+msgid "Make {amount} for {date}"
+msgstr ""
+
+msgid "Make {quantity}"
+msgstr "{quantity} 제조"
 
 msgid "Make Active"
 msgstr "활성으로 설정"
@@ -11725,9 +11774,6 @@ msgstr "새 공급업체 부품"
 msgid "New Supplier Return"
 msgstr "새 공급업체 반품"
 
-msgid "New supply"
-msgstr "새로운 공급"
-
 msgid "New Timecard"
 msgstr "새 근무기록"
 
@@ -12332,6 +12378,9 @@ msgstr "보관 단위가 없습니다."
 
 msgid "No storage units or tracking numbers match."
 msgstr "일치하는 보관 단위 또는 추적 번호가 없습니다."
+
+msgid "No Supplier"
+msgstr "공급업체 없음"
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -13069,6 +13118,12 @@ msgstr "이 작업 지시를 위해 {0} × {substitute} 발주"
 msgid "Order {0} for this job"
 msgstr "이 작업의 주문 {0}"
 
+msgid "Order {amount} for {date}"
+msgstr ""
+
+msgid "Order {quantity}"
+msgstr "{quantity} 주문"
+
 msgid "Order by"
 msgstr "정렬 기준"
 
@@ -13730,6 +13785,12 @@ msgstr "계획 호라이즌:"
 msgid "Planning Ownership"
 msgstr "계획 소유권"
 
+msgid "Planning purchase orders need approval"
+msgstr ""
+
+msgid "Planning purchase orders skip approval"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "계획은 제안된 보충 수량을 이 숫자의 배수로 반올림합니다."
 
@@ -14312,6 +14373,9 @@ msgstr "발주서"
 msgid "Purchase Order Amount"
 msgstr "발주서 금액"
 
+msgid "Purchase Order Approval"
+msgstr ""
+
 msgid "Purchase Order approval rule"
 msgstr "발주서 승인 규칙"
 
@@ -14338,6 +14402,9 @@ msgstr "발주서"
 
 msgid "Purchase Orders and Planning"
 msgstr "발주서 및 계획"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr ""
 
 msgid "Purchase orders required"
 msgstr "발주서가 필요합니다"
@@ -14444,9 +14511,6 @@ msgstr "수량"
 
 msgid "Qty On Hand"
 msgstr "현재고"
-
-msgid "Qty to Order"
-msgstr "주문 수량"
 
 msgid "Qty. Complete"
 msgstr "완료 수량"
@@ -15056,8 +15120,14 @@ msgstr "릴리스 제어"
 msgid "Release Job"
 msgstr "작업 지시 릴리스"
 
+msgid "Release job {target} by {date}"
+msgstr ""
+
 msgid "Release Jobs"
 msgstr "작업 지시 릴리스"
+
+msgid "Release purchase order {target} by {date}"
+msgstr ""
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -15209,6 +15279,9 @@ msgstr "라벨 미리보기 생성 중..."
 
 msgid "Reopen"
 msgstr "다시 열기"
+
+msgid "Reopen as Revision"
+msgstr ""
 
 msgid "Reorder"
 msgstr "재주문"
@@ -18080,7 +18153,7 @@ msgstr "동기화"
 msgid "Sync Activity"
 msgstr "동기화 활동"
 
-msgid "sync off"
+msgid "Sync Off"
 msgstr "동기화 해제"
 
 msgid "Sync operation"
@@ -18871,6 +18944,9 @@ msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 �
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공자에서 기능을 활성화하세요(예: 추적 카테고리, 클래스 추적 또는 필드)."
+
+msgid "The purchase order"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격 책정 수량 구간점; 각 열은 구매자-공급업체 협상 및 다운스트림 문서로 변환하기 위한 자체 단가를 포함합니다."
@@ -20062,7 +20138,7 @@ msgstr "실행 취소"
 msgid "Ungroup"
 msgstr "그룹 해제"
 
-msgid "unhealthy"
+msgid "Unhealthy"
 msgstr "문제 있음"
 
 msgid "Uninstall"

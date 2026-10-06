@@ -12,7 +12,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   HStack,
-  Loading,
   PulsingDot,
   Status,
   Tooltip,
@@ -23,16 +22,8 @@ import {
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -58,13 +49,10 @@ import {
   useDrawerItem,
   useMrpScheduleDescription,
   usePermissions,
+  useQuantityFormatter,
   useUser
 } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
-import {
-  clearOrdersCache,
-  getPurchaseOrdersFromPlanning
-} from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { PlanningAction } from "~/modules/production";
 import {
   PLANNING_ACTIONS_COLUMN,
@@ -75,9 +63,15 @@ import {
   isNewSupplyAction,
   PlanningActionLines,
   PlanningActionsCell,
+  planningActionDot,
   planningActionsExportValue,
   usePlanningActionTypeOptions
 } from "~/modules/production/ui/Planning/PlanningActionLines";
+import {
+  openNewSupplyActions,
+  plannedOrdersFromActions,
+  supplierConversionFactor
+} from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
 import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
@@ -89,6 +83,7 @@ import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../purchasing.models";
 import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingPlanningOrderDrawer } from "./PurchasingPlanningOrderDrawer";
+import { usePurchaseOrderPlanningCommands } from "./usePurchaseOrderPlanningCommands";
 
 type PlanningTableProps = {
   data: PurchasingPlanningItem[];
@@ -106,13 +101,6 @@ type PlanningTableProps = {
   locationToday: string;
 };
 
-// `useNumberFormatter()` with no argument builds a new formatter on EVERY render:
-// react-aria memoizes on the options object, and a default `{}` is a new object
-// each time. The formatter is a dependency of `columns`, so every render of this
-// table rebuilt the columns, which remounts every cell — opening the order
-// drawer did it six times over. One shared options object keeps it stable.
-const NUMBER_FORMAT_OPTIONS: Intl.NumberFormatOptions = {};
-
 const PlanningTable = memo(
   ({
     data,
@@ -126,7 +114,8 @@ const PlanningTable = memo(
     const { t, i18n } = useLingui();
     const permissions = usePermissions();
 
-    const numberFormatter = useNumberFormatter(NUMBER_FORMAT_OPTIONS);
+    // Memoized on the locale, so it never rebuilds `columns` on its own.
+    const formatQuantity = useQuantityFormatter();
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
     const [suppliers] = useSuppliers();
@@ -134,10 +123,8 @@ const PlanningTable = memo(
 
     const mrpFetcher = useAction<typeof mrpAction>({
       onSettled: (data) => {
-        if (data) {
-          clearOrdersCache();
-          setOrdersMap({}); // Reset local state to force recalculation
-        }
+        // the drawer re-seeds from the new run's actions
+        if (data) setOrdersMap({});
       }
     });
     const mrpScheduleDescription = useMrpScheduleDescription();
@@ -149,9 +136,10 @@ const PlanningTable = memo(
     const actionTypeOptions = usePlanningActionTypeOptions("Buy");
     const [people] = usePeople();
     const {
-      actionHandlers,
+      actionHandlers: changeActionHandlers,
       isActionsBusy,
       timeFence,
+      actionsByItemId,
       fencedActionsByItemId,
       visibleActionsByItemId,
       submitActions
@@ -164,6 +152,27 @@ const PlanningTable = memo(
       currentUserId: user.id,
       canUpdate: canUpdateActions
     });
+
+    // The purchase order's own commands (Reopen, Finalize) join each row's ⋯.
+    const {
+      purchaseOrderMenuItems,
+      finalizePurchaseOrder,
+      purchaseOrderDialogs,
+      ordersVersion
+    } = usePurchaseOrderPlanningCommands();
+    // Releasing a planned PO is finalizing it: the Release button opens the
+    // same modal as the ⋯ Finalize item.
+    const onRelease = useCallback(
+      (action: PlanningAction) => {
+        if (action.purchaseOrderId)
+          finalizePurchaseOrder(action.purchaseOrderId);
+      },
+      [finalizePurchaseOrder]
+    );
+    const actionHandlers = useMemo(
+      () => ({ ...changeActionHandlers, purchaseOrderMenuItems, onRelease }),
+      [changeActionHandlers, purchaseOrderMenuItems, onRelease]
+    );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
@@ -266,16 +275,40 @@ const PlanningTable = memo(
 
     const [items] = useItems();
 
+    // A row's suggested orders are its open Order actions: what MRP wrote
+    // after it moved expedited supply, folded a shortfall into an open order
+    // as an Increase, and summed each week. They seed the drawer, size the
+    // Order button, and are what a bulk order submits for rows never opened.
+    const plannedOrdersFor = useCallback(
+      (row: PurchasingPlanningItem): PlannedOrder[] => {
+        const supplierId = suppliersMap[row.id];
+        const item = items.find((item) => item.id === row.id);
+        return plannedOrdersFromActions(
+          openNewSupplyActions(actionsByItemId.get(row.id), "Order"),
+          {
+            conversionFactor: supplierConversionFactor(
+              row.suppliers,
+              supplierId
+            ),
+            supplierId,
+            itemReadableId: item?.readableIdWithRevision,
+            description: item?.name,
+            unitOfMeasureCode: item?.unitOfMeasureCode
+          }
+        );
+      },
+      [actionsByItemId, items, suppliersMap]
+    );
+
+    const ordersByItemId = useMemo(
+      () => new Map(data.map((row) => [row.id, plannedOrdersFor(row)])),
+      [data, plannedOrdersFor]
+    );
+
     // Store orders in a map keyed by item id - calculate on-demand instead of eagerly
     const [ordersMap, setOrdersMap] = useState<Record<string, PlannedOrder[]>>(
       {}
     );
-
-    // Auto-computed planned orders for every row, used as the fallback when
-    // bulk-submitting items the user never opened in the drawer.
-    const [ordersByItemId, setOrdersByItemId] = useState<
-      Map<string, PlannedOrder[]>
-    >(new Map());
 
     // The drawer's draft orders are page state keyed by item. They are
     // dropped when the page's scope changes (location, filters, search, sort,
@@ -302,8 +335,11 @@ const PlanningTable = memo(
         );
 
         if (rowsWithoutSuppliers.length > 0) {
+          const count = rowsWithoutSuppliers.length;
           toast.error(
-            `Cannot place order - ${rowsWithoutSuppliers.length} item(s) have no supplier associated`
+            count === 1
+              ? t`Cannot place the order — 1 item has no supplier`
+              : t`Cannot place the order — ${count} items have no supplier`
           );
         }
 
@@ -318,12 +354,14 @@ const PlanningTable = memo(
             .map((row) => {
               // Prefer user-edited orders (from the drawer) when present,
               // otherwise fall back to the auto-computed planned orders so
-              // bulk submit works for items the user never opened.
-              // The fallback stops at the row's time fence: a bulk order
+              // bulk submit works for items the user never opened. An item
+              // opened and emptied in the drawer stays empty: removing every
+              // suggestion is the planner's choice, not a reason to re-raise
+              // them. The fallback stops at the row's time fence: a bulk order
               // raises what is due inside the planning horizon, not the whole
               // planning window.
               const sourceOrders =
-                ordersMap[row.id!] && ordersMap[row.id!]!.length > 0
+                row.id! in ordersMap
                   ? ordersMap[row.id!]!
                   : splitOrdersByFence(
                       ordersByItemId.get(row.id!) ?? [],
@@ -376,6 +414,7 @@ const PlanningTable = memo(
         ordersMap,
         ordersByItemId,
         suppliersMap,
+        t,
         timeFence
       ]
     );
@@ -430,24 +469,21 @@ const PlanningTable = memo(
     );
 
     // The drawer's suggested orders, split at the selected row's time fence:
-    // it opens on what is due inside the fence and can pull the rest in.
+    // it opens on what is due inside the fence and can pull the rest in. A
+    // shortfall MRP folded into an Increase on an existing PO line has no
+    // Order action, so it is offered there, in Open Orders, and not here.
     const selectedOrders = useMemo(() => {
       if (!selectedItem?.id) return { inside: [], beyond: [] };
       return splitOrdersByFence(
-        getPurchaseOrdersFromPlanning(
-          selectedItem,
-          periods,
-          locationToday,
-          items,
-          suppliersMap[selectedItem.id]
-        ),
+        plannedOrdersFor(selectedItem),
         timeFence.fenceDateFor(selectedItem)
       );
-    }, [selectedItem, periods, items, suppliersMap, timeFence, locationToday]);
+    }, [selectedItem, plannedOrdersFor, timeFence]);
 
     // The drawer's Open Orders table shows the selected row's change actions on existing
-    // orders (Expedite, Defer, …). Order / Make actions are left out — each one
-    // is already a "New" row in the drawer's order list, right above the table.
+    // orders (Expedite, Defer, Increase, …). Order / Make actions are left
+    // out — each one is already a "New" row in the drawer's order list, right
+    // above the table.
     const selectedActions = useMemo(
       () =>
         selectedItem?.id
@@ -461,35 +497,13 @@ const PlanningTable = memo(
     // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
     // Assign controls as the expanded row, through the same single fetcher.
 
-    const [isPending, startTransition] = useTransition();
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-    useEffect(() => {
-      startTransition(() => {
-        const ordersByItemId = new Map<string, PlannedOrder[]>();
-        data.forEach((item) => {
-          ordersByItemId.set(
-            item.id,
-            getPurchaseOrdersFromPlanning(
-              item,
-              periods,
-              locationToday,
-              items,
-              suppliersMap[item.id]
-            )
-          );
-        });
-        setOrdersByItemId(ordersByItemId);
-      });
-    }, [data]);
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<PurchasingPlanningItem>[]>(() => {
       const shared = planningColumns<PurchasingPlanningItem>({
         i18n,
         periods,
         locationToday,
-        numberFormatter,
+        formatQuantity,
         unitOfMeasures,
         itemPostingGroups,
         timeFence,
@@ -592,13 +606,15 @@ const PlanningTable = memo(
                 .join(", ")
           }
         },
-        shared.unitOfMeasure,
+        ...shared.periods,
+        shared.reorderPolicy,
         {
           accessorKey: "preferredSupplierId",
           header: t`Supplier`,
           cell: ({ row }) => {
             const supplierId = suppliersMap[row.original.id];
-            if (!supplierId) return <Status color="red">No Supplier</Status>;
+            if (!supplierId)
+              return <Status color="red">{t`No Supplier`}</Status>;
 
             return <SupplierAvatar supplierId={supplierId} />;
           },
@@ -613,7 +629,7 @@ const PlanningTable = memo(
             icon: <LuContainer />
           }
         },
-        shared.itemGroup,
+        shared.unitOfMeasure,
         {
           accessorKey: "leadTime",
           header: t`Lead Time`,
@@ -630,29 +646,12 @@ const PlanningTable = memo(
             icon: <LuClock />
           }
         },
-        shared.reorderPolicy,
         shared.onHand,
-        ...shared.periods,
         shared.firstNegativeDate,
-        {
-          accessorKey: "quantityToOrder",
-          header: t`Qty to Order`,
-          cell: ({ row }) => {
-            const value = row.original.quantityToOrder;
-            if (value === undefined || value === 0) return "-";
-            return (
-              <span className="font-medium">
-                {numberFormatter.format(value)}
-              </span>
-            );
-          },
-          meta: {
-            icon: <LuCirclePlay />
-          }
-        },
         shared.latestOrderDate,
         shared.timeFence,
         shared.type,
+        shared.itemGroup,
         {
           id: "Order",
           header: "",
@@ -671,11 +670,19 @@ const PlanningTable = memo(
             );
             const isBlocked = row.original.purchasingBlocked;
             const hasOrders = orders.length > 0 && orderQuantity > 0;
+            const quantity = formatQuantity(orderQuantity);
+            // An open action that adds or advances supply needs doing even with
+            // nothing new to order (an Increase on an existing order), so it lights
+            // the dot too; a Decrease, Defer or Cancel does not.
+            const dot =
+              planningActionDot(
+                visibleActionsByItemId.get(row.original.id) ?? []
+              ) ?? (hasOrders ? "green" : null);
             return (
               <div className="flex justify-end">
                 <Button
                   variant="secondary"
-                  leftIcon={hasOrders ? undefined : <LuCircleCheck />}
+                  leftIcon={dot ? undefined : <LuCircleCheck />}
                   isDisabled={isDisabled || isBlocked}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -683,14 +690,14 @@ const PlanningTable = memo(
                   }}
                 >
                   {isBlocked ? (
-                    "Blocked"
-                  ) : hasOrders ? (
+                    t`Blocked`
+                  ) : dot ? (
                     <HStack>
-                      <PulsingDot />
-                      <span>Order {orderQuantity}</span>
+                      <PulsingDot variant={dot} />
+                      <span>{hasOrders ? t`Order ${quantity}` : t`Order`}</span>
                     </HStack>
                   ) : (
-                    "Order"
+                    t`Order`
                   )}
                 </Button>
               </div>
@@ -702,7 +709,7 @@ const PlanningTable = memo(
       t,
       i18n,
       suppliers,
-      numberFormatter,
+      formatQuantity,
       unitOfMeasures,
       suppliersMap,
       isDisabled,
@@ -802,7 +809,7 @@ const PlanningTable = memo(
     };
 
     return (
-      <Loading isLoading={isPending}>
+      <>
         <Table<PurchasingPlanningItem>
           count={count}
           columns={columns}
@@ -870,6 +877,7 @@ const PlanningTable = memo(
             onTimeFenceChange={onSelectedFenceChange}
             actions={selectedActions}
             actionHandlers={actionHandlers}
+            ordersVersion={ordersVersion}
             setOrders={setOrders}
             periods={periods}
             isOpen={isDrawerOpen}
@@ -882,7 +890,8 @@ const PlanningTable = memo(
             }}
           />
         )}
-      </Loading>
+        {purchaseOrderDialogs}
+      </>
     );
   }
 );

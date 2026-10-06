@@ -269,6 +269,11 @@ msgstr "{0}個の値"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0} は {name} として保存されます"
@@ -432,6 +437,9 @@ msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残�
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} リソース · {reservationCount} 予約 · {jobCount} 製造指図"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 個の権限"
 
@@ -470,9 +478,6 @@ msgstr "{unmappedRequiredCount, plural, one {残りの # 個の必須勘定科�
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}はスケジュール化できません"
-
-msgid "{updatedJobCount} jobs updated"
-msgstr "{updatedJobCount} 件の製造指図が更新されました"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} がアップロードされました — フィールドは文書から入力されました。"
@@ -537,9 +542,6 @@ msgstr "1 件の下書き仕訳行"
 
 msgid "1 job created"
 msgstr "1件のジョブが作成されました"
-
-msgid "1 job updated"
-msgstr "1件のジョブが更新されました"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -2035,6 +2037,12 @@ msgstr "このジョブの工程がこのバッチで実行されます"
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "作業区のキューにおける工程のポジション — 床がピックアップする順序。エンジンは配置順序（最初に予想される開始が最初）からそれに番号を付けます。作業区ボード上でカードを並べ替えることは、日付を変えずにそれを上書きします。"
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr ""
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr ""
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "Onshapeへの接続中に予期しないエラーが発生しました。連携設定を保存して再度お試しください。"
 
@@ -2775,9 +2783,6 @@ msgstr "以下の日付時点:"
 
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "会社責任者として、別の従業員に所有権を譲渡できます。これにより、請求とシステム管理の設定への完全なアクセス権が与えられます。"
-
-msgid "ASAP"
-msgstr "ASAP"
 
 msgid "Ascending"
 msgstr "昇順"
@@ -3532,11 +3537,17 @@ msgstr "変更通知をキャンセル"
 msgid "Cancel Job"
 msgstr "ジョブをキャンセル"
 
+msgid "Cancel job {target}"
+msgstr ""
+
 msgid "Cancel Order"
 msgstr "注文をキャンセル"
 
 msgid "Cancel Purchase Order"
 msgstr "発注書をキャンセル"
+
+msgid "Cancel purchase order {target}"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "返品をキャンセル"
@@ -3588,6 +3599,12 @@ msgstr "品目IDなしで部品バケットに移動することはできませ�
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "発注できません - この品目に関連付けられた仕入先がありません"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "注文できません — {count} 件の品目に仕入先がありません"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "注文できません — 1 件の品目に仕入先がありません"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "投稿できません — 出荷に期限切れの追跡対象エンティティが含まれています。"
@@ -4890,8 +4907,10 @@ msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "{0}をリリースできませんでした: {1}"
@@ -5724,6 +5743,12 @@ msgstr "定率法"
 msgid "Decrease"
 msgstr "減少"
 
+msgid "Decrease job {target} to {amount}"
+msgstr ""
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr ""
+
 msgid "Deep in the small hours, {name}."
 msgstr "真夜中ですね、{name}さん。"
 
@@ -5846,6 +5871,12 @@ msgstr "デフォルト"
 
 msgid "Defer"
 msgstr "延期"
+
+msgid "Defer job {target} to {date}"
+msgstr ""
+
+msgid "Defer purchase order {target} to {date}"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "繰延税金費用"
@@ -7706,6 +7737,12 @@ msgstr "予想受取日"
 msgid "Expedite"
 msgstr "前倒し"
 
+msgid "Expedite job {target} to {date}"
+msgstr ""
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "売掛金決済において回収不可能として償却された得意先残高の費用勘定"
 
@@ -8915,7 +8952,7 @@ msgstr "スケジュール化できない工程があります"
 msgid "Headers"
 msgstr "ヘッダー"
 
-msgid "healthy"
+msgid "Healthy"
 msgstr "正常"
 
 msgid "Help"
@@ -9357,9 +9394,6 @@ msgstr "アプリ内通知は常に配信されます。どのトピックがメ
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールでも届くかを選択してください。"
 
-msgid "inactive"
-msgstr "無効"
-
 msgid "Inactive"
 msgstr "無効"
 
@@ -9419,6 +9453,12 @@ msgstr "インコタームズの場所"
 
 msgid "Increase"
 msgstr "増加"
+
+msgid "Increase job {target} to {amount}"
+msgstr ""
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr ""
 
 msgid "Indirect"
 msgstr "間接"
@@ -9990,6 +10030,9 @@ msgstr "ジョブ優先度"
 
 msgid "Job readable"
 msgstr "ジョブ読取可能"
+
+msgid "Job released"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "現品票"
@@ -10682,6 +10725,12 @@ msgstr "保全タイプ"
 
 msgid "Make"
 msgstr "製造"
+
+msgid "Make {amount} for {date}"
+msgstr ""
+
+msgid "Make {quantity}"
+msgstr "{quantity} を製造"
 
 msgid "Make Active"
 msgstr "アクティブにする"
@@ -11725,9 +11774,6 @@ msgstr "新規仕入先部品"
 msgid "New Supplier Return"
 msgstr "新規仕入先返品"
 
-msgid "New supply"
-msgstr "新規供給"
-
 msgid "New Timecard"
 msgstr "新しいタイムカード"
 
@@ -12332,6 +12378,9 @@ msgstr "保管ユニットがありません"
 
 msgid "No storage units or tracking numbers match."
 msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
+
+msgid "No Supplier"
+msgstr "仕入先なし"
 
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
@@ -13069,6 +13118,12 @@ msgstr "この製造指図に{0} × {substitute}を発注"
 msgid "Order {0} for this job"
 msgstr "このジョブ用に{0}を発注"
 
+msgid "Order {amount} for {date}"
+msgstr ""
+
+msgid "Order {quantity}"
+msgstr "{quantity} を注文"
+
 msgid "Order by"
 msgstr "注文日"
 
@@ -13730,6 +13785,12 @@ msgstr "計画期間:"
 msgid "Planning Ownership"
 msgstr "計画所有権"
 
+msgid "Planning purchase orders need approval"
+msgstr ""
+
+msgid "Planning purchase orders skip approval"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "計画ラウンドは、この数の整数倍まで補充を提案しました。"
 
@@ -14312,6 +14373,9 @@ msgstr "発注書"
 msgid "Purchase Order Amount"
 msgstr "発注書金額"
 
+msgid "Purchase Order Approval"
+msgstr ""
+
 msgid "Purchase Order approval rule"
 msgstr "発注書承認ルール"
 
@@ -14338,6 +14402,9 @@ msgstr "発注書"
 
 msgid "Purchase Orders and Planning"
 msgstr "発注書と計画"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr ""
 
 msgid "Purchase orders required"
 msgstr "発注書が必要です"
@@ -14444,9 +14511,6 @@ msgstr "数量"
 
 msgid "Qty On Hand"
 msgstr "手持数量"
-
-msgid "Qty to Order"
-msgstr "注文数量"
 
 msgid "Qty. Complete"
 msgstr "数量完了"
@@ -15056,8 +15120,14 @@ msgstr "リリース管理"
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
+msgid "Release job {target} by {date}"
+msgstr ""
+
 msgid "Release Jobs"
 msgstr "製造指図をリリース"
+
+msgid "Release purchase order {target} by {date}"
+msgstr ""
 
 msgid "Released"
 msgstr "リリース済み"
@@ -15209,6 +15279,9 @@ msgstr "ラベルプレビューをレンダリング中..."
 
 msgid "Reopen"
 msgstr "再オープン"
+
+msgid "Reopen as Revision"
+msgstr ""
 
 msgid "Reorder"
 msgstr "並び替え"
@@ -18080,7 +18153,7 @@ msgstr "同期"
 msgid "Sync Activity"
 msgstr "同期アクティビティ"
 
-msgid "sync off"
+msgid "Sync Off"
 msgstr "同期オフ"
 
 msgid "Sync operation"
@@ -18871,6 +18944,9 @@ msgstr "この作業区が実行できる工法。工程のスケジュール時
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "プロバイダーはディメンションターゲットを提供していません。最初にプロバイダーで機能を有効にしてください(例:追跡カテゴリ、クラス追跡、またはフィールド)。"
+
+msgid "The purchase order"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この明細が価格設定される数量ブレークポイント。各列は買い手と仕入先の交渉および下流文書への変換用に、独自の単価を持ちます。"
@@ -20062,7 +20138,7 @@ msgstr "元に戻す"
 msgid "Ungroup"
 msgstr "グループ解除"
 
-msgid "unhealthy"
+msgid "Unhealthy"
 msgstr "不正常"
 
 msgid "Uninstall"

@@ -269,6 +269,11 @@ msgstr "{0} wartości"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0} będzie zapisany jako {name}"
@@ -432,6 +437,9 @@ msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} zasobów · {reservationCount} rezerwacji · {jobCount} zleceń produkcyjnych"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} uprawnień"
 
@@ -470,9 +478,6 @@ msgstr "{unmappedRequiredCount, plural, one {Najpierw zmapuj # pozostałe wymaga
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "Nie można zaplanować {unschedulableCount}"
-
-msgid "{updatedJobCount} jobs updated"
-msgstr "{updatedJobCount} zleceń produkcyjnych zaktualizowanych"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Przesłano {uploadedFileName} — pola wypełniono na podstawie dokumentu."
@@ -537,9 +542,6 @@ msgstr "1 wersja robocza zapisu księgowego"
 
 msgid "1 job created"
 msgstr "1 zadanie utworzone"
-
-msgid "1 job updated"
-msgstr "1 zadanie zaktualizowane"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 część pominięta — ma już otwarte zadanie"
@@ -2035,6 +2037,12 @@ msgstr "Operacja tego zlecenia jest w tej partii"
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Pozycja operacji w kolejce stanowiska roboczego — kolejność, w jakiej brygada podejmuje prace. Silnik numeruje ją na podstawie kolejności umieszczenia (najwcześniejszy planowany start najpierw); zmiana kolejności kart na tablicy Stanowisk roboczych zmienia ją bez zmiany dat."
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr ""
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr ""
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "Podczas łączenia się z Onshape wystąpił nieoczekiwany błąd. Zapisz ustawienia integracji, aby spróbować ponownie."
 
@@ -2775,9 +2783,6 @@ msgstr "Na dzień:"
 
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "Jako właściciel firmy możesz przenieść własność na innego pracownika. Daje mu to pełny dostęp do rozliczeń i ustawień administracyjnych."
-
-msgid "ASAP"
-msgstr "Jak najszybciej"
 
 msgid "Ascending"
 msgstr "Rosnąco"
@@ -3532,11 +3537,17 @@ msgstr "Anuluj zawiadomienie o zmianie"
 msgid "Cancel Job"
 msgstr "Anuluj zadanie"
 
+msgid "Cancel job {target}"
+msgstr ""
+
 msgid "Cancel Order"
 msgstr "Anuluj zamówienie"
 
 msgid "Cancel Purchase Order"
 msgstr "Anuluj zamówienie zakupu"
+
+msgid "Cancel purchase order {target}"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "Anuluj zwrot"
@@ -3588,6 +3599,12 @@ msgstr "Nie można przenieść do zasobnika części bez identyfikatora elementu
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "Nie można złożyć zamówienia - brak dostawcy powiązanego z tym artykułem"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "Nie można złożyć zamówienia — {count} pozycji nie ma dostawcy"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "Nie można złożyć zamówienia — 1 pozycja nie ma dostawcy"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "Nie można zaksięgować — wysyłka zawiera wygasłe jednostki śledzone."
@@ -4890,8 +4907,10 @@ msgid "Could not read the document: {0}"
 msgstr "Nie można odczytać dokumentu: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Nie można było zwolnić {0}: {1}"
@@ -5724,6 +5743,12 @@ msgstr "Metoda degresywna"
 msgid "Decrease"
 msgstr "Zmniejsz"
 
+msgid "Decrease job {target} to {amount}"
+msgstr ""
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr ""
+
 msgid "Deep in the small hours, {name}."
 msgstr "Głębokie noce, {name}."
 
@@ -5846,6 +5871,12 @@ msgstr "Ustawienia domyślne"
 
 msgid "Defer"
 msgstr "Przełóż"
+
+msgid "Defer job {target} to {date}"
+msgstr ""
+
+msgid "Defer purchase order {target} to {date}"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "Odroczone Wydatki Podatkowe"
@@ -7706,6 +7737,12 @@ msgstr "Oczekiwana data przyjęcia"
 msgid "Expedite"
 msgstr "Przyspiesz"
 
+msgid "Expedite job {target} to {date}"
+msgstr ""
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Konto wydatków dla sald klientów odpisanych jako nieściągalne przy rozliczeniu należności"
 
@@ -8915,8 +8952,8 @@ msgstr "Ma operacje, które nie można zaplanować"
 msgid "Headers"
 msgstr "Nagłówki"
 
-msgid "healthy"
-msgstr "zdrowy"
+msgid "Healthy"
+msgstr "Zdrowy"
 
 msgid "Help"
 msgstr "Pomoc"
@@ -9357,9 +9394,6 @@ msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy mają do Ciebie dotrzeć również pocztą e-mail."
 
-msgid "inactive"
-msgstr "nieaktywny"
-
 msgid "Inactive"
 msgstr "Nieaktywny"
 
@@ -9419,6 +9453,12 @@ msgstr "Lokalizacja Incoterm"
 
 msgid "Increase"
 msgstr "Zwiększ"
+
+msgid "Increase job {target} to {amount}"
+msgstr ""
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr ""
 
 msgid "Indirect"
 msgstr "Pośredni"
@@ -9990,6 +10030,9 @@ msgstr "Priorytet zadania"
 
 msgid "Job readable"
 msgstr "Czytelne zadanie"
+
+msgid "Job released"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "Przewodnik zlecenia"
@@ -10682,6 +10725,12 @@ msgstr "Typ utrzymania ruchu"
 
 msgid "Make"
 msgstr "Wytwórz"
+
+msgid "Make {amount} for {date}"
+msgstr ""
+
+msgid "Make {quantity}"
+msgstr "Wytwórz {quantity}"
 
 msgid "Make Active"
 msgstr "Ustaw jako aktywny"
@@ -11725,9 +11774,6 @@ msgstr "Nowa część dostawcy"
 msgid "New Supplier Return"
 msgstr "Nowy zwrot dostawcy"
 
-msgid "New supply"
-msgstr "Nowe pokrycie"
-
 msgid "New Timecard"
 msgstr "Nowy Timecard"
 
@@ -12332,6 +12378,9 @@ msgstr "Brak jednostki magazynowania"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Brak zgodnych jednostek magazynowych ani numerów śledzenia."
+
+msgid "No Supplier"
+msgstr "Brak dostawcy"
 
 msgid "No suppliers yet"
 msgstr "Brak dostawców"
@@ -13069,6 +13118,12 @@ msgstr "Zamów {0} × {substitute} dla tego zlecenia produkcyjnego"
 msgid "Order {0} for this job"
 msgstr "Zamów {0} dla tego zadania"
 
+msgid "Order {amount} for {date}"
+msgstr ""
+
+msgid "Order {quantity}"
+msgstr "Zamów {quantity}"
+
 msgid "Order by"
 msgstr "Zamów do"
 
@@ -13730,6 +13785,12 @@ msgstr "Horyzont Planowania:"
 msgid "Planning Ownership"
 msgstr "Właściciel planowania"
 
+msgid "Planning purchase orders need approval"
+msgstr ""
+
+msgid "Planning purchase orders skip approval"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Rundy planowania zasugerowały uzupełnienie do całkowitej wielokrotności tej liczby."
 
@@ -14312,6 +14373,9 @@ msgstr "Zamówienie Zakupu"
 msgid "Purchase Order Amount"
 msgstr "Kwota Zamówienia Zakupu"
 
+msgid "Purchase Order Approval"
+msgstr ""
+
 msgid "Purchase Order approval rule"
 msgstr "Reguła zatwierdzania zamówienia zakupu"
 
@@ -14338,6 +14402,9 @@ msgstr "Zamówienia Zakupu"
 
 msgid "Purchase Orders and Planning"
 msgstr "Zamówienia zakupu i planowanie"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr ""
 
 msgid "Purchase orders required"
 msgstr "Wymagane zamówienia zakupu"
@@ -14444,9 +14511,6 @@ msgstr "Ilość"
 
 msgid "Qty On Hand"
 msgstr "Ilość na magazynie"
-
-msgid "Qty to Order"
-msgstr "Ilość do zamówienia"
 
 msgid "Qty. Complete"
 msgstr "Ilość ukończona"
@@ -15056,8 +15120,14 @@ msgstr "Kontrola Zwolnienia"
 msgid "Release Job"
 msgstr "Zwolnij zadanie"
 
+msgid "Release job {target} by {date}"
+msgstr ""
+
 msgid "Release Jobs"
 msgstr "Zwolnij zlecenia produkcyjne"
+
+msgid "Release purchase order {target} by {date}"
+msgstr ""
 
 msgid "Released"
 msgstr "Wydane"
@@ -15209,6 +15279,9 @@ msgstr "Renderowanie podglądu etykiety..."
 
 msgid "Reopen"
 msgstr "Ponownie otwórz"
+
+msgid "Reopen as Revision"
+msgstr ""
 
 msgid "Reorder"
 msgstr "Zmień kolejność"
@@ -18080,8 +18153,8 @@ msgstr "Synchronizuj"
 msgid "Sync Activity"
 msgstr "Działalność synchronizacji"
 
-msgid "sync off"
-msgstr "synchronizacja wyłączona"
+msgid "Sync Off"
+msgstr "Synchronizacja wyłączona"
 
 msgid "Sync operation"
 msgstr "Operacja synchronizacji"
@@ -18871,6 +18944,9 @@ msgstr "Procesy, które może wykonać to stanowisko robocze; pojawia się w sel
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Dostawca nie oferuje celów wymiarów. Najpierw włącz funkcję u dostawcy (np. kategorie śledzenia, śledzenie klasy lub pola)."
+
+msgid "The purchase order"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Punkty graniczne ilości, przy których ta pozycja jest wyceniona; każda kolumna nosi własną cenę za sztukę do negocjacji kupiec–dostawca i do konwersji na dokumenty następujące."
@@ -20062,8 +20138,8 @@ msgstr "Cofnij"
 msgid "Ungroup"
 msgstr "Rozdziel"
 
-msgid "unhealthy"
-msgstr "w złym stanie"
+msgid "Unhealthy"
+msgstr "W złym stanie"
 
 msgid "Uninstall"
 msgstr "Odinstaluj"

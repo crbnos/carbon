@@ -36,7 +36,7 @@ import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -58,6 +58,7 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -72,10 +73,15 @@ import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingStatus } from "../PurchaseOrder";
 
 /** An existing PO line in the planned-order shape the chart reads, plus the
- *  factor between its purchase units and inventory units. */
+ *  factor between its purchase units and inventory units, and the quantity it
+ *  was read at (so the chart can tell a planner's edit from the stored line). */
 type OpenPurchaseOrder = PlannedOrder & {
   existingLineId: string;
   conversionFactor: number;
+  /** Purchase units already received, on a line whose quantity is the ordered
+   *  total (an editable one); 0 on a sent line, which shows what is to come. */
+  receivedOffset: number;
+  loadedQuantity: number;
 };
 
 type PurchasingPlanningOrderDrawerProps = {
@@ -104,6 +110,9 @@ type PurchasingPlanningOrderDrawerProps = {
   actions: PlanningAction[];
   /** Apply / dismiss / reopen / assign, owned by the grid (one fetcher). */
   actionHandlers: PlanningActionHandlers;
+  /** Bumped when a purchase order was reopened or finalized from the page:
+   *  the open orders are re-read, since no action of theirs changed. */
+  ordersVersion?: number;
   periods: { id: string; startDate: string; endDate: string }[];
   selectedItem: PurchasingPlanningItem;
   selectedSupplier: string;
@@ -124,6 +133,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     onTimeFenceChange,
     actions,
     actionHandlers,
+    ordersVersion = 0,
     setOrders,
     locationId,
     periods,
@@ -139,10 +149,11 @@ export const PurchasingPlanningOrderDrawer = memo(
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
     const fetcher = useFetcher<typeof bulkUpdateAction>();
-    const revalidator = useRevalidator();
+    const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
     const formatter = useCurrencyFormatter();
+    const formatQuantity = useQuantityFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
 
     const [activeTab, setActiveTab] = useState("ordering");
@@ -196,7 +207,7 @@ export const PurchasingPlanningOrderDrawer = memo(
             ? await carbon
                 .from("purchaseOrderLine")
                 .select(
-                  "id, purchaseQuantity, quantityToReceive, conversionFactor"
+                  "id, purchaseQuantity, quantityToReceive, quantityReceived, conversionFactor"
                 )
                 .in("id", lineIds)
             : { data: [], error: null };
@@ -215,6 +226,13 @@ export const PurchasingPlanningOrderDrawer = memo(
               if (!line.id) return [];
               const detail = detailById.get(line.id);
               const isLocked = isPurchaseOrderLocked(line.status);
+              // purchase units: what is still to come on a sent line, the
+              // ordered quantity on one that can still be changed
+              const quantity = Number(
+                (isLocked
+                  ? detail?.quantityToReceive
+                  : detail?.purchaseQuantity) ?? 0
+              );
               return [
                 {
                   existingId: line.purchaseOrderId ?? undefined,
@@ -226,13 +244,11 @@ export const PurchasingPlanningOrderDrawer = memo(
                   existingStatus: line.status ?? undefined,
                   startDate: line.orderDate ?? null,
                   dueDate: line.dueDate ?? null,
-                  // purchase units: what is still to come on a sent line, the
-                  // ordered quantity on one that can still be changed
-                  quantity: Number(
-                    (isLocked
-                      ? detail?.quantityToReceive
-                      : detail?.purchaseQuantity) ?? 0
-                  ),
+                  quantity,
+                  loadedQuantity: quantity,
+                  receivedOffset: isLocked
+                    ? 0
+                    : Number(detail?.quantityReceived ?? 0),
                   periodId: periodIdFor(periods, line.dueDate),
                   supplierId: line.supplierId ?? undefined,
                   conversionFactor: Number(detail?.conversionFactor ?? 1) || 1
@@ -246,7 +262,14 @@ export const PurchasingPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
-    }, [isOpen, carbon, selectedItem.id, locationId, actionsKey]);
+    }, [
+      isOpen,
+      carbon,
+      selectedItem.id,
+      locationId,
+      actionsKey,
+      ordersVersion
+    ]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openOrders)) return openOrders;
@@ -268,14 +291,26 @@ export const PurchasingPlanningOrderDrawer = memo(
           // the server's gate: Draft / Planned only, not in approval or sent
           isEditable: isPurchaseOrderEditableFromPlanning(order.existingStatus),
           action,
-          // the action's quantity is in inventory units; the row is in
-          // purchase units, rounded up to whole units as Apply does
+          // the action's quantity is in inventory units and is what the line
+          // must still bring; the row is in purchase units, rounded up to
+          // whole units, plus what was received when the row shows the
+          // ordered total — the quantity Apply writes
           suggestedQuantity: action
-            ? round(
+            ? order.receivedOffset +
+              round(
                 Number(action.suggestedQuantity) / order.conversionFactor,
                 0,
                 RoundingMode.Up
               )
+            : null,
+          purchaseOrder: order.existingId
+            ? {
+                id: order.existingId,
+                readableId: order.existingReadableId,
+                status: order.existingStatus ?? null,
+                // the view's orderDate is the PO's, read in as the start date
+                orderDate: order.startDate ?? null
+              }
             : null
         };
       });
@@ -343,7 +378,7 @@ export const PurchasingPlanningOrderDrawer = memo(
             // A plain fetch bypasses the router: refresh the grid row behind
             // the drawer, which otherwise shows the old value until the next
             // navigation.
-            void revalidator.revalidate();
+            void revalidate();
             return true;
           }
           toast.error(
@@ -355,7 +390,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           return false;
         }
       },
-      [locationId, revalidator, t]
+      [locationId, revalidate, t]
     );
 
     const renderOpenOrderStatus = useCallback(
@@ -369,19 +404,41 @@ export const PurchasingPlanningOrderDrawer = memo(
     );
 
     // What the chart overlays as planned supply: the draft orders, plus the
-    // open orders so an edit to one shows before MRP runs again. The chart
-    // reads existing orders in inventory units (see mergePlannedOrders).
+    // open orders so an edit to one shows before MRP runs again — at its open
+    // Increase, which took the place of a draft order. The chart reads
+    // existing orders in inventory units (see mergePlannedOrders), and only
+    // what is still to come: received units are already on hand.
     const chartOrders = useMemo<PlannedOrder[]>(
       () => [
         ...orders,
         ...(Array.isArray(openOrders)
-          ? openOrders.map(({ conversionFactor, ...order }) => ({
-              ...order,
-              quantity: order.quantity * conversionFactor
-            }))
+          ? openOrders.map(
+              ({
+                conversionFactor,
+                loadedQuantity,
+                receivedOffset,
+                ...order
+              }) => ({
+                ...order,
+                quantity: chartedOrderQuantity({
+                  quantity:
+                    Math.max(order.quantity - receivedOffset, 0) *
+                    conversionFactor,
+                  loadedQuantity:
+                    Math.max(loadedQuantity - receivedOffset, 0) *
+                    conversionFactor,
+                  increase: actionForOrder(
+                    actions,
+                    (a) =>
+                      a.type === "Increase" &&
+                      a.purchaseOrderLineId === order.existingLineId
+                  )
+                })
+              })
+            )
           : [])
       ],
-      [orders, openOrders]
+      [orders, openOrders, actions]
     );
 
     // "N More After <fence>": move this row's fence out to the last suggested
@@ -452,7 +509,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       (id: string, orders: PlannedOrder[]) => {
         const ordersWithPeriods = orders.map((order) => {
           // Stamp the currently-selected supplier onto every order. Orders built
-          // by onAddOrder/getPurchaseOrdersFromPlanning may carry a null
+          // by onAddOrder/plannedOrdersFromActions may carry a null
           // supplierId (e.g. the item has no preferredSupplierId), which the
           // server validator rejects as "No suppliers provided" — the Order
           // button already guards that selectedSupplier is set.
@@ -733,8 +790,9 @@ export const PurchasingPlanningOrderDrawer = memo(
                       const supplier = (
                         selectedItem.suppliers as SupplierPart[]
                       )?.find((s) => s.supplierId === selectedSupplier);
-                      const conversionFactor = supplier?.conversionFactor ?? 1;
-                      return conversionFactor !== 1 ? (
+                      const factor = supplier?.conversionFactor ?? 1;
+                      const conversionFactor = formatQuantity(factor);
+                      return factor !== 1 ? (
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             <Trans>Conversion:</Trans>
@@ -776,6 +834,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       documentHeader={t`PO`}
                       quantityHeader={t`Qty`}
                       rows={openOrderRows}
+                      todayIso={locationToday}
                       renderStatusIcon={renderOpenOrderStatus}
                       onSave={onSaveOpenOrder}
                       onRowsChange={onOpenOrdersChange}

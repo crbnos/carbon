@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import { async, scrapAllowance } from "@carbon/utils";
+import { async } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -23,6 +23,7 @@ import {
   recalculateJobRequirements,
   releasePlanningActionClaim,
   reopenDismissedPlanningActions,
+  settleNewSupplyPlanningActions,
   updatePlanningJob,
   upsertJobMethod
 } from "~/modules/production";
@@ -153,20 +154,29 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
+      // `order` only creates jobs. An existing job is edited through
+      // `updateJob` or Apply, which carry the Draft / Planned guard, the
+      // location check and the priority recalculation; this path had none.
+      if (itemsToOrder.some((item) => item.orders.some((o) => o.existingId))) {
+        logger.warn("Planning order named an existing job", {
+          companyId,
+          userId,
+          locationId
+        });
+        return data(
+          {
+            success: false,
+            message: "Existing jobs are changed from the Open Jobs list"
+          },
+          { status: 400 }
+        );
+      }
+
       // `client` is the service role (bypassRls) and every id below comes from
-      // the request body: prove the location, items and existing jobs are this
-      // company's before any job is created or rewritten. One query per type.
+      // the request body: prove the location and items are this company's
+      // before any job is created. One query per type.
       const itemIds = [...new Set(itemsToOrder.map((item) => item.id))];
-      const existingJobIds = [
-        ...new Set(
-          itemsToOrder.flatMap((item) =>
-            item.orders.flatMap((order) =>
-              order.existingId ? [order.existingId] : []
-            )
-          )
-        )
-      ];
-      const [ownedLocation, ownedItems, ownedJobs] = await Promise.all([
+      const [ownedLocation, ownedItems] = await Promise.all([
         client
           .from("location")
           .select("id")
@@ -177,29 +187,19 @@ export async function action({ request }: ActionFunctionArgs) {
           .from("item")
           .select("id")
           .in("id", itemIds)
-          .eq("companyId", companyId),
-        existingJobIds.length > 0
-          ? client
-              .from("job")
-              .select("id")
-              .in("id", existingJobIds)
-              .eq("companyId", companyId)
-          : Promise.resolve({ data: [] as { id: string }[], error: null })
+          .eq("companyId", companyId)
       ]);
       if (
         ownedLocation.error ||
         !ownedLocation.data ||
         ownedItems.error ||
-        (ownedItems.data ?? []).length !== itemIds.length ||
-        ownedJobs.error ||
-        (ownedJobs.data ?? []).length !== existingJobIds.length
+        (ownedItems.data ?? []).length !== itemIds.length
       ) {
         logger.error("Planning order references records outside the company", {
           companyId,
           locationId,
           itemIds,
-          existingJobIds,
-          error: ownedLocation.error ?? ownedItems.error ?? ownedJobs.error
+          error: ownedLocation.error ?? ownedItems.error
         });
         return data({ success: false, message: "Not found" }, { status: 404 });
       }
@@ -208,7 +208,6 @@ export async function action({ request }: ActionFunctionArgs) {
         const allJobIds: string[] = [];
         const createdJobs: { id: string; readableId: string }[] = [];
         const itemsWithoutOrders: string[] = [];
-        let updatedJobCount = 0;
         const allSupplyForecasts: Array<{
           itemId: string;
           locationId: string;
@@ -222,13 +221,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
         let processedItems = 0;
         let errors: string[] = [];
+        // The (item, week) of every order that became a job, so the Make
+        // suggestions it answers leave the worklist now, not at the next run.
+        const ordered: { itemId: string; periodId: string }[] = [];
 
         // Manufacturing data for every item being ordered, in one read
         const manufacturingRows = await client
           .from("itemReplenishment")
-          .select(
-            "itemId, manufacturingBlocked, scrapPercentage, requiresConfiguration"
-          )
+          .select("itemId, manufacturingBlocked, requiresConfiguration")
           .in(
             "itemId",
             itemsToOrder.flatMap((item) =>
@@ -286,118 +286,69 @@ export async function action({ request }: ActionFunctionArgs) {
 
           // Process each order for this item
           for (const order of orders) {
-            if (!order.existingId) {
-              // Create new job
-              const createJob = await insertJob(
-                client,
-                getDatabaseClient(),
-                {
-                  itemId: item.id,
-                  quantity: order.quantity,
-                  startDate: order.startDate ?? undefined,
-                  dueDate: order.dueDate ?? undefined,
-                  deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
-                  status: "Planned",
-                  locationId,
-                  companyId,
-                  createdBy: userId,
-                  unitOfMeasureCode: "EA"
-                },
-                { skipMethod: true, skipRecalculate: true, source: "mrp" }
-              );
+            // Create new job
+            const createJob = await insertJob(
+              client,
+              getDatabaseClient(),
+              {
+                itemId: item.id,
+                quantity: order.quantity,
+                startDate: order.startDate ?? undefined,
+                dueDate: order.dueDate ?? undefined,
+                deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
+                status: "Planned",
+                locationId,
+                companyId,
+                createdBy: userId,
+                unitOfMeasureCode: "EA"
+              },
+              { skipMethod: true, skipRecalculate: true, source: "mrp" }
+            );
 
-              if (createJob.error) {
-                const errorMsg = `Failed to create job for item ${item.id}: ${createJob.error.message}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              const id = createJob.data?.id;
-              const readableId = createJob.data?.jobId ?? "";
-              if (!id) {
-                const errorMsg = `Job was not returned after creation for item ${item.id}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              const upsertMethod = await upsertJobMethod(
-                client,
-                getDatabaseClient(),
-                "itemToJob",
-                {
-                  sourceId: item.id,
-                  targetId: id,
-                  companyId,
-                  userId
-                }
-              );
-
-              if (upsertMethod.error) {
-                const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              jobIds.push(id);
-              createdJobs.push({ id, readableId });
-              itemProcessed = true;
-            } else {
-              // Update existing job
-              jobIds.push(order.existingId);
-
-              // Calculate scrap quantity based on scrap percentage
-              const updateScrapPercentage =
-                manufacturing.data?.scrapPercentage ?? 0;
-              const updateScrapQuantity = scrapAllowance(
-                order.quantity,
-                updateScrapPercentage
-              );
-
-              const updateJob = await client
-                .from("job")
-                .update({
-                  dueDate: order.dueDate ?? undefined,
-                  deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
-                  quantity: order.quantity,
-                  scrapQuantity: updateScrapQuantity,
-                  startDate: order.startDate ?? undefined,
-                  status: "Planned",
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId
-                })
-                .eq("id", order.existingId)
-                .eq("companyId", companyId)
-                // The drawer sends only new orders; an existing job named here
-                // may be re-planned only while it is still Draft / Planned —
-                // never pulled back from the floor (or from Completed).
-                .in("status", [...PLANNING_EDITABLE_JOB_STATUSES])
-                .select("id");
-
-              if (updateJob.error) {
-                const errorMsg = `Failed to update job ${order.existingId} for item ${item.id}: ${updateJob.error.message}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-              if (updateJob.data.length === 0) {
-                errors.push(
-                  `Job ${order.existingId} is no longer Draft or Planned; change it on the job`
-                );
-                continue;
-              }
-
-              updatedJobCount++;
-              itemProcessed = true;
+            if (createJob.error) {
+              const errorMsg = `Failed to create job for item ${item.id}: ${createJob.error.message}`;
+              logger.error(errorMsg);
+              errors.push(errorMsg);
+              continue;
             }
+
+            const id = createJob.data?.id;
+            const readableId = createJob.data?.jobId ?? "";
+            if (!id) {
+              const errorMsg = `Job was not returned after creation for item ${item.id}`;
+              logger.error(errorMsg);
+              errors.push(errorMsg);
+              continue;
+            }
+
+            const upsertMethod = await upsertJobMethod(
+              client,
+              getDatabaseClient(),
+              "itemToJob",
+              {
+                sourceId: item.id,
+                targetId: id,
+                companyId,
+                userId
+              }
+            );
+
+            if (upsertMethod.error) {
+              const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
+              logger.error(errorMsg);
+              errors.push(errorMsg);
+              continue;
+            }
+
+            jobIds.push(id);
+            createdJobs.push({ id, readableId });
+            itemProcessed = true;
 
             // Track supply forecast by period
             const periodId = order.periodId;
+            ordered.push({ itemId: item.id, periodId });
             supplyForecastByPeriod[periodId] =
-              (supplyForecastByPeriod[periodId] || 0) +
-              (order.quantity - (order.existingQuantity ?? 0));
+              (supplyForecastByPeriod[periodId] || 0) + order.quantity;
           }
 
           if (itemProcessed) {
@@ -421,6 +372,20 @@ export async function action({ request }: ActionFunctionArgs) {
               }
             );
           }
+        }
+
+        const settled = await settleNewSupplyPlanningActions(
+          getDatabaseClient(),
+          { companyId, locationId, userId, type: "Make", ordered }
+        );
+        if (settled.error) {
+          // The jobs stand; the suggestions clear on the next MRP run.
+          logger.error("Failed to settle ordered planning actions", {
+            companyId,
+            userId,
+            locationId,
+            error: settled.error
+          });
         }
 
         // Insert all supply forecasts using upsert to handle duplicates
@@ -523,7 +488,6 @@ export async function action({ request }: ActionFunctionArgs) {
           success: processedItems > 0 || errors.length === 0,
           message,
           jobs: createdJobs,
-          updatedJobCount,
           alreadyPlannedItemCount: alreadyPlannedItemIds.size,
           noDemandItemCount:
             itemsWithoutOrders.length - alreadyPlannedItemIds.size,
@@ -981,8 +945,16 @@ export async function action({ request }: ActionFunctionArgs) {
                 db,
                 jobId,
                 companyId,
-                userId
+                userId,
+                // Read Draft / Planned above; released since, it goes to review
+                // instead of losing its picks.
+                fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
               });
+              if (failed?.refused) {
+                await releaseClaim(planningActionId);
+                requiresManualAction.push({ id: planningActionId, jobId });
+                continue;
+              }
               if (failed) {
                 await releaseClaim(planningActionId);
                 errors.push(
@@ -1092,7 +1064,8 @@ export async function action({ request }: ActionFunctionArgs) {
       const result = await dismissPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
-        userId
+        userId,
+        kind: "Make"
       });
       if (result.error) {
         logger.error("Failed to dismiss planning actions", {
@@ -1141,7 +1114,8 @@ export async function action({ request }: ActionFunctionArgs) {
       const result = await reopenDismissedPlanningActions(getDatabaseClient(), {
         ids: parsedIds.data,
         companyId,
-        userId
+        userId,
+        kind: "Make"
       });
       if (result.error) {
         logger.error("Failed to reopen planning actions", {
@@ -1210,7 +1184,8 @@ export async function action({ request }: ActionFunctionArgs) {
         ids: parsedIds.data,
         companyId,
         assignee: parsedAssignee.data || null,
-        userId
+        userId,
+        kind: "Make"
       });
       if (result.error) {
         logger.error("Failed to assign planning actions", {

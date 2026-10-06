@@ -233,7 +233,7 @@ No RLS changes (existing table policies cover the new columns). No new enums.
 
 Where the shipped code differs from the design below:
 
-- **One migration, every read path.** `20261005090301_demand-forecast-consumption.sql`
+- **One migration, every read path.** `20261006030001_demand-forecast-consumption.sql`
   holds all of it: the two columns, `openSalesOrderLines.quantityToConsume`, and the
   netted `get_production_planning`, `get_purchasing_planning` and
   `get_inventory_quantities`. The last two are forked from the guarded

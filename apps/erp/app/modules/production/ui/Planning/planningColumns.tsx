@@ -82,7 +82,7 @@ export function planningColumns<T extends PlanningRow>(ctx: {
   i18n: I18n;
   periods: { id: string; startDate: string; endDate: string }[];
   locationToday: string;
-  numberFormatter: Intl.NumberFormat;
+  formatQuantity: (quantity: number) => string;
   unitOfMeasures: Option[];
   itemPostingGroups: Option[];
   timeFence: ReturnType<typeof useTimeFenceOverrides>;
@@ -92,7 +92,7 @@ export function planningColumns<T extends PlanningRow>(ctx: {
     i18n,
     periods,
     locationToday,
-    numberFormatter,
+    formatQuantity,
     unitOfMeasures,
     itemPostingGroups,
     timeFence,
@@ -207,7 +207,7 @@ export function planningColumns<T extends PlanningRow>(ctx: {
     onHand: {
       accessorKey: "quantityOnHand",
       header: i18n._(LABELS.onHand),
-      cell: ({ row }) => numberFormatter.format(row.original.quantityOnHand),
+      cell: ({ row }) => formatQuantity(row.original.quantityOnHand),
       meta: {
         icon: <LuBlocks />,
         renderTotal: true
@@ -227,22 +227,20 @@ export function planningColumns<T extends PlanningRow>(ctx: {
       }
     } as ColumnDef<PlanningRow>,
     latestOrderDate: {
-      // Sorted by the order-by date MRP stored on the item's open new-supply
-      // actions; the cell shows the live sizing the order drawer uses, which
-      // matches it as of the last MRP run.
+      // The order-by date MRP stored on the item's open new-supply actions —
+      // the same actions the order drawer lists — so cell, sort and drawer
+      // agree.
       accessorKey: "latestOrderDate",
       header: i18n._(LABELS.latestOrderDate),
       cell: ({ row }) => (
         <LatestOrderDateCell
           itemPlanning={row.original}
-          periods={periods}
           todayIso={locationToday}
         />
       ),
       meta: {
         icon: <LuCalendarClock />,
-        exportValue: (row: PlanningRow) =>
-          latestOrderDateExportValue(row, periods, locationToday)
+        exportValue: latestOrderDateExportValue
       }
     } as ColumnDef<PlanningRow>,
     timeFence: {

@@ -207,19 +207,45 @@ export async function releaseJobs({
 // It stops at the first failure, before the status changes, so a retry starts
 // from the same place. Returns null on success, else the failure with the
 // message to show the user.
+//
+// `fromStatuses` limits the cancel to jobs still in one of them, checked
+// before step 1 and again in the status UPDATE. Planning's Cancel passes
+// Draft / Planned: it read the status earlier, and a job released since must
+// not lose its picks. A job outside them is `refused`, with nothing changed.
 export async function cancelJob({
   client,
   db,
   jobId,
   companyId,
-  userId
+  userId,
+  fromStatuses
 }: {
   client: SupabaseClient<Database>;
   db: Kysely<KyselyDatabase>;
   jobId: string;
   companyId: string;
   userId: string;
-}): Promise<{ error: unknown; message: string } | null> {
+  fromStatuses?: Database["public"]["Enums"]["jobStatus"][];
+}): Promise<{ error: unknown; message: string; refused?: boolean } | null> {
+  if (fromStatuses) {
+    const current = await client
+      .from("job")
+      .select("status")
+      .eq("id", jobId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (current.error) {
+      return { error: current.error, message: "Failed to read the job" };
+    }
+    if (!current.data || !fromStatuses.includes(current.data.status)) {
+      return {
+        error: null,
+        message: "The job's status changed; cancel it on the job",
+        refused: true
+      };
+    }
+  }
+
   const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), db, {
     jobId,
     userId,
@@ -249,10 +275,18 @@ export async function cancelJob({
     companyId,
     status: "Cancelled",
     assignee: null,
-    updatedBy: userId
+    updatedBy: userId,
+    ...(fromStatuses ? { fromStatuses } : {})
   });
   if (update.error) {
     return { error: update.error, message: "Failed to update job status" };
+  }
+  if (!update.updated) {
+    return {
+      error: null,
+      message: "The job's status changed; cancel it on the job",
+      refused: true
+    };
   }
 
   return null;

@@ -42718,6 +42718,12 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.isASAP"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
             $ref: "#/parameters/rowFilter.planningAction.purchaseOrderLineId"
           },
           {
@@ -42755,12 +42761,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
           },
           {
             $ref: "#/parameters/select"
@@ -42852,6 +42852,12 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.isASAP"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
             $ref: "#/parameters/rowFilter.planningAction.purchaseOrderLineId"
           },
           {
@@ -42889,12 +42895,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -42940,6 +42940,12 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.isASAP"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
             $ref: "#/parameters/rowFilter.planningAction.purchaseOrderLineId"
           },
           {
@@ -42977,12 +42983,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
           },
           {
             $ref: "#/parameters/body.planningAction"
@@ -59581,6 +59581,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.createdFromPlanning"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -59724,6 +59727,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.createdFromPlanning"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -59819,6 +59825,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.createdFromPlanning"
           },
           {
             $ref: "#/parameters/body.purchaseOrder"
@@ -93316,18 +93325,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
@@ -93340,10 +93337,25 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.mrpRunTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.skipApprovalForPlanningPurchaseOrders"
           },
           {
             $ref: "#/parameters/select"
@@ -93552,18 +93564,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
@@ -93576,10 +93576,25 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.mrpRunTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.skipApprovalForPlanningPurchaseOrders"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -93742,18 +93757,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
@@ -93766,10 +93769,25 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.mrpRunTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.skipApprovalForPlanningPurchaseOrders"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -100259,6 +100277,63 @@ export default {
       }
     },
     "/rpc/get_purchasing_planning_grid": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "periods",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "as_of",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "action_types",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "action_assignees",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_purchasing_planning_grid"]
+      },
       post: {
         parameters: [
           {
@@ -102938,6 +103013,63 @@ export default {
       }
     },
     "/rpc/get_production_planning_grid": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "periods",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "as_of",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "action_types",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "action_assignees",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_production_planning_grid"]
+      },
       post: {
         parameters: [
           {
@@ -128389,11 +128521,11 @@ export default {
         "suggestedQuantity",
         "suggestedDate",
         "isASAP",
+        "horizonDate",
         "requiresManualAction",
         "assigneeOverridden",
         "createdBy",
-        "createdAt",
-        "horizonDate"
+        "createdAt"
       ],
       properties: {
         id: {
@@ -128434,7 +128566,8 @@ export default {
             "Defer",
             "Cancel",
             "Increase",
-            "Decrease"
+            "Decrease",
+            "Release"
           ],
           format: 'public."planningActionType"',
           type: "string"
@@ -128458,6 +128591,14 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        horizonDate: {
+          format: "date",
+          type: "string"
+        },
+        latestOrderDate: {
+          format: "date",
+          type: "string"
+        },
         purchaseOrderLineId: {
           description:
             "Note:\nThis is a Foreign Key to `purchaseOrderLine.id`.<fk table='purchaseOrderLine' column='id'/>",
@@ -128476,6 +128617,8 @@ export default {
           type: "boolean"
         },
         supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -128520,14 +128663,6 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
-          type: "string"
-        },
-        horizonDate: {
-          format: "date",
-          type: "string"
-        },
-        latestOrderDate: {
-          format: "date",
           type: "string"
         }
       },
@@ -135947,7 +136082,8 @@ export default {
         "createdAt",
         "createdBy",
         "supplierInteractionId",
-        "purchaseOrderType"
+        "purchaseOrderType",
+        "createdFromPlanning"
       ],
       properties: {
         id: {
@@ -136101,6 +136237,11 @@ export default {
         jobReadableId: {
           format: "text",
           type: "string"
+        },
+        createdFromPlanning: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -152383,13 +152524,14 @@ export default {
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
-        "rescheduleToleranceDays",
-        "forecastConsumptionBackwardPeriods",
-        "forecastConsumptionForwardPeriods",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
-        "showBomExplorerReadableId"
+        "showBomExplorerReadableId",
+        "rescheduleToleranceDays",
+        "forecastConsumptionBackwardPeriods",
+        "forecastConsumptionForwardPeriods",
+        "skipApprovalForPlanningPurchaseOrders"
       ],
       properties: {
         id: {
@@ -152658,27 +152800,6 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        defaultResponsibleEmployee: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        rescheduleToleranceDays: {
-          default: 7,
-          format: "integer",
-          type: "integer"
-        },
-        forecastConsumptionBackwardPeriods: {
-          default: 4,
-          format: "integer",
-          type: "integer"
-        },
-        forecastConsumptionForwardPeriods: {
-          default: 1,
-          format: "integer",
-          type: "integer"
-        },
         includeOperationsOnTraveler: {
           default: true,
           format: "boolean",
@@ -152703,6 +152824,27 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        defaultResponsibleEmployee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        rescheduleToleranceDays: {
+          default: 7,
+          format: "integer",
+          type: "integer"
+        },
+        forecastConsumptionBackwardPeriods: {
+          default: 4,
+          format: "integer",
+          type: "integer"
+        },
+        forecastConsumptionForwardPeriods: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
         defaultPlanningHorizonDays: {
           format: "integer",
           type: "integer"
@@ -152710,6 +152852,11 @@ export default {
         mrpRunTime: {
           format: "time without time zone",
           type: "string"
+        },
+        skipApprovalForPlanningPurchaseOrders: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -175943,6 +176090,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.planningAction.horizonDate": {
+      name: "horizonDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.latestOrderDate": {
+      name: "latestOrderDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.planningAction.purchaseOrderLineId": {
       name: "purchaseOrderLineId",
       required: false,
@@ -176017,18 +176176,6 @@ export default {
     },
     "rowFilter.planningAction.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.planningAction.horizonDate": {
-      name: "horizonDate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.planningAction.latestOrderDate": {
-      name: "latestOrderDate",
       required: false,
       in: "query",
       type: "string"
@@ -184443,6 +184590,12 @@ export default {
     },
     "rowFilter.purchaseOrder.jobReadableId": {
       name: "jobReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrder.createdFromPlanning": {
+      name: "createdFromPlanning",
       required: false,
       in: "query",
       type: "string"
@@ -202871,30 +203024,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.defaultResponsibleEmployee": {
-      name: "defaultResponsibleEmployee",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.rescheduleToleranceDays": {
-      name: "rescheduleToleranceDays",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.forecastConsumptionBackwardPeriods": {
-      name: "forecastConsumptionBackwardPeriods",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.forecastConsumptionForwardPeriods": {
-      name: "forecastConsumptionForwardPeriods",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.includeOperationsOnTraveler": {
       name: "includeOperationsOnTraveler",
       required: false,
@@ -202923,6 +203052,30 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.defaultResponsibleEmployee": {
+      name: "defaultResponsibleEmployee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.rescheduleToleranceDays": {
+      name: "rescheduleToleranceDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.forecastConsumptionBackwardPeriods": {
+      name: "forecastConsumptionBackwardPeriods",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.forecastConsumptionForwardPeriods": {
+      name: "forecastConsumptionForwardPeriods",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.defaultPlanningHorizonDays": {
       name: "defaultPlanningHorizonDays",
       required: false,
@@ -202931,6 +203084,12 @@ export default {
     },
     "rowFilter.companySettings.mrpRunTime": {
       name: "mrpRunTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.skipApprovalForPlanningPurchaseOrders": {
+      name: "skipApprovalForPlanningPurchaseOrders",
       required: false,
       in: "query",
       type: "string"

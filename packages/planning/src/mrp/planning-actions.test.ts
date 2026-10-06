@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { computePlanningOrders } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import type {
   ExistingPlanningAction,
@@ -11,13 +12,17 @@ import {
   convertOrdersToIncreases,
   daysBetween,
   deriveChangeActions,
+  deriveReleaseActions,
   diffPlanningActions,
   earlierDate,
+  earlierRelease,
+  firstNeedPeriodByOrder,
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
   keyPeriodFor,
   naturalKey,
-  projectionsWithExpedites
+  projectionsWithExpedites,
+  releaseByDate
 } from "./planning-actions";
 
 const PERIODS = [
@@ -492,6 +497,138 @@ describe("deriveChangeActions", () => {
       requiresManualAction: false
     });
   });
+
+  // Apply changes a PO line in whole PURCHASE units (it writes
+  // round(suggested / conversionFactor, Up)). A Decrease to 55 on a line
+  // bought in tens became 60, and the next run offered "Decrease to 55" again.
+  describe("on a purchase order line, quantities are whole purchase units", () => {
+    const decrease = (order: {
+      quantity: number;
+      conversionFactor?: number;
+      need: number;
+    }) =>
+      deriveChangeActions({
+        ...base,
+        onHand: 0,
+        demandPeriods: [
+          { periodId: "p2", startDate: "2026-10-12", quantity: order.need }
+        ],
+        openOrders: [
+          {
+            purchaseOrderLineId: "pol-1",
+            quantity: order.quantity,
+            conversionFactor: order.conversionFactor,
+            dueDate: "2026-10-12", // on time → no date action
+            requiresManualAction: false
+          }
+        ]
+      });
+
+    it("decreases to the next whole purchase unit above the requirement", () => {
+      const actions = decrease({
+        quantity: 100,
+        conversionFactor: 10,
+        need: 55
+      });
+      expect(actions).toHaveLength(1);
+      expect(actions[0]).toMatchObject({
+        type: "Decrease",
+        suggestedQuantity: 60
+      });
+    });
+
+    it("raises nothing once the line is already at that whole purchase unit", () => {
+      expect(
+        decrease({ quantity: 60, conversionFactor: 10, need: 55 })
+      ).toEqual([]);
+    });
+
+    it("raises nothing for a fractional requirement a whole unit already covers", () => {
+      expect(
+        decrease({ quantity: 13, conversionFactor: 1, need: 12.5 })
+      ).toEqual([]);
+      // a line with no factor is bought one for one
+      expect(decrease({ quantity: 13, need: 12.5 })).toEqual([]);
+    });
+
+    it("leaves a job's quantity unrounded", () => {
+      const actions = deriveChangeActions({
+        ...base,
+        onHand: 0,
+        demandPeriods: [
+          { periodId: "p2", startDate: "2026-10-12", quantity: 12.5 }
+        ],
+        openOrders: [
+          {
+            jobId: "job-1",
+            quantity: 13,
+            dueDate: "2026-10-12",
+            requiresManualAction: false
+          }
+        ]
+      });
+      expect(actions[0]).toMatchObject({
+        type: "Decrease",
+        suggestedQuantity: 12.5
+      });
+    });
+  });
+
+  // MRP's weeks start on Sunday; most days, that is before today. Apply
+  // writes an Expedite's date onto the order, so an Expedite to the week
+  // start put the order "overdue", it read as arriving today, four days after
+  // the week start it was measured against, and the same Expedite came back
+  // every run.
+  describe("an Expedite never asks for a date before today", () => {
+    const weeks = [
+      { id: "w1", startDate: "2026-10-04" }, // Sunday
+      { id: "w2", startDate: "2026-10-11" },
+      { id: "w3", startDate: "2026-10-18" },
+      { id: "w4", startDate: "2026-10-25" },
+      { id: "w5", startDate: "2026-11-01" }
+    ];
+    const thursday = "2026-10-08";
+    const expedite = (dueDate: string) =>
+      deriveChangeActions({
+        periods: weeks,
+        policyFloor: 0,
+        toleranceDays: 2,
+        todayDate: thursday,
+        onHand: 0,
+        demandPeriods: [
+          { periodId: "w1", startDate: "2026-10-04", quantity: 10 }
+        ],
+        openOrders: [
+          {
+            purchaseOrderLineId: "pol-1",
+            quantity: 10,
+            dueDate,
+            requiresManualAction: false
+          }
+        ]
+      });
+
+    it("raises nothing for a line already moved to this week's start", () => {
+      expect(expedite("2026-10-04")).toEqual([]);
+    });
+
+    it("raises nothing for a line already due today", () => {
+      expect(expedite(thursday)).toEqual([]);
+    });
+
+    it("expedites a later line to today, not to the week start", () => {
+      const actions = expedite("2026-11-01");
+      expect(actions).toHaveLength(1);
+      expect(actions[0]).toMatchObject({
+        type: "Expedite",
+        periodId: "w1",
+        suggestedDate: thursday,
+        horizonDate: thursday,
+        isASAP: true,
+        reason: "Needed 24 days earlier than its current date"
+      });
+    });
+  });
 });
 
 describe("convertOrdersToIncreases", () => {
@@ -524,7 +661,8 @@ describe("convertOrdersToIncreases", () => {
         }
       ],
       changeActions: [],
-      toleranceDays: TOLERANCE
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY
     });
     expect(action).toMatchObject({
       type: "Increase",
@@ -545,7 +683,8 @@ describe("convertOrdersToIncreases", () => {
         }
       ],
       changeActions: [],
-      toleranceDays: TOLERANCE
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY
     });
     expect(action).toMatchObject({
       type: "Increase",
@@ -583,7 +722,8 @@ describe("convertOrdersToIncreases", () => {
           triggerValues: null
         }
       ],
-      toleranceDays: TOLERANCE
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY
     });
     expect(action?.type).toBe("Order");
   });
@@ -600,9 +740,83 @@ describe("convertOrdersToIncreases", () => {
         }
       ],
       changeActions: [],
-      toleranceDays: TOLERANCE
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY
     });
     expect(action?.type).toBe("Make");
+  });
+
+  // The Increase is a change to THAT line, on that line's PO; the item's
+  // preferred supplier may not be the one it was bought from.
+  it("names the purchase order line's supplier, not the item's preferred one", () => {
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [orderCandidate],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-10-12",
+          requiresManualAction: false,
+          supplierId: "sup-on-po"
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY
+    });
+    expect(action).toMatchObject({
+      type: "Increase",
+      supplierId: "sup-on-po"
+    });
+  });
+
+  it("sizes an Increase on a purchase order line in whole purchase units", () => {
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [orderCandidate],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 60,
+          conversionFactor: 10,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY
+    });
+    // 60 + 5 is 6.5 purchase units; Apply writes 7
+    expect(action).toMatchObject({ type: "Increase", suggestedQuantity: 70 });
+  });
+
+  // This week's suggestion is due on the week's Sunday; an order expedited
+  // to today is the same week's supply, whatever the tolerance.
+  it("folds this week's suggestion into an order due today", () => {
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [
+        {
+          ...orderCandidate,
+          suggestedDate: "2026-10-04", // Sunday, the week start
+          horizonDate: "2026-10-04"
+        }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-10-08", // today, a Thursday
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: 2,
+      todayDate: "2026-10-08"
+    });
+    expect(action).toMatchObject({
+      type: "Increase",
+      purchaseOrderLineId: "pol-1"
+    });
   });
 });
 
@@ -965,5 +1179,273 @@ describe("projectionsWithExpedites", () => {
         openOrders: [lateOrder]
       })
     ).toEqual(projections);
+  });
+
+  // Late within the tolerance: no Expedite, but the order still covers the
+  // need, so it counts from the need week.
+  it("counts an order from its first need week when no action moves it", () => {
+    expect(
+      projectionsWithExpedites({
+        projections,
+        periods: PERIODS,
+        changeActions: [],
+        openOrders: [lateOrder],
+        firstNeedPeriods: new Map([["pol-1", "p2"]])
+      })
+    ).toEqual([5, 5, 5, 5, 5]);
+  });
+
+  it("moves an order needed after it lands nowhere", () => {
+    expect(
+      projectionsWithExpedites({
+        projections,
+        periods: PERIODS,
+        changeActions: [],
+        openOrders: [lateOrder],
+        firstNeedPeriods: new Map([["pol-1", "p5"]])
+      })
+    ).toEqual(projections);
+  });
+
+  it("moves an expedited order once, not once per source", () => {
+    expect(
+      projectionsWithExpedites({
+        projections,
+        periods: PERIODS,
+        changeActions: [expedite("pol-1", "p2")],
+        openOrders: [lateOrder],
+        firstNeedPeriods: new Map([["pol-1", "p2"]])
+      })
+    ).toEqual([5, 5, 5, 5, 5]);
+  });
+});
+
+// The whole new-supply path for one item, as generatePlanningActions runs it:
+// the change actions, then sizing on the adjusted projection, then the fold
+// into an open order.
+describe("new supply beside an order late within the tolerance", () => {
+  const periods = [
+    { id: "w0", startDate: "2026-10-04", endDate: "2026-10-10" },
+    { id: "w1", startDate: "2026-10-11", endDate: "2026-10-17" },
+    { id: "w2", startDate: "2026-10-18", endDate: "2026-10-24" },
+    { id: "w3", startDate: "2026-10-25", endDate: "2026-10-31" }
+  ];
+  const today = "2026-10-06";
+
+  function plan(demandPeriodId: string, poDue: string, raw: number[]) {
+    const openOrders = [
+      {
+        purchaseOrderLineId: "X",
+        quantity: 100,
+        dueDate: poDue,
+        requiresManualAction: false
+      }
+    ];
+    const coverageInput = {
+      onHand: 0,
+      demandPeriods: [
+        {
+          periodId: demandPeriodId,
+          startDate: periods.find((p) => p.id === demandPeriodId)!.startDate,
+          quantity: 100
+        }
+      ],
+      openOrders,
+      periods,
+      policyFloor: 0
+    };
+    const changeActions = deriveChangeActions({
+      ...coverageInput,
+      toleranceDays: TOLERANCE,
+      todayDate: today
+    });
+    const sizing = computePlanningOrders({
+      reorderingPolicy: "Demand-Based Reorder",
+      periods,
+      projections: projectionsWithExpedites({
+        projections: raw,
+        periods,
+        changeActions,
+        openOrders,
+        firstNeedPeriods: firstNeedPeriodByOrder(coverageInput)
+      }),
+      todayDate: today,
+      params: {
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        minimumOrderQuantity: 0,
+        maximumOrderQuantity: 0,
+        orderMultiple: 0,
+        lotSize: 0,
+        maximumInventoryQuantity: 0,
+        demandAccumulationPeriod: 1,
+        demandAccumulationSafetyStock: 0,
+        leadTime: 0
+      }
+    }).map((o) => ({
+      type: "Order" as const,
+      periodId: o.periodId,
+      suggestedQuantity: o.quantity,
+      suggestedDate: o.dueDate,
+      horizonDate: o.dueDate,
+      latestOrderDate: o.startDate,
+      isASAP: o.isASAP,
+      purchaseOrderLineId: null,
+      jobId: null,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: o.policyName,
+      reason: null,
+      triggerValues: null
+    }));
+    return {
+      changeActions,
+      merged: convertOrdersToIncreases({
+        sizingCandidates: sizing,
+        openOrders,
+        changeActions,
+        toleranceDays: TOLERANCE,
+        todayDate: today
+      })
+    };
+  }
+
+  // A need of 100 this week, the PO for 100 landing next Sunday — 5 days,
+  // inside the 7-day tolerance. MRP's weekly projection still books the PO in
+  // next week, so this week read short by 100, sizing ordered 100 and the
+  // fold made it "Increase from 100 to 200" for a need the PO already covers.
+  it("suggests nothing for a need this week the PO covers a few days late", () => {
+    const { changeActions, merged } = plan("w0", "2026-10-11", [-100, 0, 0, 0]);
+    expect(changeActions).toEqual([]);
+    expect(merged).toEqual([]);
+  });
+
+  it("suggests nothing for a later need the PO covers at the next week start", () => {
+    const { changeActions, merged } = plan("w2", "2026-10-25", [0, 0, -100, 0]);
+    expect(changeActions).toEqual([]);
+    expect(merged).toEqual([]);
+  });
+
+  it("still expedites an order late beyond the tolerance, with no new order", () => {
+    const { changeActions, merged } = plan(
+      "w0",
+      "2026-10-18",
+      [-100, -100, 0, 0]
+    );
+    expect(changeActions.map((a) => a.type)).toEqual(["Expedite"]);
+    expect(merged).toEqual([]);
+  });
+});
+
+describe("releaseByDate", () => {
+  it("is the day before the due date less the lead time", () => {
+    // due in 8 days with a 7-day lead time: release today
+    expect(releaseByDate("2026-10-14", 7)).toBe("2026-10-06");
+  });
+
+  it("is the day before the due date with no lead time", () => {
+    expect(releaseByDate("2026-10-14", 0)).toBe("2026-10-13");
+  });
+});
+
+describe("earlierRelease", () => {
+  const release = (date: string) => ({ date, dueDate: date, leadTime: 0 });
+
+  it("keeps the release that comes first, whichever is passed first", () => {
+    expect(
+      earlierRelease(release("2026-10-08"), release("2026-10-12")).date
+    ).toBe("2026-10-08");
+    expect(
+      earlierRelease(release("2026-10-12"), release("2026-10-08")).date
+    ).toBe("2026-10-08");
+    expect(earlierRelease(null, release("2026-10-12")).date).toBe("2026-10-12");
+  });
+});
+
+describe("deriveReleaseActions", () => {
+  const today = "2026-10-06";
+  const periods = [
+    { id: "w0", startDate: "2026-10-04" },
+    { id: "w1", startDate: "2026-10-11" },
+    { id: "w2", startDate: "2026-10-18" }
+  ];
+  const planned = (purchaseOrderLineId: string, releaseDate: string) => ({
+    purchaseOrderLineId,
+    quantity: 10,
+    dueDate: "2026-10-20",
+    requiresManualAction: false,
+    release: { date: releaseDate, dueDate: "2026-10-20", leadTime: 7 }
+  });
+
+  it("raises one Release per planned order, dated its release day", () => {
+    const [release] = deriveReleaseActions({
+      openOrders: [planned("pol-1", "2026-10-12")],
+      changeActions: [],
+      periods,
+      todayDate: today
+    });
+    expect(release).toMatchObject({
+      type: "Release",
+      purchaseOrderLineId: "pol-1",
+      suggestedDate: "2026-10-12",
+      horizonDate: "2026-10-12",
+      periodId: "w1",
+      isASAP: false,
+      latestOrderDate: null,
+      requiresManualAction: false,
+      reason: "Due 2026-10-20 with a 7-day lead time"
+    });
+  });
+
+  it("flags a release due today or already late as ASAP", () => {
+    const actions = deriveReleaseActions({
+      openOrders: [planned("today", today), planned("late", "2026-10-01")],
+      changeActions: [],
+      periods,
+      todayDate: today
+    });
+    expect(
+      actions.map((a) => [a.purchaseOrderLineId, a.isASAP, a.periodId])
+    ).toEqual([
+      ["today", true, "w0"],
+      ["late", true, "w0"]
+    ]);
+  });
+
+  it("raises nothing for an order past Planned", () => {
+    expect(
+      deriveReleaseActions({
+        openOrders: [{ ...planned("pol-1", today), release: null }],
+        changeActions: [],
+        periods,
+        todayDate: today
+      })
+    ).toEqual([]);
+  });
+
+  it("raises nothing for an order MRP would cancel", () => {
+    expect(
+      deriveReleaseActions({
+        openOrders: [planned("pol-1", today)],
+        changeActions: [
+          { type: "Cancel", purchaseOrderLineId: "pol-1", jobId: null }
+        ],
+        periods,
+        todayDate: today
+      })
+    ).toEqual([]);
+  });
+
+  it("keeps a Release beside a change to the same order", () => {
+    expect(
+      deriveReleaseActions({
+        openOrders: [planned("pol-1", today)],
+        changeActions: [
+          { type: "Increase", purchaseOrderLineId: "pol-1", jobId: null }
+        ],
+        periods,
+        todayDate: today
+      })
+    ).toHaveLength(1);
   });
 });

@@ -128,13 +128,42 @@ export async function action(args: ActionFunctionArgs) {
     }
   }
 
+  // A PO raised by the planning pages, untouched by hand since, skips the
+  // approval rule when the company allows it (Settings → Planning). Fail
+  // closed: a failed read of either is an ordinary approval check.
+  const [planningOrigin, planningSettings] = await Promise.all([
+    serviceRole
+      .from("purchaseOrder")
+      .select("createdFromPlanning")
+      .eq("id", orderId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    serviceRole
+      .from("companySettings")
+      .select("skipApprovalForPlanningPurchaseOrders")
+      .eq("id", companyId)
+      .maybeSingle()
+  ]);
+  if (planningOrigin.error || planningSettings.error) {
+    logger.error("Failed to read the planning approval bypass", {
+      companyId,
+      purchaseOrderId: orderId,
+      error: planningOrigin.error ?? planningSettings.error
+    });
+  }
+  const skipsApproval =
+    planningOrigin.data?.createdFromPlanning === true &&
+    planningSettings.data?.skipApprovalForPlanningPurchaseOrders === true;
+
   const orderAmount = purchaseOrder.data.orderTotal ?? 0;
-  const approvalRequired = await isApprovalRequired(
-    serviceRole,
-    "purchaseOrder",
-    companyId,
-    orderAmount
-  );
+  const approvalRequired = skipsApproval
+    ? false
+    : await isApprovalRequired(
+        serviceRole,
+        "purchaseOrder",
+        companyId,
+        orderAmount
+      );
 
   const finalize = await finalizePurchaseOrder(client, orderId, userId);
   if (finalize.error) {

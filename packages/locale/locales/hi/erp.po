@@ -269,6 +269,11 @@ msgstr "{0} मान"
 msgid "{0} values missing"
 msgstr "{0} मान गायब हैं"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0} को {name} के रूप में सहेजा जाएगा"
@@ -432,6 +437,9 @@ msgstr "{remaining, plural, one {# चरण बचा} other {# चरण ब�
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} संसाधन · {reservationCount} आरक्षण · {jobCount} जॉब"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} अनुमतियाँ"
 
@@ -470,9 +478,6 @@ msgstr "{unmappedRequiredCount, plural, one {पहले # शेष आवश�
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
-
-msgid "{updatedJobCount} jobs updated"
-msgstr "{updatedJobCount} जॉब अपडेट किए गए"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
@@ -537,9 +542,6 @@ msgstr "1 ड्राफ्ट जर्नल प्रविष्टि"
 
 msgid "1 job created"
 msgstr "1 नौकरी बनाई गई"
-
-msgid "1 job updated"
-msgstr "1 नौकरी अपडेट की गई"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -2035,6 +2037,12 @@ msgstr "इस जॉब की एक प्रक्रिया इस बै
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "एक ऑपरेशन की वर्क सेंटर की कतार में स्थिति — वह क्रम जिसमें फ्लोर काम लेता है। इंजन इसे प्लेसमेंट क्रम से संख्या देता है (सबसे पहली अनुमानित शुरुआत पहले); वर्क सेंटर बोर्ड पर कार्ड्स को पुनः क्रमित करना तारीख बदले बिना इसे निरस्त करता है।"
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr ""
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr ""
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "Onshape से कनेक्ट करते समय एक अप्रत्याशित त्रुटि हुई। एकीकरण सेटिंग्स को सहेजें और फिर से कोशिश करें।"
 
@@ -2775,9 +2783,6 @@ msgstr "इसके अनुसार:"
 
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "कंपनी के मालिक के रूप में, आप स्वामित्व किसी अन्य कर्मचारी को स्थानांतरित कर सकते हैं। यह उन्हें बिलिंग और प्रशासनिक सेटिंग्स तक पूर्ण पहुंच देगा।"
-
-msgid "ASAP"
-msgstr "जितनी जल्दी संभव हो"
 
 msgid "Ascending"
 msgstr "आरोही"
@@ -3532,11 +3537,17 @@ msgstr "परिवर्तन सूचना को रद्द करे�
 msgid "Cancel Job"
 msgstr "नौकरी रद्द करें"
 
+msgid "Cancel job {target}"
+msgstr ""
+
 msgid "Cancel Order"
 msgstr "ऑर्डर रद्द करें"
 
 msgid "Cancel Purchase Order"
 msgstr "क्रय आदेश रद्द करें"
+
+msgid "Cancel purchase order {target}"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "रिटर्न रद्द करें"
@@ -3588,6 +3599,12 @@ msgstr "आइटम आईडी के बिना पार्ट्स ब�
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "इस आइटम के साथ कोई आपूर्तिकर्ता जुड़ा नहीं है - ऑर्डर नहीं दे सकते"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "ऑर्डर नहीं दिया जा सकता — {count} आइटम का कोई आपूर्तिकर्ता नहीं है"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "ऑर्डर नहीं दिया जा सकता — 1 आइटम का कोई आपूर्तिकर्ता नहीं है"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "पोस्ट नहीं कर सकते — शिपमेंट में समाप्त ट्रैक किए गए इकाइयां हैं।"
@@ -4890,8 +4907,10 @@ msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "जारी नहीं कर सके {0}: {1}"
@@ -5724,6 +5743,12 @@ msgstr "ह्रासमान शेष"
 msgid "Decrease"
 msgstr "घटाएं"
 
+msgid "Decrease job {target} to {amount}"
+msgstr ""
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr ""
+
 msgid "Deep in the small hours, {name}."
 msgstr "गहरी रात में, {name}।"
 
@@ -5846,6 +5871,12 @@ msgstr "डिफ़ॉल्ट"
 
 msgid "Defer"
 msgstr "स्थगित करें"
+
+msgid "Defer job {target} to {date}"
+msgstr ""
+
+msgid "Defer purchase order {target} to {date}"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "आस्थगित कर व्यय"
@@ -7706,6 +7737,12 @@ msgstr "अपेक्षित प्राप्ति तारीख"
 msgid "Expedite"
 msgstr "तेज़ी से करें"
 
+msgid "Expedite job {target} to {date}"
+msgstr ""
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "ग्राहक शेष राशि के लिए व्यय खाता जो प्राप्य खाते समझौते पर अनिर्धारक के रूप में लिखा गया है"
 
@@ -8915,7 +8952,7 @@ msgstr "ऐसे ऑपरेशन हैं जिन्हें शेड�
 msgid "Headers"
 msgstr "हेडर"
 
-msgid "healthy"
+msgid "Healthy"
 msgstr "स्वस्थ"
 
 msgid "Help"
@@ -9357,9 +9394,6 @@ msgstr "इन-ऐप सूचनाएं हमेशा दी जाती 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "इन-ऐप सूचनाएं हमेशा दी जाती हैं। चुनें कि कौन से विषय आपको ईमेल द्वारा भी पहुंचें।"
 
-msgid "inactive"
-msgstr "निष्क्रिय"
-
 msgid "Inactive"
 msgstr "निष्क्रिय"
 
@@ -9419,6 +9453,12 @@ msgstr "इनकोटर्म स्थान"
 
 msgid "Increase"
 msgstr "बढ़ाएं"
+
+msgid "Increase job {target} to {amount}"
+msgstr ""
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr ""
 
 msgid "Indirect"
 msgstr "अप्रत्यक्ष"
@@ -9990,6 +10030,9 @@ msgstr "नौकरी प्राथमिकता"
 
 msgid "Job readable"
 msgstr "नौकरी पठनीय"
+
+msgid "Job released"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "जॉब ट्रैवलर"
@@ -10682,6 +10725,12 @@ msgstr "रखरखाव प्रकार"
 
 msgid "Make"
 msgstr "बनाएं"
+
+msgid "Make {amount} for {date}"
+msgstr ""
+
+msgid "Make {quantity}"
+msgstr "{quantity} बनाएं"
 
 msgid "Make Active"
 msgstr "सक्रिय करें"
@@ -11725,9 +11774,6 @@ msgstr "नया आपूर्तिकर्ता भाग"
 msgid "New Supplier Return"
 msgstr "नया आपूर्तिकर्ता रिटर्न"
 
-msgid "New supply"
-msgstr "नई आपूर्ति"
-
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
 
@@ -12332,6 +12378,9 @@ msgstr "कोई भंडारण इकाई नहीं"
 
 msgid "No storage units or tracking numbers match."
 msgstr "कोई भंडारण इकाई या ट्रैकिंग संख्या मेल नहीं खाती।"
+
+msgid "No Supplier"
+msgstr "कोई आपूर्तिकर्ता नहीं"
 
 msgid "No suppliers yet"
 msgstr "अभी तक कोई आपूर्तिकर्ता नहीं"
@@ -13069,6 +13118,12 @@ msgstr "इस जॉब के लिए {0} × {substitute} ऑर्डर �
 msgid "Order {0} for this job"
 msgstr "इस कार्य के लिए {0} ऑर्डर करें"
 
+msgid "Order {amount} for {date}"
+msgstr ""
+
+msgid "Order {quantity}"
+msgstr "{quantity} ऑर्डर करें"
+
 msgid "Order by"
 msgstr "आदेश दें"
 
@@ -13730,6 +13785,12 @@ msgstr "योजना क्षितिज:"
 msgid "Planning Ownership"
 msgstr "योजना स्वामित्व"
 
+msgid "Planning purchase orders need approval"
+msgstr ""
+
+msgid "Planning purchase orders skip approval"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "योजना राउंड इस संख्या के पूरे गुणज तक पुनः भरण का सुझाव दिया।"
 
@@ -14312,6 +14373,9 @@ msgstr "क्रय आदेश"
 msgid "Purchase Order Amount"
 msgstr "क्रय आदेश राशि"
 
+msgid "Purchase Order Approval"
+msgstr ""
+
 msgid "Purchase Order approval rule"
 msgstr "क्रय आदेश अनुमोदन नियम"
 
@@ -14338,6 +14402,9 @@ msgstr "क्रय आदेश"
 
 msgid "Purchase Orders and Planning"
 msgstr "क्रय आदेश और योजना"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr ""
 
 msgid "Purchase orders required"
 msgstr "क्रय आदेश आवश्यक हैं"
@@ -14444,9 +14511,6 @@ msgstr "मात्रा"
 
 msgid "Qty On Hand"
 msgstr "हाथ में मात्रा"
-
-msgid "Qty to Order"
-msgstr "ऑर्डर करने की मात्रा"
 
 msgid "Qty. Complete"
 msgstr "मात्रा पूर्ण"
@@ -15056,8 +15120,14 @@ msgstr "नियंत्रण जारी करें"
 msgid "Release Job"
 msgstr "जॉब जारी करें"
 
+msgid "Release job {target} by {date}"
+msgstr ""
+
 msgid "Release Jobs"
 msgstr "जॉब को जारी करें"
+
+msgid "Release purchase order {target} by {date}"
+msgstr ""
 
 msgid "Released"
 msgstr "जारी किया गया"
@@ -15209,6 +15279,9 @@ msgstr "लेबल पूर्वावलोकन प्रस्तुत 
 
 msgid "Reopen"
 msgstr "फिर से खोलें"
+
+msgid "Reopen as Revision"
+msgstr ""
 
 msgid "Reorder"
 msgstr "पुनः क्रमित करें"
@@ -18080,7 +18153,7 @@ msgstr "सिंक करें"
 msgid "Sync Activity"
 msgstr "सिंक गतिविधि"
 
-msgid "sync off"
+msgid "Sync Off"
 msgstr "सिंक बंद"
 
 msgid "Sync operation"
@@ -18871,6 +18944,9 @@ msgstr "प्रक्रियाएँ जो यह वर्क सें�
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"
+
+msgid "The purchase order"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "मात्रा विभाजन बिंदु जिन पर इस पंक्ति की कीमत है; प्रत्येक कॉलम क्रेता-आपूर्तिकर्ता बातचीत और डाउनस्ट्रीम दस्तावेजों में परिवर्तित करने के लिए अपनी स्वयं की प्रति-यूनिट कीमत रखता है।"
@@ -20062,7 +20138,7 @@ msgstr "पूर्ववत करें"
 msgid "Ungroup"
 msgstr "अनग्रुप करें"
 
-msgid "unhealthy"
+msgid "Unhealthy"
 msgstr "अस्वस्थ"
 
 msgid "Uninstall"

@@ -62,7 +62,7 @@ describe("cancelJob", () => {
     }) as never);
     vi.mocked(updateJobStatus).mockImplementation((async () => {
       events.push("updateJobStatus");
-      return { data: null, error: null };
+      return { data: null, error: null, updated: true };
     }) as never);
   });
 
@@ -124,7 +124,7 @@ describe("cancelJob", () => {
   it("reports a failed status update", async () => {
     vi.mocked(updateJobStatus).mockImplementationOnce((async () => {
       events.push("updateJobStatus");
-      return { data: null, error: new Error("update failed") };
+      return { data: null, error: new Error("update failed"), updated: false };
     }) as never);
 
     const failed = await cancelJob(args);
@@ -135,5 +135,65 @@ describe("cancelJob", () => {
       "cancelOpenPickingLists",
       "updateJobStatus"
     ]);
+  });
+
+  // Planning's Cancel read the status earlier. A job released since must not
+  // have its picks returned: cancelJob checks the status before anything else.
+  describe("with fromStatuses", () => {
+    const jobWithStatus = (status: string) =>
+      ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: { status }, error: null })
+              })
+            })
+          })
+        })
+      }) as never;
+
+    it("refuses a job no longer in those statuses and changes nothing", async () => {
+      const failed = await cancelJob({
+        ...args,
+        client: jobWithStatus("Ready"),
+        fromStatuses: ["Draft", "Planned"]
+      });
+
+      expect(failed?.refused).toBe(true);
+      expect(events).toEqual([]);
+    });
+
+    it("cancels a job still in them, guarding the status write too", async () => {
+      const client = jobWithStatus("Planned");
+      await expect(
+        cancelJob({ ...args, client, fromStatuses: ["Draft", "Planned"] })
+      ).resolves.toBeNull();
+
+      expect(events).toEqual([
+        "returnPickedRemainders",
+        "cancelOpenPickingLists",
+        "updateJobStatus"
+      ]);
+      expect(updateJobStatus).toHaveBeenCalledWith(
+        client,
+        expect.objectContaining({ fromStatuses: ["Draft", "Planned"] })
+      );
+    });
+
+    it("refuses when the job moves on between the check and the write", async () => {
+      vi.mocked(updateJobStatus).mockImplementationOnce((async () => {
+        events.push("updateJobStatus");
+        return { data: [], error: null, updated: false };
+      }) as never);
+
+      const failed = await cancelJob({
+        ...args,
+        client: jobWithStatus("Planned"),
+        fromStatuses: ["Draft", "Planned"]
+      });
+
+      expect(failed?.refused).toBe(true);
+    });
   });
 });

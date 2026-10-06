@@ -5,5 +5,6 @@
 export { ForecastConsumptionCard } from "./ForecastConsumptionCard";
 export { MrpScheduleCard } from "./MrpScheduleCard";
 export { PlanningHorizonCard } from "./PlanningHorizonCard";
+export { PlanningPurchaseOrderApprovalCard } from "./PlanningPurchaseOrderApprovalCard";
 export { RescheduleToleranceCard } from "./RescheduleToleranceCard";
 export { ResponsibleEmployeeCard } from "./ResponsibleEmployeeCard";

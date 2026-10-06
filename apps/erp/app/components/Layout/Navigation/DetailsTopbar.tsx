@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import type { IconType } from "react-icons";
 import { useNavigate } from "react-router";
 import { useOptimisticLocation, useUrlParams } from "~/hooks";
+import { useSlidingHoverCard } from "./useSlidingHoverCard";
 
 type DetailTopbarProps = {
   links: {
@@ -40,6 +41,10 @@ const DetailTopbar = ({
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [params] = useUrlParams();
+  // The same travelling hover card as the sidebar: it slides between tabs
+  // and sits under the active one, whose own background covers it.
+  const { containerRef, cardRef, handlers } =
+    useSlidingHoverCard<HTMLDivElement>();
 
   useShortcutKeyMap(
     useMemo(
@@ -64,7 +69,16 @@ const DetailTopbar = ({
   );
 
   return (
-    <div className="inline-flex h-9 items-center justify-center rounded-[0.5rem] bg-muted p-1 text-muted-foreground shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]  border-b border-border">
+    <div
+      ref={containerRef}
+      className="relative inline-flex items-center justify-center rounded-[0.5rem] bg-muted p-0.5 text-muted-foreground border border-border"
+      {...handlers}
+    >
+      <span
+        ref={cardRef}
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 rounded-[6px] bg-active opacity-0 transition-[transform,width,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+      />
       {links.map((route) => {
         const isActive = route.isActive
           ? route.isActive(location.pathname)
@@ -79,9 +93,12 @@ const DetailTopbar = ({
             <TooltipTrigger className="w-full">
               <PrefetchLink
                 to={linkTo}
+                data-nav-item=""
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-[6px] px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  isActive && "bg-background text-foreground shadow-button-base"
+                  "relative inline-flex items-center justify-center whitespace-nowrap rounded-[6px] border border-transparent px-3 py-1 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring",
+                  isActive
+                    ? "bg-background text-foreground shadow-button-base"
+                    : "hover:text-foreground"
                 )}
               >
                 {route.icon && <route.icon className="mr-2" />}

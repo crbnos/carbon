@@ -12,7 +12,13 @@ import {
   taxPairFromAmount,
   taxPairFromPercent
 } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import {
+  type CalendarDate,
+  getLocalTimeZone,
+  parseDate,
+  startOfWeek,
+  today
+} from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
@@ -123,7 +129,7 @@ export const plannedOrderValidator = z.object({
   itemReadableId: zfd.text(z.string().optional()),
   unitPrice: zfd.numeric(z.number().optional()),
   unitOfMeasureCode: zfd.text(z.string().optional()),
-  // ── Reorder-policy attribution (populated by calculateOrders for
+  // ── Reorder-policy attribution (copied from the Order action for
   // MRP-suggested orders; absent for user-added "Add Order" rows). ──
   policyName: zfd.text(z.string().optional()),
   reason: zfd.text(z.string().optional()),
@@ -807,10 +813,73 @@ export function taxPairForQuantity(
 }
 
 /**
+ * The week a planned PO line is ordered in, as the date that week starts.
+ * Planning raises one PO per supplier per week, so each PO can be finalized
+ * and sent alone while the later weeks stay Planned and MRP can still change
+ * them. Weeks start on Sunday, as the planning grid's periods do
+ * (`getOrCreatePeriods`). A line due before `asOf` (the location's today), or
+ * with no due date, is in the current week: it is late, so it goes on the next PO sent.
+ */
+export function planningPurchaseOrderWeek(
+  requiredDate: string | null | undefined,
+  asOf: CalendarDate
+): string {
+  const due = requiredDate ? parseDate(requiredDate) : asOf;
+  return startOfWeek(due.compare(asOf) < 0 ? asOf : due, "en-US").toString();
+}
+
+/**
+ * The open PO a planned order for `week` joins: the oldest candidate for the
+ * supplier, in the supplier's currency, whose lines are ALL in that week.
+ * Candidates are the supplier's Draft / Planned purchase orders at the
+ * location, oldest first. A PO with lines in several weeks (raised before the
+ * weekly rule, or a line moved by hand) takes no more orders, so it cannot
+ * keep collecting weeks, and a PO with no lines is never reused.
+ */
+export function findPlanningPurchaseOrder<
+  P extends {
+    supplierId: string;
+    currencyCode: string | null;
+    purchaseOrderLine: { requiredDate: string | null }[];
+  }
+>(
+  candidates: P[],
+  target: { supplierId: string; currencyCode: string; week: string },
+  asOf: CalendarDate
+): P | undefined {
+  return candidates.find(
+    (po) =>
+      po.supplierId === target.supplierId &&
+      po.currencyCode === target.currencyCode &&
+      po.purchaseOrderLine.length > 0 &&
+      po.purchaseOrderLine.every(
+        (line) =>
+          planningPurchaseOrderWeek(line.requiredDate, asOf) === target.week
+      )
+  );
+}
+
+/**
+ * The statuses a reopen moves a purchase order back to: Draft from the PO
+ * page, Planned from the planning pages. Planned because Draft is not MRP
+ * supply (`openPurchaseOrderLines` leaves it out): a PO reopened to Draft from
+ * planning dropped out of the plan, and the next run suggested its whole
+ * quantity again as a new order.
+ */
+export const PURCHASE_ORDER_REOPEN_STATUSES = ["Draft", "Planned"] as const;
+
+export function isPurchaseOrderReopenStatus(
+  status: string | null | undefined
+): status is (typeof PURCHASE_ORDER_REOPEN_STATUSES)[number] {
+  return PURCHASE_ORDER_REOPEN_STATUSES.some((reopen) => reopen === status);
+}
+
+/**
  * Whether a status change is ELIGIBLE to create a revision — the bump itself
  * also requires the explicit `createRevision` flag. Only a released order
- * qualifies: `orderDate` is set at finalize, so an order reopened from
- * "Needs Approval" or closed straight from Draft never reached the supplier.
+ * reopened to Draft or Planned qualifies: `orderDate` is set at finalize, so
+ * an order reopened from "Needs Approval" or closed straight from Draft never
+ * reached the supplier.
  */
 export function canCreatePurchaseOrderRevision(transition: {
   newStatus: (typeof purchaseOrderStatusType)[number];
@@ -818,7 +887,7 @@ export function canCreatePurchaseOrderRevision(transition: {
   orderDate: string | null | undefined;
 }): boolean {
   return (
-    transition.newStatus === "Draft" &&
+    isPurchaseOrderReopenStatus(transition.newStatus) &&
     isPurchaseOrderLocked(transition.currentStatus) &&
     Boolean(transition.orderDate)
   );

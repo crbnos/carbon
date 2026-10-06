@@ -2,16 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { HStack, Skeleton } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  HStack,
+  IconButton,
+  Skeleton
+} from "@carbon/react";
+import { formatDate, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useCallback, useMemo } from "react";
-import { LuTrash } from "react-icons/lu";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -22,6 +29,8 @@ import {
   PlanningActionRowActions,
   PlanningActionTypeWithReason
 } from "./PlanningActionLines";
+import type { PlanningPurchaseOrder } from "./planning-review";
+import { isPlanningActionLate } from "./planning-review";
 
 // The two tables of the planning order drawer. They look alike and save
 // DIFFERENTLY, which is why they are two tables and not one list:
@@ -47,6 +56,14 @@ const SAVED = {
 
 /** A draft cell has nothing to persist: the grid's `onDataChange` is the save. */
 const draftMutation = async () => SAVED;
+
+/** An editable quantity commits `parse(format(x))` on blur, so it needs the
+ *  quantity kind's digits and step — Intl's default would round to three. */
+const QUANTITY_FIELD = {
+  minValue: 0,
+  formatOptions: INPUT_FORMAT.quantity,
+  step: INPUT_STEP.quantity
+};
 
 function SectionTitle({
   children,
@@ -138,7 +155,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
 
   const editableComponents = useMemo(
     () => ({
-      quantity: EditableNumber<O>(draftMutation, { minValue: 0 }),
+      quantity: EditableNumber<O>(draftMutation, QUANTITY_FIELD),
       dueDate: EditableDate<O>(draftMutation)
     }),
     []
@@ -270,7 +287,42 @@ export type OpenOrderRow = {
   action: PlanningAction | null;
   /** The action's suggested quantity, converted to this row's units. */
   suggestedQuantity: number | null;
+  /** The purchase order behind a PO line row, for the order's own menu
+   *  (Reopen, Finalize). Jobs have none. */
+  purchaseOrder?: PlanningPurchaseOrder | null;
 };
+
+/** The ⋯ of an order no planning action targets: only the order's own
+ *  commands. Renders nothing when the host offers none for it. */
+function OrderOnlyMenu({
+  order,
+  canUpdate,
+  purchaseOrderMenuItems
+}: {
+  order: PlanningPurchaseOrder;
+  canUpdate: boolean;
+  purchaseOrderMenuItems: (order: PlanningPurchaseOrder) => ReactNode;
+}) {
+  const { t } = useLingui();
+  const items = purchaseOrderMenuItems(order);
+  if (!items) return null;
+  return (
+    <div className="flex justify-end">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <IconButton
+            size="sm"
+            variant="ghost"
+            aria-label={t`More options`}
+            icon={<LuEllipsisVertical />}
+            isDisabled={!canUpdate}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">{items}</DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 
 export type OpenOrderField = "quantity" | "dueDate";
 
@@ -282,6 +334,8 @@ type OpenOrdersGridProps = PlanningActionHandlers & {
   renderStatusIcon: (status: string) => ReactNode;
   /** `null` while the orders are being read; an `Error` when the read failed. */
   rows: OpenOrderRow[] | null | Error;
+  /** Today on the location's calendar — a suggestion dated before it is late. */
+  todayIso: string;
   /** Persist one field of one order. Resolve `false` (after reporting the
    *  reason) to have the cell revert. */
   onSave: (
@@ -296,7 +350,11 @@ const QUANTITY_ACTION_TYPES: ReadonlySet<string> = new Set([
   "Increase",
   "Decrease"
 ]);
-const DATE_ACTION_TYPES: ReadonlySet<string> = new Set(["Expedite", "Defer"]);
+const DATE_ACTION_TYPES: ReadonlySet<string> = new Set([
+  "Expedite",
+  "Defer",
+  "Release"
+]);
 
 // The Due Date cell beside it already carries the year; the suggested date
 // only needs to be told apart from it, and the drawer is narrow.
@@ -307,6 +365,7 @@ export function OpenOrdersGrid({
   documentHeader,
   quantityHeader,
   rows,
+  todayIso,
   renderStatusIcon,
   onSave,
   onRowsChange,
@@ -316,14 +375,25 @@ export function OpenOrdersGrid({
   const { locale } = useLocale();
   const formatQuantity = useQuantityFormatter();
 
-  const saveCell = useCallback(
-    async (
+  // The editors must keep their identity for the life of the drawer: each
+  // `EditableNumber` / `EditableDate` call returns a NEW component, so rebuilding
+  // them remounts the open editor and drops what the planner is typing (Tab
+  // carries the edit into the next cell while the previous save is in flight,
+  // and the caller's `onSave` changes when that save revalidates). The latest
+  // `onSave` is read through a ref instead — React 18 has no useEffectEvent.
+  const latestOnSave = useRef(onSave);
+  useEffect(() => {
+    latestOnSave.current = onSave;
+  });
+
+  const editableComponents = useMemo(() => {
+    const saveCell = async (
       accessorKey: string,
       value: unknown,
       row: OpenOrderRow
     ): Promise<PostgrestSingleResponse<unknown>> => {
       const field = accessorKey as OpenOrderField;
-      const saved = await onSave(
+      const saved = await latestOnSave.current(
         row,
         field,
         field === "quantity" ? Number(value) : String(value)
@@ -334,17 +404,12 @@ export function OpenOrdersGrid({
             ...SAVED,
             error: { message: "Not saved" }
           }) as unknown as PostgrestSingleResponse<unknown>;
-    },
-    [onSave]
-  );
-
-  const editableComponents = useMemo(
-    () => ({
-      quantity: EditableNumber<OpenOrderRow>(saveCell, { minValue: 0 }),
+    };
+    return {
+      quantity: EditableNumber<OpenOrderRow>(saveCell, QUANTITY_FIELD),
       dueDate: EditableDate<OpenOrderRow>(saveCell)
-    }),
-    [saveCell]
-  );
+    };
+  }, []);
 
   // `handlers` is a rest object, new on every render, so the memo depends on
   // its members instead.
@@ -396,7 +461,14 @@ export function OpenOrdersGrid({
         header: t`Due Date`,
         size: 130,
         cell: ({ row }) => (
-          <span className="whitespace-nowrap tabular-nums">
+          <span
+            className={
+              // an open order due before today is overdue
+              row.original.dueDate && row.original.dueDate < todayIso
+                ? "whitespace-nowrap tabular-nums font-medium text-red-500"
+                : "whitespace-nowrap tabular-nums"
+            }
+          >
             {row.original.dueDate
               ? formatDate(row.original.dueDate, undefined, locale)
               : "—"}
@@ -411,8 +483,16 @@ export function OpenOrdersGrid({
         header: t`Suggestion`,
         size: 330,
         cell: ({ row }) => {
-          const { action, suggestedQuantity } = row.original;
-          if (!action) return null;
+          const { action, suggestedQuantity, purchaseOrder } = row.original;
+          if (!action) {
+            return purchaseOrder && handlers.purchaseOrderMenuItems ? (
+              <OrderOnlyMenu
+                order={purchaseOrder}
+                canUpdate={handlers.canUpdate}
+                purchaseOrderMenuItems={handlers.purchaseOrderMenuItems}
+              />
+            ) : null;
+          }
           const isDismissed = action.status === "Dismissed";
           return (
             <HStack spacing={2} className="flex-nowrap justify-between">
@@ -426,7 +506,15 @@ export function OpenOrdersGrid({
               >
                 <PlanningActionTypeWithReason action={action} />
                 {DATE_ACTION_TYPES.has(action.type) && (
-                  <span className="tabular-nums">
+                  <span
+                    className={
+                      // the same rule as the expanded row: an urgent action
+                      // (or a Release) whose day has passed
+                      isPlanningActionLate(action, todayIso)
+                        ? "tabular-nums font-medium text-red-500"
+                        : "tabular-nums"
+                    }
+                  >
                     {formatDate(action.suggestedDate, SHORT_DATE, locale)}
                   </span>
                 )}
@@ -437,7 +525,11 @@ export function OpenOrdersGrid({
                     </span>
                   )}
               </HStack>
-              <PlanningActionRowActions action={action} {...handlers} />
+              <PlanningActionRowActions
+                action={action}
+                purchaseOrder={purchaseOrder}
+                {...handlers}
+              />
             </HStack>
           );
         }
@@ -449,6 +541,7 @@ export function OpenOrdersGrid({
       renderStatusIcon,
       formatQuantity,
       locale,
+      todayIso,
       t,
       handlers.currentUserId,
       handlers.canUpdate,
@@ -456,7 +549,8 @@ export function OpenOrdersGrid({
       handlers.onApply,
       handlers.onDismiss,
       handlers.onReopen,
-      handlers.onAssignToMe
+      handlers.onAssignToMe,
+      handlers.purchaseOrderMenuItems
     ]
   );
 
@@ -499,13 +593,16 @@ export function OpenOrdersGrid({
 
 /**
  * The one planning action to show on an order's row: MRP emits at most one
- * action per target document, but a dismissed one can coexist with a newer open
- * one — the open action wins.
+ * change per target document, but a dismissed one can coexist with a newer
+ * open one — the open action wins — and a planned order also carries its
+ * Release. A change comes first (make it, then release the order); the
+ * Release shows when there is nothing to change.
  */
 export function actionForOrder(
   actions: PlanningAction[],
   matches: (action: PlanningAction) => boolean
 ): PlanningAction | null {
   const mine = actions.filter(matches);
-  return mine.find((a) => a.status === "Open") ?? mine[0] ?? null;
+  const open = mine.filter((a) => a.status === "Open");
+  return open.find((a) => a.type !== "Release") ?? open[0] ?? mine[0] ?? null;
 }

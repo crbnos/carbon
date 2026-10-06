@@ -23,6 +23,7 @@ import {
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -1569,11 +1570,15 @@ export async function setLocationResponsibleEmployee(
     userId: string;
   }
 ) {
+  // `location` is a resources table: without resources_update, row-level
+  // security matches no row and the update succeeds having changed nothing.
+  // Returning the row lets the caller tell the two apart.
   return client
     .from("location")
     .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
     .eq("id", args.locationId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
 }
 
 /**
@@ -1598,17 +1603,30 @@ export async function upsertItemPostingGroupResponsibility(
       .eq("locationId", args.locationId)
       .eq("itemPostingGroupId", args.itemPostingGroupId);
   }
-  return client.from("itemPostingGroupResponsibility").upsert(
-    {
+  // Update first, insert only when the cell is new: an upsert would restate
+  // `createdBy` on every reassignment.
+  const updated = await client
+    .from("itemPostingGroupResponsibility")
+    .update({
+      responsibleEmployee: args.employeeId,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId)
+    .eq("itemPostingGroupId", args.itemPostingGroupId)
+    .select("id");
+  if (updated.error || (updated.data?.length ?? 0) > 0) return updated;
+  return client
+    .from("itemPostingGroupResponsibility")
+    .insert({
       companyId: args.companyId,
       locationId: args.locationId,
       itemPostingGroupId: args.itemPostingGroupId,
       responsibleEmployee: args.employeeId,
-      createdBy: args.userId,
-      updatedBy: args.userId
-    },
-    { onConflict: "companyId,locationId,itemPostingGroupId" }
-  );
+      createdBy: args.userId
+    })
+    .select("id");
 }
 
 export async function setRescheduleToleranceDays(
@@ -1618,6 +1636,21 @@ export async function setRescheduleToleranceDays(
   return client
     .from("companySettings")
     .update({ rescheduleToleranceDays: args.days })
+    .eq("id", args.companyId);
+}
+
+/**
+ * Whether a purchase order the planning pages raised skips the approval rule
+ * when it is finalized (`purchaseOrder.createdFromPlanning`, cleared by any
+ * manual line change). On by default.
+ */
+export async function setSkipApprovalForPlanningPurchaseOrders(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; enabled: boolean }
+) {
+  return client
+    .from("companySettings")
+    .update({ skipApprovalForPlanningPurchaseOrders: args.enabled })
     .eq("id", args.companyId);
 }
 

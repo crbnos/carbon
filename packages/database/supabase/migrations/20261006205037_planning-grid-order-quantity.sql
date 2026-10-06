@@ -1,39 +1,17 @@
--- Planning horizon (time fence) for MRP planning actions.
+-- The planning grids' order quantity: what the row's Order / Make button
+-- offers, from MRP's open new-supply actions inside the item's planning
+-- horizon (the same fence the Actions filter and latestOrderDate use).
 --
--- MRP keeps generating actions over the whole planning window; the horizon is a
--- READ-TIME lens: the planning grids surface only the actions (and suggested new
--- orders) that fall on or before today + horizon days. Empty or 0 = no fence;
--- an item's 0 also opts it out of the company default, which empty inherits.
+-- The grids sorted and showed the base RPC's "quantityToOrder", a second sizing
+-- of the weekly projection in SQL (calculate_quantity_to_order). It does not
+-- see what MRP does after sizing — Expedites, Increases folded into open
+-- orders, orders already placed — so the Qty to Order column and the default
+-- sort disagreed with the Order button: an item MRP had nothing to order for
+-- sorted above items with real shortages. The base RPCs keep "quantityToOrder"
+-- (generatePlanningActions reads it for Stock Only items).
 --
--- Named planningHorizonDays on purpose: planningTimeFenceDays is reserved by the
--- MRP v2 spec for the auto-firm fence, which is a different concept.
---
--- The fence is compared against planningAction."horizonDate", defined with the
--- table in 20261005090300_mrp-planning-actions.sql.
+-- Re-created rather than replaced: the return type gains a column.
 
--- 1. Per item + location horizon, with a company-wide default.
-ALTER TABLE "itemPlanning"
-  ADD COLUMN IF NOT EXISTS "planningHorizonDays" INTEGER
-  CHECK ("planningHorizonDays" IS NULL OR "planningHorizonDays" >= 0);
-
-ALTER TABLE "companySettings"
-  ADD COLUMN IF NOT EXISTS "defaultPlanningHorizonDays" INTEGER
-  CHECK ("defaultPlanningHorizonDays" IS NULL OR "defaultPlanningHorizonDays" >= 0);
-
--- 2. Grid wrappers. The base RPCs stay the one definition of the projection
---    (generatePlanningActions reads them too); these add the columns only the
---    grids need and evaluate the Actions and Assignee filters in the
---    database, inside each item's fence, so the filter is complete at any volume
---    and paging stays correct.
---
---    SECURITY INVOKER: the base RPC asserts company access; everything joined
---    here runs under the caller's RLS.
---
---    `p.*` ties the column list below to the base RPC's. Adding a column to a
---    base RPC means re-creating its wrapper with the same column — the wrapper
---    fails loudly (return type mismatch) until then.
-
-DROP FUNCTION IF EXISTS get_purchasing_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT);
 DROP FUNCTION IF EXISTS get_purchasing_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT[]);
 CREATE FUNCTION get_purchasing_planning_grid(
   company_id TEXT,
@@ -86,7 +64,8 @@ CREATE FUNCTION get_purchasing_planning_grid(
     "planningHorizonDays" INTEGER,
     "timeFenceDate" DATE,
     "firstNegativeDate" DATE,
-    "latestOrderDate" DATE
+    "latestOrderDate" DATE,
+    "orderQuantity" NUMERIC
   )
   LANGUAGE sql
   STABLE
@@ -118,7 +97,27 @@ AS $$
         AND a."locationId" = location_id
         AND a."status" = 'Open'
         AND (a."type" = 'Order' OR a."purchaseOrderLineId" IS NOT NULL)
-    ) AS "latestOrderDate"
+    ) AS "latestOrderDate",
+    (
+      -- What the row's Order / Make button offers: the open Order actions
+      -- MRP wrote, inside the item's fence. The base RPC's quantityToOrder
+      -- sizes the projection again and knows nothing of what MRP did after
+      -- sizing — Expedites, Increases, orders already placed — so sorted on
+      -- it, rows with nothing to order sat above rows with real shortages.
+      -- 0, not NULL, when there is nothing: a descending sort puts NULLs first
+      SELECT COALESCE(SUM(a."suggestedQuantity"), 0)
+      FROM "planningAction" a
+      WHERE a."companyId" = company_id
+        AND a."itemId" = p."id"
+        AND a."locationId" = location_id
+        AND a."status" = 'Open'
+        AND a."type" = 'Order'
+        AND a."purchaseOrderLineId" IS NULL
+        AND (
+          h."days" IS NULL
+          OR a."horizonDate" <= COALESCE(as_of, location_today(location_id, company_id)) + h."days"
+        )
+    ) AS "orderQuantity"
   FROM get_purchasing_planning(company_id, location_id, periods) p
   -- OFFSET 0 keeps the planner from pulling to_jsonb(p) into the weekly
   -- firstNegativeDate subquery, where it ran 48 times per item (1.2 s against
@@ -155,6 +154,19 @@ AS $$
         AND a."locationId" = location_id
         AND a."status" = 'Open'
         AND (a."type" = 'Order' OR a."purchaseOrderLineId" IS NOT NULL)
+        -- A Release applies only while its order is Planned; between runs the
+        -- order can move on (sent, released) and the stale row must not match.
+        -- Compared as text: the enum value is added by a later migration.
+        AND (
+          a."type"::TEXT <> 'Release'
+          OR EXISTS (
+            SELECT 1
+            FROM "purchaseOrderLine" pol
+            INNER JOIN "purchaseOrder" po ON po."id" = pol."purchaseOrderId"
+            WHERE pol."id" = a."purchaseOrderLineId"
+              AND po."status" = 'Planned'
+          )
+        )
         AND (action_types IS NULL OR a."type"::TEXT = ANY(action_types))
         AND (action_assignees IS NULL OR a."assignee" = ANY(action_assignees))
         AND (
@@ -164,7 +176,6 @@ AS $$
     );
 $$;
 
-DROP FUNCTION IF EXISTS get_production_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT);
 DROP FUNCTION IF EXISTS get_production_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT[]);
 CREATE FUNCTION get_production_planning_grid(
   company_id TEXT,
@@ -213,7 +224,8 @@ CREATE FUNCTION get_production_planning_grid(
     "planningHorizonDays" INTEGER,
     "timeFenceDate" DATE,
     "firstNegativeDate" DATE,
-    "latestOrderDate" DATE
+    "latestOrderDate" DATE,
+    "orderQuantity" NUMERIC
   )
   LANGUAGE sql
   STABLE
@@ -245,7 +257,27 @@ AS $$
         AND a."locationId" = location_id
         AND a."status" = 'Open'
         AND (a."type" = 'Make' OR a."jobId" IS NOT NULL)
-    ) AS "latestOrderDate"
+    ) AS "latestOrderDate",
+    (
+      -- What the row's Order / Make button offers: the open Make actions
+      -- MRP wrote, inside the item's fence. The base RPC's quantityToOrder
+      -- sizes the projection again and knows nothing of what MRP did after
+      -- sizing — Expedites, Increases, orders already placed — so sorted on
+      -- it, rows with nothing to order sat above rows with real shortages.
+      -- 0, not NULL, when there is nothing: a descending sort puts NULLs first
+      SELECT COALESCE(SUM(a."suggestedQuantity"), 0)
+      FROM "planningAction" a
+      WHERE a."companyId" = company_id
+        AND a."itemId" = p."id"
+        AND a."locationId" = location_id
+        AND a."status" = 'Open'
+        AND a."type" = 'Make'
+        AND a."jobId" IS NULL
+        AND (
+          h."days" IS NULL
+          OR a."horizonDate" <= COALESCE(as_of, location_today(location_id, company_id)) + h."days"
+        )
+    ) AS "orderQuantity"
   FROM get_production_planning(company_id, location_id, periods) p
   -- OFFSET 0 keeps the planner from pulling to_jsonb(p) into the weekly
   -- firstNegativeDate subquery, where it ran 48 times per item (1.2 s against
@@ -282,6 +314,19 @@ AS $$
         AND a."locationId" = location_id
         AND a."status" = 'Open'
         AND (a."type" = 'Make' OR a."jobId" IS NOT NULL)
+        -- A Release applies only while its order is Planned; between runs the
+        -- order can move on (sent, released) and the stale row must not match.
+        -- Compared as text: the enum value is added by a later migration.
+        AND (
+          a."type"::TEXT <> 'Release'
+          OR EXISTS (
+            SELECT 1
+            FROM "job" j
+            WHERE j."id" = a."jobId"
+              AND j."companyId" = company_id
+              AND j."status" = 'Planned'
+          )
+        )
         AND (action_types IS NULL OR a."type"::TEXT = ANY(action_types))
         AND (action_assignees IS NULL OR a."assignee" = ANY(action_assignees))
         AND (

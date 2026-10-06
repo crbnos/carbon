@@ -211,6 +211,11 @@ export type PlanningGridColumns = {
   firstNegativeDate: string | null;
   /** Earliest order-by date among the item's open new-supply actions. */
   latestOrderDate: string | null;
+  /** The quantity of the item's open new-supply actions (Order / Make) inside
+   *  its fence — what the Order / Make button offers, and the default sort.
+   *  The base RPC's `quantityToOrder` is a second sizing that misses what MRP
+   *  did after sizing. */
+  orderQuantity: number;
 };
 
 export type ProductionPlanningItem = Omit<

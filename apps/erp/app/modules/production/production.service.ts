@@ -2341,8 +2341,12 @@ export async function getProductionPlanning(
     );
   }
 
+  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
+  // from MRP's open new-supply actions), then the part number so a page is
+  // stable when many rows have nothing to order.
   query = setGenericQueryFilters(query, args, [
-    { column: "quantityToOrder", ascending: false }
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
   ]);
 
   return query;
@@ -10719,12 +10723,15 @@ const PLANNING_ACTION_ITEM_CHUNK = 100;
  * ACTION in the URL: a page of busy items (2,000+ actions) overran the gateway
  * and the whole read failed, leaving the grid with no actions at all.
  */
+/** Which planning page owns an action — purchasing ("Buy") or production ("Make"). */
+export type PlanningActionKind = "Buy" | "Make";
+
 export async function getPlanningActions(
   client: SupabaseClient<Database>,
   args: {
     companyId: string;
     locationId: string;
-    kind: "Buy" | "Make";
+    kind: PlanningActionKind;
     itemIds: string[];
   }
 ) {
@@ -10742,7 +10749,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, purchaseOrder(purchaseOrderId, status)), job(jobId, status)"
+            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, promisedDate, purchaseOrder(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job(jobId, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -10781,8 +10788,19 @@ export async function getPlanningActions(
       purchaseOrderReadableId:
         purchaseOrderLine?.purchaseOrder?.purchaseOrderId ?? null,
       // why the row offers Review instead of Apply: shown as an icon beside
-      // the document number
+      // the document number, and read LIVE to choose Apply or Review — MRP's
+      // `requiresManualAction` is as of the run, so a PO reopened since would
+      // otherwise stay on Review until the next one
       purchaseOrderStatus: purchaseOrderLine?.purchaseOrder?.status ?? null,
+      // a released PO can be reopened as a revision (see
+      // canCreatePurchaseOrderRevision)
+      purchaseOrderDate: purchaseOrderLine?.purchaseOrder?.orderDate ?? null,
+      // the supplier's promise, which Apply's required date cannot move
+      purchaseOrderLinePromisedDate:
+        purchaseOrderLine?.promisedDate ??
+        purchaseOrderLine?.purchaseOrder?.purchaseOrderDelivery
+          ?.receiptPromisedDate ??
+        null,
       jobReadableId: job?.jobId ?? null,
       jobStatus: job?.status ?? null
     }))
@@ -10826,9 +10844,31 @@ async function planningActionIdList<Row>(
   }
 }
 
+/**
+ * The worklist a page may write, the same split `getPlanningActions` reads:
+ * Buy = new purchase suggestions and changes on PO lines, Make = new job
+ * suggestions and changes on jobs. The writes below go through Kysely, past
+ * row-level security, so without it a user with purchasing rights could
+ * dismiss or reassign production's actions by posting their ids.
+ */
+function inPlanningWorklist(kind: PlanningActionKind) {
+  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
+    kind === "Buy"
+      ? eb.or([
+          eb("type", "=", "Order"),
+          eb("purchaseOrderLineId", "is not", null)
+        ])
+      : eb.or([eb("type", "=", "Make"), eb("jobId", "is not", null)]);
+}
+
 export async function dismissPlanningActions(
   db: Kysely<KyselyDatabase>,
-  args: { ids: string[]; companyId: string; userId: string }
+  args: {
+    ids: string[];
+    companyId: string;
+    userId: string;
+    kind: PlanningActionKind;
+  }
 ) {
   // Open-only: Actioned is terminal, and a stale worklist id must never flip
   // an Actioned row to Dismissed (which would make it visible again and
@@ -10844,6 +10884,7 @@ export async function dismissPlanningActions(
       .where("id", "in", args.ids)
       .where("companyId", "=", args.companyId)
       .where("status", "=", "Open")
+      .where(inPlanningWorklist(args.kind))
       .returning("id")
       .execute()
   );
@@ -10872,6 +10913,58 @@ export async function markPlanningActionsActioned(
       .where("status", "=", "Open")
       // The suggestion as it is at the claim — see claimPlanningActions.
       .returning(["id", "suggestedQuantity", "suggestedDate"])
+      .execute()
+  );
+}
+
+/**
+ * Settle the new-supply suggestions a planning Order just raised. The page's
+ * Order button creates PO lines (Buy) or jobs (Make) from the suggested
+ * orders, which carry no action id; each one is the week of an Order / Make
+ * action (both come from `computePlanningOrders`, and the natural key holds
+ * one such action per item, location and week). Without this, the action
+ * stayed Open beside the order that answered it until the next MRP run.
+ * Dismissed is settled too: the need it suppressed has now been ordered.
+ * Pairs are matched as pairs, so a bulk order never settles one item's week
+ * because another item was ordered in it.
+ */
+export async function settleNewSupplyPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    userId: string;
+    type: "Order" | "Make";
+    ordered: { itemId: string; periodId: string }[];
+  }
+) {
+  const byKey = new Map(
+    args.ordered.map((pair) => [`${pair.itemId}\u0000${pair.periodId}`, pair])
+  );
+  const ordered = [...byKey.values()];
+  return planningActionIdList([...byKey.keys()], () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Actioned",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId)
+      .where("type", "=", args.type)
+      .where("status", "in", ["Open", "Dismissed"])
+      .where((eb) =>
+        eb.or(
+          ordered.map((pair) =>
+            eb.and([
+              eb("itemId", "=", pair.itemId),
+              eb("periodId", "=", pair.periodId)
+            ])
+          )
+        )
+      )
+      .returning("id")
       .execute()
   );
 }
@@ -10927,7 +11020,12 @@ export async function releasePlanningActionClaim(
  */
 export async function reopenDismissedPlanningActions(
   db: Kysely<KyselyDatabase>,
-  args: { ids: string[]; companyId: string; userId: string }
+  args: {
+    ids: string[];
+    companyId: string;
+    userId: string;
+    kind: PlanningActionKind;
+  }
 ) {
   return planningActionIdList(args.ids, () =>
     db
@@ -10940,6 +11038,7 @@ export async function reopenDismissedPlanningActions(
       .where("id", "in", args.ids)
       .where("companyId", "=", args.companyId)
       .where("status", "=", "Dismissed")
+      .where(inPlanningWorklist(args.kind))
       .returning("id")
       .execute()
   );
@@ -10959,6 +11058,7 @@ export async function assignPlanningActions(
     companyId: string;
     assignee: string | null;
     userId: string;
+    kind: PlanningActionKind;
   }
 ) {
   return planningActionIdList(args.ids, () =>
@@ -10973,6 +11073,7 @@ export async function assignPlanningActions(
       .where("id", "in", args.ids)
       .where("companyId", "=", args.companyId)
       .where("status", "in", ["Open", "Dismissed"])
+      .where(inPlanningWorklist(args.kind))
       .returning("id")
       .execute()
   );

@@ -9,7 +9,7 @@ import { useCompanySettings } from "./useCompanySettings";
 import { useCompanyTimeZone } from "./useCompanyTimeZone";
 
 /**
- * The line under every "Recalculate" button: when MRP runs on its own. Every
+ * The tooltip on every "Recalculate" button: when MRP runs on its own. Every
  * 3 hours unless the company set a daily time in Settings → Planning
  * (`companySettings.mrpRunTime`, on the company's own clock — named, since a
  * planner in another zone would otherwise read it as their own).

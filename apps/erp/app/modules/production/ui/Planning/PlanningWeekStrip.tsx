@@ -5,9 +5,10 @@
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
-import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
+import { useDateFormatter } from "@react-aria/i18n";
 import type { PointerEvent } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
+import { useQuantityFormatter } from "~/hooks";
 import { planningWeekGeometry } from "./planning-week-geometry";
 
 export type PlanningPeriod = { id: string; startDate: string; endDate: string };
@@ -56,7 +57,7 @@ export const PlanningWeekStrip = memo(function PlanningWeekStrip({
 }) {
   const { t } = useLingui();
   const dateFormatter = useDateFormatter({ month: "short", day: "numeric" });
-  const numberFormatter = useNumberFormatter();
+  const formatQuantity = useQuantityFormatter();
   const [hovered, setHovered] = useState<Hovered | null>(null);
   const { zero, heights } = useMemo(
     () => planningWeekGeometry(values),
@@ -168,7 +169,7 @@ export const PlanningWeekStrip = memo(function PlanningWeekStrip({
                 value !== undefined && value < 0 && "font-medium text-red-500"
               )}
             >
-              {value === undefined ? "-" : numberFormatter.format(value)}
+              {value === undefined ? "-" : formatQuantity(value)}
             </span>
           </div>
         </TooltipContent>

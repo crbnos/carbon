@@ -75,8 +75,9 @@ forward likewise (`update-purchased-prices` uses the planning `ln` alias).
 
 **Reverse direction (planning → purchase qty).** MRP/planning has an inventory
 requirement and computes the purchase quantity, rounding up:
-`Math.ceil(inventoryQuantity / conversionFactor)` (when factor > 0) — see
-`PurchasingPlanningOrderDrawer.tsx` and `items/ui/Item/ItemReorderPolicy.tsx`.
+`round(inventoryQuantity / conversionFactor, 0, RoundingMode.Up)` (when factor
+> 0) — see `PurchasingPlanningOrderDrawer.tsx` and
+`production/ui/Planning/planned-orders-from-actions.ts`.
 
 **Display-only conversions** multiply purchase qty by the factor to show derived
 inventory qty (e.g. `PurchaseOrderSummary.tsx`, `SupplierQuoteSummary.tsx`) and

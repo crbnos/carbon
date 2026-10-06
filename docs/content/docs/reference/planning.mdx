@@ -18,7 +18,7 @@ MRP **suggests, it never auto-orders.** The engine writes forecasts and suggesti
 
 ## When it runs
 
-MRP recalculates on its own every 3 hours. To run it once a day instead, go to **Settings → Planning → MRP Schedule**, choose **Once a day**, and pick the hour; the hour is on your company's time zone. You can also run it yourself at any moment with **Recalculate** on the planning pages, whichever schedule is set; the line under the button says which schedule is active.
+MRP recalculates on its own every 3 hours. To run it once a day instead, go to **Settings → Planning → MRP Schedule**, choose **Once a day**, and pick the hour; the hour is on your company's time zone. You can also run it yourself at any moment with **Recalculate** on the planning pages, whichever schedule is set; hover the button to see which schedule is active.
 
 ## What feeds it
 
@@ -36,7 +36,7 @@ Each item, per location, carries a **reordering policy** that decides how a sugg
 
 ## From suggestion to order
 
-An item's **<Term>replenishment system</Term>** determines where its shortage appears. *Make* items produce suggested <Term id="job">jobs</Term> on the production planning page; *Buy* items produce suggested POs on the purchasing page. Choosing **Order** creates a saved job or purchase order with status **"Planned"**, pending release into its normal lifecycle.
+An item's **<Term>replenishment system</Term>** determines where its shortage appears. *Make* items produce suggested <Term id="job">jobs</Term> on the production planning page; *Buy* items produce suggested POs on the purchasing page. Choosing **Order** creates a saved job or purchase order with status **"Planned"**, pending release into its normal lifecycle. Purchase orders are grouped one per supplier per week, so each week's order is sent on its own and the later weeks stay open to planning changes.
 
 <Callout type="info">
 **"Planned"** is a real, saved job or PO that came from a planning suggestion and is waiting to be released — distinct from a hand-started **"Draft"**.
@@ -69,7 +69,7 @@ An applied action is finished: the next run re-evaluates the changed order and w
 
 ## The order drawer
 
-The drawer shows the item's suggested orders and, below them, its **Open Jobs** (production) or **Open Orders** (purchasing). An open order at **"Draft"** or **"Planned"** can be edited in place: change its **Due Date** or **Quantity** in the grid and the order is saved. The **Suggestion** column shows the open action on that order, with the same Apply, Dismiss, Reopen and Assign controls as the grid. Suggested orders due after the row's planning horizon stay out of the drawer until you choose **N More After <date>**. The chart in the drawer marks the planning horizon.
+The drawer shows the item's suggested orders — the same Order or Make suggestions as the row's action list, one per week, refreshed each time MRP runs — and, below them, its **Open Jobs** (production) or **Open Orders** (purchasing). An open order at **"Draft"** or **"Planned"** can be edited in place: change its **Due Date** or **Quantity** in the grid and the order is saved. The **Suggestion** column shows the open action on that order, with the same Apply, Dismiss, Reopen and Assign controls as the grid. Suggested orders due after the row's planning horizon stay out of the drawer until you choose **N More After <date>**. The chart in the drawer marks the planning horizon.
 
 ## Planning horizon
 

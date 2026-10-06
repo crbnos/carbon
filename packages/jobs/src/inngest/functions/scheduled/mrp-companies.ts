@@ -101,12 +101,22 @@ export function selectCompaniesForMrp<T extends { id: string }>(
 
 /**
  * The companies a run can change anything for: open demand or supply to plan,
- * or rows an earlier run wrote that a new one would clear. For every other
- * company `runMrp` reads its inputs, finds nothing and rewrites nothing, which
- * was 93% of scheduled runs and the largest share of server time (2026-10-01
- * traces). Each source is a superset of what `runMrp` reads (projections and
- * actuals are not narrowed to the planning horizon), so a company is only left
- * out when a run would be a no-op.
+ * stock a reorder policy would replenish with no document behind it, or rows
+ * an earlier run wrote that a new one would clear. For every other company
+ * `runMrp` reads its inputs, finds nothing and rewrites nothing, which was 93%
+ * of scheduled runs and the largest share of server time (2026-10-01 traces).
+ * Each source is a superset of what `runMrp` reads (projections and actuals
+ * are not narrowed to the planning horizon), so a company is only left out
+ * when a run would be a no-op.
+ *
+ * With no demand and no supply, the planning actions still size an Order /
+ * Make from on-hand alone (`generatePlanningActions`: the shared sizing, and
+ * the Stock Only reserve), and each of those fires only below a positive
+ * floor or on negative stock: a Demand-Based Reorder item under its safety
+ * stock, a Fixed Reorder Quantity / Maximum Quantity item under its reorder
+ * point, a superseded item under its minimum reserve — or any policy but
+ * Manual Reorder below zero. Those are the last two sources. "Not Manual
+ * Reorder" alone is no filter: it is the column's default.
  */
 export async function companiesWithPlanningWork(
   db: JobDatabase
@@ -140,6 +150,34 @@ export async function companiesWithPlanningWork(
         .selectFrom("supplyActual")
         .select("companyId")
         .where("actualQuantity", "!=", 0)
+    )
+    .union(
+      db
+        .selectFrom("itemPlanning")
+        .select("companyId")
+        .where((eb) =>
+          eb.or([
+            // the Stock Only reserve applies whatever the policy
+            eb("minimumReserveQuantity", ">", 0),
+            eb.and([
+              eb("reorderingPolicy", "=", "Demand-Based Reorder"),
+              eb("demandAccumulationSafetyStock", ">", 0)
+            ]),
+            eb.and([
+              eb("reorderingPolicy", "in", [
+                "Fixed Reorder Quantity",
+                "Maximum Quantity"
+              ]),
+              eb("reorderPoint", ">", 0)
+            ])
+          ])
+        )
+    )
+    .union(
+      db
+        .selectFrom("itemStockQuantities")
+        .select("companyId")
+        .where("quantityOnHand", "<", 0)
     )
     .execute();
 

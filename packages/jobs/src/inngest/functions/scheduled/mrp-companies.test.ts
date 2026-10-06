@@ -2,9 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { KyselyDatabase } from "@carbon/database/client";
 import { parseAbsolute } from "@internationalized/date";
+import {
+  type CompiledQuery,
+  type DatabaseConnection,
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler,
+  type QueryResult
+} from "kysely";
 import { describe, expect, it } from "vitest";
 import {
+  companiesWithPlanningWork,
   isMrpDue,
   MRP_TICK_MINUTES,
   mrpTick,
@@ -81,6 +93,81 @@ describe("selectCompaniesForMrp with a planning-work lookup", () => {
       new Set(["c1", "c2"])
     );
     expect(result.map((c) => c.id)).toEqual(["c2"]);
+  });
+});
+
+// The Postgres wire is the boundary: the lookup's one statement is recorded
+// as compiled SQL, and answered with the rows Postgres would return.
+class RecordingDriver extends DummyDriver {
+  readonly sent: CompiledQuery[] = [];
+  constructor(private readonly rows: { companyId: string | null }[]) {
+    super();
+  }
+  override async acquireConnection(): Promise<DatabaseConnection> {
+    return {
+      executeQuery: async <R>(
+        query: CompiledQuery
+      ): Promise<QueryResult<R>> => {
+        this.sent.push(query);
+        return { rows: this.rows as R[] };
+      },
+      // biome-ignore lint/correctness/useYield: never streamed
+      streamQuery: async function* () {
+        throw new Error("not streamed");
+      }
+    };
+  }
+}
+
+async function lookup(rows: { companyId: string | null }[] = []) {
+  const driver = new RecordingDriver(rows);
+  const db = new Kysely<KyselyDatabase>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => driver,
+      createIntrospector: (k) => new PostgresIntrospector(k),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    }
+  });
+  const companies = await companiesWithPlanningWork(db);
+  expect(driver.sent).toHaveLength(1);
+  return { companies, query: driver.sent[0]! };
+}
+
+describe("companiesWithPlanningWork", () => {
+  it("returns each company once and drops a null", async () => {
+    const { companies } = await lookup([
+      { companyId: "c1" },
+      { companyId: null },
+      { companyId: "c2" }
+    ]);
+    expect([...companies]).toEqual(["c1", "c2"]);
+  });
+
+  // A reorder policy orders from on-hand alone: no document, no forecast,
+  // nothing an earlier run wrote. Such a company was skipped, and its
+  // safety-stock and reorder-point Orders never appeared.
+  it("includes a company whose only need is a reorder floor", async () => {
+    const { query } = await lookup();
+    expect(query.sql).toContain('from "itemPlanning"');
+    expect(query.sql).toMatch(/"minimumReserveQuantity" > \$\d+/);
+    expect(query.sql).toMatch(/"demandAccumulationSafetyStock" > \$\d+/);
+    expect(query.sql).toMatch(/"reorderPoint" > \$\d+/);
+    expect(query.parameters).toEqual(
+      expect.arrayContaining([
+        "Demand-Based Reorder",
+        "Fixed Reorder Quantity",
+        "Maximum Quantity"
+      ])
+    );
+    // "not Manual Reorder" alone would be every company: it is the default
+    expect(query.parameters).not.toContain("Manual Reorder");
+  });
+
+  it("includes a company with stock below zero", async () => {
+    const { query } = await lookup();
+    expect(query.sql).toContain('from "itemStockQuantities"');
+    expect(query.sql).toMatch(/"quantityOnHand" < \$\d+/);
   });
 });
 

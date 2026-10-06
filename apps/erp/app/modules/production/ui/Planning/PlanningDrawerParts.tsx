@@ -13,6 +13,7 @@ import {
 import { Plural, Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuCalendarRange } from "react-icons/lu";
+import { useQuantityFormatter } from "~/hooks";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { ProductionPlanningItem } from "~/modules/production";
 import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
@@ -82,6 +83,7 @@ export function PlanningPolicySummary({
   onFenceChange: (date: string | null) => void;
   children?: ReactNode;
 }) {
+  const formatQuantity = useQuantityFormatter();
   return (
     // A line between every row, whichever rows the policy shows.
     <VStack
@@ -104,10 +106,10 @@ export function PlanningPolicySummary({
       {item.reorderingPolicy === "Maximum Quantity" && (
         <>
           <PlanningSummaryRow label={<Trans>Reorder Point:</Trans>}>
-            <span>{item.reorderPoint}</span>
+            <span>{formatQuantity(item.reorderPoint)}</span>
           </PlanningSummaryRow>
           <PlanningSummaryRow label={<Trans>Maximum Inventory:</Trans>}>
-            <span>{item.maximumInventoryQuantity}</span>
+            <span>{formatQuantity(item.maximumInventoryQuantity)}</span>
           </PlanningSummaryRow>
         </>
       )}
@@ -123,33 +125,33 @@ export function PlanningPolicySummary({
             </span>
           </PlanningSummaryRow>
           <PlanningSummaryRow label={<Trans>Safety Stock:</Trans>}>
-            <span>{item.demandAccumulationSafetyStock}</span>
+            <span>{formatQuantity(item.demandAccumulationSafetyStock)}</span>
           </PlanningSummaryRow>
         </>
       )}
       {item.reorderingPolicy === "Fixed Reorder Quantity" && (
         <>
           <PlanningSummaryRow label={<Trans>Reorder Point:</Trans>}>
-            <span>{item.reorderPoint}</span>
+            <span>{formatQuantity(item.reorderPoint)}</span>
           </PlanningSummaryRow>
           <PlanningSummaryRow label={<Trans>Reorder Quantity:</Trans>}>
-            <span>{item.reorderQuantity}</span>
+            <span>{formatQuantity(item.reorderQuantity)}</span>
           </PlanningSummaryRow>
         </>
       )}
       {item.lotSize > 0 && (
         <PlanningSummaryRow label={<Trans>Lot Size:</Trans>}>
-          <span>{item.lotSize}</span>
+          <span>{formatQuantity(item.lotSize)}</span>
         </PlanningSummaryRow>
       )}
       {item.minimumOrderQuantity > 0 && (
         <PlanningSummaryRow label={<Trans>Minimum Order:</Trans>}>
-          <span>{item.minimumOrderQuantity}</span>
+          <span>{formatQuantity(item.minimumOrderQuantity)}</span>
         </PlanningSummaryRow>
       )}
       {item.maximumOrderQuantity > 0 && (
         <PlanningSummaryRow label={<Trans>Maximum Order:</Trans>}>
-          <span>{item.maximumOrderQuantity}</span>
+          <span>{formatQuantity(item.maximumOrderQuantity)}</span>
         </PlanningSummaryRow>
       )}
     </VStack>

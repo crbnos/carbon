@@ -33,7 +33,13 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { getLogger } from "@carbon/logger";
-import { computePlanningOrders, datetime, equals, round } from "@carbon/utils";
+import {
+  computePlanningOrders,
+  datetime,
+  equals,
+  RoundingMode,
+  round
+} from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
@@ -59,7 +65,8 @@ export type PlanningActionType =
   | "Defer"
   | "Cancel"
   | "Increase"
-  | "Decrease";
+  | "Decrease"
+  | "Release";
 
 export type PlanningActionCandidate = {
   itemId: string;
@@ -162,7 +169,71 @@ export type OpenSupplyOrder = {
    */
   dateIsPromised?: boolean;
   supplierId?: string | null;
+  /**
+   * A PO line's inventory units per purchase unit (`purchaseOrderLine.
+   * conversionFactor`). `quantity` is in inventory units; Apply writes the
+   * line in whole purchase units. Missing or not positive means 1.
+   */
+  conversionFactor?: number | null;
+  /**
+   * When a PLANNED order is due to be released (`releaseByDate`); null or
+   * absent once it is past Planned — a Release applies only while it is.
+   */
+  release?: PlannedOrderRelease | null;
 };
+
+export type PlannedOrderRelease = {
+  /** The last day to release it: due date − lead time − 1 day. */
+  date: string;
+  /** The due date and lead time that set it — for a purchase order, those of
+   *  the line that needs releasing first. */
+  dueDate: string;
+  leadTime: number;
+};
+
+/**
+ * The last day to release a planned order so it still arrives on time: its
+ * due date less the item's lead time, less one more day. Due in 8 days with a
+ * 7-day lead time is today.
+ */
+export function releaseByDate(dueDate: string, leadTimeDays: number): string {
+  return parseDate(dueDate)
+    .subtract({ days: Math.max(leadTimeDays, 0) + 1 })
+    .toString();
+}
+
+/** The earlier of two releases (a purchase order is released once, for the
+ *  line that needs it first). */
+export function earlierRelease(
+  a: PlannedOrderRelease | null | undefined,
+  b: PlannedOrderRelease
+): PlannedOrderRelease {
+  // daysBetween(a, b) is a − b
+  return a && daysBetween(a.date, b.date) <= 0 ? a : b;
+}
+
+/**
+ * The quantity an order holds once a change to `quantity` is applied. Apply
+ * writes a PO line in whole PURCHASE units — `round(suggested /
+ * conversionFactor, 0, Up)` — so a suggestion between two multiples was
+ * rounded up on the line, read as over-supply by the next run, and suggested
+ * again: forever. A suggested quantity is therefore what the line will
+ * actually hold. A job's quantity is written as suggested.
+ */
+export function quantityAfterApply(
+  order: Pick<OpenSupplyOrder, "purchaseOrderLineId" | "conversionFactor">,
+  quantity: number
+): number {
+  if (!order.purchaseOrderLineId) return quantity;
+  const factor =
+    order.conversionFactor && order.conversionFactor > 0
+      ? order.conversionFactor
+      : 1;
+  // Strip float noise before the ceil: 1.1 / 0.1 is 11.000000000000002,
+  // which would otherwise ceil a whole purchase unit up to the next one.
+  const purchaseUnits = round(round(quantity / factor), 0, RoundingMode.Up);
+  return round(purchaseUnits * factor);
+}
 
 export type DeriveChangeActionsInput = {
   onHand: number;
@@ -189,40 +260,26 @@ type ChangeCandidate = Omit<
   "itemId" | "locationId" | "assignee"
 >;
 
+type OrderCoverage = {
+  order: OpenSupplyOrder;
+  consumed: number;
+  holdsFloor: boolean;
+  firstNeed: { periodId: string; startDate: string } | null;
+};
+
 /**
- * SAP-style rescheduling check over one item+location. Claims the policy
- * floor, then walks demand chronologically, against on-hand and then open
- * orders (earliest first) as the balance goes negative; each order's FIRST
- * covered demand dates it, and an order holding the floor is never deferred.
- * Emits at most ONE action per open order:
- *   consumed = 0                        → Cancel
- *   |expected − firstNeed| > tolerance  → Expedite / Defer, where expected is
- *                                          the due date, or today if overdue
- *   leftover quantity (no date action)  → Decrease
+ * The chronological consumption walk both the change actions and the sizing
+ * projection read: the policy floor first (it is needed now), then demand,
+ * each drawing down on-hand first, then the earliest open orders. The first
+ * requirement an order covers is its need date.
  */
-export function deriveChangeActions(
-  input: DeriveChangeActionsInput
-): ChangeCandidate[] {
-  const {
-    onHand,
-    demandPeriods,
-    openOrders,
-    periods,
-    policyFloor,
-    toleranceDays,
-    todayDate
-  } = input;
-
-  if (openOrders.length === 0) return [];
-
-  const periodFor = (dateIso: string): { id: string; startDate: string } => {
-    let match = periods[0];
-    for (const p of periods) {
-      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
-      else break;
-    }
-    return match ?? { id: "", startDate: dateIso };
-  };
+function walkOrderCoverage(
+  input: Pick<
+    DeriveChangeActionsInput,
+    "onHand" | "demandPeriods" | "openOrders" | "periods" | "policyFloor"
+  >
+): OrderCoverage[] {
+  const { onHand, demandPeriods, openOrders, periods, policyFloor } = input;
 
   // An order due after the last planning week is outside what this walk can
   // judge: the demand it was raised for is not loaded (MRP plans further out
@@ -234,13 +291,13 @@ export function deriveChangeActions(
     !lastPeriod ||
     daysBetween(order.dueDate, lastPeriod.startDate) < DAYS_PER_PERIOD;
 
-  const orders = openOrders
+  const orders: OrderCoverage[] = openOrders
     .filter(isInsideHorizon)
     .map((order) => ({
       order,
       consumed: 0,
       holdsFloor: false,
-      firstNeed: null as { periodId: string; startDate: string } | null
+      firstNeed: null
     }))
     .sort((a, b) => daysBetween(a.order.dueDate, b.order.dueDate));
 
@@ -276,6 +333,60 @@ export function deriveChangeActions(
     cover({ periodId: demand.periodId, startDate: demand.startDate });
   }
 
+  return orders;
+}
+
+/**
+ * The week each open order is first needed in, by its target (PO line or
+ * job id) — from the same walk as the change actions. Orders that cover no
+ * dated need (unneeded, or holding only the policy floor) are absent.
+ */
+export function firstNeedPeriodByOrder(
+  input: Pick<
+    DeriveChangeActionsInput,
+    "onHand" | "demandPeriods" | "openOrders" | "periods" | "policyFloor"
+  >
+): Map<string, string> {
+  const needs = new Map<string, string>();
+  for (const { order, firstNeed } of walkOrderCoverage(input)) {
+    const ref = order.purchaseOrderLineId ?? order.jobId;
+    if (ref && firstNeed) needs.set(ref, firstNeed.periodId);
+  }
+  return needs;
+}
+
+/**
+ * SAP-style rescheduling check over one item+location. Claims the policy
+ * floor, then walks demand chronologically, against on-hand and then open
+ * orders (earliest first) as the balance goes negative; each order's FIRST
+ * covered demand dates it, and an order holding the floor is never deferred.
+ * Emits at most ONE action per open order:
+ *   consumed = 0                        → Cancel
+ *   |expected − needed| > tolerance     → Expedite / Defer, where expected is
+ *                                          the due date and needed the first
+ *                                          need's week start, each no earlier
+ *                                          than today
+ *   leftover quantity (no date action)  → Decrease, to what the order will
+ *                                          hold (`quantityAfterApply`)
+ */
+export function deriveChangeActions(
+  input: DeriveChangeActionsInput
+): ChangeCandidate[] {
+  const { openOrders, periods, toleranceDays, todayDate } = input;
+
+  if (openOrders.length === 0) return [];
+
+  const periodFor = (dateIso: string): { id: string; startDate: string } => {
+    let match = periods[0];
+    for (const p of periods) {
+      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
+      else break;
+    }
+    return match ?? { id: "", startDate: dateIso };
+  };
+
+  const orders = walkOrderCoverage(input);
+
   const actions: ChangeCandidate[] = [];
   for (const { order, consumed, holdsFloor, firstNeed } of orders) {
     const target = {
@@ -308,8 +419,14 @@ export function deriveChangeActions(
       // date: measured from that date it read as "early" and was offered a
       // Defer to a date already past.
       const expectedDate = laterDate(order.dueDate, todayDate);
+      // Likewise a need in the current week is needed today, not on the
+      // week's start: Apply writes the suggested date onto the order, so an
+      // Expedite to a past week start made the order overdue — read as
+      // arriving today, days after the week start — and the same Expedite
+      // came back every run whenever the tolerance was under a week.
+      const needDate = laterDate(firstNeed.startDate, todayDate);
       // gap > 0: the order lands AFTER it is needed
-      const gap = daysBetween(expectedDate, firstNeed.startDate);
+      const gap = daysBetween(expectedDate, needDate);
       // Moving a promised date is agreed with the supplier, not applied.
       const dateTarget = {
         ...target,
@@ -322,8 +439,8 @@ export function deriveChangeActions(
           type: "Expedite",
           periodId: firstNeed.periodId,
           suggestedQuantity: order.quantity,
-          suggestedDate: firstNeed.startDate,
-          horizonDate: earlierDate(order.dueDate, firstNeed.startDate),
+          suggestedDate: needDate,
+          horizonDate: earlierDate(order.dueDate, needDate),
           isASAP: daysBetween(firstNeed.startDate, todayDate) < 0,
           reason: `Needed ${gap} days earlier than its current date`
         });
@@ -336,8 +453,8 @@ export function deriveChangeActions(
           type: "Defer",
           periodId: firstNeed.periodId,
           suggestedQuantity: order.quantity,
-          suggestedDate: firstNeed.startDate,
-          horizonDate: earlierDate(order.dueDate, firstNeed.startDate),
+          suggestedDate: needDate,
+          horizonDate: earlierDate(order.dueDate, needDate),
           isASAP: false,
           reason: `Not needed until ${-gap} days after its current date`
         });
@@ -348,14 +465,16 @@ export function deriveChangeActions(
     // Round at the compare: `consumed` is a running float sum, so the raw
     // difference can be ~1e-16 for an order that is fully required.
     const required = round(consumed);
-    const leftover = round(order.quantity - consumed);
-    if (leftover > 0) {
+    // What the order holds once decreased — a PO line in whole purchase
+    // units — so a line already at the rounded quantity is left alone.
+    const decreasedTo = quantityAfterApply(order, required);
+    if (round(order.quantity - decreasedTo) > 0) {
       const period = periodFor(order.dueDate);
       actions.push({
         ...target,
         type: "Decrease",
         periodId: period.id,
-        suggestedQuantity: required,
+        suggestedQuantity: decreasedTo,
         suggestedDate: order.dueDate,
         horizonDate: order.dueDate,
         isASAP: false,
@@ -368,12 +487,18 @@ export function deriveChangeActions(
 }
 
 /**
- * The stock projection as if every Expedite were done: an expedited order's
- * quantity counts from the week it is needed instead of the week it lands.
+ * The stock projection as if every open order arrived when it is needed: an
+ * expedited order's quantity counts from the week it is needed instead of the
+ * week it lands — and so does an order that is late by no more than the
+ * reschedule tolerance, which gets no Expedite (`firstNeedPeriods`).
  *
  * New-supply sizing reads this projection. Sized on the raw one, a shortage an
  * Expedite already covers also got an Order (or Make) for the same week, and
  * applying both doubled that week's supply and left the order's old week short.
+ * An order a few days late was the same case without the Expedite: a need of
+ * 100 this week and a PO of 100 landing next Sunday read as short by 100 this
+ * week, so sizing ordered 100 more — folded into "Increase from 100 to 200"
+ * on that very PO, and a Decrease back on the next run.
  * Only Expedite moves supply EARLIER; Defer, Cancel and Decrease take away
  * supply nothing needs, so they cannot open a shortage and are not applied.
  *
@@ -389,6 +514,8 @@ export function projectionsWithExpedites(args: {
     "type" | "periodId" | "purchaseOrderLineId" | "jobId"
   >[];
   openOrders: OpenSupplyOrder[];
+  /** The week each order is first needed in (`firstNeedPeriodByOrder`). */
+  firstNeedPeriods?: Map<string, string>;
 }): number[] {
   const { projections, periods, changeActions, openOrders } = args;
   const adjusted = [...projections];
@@ -408,15 +535,26 @@ export function projectionsWithExpedites(args: {
     return index;
   };
 
+  // Each order moves once, to the week it is needed. An Expedite names that
+  // week itself; the walk's first need covers the rest.
+  const needPeriodByOrder = new Map<string, string>();
   for (const action of changeActions) {
     if (action.type !== "Expedite") continue;
     const target = action.purchaseOrderLineId ?? action.jobId;
+    if (target) needPeriodByOrder.set(target, action.periodId);
+  }
+  for (const [target, periodId] of args.firstNeedPeriods ?? []) {
+    if (!needPeriodByOrder.has(target)) needPeriodByOrder.set(target, periodId);
+  }
+
+  for (const [target, periodId] of needPeriodByOrder) {
     const order = openOrders.find(
       (o) => (o.purchaseOrderLineId ?? o.jobId) === target
     );
-    const needIndex = periods.findIndex((p) => p.id === action.periodId);
+    const needIndex = periods.findIndex((p) => p.id === periodId);
     if (!order || needIndex < 0) continue;
 
+    // an order landing in or before its need week moves nothing
     const landIndex = Math.min(weekOf(order.dueDate), adjusted.length);
     for (let i = needIndex; i < landIndex; i++) {
       adjusted[i] = (adjusted[i] ?? 0) + order.quantity;
@@ -436,8 +574,13 @@ export function convertOrdersToIncreases(args: {
   openOrders: OpenSupplyOrder[];
   changeActions: ChangeCandidate[];
   toleranceDays: number;
+  todayDate: string;
 }): ChangeCandidate[] {
   const { sizingCandidates, openOrders, changeActions, toleranceDays } = args;
+  // Both dates as the day they mean: an overdue order lands today, and a
+  // suggestion for the current week (dated its start) is needed today — so
+  // an order an Expedite moved to today still matches this week's shortfall.
+  const asOfToday = (dateIso: string) => laterDate(dateIso, args.todayDate);
 
   const targeted = new Set(
     changeActions.map((a) => a.purchaseOrderLineId ?? a.jobId ?? "")
@@ -455,11 +598,22 @@ export function convertOrdersToIncreases(args: {
       if (candidate.type === "Order" && !isBuy) return false;
       if (candidate.type === "Make" && isBuy) return false;
       return (
-        Math.abs(daysBetween(order.dueDate, candidate.suggestedDate)) <=
-        toleranceDays
+        Math.abs(
+          daysBetween(
+            asOfToday(order.dueDate),
+            asOfToday(candidate.suggestedDate)
+          )
+        ) <= toleranceDays
       );
     });
     if (!match) return candidate;
+    // What the order holds once increased — a PO line in whole purchase
+    // units — so the next run reads exactly what Apply wrote.
+    const increasedTo = quantityAfterApply(
+      match,
+      match.quantity + candidate.suggestedQuantity
+    );
+    if (round(increasedTo - match.quantity) <= 0) return candidate;
     used.add(match.purchaseOrderLineId ?? match.jobId ?? "");
     return {
       ...candidate,
@@ -467,11 +621,75 @@ export function convertOrdersToIncreases(args: {
       purchaseOrderLineId: match.purchaseOrderLineId ?? null,
       jobId: match.jobId ?? null,
       requiresManualAction: match.requiresManualAction,
+      // the line's own supplier — the candidate carries the item's preferred
+      // one, which need not be who this PO is with
+      supplierId: match.supplierId ?? null,
       horizonDate: earlierDate(match.dueDate, candidate.suggestedDate),
-      suggestedQuantity: round(match.quantity + candidate.suggestedQuantity),
+      suggestedQuantity: increasedTo,
       reason: `Increase from ${match.quantity} to cover a shortfall of ${round(candidate.suggestedQuantity)}`
     };
   });
+}
+
+/**
+ * One Release per planned order (`OpenSupplyOrder.release`), dated the last
+ * day to release it. Released from the order itself — the planning pages link
+ * to it — so it is never applied. An order MRP would Cancel gets none.
+ */
+export function deriveReleaseActions(args: {
+  openOrders: OpenSupplyOrder[];
+  changeActions: Pick<
+    ChangeCandidate,
+    "type" | "purchaseOrderLineId" | "jobId"
+  >[];
+  periods: { id: string; startDate: string }[];
+  todayDate: string;
+}): ChangeCandidate[] {
+  const { openOrders, changeActions, periods, todayDate } = args;
+  const cancelled = new Set(
+    changeActions
+      .filter((a) => a.type === "Cancel")
+      .map((a) => a.purchaseOrderLineId ?? a.jobId)
+  );
+  // the week a date falls in; an earlier date is the first week
+  const periodFor = (dateIso: string) => {
+    let match = periods[0];
+    for (const p of periods) {
+      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
+      else break;
+    }
+    return match;
+  };
+
+  const actions: ChangeCandidate[] = [];
+  for (const order of openOrders) {
+    const release = order.release;
+    if (!release) continue;
+    if (cancelled.has(order.purchaseOrderLineId ?? order.jobId ?? null)) {
+      continue;
+    }
+    const period = periodFor(release.date);
+    if (!period) continue;
+    actions.push({
+      type: "Release",
+      periodId: period.id,
+      suggestedQuantity: order.quantity,
+      suggestedDate: release.date,
+      horizonDate: release.date,
+      // the latest-order-date column is for new supply, not this
+      latestOrderDate: null,
+      // its day has come (or gone): release it now
+      isASAP: daysBetween(release.date, todayDate) <= 0,
+      purchaseOrderLineId: order.purchaseOrderLineId ?? null,
+      jobId: order.jobId ?? null,
+      requiresManualAction: false,
+      supplierId: order.supplierId ?? null,
+      policyName: null,
+      reason: `Due ${release.dueDate} with a ${release.leadTime}-day lead time`,
+      triggerValues: { leadTime: release.leadTime }
+    });
+  }
+  return actions;
 }
 
 /**
@@ -929,15 +1147,17 @@ export async function generatePlanningActions(
 
   // ── demand per (item, location, period): actual + forecast + projection
   //    (net of consumption), the same union the planning RPCs read; on-hand;
-  //    and the open jobs' status and good-unit quantity, which the
-  //    openProductionOrders view does not expose — one read of the company's
-  //    open jobs (the view's own statuses), no id list.
+  //    the open jobs' status and good-unit quantity, and the open PO lines'
+  //    conversion factor, which the openProductionOrders / openPurchaseOrderLines
+  //    views do not expose — one read each of the company's open documents
+  //    (the views' own filters), no id list.
   const [
     demandActuals,
     demandForecasts,
     demandProjections,
     inventoryRows,
-    openJobRows
+    openJobRows,
+    poLineFactorRows
   ] = await Promise.all([
     db
       .selectFrom("demandActual")
@@ -970,6 +1190,21 @@ export async function generatePlanningActions(
       .select(["id", "status", "quantity", "quantityReceivedToInventory"])
       .where("companyId", "=", companyId)
       .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
+      .execute(),
+    // Only the lines bought in a unit other than the inventory unit: every
+    // other line's factor is 1, the default below.
+    db
+      .selectFrom("purchaseOrderLine as pol")
+      .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+      .select(["pol.id", "pol.conversionFactor"])
+      .where("pol.companyId", "=", companyId)
+      .where("po.status", "in", [
+        "To Receive",
+        "To Receive and Invoice",
+        "Planned"
+      ])
+      .where("pol.receivedComplete", "=", false)
+      .where("pol.conversionFactor", "!=", 1)
       .execute()
   ]);
 
@@ -1036,12 +1271,34 @@ export async function generatePlanningActions(
     });
   }
 
+  const conversionFactorByLineId = new Map(
+    poLineFactorRows.map((row) => [row.id, Number(row.conversionFactor)])
+  );
+
   const openOrdersByItemLocation = new Map<string, OpenSupplyOrder[]>();
   const pushOrder = (key: string, order: OpenSupplyOrder) => {
     const list = openOrdersByItemLocation.get(key) ?? [];
     list.push(order);
     openOrdersByItemLocation.set(key, list);
   };
+  // A Planned purchase order is released once, for whichever of its lines
+  // needs it first — every line's Release carries that date.
+  const releaseByPurchaseOrder = new Map<string, PlannedOrderRelease>();
+  for (const line of poLineRows) {
+    if (line.status !== "Planned" || !line.purchaseOrderId) continue;
+    if ((Number(line.quantityToReceive) || 0) <= 0) continue;
+    const dueDate = purchaseOrderLineArrivalDate(line, todayDate);
+    const leadTime = Number(line.leadTime) || 0;
+    releaseByPurchaseOrder.set(
+      line.purchaseOrderId,
+      earlierRelease(releaseByPurchaseOrder.get(line.purchaseOrderId), {
+        date: releaseByDate(dueDate, leadTime),
+        dueDate,
+        leadTime
+      })
+    );
+  }
+
   for (const line of poLineRows) {
     if (!line.id || !line.itemId || !line.locationId) continue;
     const quantity = Number(line.quantityToReceive) || 0;
@@ -1054,7 +1311,12 @@ export async function generatePlanningActions(
       dueDate,
       requiresManualAction: isCommittedPurchaseOrderStatus(line.status),
       dateIsPromised: Boolean(line.promisedDate),
-      supplierId: line.supplierId
+      supplierId: line.supplierId,
+      conversionFactor: conversionFactorByLineId.get(line.id) ?? 1,
+      release:
+        line.status === "Planned" && line.purchaseOrderId
+          ? (releaseByPurchaseOrder.get(line.purchaseOrderId) ?? null)
+          : null
     });
   }
   for (const job of jobRows) {
@@ -1069,13 +1331,19 @@ export async function generatePlanningActions(
       ? Math.max(details.quantity - details.quantityReceivedToInventory, 0)
       : Number(job.quantityToReceive) || 0;
     if (quantity <= 0) continue;
+    // the same date the projection buckets this job on — an undated job is
+    // supply there, so it is supply here too
+    const dueDate = jobCompletionDate(job, todayDate);
+    const leadTime = Number(job.leadTime) || 0;
     pushOrder(`${job.itemId}${KEY_SEP}${job.locationId}`, {
       jobId: job.id,
       quantity,
-      // the same date the projection buckets this job on — an undated job is
-      // supply there, so it is supply here too
-      dueDate: jobCompletionDate(job, todayDate),
-      requiresManualAction: isCommittedJobStatus(details?.status)
+      dueDate,
+      requiresManualAction: isCommittedJobStatus(details?.status),
+      release:
+        details?.status === "Planned"
+          ? { date: releaseByDate(dueDate, leadTime), dueDate, leadTime }
+          : null
     });
   }
 
@@ -1129,18 +1397,23 @@ export async function generatePlanningActions(
           quantity: demandMap.get(p.id) ?? 0
         }));
 
-      const changeActions = deriveChangeActions({
+      const coverageInput = {
         onHand: onHandByItemLocation.get(itemLocationKey) ?? 0,
         demandPeriods,
         openOrders,
         periods,
-        policyFloor: policyFloorFor(row),
+        policyFloor: policyFloorFor(row)
+      };
+      const changeActions = deriveChangeActions({
+        ...coverageInput,
         toleranceDays,
         todayDate
       });
 
       // new-supply suggestions from the shared sizing (same math as the grid),
-      // sized on the projection with every Expedite above already done
+      // sized on the projection with every open order counted from the week
+      // it is needed: every Expedite above done, and an order late within the
+      // tolerance counted as on time, as the reschedule check judged it
       let sizing: ChangeCandidate[] = [];
       if (row.supersessionMode === "Stock Only") {
         const shortfall = Math.max(0, Number(row.quantityToOrder) || 0);
@@ -1183,7 +1456,8 @@ export async function generatePlanningActions(
           }),
           periods,
           changeActions,
-          openOrders
+          openOrders,
+          firstNeedPeriods: firstNeedPeriodByOrder(coverageInput)
         });
         sizing = computePlanningOrders({
           reorderingPolicy: row.reorderingPolicy,
@@ -1228,7 +1502,8 @@ export async function generatePlanningActions(
         sizingCandidates: sizing,
         openOrders,
         changeActions,
-        toleranceDays
+        toleranceDays,
+        todayDate
       });
 
       // Lot-size splitting can emit several new-supply suggestions in one
@@ -1268,11 +1543,19 @@ export async function generatePlanningActions(
         }
       }
 
+      const releaseActions = deriveReleaseActions({
+        openOrders,
+        changeActions,
+        periods,
+        todayDate
+      });
+
       const assignee = resolveAssignee(row.id, location.id);
       for (const action of [
         ...aggregated.values(),
         ...passthrough,
-        ...changeActions
+        ...changeActions,
+        ...releaseActions
       ]) {
         if (!action.periodId || !periodById.has(action.periodId)) continue;
         candidates.push({

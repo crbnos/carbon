@@ -67,8 +67,12 @@ Phase-7 write) and throws on failure.
    `demandProjection`, and the rows an earlier run wrote (`planningAction`,
    `demandForecast` with
    `forecastMethod = 'mrp'`, `demandForecastSource`, `supplyForecast`, non-zero
-   actuals). A company in none of them would read nothing and write nothing, so
-   it is skipped; a failed lookup plans for every due company. Then **one
+   actuals), plus the stock-only sources: an `itemPlanning` row with a positive
+   floor its policy reads (minimum reserve; safety stock on Demand-Based
+   Reorder; reorder point on Fixed Reorder Quantity / Maximum Quantity) and
+   negative `itemStockQuantities` — the planning actions size an Order / Make
+   from on-hand alone. A company in none of them would read nothing and write
+   nothing, so it is skipped; a failed lookup plans for every due company. Then **one
    `step.run` per company**
    (`mrp-<companyId>`) calls `runMrp(serviceRole, getJobDatabaseClient(),
    { type: "company", id, companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
@@ -242,14 +246,14 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | Table | PK | Key cols | Notes |
 |-------|----|----|-------|
 | `period` | `id` | `startDate`, `endDate`, `periodType` | enum `'Week'\|'Day'\|'Month'`; no companyId (uniform RLS) |
-| `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20261005090301`), never user-edited |
+| `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20261006030001`), never user-edited |
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261005090300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261006030000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
-| `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261005090300`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261005135332`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |
+| `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261006030000`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261006030100`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |
 
 `locationId` is declared `TEXT` (no `NOT NULL`) on the five original planning
 tables (`demandProjection`, `demandForecast`, `demandActual`, `supplyForecast`,
@@ -267,7 +271,7 @@ no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
 ## Planning split functions
 
 Latest definition of BOTH, and of `get_inventory_quantities`:
-`20261005090301_demand-forecast-consumption.sql`. `get_production_planning`
+`20261006030001_demand-forecast-consumption.sql`. `get_production_planning`
 supersedes `20260715195226`; `get_purchasing_planning` and
 `get_inventory_quantities` are forked from the guarded `20260925121735` bodies
 and open with `assert_company_access`.
@@ -299,13 +303,13 @@ to child demand. Note current `methodType` enum is
 Newest defs: `openPurchaseOrderLines` in `20260811123616_widen-purchasing-scale.sql`,
 `openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
-`openSalesOrderLines` in `20261005090301_demand-forecast-consumption.sql`.
+`openSalesOrderLines` in `20261006030001_demand-forecast-consumption.sql`.
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,
 `itemTrackingType`.
 
 - `openSalesOrderLines` — `salesOrderLineType != 'Service'`, status IN
   `('To Ship','To Ship and Invoice')`. Newest def:
-  `20261005090301_demand-forecast-consumption.sql`. Make to Order lines ARE
+  `20261006030001_demand-forecast-consumption.sql`. Make to Order lines ARE
   included, but their `quantityToSend` is netted down by the remaining output
   (`quantity − quantityReceivedToInventory − quantityShipped`) of live jobs
   linked via `job.salesOrderLineId` (statuses Planned/Ready/In Progress/Paused —
@@ -366,12 +370,54 @@ never offered a Cancel, Defer or Expedite.
   diff then deletes its existing actions, dismissals and assignee overrides
   included.
 - Change actions are derived BEFORE new-supply sizing, and sizing reads
-  `projectionsWithExpedites`: the projection with every Expedite done (the
-  order's quantity counted from its need week). Sized on the raw projection, a
-  shortage an Expedite covered also got an Order for the same week.
+  `projectionsWithExpedites`: the projection with every open order counted
+  from its need week — every Expedite done, and an order late by no more than
+  the reschedule tolerance (no Expedite) counted from its first need too
+  (`firstNeedPeriodByOrder`, the same walk as `deriveChangeActions`). Sized on
+  the raw projection, a shortage an Expedite covered also got an Order for the
+  same week; and a need this week covered by a PO landing a few days into next
+  week read as short, so sizing ordered it again and the fold made it
+  "Increase from 100 to 200" on that very PO — then a Decrease on the next run.
+- **Release** (`deriveReleaseActions`, migration `20261006210557`): every line
+  of a Planned PO and every Planned job gets one, dated `releaseByDate` — the
+  order's due date (`purchaseOrderLineArrivalDate` / `jobCompletionDate`) less
+  the item's lead time less one day, so due in 8 days with a 7-day lead time
+  is today. A PO is released once, so all its lines carry the EARLIEST line's
+  date (`earlierRelease`). `horizonDate` is that date (the fence hides it until
+  it is close), `isASAP` once it has come, `latestOrderDate` null (not new
+  supply), and an order MRP would Cancel gets none; it sits beside a change to
+  the same order (the natural key includes the type). It is never applied
+  by the planning routes (Apply Suggested Changes skips it,
+  `isApplyablePlanningAction`, and both Apply routes refuse the type): the
+  row's **Release** button runs the order's OWN release from the page through
+  `PlanningActionHandlers.onRelease` — purchasing opens the PO's Finalize modal
+  (`usePurchaseOrderPlanningCommands().finalizePurchaseOrder`), production
+  posts the job to the jobs table's release route (`useJobPlanningRelease` →
+  `path.to.bulkReleaseJob`: the job page's readiness checks, the release, the
+  location's schedule run). A host with no `onRelease` gets a link to the
+  order instead. It
+  applies only while the order is Planned — MRP stops raising it, and between
+  runs the planning pages drop it once the order's live status moves on
+  (`isStaleRelease` in `usePlanningActions`; the grid RPCs' Actions filter
+  ignores it the same way, `20261006205037`). It lights the Order button's dot
+  red on and after its day and not before (every planned order has one); its
+  date reads late only once the day has passed. In the drawer a change on the
+  same order takes the row's one action slot (`actionForOrder`).
 - `deriveChangeActions` measures Expedite / Defer from the order's EXPECTED date:
   its due date, or today when it is overdue (`laterDate`). Measured from the old
   due date, a late order read as early and got a Defer to a date already past.
+  The NEED date is clamped the same way: a need in the current week is needed
+  today, not on the week's (past) start. Apply writes the suggested date onto
+  the order, so an Expedite to last Sunday made the order overdue, read as
+  arriving today, and with a tolerance under a week the same Expedite came
+  back on every run. `convertOrdersToIncreases` compares both dates clamped.
+- **Quantity suggestions are what the order will hold** (`quantityAfterApply`).
+  Apply writes a PO line in whole PURCHASE units (`conversionFactor`, read for
+  the open lines whose factor is not 1), so a Decrease to 55 on a 10-per-box
+  line wrote 60 and the next run asked for 55 again, forever. Decrease and
+  Increase on a PO line are rounded up to the purchase multiple, and a line
+  already at it gets no action. An Increase names the PO line's supplier, not
+  the item's preferred one.
 - `deriveChangeActions` claims the policy floor (safety stock, reorder point,
   minimum reserve) FIRST — from on-hand, then the earliest orders — and an
   order holding part of it is never Cancelled, Decreased or Deferred. The floor
@@ -424,15 +470,29 @@ never offered a Cancel, Defer or Expedite.
   overlay band that is cleared on `pointerleave` — it used to stay on the last
   week touched. The per-week numbers stay in the CSV as
   `exportOnlyColumn`s keyed `week1`…`weekN`, so an export is unchanged.
-- **Latest Order Date** (both grids, after Qty to Order): the last day the
-  row's NEXT planned order can be placed and still arrive on time — the date
-  the supply is required less the item's lead time. It is the `startDate` of
-  the earliest planned order from `getNextPlannedOrder`
-  (`items/ui/Item/ItemReorderPolicy.tsx`), which reads the same cached
-  `calculateOrders` sizing the order drawer uses, so grid and drawer cannot
-  disagree. Red once the day has passed (the order's `isASAP`); "-" when
-  nothing needs ordering. The tooltip shows the required date and lead time;
-  the CSV carries the ISO date. Cell: `ui/Planning/LatestOrderDate.tsx`.
+- **Suggested orders ARE the Order / Make actions.** The order drawer's
+  Suggested Orders / Suggested Jobs, the row's Order / Make button quantity
+  and a bulk order for rows never opened all read the item's OPEN new-supply
+  actions (`openNewSupplyActions` + `plannedOrdersFromActions` /
+  `productionOrdersFromActions`, `ui/Planning/planned-orders-from-actions.ts`,
+  tested by `apps/erp/test/planned-orders-from-actions.test.ts`): one row per
+  action, on the action's own week, in purchase units for a PO (rounded up by
+  the chosen supplier part's factor). They used to be sized again in the
+  browser from the weekly projections (`calculateOrders`), which missed what
+  MRP does after sizing — moving expedited supply, folding a shortfall into
+  an open order as an Increase, summing each week into one action — so the
+  drawer showed daily 10s against weekly 50s and offered a new order for the
+  shortfall an Increase already covered. A dismissed Order is not offered;
+  a shortfall whose Increase was dismissed gets no Order until MRP writes one,
+  and the planner adds it by hand with New. The rows refresh when MRP runs.
+- **Latest Order Date** (both grids, after 1st Negative On Hand): the last day the
+  row's next suggested order can be placed and still arrive on time — the
+  grid RPC's `latestOrderDate`, the MIN order-by date of the item's open
+  new-supply actions, so the cell, its sort and the drawer agree. Red once the
+  day has passed (before the location's today); "-" when nothing needs
+  ordering. The tooltip shows the required date (order-by date plus lead
+  time) and the lead time; the CSV carries the ISO date. Cell:
+  `ui/Planning/LatestOrderDate.tsx`.
 - **Shared, not copied.** The two grids differ only in their own columns (item
   link, supplier, lead time, quantity to order, the Order button) and wiring.
   Everything else lives once in `production/ui/Planning/`: `usePlanningActions`
@@ -445,8 +505,7 @@ never offered a Cancel, Defer or Expedite.
   labels in one drawer did.
 - **One "today": the location's.** Every planning surface that marks a date
   late — the Latest Order Date cell, the expanded action lines
-  (`PlanningActionLines`), the drawers and the order sizing
-  (`calculateOrders`, part of its cache key) — takes the loader's
+  (`PlanningActionLines`) and the drawers — takes the loader's
   `locationToday` as a prop. None reads the browser's zone: a planner in
   another timezone saw an action red in one column and not in the next.
 - Both have a "Recalculate" button (`mrpFetcher.Form` POST to
@@ -458,8 +517,15 @@ never offered a Cancel, Defer or Expedite.
   in a separate list. Both routes load the location's persisted `planningAction`
   rows (`getPlanningActions`, Buy/Make by kind) and pass them to the grid, which
   renders an **Actions** column (one ICON chip per open type with a count and
-  the type name in a tooltip, the ASAP flag, a muted dismissed chip; always one
-  line so busy rows are no taller than the rest; static type filter) and an
+  the type name in a tooltip, a muted dismissed chip; always one line so busy
+  rows are no taller than the rest; static type filter), a pulsing dot on the
+  row's Order / Make button (`planningActionDot`, `ui/Planning/planning-review.ts`:
+  only open actions that add or advance supply — Order, Make, Expedite,
+  Increase — light it: red when one is ASAP, green otherwise; an Increase
+  lights it with nothing new to order. A Decrease, Defer or Cancel never
+  lights it, and is never drawn late in the expanded row either
+  (`isPlanningActionLate`) — its date is where the order sits, not a
+  deadline), and an
   **expandable row** (`renderExpandedRow`/`canExpandRow`, gated to items with
   actions) listing the item's actions as child lines — type, target PO/job
   hyperlink, quantity, `DateTime` (red when past), reason, assignee — each with
@@ -528,7 +594,7 @@ never offered a Cancel, Defer or Expedite.
   actions and resolved item ids from them — it silently dropped items past the
   cap and could not see the horizon.
 - **Reschedule tolerance.** `companySettings.rescheduleToleranceDays`
-  (`INTEGER NOT NULL DEFAULT 7`, `20261005090300`) is read by
+  (`INTEGER NOT NULL DEFAULT 7`, `20261006030000`) is read by
   `generatePlanningActions` as `toleranceDays` into `deriveChangeActions`: an
   open order gets an Expedite / Defer only when its date is STRICTLY more than
   the tolerance from the date it is needed, and a dismissed action stays
@@ -545,8 +611,13 @@ never offered a Cancel, Defer or Expedite.
   planner who assigns between the run's read and its write still wins.
 - **Settings → Planning** (`x+/settings+/planning.tsx`, cards in
   `apps/erp/app/modules/settings/ui/Planning/`): `ResponsibleEmployeeCard`
-  (intents `setCompanyDefault`, `setLocation`, `setItemGroup`),
-  `RescheduleToleranceCard` (`setTolerance`), `PlanningHorizonCard`
+  (intents `setCompanyDefault`, `setLocation`, `setItemGroup`; `setLocation`
+  writes `location`, a resources table, so a user without `resources_update`
+  matches no row under RLS and is told so rather than shown a success),
+  `RescheduleToleranceCard` (`setTolerance`), `PlanningPurchaseOrderApprovalCard`
+  (`setPlanningPurchaseOrderApproval` → `companySettings.skipApprovalForPlanningPurchaseOrders`,
+  default on: a PO the planning Order button created — `purchaseOrder.createdFromPlanning`,
+  cleared by any manual line change — finalizes without the approval rule), `PlanningHorizonCard`
   (`setPlanningHorizon`, `planningHorizonValidator`), `ForecastConsumptionCard`
   (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each)
   and `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`). An employee
@@ -659,14 +730,22 @@ never offered a Cancel, Defer or Expedite.
   The earlier single list mixed both: an edit to an existing order sat unsaved
   until Order was pressed and was dropped by Close.
 - **Grid RPCs are wrappers.** `get_purchasing_planning_grid` /
-  `get_production_planning_grid` (`20261005090304_planning-horizon.sql`) select
+  `get_production_planning_grid` (latest: `20261006205037_planning-grid-order-quantity.sql`) select
   `p.*` from the base RPC and add `itemPostingGroupId` (**Item Group** column +
   filter), `planningHorizonDays`, `timeFenceDate`, `firstNegativeDate` (**1st
   Negative On Hand**: the start of the first week whose projection is below
-  zero — weekly, because MRP buckets by week) and `latestOrderDate` (the MIN of
+  zero — weekly, because MRP buckets by week), `latestOrderDate` (the MIN of
   the item's open new-supply actions, which makes **Latest Order Date**
-  sortable; the cell still shows the live sizing, equal to it as of the last
-  run). The base RPCs stay the one definition of the projection and are what
+  sortable; the cell shows the same value) and `orderQuantity` (the SUM of the
+  item's open Order / Make actions inside its saved fence, 0 when none — the
+  grids' default sort, then the part number; there is no Qty to Order column,
+  the row's Order / Make button shows the quantity).
+  The base RPC's own `quantityToOrder` (`calculate_quantity_to_order`, a second
+  sizing of the projection in SQL) is NOT shown or sorted on any more: it
+  never sees what MRP does after sizing (Expedites, Increases, orders placed
+  since the last run against a projection only a run refreshes), so it put
+  items with nothing to order above real shortages. It stays in `p.*` for
+  `generatePlanningActions`' Stock Only path. The base RPCs stay the one definition of the projection and are what
   `generatePlanningActions` reads. Adding a column to a base RPC means
   re-creating its wrapper with the same column — it fails loudly (return type
   mismatch) until then. Generated types mark every RPC column non-null; the new
@@ -676,11 +755,19 @@ never offered a Cancel, Defer or Expedite.
     job methods, upserts `supplyForecast` (`'Production Order'`), then
     `recalculateJobRequirements()`.
   - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier
-    per submit — reuses the supplier's open Draft/Planned `Purchase` PO whose
-    delivery location is the planning location (header lookup, not a
-    line-in-period match), else inserts one. Lines are matched on item +
-    `requiredDate`, so orders for different weeks stay as separate lines on
-    the same PO. Upserts `supplyForecast` (`'Purchase Order'`) per order period.
+    per WEEK (`planningPurchaseOrderWeek`: Sunday-start, as the grid's
+    periods; a late or undated order is in the current week). It reuses the
+    oldest open Draft/Planned `Purchase` PO for the supplier, at the planning
+    location, in the supplier's currency, whose lines are ALL in that week
+    (`findPlanningPurchaseOrder`), else inserts one. A PO with lines in
+    several weeks (raised before this rule) takes no more orders; matching
+    on ANY line in the week let such a PO keep collecting weeks. Before this, every
+    week went on one PO, so finalizing it to send the first week locked the
+    later weeks against MRP's Defer / Decrease / Cancel. A PO with no lines is
+    never reused. All candidate POs and their lines are read once per submit.
+    An order whose item and `requiredDate` match an existing line adds to it,
+    restating the tax pair (`taxPairForQuantity`). Upserts `supplyForecast`
+    (`'Purchase Order'`) per order period.
 
 ## Gotchas
 

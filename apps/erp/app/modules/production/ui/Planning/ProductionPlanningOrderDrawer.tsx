@@ -45,13 +45,19 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
 import { JobStatus } from "../Jobs";
 
-/** An existing job in the planned-order shape the chart reads. */
-type OpenProductionOrder = ProductionOrder & { existingId: string };
+/** An existing job in the planned-order shape the chart reads, plus the
+ *  quantity it was read at (so the chart can tell a planner's edit from the
+ *  stored job). */
+type OpenProductionOrder = ProductionOrder & {
+  existingId: string;
+  loadedQuantity: number;
+};
 
 type ProductionPlanningOrderDrawerProps = {
   /**
@@ -103,7 +109,7 @@ export const ProductionPlanningOrderDrawer = memo(
     locationToday
   }: ProductionPlanningOrderDrawerProps) => {
     const fetcher = useFetcher<typeof bulkUpdateAction>();
-    const revalidator = useRevalidator();
+    const { revalidate } = useRevalidator();
     const { t } = useLingui();
     const { locale } = useLocale();
     const fenceLabel = timeFenceDate
@@ -162,6 +168,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 startDate: job.startDate ?? null,
                 dueDate: job.dueDate ?? null,
                 quantity: job.quantity,
+                loadedQuantity: job.quantity,
                 isASAP: job.deadlineType === "ASAP",
                 periodId: periodIdFor(periods, job.dueDate)
               })
@@ -264,7 +271,7 @@ export const ProductionPlanningOrderDrawer = memo(
             // A plain fetch bypasses the router: refresh the grid row behind
             // the drawer, which otherwise shows the old value until the next
             // navigation.
-            void revalidator.revalidate();
+            void revalidate();
             return true;
           }
           toast.error(result?.message ?? t`Failed to update job`);
@@ -274,7 +281,7 @@ export const ProductionPlanningOrderDrawer = memo(
           return false;
         }
       },
-      [locationId, revalidator, t]
+      [locationId, revalidate, t]
     );
 
     const renderOpenJobStatus = useCallback(
@@ -285,17 +292,35 @@ export const ProductionPlanningOrderDrawer = memo(
     );
 
     // What the chart overlays as planned supply: the draft jobs, plus the jobs
-    // a planner can still change so an edit shows before MRP runs again.
+    // a planner can still change so an edit shows before MRP runs again, and
+    // any job with an open Increase — charted at it, since it took the place
+    // of a draft job.
     const chartOrders = useMemo<ProductionOrder[]>(
-      () => [
-        ...orders,
-        ...(Array.isArray(openJobs)
-          ? openJobs.filter((job) =>
-              isJobEditableFromPlanning(job.existingStatus)
-            )
-          : [])
-      ],
-      [orders, openJobs]
+      () =>
+        Array.isArray(openJobs)
+          ? [
+              ...orders,
+              ...openJobs.flatMap(({ loadedQuantity, ...job }) => {
+                const increase = actionForOrder(
+                  actions,
+                  (a) => a.type === "Increase" && a.jobId === job.existingId
+                );
+                if (!increase && !isJobEditableFromPlanning(job.existingStatus))
+                  return [];
+                return [
+                  {
+                    ...job,
+                    quantity: chartedOrderQuantity({
+                      quantity: job.quantity,
+                      loadedQuantity,
+                      increase
+                    })
+                  }
+                ];
+              })
+            ]
+          : orders,
+      [orders, openJobs, actions]
     );
 
     const onSuggestedOrdersChange = useCallback(
@@ -434,6 +459,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   documentHeader={t`Job`}
                   quantityHeader={t`Qty`}
                   rows={openJobRows}
+                  todayIso={locationToday}
                   renderStatusIcon={renderOpenJobStatus}
                   onSave={onSaveOpenJob}
                   onRowsChange={onOpenJobsChange}

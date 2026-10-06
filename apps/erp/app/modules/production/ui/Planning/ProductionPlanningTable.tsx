@@ -12,7 +12,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   HStack,
-  Loading,
   PulsingDot,
   Tooltip,
   TooltipContent,
@@ -22,15 +21,8 @@ import {
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -53,12 +45,9 @@ import {
   useDrawerItem,
   useMrpScheduleDescription,
   usePermissions,
+  useQuantityFormatter,
   useUser
 } from "~/hooks";
-import {
-  clearOrdersCache,
-  getProductionOrdersFromPlanning
-} from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { PlanningAction, ProductionOrder } from "~/modules/production";
 import {
   PLANNING_ACTIONS_COLUMN,
@@ -69,11 +58,17 @@ import {
   isNewSupplyAction,
   PlanningActionLines,
   PlanningActionsCell,
+  planningActionDot,
   planningActionsExportValue,
   usePlanningActionTypeOptions
 } from "~/modules/production/ui/Planning/PlanningActionLines";
+import {
+  openNewSupplyActions,
+  productionOrdersFromActions
+} from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
 import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
+import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
@@ -98,13 +93,6 @@ type ProductionPlanningTableProps = {
   locationToday: string;
 };
 
-// `useNumberFormatter()` with no argument builds a new formatter on EVERY render:
-// react-aria memoizes on the options object, and a default `{}` is a new object
-// each time. The formatter is a dependency of `columns`, so every render of this
-// table rebuilt the columns, which remounts every cell — opening the order
-// drawer did it six times over. One shared options object keeps it stable.
-const NUMBER_FORMAT_OPTIONS: Intl.NumberFormatOptions = {};
-
 const ProductionPlanningTable = ({
   data,
   count,
@@ -117,17 +105,16 @@ const ProductionPlanningTable = ({
   const permissions = usePermissions();
   const { t, i18n } = useLingui();
 
-  const numberFormatter = useNumberFormatter(NUMBER_FORMAT_OPTIONS);
+  // Memoized on the locale, so it never rebuilds `columns` on its own.
+  const formatQuantity = useQuantityFormatter();
   const locations = useLocations();
   const unitOfMeasures = useUnitOfMeasure();
   const itemPostingGroups = useItemPostingGroups();
 
   const mrpFetcher = useAction<typeof mrpAction>({
     onSettled: (data) => {
-      if (data) {
-        clearOrdersCache();
-        setOrdersMap({}); // Reset local state to force recalculation
-      }
+      // the drawer re-seeds from the new run's actions
+      if (data) setOrdersMap({});
     }
   });
   const mrpScheduleDescription = useMrpScheduleDescription();
@@ -138,9 +125,10 @@ const ProductionPlanningTable = ({
   const actionTypeOptions = usePlanningActionTypeOptions("Make");
   const [people] = usePeople();
   const {
-    actionHandlers,
+    actionHandlers: changeActionHandlers,
     isActionsBusy,
     timeFence,
+    actionsByItemId,
     fencedActionsByItemId,
     visibleActionsByItemId,
     submitActions
@@ -153,6 +141,18 @@ const ProductionPlanningTable = ({
     currentUserId: user.id,
     canUpdate: canUpdateActions
   });
+
+  // A job's Release button releases it from here (the jobs table's release
+  // route), rather than opening the job.
+  const { onRelease, isReleasing } = useJobPlanningRelease();
+  const actionHandlers = useMemo(
+    () => ({
+      ...changeActionHandlers,
+      isBusy: changeActionHandlers.isBusy || isReleasing,
+      onRelease
+    }),
+    [changeActionHandlers, isReleasing, onRelease]
+  );
   const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
   // The drawer's draft orders are page state keyed by item. They are dropped
@@ -170,6 +170,14 @@ const ProductionPlanningTable = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
+    // Once per completed submission: the fetcher settles to idle with that
+    // submission's data. Keyed on `data.success` alone, a second Create Jobs in
+    // the same session (success again) never re-ran this — no toast, and the
+    // spent drafts stayed in `ordersMap`.
+    if (bulkUpdateFetcher.state !== "idle" || !bulkUpdateFetcher.data) {
+      return;
+    }
+
     if (
       bulkUpdateFetcher.data?.success === false &&
       bulkUpdateFetcher?.data?.message
@@ -183,12 +191,10 @@ const ProductionPlanningTable = ({
       setOrdersMap({});
       const {
         jobs = [],
-        updatedJobCount = 0,
         alreadyPlannedItemCount = 0,
         noDemandItemCount = 0
       } = bulkUpdateFetcher.data as {
         jobs?: { id: string; readableId: string }[];
-        updatedJobCount?: number;
         alreadyPlannedItemCount?: number;
         noDemandItemCount?: number;
       };
@@ -209,7 +215,7 @@ const ProductionPlanningTable = ({
         );
       }
 
-      if (jobs.length === 0 && updatedJobCount === 0) {
+      if (jobs.length === 0) {
         toast.info(
           skipped.length > 0 ? skipped.join(" · ") : t`No jobs were created`
         );
@@ -218,16 +224,10 @@ const ProductionPlanningTable = ({
 
       const created =
         jobs.length === 1 ? t`1 job created` : t`${jobs.length} jobs created`;
-      const updated =
-        updatedJobCount > 0
-          ? updatedJobCount === 1
-            ? t`1 job updated`
-            : t`${updatedJobCount} jobs updated`
-          : null;
 
       toast.success(
         <VStack spacing={1}>
-          <span>{[created, updated].filter(Boolean).join(" · ")}</span>
+          <span>{created}</span>
           {jobs.length > 0 && (
             <span className="flex flex-wrap gap-2 text-xs">
               {jobs.slice(0, 2).map((job) => (
@@ -256,7 +256,7 @@ const ProductionPlanningTable = ({
         { duration: 8000 }
       );
     }
-  }, [bulkUpdateFetcher.data?.success]);
+  }, [bulkUpdateFetcher.state, bulkUpdateFetcher.data]);
 
   const isDisabled =
     !permissions.can("create", "production") ||
@@ -268,9 +268,22 @@ const ProductionPlanningTable = ({
     {}
   );
 
-  const [ordersByItemId, setOrdersByItemId] = useState<
-    Map<string, ProductionOrder[]>
-  >(new Map());
+  // A row's suggested jobs are its open Make actions: what MRP wrote after it
+  // moved expedited supply, folded a shortfall into an open job as an
+  // Increase, and summed each week. They seed the drawer, size the Make
+  // button, and are what a bulk Create Jobs submits for rows never opened.
+  const ordersByItemId = useMemo(
+    () =>
+      new Map(
+        data.map((row) => [
+          row.id,
+          productionOrdersFromActions(
+            openNewSupplyActions(actionsByItemId.get(row.id), "Make")
+          )
+        ])
+      ),
+    [data, actionsByItemId]
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
@@ -384,18 +397,21 @@ const ProductionPlanningTable = ({
   );
 
   // The drawer's suggested orders, split at the selected row's time fence: it
-  // opens on what is due inside the fence and can pull the rest in.
+  // opens on what is due inside the fence and can pull the rest in. A
+  // shortfall MRP folded into an Increase on an existing job has no Make
+  // action, so it is offered there, in Open Orders, and not here.
   const selectedOrders = useMemo(() => {
     if (!selectedItem?.id) return { inside: [], beyond: [] };
     return splitOrdersByFence(
-      getProductionOrdersFromPlanning(selectedItem, periods, locationToday),
+      ordersByItemId.get(selectedItem.id) ?? [],
       timeFence.fenceDateFor(selectedItem)
     );
-  }, [selectedItem, periods, timeFence, locationToday]);
+  }, [selectedItem, ordersByItemId, timeFence]);
 
   // The drawer's Open Orders table shows the selected row's change actions on existing
-  // jobs (Expedite, Defer, …). Order / Make actions are left out — each one
-  // is already a "New" row in the drawer's order list, right above the table.
+  // jobs (Expedite, Defer, Increase, …). Order / Make actions are left out —
+  // each one is already a "New" row in the drawer's order list, right above
+  // the table.
   const selectedActions = useMemo(
     () =>
       selectedItem?.id
@@ -409,29 +425,13 @@ const ProductionPlanningTable = ({
   // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
   // Assign controls as the expanded row, through the same single fetcher.
 
-  const [isPending, startTransition] = useTransition();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    startTransition(() => {
-      const ordersByItemId = new Map<string, ProductionOrder[]>();
-      data.forEach((item) => {
-        ordersByItemId.set(
-          item.id,
-          getProductionOrdersFromPlanning(item, periods, locationToday)
-        );
-      });
-      setOrdersByItemId(ordersByItemId);
-    });
-  }, [data]);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const columns = useMemo<ColumnDef<ProductionPlanningItem>[]>(() => {
     const shared = planningColumns<ProductionPlanningItem>({
       i18n,
       periods,
       locationToday,
-      numberFormatter,
+      formatQuantity,
       unitOfMeasures,
       itemPostingGroups,
       timeFence,
@@ -533,29 +533,15 @@ const ProductionPlanningTable = ({
               .join(", ")
         }
       },
-      shared.unitOfMeasure,
-      shared.itemGroup,
-      shared.reorderPolicy,
-      shared.onHand,
       ...shared.periods,
+      shared.reorderPolicy,
+      shared.unitOfMeasure,
+      shared.onHand,
       shared.firstNegativeDate,
-      {
-        accessorKey: "quantityToOrder",
-        header: t`Qty to Order`,
-        cell: ({ row }) => {
-          const value = row.original.quantityToOrder;
-          if (value === undefined || value === 0) return "-";
-          return (
-            <span className="font-medium">{numberFormatter.format(value)}</span>
-          );
-        },
-        meta: {
-          icon: <LuCirclePlay />
-        }
-      },
       shared.latestOrderDate,
       shared.timeFence,
       shared.type,
+      shared.itemGroup,
       {
         id: "Order",
         header: "",
@@ -574,11 +560,19 @@ const ProductionPlanningTable = ({
           );
           const isBlocked = row.original.manufacturingBlocked;
           const hasOrders = orders.length > 0 && orderQuantity > 0;
+          const quantity = formatQuantity(orderQuantity);
+          // An open action that adds or advances supply needs doing even with
+          // nothing new to order (an Increase on an existing order), so it lights
+          // the dot too; a Decrease, Defer or Cancel does not.
+          const dot =
+            planningActionDot(
+              visibleActionsByItemId.get(row.original.id) ?? []
+            ) ?? (hasOrders ? "green" : null);
           return (
             <div className="flex justify-end">
               <Button
                 variant="secondary"
-                leftIcon={hasOrders ? undefined : <LuCircleCheck />}
+                leftIcon={dot ? undefined : <LuCircleCheck />}
                 isDisabled={isDisabled || isBlocked}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -586,14 +580,14 @@ const ProductionPlanningTable = ({
                 }}
               >
                 {isBlocked ? (
-                  "Blocked"
-                ) : hasOrders ? (
+                  t`Blocked`
+                ) : dot ? (
                   <HStack>
-                    <PulsingDot />
-                    <span>Make {orderQuantity}</span>
+                    <PulsingDot variant={dot} />
+                    <span>{hasOrders ? t`Make ${quantity}` : t`Make`}</span>
                   </HStack>
                 ) : (
-                  "Make"
+                  t`Make`
                 )}
               </Button>
             </div>
@@ -604,7 +598,7 @@ const ProductionPlanningTable = ({
   }, [
     t,
     i18n,
-    numberFormatter,
+    formatQuantity,
     unitOfMeasures,
     isDisabled,
     visibleActionsByItemId,
@@ -702,7 +696,7 @@ const ProductionPlanningTable = ({
   };
 
   return (
-    <Loading isLoading={isPending}>
+    <>
       <Table<ProductionPlanningItem>
         count={count}
         columns={columns}
@@ -772,7 +766,7 @@ const ProductionPlanningTable = ({
           onClose={closeDrawer}
         />
       )}
-    </Loading>
+    </>
   );
 };
 
