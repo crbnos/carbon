@@ -2,38 +2,51 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The server a self-hosted app runs on. `node` runs this file as it is, by
-// stripping the types: the runtime image has no TypeScript toolchain. So
-// only syntax that can be erased — no enums, no parameter properties, and
-// `import type` for anything that is only a type.
+// The server a self-hosted app runs on. `node` runs these files as they
+// are, by stripping the types: the runtime image has no TypeScript
+// toolchain. So only syntax that can be erased, `import type` for types,
+// and `.ts` on relative imports.
 //
-// It replaces `react-router-serve`, which loads the build itself and so
-// leaves no place to stand between a request and React Router. Two things
-// need that place:
-//
-//  - React Router refuses a form submit whose `Origin` is not the origin of
-//    `request.url`. Behind a proxy that ends TLS the app is called over
-//    http, the browser says https, and every submit was a 400. The
-//    deployment already says where the app lives (`siteUrl`); that host is
-//    allowed, through the option React Router has for it.
-//  - Static files compressed once at build (a `.br` beside each one) are
-//    sent as they are instead of being compressed again on every request.
+// It replaces `react-router-serve`, which loads the build itself and leaves
+// no place to stand between a request and React Router. Two things need
+// that place: the app's own URL as an origin React Router accepts
+// (`allowedActionOrigins`), and files sent as the build compressed them
+// (`assets.ts`).
 
-import { readdirSync } from "node:fs";
 import path from "node:path";
-import { Readable } from "node:stream";
 import { constants } from "node:zlib";
 import fastifyCompress from "@fastify/compress";
-import { isUtf8MimeType, mime } from "@fastify/send";
 import fastifyStatic from "@fastify/static";
 import closeWithGrace from "close-with-grace";
-import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
+import Fastify, {
+  type FastifyError,
+  type FastifyReply,
+  type FastifyRequest,
+  type FastifyServerOptions,
+  LogController
+} from "fastify";
 import Negotiator from "negotiator";
 import {
   createRequestHandler,
   RouterContextProvider,
   type ServerBuild
 } from "react-router";
+import { type Asset, cacheControl, loadAssets } from "./assets.ts";
+import { toFetchRequest } from "./request.ts";
+
+// Longer than any proxy in front holds an idle connection (an ALB 60s,
+// Traefik 90s). Shorter, and the proxy reuses a connection this side has
+// just closed: an occasional 502 on a request that was never read.
+const KEEP_ALIVE_MS = 100_000;
+// Node's own limit on how long a request may take to arrive, which Fastify
+// turns off. Without it a client that never finishes sending holds its
+// connection for good.
+const REQUEST_MS = 300_000;
+// How long a shutdown waits for requests in flight: under the thirty
+// seconds Kubernetes and ECS wait before they kill the process.
+const SHUTDOWN_MS = 20_000;
+
+const PLAIN = "text/plain; charset=utf-8";
 
 /**
  * The hosts whose forms React Router should accept: the app's own, read
@@ -50,124 +63,42 @@ export function allowedActionOrigins(siteUrl: string | undefined): string[] {
   }
 }
 
-// Fingerprinted by the build: the name changes when the bytes do.
-const IMMUTABLE = "public, max-age=31536000, immutable";
-const SHORT = "public, max-age=3600";
-
-// How long a shutdown waits for requests in flight.
-const SHUTDOWN_MS = 20_000;
-
-// Paths that are a file or nothing.
-const NEVER_A_PAGE = /^\/(assets|_vercel)\//;
-
-/**
- * What a file is, by its name: asked of the library that sends the files,
- * so an asset's Brotli copy is called exactly what its original is.
- */
-function contentType(file: string): string {
-  const type = mime.getType(file) ?? "application/octet-stream";
-  return isUtf8MimeType(type) ? `${type}; charset=utf-8` : type;
-}
-
-const cacheControl = (urlPath: string) =>
-  urlPath.startsWith("/assets/") ? IMMUTABLE : SHORT;
-
-/**
- * Every file in the built client, by its path from the root. Read once: an
- * image's files do not change under it, and asking the disk on each request
- * is what made a directory of two thousand chunks slow to serve from.
- */
-function indexFiles(root: string): Set<string> {
-  const files = new Set<string>();
-  for (const entry of readdirSync(root, {
-    recursive: true,
-    withFileTypes: true
-  })) {
-    if (!entry.isFile()) continue;
-    const rel = path
-      .relative(root, path.join(entry.parentPath, entry.name))
-      .split(path.sep)
-      .join("/");
-    if (!rel.split("/").some((segment) => segment.startsWith(".")))
-      files.add(rel);
-  }
-  return files;
-}
-
-/**
- * A Node request as the Fetch `Request` React Router takes. The URL is the
- * one the app was called on — host from the `Host` header, scheme from the
- * socket — exactly as `react-router-serve` built it.
- */
-function toRequest(req: FastifyRequest, signal: AbortSignal): Request {
-  const raw = req.raw;
-  const encrypted = "encrypted" in raw.socket && raw.socket.encrypted;
-  // Joined as text, never resolved against a base: a path of `//other.host/x`
-  // resolved that way names another host, and React Router checks a form's
-  // `Origin` against this URL.
-  const url = new URL(
-    `${encrypted ? "https" : "http"}://${raw.headers.host ?? "localhost"}${raw.url ?? "/"}`
-  );
-  const headers = new Headers();
-  for (const [name, value] of Object.entries(raw.headers)) {
-    if (value === undefined) continue;
-    if (Array.isArray(value)) for (const v of value) headers.append(name, v);
-    else headers.set(name, value);
-  }
-  const hasBody = raw.method !== "GET" && raw.method !== "HEAD";
-  return new Request(url, {
-    method: raw.method,
-    headers,
-    signal,
-    // Node's stream type and the DOM's disagree on a detail of byte
-    // readers; at runtime they are the one class.
-    ...(hasBody
-      ? { body: Readable.toWeb(raw) as unknown as BodyInit, duplex: "half" }
-      : {})
-  } as RequestInit);
-}
-
 /** The server, not yet listening — which is what a test wants. */
 export async function createApp({
   handleRequest,
-  clientDirectory
+  clientDirectory,
+  logger = { level: "info" }
 }: {
   /** Everything that is not a file: React Router, usually. */
   handleRequest: (request: Request) => Promise<Response> | Response;
   /** The built client, served at `/`. */
   clientDirectory: string;
+  logger?: FastifyServerOptions["logger"];
 }) {
   const root = path.resolve(clientDirectory);
-  // The apps log their own requests, with the request id; a second line
-  // from here said the same thing without one.
+  const assets = loadAssets(root);
+
   const app = Fastify({
-    logger: false,
-    // Longer than any proxy in front holds an idle connection (an ALB 60s,
-    // Traefik 90s). Shorter, and the proxy reuses a connection this side
-    // has just closed: an occasional 502 on a request that was never read.
-    keepAliveTimeout: 100_000,
-    // Node's own limit on how long a request may take to arrive, which
-    // Fastify turns off. Without it a client that never finishes sending
-    // holds its connection for good.
-    requestTimeout: 300_000,
-    // A URL the router cannot decode. Fastify's own answer is JSON naming
-    // its error code.
+    logger,
+    // The apps log their own requests, with the request id.
+    logController: new LogController({ disableRequestLogging: true }),
+    keepAliveTimeout: KEEP_ALIVE_MS,
+    requestTimeout: REQUEST_MS,
+    // A URL the router cannot decode. Fastify's own answer names its
+    // error code.
     frameworkErrors: (_error, _req, reply) =>
-      (reply as FastifyReply)
-        .code(400)
-        .type("text/plain; charset=utf-8")
-        .send("Bad Request")
+      (reply as FastifyReply).code(400).type(PLAIN).send("Bad Request")
   });
 
-  // Bodies are React Router's to read. Parsed here, the stream it is handed
-  // would already be empty.
+  // Bodies are React Router's to read. Parsed here, the stream it is
+  // handed would already be empty.
   app.removeAllContentTypeParsers();
   app.addContentTypeParser("*", (_req, _payload, done) => done(null));
 
-  // For what is rendered per request. A file compressed at build already
-  // carries its encoding and is left alone. Flushed as it is written:
-  // React streams a page in pieces, and a compressor that waits for a full
-  // buffer holds the first of them back.
+  // For what is rendered per request; a file compressed at build carries
+  // its encoding and is left alone. Flushed as it is written: React
+  // streams a page in pieces, and a compressor waiting for a full buffer
+  // holds the first of them back.
   await app.register(fastifyCompress, {
     global: true,
     encodings: ["br", "gzip"],
@@ -179,99 +110,112 @@ export async function createApp({
     zlibOptions: { flush: constants.Z_SYNC_FLUSH }
   });
 
-  // Only for `reply.sendFile`, which answers ranges and conditional
-  // requests. Which file is ours to say, from the index: left to find it
-  // itself, the plugin lists the directory on every request.
-  const files = indexFiles(root);
+  // For the files left on disk: `reply.sendFile`, which answers ranges.
+  // It serves nothing by itself — left to find files, it lists their
+  // directory on every request.
   await app.register(fastifyStatic, {
     root,
     serve: false,
     cacheControl: false,
-    setHeaders(reply, filePath) {
-      const urlPath = `/${path.relative(root, filePath).split(path.sep).join("/")}`;
-      reply.header("Cache-Control", cacheControl(urlPath));
-      if (!filePath.endsWith(".br")) return;
-      // Say what it is a file of, not that it is Brotli.
-      reply
-        .header("Content-Type", contentType(filePath.slice(0, -3)))
-        .header("Content-Encoding", "br");
+    setHeaders: (reply, file) => {
+      reply.header("cache-control", cacheControl(path.relative(root, file)));
     }
   });
 
-  // A route, not the not-found handler: the compression above attaches to
-  // routes, and pages rendered from the not-found handler went out as they
-  // were.
-  app.all("/*", async (req, reply) => {
-    const { method } = req.raw;
-    const urlPath = (req.raw.url ?? "/").split("?")[0] ?? "/";
+  function held(req: FastifyRequest, reply: FastifyReply, asset: Asset) {
+    reply.headers(asset.headers);
+    if (req.headers["if-none-match"] === asset.headers.etag) {
+      return reply.code(304).send();
+    }
+    if (req.method === "HEAD") {
+      return reply.header("content-length", asset.body.length).send();
+    }
+    return reply.send(asset.body);
+  }
 
-    if (method === "GET" || method === "HEAD") {
-      let rel = "";
-      try {
-        rel = decodeURIComponent(urlPath).slice(1);
-      } catch {
-        // Not a path at all: React Router's to refuse.
-      }
-      if (files.has(rel)) {
-        if (!files.has(`${rel}.br`)) return reply.sendFile(rel);
-        // Which of the two is sent depends on the caller, and a cache in
-        // between has to know that — whichever one it is handed.
-        reply.header("Vary", "Accept-Encoding");
-        // Every browser accepts Brotli; a monitor or a script may not, and
-        // `br;q=0` is one saying so.
-        const [accepted] = new Negotiator(req.raw).encodings(["br"]);
-        return reply.sendFile(accepted === "br" ? `${rel}.br` : rel);
-      }
-      // A chunk from before the last deploy, or Vercel's analytics script
-      // off Vercel: there is no page to render for these, and rendering the
-      // app's 404 for each cost a full pass through React Router.
-      if (NEVER_A_PAGE.test(urlPath))
-        return reply
-          .code(404)
-          .header("Cache-Control", "no-store")
-          .type("text/plain; charset=utf-8")
-          .send("Not found");
+  /** The file `name`, sent; or nothing when there is no such file. */
+  function file(req: FastifyRequest, reply: FastifyReply, name: string) {
+    const asset = assets.get(name);
+    if (!asset) return undefined;
+    // Every browser accepts Brotli; a monitor or a script may not, and
+    // `br;q=0` is one saying so.
+    if (asset.brotli) {
+      const [accepted] = new Negotiator(req.raw).encodings(["br"]);
+      if (accepted === "br") return held(req, reply, asset.brotli);
+      // Which copy is sent depends on the caller: a cache in between has
+      // to know that of this one too.
+      reply.header("vary", "Accept-Encoding");
+    }
+    return asset.plain ? held(req, reply, asset.plain) : reply.sendFile(name);
+  }
+
+  // A chunk from before the last deploy, or Vercel's analytics script off
+  // Vercel. There is no page for these, and rendering the app's 404 for
+  // each cost a pass through React Router.
+  const gone = (reply: FastifyReply) =>
+    reply
+      .code(404)
+      .header("cache-control", "no-store")
+      .type(PLAIN)
+      .send("Not found");
+
+  type Path = { Params: { "*": string } };
+
+  app.route<Path>({
+    method: ["GET", "HEAD"],
+    url: "/assets/*",
+    handler: (req, reply) =>
+      file(req, reply, `assets/${req.params["*"]}`) ?? gone(reply)
+  });
+
+  app.route({
+    method: ["GET", "HEAD"],
+    url: "/_vercel/*",
+    handler: (_req, reply) => gone(reply)
+  });
+
+  // A route, not the not-found handler: compression attaches to routes.
+  app.all<Path>("/*", async (req, reply) => {
+    if (req.method === "GET" || req.method === "HEAD") {
+      const sent = file(req, reply, req.params["*"]);
+      if (sent) return sent;
     }
 
-    // Stops the render when the browser goes away, as the stock server did.
+    // Stops the render when the browser goes away.
     const controller = new AbortController();
-    reply.raw.on("close", () => {
+    reply.raw.once("close", () => {
       if (!reply.raw.writableFinished) controller.abort();
     });
-    const response = await handleRequest(toRequest(req, controller.signal));
-    // The stock server named the charset on text it was handed without one.
+    const response = await handleRequest(
+      toFetchRequest(req.raw, controller.signal)
+    );
+    // The stock server named the charset on text handed to it without one.
     const type = response.headers.get("content-type");
-    if (type && /^text\/[^;]+$/.test(type))
+    if (type?.startsWith("text/") && !type.includes(";")) {
       response.headers.set("content-type", `${type}; charset=utf-8`);
+    }
     return reply.send(response);
   });
 
-  // Fastify's own answer carries the error's message; what failed is for
-  // the log, not the caller.
-  app.setErrorHandler((error: { statusCode?: unknown }, _req, reply) => {
-    const status =
-      typeof error.statusCode === "number" && error.statusCode >= 400
-        ? error.statusCode
-        : 500;
-    if (status >= 500) console.error("[carbon] request failed", error);
-    reply
-      .code(status)
-      .type("text/plain; charset=utf-8")
-      .send(status >= 500 ? "Internal Server Error" : "Bad Request");
+  // What failed is for the log. Fastify's own answer hands the caller the
+  // error's message.
+  app.setErrorHandler((error: FastifyError, req, reply) => {
+    const status = error.statusCode ?? 500;
+    if (status < 500) return reply.code(status).type(PLAIN).send("Bad Request");
+    req.log.error({ err: error }, "request failed");
+    return reply.code(500).type(PLAIN).send("Internal Server Error");
   });
 
   return app;
 }
 
-/**
- * Starts a built React Router app.
- */
+/** Starts a built React Router app. */
 export async function serve({
   build,
   clientDirectory,
   siteUrl,
-  port,
-  host
+  port = Number(process.env.PORT ?? 3000),
+  host = process.env.HOST ?? "0.0.0.0"
 }: {
   build: ServerBuild;
   clientDirectory: string;
@@ -299,19 +243,13 @@ export async function serve({
       handler(request, new RouterContextProvider())
   });
 
-  // On SIGTERM or SIGINT, and on an error nothing caught: stop taking
-  // requests, let those in flight finish, then exit. Bounded, so a request
-  // that never ends cannot hold a rollout — and under the thirty seconds
-  // Kubernetes and ECS both wait before they kill the process outright.
+  // On a signal, or an error nothing caught: stop taking requests, let
+  // those in flight finish, exit.
   closeWithGrace({ delay: SHUTDOWN_MS }, async ({ err }) => {
-    if (err) console.error("[carbon] shutting down after an error", err);
+    if (err) app.log.error({ err }, "shutting down after an error");
     await app.close();
   });
 
-  const address = await app.listen({
-    port: port ?? Number(process.env.PORT ?? 3000),
-    host: host ?? process.env.HOST ?? "0.0.0.0"
-  });
-  console.log(`[carbon] ${address}`);
+  await app.listen({ port, host });
   return app;
 }
