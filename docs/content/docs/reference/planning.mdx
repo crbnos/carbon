@@ -18,7 +18,7 @@ MRP **suggests, it never auto-orders.** The engine writes forecasts and suggesti
 
 ## When it runs
 
-MRP recalculates on its own every 3 hours. To run it once a day instead, go to **Settings → Planning → MRP Schedule**, choose **Once a day**, and pick the hour; the hour is on your company's time zone. You can also run it yourself at any moment with **Recalculate** on the planning pages, whichever schedule is set.
+MRP recalculates on its own every 3 hours. To run it once a day instead, go to **Settings → Planning → MRP Schedule**, choose **Once a day**, and pick the hour; the hour is on your company's time zone. You can also run it yourself at any moment with **Recalculate** on the planning pages, whichever schedule is set; the line under the button says which schedule is active.
 
 ## What feeds it
 
@@ -42,9 +42,13 @@ An item's **<Term>replenishment system</Term>** determines where its shortage ap
 **"Planned"** is a real, saved job or PO that came from a planning suggestion and is waiting to be released — distinct from a hand-started **"Draft"**.
 </Callout>
 
+## Reading the grid
+
+Each row is an item at the location. **Stock Availability** draws the projected stock for every planning week as one strip; the CSV export keeps a column per week. **1st Negative On Hand** is the first week the projection goes below zero. **Latest Order Date** is the date you must order by to receive in time (the required date less the lead time); it turns red once it has passed. Open a row to see the order drawer.
+
 ## Planning actions
 
-Every MRP run leaves a worklist on the planning pages. Each row's **Actions** column shows one chip per open action type; expand the row to see each action with its target order, quantity, date and reason.
+Every MRP run leaves a worklist on the planning pages. Each row's **Actions** column shows one chip per open action type, an **ASAP** flag when a suggestion is already late, and a muted count of the actions you dismissed. Expand the row to see each action with its target order, quantity, date and assignee; hover the action type for MRP's reason.
 
 | Action | Target | What applying it does |
 | --- | --- | --- |
@@ -53,15 +57,19 @@ Every MRP run leaves a worklist on the planning pages. Each row's **Actions** co
 | **Increase** / **Decrease** | an open PO line or job | Sets the line's purchase quantity, or the job's quantity, to the suggested quantity. |
 | **Cancel** | an open PO line or job | Deletes the PO line, or cancels the job, when nothing needs it. |
 
-**Apply** is offered only while the target can still change from planning: a PO at **"Draft"** or **"Planned"**, a job at **"Draft"** or **"Planned"**. A PO that has been sent or is in approval, a job on the floor, or a PO line whose date the supplier has promised shows **Review** instead, and you make the change on the order itself. Select several rows and choose **Apply Suggested Changes** to apply every open action on them at once.
+**Apply** is offered only while the target can still change from planning: a PO at **"Draft"** or **"Planned"**, a job at **"Draft"** or **"Planned"**. A PO that has been sent or is in approval, a job on the floor, or a PO line whose date the supplier has promised shows **Review** instead, and you make the change on the order itself. Select several rows and choose **Apply Suggested Changes** to apply every open action on them at once. Apply writes the suggestion as it is at that moment: if an MRP run refreshed the action after the page loaded, the refreshed quantity or date is what lands. A job that had no deadline gets a **Soft Deadline** with its new date. Cancelling a PO line deletes it, so it needs the purchasing delete permission.
 
 <Callout type="info" title="A dismissed action stays dismissed until the need changes">
-**Dismiss** hides an action you have decided not to take. The next MRP runs keep it hidden while the suggested quantity and date stay the same; a material change reopens it. **Reopen** brings it back by hand. **Assign to Me** sets the owner, and MRP keeps a hand-set owner on later runs.
+**Dismiss** hides an action you have decided not to take. The next MRP runs keep it hidden while the suggested quantity stays the same and the date moves by no more than the reschedule tolerance; a larger change reopens it. **Reopen** brings it back by hand. **Assign to Me** sets the owner, and MRP keeps a hand-set owner on later runs.
 </Callout>
 
 An applied action is finished: the next run re-evaluates the changed order and writes a fresh action only if something still does not fit.
 
 <Screenshot label="Production planning grid with the Actions column and one row expanded to its action lines" caption="Each row carries its open actions; expand it to apply, dismiss or assign them." ratio="wide" />
+
+## The order drawer
+
+The drawer shows the item's suggested orders and, below them, its **Open Jobs** (production) or **Open Orders** (purchasing). An open order at **"Draft"** or **"Planned"** can be edited in place: change its **Due Date** or **Quantity** in the grid and the order is saved. The **Suggestion** column shows the open action on that order, with the same Apply, Dismiss, Reopen and Assign controls as the grid. Suggested orders due after the row's planning horizon stay out of the drawer until you choose **N More After <date>**. The chart in the drawer marks the planning horizon.
 
 ## Planning horizon
 
@@ -72,6 +80,8 @@ Moving the date in the column widens or narrows that one row for this page view 
 ## Reschedule tolerance
 
 MRP suggests **Expedite** or **Defer** only when an open order lands more than the tolerance away from the date it is needed. The default is 7 days. Set it in **Settings → Planning → Reschedule Tolerance**; 0 suggests a move for any date difference.
+
+Two kinds of open order never get a change suggestion. An order due after the planning window (48 weeks) is outside what the check can judge, so it is left alone rather than offered for Cancel. An order that holds the item's safety stock or reorder point is never Cancelled, Decreased or Deferred; it can still be Expedited when demand needs it earlier.
 
 ## Planning ownership
 
@@ -120,5 +130,5 @@ Another planner applied the same action after this page loaded. Reload the plann
 The target left Draft / Planned between the page load and Apply (the PO was sent or put in approval, the job was released). The action stays open as Review; make the change on the order.
 
 ### Mechanics
-Actions are rows in `planningAction` (`type` Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` Open / Dismissed / Actioned), written by `generatePlanningActions` after every MRP run as a diff against the previous run. Apply runs as one transaction per batch: the claim (Open → Actioned) and the change commit together. The horizon is `itemPlanning.planningHorizonDays`, else `companySettings.defaultPlanningHorizonDays`; 0 at either level means no horizon. The tolerance is `companySettings.rescheduleToleranceDays`. The owner ladder is `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` → `location.responsibleEmployee` → `companySettings.defaultResponsibleEmployee`.
+Actions are rows in `planningAction` (`type` Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` Open / Dismissed / Actioned), written by `generatePlanningActions` after every MRP run as a diff against the previous run. Purchasing actions, and job Expedite / Defer, apply as one transaction per batch: the claim (Open → Actioned) and the change commit together. Job Increase / Decrease / Cancel run one job at a time through server functions with their own transactions, each action claimed right before its own change. Every claim returns the action's suggested quantity and date as they are at the claim, and Apply writes those. A date move on a "No Deadline" job sets `deadlineType` to "Soft Deadline". The horizon is `itemPlanning.planningHorizonDays`, else `companySettings.defaultPlanningHorizonDays`; 0 at either level means no horizon. The tolerance is `companySettings.rescheduleToleranceDays`. The owner ladder is `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` → `location.responsibleEmployee` → `companySettings.defaultResponsibleEmployee`.
 </AgentContext>

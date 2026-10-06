@@ -11,6 +11,14 @@ paths:
   - "apps/erp/app/modules/settings/ui/Planning/**"
   - "apps/erp/app/routes/x+/{production,purchasing}+/planning*.tsx"
   - "apps/erp/app/routes/x+/settings+/planning.tsx"
+  - "apps/erp/app/modules/production/production.service.ts"
+  - "apps/erp/app/modules/production/production.server.ts"
+  - "apps/erp/app/modules/purchasing/purchasing.service.ts"
+  - "apps/erp/app/modules/settings/settings.service.ts"
+  - "apps/erp/app/modules/settings/settings.models.ts"
+  - "apps/erp/app/routes/api+/items.$id.$locationId.forecast.ts"
+  - "apps/erp/app/hooks/useMrpScheduleDescription.ts"
+  - "packages/planning/src/index.ts"
 ---
 
 # MRP (Material Requirements Planning)
@@ -241,8 +249,11 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261005090300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, and the target order — or, for a new Order / Make, its week) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
+| `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261005090300`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261005135332`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |
 
-`locationId` is declared `TEXT` (no `NOT NULL`) on all five planning tables, but
+`locationId` is declared `TEXT` (no `NOT NULL`) on the five original planning
+tables (`demandProjection`, `demandForecast`, `demandActual`, `supplyForecast`,
+`supplyActual`; `planningAction` declares it `NOT NULL` outright), but
 it is part of the PRIMARY KEY of every one of them (see the PK column above), so
 Postgres makes it **implicitly NOT NULL** — a null `locationId` raises 23502, and
 it is also an FK to `location(id)`, so a bogus value (e.g. the empty string
@@ -346,8 +357,9 @@ never offered a Cancel, Defer or Expedite.
 
 - The generator's reads are grouped: the responsible-employee resolver and
   the two open-supply views in one `Promise.all`, then the three demand
-  tables, on-hand and the open jobs in a second (five Kysely reads at once,
-  the job pool's size). They were six waits in a row.
+  tables, on-hand and the open jobs in a second (five Kysely reads at once —
+  `getJobDatabaseClient()` shares the 16-connection process pool, so a bounded
+  group leaves room for the run's other work). They were six waits in a row.
 - The two planning RPCs are read through `fetchAll` with `.order("id")`, like
   every other read in the run. A bare `client.rpc(...)` stops at PostgREST's
   `max_rows` (1000); an item missing from those rows has no candidates, and the
@@ -515,6 +527,30 @@ never offered a Cancel, Defer or Expedite.
   with `itemIds`, paged). An earlier version loaded the location's first 500
   actions and resolved item ids from them — it silently dropped items past the
   cap and could not see the horizon.
+- **Reschedule tolerance.** `companySettings.rescheduleToleranceDays`
+  (`INTEGER NOT NULL DEFAULT 7`, `20261005090300`) is read by
+  `generatePlanningActions` as `toleranceDays` into `deriveChangeActions`: an
+  open order gets an Expedite / Defer only when its date is STRICTLY more than
+  the tolerance from the date it is needed, and a dismissed action stays
+  dismissed while its date moves within the tolerance. Authored at Settings →
+  Planning (`RescheduleToleranceCard`, intent `setTolerance`,
+  `rescheduleToleranceValidator` in `settings.models.ts`, 0–365).
+- **Planning ownership (the owner ladder).** `resolveResponsibleEmployee` /
+  `loadResponsibleEmployeeResolver` (`packages/planning/src/mrp/responsible-employee.ts`):
+  `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` (the
+  item group AT the location) → `location.responsibleEmployee` →
+  `companySettings.defaultResponsibleEmployee`, first non-null wins. The diff
+  re-resolves an action's `assignee` on every run unless `assigneeOverridden`
+  (set by Assign) — and the UPDATE re-checks that flag on the row itself, so a
+  planner who assigns between the run's read and its write still wins.
+- **Settings → Planning** (`x+/settings+/planning.tsx`, cards in
+  `apps/erp/app/modules/settings/ui/Planning/`): `ResponsibleEmployeeCard`
+  (intents `setCompanyDefault`, `setLocation`, `setItemGroup`),
+  `RescheduleToleranceCard` (`setTolerance`), `PlanningHorizonCard`
+  (`setPlanningHorizon`, `planningHorizonValidator`), `ForecastConsumptionCard`
+  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each)
+  and `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`). An employee
+  id is saved only after `isActiveCompanyEmployee`; a bad value answers 400.
 - **Planning horizon (time fence).** `itemPlanning.planningHorizonDays` (per
   item + location, Part → Planning) else `companySettings.defaultPlanningHorizonDays`
   (Settings → Planning) else none. **0 means "no fence"** at either level

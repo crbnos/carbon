@@ -49,7 +49,7 @@ pnpm --filter @carbon/erp test
 | `makeMethod` | Versioned manufacturing method header (Draft/Active/Archived) |
 | `methodMaterial` / `methodOperation` / `methodOperationStep` / `methodOperationParameter` / `methodOperationTool` | BOM lines, routing steps, and work instruction details |
 | `itemCost` / `costLedger` | Standard/average costs and cost history |
-| `itemReplenishment` / `itemPlanning` | Manufacturing settings (lot size, lead time, scrap %) and planning params |
+| `itemReplenishment` / `itemPlanning` | Manufacturing settings (lot size, lead time, scrap %) and planning params — per location: the reorder policy and its sizing parameters, `planningHorizonDays` (the item's time fence on the planning pages; empty = inherit the company default, 0 = no fence) and `responsibleEmployee` (the leaf rung of the MRP action owner ladder), all on `itemPlanningValidator` / `ItemPlanningForm`. `ItemReorderPolicy` sizes the tab's suggested orders with `computePlanningOrders` (`@carbon/utils`), the same sizing MRP uses; `api+/items.$id.$locationId.forecast.ts` nets `demandProjection.consumedQuantity` so the chart matches the planning grids |
 | `itemPostingGroup` | Maps item categories to GL accounts |
 | `unitOfMeasure` | UoM definitions |
 | `configurationParameter` / `configurationRule` / `configurationParameterGroup` | Product configurator |

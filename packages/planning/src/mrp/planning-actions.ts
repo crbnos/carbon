@@ -901,8 +901,9 @@ export async function generatePlanningActions(
 
   // Every read below is independent of the others, so they run together in
   // two groups instead of one after another (they were six waits in a row).
-  // Two groups, not one: the job pool has five connections, and the resolver
-  // alone takes five Kysely reads — the PostgREST views ride alongside it.
+  // Two groups, not one: the resolver alone takes five Kysely reads from the
+  // shared process pool, so a bounded group leaves connections for the run's
+  // other work — the PostgREST views ride alongside it.
   const [resolveAssignee, openPoLines, openJobs] = await Promise.all([
     loadResponsibleEmployeeResolver(db, companyId),
     // ── open supply (real documents change actions target)

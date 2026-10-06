@@ -14,7 +14,7 @@ A projection lives on the `demandProjection` table, keyed by item, location, and
 Only **make parts** carry projections. The item picker on the form is fixed to `type="Part"` with `replenishmentSystem="Make"` (`apps/erp/app/modules/production/ui/DemandProjection/DemandProjectionForm.tsx`), so you project the things you build. Their purchased components inherit demand through the BOM explosion, not through their own projection.
 
 <Callout type="note" title="Projection, not forecast">
-Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the <Term>MRP</Term> run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/planning/src/mrp/mrp.ts`). The Projections screen only ever touches `demandProjection`.
+Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the <Term>MRP</Term> run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/planning/src/mrp/mrp.ts`). The Demand Forecasts screen only ever touches `demandProjection`.
 </Callout>
 
 ## How you enter one
@@ -29,9 +29,9 @@ The entry grid spans 52 weeks (`WEEKS_TO_PROJECT = 52` in both `demand-forecasts
 
 Planning runs in-process from `@carbon/planning` (`runMrp`), and it reads `demandProjection` directly as a demand source (`packages/planning/src/mrp/mrp.ts`). But a projection does not simply add to demand: **actual demand consumes the forecast**. Each MRP run nets every open sales order line and job-material line against the projections for the same part and location — first in the order's own week, then reaching backward and then forward a configurable number of weeks — and only the *unconsumed remainder* of the projection still drives demand. Ten forecast plus ten on order in the same week is ten of demand, not twenty; twelve on order against ten forecast is twelve.
 
-The reach is set company-wide on the **Forecast Consumption** card under **Settings → Planning**: **Look back (weeks)** (default 4) and **Look ahead (weeks)** (default 1). That window is what heals gaps — if you forecast 10 in one week and 0 the next, a sales order landing in the empty week consumes the neighboring forecast instead of double-counting. Set both to 0 to net strictly within the same week. Each run persists what it consumed to `demandProjection.consumedQuantity`, so the planning screens, the item planning chart, and Inventory all read the same net number, and the grid shows a "consumed" note under each week that actual demand has claimed.
+The reach is set company-wide on the **Forecast Consumption** card under **Settings → Planning**: **Look back (weeks)** (default 4) and **Look ahead (weeks)** (default 1). That window is what heals gaps — if you forecast 10 in one week and 0 the next, a sales order landing in the empty week consumes the neighboring forecast instead of double-counting. Set both to 0 to net strictly within the same week. Each run persists what it consumed to `demandProjection.consumedQuantity`, so the planning screens, the item planning chart, and Inventory all read the same net number, and the edit form shows an "N consumed" note under each week that actual demand has claimed.
 
-Sales orders consume at their full open quantity — a Make to Order line already covered by its linked job still consumes the forecast that predicted it, even though the job, not the line, is what drives supply. Forecast in past weeks simply falls out of the horizon; it never lingers as phantom demand.
+Sales orders consume at their full open quantity — a Make to Order line already covered by its linked job still consumes the forecast that predicted it, even though the job, not the line, is what drives supply. An order dated before the current week is still demand, but it consumes no forecast; an order with no date counts as due now and does consume. Forecast in past weeks simply falls out of the horizon; it never lingers as phantom demand.
 
 <Callout type="note" title="Projections don't double-plan production you've already got in flight">
 Open production is handled on the *supply* side, not by consumption: firm job/PO supply is credited exactly once through the BOM explosion's running on-hand/supply balance, so a projection partway covered by in-flight jobs isn't planned twice. Consumption is the *demand*-side reconciliation — forecast versus actual orders — and the two never overlap.
@@ -51,7 +51,7 @@ The run turns projected demand into *suggested* jobs and purchase orders. Nothin
   <Field name="Week 1 … Week 52">Expected quantity consumed in each weekly bucket, starting from the current week. A blank or zero cell stores nothing.</Field>
 </FieldTable>
 
-Projections are manual inputs. Carbon does not calculate them from history, seasonality, or a statistical model. Although the schema reserves `forecastMethod` and `confidence`, the Projections form does not write them. MRP provides the netting and BOM explosion.
+Projections are manual inputs. Carbon does not calculate them from history, seasonality, or a statistical model. Although the schema reserves `forecastMethod` and `confidence`, the Demand Forecast form does not write them. MRP provides the netting and BOM explosion.
 
 <AgentContext>
 ## Troubleshooting
@@ -65,7 +65,7 @@ The item picker is fixed to parts with a **Make** replenishment system (`type="P
 Creating, editing, and deleting projections all require the **`production`** permission. Without it the actions are blocked. Have an admin grant production access.
 
 ### I edited `demandForecast` but my change was overwritten
-You never edit `demandForecast` by hand — it's planning's **output**, rebuilt on every <Term>MRP</Term> run (`forecastMethod = "mrp"`). Your input is `demandProjection`, edited only from the Projections screen. If you meant to change the projected numbers, edit them there and re-run MRP.
+You never edit `demandForecast` by hand — it's planning's **output**, rebuilt on every <Term>MRP</Term> run (`forecastMethod = "mrp"`). Your input is `demandProjection`, edited only from the Demand Forecasts screen. If you meant to change the projected numbers, edit them there and re-run MRP.
 
 ### Deleting a part's projection removed more than I expected
 Deleting a part's projections clears **every future week** for that item and location (current week and beyond), not just the visible tab. It's an all-or-nothing clear per item/location, so delete only when you mean to wipe the whole forward projection.
@@ -77,7 +77,7 @@ Open production you've already planned reduces what a projection drives — but 
 A blank or zero cell stores nothing — it's deleted rather than persisted, so the grid stays sparse. That's expected; only non-zero weeks become `demandProjection` rows.
 
 ### Planning shows less demand than my forecast
-That's forecast consumption working. Open sales orders and job materials for the same part and location consume the projection (own week first, then backward/forward per **Settings → Planning**), and planning drives only actuals plus the unconsumed remainder — so forecast and real orders are never double-counted. The grid's "consumed" note under a week shows how much actual demand has claimed. If you want strict same-week netting only, set both consumption windows to 0.
+That's forecast consumption working. Open sales orders and job materials for the same part and location consume the projection (own week first, then backward/forward per **Settings → Planning**), and planning drives only actuals plus the unconsumed remainder — so forecast and real orders are never double-counted. The edit form's "consumed" note under a week shows how much actual demand has claimed. If you want strict same-week netting only, set both consumption windows to 0.
 
 ### A sales order in a week with no forecast still reduced a neighboring week
 Also consumption, by design: the backward/forward window lets an order land in a gap between forecast entries and consume the nearest forecast instead of adding on top of it. Narrow the window in **Settings → Planning** if your forecasts are precise to the week.

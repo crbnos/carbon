@@ -480,8 +480,8 @@ export function PlanningActionLines({
   // per expanded row read as clutter — so `table-fixed` takes its column
   // widths from the `colgroup`, keeping cells aligned between rows; the widths
   // are sized to their widest content (incl. the primitives' px-6). The
-  // reason is a tooltip on an info icon beside the
-  // badge — a sentence per row is a column no width comfortably fits. The
+  // reason is the type badge's tooltip — a sentence per row is a column no
+  // width comfortably fits. The
   // grid lives in a half-width resizable pane, so the block is a container:
   // below @4xl the assignee is avatar-only, and narrower than the columns'
   // sum the block scrolls on its own rather than squeezing any column.

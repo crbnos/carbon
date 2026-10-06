@@ -4,7 +4,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 
 ## Key Domain Concepts
 
-- **Purchase Order (PO)** — document sent to a supplier. Statuses: Draft → Needs Approval → To Review → To Receive → To Receive and Invoice → To Invoice → Completed. MUST use `closePurchaseOrder` to close manually.
+- **Purchase Order (PO)** — document sent to a supplier. Statuses (`purchaseOrderStatusType`, `purchasing.models.ts`): Draft → Planned (from a planning suggestion) → Needs Approval → To Review → To Receive → To Receive and Invoice → To Invoice → Completed, plus Rejected and Closed. MUST use `closePurchaseOrder` to close manually.
 - **PO Revision** — `purchaseOrder.revisionId` counts amendments to a released order. Created ONLY when the header dropdown's "Create PO Revision" action posts `createRevision=true`; a plain Reopen never bumps. The write is `reopenPurchaseOrderAsRevision` (Kysely, `purchasing.service.ts`): a compare-and-swap that sets `revisionId = revisionId + 1` **in SQL** with the eligibility conditions (locked status + non-null `orderDate`) in the WHERE clause, so concurrent requests can't collide and an ineligible order matches 0 rows. `canCreatePurchaseOrderRevision` (`purchasing.models.ts`) is the matching pure predicate used to gate the menu item — keep the two in sync. Unlike quotes, a PO revision is in-place: no new row, receipts/invoices stay attached. Displayed as `PO000123-1` when > 0 via `getPurchaseOrderDisplayId` (`@carbon/documents/utils`) on the PDF, email, filenames, and UI; the two-tone in-app rendering uses `<RevisionSuffix>` (`~/components`).
 - **Supplier Interaction** — umbrella entity linking a supplier quote to RFQs, POs, and documents. A supplier quote always lives under an interaction.
 - **Supplier Quote** — vendor-side pricing with line-level price breaks (`supplierQuoteLinePrice`). Can be finalized (`finalizeSupplierQuote`) and converted to POs via the `convert` server function.
@@ -65,6 +65,8 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `finalizePurchaseOrder` / `finalizeSupplierQuote` — lock documents for processing
 - `sendSupplierQuote` — sends quote to supplier
 - `getPurchasingPlanning` — MRP-driven planned order view (RPC `get_purchasing_planning_grid`)
+- `applyPurchasingPlanningActions(db, { companyId, userId, actions })` — one Kysely transaction for a batch of planning actions on PO lines: the claim (Open → Actioned, returning each action's suggested quantity and date, which are what gets written), one `UPDATE … FROM (VALUES …)` for dates and one for quantities (`taxPairForQuantity` restates the tax pair), one `DELETE` for Cancels (Draft / Planned PO, nothing received or invoiced), then the refused claims are released. Returns `{ applied, alreadyApplied, refused, failed }`
+- `updatePurchaseOrderLineSchedule(client, db, args)` — planning's single-line write (the order drawer's inline edit): `requiredDate` or `purchaseQuantity` on a line of a Draft / Planned PO, the guard inside the UPDATE; returns `{ updated, error }`
 - `getSupplierApprovalContext` — reads approval workflow state
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
