@@ -134,7 +134,7 @@ export async function ensureDraftMakeMethod(
   });
   const failure = copied.error
     ? `its method could not be copied (${copied.error.message})`
-    : await carryLineOwnership(client, {
+    : await carryLineOwnership(client, serviceRole, {
         sourceMethodId: activeMethodId,
         targetMethodId: draftId,
         companyId,
@@ -215,10 +215,14 @@ async function discardDraft(
  * new ids, so without this every Onshape-owned line in the draft reads as
  * manual and the next push inserts a duplicate beside each.
  *
+ * The mappings are read with the service role, like every other reader of
+ * them; the new rows are written as the user.
+ *
  * Returns an error message, or null when the ownership carried across.
  */
 async function carryLineOwnership(
   client: Client,
+  serviceRole: Client,
   args: {
     sourceMethodId: string;
     targetMethodId: string;
@@ -228,7 +232,7 @@ async function carryLineOwnership(
 ): Promise<string | null> {
   const { sourceMethodId, targetMethodId, companyId, userId } = args;
 
-  const mappings = await client
+  const mappings = await serviceRole
     .from("externalIntegrationMapping")
     .select("entityId, externalId, metadata, lastSyncedAt")
     .eq("companyId", companyId)

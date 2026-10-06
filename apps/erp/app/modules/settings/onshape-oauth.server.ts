@@ -21,6 +21,8 @@ import {
   patchOnshapeOAuthGrant
 } from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { IntegrationErrorCode } from "./integration-errors";
@@ -179,9 +181,9 @@ export async function completeOnshapeAuthorization({
         {
           accessToken: tokenData.access_token,
           refreshToken: tokenData.refresh_token,
-          expiresAt: new Date(
-            Date.now() + (tokenData.expires_in ?? 3600) * 1000
-          ).toISOString(),
+          expiresAt: parseAbsolute(datetime.timestamp(), "UTC")
+            .add({ seconds: tokenData.expires_in ?? 3600 })
+            .toAbsoluteString(),
           scope,
           baseUrl: oauth.baseUrl,
           canWrite: onshapeConnectionHasWriteScope({ scope }),

@@ -47,6 +47,7 @@ import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import { ensureDraftMakeMethod } from "~/modules/settings/onshape-draft-method.server";
 import {
+  applyItemManufacturingEdits,
   claimManualMethodLine,
   insertOwnedMethodLines,
   type OwnedMethodLine,
@@ -110,7 +111,9 @@ export async function action({ request }: ActionFunctionArgs) {
     request,
     {
       create: "parts",
-      update: "parts"
+      update: "parts",
+      // Re-pushing replaces the BOM lines an earlier push wrote.
+      delete: "parts"
     }
   );
 
@@ -299,21 +302,26 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const planned = textByPartNumber.get(partNumber);
       const text = planned && planned.itemId === found.id ? planned.text : {};
-      const update = {
-        ...(mfg?.ok ? mfg.changed : {}),
-        ...text
-      };
-      if (Object.keys(update).length > 0) {
+      if (Object.keys(text).length > 0) {
         const updated = await client
           .from("item")
-          .update({ ...update, updatedBy: userId })
+          .update({ ...text, updatedBy: userId })
           .eq("id", found.id)
           .eq("companyId", companyId);
         if (updated.error) {
           summary.errors.push(`${partNumber}: ${updated.error.message}`);
-        } else if (Object.keys(text).length > 0) {
+        } else {
           summary.descriptionsUpdated += 1;
         }
+      }
+      if (mfg?.ok && Object.keys(mfg.changed).length > 0) {
+        const error = await applyItemManufacturingEdits(client, db, {
+          itemId: found.id,
+          companyId,
+          userId,
+          changed: mfg.changed
+        });
+        if (error) summary.errors.push(`${partNumber}: ${error}`);
       }
       return found;
     }

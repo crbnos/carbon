@@ -7,6 +7,11 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  cascadeItemTrackingType,
+  updateItemMethodAndSourcing
+} from "~/modules/items";
 
 /**
  * The panel pushes' multi-row writes that must land together, as Kysely
@@ -223,5 +228,73 @@ export async function claimManualMethodLine(
       mappingId: null,
       error: error instanceof Error ? error.message : "line takeover failed"
     };
+  }
+}
+
+type ItemEnums = Database["public"]["Enums"];
+
+/**
+ * Write a reviewer's manufacturing-field edits to an existing item the way the
+ * items update route does, so what depends on those fields follows:
+ * replenishment and method type through `updateItemMethodAndSourcing`, which
+ * mirrors the method type onto Draft method materials, and tracking type
+ * through `cascadeItemTrackingType`. Returns an error message, or null.
+ */
+export async function applyItemManufacturingEdits(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    changed: {
+      replenishmentSystem?: ItemEnums["itemReplenishmentSystem"];
+      defaultMethodType?: ItemEnums["methodType"];
+      itemTrackingType?: ItemEnums["itemTrackingType"];
+    };
+  }
+): Promise<string | null> {
+  const { itemId, companyId, userId } = args;
+  const { replenishmentSystem, defaultMethodType, itemTrackingType } =
+    args.changed;
+  try {
+    if (replenishmentSystem !== undefined || defaultMethodType !== undefined) {
+      await updateItemMethodAndSourcing(db, {
+        itemIds: [itemId],
+        companyId,
+        userId,
+        itemUpdate: { replenishmentSystem, defaultMethodType },
+        cascade:
+          defaultMethodType !== undefined
+            ? { methodType: defaultMethodType }
+            : {}
+      });
+    }
+    if (itemTrackingType !== undefined) {
+      const updated = await client
+        .from("item")
+        .update({
+          itemTrackingType,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", itemId)
+        .eq("companyId", companyId);
+      if (updated.error) return updated.error.message;
+      await cascadeItemTrackingType(db, {
+        itemIds: [itemId],
+        companyId,
+        newType: itemTrackingType,
+        userId
+      });
+    }
+    return null;
+  } catch (error) {
+    logger.error("Failed to write manufacturing edits from Onshape", {
+      companyId,
+      itemId,
+      error
+    });
+    return error instanceof Error ? error.message : "Failed to update the item";
   }
 }

@@ -31,7 +31,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
-import { swapItemMapping } from "~/modules/settings/onshape-push.server";
+import {
+  applyItemManufacturingEdits,
+  swapItemMapping
+} from "~/modules/settings/onshape-push.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export const config = {
@@ -259,17 +262,14 @@ export async function action({ request }: ActionFunctionArgs) {
         continue;
       }
       if (mfg?.ok && Object.keys(mfg.changed).length > 0 && row.itemId) {
-        const updated = await client
-          .from("item")
-          .update({ ...mfg.changed, updatedBy: userId })
-          .eq("id", row.itemId)
-          .eq("companyId", companyId);
-        if (updated.error) {
-          results.push({
-            partId,
-            action: "error",
-            message: updated.error.message
-          });
+        const error = await applyItemManufacturingEdits(client, db, {
+          itemId: row.itemId,
+          companyId,
+          userId,
+          changed: mfg.changed
+        });
+        if (error) {
+          results.push({ partId, action: "error", message: error });
           continue;
         }
         results.push({
@@ -357,11 +357,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const updated = await client
         .from("item")
-        .update({
-          ...ownedFields(row),
-          ...(mfg?.ok ? mfg.changed : {}),
-          updatedBy: userId
-        })
+        .update({ ...ownedFields(row), updatedBy: userId })
         .eq("id", itemId)
         .eq("companyId", companyId);
       if (updated.error) {
@@ -371,6 +367,18 @@ export async function action({ request }: ActionFunctionArgs) {
           message: updated.error.message
         });
         continue;
+      }
+      if (mfg?.ok && Object.keys(mfg.changed).length > 0) {
+        const error = await applyItemManufacturingEdits(client, db, {
+          itemId,
+          companyId,
+          userId,
+          changed: mfg.changed
+        });
+        if (error) {
+          results.push({ partId, action: "error", message: error });
+          continue;
+        }
       }
       const owned = ownedCustomFieldValues(row);
       if (owned) {

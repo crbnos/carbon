@@ -4,6 +4,7 @@
 
 import type { Integration } from "@carbon/ee";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
+import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
   Badge,
@@ -26,6 +27,8 @@ import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { path } from "~/utils/path";
 import { InstallModeDialog } from "./InstallModeDialog";
+
+const logger = getLogger("erp", "settings", "integrations");
 
 /** Mirrors `IntegrationHealthStatus` in settings.server (not importable here). */
 type IntegrationHealthStatus =
@@ -167,11 +170,11 @@ export function IntegrationCard({
       try {
         await integration.onClientInstall();
       } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : `Couldn't start the ${integration.name} connection`
-        );
+        logger.error("Client install failed", {
+          integration: integration.id,
+          error
+        });
+        toast.error(`Couldn't start the ${integration.name} connection`);
       }
     } else {
       const formData = new FormData();
