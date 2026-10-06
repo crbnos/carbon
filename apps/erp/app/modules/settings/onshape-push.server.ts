@@ -231,6 +231,96 @@ export async function claimManualMethodLine(
   }
 }
 
+/**
+ * Put an item a push created under a change notice, the way
+ * `createChangeNoticeDraftMethod` stages a Revision or a New Part: the item is
+ * inactive, it and its Draft make method carry the notice's id, and an
+ * affected-item row points at both. Releasing the notice then activates the
+ * Draft, reveals the item and, for a Revision, writes the old-to-new
+ * supersession. The stamps and the row land together or not at all.
+ */
+export async function stageChangeNoticeItem(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    /** `changeOrder.id`, not its readable id. */
+    changeOrderId: string;
+    companyId: string;
+    userId: string;
+    itemId: string;
+    /** The revision this one replaces; null for a New Part. */
+    baseItemId: string | null;
+    sortOrder: number;
+  }
+): Promise<{ error: string | null }> {
+  const { changeOrderId, companyId, userId, itemId, baseItemId } = args;
+  const now = datetime.timestamp();
+  try {
+    await db.transaction().execute(async (trx) => {
+      const draft = await trx
+        .selectFrom("makeMethod")
+        .select("id")
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .orderBy("version", "desc")
+        .executeTakeFirst();
+      // Release refuses an affected item with no Draft to activate.
+      if (!draft) throw new Error("the item has no Draft make method");
+      const base = baseItemId
+        ? await trx
+            .selectFrom("activeMakeMethods")
+            .select("id")
+            .where("itemId", "=", baseItemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+
+      await trx
+        .updateTable("item")
+        .set({
+          active: false,
+          changeOrderId,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .updateTable("makeMethod")
+        .set({ changeOrderId, updatedBy: userId, updatedAt: now })
+        .where("id", "=", draft.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .insertInto("changeOrderAffectedItem")
+        .values({
+          changeOrderId,
+          itemId: baseItemId ?? itemId,
+          changeType: baseItemId ? "Revision" : "New Part",
+          sortOrder: args.sortOrder,
+          draftMakeMethodId: draft.id,
+          baseMakeMethodId: base?.id ?? null,
+          newItemId: itemId,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    });
+    return { error: null };
+  } catch (error) {
+    logger.error("Failed to stage an item under a change notice", {
+      companyId,
+      changeOrderId,
+      itemId,
+      error
+    });
+    return {
+      error: error instanceof Error ? error.message : "staging failed"
+    };
+  }
+}
+
 type ItemEnums = Database["public"]["Enums"];
 
 /**

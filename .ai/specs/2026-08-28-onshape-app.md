@@ -2,7 +2,8 @@
 
 - **Status:** Implemented on `feat/onshape-app` (PR #1591, pending review)
 - **Date:** 2026-08-28; amended 2026-09-13 (own integration, push defaults,
-  Draft on released methods, three-page panel)
+  Draft on released methods, three-page panel); 2026-10-06 (release pushes
+  stage under their change notice)
 - **User docs:** `docs/content/docs/integrations/cad.mdx`
 - **Author:** Raul (with Claude)
 
@@ -100,17 +101,19 @@ Deployment requirements the split adds:
 - Releases are reconstructed from `GET /revisions/d/{did}` grouped by
   releaseId (Onshape has no packages-by-document endpoint; one call).
 - Per released part/assembly: ensure a Carbon item at the released revision
-  letter — `createRevision` from the base item (created **active** and made
-  the **default** via `updateDefaultRevision`, so consuming lines cut over) —
-  or a fresh item when the part number was never in Carbon.
+  letter — `createRevision` from the base item, or a fresh item when the part
+  number was never in Carbon.
 - Released assemblies apply their version-scoped BOM to the new revision's
   Draft method. The revision copy's Onshape-origin lines are deduped through
   the base method's mapping tuples, so manual lines survive into the new
   revision. Children resolve to the same release's letter items first, then
   any existing item (one bulk lookup — purchased hardware isn't re-minted).
-- One **Draft** change notice records the push (Revision affected rows with
-  base item, `newItemId`, draft + base methods). Releasing methods and
-  production cutover stay with the user.
+- What the push creates is staged under one **Draft** change notice, as
+  Carbon's own Revision / New Part affected items are: inactive, item and
+  Draft method stamped with the notice, affected rows with base item,
+  `newItemId`, draft + base methods. Releasing the notice in Carbon activates
+  them and supersedes the old revisions. Without a notice (API only) they are
+  created **active** and made the **default** via `updateDefaultRevision`.
 - Assets export at the released version per item; released drawings attach as
   PDF via the panel-sync job's `drawing` branch (exact part-number match).
 - Idempotent on the release's part number + letter pairs; re-push re-applies
@@ -170,9 +173,8 @@ documented defaults (Make / Make to Order / Pull from Inventory / Inventory /
 unit resolved from the company's list), because a plan must always build.
 `reconcilePushDefaults` keeps the replenishment↔method pair one the Part form
 would accept; purchased BOM rows are always Buy. Edited on the panel's
-Settings page (`panel.preferences` POST). Release behaviour — record a change
-notice, make new revisions the default — is per push on the review, not a
-default.
+Settings page (`panel.preferences` POST). Release behaviour is fixed, not a
+default: the review states the change notice it records.
 
 ### Three pages (2026-09-13)
 

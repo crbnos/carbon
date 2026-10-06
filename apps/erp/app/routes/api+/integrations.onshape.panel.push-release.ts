@@ -42,6 +42,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import {
   createRevision,
+  deleteChangeNotice,
   type getItem,
   insertChangeNotice,
   updateDefaultRevision,
@@ -51,6 +52,7 @@ import {
   applyItemManufacturingEdits,
   insertOwnedMethodLines,
   type OwnedMethodLine,
+  stageChangeNoticeItem,
   swapItemMapping
 } from "~/modules/settings/onshape-push.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
@@ -170,7 +172,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const plan = stored.plan as StoredReleasePlan;
   const makeDefault = parsed.data.makeDefault ?? plan.makeDefault;
-  // Unset: record a notice whenever this push creates something, decided after the writes.
+  // Unset: a notice whenever this push creates something.
   const createChangeNoticeChoice = parsed.data.createChangeNotice;
 
   // Merge the review's edits before any write.
@@ -458,6 +460,63 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // A notice stages what this push creates: each new revision or item is
+  // inactive and owned by the notice until it is released in Carbon. Created
+  // first, so every item is tied to it as it is written.
+  let changeNotice: { id: string; changeNoticeId: string } | null = null;
+  if (
+    (createChangeNoticeChoice ?? true) &&
+    decisions.some((decision) => decision.kind !== "reuse")
+  ) {
+    const description = changeNoticeDescriptionJson(
+      changeNoticeValues.description
+    );
+    const inserted = await insertChangeNotice(client, {
+      companyId,
+      createdBy: userId,
+      name: changeNoticeValues.name,
+      // Tiptap JSON; omitted, not nulled, when empty.
+      ...(description ? { description: description as Json } : {}),
+      openDate: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString()
+    });
+    if (inserted.error || !inserted.data) {
+      return data(
+        {
+          error: `Couldn't create the change notice (${
+            inserted.error?.message ?? "no row returned"
+          }); nothing was written. Review and push again.`
+        },
+        { status: 500 }
+      );
+    }
+    changeNotice = inserted.data;
+    summary.changeNotice = inserted.data.changeNoticeId;
+  }
+  let noticeSortOrder = 0;
+  const stageInNotice = async (
+    label: string,
+    itemId: string,
+    baseItemId: string | null
+  ) => {
+    if (!changeNotice) return;
+    const staged = await stageChangeNoticeItem(db, {
+      changeOrderId: changeNotice.id,
+      companyId,
+      userId,
+      itemId,
+      baseItemId,
+      sortOrder: noticeSortOrder
+    });
+    noticeSortOrder += 1;
+    if (staged.error) {
+      summary.errors.push(
+        `${label}: written but not added to change notice ${changeNotice.changeNoticeId} (${staged.error})`
+      );
+    }
+  };
+
   for (const decision of decisions) {
     const { item } = decision;
     if (decision.kind === "reuse") {
@@ -478,7 +537,7 @@ export async function action({ request }: ActionFunctionArgs) {
         item: full,
         revision: item.revision,
         createdBy: userId,
-        active: true
+        active: !changeNotice
       });
       if (inserted.error || !inserted.data) {
         summary.errors.push(
@@ -504,6 +563,11 @@ export async function action({ request }: ActionFunctionArgs) {
         baseItemId: decision.base.id
       });
       summary.revisionsCreated += 1;
+      await stageInNotice(
+        `${item.partNumber} Rev ${item.revision}`,
+        row.id,
+        decision.base.id
+      );
     } else {
       // `upsertPart` reads the new id back by readableId, safe only because no other revision exists.
       const { proposed } = decision;
@@ -535,6 +599,11 @@ export async function action({ request }: ActionFunctionArgs) {
         baseItemId: null
       });
       summary.itemsCreated += 1;
+      await stageInNotice(
+        `${item.partNumber} Rev ${item.revision}`,
+        row.id,
+        null
+      );
     }
 
     revisionItemByPartNumber.set(item.partNumber, row);
@@ -543,12 +612,28 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   summary.alreadyPushed = created.length === 0;
+  if (changeNotice && created.length === 0) {
+    // Every create failed, so the notice holds nothing.
+    const dropped = await deleteChangeNotice(
+      client,
+      db,
+      changeNotice.id,
+      companyId
+    );
+    if (dropped.error) {
+      summary.errors.push(
+        `Change notice ${changeNotice.changeNoticeId} is empty and could not be removed (${dropped.error.message})`
+      );
+    } else {
+      summary.changeNotice = null;
+    }
+    changeNotice = null;
+  }
 
   // Pass 2: BOMs for released assemblies. Any read failure skips every BOM write:
   // deleting or inserting on a partial read duplicates or orphans lines.
   let bomReadFailure: string | null = null;
 
-  // Reused by the change notice: nothing this route writes changes which method is active.
   const methodByItemId = new Map(baseMethodByItemId);
   try {
     for (const [itemId, method] of await loadActiveMakeMethods(
@@ -953,7 +1038,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Make Default repoints sibling revisions' methodMaterial lines to the new revision.
-  if (makeDefault) {
+  // A staged revision is left out: until its notice is released it is inactive,
+  // and the release supersedes the old revision instead.
+  if (makeDefault && !changeNotice) {
     for (const entry of created) {
       if (!entry.baseItemId) continue; // brand-new item: it is the only revision
       const updated = await updateDefaultRevision(client, {
@@ -970,56 +1057,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Pass 4: one Draft change notice for what this push created.
-  if (created.length > 0 && (createChangeNoticeChoice ?? true)) {
-    const description = changeNoticeDescriptionJson(
-      changeNoticeValues.description
-    );
-    const changeNotice = await insertChangeNotice(client, {
-      companyId,
-      createdBy: userId,
-      name: changeNoticeValues.name,
-      // Tiptap JSON; omitted, not nulled, when empty.
-      ...(description ? { description: description as Json } : {}),
-      openDate: datetime
-        .today(await getCompanyTimeZone(client, companyId))
-        .toString()
-    });
-    if (changeNotice.error || !changeNotice.data) {
-      summary.errors.push(
-        `Change notice: ${changeNotice.error?.message ?? "failed to create"}`
-      );
-    } else {
-      summary.changeNotice = changeNotice.data.changeNoticeId;
-      let sortOrder = 0;
-      for (const entry of created) {
-        const draftMethod = methodByItemId.get(entry.itemId);
-        const baseMethod = entry.baseItemId
-          ? methodByItemId.get(entry.baseItemId)
-          : null;
-        const affected = await client.from("changeOrderAffectedItem").insert({
-          changeOrderId: changeNotice.data.id,
-          itemId: entry.baseItemId ?? entry.itemId,
-          changeType: entry.baseItemId ? "Revision" : "New Part",
-          sortOrder,
-          draftMakeMethodId:
-            draftMethod?.status === "Draft" ? draftMethod.id : null,
-          baseMakeMethodId: baseMethod?.id ?? null,
-          newItemId: entry.baseItemId ? entry.itemId : null,
-          companyId,
-          createdBy: userId
-        } as any);
-        if (affected.error) {
-          summary.errors.push(
-            `Change notice item ${entry.partNumber}: ${affected.error.message}`
-          );
-        }
-        sortOrder += 1;
-      }
-    }
-  }
-
-  // Pass 5: asset exports at the released versions.
+  // Pass 4: asset exports at the released versions.
   const assetTargets: Array<{
     item: ReleasePlanItem;
     itemId: string;
