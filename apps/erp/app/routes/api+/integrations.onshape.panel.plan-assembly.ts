@@ -62,7 +62,9 @@ export async function action({ request }: ActionFunctionArgs) {
     request,
     {
       create: "parts",
-      update: "parts"
+      update: "parts",
+      // Re-pushing replaces the BOM lines an earlier push wrote.
+      delete: "parts"
     }
   );
 

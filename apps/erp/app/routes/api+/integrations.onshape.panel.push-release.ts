@@ -48,6 +48,7 @@ import {
   upsertPart
 } from "~/modules/items";
 import {
+  applyItemManufacturingEdits,
   insertOwnedMethodLines,
   type OwnedMethodLine,
   swapItemMapping
@@ -138,7 +139,9 @@ export async function action({ request }: ActionFunctionArgs) {
     request,
     {
       create: "parts",
-      update: "parts"
+      update: "parts",
+      // Re-pushing replaces the BOM lines an earlier push wrote.
+      delete: "parts"
     }
   );
 
@@ -255,14 +258,13 @@ export async function action({ request }: ActionFunctionArgs) {
       return;
     }
     if (Object.keys(mfg.changed).length === 0) return;
-    const updated = await client
-      .from("item")
-      .update({ ...mfg.changed, updatedBy: userId })
-      .eq("id", itemId)
-      .eq("companyId", companyId);
-    if (updated.error) {
-      summary.errors.push(`${partNumber}: ${updated.error.message}`);
-    }
+    const error = await applyItemManufacturingEdits(client, db, {
+      itemId,
+      companyId,
+      userId,
+      changed: mfg.changed
+    });
+    if (error) summary.errors.push(`${partNumber}: ${error}`);
   };
 
   // Re-read every part number (all revisions): the plan may be minutes old.
