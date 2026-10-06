@@ -150,6 +150,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   React Router skips `handleError` for it, so an unlogged throw leaves no server trace.
 - Also log failures you deliberately swallow (best-effort cleanup, ignored
   `{ error }` results, `.catch(() => {})`).
+- The body of a thrown 4xx `Response` is shown to the user on the route error
+  screen (`routeErrorCopy`, `@carbon/react`), with its status. Write it for a
+  person and say what was wrong ("The item could not be found…"); never pass a
+  database or provider error as the body. A 5xx body is not shown.
 - Redirects (`throw redirect(...)`) are control flow, not errors; no log needed.
 
 ## Components & UI Library
