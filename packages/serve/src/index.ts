@@ -26,6 +26,7 @@ import { constants } from "node:zlib";
 import fastifyCompress from "@fastify/compress";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
+import Negotiator from "negotiator";
 import {
   createRequestHandler,
   RouterContextProvider,
@@ -71,19 +72,15 @@ const SHORT = "public, max-age=3600";
 const NEVER_A_PAGE = /^\/(assets|_vercel)\//;
 
 /**
- * Whether an `Accept-Encoding` header names Brotli and does not rule it out:
- * `br;q=0` is a caller saying it cannot take it.
+ * Whether an `Accept-Encoding` header takes Brotli. Left to `negotiator`,
+ * which is what Express answers this with: `br;q=0` is a refusal, `*`
+ * takes it, and a refusal outranks a `*` beside it.
  */
 export function takesBrotli(header: string | string[] | undefined): boolean {
-  for (const part of String(header ?? "").split(",")) {
-    const [name, ...params] = part.split(";").map((piece) => piece.trim());
-    if (name?.toLowerCase() !== "br") continue;
-    const quality = params.find((param) =>
-      param.toLowerCase().startsWith("q=")
-    );
-    return quality === undefined || Number(quality.slice(2)) > 0;
-  }
-  return false;
+  const negotiator = new Negotiator({
+    headers: { "accept-encoding": header }
+  });
+  return negotiator.encodings(["br"]).length > 0;
 }
 
 const contentType = (file: string) =>

@@ -3631,6 +3631,9 @@ importers:
       fastify:
         specifier: 'catalog:'
         version: 5.12.5
+      negotiator:
+        specifier: 1.0.0
+        version: 1.0.0
       react-router:
         specifier: 'catalog:'
         version: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3638,6 +3641,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@types/negotiator':
+        specifier: 0.6.5
+        version: 0.6.5
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
@@ -10790,6 +10796,9 @@ packages:
 
   '@types/mysql@2.15.27':
     resolution: {integrity: sha512-YfWiV16IY0OeBfBCk8+hXKmdTKrKlwKN1MNKAPBu5JYxLwBEZl7QzeEpGnlZb3VMGJrrGmB84gXiH+ofs/TezA==}
+
+  '@types/negotiator@0.6.5':
+    resolution: {integrity: sha512-MPOlB48mfWhoUlynY0ga7CFsXIPcH6vGPkjzXMn2p+4PH1QUyn2KPtw0hrLLmO6SaX4zse3X6h2x/083vveAlA==}
 
   '@types/node@20.19.39':
     resolution: {integrity: sha512-orrrD74MBUyK8jOAD/r0+lfa1I2MO6I+vAkmAWzMYbCcgrN4lCrmK52gRFQq/JRxfYPfonkr4b0jcY7Olqdqbw==}
@@ -25554,6 +25563,8 @@ snapshots:
   '@types/mysql@2.15.27':
     dependencies:
       '@types/node': 22.19.7
+
+  '@types/negotiator@0.6.5': {}
 
   '@types/node@20.19.39':
     dependencies:

@@ -32,9 +32,12 @@ describe("takesBrotli", () => {
   it("is what the header says, a refusal included", () => {
     expect(takesBrotli("gzip, deflate, br")).toBe(true);
     expect(takesBrotli("BR;q=0.5, gzip")).toBe(true);
+    expect(takesBrotli("*")).toBe(true);
     expect(takesBrotli("gzip, br;q=0")).toBe(false);
     expect(takesBrotli("gzip, br; q=0.0")).toBe(false);
+    expect(takesBrotli("br;q=0, *")).toBe(false);
     expect(takesBrotli("gzip, brotli")).toBe(false);
+    expect(takesBrotli("")).toBe(false);
     expect(takesBrotli(undefined)).toBe(false);
   });
 });

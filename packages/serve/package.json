@@ -4,10 +4,12 @@
     "@fastify/compress": "catalog:",
     "@fastify/static": "catalog:",
     "fastify": "catalog:",
+    "negotiator": "1.0.0",
     "react-router": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@types/negotiator": "0.6.5",
     "@types/node": "20.19.39",
     "typescript": "catalog:",
     "vitest": "catalog:"
