@@ -698,11 +698,17 @@ type AppShellRows = {
  */
 export async function getAppShell(
   client: SupabaseClient<Database>,
-  companyId: string,
+  // Absent for someone who has signed in and has no company yet.
+  companyId: string | null | undefined,
   userId: string
 ) {
   const result = await client.rpc("get_app_shell", {
-    company_id: companyId,
+    // Sent as null, never left out. An undefined key is dropped from the
+    // request, the API then looks for a `get_app_shell(user_id)` that does
+    // not exist, and a first sign-in was logged straight back out instead
+    // of being sent to onboarding. With null the function runs and returns
+    // the user with no company rows.
+    company_id: (companyId ?? null) as string,
     user_id: userId
   });
   if (result.error || !result.data) {

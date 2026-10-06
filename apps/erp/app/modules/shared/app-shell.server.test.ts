@@ -53,6 +53,21 @@ describe("getAppShell", () => {
     expect(shell.data?.groups).toEqual(["g1"]);
   });
 
+  it("asks with a null company for a user who has none yet", async () => {
+    const { client, rpc } = clientReturning({
+      data: { companies: [], groups: [], user: { id: "u1" } },
+      error: null
+    });
+    const shell = await getAppShell(client, undefined, "u1");
+    // The key must be present: dropped, the API finds no such function.
+    expect(rpc).toHaveBeenCalledWith("get_app_shell", {
+      company_id: null,
+      user_id: "u1"
+    });
+    expect(shell.error).toBeNull();
+    expect(shell.data?.user).toEqual({ id: "u1" });
+  });
+
   it("returns the error and no data when the read fails", async () => {
     const error = { message: "boom" };
     const { client } = clientReturning({ data: null, error });
