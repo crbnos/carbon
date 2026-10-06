@@ -6,15 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
-import { datetime, isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Await, Outlet, useLoaderData, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
@@ -22,7 +20,6 @@ import { getConfigurationParameters } from "~/modules/items";
 import type { JobMethodTreeItem } from "~/modules/production";
 import {
   getJob,
-  getJobDocuments,
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
   getJobOrderStatusMap,
@@ -76,13 +73,27 @@ export const handle: Handle = {
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId
   ),
-  module: "production"
+  module: "production",
+  // Everything the job's pages show: an operation finished on the shop floor,
+  // a pick, a step record — all reach this page without a reload.
+  realtime: [
+    { table: "job", column: "id", param: "jobId" },
+    { table: "jobOperation", column: "jobId", param: "jobId" },
+    { table: "jobMaterial", column: "jobId", param: "jobId" },
+    { table: "jobMakeMethod", column: "jobId", param: "jobId" },
+    { table: "jobOperationStep", column: "jobId", param: "jobId" },
+    { table: "jobOperationStepRecord", column: "jobId", param: "jobId" },
+    { table: "productionEvent", column: "jobId", param: "jobId" },
+    { table: "pickingListLine", column: "jobId", param: "jobId" },
+    {
+      // The job's own model. A job without one follows none: attaching a model
+      // changes the job row, which is followed above.
+      table: "modelUpload",
+      filter: ({ data }) =>
+        data?.job?.modelUploadId ? `id=eq.${data.job.modelUploadId}` : false
+    }
+  ]
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["jobId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -133,7 +144,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
-    files: getJobDocuments(client, companyId, job.data),
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),
     method: getJobMethodTree(client, jobId), // returns a promise
     orderStatus: getJobOrderStatus(
@@ -188,7 +198,7 @@ export default function JobRoute() {
               }
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={<JobProperties key={jobId} />}

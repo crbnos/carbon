@@ -6,8 +6,9 @@
 //!
 //! Reads the GLBs this service produces — plain buffers (`convert`) and
 //! `EXT_meshopt_compression` (`optimize`) — walks the scene, and rasterises every
-//! triangle into a z-buffer from the viewer's default direction (front-top-right
-//! isometric, Z up). The background is transparent; the model is lit by two
+//! triangle into a z-buffer through the viewer's camera: a 45° perspective
+//! from its default direction (front-top-right, Z up) unless the caller names
+//! another. The background is transparent; the model is lit by two
 //! fixed lights and coloured by each material's `baseColorFactor`.
 //!
 //! Textures, vertex colours and Draco-compressed primitives are not read: the
@@ -29,8 +30,14 @@ const SUPERSAMPLE: usize = 3;
 const MARGIN: f32 = 0.06;
 /// Colour of a primitive with no material — the converter's default part grey.
 const DEFAULT_COLOR: [f32; 3] = [0.65, 0.65, 0.65];
-/// Towards the camera. The viewer frames a model from here (`ModelCanvas`).
-const VIEW_DIRECTION: [f32; 3] = [1.0, -1.0, 1.0];
+/// From the model towards the camera. The viewer's home view (`AssemblyViewer`'s
+/// camera at `[100, -100, 100]`).
+pub const DEFAULT_DIRECTION: [f32; 3] = [1.0, -1.0, 1.0];
+/// The viewer's vertical field of view, and how far back it stands to fit the
+/// model's bounding sphere (`frameBox` in `ModelCanvas`). Kept the same here so
+/// a thumbnail has the perspective the viewer shows.
+const FOV_DEGREES: f32 = 45.0;
+const FIT_MARGIN: f32 = 1.1;
 /// A malformed scene whose nodes form a cycle would otherwise never finish.
 const MAX_NODE_VISITS: usize = 1_000_000;
 /// Ceilings on what one render holds in memory. The counts in a GLB are the
@@ -57,15 +64,17 @@ fn err<T>(message: impl Into<String>) -> Result<T, ThumbnailError> {
     Err(ThumbnailError(message.into()))
 }
 
-/// Render `glb` to a `size`×`size` RGBA PNG.
-pub fn render_png(glb: &[u8], size: u32) -> Result<Vec<u8>, ThumbnailError> {
+/// Render `glb` to a `size`×`size` RGBA PNG, seen from `direction` (model
+/// towards camera, Z up). A direction that is not a usable vector falls back to
+/// [`DEFAULT_DIRECTION`].
+pub fn render_png(glb: &[u8], size: u32, direction: [f32; 3]) -> Result<Vec<u8>, ThumbnailError> {
     let size = size.clamp(MIN_SIZE, MAX_SIZE) as usize;
     let doc = Doc::parse(glb)?;
     let triangles = doc.triangles()?;
     if triangles.indices.is_empty() {
         return err("GLB has no triangles to render");
     }
-    let rgba = rasterize(&triangles, size)?;
+    let rgba = rasterize(&triangles, size, direction)?;
     Ok(encode_png(&rgba, size))
 }
 
@@ -554,10 +563,26 @@ fn normalize(v: [f32; 3]) -> [f32; 3] {
 
 // ---- Rasteriser ---------------------------------------------------------------
 
-/// Orthographic z-buffer render to straight-alpha RGBA, `size`×`size`.
-fn rasterize(triangles: &Triangles, size: usize) -> Result<Vec<u8>, ThumbnailError> {
-    let toward = normalize(VIEW_DIRECTION);
-    let right = normalize(cross([0.0, 0.0, 1.0], toward));
+/// Perspective z-buffer render to straight-alpha RGBA, `size`×`size`.
+fn rasterize(
+    triangles: &Triangles,
+    size: usize,
+    direction: [f32; 3],
+) -> Result<Vec<u8>, ThumbnailError> {
+    // Scaled by its largest component first: squaring a large but finite
+    // direction overflows, and its length would come out infinite.
+    let largest = direction.iter().fold(0.0f32, |m, c| m.max(c.abs()));
+    let usable = direction.iter().all(|c| c.is_finite()) && largest > 0.0;
+    let toward = normalize(if usable {
+        direction.map(|c| c / largest)
+    } else {
+        DEFAULT_DIRECTION
+    });
+    // Straight down (or up) the Z axis there is no "right" to derive from Z.
+    let right = match cross([0.0, 0.0, 1.0], toward) {
+        r if dot(r, r) > 1e-12 => normalize(r),
+        _ => [1.0, 0.0, 0.0],
+    };
     let up = cross(toward, right);
     // Key light over the viewer's left shoulder, a weaker fill from the right.
     let key = normalize([
@@ -571,11 +596,45 @@ fn rasterize(triangles: &Triangles, size: usize) -> Result<Vec<u8>, ThumbnailErr
         toward[2] + 0.9 * right[2] - 0.2 * up[2],
     ]);
 
-    // Screen x / y and depth (larger is nearer) for every vertex.
+    // The camera stands where the viewer's does: looking at the centre of the
+    // bounding box, far enough back that the bounding sphere fits the view.
+    let mut lo = [f32::INFINITY; 3];
+    let mut hi = [f32::NEG_INFINITY; 3];
+    for p in triangles
+        .positions
+        .iter()
+        .filter(|p| p.iter().all(|c| c.is_finite()))
+    {
+        for axis in 0..3 {
+            lo[axis] = lo[axis].min(p[axis]);
+            hi[axis] = hi[axis].max(p[axis]);
+        }
+    }
+    if !(lo[0] <= hi[0]) {
+        return err("GLB has no finite geometry to render");
+    }
+    let centre = [
+        (lo[0] + hi[0]) / 2.0,
+        (lo[1] + hi[1]) / 2.0,
+        (lo[2] + hi[2]) / 2.0,
+    ];
+    let diagonal = sub(hi, lo);
+    let radius = (dot(diagonal, diagonal).sqrt() / 2.0).max(f32::MIN_POSITIVE);
+    // In units of the radius, so a model renders the same at any scale.
+    let distance = (FIT_MARGIN / (FOV_DEGREES.to_radians() / 2.0).tan()).max(1.5);
+
+    // Screen x / y and depth (larger is nearer) for every vertex. The depth is
+    // 1/distance-along-the-view, which is what stays linear across a triangle
+    // on screen under perspective.
     let projected: Vec<[f32; 3]> = triangles
         .positions
         .iter()
-        .map(|p| [dot(*p, right), dot(*p, up), dot(*p, toward)])
+        .map(|p| {
+            let local = sub(*p, centre).map(|c| c / radius);
+            // Every vertex is inside the unit sphere and the camera outside it.
+            let along = distance - dot(local, toward);
+            [dot(local, right) / along, dot(local, up) / along, 1.0 / along]
+        })
         .collect();
     let mut min = [f32::INFINITY; 2];
     let mut max = [f32::NEG_INFINITY; 2];
@@ -808,7 +867,12 @@ mod tests {
     }
 
     fn render(glb: &[u8], size: usize) -> Vec<u8> {
-        rasterize(&Doc::parse(glb).unwrap().triangles().unwrap(), size).unwrap()
+        rasterize(
+            &Doc::parse(glb).unwrap().triangles().unwrap(),
+            size,
+            DEFAULT_DIRECTION,
+        )
+        .unwrap()
     }
 
     #[test]
@@ -832,6 +896,81 @@ mod tests {
             "top {top}, left {left}, right {right}"
         );
         assert_ne!(left, right);
+    }
+
+    #[test]
+    fn the_camera_direction_decides_what_is_drawn() {
+        let glb = optimize::stl_to_glb(&cube_stl(10.0)).unwrap();
+        let triangles = Doc::parse(&glb).unwrap().triangles().unwrap();
+        let from = |direction| rasterize(&triangles, 64, direction).unwrap();
+
+        let home = from(DEFAULT_DIRECTION);
+        // Any length names the same direction.
+        assert!(from([40.0, -40.0, 40.0]) == home);
+        assert!(from([1e30, -1e30, 1e30]) == home);
+        assert!(from([1e-30, -1e-30, 1e-30]) == home);
+        // A lower camera sees less of the top face. (A cube looks the same from
+        // each of its corners, so the test cannot just mirror the direction.)
+        assert!(from([1.0, -1.0, 0.2]) != home);
+        // Straight down has no "right" to derive from Z; it still renders.
+        let top = from([0.0, 0.0, 1.0]);
+        assert_eq!(alpha(&top, 64, 32, 32), 255);
+        // Not a direction at all: the home view.
+        assert!(from([0.0, 0.0, 0.0]) == home);
+        assert!(from([f32::NAN, 1.0, 1.0]) == home);
+    }
+
+    #[test]
+    fn nearer_edges_are_drawn_larger() {
+        // Seen from straight above, a tall box's top face is nearer than its
+        // base. Orthographic, both would cover the same pixels; in perspective
+        // the base is hidden inside the top's outline and the walls never show.
+        // Seen from the side the same box shows its near end wider than its far.
+        let mut stl = vec![0u8; 80];
+        let (w, h) = (1.0f32, 8.0f32);
+        let corners = |z: f32| [[-w, -w, z], [w, -w, z], [w, w, z], [-w, w, z]];
+        let (low, high) = (corners(0.0), corners(h));
+        let mut faces: Vec<[[f32; 3]; 3]> = vec![
+            [low[0], low[2], low[1]],
+            [low[0], low[3], low[2]],
+            [high[0], high[1], high[2]],
+            [high[0], high[2], high[3]],
+        ];
+        for i in 0..4 {
+            let j = (i + 1) % 4;
+            faces.push([low[i], low[j], high[j]]);
+            faces.push([low[i], high[j], high[i]]);
+        }
+        stl.extend_from_slice(&(faces.len() as u32).to_le_bytes());
+        for face in &faces {
+            stl.extend_from_slice(&[0u8; 12]);
+            for vertex in face {
+                for c in vertex {
+                    stl.extend_from_slice(&c.to_le_bytes());
+                }
+            }
+            stl.extend_from_slice(&[0, 0]);
+        }
+        let glb = optimize::stl_to_glb(&stl).unwrap();
+        let size = 128;
+        // Looking along +X with the long axis (Z) up: measure the width of the
+        // silhouette on a row near the top and one near the bottom after
+        // tilting the view so the top end is nearer.
+        let rgba = rasterize(
+            &Doc::parse(&glb).unwrap().triangles().unwrap(),
+            size,
+            [1.0, 0.0, 2.0],
+        )
+        .unwrap();
+        let width = |y: usize| (0..size).filter(|&x| alpha(&rgba, size, x, y) > 0).count();
+        let rows: Vec<usize> = (0..size).filter(|&y| width(y) > 0).collect();
+        let (first, last) = (rows[0], rows[rows.len() - 1]);
+        let near_top = width(first + (last - first) / 4);
+        let near_bottom = width(first + (last - first) * 3 / 4);
+        assert!(
+            near_top > near_bottom,
+            "top (nearer) {near_top}px should be wider than bottom {near_bottom}px"
+        );
     }
 
     #[test]
@@ -863,7 +1002,7 @@ mod tests {
     #[test]
     fn the_png_is_a_valid_rgba_image_of_the_requested_size() {
         let glb = optimize::stl_to_glb(&cube_stl(10.0)).unwrap();
-        let png = render_png(&glb, 64).unwrap();
+        let png = render_png(&glb, 64, DEFAULT_DIRECTION).unwrap();
 
         assert_eq!(&png[..8], &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
         assert_eq!(&png[12..16], b"IHDR");
@@ -920,12 +1059,12 @@ mod tests {
     }
 
     fn message(glb: &[u8]) -> String {
-        render_png(glb, 64).unwrap_err().0
+        render_png(glb, 64, DEFAULT_DIRECTION).unwrap_err().0
     }
 
     #[test]
     fn counts_the_file_cannot_back_are_errors_not_allocations() {
-        assert!(render_png(&triangle_glb(3, |_| {}), 64).is_ok());
+        assert!(render_png(&triangle_glb(3, |_| {}), 64, DEFAULT_DIRECTION).is_ok());
 
         // An accessor claiming more elements than its view holds.
         let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = 1_000.into());
@@ -965,9 +1104,9 @@ mod tests {
 
     #[test]
     fn input_that_cannot_be_rendered_is_an_error() {
-        assert!(render_png(b"not a glb", 64).is_err());
+        assert!(render_png(b"not a glb", 64, DEFAULT_DIRECTION).is_err());
         let mut truncated = optimize::stl_to_glb(&cube_stl(10.0)).unwrap();
         truncated.truncate(truncated.len() - 16);
-        assert!(render_png(&truncated, 64).is_err());
+        assert!(render_png(&truncated, 64, DEFAULT_DIRECTION).is_err());
     }
 }

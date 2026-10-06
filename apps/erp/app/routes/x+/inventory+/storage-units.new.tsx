@@ -8,11 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useSearchParams } from "react-router";
 import { useUser } from "~/hooks";
 import {
@@ -22,7 +18,6 @@ import {
 } from "~/modules/inventory";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -72,28 +67,6 @@ export async function action({ request }: ActionFunctionArgs) {
         `${path.to.storageUnits}?${getParams(request)}`,
         await flash(request, success("Storage unit created"))
       );
-}
-
-export async function clientAction({
-  request,
-  serverAction
-}: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-
-  const formData = await request.clone().formData();
-  const validation = await validator(storageUnitValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  if (companyId && validation.data.locationId) {
-    window.clientCache?.setQueryData(
-      storageUnitsQuery(companyId, validation.data.locationId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function NewStorageUnitRoute() {

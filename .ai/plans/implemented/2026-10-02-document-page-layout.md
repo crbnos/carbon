@@ -48,8 +48,8 @@ Shipment is the reference: `routes/x+/shipment+/$shipmentId.tsx`,
 Every page passes `activity`: its record is in `auditConfig.entities`. Journal
 entry, payment, memo, reimbursement, picking list and the two runs were added
 for this (with their line tables; `invoiceSettlement` is a child of both payment
-and memo), and migration `20261005011001_audit-posting-documents.sql` attaches
-the async event triggers their tables lacked. A record that is not audited may
+and memo), and their tables queue events through `events: true` in
+`event-system/attachments.ts` (shipped by `20261006205843_posting-documents-audit-events.sql`). A record that is not audited may
 omit `activity`; the panel then shows Documents alone.
 
 When the last `DocumentHeader` caller is gone, delete

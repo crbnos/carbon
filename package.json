@@ -10,18 +10,17 @@
     "cli-table3": "^0.6.5",
     "csv-parse": "5.6.0",
     "execa": "^8.0.1",
-    "husky": "8.0.3",
     "linguito": "^0.5.2",
     "lint-staged": "16.4.0",
     "npm-run-all": "catalog:",
     "rimraf": "catalog:",
+    "simple-git-hooks": "2.14.0",
     "supabase": "catalog:",
     "ts-morph": "28.0.0",
     "tsx": "catalog:",
     "turbo": "2.9.6",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-babel-macros": "catalog:",
     "zod": "catalog:"
   },
   "lint-staged": {
@@ -31,6 +30,11 @@
     "*.json": [
       "biome check --write --no-errors-on-unmatched"
     ]
+  },
+  "simple-git-hooks": {
+    "preserveUnused": true,
+    "pre-commit": "if [ -f scripts/git-hooks/pre-commit ]; then sh scripts/git-hooks/pre-commit; elif [ -f .husky/pre-commit ]; then sh .husky/pre-commit; fi",
+    "post-merge": "if [ -f scripts/git-hooks/post-merge ]; then sh scripts/git-hooks/post-merge; elif [ -f .husky/post-merge ]; then sh .husky/post-merge; fi"
   },
   "private": true,
   "scripts": {
@@ -69,8 +73,8 @@
     "lingui:compile": "lingui compile --namespace es",
     "lingui:extract": "lingui extract --clean",
     "lint": "turbo run lint",
-    "postinstall": "turbo run @carbon/documents#build //#generate:mcp --output-logs=new-only",
-    "prepare": "pnpm exec husky install; if [ -f .ai/scripts/install-skills.sh ]; then bash .ai/scripts/install-skills.sh; fi",
+    "postinstall": "MCP=//#generate:mcp; [ -n \"$VERCEL\" ] && [ \"${INIT_CWD##*/}\" = mes ] && MCP=; turbo run @carbon/documents#build $MCP --output-logs=new-only",
+    "prepare": "case \"$(git config core.hooksPath)\" in *.husky) git config --unset core.hooksPath; git config --worktree --unset core.hooksPath;; esac; simple-git-hooks; if [ -f .ai/scripts/install-skills.sh ]; then bash .ai/scripts/install-skills.sh; fi",
     "test": "turbo run test",
     "translate": "pnpm run lingui:extract && pnpm exec linguito translate --llm && pnpm lingui:clean",
     "typecheck": "turbo run typecheck --filter='*'",
@@ -118,7 +122,7 @@
       "supabase"
     ],
     "patchedDependencies": {
-      "@react-router/dev@7.18.0": "patches/@react-router__dev@7.18.0.patch",
+      "@react-router/dev@7.18.4": "patches/@react-router__dev@7.18.4.patch",
       "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
       "supabase@2.89.0": "patches/supabase@2.89.0.patch"
     }

@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getCustomerStatuses, getCustomers } from "~/modules/sales";
 import { CustomersTable } from "~/modules/sales/ui/Customers";
 import { getTagsList } from "~/modules/shared";
@@ -18,6 +18,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["customer"],
   breadcrumb: msg`Customers`,
   to: path.to.customers
 };
@@ -74,7 +75,7 @@ export default function SalesCustomersRoute() {
         customerStatuses={customerStatuses}
         tags={tags}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

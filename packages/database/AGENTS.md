@@ -28,6 +28,8 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Changing `audit.config.ts` entity definitions (affects which tables get audited and how diffs are computed).
 - Modifying `src/client.ts` (the Node-only Kysely/node-postgres client shared by the apps, jobs and server functions, including its NUMERIC/DATE type parsers).
 
+- **Declare event triggers in `src/event-system/attachments.ts`**, and write interceptor / statement-handler bodies as files in `src/event-system/handlers/`. `authz sync` applies both; `authz migration <name>` ships them. Never call `attach_event_trigger`, `attach_statement_handler` or `set_event_triggers` in a migration.
+- **A table is realtime when its attachments entry lists `broadcast_table_changes`.** `REALTIME_TABLES` (`src/realtime-tables.ts`) is derived from the manifest. See `.claude/rules/realtime-system.md`.
 ## Never
 
 - Specify decimal places in `NUMERIC` columns (use bare `NUMERIC`).

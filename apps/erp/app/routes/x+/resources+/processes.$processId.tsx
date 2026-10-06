@@ -9,11 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
@@ -26,7 +22,6 @@ import {
 } from "~/modules/resources";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -149,14 +144,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return modal ? createProcess : redirect(path.to.processes);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    processesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function ProcessRoute() {

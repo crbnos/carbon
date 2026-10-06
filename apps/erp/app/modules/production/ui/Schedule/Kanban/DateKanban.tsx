@@ -26,6 +26,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -49,6 +50,12 @@ import {
 } from "./placement";
 import type { Column, DisplaySettings, JobItem, Progress } from "./types";
 import { hasDraggableData, kanbanCollisionDetection } from "./utils";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates
+};
 
 const logger = getLogger("erp", "datekanban");
 
@@ -274,14 +281,7 @@ const DateKanban = ({
   );
 
   // For date-based kanban, always use the column order from props (don't persist)
-  const [columnOrder, setColumnOrder] = useState<string[]>(
-    columns.map((col) => col.id)
-  );
-
-  // Update column order when columns change (e.g., navigating to a different week/month)
-  useEffect(() => {
-    setColumnOrder(columns.map((col) => col.id));
-  }, [columns]);
+  const columnOrder = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const itemsById = new Map<string, JobItem>(
     initialItems.map((item) => [item.id, item])
@@ -305,9 +305,7 @@ const DateKanban = ({
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   function clearDragState() {

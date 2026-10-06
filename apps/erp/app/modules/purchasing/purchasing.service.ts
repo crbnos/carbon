@@ -9,6 +9,7 @@ import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import {
+  async,
   datetime,
   EPSILON,
   getPurchaseOrderStatus,
@@ -393,23 +394,25 @@ export async function getPurchaseOrder(
 /** @mcp update */
 export async function finalizeSupplierQuote(
   client: SupabaseClient<Database>,
-  supplierQuoteId: string,
-  userId: string
+  db: Kysely<KyselyDatabase>,
+  payload: { supplierQuoteId: string; companyId: string; userId: string }
 ) {
-  const quoteUpdate = await client
-    .from("supplierQuote")
-    .update({
-      status: "Active",
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", supplierQuoteId);
+  const { companyId, userId, ...input } = payload;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("finalize-supplier-quote", input);
+}
 
-  if (quoteUpdate.error) {
-    return quoteUpdate;
-  }
-
-  return { data: null, error: null };
+/** @mcp update */
+export async function finalizePurchasingRfq(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  payload: { rfqId: string; companyId: string; userId: string }
+) {
+  const { companyId, userId, ...input } = payload;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("finalize-purchasing-rfq", input);
 }
 
 /** @mcp read */
@@ -729,6 +732,41 @@ export async function getSupplierInteractionLineDocuments(
     ...f,
     bucket: "supplier-interaction-line"
   }));
+}
+
+/**
+ * Signed links to every document attached to the given lines, for an email's
+ * attachments. Lines are listed and signed together, in the lines' order.
+ */
+export async function getSupplierInteractionLineAttachments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lineIds: string[]
+): Promise<{ filename: string; path: string }[]> {
+  const perLine = await async.map(lineIds, async (lineId) => {
+    const docs = await getSupplierInteractionLineDocuments(
+      client,
+      companyId,
+      lineId
+    );
+    return async.map(docs, async (doc) => {
+      const storagePath = `${companyId}/supplier-interaction-line/${lineId}/${doc.name}`;
+      const { data, error } = await storage(client)
+        .company(companyId)
+        .createSignedUrl(storagePath, 3600);
+      if (!data) {
+        logger.error("Failed to create signed URL for attachment", {
+          storagePath,
+          error
+        });
+        return null;
+      }
+      return { filename: doc.name, path: data.signedUrl };
+    });
+  });
+  return perLine
+    .flat()
+    .flatMap((attachment) => (attachment ? [attachment] : []));
 }
 
 /** @mcp read */

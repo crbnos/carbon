@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getPurchaseReturnOrders } from "~/modules/purchasing";
 import { PurchaseReturnOrdersTable } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { Handle } from "~/utils/handle";
@@ -17,6 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["purchaseReturnOrder"],
   breadcrumb: msg`Supplier Returns`,
   to: path.to.purchaseReturnOrders
 };
@@ -74,7 +75,7 @@ export default function PurchaseReturnOrdersSearchRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <PurchaseReturnOrdersTable data={purchaseReturnOrders} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -14,6 +14,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -47,7 +48,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -495,7 +496,13 @@ export function RecordModal({
   const [filePath, setFilePath] = useState<string | null>(null);
   // Bumped on every drop/remove so a stale in-flight upload can't set state
   const uploadIdRef = useRef(0);
-  const fetcher = useFetcher<{ success: boolean }>();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
+    }
+  });
 
   const removeFile = () => {
     uploadIdRef.current += 1;
@@ -531,12 +538,6 @@ export function RecordModal({
       setFilePath(upload.data.path);
     }
   };
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    }
-  }, [fetcher.data?.success, onClose]);
 
   const record = attribute?.jobOperationStepRecord.find(
     (r) => r.index === activeStep
@@ -726,13 +727,13 @@ export function DeleteStepRecordModal({
   title: string;
   description: string;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
+  });
 
   return (
     <Modal open={true} onOpenChange={onClose}>

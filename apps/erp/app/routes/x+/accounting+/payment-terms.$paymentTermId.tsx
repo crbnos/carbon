@@ -8,11 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import type { PaymentTermCalculationMethod } from "~/modules/accounting";
 import {
@@ -23,7 +19,6 @@ import {
 import { PaymentTermForm } from "~/modules/accounting/ui/PaymentTerms";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -78,14 +73,6 @@ export async function action({ request }: ActionFunctionArgs) {
     `${path.to.paymentTerms}?${getParams(request)}`,
     await flash(request, success("Updated payment term"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    paymentTermsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function EditPaymentTermsRoute() {

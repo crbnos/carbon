@@ -18,7 +18,7 @@ import { type CalendarDate, parseDate } from "@internationalized/date";
  * created in — never the company's base currency. The cost components are NOT
  * interchangeable and — apart from `unitPrice` — are NOT per-unit. This mirrors
  * the `salesInvoices` view, which is the single definition of what a Carbon
- * sales invoice is worth (migration `20261005011501_sales-invoice-discount-and-ship-to.sql`),
+ * sales invoice is worth (migration `20261006131501_sales-invoice-discount-and-ship-to.sql`),
  * applied to the `converted*` columns:
  *
  *   net      = unitPrice·(1 − discountPercent)

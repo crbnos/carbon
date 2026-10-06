@@ -1,133 +1,99 @@
 ---
 paths:
+  - "packages/query/**"
   - "apps/erp/app/routes/api+/**"
-  - "apps/erp/app/routes/x+/**"
-  - "apps/erp/app/utils/react-query.ts"
-  - "apps/erp/app/root.tsx"
 ---
 
-# clientLoader / clientAction Patterns
+# Client cache: `cachedClientLoader` and the invalidation middleware
 
-React Router v7 (`react-router`, **not** Remix) client data functions. They run an
-in-memory SPA cache in front of the route's own server `loader` / `action`. This is an
-**ERP-only** convention — `apps/mes/app` uses neither. As of grounding: ~25 ERP files use
-`clientLoader`, ~63 use `clientAction`.
+How the ERP and the MES cache route data in the browser. All of it lives in
+`@carbon/query` (`packages/query`); there is no app-level cache file
+(`~/utils/react-query` is gone) and no route exports a `clientAction`.
 
-Types are imported from `"react-router"`:
+## The cache
 
-```ts
-import type {
-  ClientLoaderFunctionArgs,
-  ClientActionFunctionArgs,
-} from "react-router";
-```
+One TanStack `QueryClient` per page. Each app's `root.tsx` creates it and stores
+it on `window.clientCache`, so code outside React (a `clientLoader`, the
+middleware, the realtime hooks) reaches the same client as `useQuery` does.
+`getClientCache()` from `@carbon/query/cache` returns it (undefined on the server).
 
-## The cache: a `window.clientCache` QueryClient
-
-The cache is a TanStack `QueryClient` attached to `window.clientCache` — **not** a
-module-level Map or localStorage. It is created once on mount in
-`apps/erp/app/root.tsx` with everything set to never expire, so it behaves as a
-session-lived in-memory cache:
+## Caching a loader: one line, no key
 
 ```ts
-window.clientCache = new QueryClient({
-  defaultOptions: {
-    queries: { gcTime: Infinity, refetchOnWindowFocus: false, staleTime: Infinity },
-  },
-});
+// apps/erp/app/routes/api+/sales.customer-types.ts
+import { cachedClientLoader } from "@carbon/query/cache";
+
+export async function loader({ request }: LoaderFunctionArgs) { /* unchanged */ }
+
+export const clientLoader = cachedClientLoader<typeof loader>();
+// or cachedClientLoader<typeof loader>({ staleTime: RefreshRate.Never })
 ```
 
-Query keys come from factory functions in `apps/erp/app/utils/react-query.ts`
-(e.g. `customerTypesQuery(companyId)`, `itemPostingGroupsQuery(companyId)`), each
-returning `{ queryKey, staleTime }`. Keys are namespaced by company for multi-tenancy.
-Helpers in that file: `getCompanyId()` reads the `companyId` cookie client-side (returns
-`null` on the server); `getClientCache()` returns `window.clientCache` or `undefined`.
+- The key is the URL: `[LOADER, companyId, pathname, search]`. Nobody writes a
+  query key or a key factory. A route param or a search param is part of the key
+  because it is part of the URL.
+- It reads with `fetchQuery`, so `staleTime` is honored and concurrent loads of
+  one URL share a request. (The old `getQueryData`/`setQueryData` pair ignored
+  both: an entry lived for the whole session.)
+- `clientLoader.hydrate` is set, so the cache warms on first load.
+- With no company yet, or no cache, it calls `serverLoader()` uncached.
+- Loader entries are garbage-collected after 30 minutes unused.
+- Import from `@carbon/query/cache` in a route module, not `@carbon/query`: the
+  subpath has no React or UI import, and a route module also runs on the server.
 
-## clientLoader — read-through cache (read routes, `api+/`)
+**Scope: `api+` reference lists only.** Page data is not cached this way. A
+route with a `clientLoader` leaves the combined single-fetch request and sends
+its own, so caching page loaders turns one request into many.
 
-Canonical shape (`apps/erp/app/routes/api+/sales.customer-types.ts`): company-scoped
-read-through cache. No company → defer to server. Cache miss → `serverLoader()` then
-populate. Cache hit → skip the network.
+## Invalidation: once, in `root.tsx`
 
 ```ts
-export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
-  const companyId = getCompanyId();
-  if (!companyId) return await serverLoader<typeof loader>();
-
-  const queryKey = customerTypesQuery(companyId).queryKey;
-  const data =
-    window?.clientCache?.getQueryData<Awaited<ReturnType<typeof loader>>>(queryKey);
-
-  if (!data) {
-    const serverData = await serverLoader<typeof loader>();
-    window?.clientCache?.setQueryData(queryKey, serverData);
-    return serverData;
-  }
-  return data;
-}
-clientLoader.hydrate = true;
+export const clientMiddleware = [
+  flashClientMiddleware,
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.refreshSession]
+  })
+];
 ```
 
-- `serverLoader<typeof loader>()` is the typed call back to the route's own server `loader`.
-- `clientLoader.hydrate = true` makes the client loader run on **initial hydration**, not
-  just subsequent client navigations — so the cache warms on first load. Present on all
-  `api+` clientLoader files; no `HydrateFallback` is exported anywhere.
-- Variants fold route/search params into the key
-  (`apps/erp/app/routes/api+/items.types.$substanceId.$formId.ts` →
-  `materialTypesQuery(substanceId, formId, companyId)`).
-- For component-driven (non-navigation) fetches, `clientLoader` never runs — raw
-  `fetch` bypasses it. Those use `cachedApiQuery(queryDef, url)`
-  (`apps/erp/app/utils/react-query.ts`), an imperative
-  `clientCache.fetchQuery` read-through with the same key factories, so
-  `clientAction` invalidation still applies (see the user-select endpoints,
-  invalidated by `invalidateUserSelectQueries`).
+After any non-GET request finishes, every `LOADER` entry is marked stale. The
+action and the revalidation that follows it are separate passes through the
+middleware, so the entries are already stale when the loaders re-run. Client
+middleware wraps fetcher submissions too, so a modal's save is covered.
 
-## clientAction — cache invalidation (mutation routes, `x+/`)
+- A route does not name what its action changes. Do not add a `clientAction`
+  to invalidate.
+- `skipPaths` is for POSTs that change no data. `/refresh-session` fires on
+  every tab focus and would otherwise refetch every list.
+- It is deliberately blunt: saving a part also marks customer types stale,
+  which costs one extra fetch the next time that list is used.
+- Realtime invalidates the same entries when another user changes a reference
+  table (see `realtime-system.md`).
 
-Mutation routes (`*.new`, `*.$id`, `*.delete.*`) invalidate the matching cached query,
-then delegate to the server `action`. **No optimistic updates** — invalidation only; the
-next `clientLoader` run sees a miss and re-fetches.
+## Reading in a component
 
-Invalidate-by-predicate (`apps/erp/app/routes/x+/items+/groups.$groupId.tsx`):
+| Hook | Use |
+|---|---|
+| `useLoaderQuery<T>(url \| null)` | Render with an `api+` URL's data. One request per URL however many components read it; refetches when invalidated. `T` is the data, or `typeof loader`. `null` waits |
+| `cachedApiQuery<T>(url)` | The same read from an event handler or an effect |
+| `useAction<T>({ onSuccess, onError, onSettled })` | A mutation fetcher whose result goes to a callback instead of an effect watching `fetcher.data`. Submit with `.submit()` or `<action.Form>` as with `useFetcher`. `onSettled` runs whenever a submission finishes; `onSuccess` / `onError` only when the action returned data (an action that redirects returns none) |
 
-```ts
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return (
-        queryKey[0] === itemPostingGroupsQuery(companyId).queryKey[0] &&
-        queryKey[1] === companyId
-      );
-    },
-  });
-  return await serverAction();
-}
-```
+Do not write `useFetcher()` + `fetcher.load(url)` in a mount effect for an
+`api+` list: it is one request per component, shows no cached value, and never
+refetches after a save. Keep `useFetcher` for a load that happens on an event
+(a search box, a drill-down click) or that calls a third party.
 
-Alternative for a single known key — set it to `null` instead of a predicate:
+## The company in the key
 
-```ts
-window?.clientCache?.setQueryData(uomsQuery(getCompanyId()).queryKey, null);
-return await serverAction();
-```
+The `companyId` cookie is httpOnly, so the browser cannot read it. Each shell
+layout calls `setClientCompanyId(company.id)` during render, and `getCompanyId()`
+returns that. Before this, `getCompanyId()` parsed `document.cookie` and always
+returned `null`, so every key was scoped to the string `"null"`.
 
-If you need form data inside the clientAction (e.g. to pick which key to invalidate),
-clone the request first — `request.clone().formData()` — so the server `action` can still
-read the body.
+## Naming trap
 
-## Rules
-
-1. **Always end by calling `serverAction()` / `serverLoader()`** — the client function
-   wraps the real server function, it does not replace it.
-2. **Optional-chain the cache**: `window?.clientCache?.` — it may not exist yet.
-3. **Scope by company**: build keys with `getCompanyId()`; bail to the server when it's
-   `null`.
-4. `invalidateQueries({ predicate })` for bulk/prefix invalidation;
-   `setQueryData(key, null)` for one specific key.
-5. Set `clientLoader.hydrate = true` so the cache warms on first load.
-
-<!-- UNVERIFIED: claim that clientAction "can handle validation errors before hitting the
-server" — the old supplier-processes example wasn't re-confirmed at grounding; treat
-validation-in-clientAction as a rare special case, not the standard pattern. -->
+Never name a module `*.client.ts` if a route calls something from it while the
+module is evaluated. React Router empties `.client` modules on the server:
+`createInvalidationMiddleware(...)` in `root.tsx` became "is not a function"
+during SSR. Typecheck and unit tests pass with that bug in place.

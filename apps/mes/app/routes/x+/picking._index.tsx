@@ -21,7 +21,12 @@ import { DateTime } from "~/components";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
 import { getAssignedPickingLists } from "~/services/picking.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["pickingList"]
+};
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});

@@ -4,8 +4,10 @@
 
 import { parse } from "libpg-query";
 import type { Client } from "pg";
+import type { Attachments } from "../event-system/attachments";
+import { syncAttachments } from "../event-system/attachments-sync";
 import { type Helper, loadHelpers, syncHelpers } from "./helpers";
-import { type AnyRule, type Manifest, render } from "./rules";
+import { type AnyRule, locate, type Manifest, render } from "./rules";
 
 export type Policy = {
   policyname: string;
@@ -42,12 +44,12 @@ export const readPolicies = async (db: Client, schema: string, table: string) =>
     )
   ).rows;
 
-const rlsEnabled = async (db: Client, table: string) =>
+const rlsEnabled = async (db: Client, schema: string, table: string) =>
   (
     await db.query<{ enabled: boolean }>(
       `SELECT relrowsecurity AS enabled FROM pg_class
-        WHERE oid = to_regclass(format('public.%I', $1::text))`,
-      [table]
+        WHERE oid = to_regclass(format('%I.%I', $1::text, $2::text))`,
+      [schema, table]
     )
   ).rows[0]?.enabled ?? false;
 
@@ -85,23 +87,26 @@ export async function desiredPolicies(db: Client, manifest: Manifest) {
   await db.query("SAVEPOINT authz_scratch");
   try {
     await db.query(`CREATE SCHEMA ${ident(SCRATCH)}`);
-    for (const [table, rule] of rulesOf(manifest)) {
+    for (const [key, rule] of rulesOf(manifest)) {
+      const { schema, table } = locate(key);
       await db.query("SAVEPOINT authz_rule");
       try {
         await db.query(
-          `CREATE TABLE ${ident(SCRATCH)}.${ident(table)} (LIKE public.${ident(table)})`
+          `CREATE TABLE ${ident(SCRATCH)}.${ident(table)} (LIKE ${ident(schema)}.${ident(table)})`
         );
         const sql = render(rule, table, SCRATCH);
         if (sql) {
           await assertOnlyPolicies(sql, SCRATCH, table);
           await db.query(sql);
         }
-        desired.set(table, await readPolicies(db, SCRATCH, table));
+        desired.set(key, await readPolicies(db, SCRATCH, table));
+        // Dropped so an external table may share its name with a public one.
+        await db.query(`DROP TABLE ${ident(SCRATCH)}.${ident(table)}`);
         await db.query("RELEASE SAVEPOINT authz_rule");
       } catch (error) {
         await db.query("ROLLBACK TO SAVEPOINT authz_rule");
         desired.set(
-          table,
+          key,
           error instanceof Error ? error : new Error(String(error))
         );
       }
@@ -143,6 +148,8 @@ export type SyncResult = {
   changed: string[];
   /** Public tables the manifest does not cover. */
   unmanaged: string[];
+  /** Tables whose event triggers differed from attachments.ts. */
+  attachments: string[];
 };
 
 /**
@@ -153,7 +160,11 @@ export type SyncResult = {
 export async function syncAuthz(
   db: Client,
   manifest: Manifest,
-  { dryRun = false, helpers }: { dryRun?: boolean; helpers?: Helper[] } = {}
+  {
+    dryRun = false,
+    helpers,
+    attachments
+  }: { dryRun?: boolean; helpers?: Helper[]; attachments?: Attachments } = {}
 ): Promise<SyncResult> {
   const managedHelpers = helpers ?? (await loadHelpers());
   return inAuthzTransaction(
@@ -172,27 +183,37 @@ export async function syncAuthz(
       }
 
       const changed: string[] = [];
-      for (const [table, rule] of rulesOf(manifest)) {
-        const live = await readPolicies(db, "public", table);
+      for (const [key, rule] of rulesOf(manifest)) {
+        const { schema, table } = locate(key);
+        const live = await readPolicies(db, schema, table);
+        const enabled = await rlsEnabled(db, schema, table);
+        // An external table's RLS switch belongs to its owner. Policies on a
+        // table without it would authorize nothing, so that is a failure.
+        if (schema !== "public" && !enabled) {
+          throw new Error(
+            `authz: ${key} does not have row level security enabled`
+          );
+        }
         const same =
-          JSON.stringify(live) === JSON.stringify(desired.get(table)) &&
-          (await rlsEnabled(db, table));
+          JSON.stringify(live) === JSON.stringify(desired.get(key)) && enabled;
         if (same) continue;
 
-        changed.push(table);
+        changed.push(key);
         if (dryRun) continue;
 
         for (const policy of live) {
           await db.query(
-            `DROP POLICY ${ident(policy.policyname)} ON public.${ident(table)}`
+            `DROP POLICY ${ident(policy.policyname)} ON ${ident(schema)}.${ident(table)}`
           );
         }
-        await db.query(
-          `ALTER TABLE public.${ident(table)} ENABLE ROW LEVEL SECURITY`
-        );
-        const sql = render(rule, table);
+        if (schema === "public") {
+          await db.query(
+            `ALTER TABLE public.${ident(table)} ENABLE ROW LEVEL SECURITY`
+          );
+        }
+        const sql = render(rule, table, schema);
         if (sql) {
-          await assertOnlyPolicies(sql, "public", table);
+          await assertOnlyPolicies(sql, schema, table);
           await db.query(sql);
         }
       }
@@ -211,7 +232,17 @@ export async function syncAuthz(
         )
       ).rows.map((r) => r.table);
 
-      return { helpers: changedHelpers, changed, unmanaged };
+      // Last: the triggers call the functions synced above.
+      const changedAttachments = attachments
+        ? await syncAttachments(db, attachments, { dryRun })
+        : [];
+
+      return {
+        helpers: changedHelpers,
+        changed,
+        unmanaged,
+        attachments: changedAttachments
+      };
     },
     { commit: !dryRun }
   );

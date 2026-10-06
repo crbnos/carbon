@@ -6,13 +6,12 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import type { ContractRevenueRow } from "@carbon/utils";
 import {
   contractPositionPreview,
   datetime,
   horizon,
-  isUnaffectedByNavigation,
   lineRevenueDates,
   lineTotals,
   planInvoiceSchedule,
@@ -28,7 +27,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, useLoaderData, useMatches, useParams } from "react-router";
+import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   getContract,
@@ -65,21 +64,11 @@ export const handle: Handle = {
 };
 
 // An amend / cancel preview posts but commits nothing, so it never refreshes
-// the page; every other submission does.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
-  if (args.formData?.get("intent") === "preview") return false;
-  // Entering or leaving the setup wizard is a status change (a Draft opens
-  // the wizard, a confirmed contract leaves it) reached through a redirect
-  // that no longer carries the submission, so reload rather than show the
-  // contract as it was.
-  if (isSetupPath(args.currentUrl) !== isSetupPath(args.nextUrl)) return true;
-  return isUnaffectedByNavigation(args, { params: ["id"] })
+// the page; every other submission and navigation does.
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  args.formData?.get("intent") === "preview"
     ? false
     : args.defaultShouldRevalidate;
-};
-
-const isSetupPath = (url: URL) =>
-  /\/contract\/[^/]+\/setup(\/|$)/.test(url.pathname);
 
 export async function loader({
   request,
@@ -355,7 +344,7 @@ export default function ContractRoute() {
   // The setup wizard (`$id.setup`) is a child of this route so it reads the
   // same loader, but it takes the whole page rather than the workspace.
   if (matches.some((match) => match.id.endsWith("$id.setup"))) {
-    return <Outlet />;
+    return <RecordOutlet />;
   }
 
   return (
@@ -369,7 +358,7 @@ export default function ContractRoute() {
               content={
                 <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

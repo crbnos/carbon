@@ -8,6 +8,9 @@ import {
   mkdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
+  rmdirSync,
+  statSync,
   writeFileSync
 } from "node:fs";
 import net from "node:net";
@@ -159,6 +162,18 @@ export async function resolveSlot(
   slug: string,
   worktreeRoot: string
 ): Promise<{ ports: PortMap; redisDb: number; jwt: JwtCreds }> {
+  const unlock = lockRegistry();
+  try {
+    return await resolveSlotLocked(slug, worktreeRoot);
+  } finally {
+    unlock();
+  }
+}
+
+async function resolveSlotLocked(
+  slug: string,
+  worktreeRoot: string
+): Promise<{ ports: PortMap; redisDb: number; jwt: JwtCreds }> {
   const registry = readRegistry();
   const existing = registry[slug];
 
@@ -244,10 +259,15 @@ export function slugForWorktreePath(
 }
 
 export function removeSlot(slug: string) {
-  const registry = readRegistry();
-  if (!(slug in registry)) return;
-  delete registry[slug];
-  writeRegistry(registry);
+  const unlock = lockRegistry();
+  try {
+    const registry = readRegistry();
+    if (!(slug in registry)) return;
+    delete registry[slug];
+    writeRegistry(registry);
+  } finally {
+    unlock();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -316,9 +336,56 @@ function isJwtCreds(v: unknown): v is JwtCreds {
   );
 }
 
+// Temp file + rename, so a reader never sees a half-written registry.
 function writeRegistry(registry: Registry) {
   mkdirSync(dirname(REGISTRY_PATH), { recursive: true });
-  writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2));
+  const tmp = `${REGISTRY_PATH}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(registry, null, 2));
+  renameSync(tmp, REGISTRY_PATH);
+}
+
+// Every change to the registry is read → decide → write, and several `crbn up`
+// start at once (Conductor boots workspaces concurrently). Without a lock two
+// of them read the same file and hand out the same ports and redis db. `mkdir`
+// is the lock: it is atomic, and it either creates the directory or fails.
+const LOCK_PATH = `${REGISTRY_PATH}.lock`;
+const LOCK_STALE_MS = 10_000;
+const LOCK_WAIT_MS = 20_000;
+
+function lockRegistry(): () => void {
+  mkdirSync(dirname(LOCK_PATH), { recursive: true });
+  const deadline = Date.now() + LOCK_WAIT_MS;
+  for (;;) {
+    try {
+      mkdirSync(LOCK_PATH);
+      break;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+    }
+    // A holder that was killed leaves the directory behind. Nothing holds the
+    // lock for more than a second, so one this old has no owner.
+    try {
+      if (Date.now() - statSync(LOCK_PATH).mtimeMs > LOCK_STALE_MS) {
+        rmdirSync(LOCK_PATH);
+        continue;
+      }
+    } catch {
+      continue; // released between the mkdir and the stat
+    }
+    if (Date.now() > deadline) {
+      throw new Error(
+        `Timed out waiting for the slot registry lock (${LOCK_PATH}). If no other crbn is running, delete that directory.`
+      );
+    }
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+  }
+  return () => {
+    try {
+      rmdirSync(LOCK_PATH);
+    } catch {
+      // already gone (taken over as stale) — nothing to release
+    }
+  };
 }
 
 function pickRedisDb(taken: Set<number>): number {

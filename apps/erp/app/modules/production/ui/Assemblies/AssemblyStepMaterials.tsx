@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import { Badge, HStack, IconButton, Subheading, VStack } from "@carbon/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuCirclePlus, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Empty } from "~/components";
@@ -35,17 +36,17 @@ export default function AssemblyStepMaterials({
   isDisabled
 }: AssemblyStepMaterialsProps) {
   const permissions = usePermissions();
-  const fetcher = useFetcher<{ success: boolean }>();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        setFormKey((key) => key + 1);
+        setSelectedItemId(null);
+      }
+    }
+  });
   // Remount the form after a successful add so the fields clear
   const [formKey, setFormKey] = useState(0);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      setFormKey((key) => key + 1);
-      setSelectedItemId(null);
-    }
-  }, [fetcher.state, fetcher.data]);
 
   // One option per distinct BOM item, excluding items already on the step
   const options = useMemo(() => {

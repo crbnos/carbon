@@ -9,9 +9,9 @@ import { describe, expect, it, vi } from "vitest";
 // a unit test has no business booting. Everything below runs real — the actual
 // descriptor, the actual mode profiles, the actual zod schema.
 vi.mock("@carbon/auth", () => ({ RAMP_CLIENT_ID: "test-client-id" }));
-// Same reason, one layer out: `@carbon/react`'s barrel reaches
-// `useRealtimeChannel`, which reads env at load. The descriptor only imports it
-// for the setup-instructions JSX, which nothing here renders.
+// `@carbon/react`'s barrel reaches components that use Lingui macros, which
+// cannot run uncompiled. The descriptor only imports it for the
+// setup-instructions JSX, which nothing here renders.
 vi.mock("@carbon/react", () => ({
   Copy: () => null,
   Input: () => null,

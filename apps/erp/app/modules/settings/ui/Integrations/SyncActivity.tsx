@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -43,7 +44,7 @@ import {
   LuSend,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher, useRevalidator } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 

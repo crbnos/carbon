@@ -1,6 +1,6 @@
 # Create Purchase Order
 
-Last tested: 2026-06-06
+Last tested: 2026-10-04
 Route: /x/purchase-order/new
 
 ## Prerequisites
@@ -20,9 +20,10 @@ Route: /x/purchase-order/new
 
 ### 3. Submit
 - Button: "Save" (at the bottom of the drawer form, before the "Close" button)
+- requestSubmit the form (NOT a click). The button text is "Save" followed by its shortcut hint, so match with `startsWith`.
 
 ### 4. Verify
-- Expected redirect: `/x/purchase-order/<id>` (detail page opens in drawer)
+- Expected redirect: `/x/purchase-order/<id>/details`
 - Success indicator: heading shows "PO000001" (or next sequence), page shows "Add Line Item" buttons and detail sections (Shipping, Payment, Notes, Files)
 - URL stays on the purchase orders list with the detail drawer open
 

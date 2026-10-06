@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { optionalTiptapDoc, toTiptapDoc } from "./shared.models";
+import {
+  normalizeOperationSourceIds,
+  optionalTiptapDoc,
+  toTiptapDoc
+} from "./shared.models";
 
 // Rich-text columns are `json` and must hold a tiptap document OBJECT. A JSON
 // string scalar stored there later breaks every Kysely copy of the row
@@ -78,5 +82,43 @@ describe("optionalTiptapDoc", () => {
     expect(optionalTiptapDoc.safeParse(42).success).toBe(false);
     expect(optionalTiptapDoc.safeParse(["x"]).success).toBe(false);
     expect(optionalTiptapDoc.safeParse(null).success).toBe(false);
+  });
+});
+
+// Outside Processing is done at the supplier, so it has no work center. The
+// form hides the field for that type and an update leaves an omitted column as
+// it was, so a work center set while the operation was in-house survived the
+// switch — and put the subcontracted operation on the MES Work Centers board.
+describe("normalizeOperationSourceIds", () => {
+  it("clears the work center of an Outside Processing operation", () => {
+    expect(
+      normalizeOperationSourceIds({
+        operationType: "Outside Processing",
+        workCenterId: "wc1"
+      }).workCenterId
+    ).toBeNull();
+  });
+
+  it("clears it even when the form omitted the field", () => {
+    const normalized = normalizeOperationSourceIds<{
+      operationType?: string;
+      workCenterId?: string | null;
+    }>({ operationType: "Outside Processing" });
+    expect(normalized).toHaveProperty("workCenterId", null);
+  });
+
+  it("keeps the work center of an in-house operation", () => {
+    expect(
+      normalizeOperationSourceIds({
+        operationType: "Process",
+        workCenterId: "wc1"
+      }).workCenterId
+    ).toBe("wc1");
+  });
+
+  it("does not add a work center to an in-house operation that omitted it", () => {
+    expect(
+      normalizeOperationSourceIds({ operationType: "Process" })
+    ).not.toHaveProperty("workCenterId");
   });
 });

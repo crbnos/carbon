@@ -20,6 +20,7 @@ import {
   type ManagedFunction,
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
+import { noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -29,6 +30,7 @@ import {
   SHARED_APP_DIRS
 } from "./conformance/no-duplicated-app-file";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -36,10 +38,13 @@ import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
 import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
+import { noPostgresChanges } from "./conformance/no-postgres-changes";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRedirect } from "./conformance/no-raw-redirect";
+import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
@@ -86,7 +91,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noIntegrationIdBranching,
   noUnscopedKyselyWrite,
   noUnguardedSubmit,
-  noNoopOpenChange
+  noNoopOpenChange,
+  noPostgresChanges
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
@@ -168,6 +174,12 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawForwardedHeaders,
       noInterpolatedErrorLog,
       noRawRedirect
+    ]),
+    ...scanAll(loadTypescriptFiles(root), [
+      noRawRevalidator,
+      noInlineSensorOptions,
+      noBareOutlet,
+      noStateCopyOfLoaderData
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders

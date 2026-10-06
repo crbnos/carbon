@@ -1,0 +1,89 @@
+---
+title: "A faster Carbon: quicker page loads, lighter navigation, steadier 3D models"
+description: "Pages load with far fewer requests, posting runs in the app, and every request is traced with OpenTelemetry."
+date: "2026-10-05"
+tags: ["performance", "platform", "self-hosting"]
+image: "/changelog/2026-10-05-a-faster-carbon.svg"
+---
+
+Carbon had been getting slower as companies grew, and most of the wait was the app asking for the same data again. Over the last few days we traced where a page load's time goes and removed the repeats.
+
+## Tracing with OpenTelemetry
+
+This work started from measurement. Carbon's apps, background jobs and the 3D model service now emit OpenTelemetry traces over OTLP, one trace per request, with a span for each loader, database call, storage call and job step. We send ours to Axiom, which is how we found every item below.
+
+Self-hosted installs get the same traces. Tracing is off until you set `OTEL_EXPORTER_OTLP_ENDPOINT`, and any OTLP backend works. The Axiom settings are in `.env.example`.
+
+## Moving between pages
+
+Clicking a tab used to reload everything around it. One click on a part's bill of materials made about 68 data requests, and about 10 of them were for the page you asked for. The surrounding layout now reloads only when something changed, so a click fetches the page and little else.
+
+Links also stopped loading pages you only moved the mouse over. A page now starts loading the moment you press on its link, and opening a record by its bare address goes straight to its details.
+
+## Opening Carbon
+
+The first page after sign-in made 686 requests and downloaded 3.3 MB before you did anything, most of it whole lists of items, customers and suppliers. Those lists are now read in a few requests, and on-hand quantities are fetched only when an item picker is on screen.
+
+The frame around every page, with your companies, permissions and settings, is read in one request where it took nine. Translations ship as a cached file, which took the sign-in page's data from 427 KB to 1.2 KB.
+
+## Record pages
+
+Part, [job](/docs/reference/jobs), [quote](/docs/reference/quotes), [sales order](/docs/reference/sales-orders), supplier quote and [inventory](/docs/reference/inventory) pages asked their questions one after another. They now ask them together, in three steps at most where some took five or more. A part's where-used list and its change notices each take one request.
+
+Bulk actions read what they need once for the whole selection, where they read it again for every row.
+
+## Lists that stay current
+
+Lists and pickers keep what they have already loaded and refresh only when a record behind them changes. A record page listens for changes to that record alone. A change made by someone else still appears without a reload, in the ERP and on the [shop floor](/docs/reference/mes).
+
+## Posting and job creation
+
+Posting [receipts](/docs/reference/receipts), [shipments](/docs/reference/shipments), invoices and payments, creating a job from a [method](/docs/reference/methods), issuing material and recalculating a job used to leave the app for a separate function that paid a network trip for every read. They now run inside the app on a direct database connection. Copying a method onto a job or quote line makes about a third fewer database calls.
+
+A [self-hosted](/docs/platform/self-hosting) install no longer deploys a function per operation. One remains, for search. The [architecture](/docs/building/architecture) page shows the new layout.
+
+## Documents
+
+The [documents](/docs/reference/documents) page waited on its file-type filter, which was slow enough to time out for companies with many documents. The page no longer waits for it, and both the page and the filter are served from a new per-company index.
+
+## Scheduling and planning
+
+The Forecast board in [scheduling](/docs/reference/scheduling) scrolls smoothly on large boards. A schedule run reads every job's rows once, writes a job's operations in one statement, and writes only the operations whose dates moved. The [planning](/docs/reference/planning) run skips companies with nothing to plan.
+
+## 3D models
+
+Converting a CAD model for [assembly instructions](/docs/reference/assembly-instructions) uses far less memory, so large models finish where they used to fail. A 5 MB plate with 1,200 holes needed 6.2 GB to convert. It now needs 840 MB.
+
+Model thumbnails are drawn by the same service, from the viewer's camera angle. A camera button in the viewer toolbar redraws the thumbnail from where you are looking.
+
+## Doing more with less
+
+Carbon is faster than it was a week ago, and it is still far from where we plan to take it.
+
+We could get there sooner by giving each slow piece its own specialised service: a cache here, a queue there, a separate store for search. We choose not to. Carbon is open source, and the people who run it on their own servers matter as much to us as the people on our cloud. Every service we add is one more thing they have to deploy, secure and keep running.
+
+So we keep the list of what Carbon needs short, and get the speed from using it better. Everything above came from fewer requests and better queries, and it reaches self-hosted installs the same day it reaches ours.
+
+<Accordion title="Improvements">
+
+- Slow parts of a page, such as an item's supersession badge and a quote's or purchase order's file list, appear after the page instead of holding it back.
+- A page you leave before it finishes loading stops its remaining work.
+- The PDF engine loads when you open a PDF, not with every page.
+- [Audit log](/docs/reference/audit-log) writes no longer pause other requests.
+- Plan checks are remembered for five minutes instead of being read on every request.
+- Paged lists no longer count every matching row before showing the first page.
+- Refreshing your session no longer reloads the page's data.
+- Background jobs such as the notification digest wake only when there is work for them.
+- Animations follow your system's reduced-motion setting everywhere, and pages can be zoomed.
+- 1,824 missing translations are filled in across 12 languages.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- A page that fails to load shows the error in place instead of replacing the whole app.
+- Signing in or switching company lands on the page you were headed to.
+- The sidebars no longer flicker while a page loads.
+- Finalizing an RFQ or a supplier quote either completes fully or changes nothing.
+
+</Accordion>

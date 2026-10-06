@@ -3,15 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, useDisclosure } from "@carbon/react";
-import { equals, isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { Button, RecordOutlet, useDisclosure } from "@carbon/react";
+import { equals, redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuCircleCheck } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Link, Outlet, useMatches, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Link, useMatches, useParams } from "react-router";
 import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
 import type {
   ContractRouteData,
@@ -24,11 +21,6 @@ import {
   contractSetupSteps
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 /** The setup wizard is for a Draft: once confirmed, a contract is worked on
  *  from its page and changed with Amend. */
@@ -100,7 +92,7 @@ export default function ContractSetupRoute() {
       step={step}
       contractId={id}
     >
-      <Outlet />
+      <RecordOutlet />
       {/* The Details step is a form and renders its own footer, with Next
           as its submit. */}
       {step !== "details" && (

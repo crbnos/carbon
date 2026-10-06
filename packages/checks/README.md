@@ -21,12 +21,13 @@ append-only — new migration files, and new check types in old files, are alway
 
 ## Clobber check
 
-Detects when the same DB object (view, function, or event-trigger) is redefined
+Detects when the same DB object (view or function) is redefined
 on **both** the current branch and `main` since their merge-base — a "concurrent
 redefinition" that will silently overwrite whichever side merges last.
 
-- **What counts as a clobber:** `CREATE OR REPLACE VIEW`, `CREATE OR REPLACE FUNCTION`,
-  or `attach_event_trigger(...)` targeting the same object name on both sides.
+- **What counts as a clobber:** `CREATE OR REPLACE VIEW` or `CREATE OR REPLACE FUNCTION`
+  targeting the same object name on both sides. Event triggers are not included:
+  they live in the attachments manifest, not in migrations.
 - **Run at PR time:** `pnpm --filter @carbon/checks clobbers`
   (needs `origin/main` fetched — run `git fetch origin main` first if needed).
 - **Grow coverage:** add a `{ kind, re }` row to `OBJECT_PATTERNS` in

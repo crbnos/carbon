@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Combobox, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -567,17 +568,15 @@ function MatchByCodeDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSettled: () => {
+      if (submittedRef.current) {
+        onClose();
+      }
+    }
+  });
   const isSubmitting = fetcher.state !== "idle";
   const submittedRef = useRef(false);
-
-  // Close once the confirm-all POST settles; revalidation has already
-  // refreshed the sections behind the drawer.
-  useEffect(() => {
-    if (submittedRef.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
 
   const confirmAll = () => {
     if (proposals.length === 0) return;
@@ -711,21 +710,19 @@ function AiSuggestModal({
   const suggestFetcher = useFetcher<{
     proposals?: AccountMatchProposalRow[];
   }>();
-  const applyFetcher = useFetcher();
+  const applyFetcher = useAction({
+    onSettled: () => {
+      if (appliedRef.current) {
+        onClose();
+      }
+    }
+  });
   const appliedRef = useRef(false);
 
   const isSuggesting = suggestFetcher.state !== "idle";
   const isApplying = applyFetcher.state !== "idle";
   const proposals = suggestFetcher.data?.proposals;
   const hasSuggested = proposals !== undefined;
-
-  // Close once the apply POST settles; revalidation has already refreshed
-  // the sections behind the modal.
-  useEffect(() => {
-    if (appliedRef.current && applyFetcher.state === "idle") {
-      onClose();
-    }
-  }, [applyFetcher.state, onClose]);
 
   const suggest = () => {
     const formData = new FormData();

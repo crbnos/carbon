@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   getCompanyPrivateBucket,
   hasCompanyPrivateObjectPathPrefix,
+  imageTransformErrorMessage,
   isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
@@ -643,6 +644,22 @@ describe("move falls back to a cross-bucket move out of the legacy bucket", () =
 
     expect(result.error).toBeTruthy();
     expect(companyMove).not.toHaveBeenCalled();
+  });
+});
+
+describe("imageTransformErrorMessage", () => {
+  it("names imgproxy when storage could not reach it", () => {
+    // The message storage-api returns with the imgproxy container absent.
+    const error = { message: "getaddrinfo ENOTFOUND imgproxy", status: 500 };
+    expect(imageTransformErrorMessage(error, "fallback")).toContain(
+      "crbn reload imgproxy"
+    );
+  });
+
+  it("keeps the caller's message for any other failure", () => {
+    const error = { message: "Object not found", status: 404 };
+    expect(imageTransformErrorMessage(error, "fallback")).toBe("fallback");
+    expect(imageTransformErrorMessage(null, "fallback")).toBe("fallback");
   });
 });
 

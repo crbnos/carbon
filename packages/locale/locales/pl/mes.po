@@ -188,11 +188,11 @@ msgstr "Czy na pewno chcesz usunąć tę kartę czasu pracy? Tej operacji nie mo
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Czy na pewno chcesz zakończyć wszystkie zdarzenia produkcyjne? Spowoduje to zakończenie wszystkich aktywnych operacji bez ich ukończenia."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Czy na pewno chcesz zakończyć tę operację? Spowoduje to zakończenie wszystkich aktywnych zdarzeń produkcyjnych dla tej operacji."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Czy na pewno chcesz opuścić tę stronę?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Czy na pewno chcesz oznaczyć tę operację jako gotową? Spowoduje to zakończenie wszystkich aktywnych zdarzeń produkcyjnych dla tej operacji."
 
 msgid "Assembly steps"
 msgstr "Kroki montażu"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "Rozpoczęcie pracy"
 
 msgid "Clock out"
-msgstr "Zakończ pracę"
+msgstr "Zakończenie pracy"
 
 msgid "Clock Out"
 msgstr "Zakończenie pracy"
 
 msgid "Clocked in"
-msgstr "W pracy"
+msgstr "Zalogowany"
 
 msgid "Clocked in since <0/>"
 msgstr "Zalogowany od <0/>"
@@ -509,9 +509,9 @@ msgstr "Przeciąganie {0} anulowane."
 msgid "Due"
 msgstr "Termin"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Termin {0}"
 
@@ -529,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "Zduplikowany numer partii"
 
 msgid "Duplicate or copy"
-msgstr "Duplikuj lub skopiuj"
+msgstr "Duplikuj lub kopiuj"
 
 msgid "Duplicate serial number"
 msgstr "Zduplikowany numer seryjny"
@@ -657,13 +657,6 @@ msgstr "Filtruj według lokalizacji"
 
 msgid "Finish"
 msgstr "Zakończ"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Zakończ {0}"
-
-msgid "Finish Anyways"
-msgstr "Zakończ mimo wszystko"
 
 msgid "Finish setting up your account"
 msgstr "Dokończ konfigurowanie swojego konta"
@@ -903,6 +896,16 @@ msgstr "Ręcznie dodaj pozycje do zapasów"
 
 msgid "Manually remove items from inventory"
 msgstr "Ręcznie usuń artykuły z zapasów"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "Oznacz {0} jako gotowe"
+
+msgid "Mark as Done"
+msgstr "Oznacz jako gotowe"
+
+msgid "Mark as Done Anyways"
+msgstr "Oznacz jako gotowe mimo wszystko"
 
 msgid "Mark Short"
 msgstr "Oznacz jako brakujące"
@@ -1162,7 +1165,11 @@ msgstr "Otwarte zlecenia produkcyjne"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr "Otwórz podzestaw {0}: {1}"
+msgstr "Otwórz podzestawienie {0}: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Operacja potrzebna do {0}"
 
 msgid "Operations"
 msgstr "Operacje"
@@ -1311,11 +1318,6 @@ msgstr "Procesy"
 
 msgid "Progress"
 msgstr "Postęp"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Prognoz. {0}"
 
 msgid "Quality Issue"
 msgstr "Problem z jakością"
@@ -1575,7 +1577,7 @@ msgid "Set Clock Out"
 msgstr "Ustaw zakończenie pracy"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "Ustaw czas, kiedy przestałeś pracować, lub potwierdź, że wciąż pracujesz."
+msgstr "Ustaw czas, w którym przestałeś pracować, lub potwierdź, że nadal pracujesz."
 
 msgid "Set up in Carbon"
 msgstr "Skonfiguruj w aplikacji Carbon"
@@ -1673,19 +1675,19 @@ msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
 
 msgid "Sub-Assembly"
-msgstr "Podzestaw"
+msgstr "Podzestawienie"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr "Podzestaw {0} · {1}"
+msgstr "Podzestawienie {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Podzestaw {0} · {1} — pokazany oddzielnie"
+msgstr "Podzestawienie {0} · {1} — wyświetlane osobno"
 
 msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
@@ -1894,7 +1896,7 @@ msgid "View maintenance dispatch"
 msgstr "Wyświetl zlecenie utrzymania ruchu"
 
 msgid "View or open"
-msgstr "Wyświetl lub Otwórz"
+msgstr "Wyświetl lub otwórz"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Wysłaliśmy Ci link do logowania na Twoje konto."

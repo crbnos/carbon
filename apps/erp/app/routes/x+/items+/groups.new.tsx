@@ -8,11 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   itemPostingGroupValidator,
@@ -21,7 +17,6 @@ import {
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -84,14 +79,6 @@ export async function action({ request }: ActionFunctionArgs) {
         `${path.to.itemPostingGroups}?${getParams(request)}`,
         await flash(request, success("Item posting group created"))
       );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    itemPostingGroupsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewItemPostingGroupsRoute() {

@@ -3,12 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuHammer } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { usePermissions } from "~/hooks";
 import { getFleetAssets } from "~/modules/accounting";
 import { FleetAssetsTable } from "~/modules/accounting/ui/FixedAssets";
@@ -97,7 +97,7 @@ export default function FleetRoute() {
           )
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

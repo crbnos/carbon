@@ -168,7 +168,7 @@ msgid "All scrap"
 msgstr "Hepsi fire"
 
 msgid "All steps"
-msgstr "Tüm Adımlar"
+msgstr "Tüm adımlar"
 
 msgid "Allocate failed units"
 msgstr "Başarısız birimleri tahsis et"
@@ -188,11 +188,11 @@ msgstr "Bu zaman kartını silmek istediğinizden emin misiniz? Bu geri alınama
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Tüm üretim olaylarını sonlandırmak istediğinizden emin misiniz? Bu, tüm etkin operasyonları tamamlamadan veya bitirmeden sonlandıracaktır."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Bu işlemi bitirmek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Bu işlemi tamamlandı olarak işaretlemek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
 
 msgid "Assembly steps"
 msgstr "Montaj adımları"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "İş başlangıcı"
 
 msgid "Clock out"
-msgstr "İş Bitişi"
+msgstr "İş bitişi"
 
 msgid "Clock Out"
 msgstr "İş bitişi"
 
 msgid "Clocked in"
-msgstr "İş başında"
+msgstr "İşe başlandı"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
@@ -509,9 +509,9 @@ msgstr "Taşıma {0} iptal edildi."
 msgid "Due"
 msgstr "Vade"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Süresi dolacak {0}"
 
@@ -658,13 +658,6 @@ msgstr "Konuma göre filtrele"
 msgid "Finish"
 msgstr "Bitir"
 
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Bitir {0}"
-
-msgid "Finish Anyways"
-msgstr "Yine de Bitir"
-
 msgid "Finish setting up your account"
 msgstr "Hesabınızı ayarlamayı tamamlayın"
 
@@ -728,7 +721,7 @@ msgid "in {0}"
 msgstr "{0} içinde"
 
 msgid "In an open menu"
-msgstr "Açık menüde"
+msgstr "Açık bir menüde"
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
@@ -903,6 +896,16 @@ msgstr "Envantere öğeler eklemek için manuel olarak"
 
 msgid "Manually remove items from inventory"
 msgstr "Envanterden stok kartlarını manuel kaldır"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} öğesini Tamamlandı Olarak İşaretle"
+
+msgid "Mark as Done"
+msgstr "Tamamlandı Olarak İşaretle"
+
+msgid "Mark as Done Anyways"
+msgstr "Yine de Tamamlandı Olarak İşaretle"
 
 msgid "Mark Short"
 msgstr "Kısa Teslim Et"
@@ -1162,7 +1165,11 @@ msgstr "Açık İş emirleri"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr "Alt montajı aç {0}: {1}"
+msgstr "Alt derlemeyi aç {0}: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Operasyon için gereken tarih: {0}"
 
 msgid "Operations"
 msgstr "Operasyonlar"
@@ -1253,7 +1260,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı, {substitutedAssemblies} montaj için"
 
 msgid "Pin or unpin"
-msgstr "Sabitle veya sabitlemeyi kaldır"
+msgstr "Sabitle veya sabitliği kaldır"
 
 msgid "Pin Out"
 msgstr "Çıkış Yap"
@@ -1311,11 +1318,6 @@ msgstr "Süreçler"
 
 msgid "Progress"
 msgstr "İlerleme"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
 
 msgid "Quality Issue"
 msgstr "Kalite Sorunu"
@@ -1575,7 +1577,7 @@ msgid "Set Clock Out"
 msgstr "İş bitişini ayarla"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "Çalışmayı durdurduğunuz saati ayarlayın veya hala çalışmakta olduğunuzu onaylayın."
+msgstr "Çalışmayı bitirdiğiniz zamanı ayarlayın veya hala çalışmakta olduğunuzu onaylayın."
 
 msgid "Set up in Carbon"
 msgstr "Carbon'da ayarla"
@@ -1673,19 +1675,19 @@ msgid "Storage Unit"
 msgstr "Depolama Birimi"
 
 msgid "Sub-Assembly"
-msgstr "Alt Montaj"
+msgstr "Alt derleme"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr "Alt Montaj {0} · {1}"
+msgstr "Alt derleme {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Alt Montaj {0} · {1} — kendi başına gösteriliyor"
+msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
 
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"

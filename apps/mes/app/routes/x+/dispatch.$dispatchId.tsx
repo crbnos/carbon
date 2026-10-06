@@ -21,16 +21,13 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { groupBy } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
 import { LuArrowLeft, LuCheck, LuCirclePlus, LuX } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
@@ -54,12 +51,14 @@ import type {
   maintenanceSeverity
 } from "~/services/models";
 import { useItems } from "~/stores";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["dispatchId"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const handle: Handle = {
+  realtime: [
+    { table: "maintenanceDispatch", column: "id", param: "dispatchId" }
+  ]
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -92,22 +91,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     replacementParts = parts.data ?? [];
   }
 
-  // Fetch tracked entities for each item
-  const itemTrackedEntities: Record<
-    string,
-    Awaited<
-      ReturnType<typeof getMaintenanceDispatchItemTrackedEntities>
-    >["data"]
-  > = {};
-  if (items.data) {
-    for (const item of items.data) {
-      const trackedEntities = await getMaintenanceDispatchItemTrackedEntities(
+  // Tracked entities for every item, in one read
+  const trackedEntities = items.data?.length
+    ? await getMaintenanceDispatchItemTrackedEntities(
         client,
-        item.id
-      );
-      itemTrackedEntities[item.id] = trackedEntities.data ?? [];
-    }
-  }
+        items.data.map((item) => item.id)
+      )
+    : null;
+  const trackedEntitiesByItem = groupBy(
+    trackedEntities?.data ?? [],
+    (row) => row.maintenanceDispatchItemId
+  );
+  const itemTrackedEntities = Object.fromEntries(
+    (items.data ?? []).map((item) => [
+      item.id,
+      trackedEntitiesByItem[item.id] ?? []
+    ])
+  );
 
   return {
     dispatch: dispatch.data,

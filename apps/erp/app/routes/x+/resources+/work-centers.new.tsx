@@ -7,10 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import { notifyScheduleInputsChanged } from "~/modules/production";
@@ -21,7 +18,6 @@ import {
 } from "~/modules/resources";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -67,14 +63,6 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   return modal ? createWorkCenter : redirect(path.to.workCenters);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    workCentersQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewWorkCenterRoute() {

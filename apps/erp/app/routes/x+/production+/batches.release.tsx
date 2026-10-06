@@ -6,6 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
 import {
   notifyScheduleInputsChanged,
   releaseJobOperationBatch
@@ -19,14 +20,21 @@ import { getDatabaseClient } from "~/services/database.server";
 // released — the caller filters, and any non-Planned id is refused here too so a
 // stale selection can't flip an Active/Completing batch. Fetcher-driven; the
 // table toasts the summary and the loader revalidates.
+const bodySchema = z.object({ batchIds: z.array(z.string()) });
+
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
-  const { batchIds } = (await request.json()) as { batchIds?: string[] };
-  const ids = [...new Set((batchIds ?? []).filter(Boolean))];
+  // A body that is not JSON, or not the shape the table sends, is a plain
+  // refusal rather than a 500.
+  const body = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!body.success) {
+    return { success: false, message: "Invalid request" };
+  }
+  const ids = [...new Set(body.data.batchIds.filter(Boolean))];
   if (ids.length === 0) {
     return { success: false, message: "No batches selected" };
   }

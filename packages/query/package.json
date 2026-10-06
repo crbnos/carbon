@@ -1,0 +1,38 @@
+{
+  "name": "@carbon/query",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./cache": "./src/cache.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@carbon/database": "workspace:*",
+    "@carbon/env": "workspace:*",
+    "@carbon/logger": "workspace:*",
+    "@carbon/react": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "@tanstack/react-query": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "react-router": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-router": "catalog:"
+  }
+}

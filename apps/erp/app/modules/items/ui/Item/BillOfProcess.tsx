@@ -7,6 +7,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -19,6 +20,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  ClientOnly,
   Count,
   cn,
   DropdownMenu,
@@ -71,12 +73,7 @@ import {
   LuSquareFunction,
   LuTriangleAlert
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useFetchers,
-  useParams,
-  useRevalidator
-} from "react-router";
+import { useFetcher, useFetchers, useParams } from "react-router";
 import { z } from "zod";
 import {
   DateTime,
@@ -314,12 +311,10 @@ const BillOfProcess = ({
       }, {} as PendingWorkInstructions);
     });
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const operationsById = new Map<
     string,
@@ -1890,7 +1885,8 @@ function AttributesForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");
@@ -2527,16 +2523,15 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationStepAction>();
-  const duplicateFetcher = useFetcher();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const duplicateFetcher = useFetcher();
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
@@ -3331,15 +3326,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -3770,12 +3764,18 @@ function OperationPreview({
         {step.type ? <Badge variant="secondary">{step.type}</Badge> : null}
       </div>
       <p className="text-sm font-medium">{step.name ?? t`Step`}</p>
-      {descriptionHtml ? (
-        <div
-          className="prose prose-sm max-w-none text-sm dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-        />
-      ) : null}
+      {/* generateHTML returns nothing on the server, so the server never
+          renders this block: rendering it during hydration would not match. */}
+      <ClientOnly>
+        {() =>
+          descriptionHtml ? (
+            <div
+              className="prose prose-sm max-w-none text-sm dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            />
+          ) : null
+        }
+      </ClientOnly>
 
       <div className="flex flex-col gap-1 border-t pt-3">
         <Subheading variant="heavy">
@@ -3931,15 +3931,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);

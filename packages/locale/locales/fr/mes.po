@@ -188,11 +188,11 @@ msgstr "Êtes-vous sûr de vouloir supprimer cette fiche de temps ? Cette action
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Êtes-vous sûr de vouloir mettre fin à tous les événements de production ? Cela arrêtera toutes les opérations actives sans les terminer ni les achever."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Êtes-vous sûr de vouloir terminer cette opération ? Cela mettra fin à tous les événements de production actifs pour cette opération."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Êtes-vous sûr de vouloir quitter cette page ?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Êtes-vous sûr de vouloir marquer cette opération comme terminée ? Cela mettra fin à tous les événements de production actifs pour cette opération."
 
 msgid "Assembly steps"
 msgstr "Étapes d'assemblage"
@@ -509,9 +509,9 @@ msgstr "Déplacement de {0} annulé."
 msgid "Due"
 msgstr "Échéance"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Échéance {0}"
 
@@ -658,13 +658,6 @@ msgstr "Filtrer par emplacement"
 msgid "Finish"
 msgstr "Terminer"
 
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Terminer {0}"
-
-msgid "Finish Anyways"
-msgstr "Terminer quand même"
-
 msgid "Finish setting up your account"
 msgstr "Terminez la configuration de votre compte"
 
@@ -728,7 +721,7 @@ msgid "in {0}"
 msgstr "dans {0}"
 
 msgid "In an open menu"
-msgstr "Dans un menu ouvert"
+msgstr "Dans un menu déroulant"
 
 msgid "In Progress"
 msgstr "En cours"
@@ -903,6 +896,16 @@ msgstr "Ajouter manuellement des articles au stock"
 
 msgid "Manually remove items from inventory"
 msgstr "Retirer manuellement des articles du stock"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "Marquer {0} comme terminé"
+
+msgid "Mark as Done"
+msgstr "Marquer comme terminé"
+
+msgid "Mark as Done Anyways"
+msgstr "Marquer comme terminé quand même"
 
 msgid "Mark Short"
 msgstr "Marquer comme manquant"
@@ -1162,7 +1165,11 @@ msgstr "Ordres de fabrication ouverts"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr "Ouvrir sous-assemblage {0} : {1}"
+msgstr "Ouvrir le sous-ensemble {0} : {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Opération requise avant le {0}"
 
 msgid "Operations"
 msgstr "Opérations"
@@ -1311,11 +1318,6 @@ msgstr "Processus"
 
 msgid "Progress"
 msgstr "Progression"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
 
 msgid "Quality Issue"
 msgstr "Problème de qualité"
@@ -1575,7 +1577,7 @@ msgid "Set Clock Out"
 msgstr "Définir le pointage fin"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "Indiquez l'heure à laquelle vous avez arrêté de travailler, ou confirmez que vous continuez à travailler."
+msgstr "Enregistrez l'heure à laquelle vous avez cessé de travailler, ou confirmez que vous continuez à travailler."
 
 msgid "Set up in Carbon"
 msgstr "Configurer dans Carbon"
@@ -1673,19 +1675,19 @@ msgid "Storage Unit"
 msgstr "Unité de stockage"
 
 msgid "Sub-Assembly"
-msgstr "Sous-assemblage"
+msgstr "Sous-ensemble"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr "Sous-assemblage {0} · {1}"
+msgstr "Sous-ensemble {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Sous-assemblage {0} · {1} — affiché seul"
+msgstr "Sous-ensemble {0} · {1} — affiché seul"
 
 msgid "Submit anonymously"
 msgstr "Soumettre anonymement"

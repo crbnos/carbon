@@ -5,20 +5,13 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { getSupplierProcessesBySupplier } from "~/modules/purchasing";
 import SupplierProcesses from "~/modules/purchasing/ui/Supplier/SupplierProcesses";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["supplierId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -51,7 +44,7 @@ export default function SupplierPaymentRoute() {
   return (
     <>
       <SupplierProcesses processes={processes} />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

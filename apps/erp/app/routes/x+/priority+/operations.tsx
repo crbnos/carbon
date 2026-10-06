@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useChangedRows } from "@carbon/query";
 import {
   Button,
   ClientOnly,
@@ -23,10 +24,8 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -35,6 +34,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { replaceEqualDeep } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuCirclePlus,
@@ -42,10 +42,7 @@ import {
   LuSettings2,
   LuTriangleAlert
 } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -83,11 +80,6 @@ export const handle: Handle = {
   to: path.to.priorityOperation,
   module: "schedule"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -595,8 +587,10 @@ function KanbanSchedule() {
     [displaySettings]
   );
 
+  // A reload hands over new objects for every card. Keeping the ones that did
+  // not change lets their memoized cards skip the render.
   useEffect(() => {
-    setItems(initialItems);
+    setItems((previous) => replaceEqualDeep(previous, initialItems));
   }, [initialItems]);
 
   const sortItems = useCallback((items: Item[]) => {
@@ -1050,96 +1044,58 @@ function useProgressByOperation(
     }
   }, [productionEventsByOperation]);
 
-  useRealtimeChannel({
-    topic: `kanban-schedule:${companyId}`,
-    setup(channel) {
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=in.(${items
-              .filter((item) => !isBatchItem(item))
-              .map((item) => item.id)
-              .join(",")})`
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "UPDATE": {
-                const { new: updated } = payload;
-                setItems((prevItems: Item[]) =>
-                  sortItems(
-                    prevItems.map((item: Item) => {
-                      if (item.id === updated.id) {
-                        return {
-                          ...item,
-                          columnId: updated.workCenterId,
-                          priority: updated.priority
-                        };
-                      }
-                      return item;
-                    })
-                  )
-                );
-                break;
-              }
-              case "DELETE": {
-                const { old: deleted } = payload;
-                setItems((prevItems: Item[]) =>
-                  sortItems(
-                    prevItems.filter((item: Item) => item.id !== deleted.id)
-                  )
-                );
-                break;
-              }
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `companyId=eq.${companyId}`
-          },
-          (payload) => {
-            if (payload.eventType === "INSERT") {
-              const { new: inserted } = payload;
-              if (inserted.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [inserted.jobOperationId]: [
-                    ...(prevState[inserted.jobOperationId] ?? []),
-                    inserted
-                  ]
-                }));
-              }
-            } else if (payload.eventType === "UPDATE") {
-              const { new: updated } = payload;
-              if (updated.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [updated.jobOperationId]: (
-                    prevState[updated.jobOperationId] ?? []
-                  ).map((event) => (event.id === updated.id ? updated : event))
-                }));
-              }
-            } else if (payload.eventType === "DELETE") {
-              const { old: deleted } = payload;
-              if (deleted.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [deleted.jobOperationId]: (
-                    prevState[deleted.jobOperationId] ?? []
-                  ).filter((event) => event.id !== deleted.id)
-                }));
-              }
-            }
-          }
+  useChangedRows<{ id: string; workCenterId: string; priority: number }>({
+    companyId,
+    table: "jobOperation",
+    columns: "id, workCenterId, priority",
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        setItems((prevItems: Item[]) =>
+          sortItems(prevItems.filter((item: Item) => !ids.includes(item.id)))
         );
+        return;
+      }
+      const changed = new Map(rows.map((row) => [row.id, row]));
+      setItems((prevItems: Item[]) =>
+        sortItems(
+          prevItems.map((item: Item) => {
+            const updated = changed.get(item.id);
+            return updated
+              ? {
+                  ...item,
+                  columnId: updated.workCenterId,
+                  priority: updated.priority
+                }
+              : item;
+          })
+        )
+      );
+    }
+  });
+
+  useChangedRows<Event>({
+    companyId,
+    table: "productionEvent",
+    onChange: ({ op, ids, rows }) => {
+      setProductionEventsByOperation((prev) => {
+        if (op === "DELETE") {
+          return Object.fromEntries(
+            Object.entries(prev).map(([operationId, events]) => [
+              operationId,
+              events.filter((event) => !ids.includes(event.id))
+            ])
+          );
+        }
+        const next = { ...prev };
+        for (const row of rows) {
+          if (!row.jobOperationId) continue;
+          const events = next[row.jobOperationId] ?? [];
+          next[row.jobOperationId] = events.some((event) => event.id === row.id)
+            ? events.map((event) => (event.id === row.id ? row : event))
+            : [...events, row];
+        }
+        return next;
+      });
     }
   });
 

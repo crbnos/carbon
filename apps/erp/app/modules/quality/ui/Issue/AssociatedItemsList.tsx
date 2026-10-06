@@ -10,6 +10,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -79,13 +80,13 @@ function DispositionQuantityInput({
   quantity: number;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
+  });
 
   // Show the submitted value while the save is in flight; once the fetcher is
   // idle this falls back to the loader's quantity, which also resets the field
@@ -177,18 +178,18 @@ export function AssociatedItemsList({
   const [items] = useItems();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
+    }
+  });
   const splitFetcher = useFetcher<typeof splitAction>();
   const assignFetcher = useFetcher<typeof assignAction>();
   const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
   const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
-    }
-  }, [fetcher.data]);
 
   useEffect(() => {
     if (

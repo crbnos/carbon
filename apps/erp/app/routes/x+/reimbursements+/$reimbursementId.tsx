@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getActiveDimensionsWithValues,
@@ -32,11 +30,6 @@ export const handle: Handle = {
   to: path.to.reimbursements,
   module: "invoicing"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["reimbursementId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 /**
  * Loads the document for the whole page — the header, the Documents panel,
@@ -190,7 +183,7 @@ export default function ReimbursementRoute() {
         />
       }
     >
-      <Outlet />
+      <RecordOutlet />
     </DocumentPage>
   );
 }

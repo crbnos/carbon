@@ -55,11 +55,23 @@ export function useErrorResponseForForm({
   return null;
 }
 
+/**
+ * True once the stored state is this form instance's own and holds its
+ * defaults. Read this, never `isHydrated` alone: on the first render of a form
+ * that replaces another with the same fixed `id`, the store still holds the
+ * previous form's values, and an input mounted with them kept showing the
+ * previous record (a receipt's form showed the last receipt's number).
+ */
+export const useIsFormHydrated = (context: InternalFormContextValue) => {
+  const hydrated = useFormStore(context.formId, (state) => state.isHydrated);
+  return hydrated && (context.ownsState ?? true);
+};
+
 export const useFieldErrorsForForm = (
   context: InternalFormContextValue
 ): Hydratable<FieldErrors | undefined> => {
   const response = useErrorResponseForForm(context);
-  const hydrated = useFormStore(context.formId, (state) => state.isHydrated);
+  const hydrated = useIsFormHydrated(context);
   return hydratable.from(response?.fieldErrors, hydrated);
 };
 
@@ -86,8 +98,8 @@ export const useDefaultValuesFromLoader = ({
 export const useDefaultValuesForForm = (
   context: InternalFormContextValue
 ): Hydratable<{ [fieldName: string]: any }> => {
-  const { formId, defaultValuesProp } = context;
-  const hydrated = useFormStore(formId, (state) => state.isHydrated);
+  const { defaultValuesProp } = context;
+  const hydrated = useIsFormHydrated(context);
   const errorResponse = useErrorResponseForForm(context);
   const defaultValuesFromLoader = useDefaultValuesFromLoader(context);
 

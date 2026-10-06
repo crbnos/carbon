@@ -31,6 +31,15 @@ The tracking type sets how units are counted. *Inventory* items are quantity-tra
 
 Each part revision is a separate item record with the same part number and a different revision. Creating a revision preserves the item used by existing jobs.
 
+A new revision starts as a copy of the revision you created it from, so you don't set it up again. Along with the item's properties and its method, it carries over:
+
+- **Batch Size**, **Scrap Percent**, and <Term id="lead-time">lead time</Term>
+- each location's <Term id="reordering-policy">reordering policy</Term> with its parameters, such as the accumulation period and safety stock
+- the <Term id="item-group">item group</Term>
+- the preferred supplier, and every supplier part with its price breaks
+
+Costs, the sale price, and stock are not copied. They belong to the revision they were recorded against. Change anything on the new revision and the old one is left as it was.
+
 <Callout type="info">
 An item's <Term>costing method</Term>, one of *Standard*, *Average*, *FIFO*, or *LIFO*, lives on its cost record, not the item itself, and decides how consumption is valued.
 </Callout>

@@ -27,11 +27,7 @@ import {
 import { getClientIp, redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuShield } from "react-icons/lu";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
@@ -46,7 +42,6 @@ import {
 } from "~/modules/users";
 import { getClaims } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 // The per-user permissions editor is a modal over the accounts list; when the
 // company isn't entitled we show the upgrade prompt IN that modal (not a
@@ -208,11 +203,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   throw redirect(path.to.employeeAccounts, await flash(request, result));
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function UsersEmployeeRoute() {

@@ -6,10 +6,9 @@ import { ValidatedForm } from "@carbon/form";
 import { LabelWithHelp, Status } from "@carbon/react";
 import { isBalanced } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useStore } from "@nanostores/react";
-import { atom } from "nanostores";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuPlus } from "react-icons/lu";
+import { create } from "zustand";
 import { DatePicker, Hidden, Input, Select } from "~/components/Form";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -33,12 +32,12 @@ export const journalEntryFormId = "journal-entry-form";
 
 // Whether the entry being edited can be posted — balanced, with at least one
 // debit. The lines live in the form; the header's Post button reads this.
-const $postable = atom<{ journalEntryId: string; canPost: boolean } | null>(
-  null
-);
+const usePostableStore = create<{
+  postable: { journalEntryId: string; canPost: boolean } | null;
+}>()(() => ({ postable: null }));
 
 export function useJournalEntryCanPost(journalEntryId: string) {
-  const postable = useStore($postable);
+  const postable = usePostableStore((state) => state.postable);
   return postable?.journalEntryId === journalEntryId && postable.canPost;
 }
 
@@ -130,7 +129,7 @@ const JournalEntryForm = ({
   const canPost = balanced && totalDebits !== 0;
 
   useEffect(() => {
-    $postable.set({ journalEntryId, canPost });
+    usePostableStore.setState({ postable: { journalEntryId, canPost } });
   }, [journalEntryId, canPost]);
 
   const handleLineChange = useCallback(

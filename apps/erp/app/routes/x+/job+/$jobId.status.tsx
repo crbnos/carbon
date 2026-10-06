@@ -155,6 +155,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     });
     if (released.error) {
+      // The job is Ready when it came back released (its purchase orders
+      // failed after the flip): schedule it, then say what failed.
+      if (released.releasedJobIds.includes(id)) {
+        try {
+          await scheduleJobLocation({ id, companyId, userId });
+        } catch (err) {
+          logger.error("Error", { error: err });
+        }
+      }
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, released.error))

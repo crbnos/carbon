@@ -23,14 +23,30 @@ const SINCE = "20260927000000";
 /** The migration that took over the event-system functions. */
 const EVENT_SYSTEM_SINCE = "20261002114954";
 
+/**
+ * The migration that took over the table handlers (interceptors and statement
+ * handlers) and the event triggers that attach them.
+ */
+const ATTACHMENTS_SINCE = "20261004194527";
+
 /** The directories of managed function files, and the migration each set is checked from. */
 export const MANAGED_FUNCTION_SETS = [
   { dir: "packages/database/src/authz/helpers", since: SINCE },
   {
     dir: "packages/database/src/event-system/functions",
     since: EVENT_SYSTEM_SINCE
+  },
+  {
+    dir: "packages/database/src/event-system/handlers",
+    since: ATTACHMENTS_SINCE
   }
 ];
+
+// Each of these replaces a table's whole list of handlers, so a call that
+// leaves one out detaches it. The lists live in one place instead:
+// packages/database/src/event-system/attachments.ts.
+const ATTACH_CALL =
+  /\b(attach_event_trigger|attach_statement_handler|set_event_triggers)\s*\(/gi;
 
 /** `file` is `<name>.sql` for public, `<schema>.<name>.sql` otherwise. */
 export type ManagedFunction = {
@@ -54,7 +70,9 @@ export const GENERATED_AUTHZ_MIGRATION =
 // Group 2 is the schema when the statement names one, group 3 the function.
 const NAME = String.raw`(?:"?(\w+)"?\s*\.\s*)?"?(\w+)"?`;
 // The target may be on a later line; group 2 is its schema, when it names one. The manifest
-// owns public tables only, so storage.objects (bucket) policies stay in migrations.
+// owns public tables and realtime.messages (broadcast authorization); storage.objects
+// (bucket) policies stay in migrations.
+const MANIFEST_SCHEMAS = new Set(["public", "realtime"]);
 const POLICY_DDL =
   /\b(?:CREATE|ALTER)\s+POLICY\s+(?:"[^"]*"|\S+)\s+ON\s+(?:"?(\w+)"?\s*\.\s*)?"?\w+"?/gi;
 const FUNCTION_DDL = new RegExp(
@@ -73,7 +91,7 @@ export const noAuthzDdlInMigrations = (
 ): ConformanceCheck => ({
   id: "no-authz-ddl-in-migrations",
   description:
-    "Policies, RLS helpers and event-system functions are authored as files, not migrations.",
+    "Policies, RLS helpers, event-system functions and event triggers are authored as files, not migrations.",
   provenance: {
     deprecates: "CREATE/ALTER POLICY and managed function DDL in migrations",
     replacedBy:
@@ -96,7 +114,7 @@ export const noAuthzDdlInMigrations = (
     const line = (index: number) => sql.slice(0, index).split("\n").length;
     const violations: Violation[] = [];
     for (const m of sql.matchAll(POLICY_DDL)) {
-      if ((m[1] ?? "public").toLowerCase() !== "public") continue;
+      if (!MANIFEST_SCHEMAS.has((m[1] ?? "public").toLowerCase())) continue;
       violations.push({
         file,
         line: line(m.index),
@@ -104,6 +122,17 @@ export const noAuthzDdlInMigrations = (
         message:
           "Author policies in packages/database/src/authz/manifest.ts, then run `pnpm --filter @carbon/database authz migration <name>`."
       });
+    }
+    if (timestamp >= ATTACHMENTS_SINCE) {
+      for (const m of sql.matchAll(ATTACH_CALL)) {
+        violations.push({
+          file,
+          line: line(m.index),
+          snippet: m[0],
+          message:
+            "Declare event triggers in packages/database/src/event-system/attachments.ts, then run `pnpm --filter @carbon/database authz migration <name>`."
+        });
+      }
     }
     for (const m of sql.matchAll(FUNCTION_DDL)) {
       const fn = managed.get(`${m[2] ?? "public"}.${m[3]}`.toLowerCase());

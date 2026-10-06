@@ -14,10 +14,10 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, FieldEmptyState } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
+import { useMemo } from "react";
 import type { getOpenSalesOrderLinesForItem } from "~/modules/sales";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
@@ -53,13 +53,9 @@ const JobSalesOrderLine = ({
   const { t } = useLingui();
   const [customers] = useCustomers();
 
-  const fetcher =
-    useFetcher<Awaited<ReturnType<typeof getOpenSalesOrderLinesForItem>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
-  useEffect(() => {
-    if (jobId) fetcher.load(path.to.api.jobSalesOrderLines(jobId));
-  }, [jobId]);
+  const fetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getOpenSalesOrderLinesForItem>>
+  >(jobId ? path.to.api.jobSalesOrderLines(jobId) : null);
 
   const lines = fetcher.data?.data ?? [];
 

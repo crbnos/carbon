@@ -9,12 +9,8 @@ import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { getClientIp, redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -79,9 +75,4 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
   }
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }

@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getWarehouseTransfers } from "~/modules/inventory";
 import WarehouseTransfersTable from "~/modules/inventory/ui/WarehouseTransfers/WarehouseTransfersTable";
 import type { Handle } from "~/utils/handle";
@@ -17,6 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["warehouseTransfer"],
   breadcrumb: msg`Warehouse Transfers`,
   to: path.to.warehouseTransfers
 };
@@ -59,7 +60,7 @@ export default function WarehouseTransfersRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <WarehouseTransfersTable data={warehouseTransfers} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

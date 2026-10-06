@@ -84,10 +84,11 @@ Each item's diff compares its edited draft against the method it was snapshotted
 - **Bill of Process** — added, removed, and modified operations and their steps, parameters, and tools.
 - **Properties** — changed item fields (name, description, unit of measure, tracking type, replenishment
   system, and the rest), one row per changed column.
-- **Supplier Parts** — for a purchased Revision, Replacement Part, or New Part, the [suppliers you set up on the
-  line](/docs/reference/change-orders/change-types#supplier-parts-on-a-purchased-line), each listed as an
-  addition with its part number, unit price, min order qty, order multiple, conversion factor, and purchasing
-  unit. A draft starts with none, so every supplier you add shows here.
+- **Supplier Parts** — for a purchased Revision, Replacement Part, or New Part, the [suppliers on the
+  line](/docs/reference/change-orders/change-types#supplier-parts-on-a-purchased-line), with their part number,
+  unit price, min order qty, order multiple, conversion factor, and purchasing unit. A Revision starts with its
+  source revision's suppliers, so only the ones you added, changed, or removed show here. A Replacement Part or
+  New Part starts with none, so every supplier you add shows as an addition.
 
 <Callout type="info" title="The diff is exact because the draft is real.">
 There's no shadow copy of your edits to drift out of sync. You edited an actual draft method, so the diff is

@@ -219,6 +219,14 @@ async function assertEligible(
     if (op.jobOperationBatchId) {
       throw new Error(`Operation ${op.id} is already in a batch`);
     }
+    // A batch is one run on one of our work centers; subcontracted work runs
+    // at the supplier, and joining a batch would stamp the batch's work center
+    // onto it.
+    if (op.operationType === "Outside Processing") {
+      throw new Error(
+        `Operation ${op.id} is outside processing and can't be batched`
+      );
+    }
     if (!NOT_STARTED.includes(op.status)) {
       throw new Error(`Operation ${op.id} has already started`);
     }

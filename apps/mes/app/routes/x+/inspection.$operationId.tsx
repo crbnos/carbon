@@ -35,8 +35,27 @@ import {
 } from "~/services/quality.service";
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    {
+      table: "inspection",
+      filter: ({ data }) =>
+        data?.inspection?.id ? `id=eq.${data.inspection.id}` : undefined
+    },
+    {
+      table: "inspectionSample",
+      filter: ({ data }) =>
+        data?.inspection?.id
+          ? `inspectionId=eq.${data.inspection.id}`
+          : undefined
+    },
+    { table: "jobOperation", column: "id", param: "operationId" }
+  ]
+};
 
 const logger = getLogger("mes", "inspection");
 

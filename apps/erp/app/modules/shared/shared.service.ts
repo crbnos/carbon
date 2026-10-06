@@ -4,7 +4,13 @@
 
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { getContentType, getFileExtension, storage } from "@carbon/files";
+import {
+  getContentType,
+  getFileExtension,
+  imageTransformErrorMessage,
+  storage
+} from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type {
   PostgrestResponse,
@@ -15,6 +21,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { PriceBreak, SupplierPriceMap } from "./shared.models";
 import type { ItemModelUpload } from "./types";
+
+const logger = getLogger("erp", "shared");
 
 export async function deleteNote(
   client: SupabaseClient<Database>,
@@ -73,10 +81,16 @@ export async function getBase64ImageFromSupabase(
     return null;
   }
 
-  const { data } = await storage(client)
+  const { data, error } = await storage(client)
     .company(companyId)
     .download(path, heic ? { transform: { quality: 90 } } : undefined);
   if (!data) {
+    if (heic) {
+      logger.error(
+        imageTransformErrorMessage(error, "Failed to transform HEIC file"),
+        { path, error }
+      );
+    }
     return null;
   }
 

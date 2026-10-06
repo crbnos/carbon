@@ -28,6 +28,7 @@ const TYPESCRIPT_ROOTS = [
   "packages/files/src",
   "packages/form/src",
   "packages/react/src",
+  "packages/query/src",
   "packages/printing/src"
   // (workflows source now lives under packages/ee/src, already scanned above)
 ];

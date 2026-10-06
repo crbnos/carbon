@@ -26,16 +26,12 @@ import {
   HubProvider,
   toFormFields
 } from "@carbon/onboarding/ui";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {
-  Outlet,
   useFetcher,
   useLoaderData,
   useLocation,
@@ -51,7 +47,7 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
-import { getImplementationSignals } from "~/services/implementation-signals.server";
+import { getImplementationSignals } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
@@ -144,9 +140,6 @@ export const handle: Handle = {
   to: path.to.getStarted,
   sidebar: GetStartedSidebar
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -276,7 +269,7 @@ export default function GetStartedLayout() {
             resolveScreenUrl={resolveScreenUrl}
             resolveVideoUrl={resolveVideoUrl}
           >
-            <Outlet />
+            <RecordOutlet />
           </HubProvider>
         </div>
       </div>

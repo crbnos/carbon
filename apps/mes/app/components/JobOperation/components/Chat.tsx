@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
+import { useChangedRows } from "@carbon/query";
 import {
   Avatar,
   Button,
@@ -12,8 +13,7 @@ import {
   Loading,
   ScrollArea,
   useDebounce,
-  useMount,
-  useRealtimeChannel
+  useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -74,26 +74,17 @@ export function OperationChat({
     fetchChats();
   });
 
-  useRealtimeChannel({
-    topic: `job-operation-notes-${operation.id}`,
-    setup(channel) {
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "jobOperationNote",
-          filter: `jobOperationId=eq.${operation.id}`
-        },
-        (payload) => {
-          setMessages((prev) => {
-            if (prev.some((note) => note.id === payload.new.id)) {
-              return prev;
-            }
-            return [...prev, payload.new as Message];
-          });
-        }
-      );
+  useChangedRows<Message & { jobOperationId: string }>({
+    companyId: user.company.id,
+    table: "jobOperationNote",
+    onResync: fetchChats,
+    onChange: ({ op, rows }) => {
+      if (op !== "INSERT") return;
+      const notes = rows.filter((row) => row.jobOperationId === operation.id);
+      setMessages((prev) => [
+        ...prev,
+        ...notes.filter((note) => !prev.some((p) => p.id === note.id))
+      ]);
     }
   });
 

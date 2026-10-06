@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getRentalAgreements } from "~/modules/sales";
 import { RentalAgreementsTable } from "~/modules/sales/ui/Rentals";
 import type { Handle } from "~/utils/handle";
@@ -63,7 +63,7 @@ export default function RentalAgreementsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <RentalAgreementsTable data={rentalAgreements} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -22,12 +22,10 @@ import {
   useOptimisticMode
 } from "./useMode";
 import useMount from "./useMount";
-import { useNanoStore } from "./useNanoStore";
 import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
 import { usePlan } from "./usePlan";
-import { useRealtimeChannel } from "./useRealtimeChannel";
 import { useRouteData } from "./useRouteData";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
@@ -53,13 +51,11 @@ export {
   useIdle,
   useModePreference,
   useMount,
-  useNanoStore,
   useNProgress,
   useOptimisticLocation,
   useOptimisticMode,
   useOutsideClick,
   usePlan,
-  useRealtimeChannel,
   useRouteData,
   useShortcutKeyMap,
   useShortcutKeys,

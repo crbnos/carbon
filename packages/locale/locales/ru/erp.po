@@ -77,7 +77,7 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
-msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Переустановите план для применения.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Переустановите план для применения.}}"
+msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -359,6 +359,21 @@ msgstr "{count, plural, one {# счет с остатком} other {# счето
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Расформировать # серию} few {Расформировать # серии} many {Расформировать # серий} other {Расформировать # серий}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {Расформирована # серия} few {Расформированы # серии} many {Расформированы # серий} other {Расформированы # серий}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Запустить в работу # серию} few {Запустить в работу # серии} many {Запустить в работу # серий} other {Запустить в работу # серий}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {Запущена # серия} few {Запущены # серии} many {Запущены # серий} other {Запущены # серий}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {Запущен # производственный заказ} few {Запущено # производственных заказа} many {Запущено # производственных заказов} other {Запущено # производственных заказов}}"
+
 msgid "{count} of {total} units"
 msgstr "{count} из {total} единиц"
 
@@ -508,7 +523,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
-msgstr "{unmappedRequiredCount, plural, one {Сначала отобразите # оставшийся обязательный счет.} other {Сначала отобразите # оставшихся обязательных счетов.}}"
+msgstr "{unmappedRequiredCount, plural, one {Сначала сопоставьте # оставшийся требуемый счет.} other {Сначала сопоставьте # оставшиеся требуемые счета.}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
@@ -2548,7 +2563,7 @@ msgstr "Вы уверены, что хотите активировать это
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Вы уверены, что хотите отменить {0}? Он будет закрыт и доступен только для чтения, пока вы его не откроете заново."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
 
@@ -2928,8 +2943,8 @@ msgstr "Вы уверены, что хотите покинуть эту стр�
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "Вы уверены, что хотите пройти эту контрольную точку? На этапе {0} остались незавершённые задачи."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Вы уверены, что хотите окончательно удалить {0}?"
 
@@ -4198,7 +4213,7 @@ msgid "Changes"
 msgstr "Изменения"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
-msgstr "Изменение компонентов переопределяет группу. Повторно запустите планирование движения, чтобы применить изменение к шагам."
+msgstr "Изменение компонентов переопределяет группу. Повторно запустите Motion Planning, чтобы применить изменение к шагам."
 
 msgid "Changing this will overwrite the existing method"
 msgstr "Это изменение перезапишет существующий метод"
@@ -4385,7 +4400,7 @@ msgid "Clock Out"
 msgstr "Окончание работы"
 
 msgid "Clocked in"
-msgstr "Начал работу"
+msgstr "Зарегистрирован"
 
 msgid "Clocked in since <0/>"
 msgstr "Работаю с <0/>"
@@ -5390,7 +5405,9 @@ msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Не удалось запустить в работу {0}: {1}"
 
@@ -6760,7 +6777,7 @@ msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Удалить ценовую шкалу для количества {0}? Это не может быть отменено."
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
-msgstr "Удалить эту подсборку и все ее шаги? Это невозможно будет отменить."
+msgstr "Удалить эту подсборку и все ее шаги? Это не может быть отменено."
 
 msgid "Delete Timecard"
 msgstr "Удалить табель учета рабочего времени"
@@ -7114,19 +7131,11 @@ msgstr "Решения"
 msgid "Dissolve"
 msgstr "Распустить"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Растворить {0} партий"
-
 msgid "Dissolve batch"
 msgstr "Разбить партию"
 
 msgid "Dissolve Batch"
 msgstr "Распустить партию"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Растворено {0} партий"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -7251,7 +7260,7 @@ msgid "Drag handle"
 msgstr "Ручка перетаскивания"
 
 msgid "Drag steps here to build them on their own."
-msgstr "Перетащите шаги сюда для их самостоятельной сборки."
+msgstr "Перетащите шаги сюда, чтобы построить их отдельно."
 
 msgid "Drag the red waypoints in the viewer"
 msgstr "Перетащите красные точки маршрута в средство просмотра"
@@ -8986,7 +8995,7 @@ msgid "Failed to upload thumbnail"
 msgstr "Не удалось загрузить миниатюру"
 
 msgid "Failed to upload: {reason}"
-msgstr "Не удалось загрузить: {reason}"
+msgstr "Ошибка загрузки: {reason}"
 
 msgid "Failure"
 msgstr "Сбой"
@@ -9135,7 +9144,7 @@ msgid "First invoice"
 msgstr "Первый счет-фактура"
 
 msgid "First Invoice"
-msgstr "Первый счет-фактура"
+msgstr "Срабатывает на строках предложения, строках заказа покупателя и строках счета-фактуры выданного."
 
 msgid "First light, {name}."
 msgstr "Первый свет, {name}."
@@ -9727,7 +9736,7 @@ msgid "Headers"
 msgstr "Заголовки"
 
 msgid "healthy"
-msgstr "здорово"
+msgstr "здоровый"
 
 msgid "Help"
 msgstr "Справка"
@@ -9934,7 +9943,7 @@ msgid "How strictly each material property must match for operations to share a 
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
 
 msgid "How the finished sub-assembly joins the main build."
-msgstr "Как готовая подсборка присоединяется к основной сборке."
+msgstr "Как готовая подсборка соединяется с основной сборкой."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Как производственный заказ рангируется, когда планировщик распределяет мощность — ASAP занимает первое место, затем Жесткий срок, Мягкий срок и Нет срока в последнюю очередь. Только сигнал ранжирования; ни один тип срока не блокирует и не ограничивает размещение."
@@ -10217,7 +10226,7 @@ msgid "Included"
 msgstr "Включено"
 
 msgid "Includes bought and picked parts"
-msgstr "Включает купленные и отобранные детали."
+msgstr "Включает купленные и отобранные детали"
 
 msgid "Includes tax and shipping costs"
 msgstr "Включает налоги и стоимость доставки"
@@ -10655,6 +10664,9 @@ msgstr "это"
 msgid "is any of"
 msgstr "является одним из"
 
+msgid "is between"
+msgstr "находится между"
+
 msgid "Is console operator"
 msgstr "Является оператором консоли"
 
@@ -10669,6 +10681,12 @@ msgstr "Является группой типов сотрудников"
 
 msgid "Is identity group"
 msgstr "Является группой идентификации"
+
+msgid "is on or after"
+msgstr "находится на или после"
+
+msgid "is on or before"
+msgstr "находится на или до"
 
 msgid "Is supplier org group"
 msgstr "Является группой организаций поставщиков"
@@ -11015,7 +11033,7 @@ msgid "Labor & Machine Variance (default)"
 msgstr "Отклонение трудозатрат и времени станка (по умолчанию)"
 
 msgid "Labor Costs"
-msgstr "Затраты на труд"
+msgstr "Стоимость труда"
 
 msgid "Labor Hours"
 msgstr "Часы труда"
@@ -11510,7 +11528,7 @@ msgid "Machine"
 msgstr "Станок"
 
 msgid "Machine Costs"
-msgstr "Затраты на станок"
+msgstr "Стоимость станка"
 
 msgid "Machine Hours"
 msgstr "Часы станка"
@@ -11624,7 +11642,7 @@ msgid "Make size {0} default?"
 msgstr "Сделать размер {0} размером по умолчанию?"
 
 msgid "Make Sub-Assembly"
-msgstr "Изготовить подсборку"
+msgstr "Производство подсборки"
 
 msgid "Make the final go / no-go call"
 msgstr "Принять окончательное решение: идти или не идти"
@@ -12934,7 +12952,7 @@ msgid "No completion date"
 msgstr "Нет даты завершения"
 
 msgid "No components — add a selection or cancel."
-msgstr "Нет компонентов — добавьте выбор или отмена."
+msgstr "Нет компонентов — добавьте выбор или отмените."
 
 msgid "No components yet"
 msgstr "Компонентов еще нет"
@@ -13247,7 +13265,7 @@ msgid "No pricing options found"
 msgstr "Варианты ценообразования не найдены"
 
 msgid "No pricing rules apply to this quantity."
-msgstr "Никакие правила ценообразования не применяются к этому количеству."
+msgstr "К этому количеству не применяются правила ценообразования."
 
 msgid "No printer configured"
 msgstr "Принтер не настроен"
@@ -13361,7 +13379,7 @@ msgid "No steps match \"{search}\""
 msgstr "Ни один шаг не соответствует «{search}»"
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
-msgstr "Нет шагов. Перетащите шаги в него или выберите Переместить в из меню шага."
+msgstr "Нет шагов. Перетащите шаги в него или используйте «Переместить в» из меню шага."
 
 msgid "No stock"
 msgstr "Нет запасов"
@@ -13369,11 +13387,17 @@ msgstr "Нет запасов"
 msgid "No stock at this location"
 msgstr "Нет запасов в этом месте"
 
+msgid "No stock on hand at this location."
+msgstr "На этой площадке нет запаса."
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Отсутствие дефицита запасов не прогнозируется в течение следующих 48 недель"
 
 msgid "No storage unit"
 msgstr "Нет единицы хранения"
+
+msgid "No storage units or tracking numbers match."
+msgstr "Единицы хранения или номера отслеживания не совпадают."
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -13578,7 +13602,7 @@ msgid "Nothing is synced until you turn sync on."
 msgstr "Ничего не синхронизируется, пока вы не включите синхронизацию."
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
-msgstr "Ничего не синхронизируется, пока вы не включите синхронизацию. Каждый требуемый счет отображен."
+msgstr "Ничего не синхронизируется, пока вы не включите синхронизацию. Каждый требуемый счет распределен."
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
@@ -13866,7 +13890,7 @@ msgid "Open a change notice"
 msgstr "Открыть Извещение об изменении"
 
 msgid "Open Account Mapping"
-msgstr "Открыть отображение счета"
+msgstr "Открыть распределение счетов"
 
 msgid "Open Actions"
 msgstr "Открытые действия"
@@ -13956,7 +13980,7 @@ msgid "Open Scheduled"
 msgstr "Открытые запланированные"
 
 msgid "Open Sub-Assembly"
-msgstr "Открыть субузел"
+msgstr "Открытая подсборка"
 
 msgid "Open task details"
 msgstr "Открыть детали задачи"
@@ -14419,7 +14443,7 @@ msgid "Part Being Replaced"
 msgstr "Заменяемая деталь"
 
 msgid "Part Cost"
-msgstr "Себестоимость детали"
+msgstr "Стоимость детали"
 
 msgid "Part Details"
 msgstr "Детали детали"
@@ -14762,7 +14786,7 @@ msgstr "Выбранное количество"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
-msgstr "Отобран шаг {0}"
+msgstr "Подобран шаг {0}"
 
 msgid "picking in place of {substitutedFrom}, the item on the job"
 msgstr "отбор вместо {substitutedFrom}, номенклатуры в производственном заказе"
@@ -14809,7 +14833,7 @@ msgid "Pin {0}"
 msgstr "Закрепить {0}"
 
 msgid "Pin or unpin"
-msgstr "Закрепить или открепить"
+msgstr "Прикрепить или открепить"
 
 msgid "Pinned"
 msgstr "Закреплено"
@@ -15027,7 +15051,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предзаполнено для новой номенклатуры, если срок годности установлен на фиксированную продолжительность."
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
-msgstr "Защиты, управляемые предикатом, которые срабатывают на строках по продажам. Блокируют с ошибками или предупреждают с подтверждением."
+msgstr "Предикатные защиты, которые срабатывают на строках продаж. Блокировать с ошибками или предупреждать с подтверждением продолжения."
 
 msgid "Predict lead time"
 msgstr "Предсказать срок поставки"
@@ -15139,7 +15163,7 @@ msgid "Price override"
 msgstr "Переопределение цены"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr "Оценено до того, как были записаны следы ценообразования — это сегодняшний расчет."
+msgstr "Оценено до того, как были записаны следы ценообразования — это расчет на сегодня."
 
 msgid "Prices"
 msgstr "Цены"
@@ -15311,10 +15335,6 @@ msgstr "Процент прибыли"
 msgid "Progress"
 msgstr "Прогресс"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Прогн. {0}"
-
 msgid "Project"
 msgstr "Проект"
 
@@ -15329,10 +15349,6 @@ msgstr "План проекта"
 
 msgid "Project start"
 msgstr "Начало проекта"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Прогнозируемое {0}"
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -16316,10 +16332,6 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Запустить в работу {0} серий"
-
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
@@ -16340,12 +16352,11 @@ msgstr "Управление запуском в работу"
 msgid "Release Job"
 msgstr "Запустить производственный заказ в работу"
 
+msgid "Release Jobs"
+msgstr "Запустить в работу производственные заказы"
+
 msgid "Released"
 msgstr "Выпущено"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "Запущено {0} серий"
 
 msgid "Released date"
 msgstr "Дата выпуска"
@@ -16355,6 +16366,10 @@ msgstr "Выпущенная ревизия"
 
 msgid "Released revision is locked"
 msgstr "Выпущенная ревизия заблокирована"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Запущено с проблемами: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
@@ -16464,7 +16479,7 @@ msgid "Remove station"
 msgstr "Удалить рабочее место"
 
 msgid "Remove this item"
-msgstr "Убрать эту номенклатуру"
+msgstr "Убрать этот элемент"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Удалите этот тип хранения из всех ссылающихся единиц хранения и удалите его. Это невозможно отменить."
@@ -16637,7 +16652,7 @@ msgstr "Переоценить с учетом текущих правил"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr "Переоценка с учетом сегодняшних правил и затрат дает <0>{0}</0>."
+msgstr "Переоценка с сегодняшними правилами и стоимостью дает <0>{0}</0>."
 
 msgid "Reprint"
 msgstr "Перепечать"
@@ -17468,13 +17483,13 @@ msgstr "Правило продажи"
 
 #. placeholder {0}: rule.name
 msgid "Sales rule \"{0}\""
-msgstr "Правило продажи «{0}»"
+msgstr "Правило продаж «{0}»"
 
 msgid "Sales Rule Violations"
 msgstr "Нарушения правил продаж"
 
 msgid "Sales rules"
-msgstr "Правила продажи"
+msgstr "Правила продаж"
 
 msgid "Sales Rules"
 msgstr "Правила продаж"
@@ -17801,6 +17816,9 @@ msgstr "Поиск записей…"
 msgid "Search related items..."
 msgstr "Поиск связанных элементов..."
 
+msgid "Search storage units and tracking numbers"
+msgstr "Поиск единиц хранения и номеров отслеживания"
+
 msgid "Search suppliers..."
 msgstr "Поиск поставщиков..."
 
@@ -17941,7 +17959,7 @@ msgid "Select an option"
 msgstr "Выберите опцию"
 
 msgid "Select at least one item to accept the quote"
-msgstr "Выберите хотя бы одну номенклатуру, чтобы принять коммерческое предложение"
+msgstr "Выберите по крайней мере одну номенклатуру, чтобы принять коммерческое предложение"
 
 msgid "Select at least one line to convert"
 msgstr "Выберите хотя бы одну строку для преобразования"
@@ -18290,7 +18308,7 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Установите дату начала соглашения для просмотра бухгалтерской обработки."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "Установите время, когда вы прекратили работу, или подтвердите, что вы все еще работаете."
+msgstr "Установите время, когда вы перестали работать, или подтвердите, что вы еще работаете."
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
@@ -19067,12 +19085,12 @@ msgstr "Шаг {0} находится над {1}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} was dropped"
-msgstr "Шаг {0} был перемещен"
+msgstr "Шаг {0} был размещен"
 
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} was dropped at {1}"
-msgstr "Шаг {0} был перемещен на {1}"
+msgstr "Шаг {0} был размещен на {1}"
 
 msgid "Step {number}"
 msgstr "Шаг {number}"
@@ -19108,7 +19126,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "Шаги наследуются из плана контроля."
 
 msgid "Steps built on their own, then fitted as one piece: in the step that uses it, or, when nothing uses it, right after its own steps."
-msgstr "Шаги строятся самостоятельно, затем подгоняются как одна часть: на шаге, который его использует, или, когда ничто его не использует, сразу после собственных шагов."
+msgstr "Шаги, построенные отдельно, затем собранные как одно целое: на шаге, который его использует, или, когда его ничто не использует, сразу после собственных шагов."
 
 msgid "Still dark out on the floor."
 msgstr "На производстве всё ещё темно."
@@ -19155,7 +19173,7 @@ msgstr "Остановить отправку"
 
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
-msgstr "Прекратить использование {0} в этом шаге"
+msgstr "Прекратить использование {0} на этом шаге"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Останавливает новые предложения по закупкам после этой даты."
@@ -19239,23 +19257,23 @@ msgid "Sub-assembly"
 msgstr "Подузел"
 
 msgid "Sub-Assembly"
-msgstr "Подузел"
+msgstr "Подсборка"
 
 msgid "Sub-Assembly · joins main build"
-msgstr "Подсборка · подключается к основной сборке"
+msgstr "Подсборка · присоединяется к основной сборке"
 
 msgid "Sub-Assembly · used in {usedInNumber}"
-msgstr "Подсборка · используется в {usedInNumber}"
+msgstr "Подсборка · используется на {usedInNumber}"
 
 #. placeholder {0}: used.number
 #. placeholder {1}: used.partCount
 msgid "Sub-Assembly {0} · {1, plural, one {# part} other {# parts}}"
-msgstr "Подсборка {0} · {1, plural, one {# деталь} other {# деталей}}"
+msgstr "Подсборка {0} · {1, plural, one {# деталь} other {# детали}}"
 
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Подсборка {0} · {1} — показана отдельно"
+msgstr "Узел {0} · {1} — показано отдельно"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -20358,7 +20376,7 @@ msgid "The material types you organize your stock by"
 msgstr "Типы материалов, по которым вы организуете свой запас"
 
 msgid "The model is still loading."
-msgstr "Модель все еще загружается."
+msgstr "Модель еще загружается."
 
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "Месяц начала финансового года; периоды нумеруются, начиная с этого месяца."
@@ -20581,6 +20599,9 @@ msgstr "Тот же инспектор может проверять"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "URL метаданных SAML, опубликованный вашим поставщиком удостоверений"
+
+msgid "The schedule could not be updated after the release"
+msgstr "График не удалось обновить после запуска в работу"
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "График, используемый для распределения Себестоимости этого актива в течение его Срока полезного использования (линейный, Уменьшаемый остаток, единицы производства)."
@@ -21070,7 +21091,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "This price was entered manually, so no pricing rules were applied."
-msgstr "Эта цена была введена вручную, поэтому правила ценообразования не применялись."
+msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
 
 msgid "this purchase order"
 msgstr "этот заказ поставщику"
@@ -21441,7 +21462,7 @@ msgid "Tool ID"
 msgstr "ID инструмента"
 
 msgid "Tooling Cost"
-msgstr "Себестоимость инструмента"
+msgstr "Себестоимость оснастки"
 
 msgid "tools"
 msgstr "Инструменты"
@@ -21475,7 +21496,7 @@ msgid "Total Construction Cost:"
 msgstr "Общая стоимость строительства:"
 
 msgid "Total Direct Cost"
-msgstr "Общие прямые затраты"
+msgstr "Итоговая прямая себестоимость"
 
 msgid "Total discount"
 msgstr "Общая скидка"
@@ -21484,7 +21505,7 @@ msgid "Total Due"
 msgstr "Итого к оплате"
 
 msgid "Total Estimated Cost"
-msgstr "Общие предполагаемые затраты"
+msgstr "Итоговая ожидаемая себестоимость"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."
@@ -21496,19 +21517,19 @@ msgid "Total Indirect Cost"
 msgstr "Общие косвенные затраты"
 
 msgid "Total Material Cost"
-msgstr "Общие затраты на материалы"
+msgstr "Итоговая себестоимость материалов"
 
 msgid "Total Minutes"
 msgstr "Всего минут"
 
 msgid "Total Outside Cost"
-msgstr "Общие внешние затраты"
+msgstr "Себестоимость сторонних работ"
 
 msgid "Total Price"
 msgstr "Общая цена"
 
 msgid "Total Profit"
-msgstr "Общая прибыль"
+msgstr "Итоговая прибыль"
 
 msgid "Total quantity"
 msgstr "Итого количество"
@@ -21593,9 +21614,6 @@ msgstr "Отслеживаемый материал предварительно
 
 msgid "Tracking"
 msgstr "Отслеживание"
-
-msgid "Tracking ID"
-msgstr "ID отслеживания"
 
 msgid "Tracking method"
 msgstr "Метод отслеживания"
@@ -21835,7 +21853,7 @@ msgid "Unguaranteed Residual Value"
 msgstr "Негарантированная ликвидационная стоимость"
 
 msgid "unhealthy"
-msgstr "неисправно"
+msgstr "некорректно"
 
 msgid "Uninstall"
 msgstr "Удалить"
@@ -22011,6 +22029,9 @@ msgstr "Безымянная строка"
 
 msgid "Untitled step"
 msgstr "Шаг без названия"
+
+msgid "Untracked"
+msgstr "Без отслеживания"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."
@@ -22215,7 +22236,7 @@ msgid "Use a different email"
 msgstr "Использовать другой адрес электронной почты"
 
 msgid "Use a finished sub-assembly in this step"
-msgstr "Использовать готовую подсборку на этом шаге"
+msgstr "Использовать завершённую под-сборку на этом шаге"
 
 msgid "Use Current View"
 msgstr "Использовать текущий просмотр"
@@ -22224,7 +22245,7 @@ msgid "Use metric system for default material dimensions."
 msgstr "Используйте метрическую систему для измерений материала по умолчанию."
 
 msgid "Use Sub-Assembly"
-msgstr "Использовать подсборку"
+msgstr "Использовать под-сборку"
 
 msgid "Used in"
 msgstr "Используется в"
@@ -22314,7 +22335,7 @@ msgid "Uses sub-assembly {0} · {1}"
 msgstr "Использует подсборку {0} · {1}"
 
 msgid "Valid"
-msgstr "Действительно"
+msgstr "Использует под-сборку {0} · {1}"
 
 msgid "Valid From"
 msgstr "Действительно с"
@@ -22555,7 +22576,7 @@ msgid "View Open RFQs"
 msgstr "Просмотреть открытые РФП"
 
 msgid "View or open"
-msgstr "Просмотр или открытие"
+msgstr "Просмотреть или открыть"
 
 msgid "View Payables"
 msgstr "Просмотр кредиторской задолженности"
@@ -23072,7 +23093,7 @@ msgid "Where goods on this PO are shipped to by default; per-line delivery locat
 msgstr "Куда по умолчанию отправляются товары на этом РП; места доставки на уровне строки РП переопределяют это для сценариев прямой поставки и разделенной доставки."
 
 msgid "Where it goes"
-msgstr "Куда это идет"
+msgstr "Куда это идёт"
 
 msgid "Where it lives today"
 msgstr "Где это находится сегодня"
@@ -23403,8 +23424,7 @@ msgstr "Вы можете увидеть этот ключ только один
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

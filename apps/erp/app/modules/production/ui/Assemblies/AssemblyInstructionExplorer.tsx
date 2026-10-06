@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   cn,
@@ -42,12 +43,7 @@ import {
   LuTriangleAlert,
   LuWaypoints
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useParams,
-  useRevalidator,
-  useSearchParams
-} from "react-router";
+import { useFetcher, useParams, useSearchParams } from "react-router";
 import { Empty } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";

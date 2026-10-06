@@ -457,7 +457,7 @@ guard went missing instead. `check-clobbers` compares against the merge base and
 nothing. After merging main, list main's migrations newer than your branch's oldest and grep
 them for every function and view your migrations define; for any hit, write a NEW migration
 dated after both that carries both changes (here, since folded into
-`20261005011701_complete-job-to-asset.sql`).
+`20261006131701_complete-job-to-asset.sql`).
 
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
@@ -2261,7 +2261,9 @@ invisible to the missing-translation gate because the placeholder IS filled.
 **Rule:** Never put a pluralizing (or any word-choosing) ternary inside a
 `t` tagged template or `<Trans>`. Use the ICU plural macro: `<Plural value={n}
 one="# day" other="# days" />` from `@lingui/react/macro` (or `plural()` in
-non-JSX). The whole phrase with `#` goes in each branch
+non-JSX — but not inside a `memo(…)`-wrapped component, see "Lingui: `plural()`
+inside a `memo(…)` component calls the global i18n" below). The whole phrase
+with `#` goes in each branch
 (`one="# operation has no time standards"`), so the words are extracted and
 translated. After adding one, re-run `lingui:extract` + `/translate` — the new
 ICU msgid needs its own filled `msgstr` per locale (locales with more CLDR
@@ -2799,10 +2801,9 @@ GET navigation, so every reused ancestor loader re-runs unless its route exports
 only opted out for same-pathname navigations, and the part layouts not at all. The burst is
 what makes each call slow: the first concurrent wave ran ~200 ms per call, later ones 30–60 ms.
 
-**Rule:** A layout loader with children exports `shouldRevalidate` and re-runs only when what
-it reads changes — `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`,
-naming the route and search params the loader reads. Mutations and
-`useRevalidator().revalidate()` still reach it. Data in a shell loader that does not gate
+**Rule (superseded 2026-10-06, see "A layout that skips its loader is only as correct as its
+skip rule"):** layouts no longer export `shouldRevalidate`; the skip was removed and slow layout
+loaders are made faster instead. Data in a shell loader that does not gate
 rendering is returned as a promise and read with `useResolved` (`~/hooks/useResolved`), never
 awaited.
 
@@ -2935,6 +2936,32 @@ tag until proven otherwise.
 
 **Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.
 
+## Copying child rows onto a new record can make that record undeletable
+
+**Context:** A new item revision now inherits the source revision's supplier parts and their
+price breaks (`copyItemPlanningAndPurchasing`, called by `createRevision`). A change notice
+discards its draft revision by deleting the draft item.
+
+**Problem:** `supplierPart.itemId → item` is `ON DELETE CASCADE`, but
+`supplierPartPrice → supplierPart` is `ON DELETE RESTRICT`. An item delete therefore cascades
+into a supplier part that a price break refuses to let go, and the whole delete fails with
+`23503`. Before the copy, a fresh revision had no supplier parts, so nothing exercised that
+path; after it, every revision of an item with price breaks carries the blocker: the Item
+Master delete was refused, and the change notice's draft discard ignored the delete's error,
+so the draft would have survived silently. Reading the migrations for the table being copied
+was not enough; the constraint that mattered sat on its child.
+
+**Rule:** Before copying rows onto a record, list the delete rule of every FK that points at
+the copied tables (`pg_constraint.confdeltype`, or `grep REFERENCES` for the table name) and
+walk every path that deletes the parent. A `RESTRICT`/`NO ACTION` child turns a copy into a
+delete blocker. Either delete the child first on that path, in the same transaction as the
+parent so a refused parent delete does not lose the child, or change the rule in a migration.
+And a delete whose failure the caller ignores is not a delete: return the error.
+
+**Applies to:** `apps/erp/app/modules/items/items.service.ts` (`createRevision`,
+`deleteItemsWithPriceBreaks`, `deleteItem`, `discardChangeNoticeDrafts`,
+`deleteSupplierPart`), and any copy/duplicate of `supplierPart`.
+
 ## "Come back here" must carry the query string
 
 **Context:** Notification emails link to `/api/link?event=…&documentId=…&companyId=…`, and `requireAuthSession` sends a request away and back for a token refresh, login, MFA or idle unlock.
@@ -2982,11 +3009,11 @@ creates an opportunity for it in the same transaction. Nullable in the schema do
 mean optional in the app.
 
 **Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
-of `salesInvoice`; backfilled by `20261005010901_sales-invoice-opportunity-backfill.sql`.
+of `salesInvoice`; backfilled by `20261006130901_sales-invoice-opportunity-backfill.sql`.
 
 ## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
 
-**Context:** The contracts migration (`20261005011401_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
+**Context:** The contracts migration (`20261006131401_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
 
 **Problem:** After `generate:types`, the ERP typecheck failed with TS2589 ("type instantiation is excessively deep") in four files that the change did not touch. Each did a bare embed such as `.select("salesInvoice(id, invoiceId)")` from `salesInvoiceLine`. More relationships on the table make the inference of a bare embed too deep. A `@ts-ignore` would hide it, but the next new FK moves the error to another file.
 
@@ -3013,3 +3040,173 @@ of `salesInvoice`; backfilled by `20261005010901_sales-invoice-opportunity-backf
 **Rule:** Before a task, run `git status` and treat any change you did not make as foreign: stage only your own hunks and never stash, reset or check out over them. For a long task, ask for an isolated worktree (`isolation: "worktree"`) instead of sharing one.
 
 **Applies to:** Any session that starts in a worktree with uncommitted changes; parallel agents dispatched into the same checkout.
+
+## A `prepare` script that edits git config reaches every worktree
+
+**Context:** Replacing husky with simple-git-hooks, `prepare` unset `core.hooksPath` and installed hooks. It ran on every `pnpm install` in a worktree.
+
+**Problem:** Worktrees share one `.git`. The unset removed the main checkout's `core.hooksPath` and simple-git-hooks wrote into the shared `.git/hooks`, so checkouts still on husky skipped their hooks without a word. The desktop app also sets `core.hooksPath` at WORKTREE scope, which a plain `git config --unset` does not touch. simple-git-hooks additionally deletes every hook it does not manage unless `preserveUnused` is set.
+
+**Rule:** Treat a lifecycle script that touches git config or `.git/hooks` as a change to every checkout of the repository. Use `pnpm install --ignore-scripts` while such a branch is unmerged, clear both the local and the worktree scope, and set `preserveUnused: true`.
+
+**Applies to:** root `package.json` (`prepare`, `simple-git-hooks`), `scripts/git-hooks/`.
+
+## `scripts/one-off/` is a registry, not a folder of leftovers
+
+**Context:** A cleanup pass listed `scripts/one-off/recopy-private-buckets.ts` as dead because nothing referenced it by name.
+
+**Problem:** `ci/src/one-off-scripts.ts` runs every `.ts` file in that folder once per database on deploy; the folder IS the reference. Deleting a file there changes what the next deploy does.
+
+**Rule:** "No grep hits" does not mean dead. Before deleting a script, check whether its directory is enumerated (`readdirSync`, a glob in a workflow or `turbo.json`).
+
+**Applies to:** `scripts/one-off/`, `ci/src/one-off-scripts.ts`, any repo cleanup.
+
+## A Vite plugin that reads the file name must drop the query first
+
+**Context:** Lingui 6.9.0's native macro transform chooses its parser from `path.basename(id)`.
+
+**Problem:** React Router loads route modules as `route.tsx?__react-router-build-client-route`. The extension no longer ends the name, the file is parsed as plain JS, and the build fails with hundreds of "Expected ','" errors on `import type`. vitest and non-route files never show it.
+
+**Rule:** When a transform plugin misbehaves only on route modules, look at the id's query. Verify a build-plugin change with a real `react-router build` of ERP, not with vitest.
+
+**Applies to:** `packages/dev/vite.js` (`linguiWithoutIdQuery`), `apps/*/vite.config.ts`.
+
+## A realtime subscription to a table that is not published fails silently
+
+**Context:** The ERP job page did not show an operation completed in the MES until a reload. It subscribed with `postgres_changes` to `jobOperationStep` and `jobOperationStepRecord`, which were never in the `supabase_realtime` publication, and it had no subscription to `jobOperation` or `job` at all.
+
+**Problem:** Realtime accepts a `postgres_changes` subscription for any table name. For an unpublished table it joins, delivers nothing and reports nothing. The code looked wired and typecheck, lint and tests were all green.
+
+**Rule:** Realtime goes through broadcast topics (`@carbon/query`). Declare a route's tables in `handle.realtime`; the table type is derived from `event-system/attachments.ts`, so a table with no broadcast handler does not compile, and `no-postgres-changes` fails the old API. Verify a "live" page by changing the row while the page is open, not by reading the subscription code.
+
+**Applies to:** `apps/*/app/routes/**` `handle.realtime`, `useRealtime`, `useChangedRows`, `.claude/rules/realtime-system.md`.
+
+## `getCompanyId()` read an httpOnly cookie in the browser and always returned null
+
+**Context:** The client cache scoped its keys with `getCompanyId()`, which parsed `document.cookie` for `companyId`.
+
+**Problem:** That cookie is httpOnly, so JavaScript never sees it. Every key was scoped to the string `"null"`, and an invalidation that matched on the real company id matched nothing. It went unnoticed because a company switch reloads the page and empties the in-memory cache.
+
+**Rule:** Never read a session cookie from `document.cookie`. A value the browser needs comes from loader data: the shell layout calls `setClientCompanyId(company.id)` during render (`@carbon/query/cache`).
+
+**Applies to:** `packages/query/src/cache.ts`, both `apps/*/app/routes/x+/_layout.tsx`, any new client-side tenant scoping.
+
+## A `.client.ts` module is empty on the server, even for a value a route only calls at load
+
+**Context:** The invalidation middleware factory lived in `invalidate.client.ts`, next to `flash.client.ts`. `root.tsx` calls `createInvalidationMiddleware(...)` while the module is evaluated.
+
+**Problem:** React Router replaces a `.client` module's exports with `undefined` on the server. `flash.client.ts` survives because `root.tsx` only REFERENCES its export; a factory is CALLED, so SSR died with "is not a function". Typecheck, lint and unit tests passed.
+
+**Rule:** A module whose export is called at module load of a route must not be named `.client` or `.server`. After adding anything to `root.tsx` or a shell layout, load the page from a running dev server before calling it done.
+
+**Applies to:** `apps/*/app/root.tsx`, `packages/query/src/invalidation.ts`, any shared module imported by a route.
+
+## Two hooks that open the same Realtime topic close each other's channel
+
+**Context:** The shell, the live lists and individual components each called `carbon.channel(topic)` for `company:<id>:<table>`.
+
+**Problem:** `RealtimeClient.channel()` returns the EXISTING channel when the topic is already open. Two hooks then hold one channel object, and the first to unmount calls `removeChannel` and silences the other. A customers page that declared `customer` while the customer list also followed it would have lost one of them at random.
+
+**Rule:** One owner per topic. Listeners register in the registry in `packages/query/src/useRealtime.tsx` (`useTopic`, `useTableChanges`) and `RouteRealtime` owns the channels. Do not call `carbon.channel` or `useRealtimeChannel` for a broadcast topic directly.
+
+**Applies to:** `packages/query/src/useRealtime.tsx`, any new realtime listener.
+
+## Chained Supabase writes in a route action are not a transaction
+
+**Context:** RFQ finalize and supplier quote finalize each wrote a quote, its lines, a share link and a price list as separate `client.from(...)` calls in a loop, logging and skipping any that failed.
+
+**Problem:** Every statement was its own PostgREST request (about 34 ms each), and a failure partway left quotes without lines or half a price list while the action still reported success. The checks that made the write safe (every line priced, the RFQ still Draft) lived in the route, so the API tool for the same operation skipped them.
+
+**Rule:** A write that spans tables is a server function (`packages/server-functions`) with one Kysely transaction. Its preconditions are checked inside it, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email.
+
+**Applies to:** any route action with more than one write; `finalize-purchasing-rfq`, `finalize-supplier-quote`.
+
+## A stored copy of server data belongs to a user, not a browser
+
+**Context:** The live lists (items, customers, suppliers, people) were kept in IndexedDB under `<list>:<companyId>` and patched from a change log.
+
+**Problem:** The rows a user holds are their RLS view. The next person to sign in on that browser hydrated the previous user's rows, and patching only the changed ids never removed them. The in-memory query cache had the same hole inside one tab.
+
+**Rule:** Key anything stored on the device by user as well as company, and empty the in-memory cache when the user changes (`setClientCompanyId(companyId, userId)`). A cache that is only ever patched needs a path that replaces it.
+
+**Applies to:** `packages/query/src/useLiveList.tsx`, `packages/query/src/cache.ts`, any new client-side persistence.
+
+## A prefetch the browser cannot reuse makes the click slower
+
+**Context:** Links prefetched their page's data on hover, then (2026-10-02) on press, to give the click a head start.
+
+**Problem:** Single-fetch `.data` responses carry `cache-control: max-age=0, must-revalidate` and no validator, so the browser never serves the click from the prefetched response: both requests reach the server. Chrome also holds a second request for a URL until the first one's response arrives (its HTTP cache admits one writer per URL). The click's request therefore waited behind the prefetch: 781 ms against 518 ms median click-to-page in production, and two same-URL `fetch` calls took 572 / 923 ms where two `cache: "no-store"` ones took 615 / 585 ms.
+
+**Rule:** A prefetch only helps if the browser may reuse its response. Give a prefetch response (`Sec-Purpose: prefetch`) a short `private` lifetime and leave every other response uncached; `prefetchCacheMiddleware` (`@carbon/utils`) does it in each app's root `middleware`, the fix React Router points to (remix-run/react-router#13255). Measure a prefetch by click-to-page time, not by whether the request was sent. A first fix removed the prefetch instead (`6e3bdf7bc6`); it worked but threw away the head start.
+
+**Applies to:** `packages/react/src/PrefetchLink.tsx`; `packages/utils/src/prefetch.ts`; any `<Link prefetch>` or `PrefetchPageLinks`; a revalidation started while a navigation to the same URL is loading.
+
+## A revalidation during the navigation after a save loses the save
+
+**Context:** 186 layouts export `shouldRevalidate` and skip a GET navigation that leaves their params unchanged. Realtime calls `revalidate()` 300 ms after a broadcast.
+
+**Problem:** A save's own broadcast arrives while its redirect is still loading. `revalidate()` during a loading navigation restarts it with `overrideNavigation: state.navigation`, and for a fetcher submission that carries no `formMethod`. The restarted navigation looks like a plain one, so each layout returned `false` and kept its data from before the save: a new quote line was missing from the quote's explorer until a reload (2026-10-05). In single fetch `defaultShouldRevalidate` is `true` for every route on every navigation, so a predicate cannot tell a forced reload from a plain one. A first fix assumed React Router's default was `false` after a redirect with no cookie; logging the predicate's arguments in the browser showed the default was `true` and the first pass did include the layout.
+
+**Rule:** Never call React Router's `revalidate()` directly. Import `useRevalidator` from `@carbon/query`: it holds a call made while a navigation is in flight or a fetcher is submitting and runs it when the router is idle. The `no-raw-revalidator` check (`@carbon/checks`) fails an import of React Router's. Before explaining a skipped loader, log what `shouldRevalidate` received: wrap the route's `shouldRevalidate` on `window.__reactRouterDataRouter.routes` and read `formMethod`, `defaultShouldRevalidate` and both URLs for each call.
+
+**Applies to:** `packages/query/src/useRevalidator.ts`; every `revalidate()` call (realtime, polling timers, upload callbacks); every route that exports `shouldRevalidate`.
+
+## A drag re-rendered every card on the board
+
+**Context:** The schedule boards (operations, dates, batches) render one sortable card per operation or job, each with a form, avatars, tooltips and a menu.
+
+**Problem:** A drag stuttered: with 82 cards, six frames of a 90-frame sweep took over 100 ms. Two causes. dnd-kit re-renders every `useSortable` consumer when the drop target changes, and the hook sat inside the card, so every card's whole body rendered each time. And `useSensor(KeyboardSensor, { coordinateGetter })` passed a new options object on every render: dnd-kit memoizes the sensor on it, so every draggable got new `listeners`, which defeats `memo` on anything that takes them.
+
+**Rule:** A sortable card is a thin shell that calls `useSortable` and a `memo`ized body that takes plain props (`sortableCardProps` in `Schedule/Kanban/cardShell.ts`). `useSensor` options are a module constant (`no-inline-sensor-options` check). A context every card reads must have a stable value. To find what re-renders, count renders per component during a scripted drag; do not guess.
+
+**Applies to:** `apps/erp/app/modules/production/ui/Schedule/Kanban/**`; any dnd-kit board or list with more than a few dozen items.
+
+## Lingui: `plural()` inside a `memo(…)` component calls the global i18n
+
+**Context:** The jobs table's bulk-release toast needed "Released 1 job" / "Released N jobs". The table is `memo((props) => { … })`, and the toast text was written as `` t`${plural(count, { one: "Released # job", other: "Released # jobs" })}` `` with `t` from `useLingui()` and `plural` from `@lingui/core/macro`.
+
+**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, Biome and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
+
+**Rule:** Do not call `plural()` (or `select()`) from `@lingui/core/macro` inside a component passed inline to `memo(…)` or any other call. Use `<Plural>` in JSX. For a string (a toast), either build it in a function-declaration hook (`function useX() { const { t } = useLingui(); return (n: number) => t`${plural(n, …)}`; }`), or choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. When in doubt, read the compiled module (Vite `transformRequest` on the file) and check for an import of `i18n` from `@lingui/core`.
+
+**Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
+
+## A row stayed off a screen only because a column happened to be null
+
+**Context:** The MES Work Centers board, the ERP Priority board and the API read `get_active_job_operations_by_location`. Both boards group operations into work-center columns.
+
+**Problem:** An Outside Processing operation showed up on the MES board for an operator to start (2026-10-05). The function never filtered on `operationType`; subcontracted operations stayed off the boards only because they usually have no work center, so they had no column. The work center came back two ways. The operation forms hide the Work Center field for Outside Processing, and a hidden field is omitted from the submit, not cleared, so an update left the work center from the operation's earlier in-house type. Batching was the second way: `get_batchable_operations` offered outside operations, and releasing a batch writes the batch's work center onto every member.
+
+**Rule:** Filter on the fact that decides whether a row belongs, never on a column that only usually agrees with it. When a type makes a field meaningless, clear the field in the one function every writer goes through (`normalizeOperationSourceIds`), because hiding the input does not clear it. Hiding a row from a list is not a gate: refuse it in the routes that open and start it too.
+
+**Applies to:** `get_active_job_operations_by_location`; `get_batchable_operations` and the `batch-operations` `assertEligible`; the MES operation, start and event routes; any form that hides a field by type; any list whose visibility rests on a NULL.
+
+## State seeded from loaded data is a copy that nothing updates
+
+**Context:** A route's components stay mounted when only its params change, and loaded data changes under a mounted component constantly: a save's revalidation, a realtime reload, a layout that reloads after its page has mounted.
+
+**Problem:** `useState(valueFromLoaderData)` reads the value once. Two bugs came from it (2026-10-06). The quote summary summed its totals from lines copied into state at mount, so a deleted line stayed in the subtotal until a reload. And a notes editor seeded from record A stayed mounted on record B: B showed A's notes, and the first keystroke saved A's text into B. An audit of 467 seeded `useState` calls found 17 confirmed cases. Reloading every layout on every navigation had hidden most of the first kind, not fixed it.
+
+**Rule:** Do not copy loaded data into state. A value computed from the data is computed during render (`useMemo`). The user's choices over the data are the only state, combined with the current data during render (`selectQuoteLines`). A draft the user edits is fine as state because the page it lives in remounts for another record: every route under `/x` renders `RecordOutlet` (`@carbon/react`), never a plain `<Outlet>`. Do not write an effect that copies the data into state again. Checks: `no-bare-outlet` and `no-state-copy-of-loader-data` (`@carbon/checks`; the second sees only a hook result used by name in the same file, not a copy seeded from a prop).
+
+**Applies to:** every component that reads `useLoaderData`, `useRouteData` or props that come from them; every route with a param in its path.
+
+## A layout that skips its loader is only as correct as its skip rule
+
+**Context:** 186 layouts exported `shouldRevalidate` and skipped a GET navigation that left their params unchanged (`isUnaffectedByNavigation`, 2026-10-01), to save a layout loader run on each click.
+
+**Problem:** The rule inferred "nothing changed" from `formMethod`. React Router passes a fetcher's submission to the first navigation after it only, so a delete that redirected to a record's bare URL, whose index route redirects again, arrived as a plain navigation and every layout kept its data (2026-10-06). An earlier patch had fixed the same blind spot for a revalidation restarting a navigation. 154 of the 186 layouts also declared no realtime tables, so another user's change did not show until the record changed. A module-level "a save happened" flag closed the redirect case and was rejected: one package set it, another cleared it, a third read it.
+
+**Rule:** Layouts do not skip their loaders. Do not export `shouldRevalidate` from a layout to save a loader run; make the loader cheaper instead (one query, the direct connection, shared work through middleware context). The root and the app shell are the only exceptions. To see which loaders a navigation asked for, read the `_routes` query of its `.data` request. Estimated cost of removing the skip, from production traces: 100 to 300 ms on a click that used to skip, until the dozen slow record loaders are optimised.
+
+**Applies to:** every layout route; `packages/utils/src/revalidate.ts`; the record loaders (`purchase-order+/$orderId`, `supplier+/$supplierId`, `sales-invoice+/$invoiceId`, `part+/$itemId`, `sales-order+/$orderId`, `quote+/$quoteId`).
+
+## A restore told the change log but not the open tabs
+
+**Context:** Backup restore and template revert reload a company through `wipeAndLoad` with triggers off (`session_replication_role = replica`). The live lists (items, customers, suppliers, people) are kept in the browser and updated from broadcasts; the change log (`tableChange`) is what a tab reads when it loads or reconnects.
+
+**Problem:** With triggers off nothing was broadcast. `wipeAndLoad` wrote a reset row to the change log, but an open tab only reads the log when a broadcast tells it to, or once an hour. After a demo template was reverted and applied again, a tab's part picker held the reverted parts next to the new ones, and creating a job with a reverted part returned 404 (2026-10-06, production). The first reproductions missed it because they applied a template (triggers on), which broadcasts correctly.
+
+**Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.

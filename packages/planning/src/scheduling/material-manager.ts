@@ -2,21 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { DB } from "@carbon/database/client";
-import type { Kysely } from "kysely";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import type { BaseOperation } from "./types.ts";
 
 class MaterialManager {
-  private db: Kysely<DB>;
   private provider: MasterDataProvider;
   private materialsWithoutOperations: {
     id: string;
     jobMakeMethodId: string;
   }[] = [];
 
-  constructor(db: Kysely<DB>, provider: MasterDataProvider) {
-    this.db = db;
+  constructor(provider: MasterDataProvider) {
     this.provider = provider;
     this.materialsWithoutOperations = [];
   }
@@ -38,16 +34,16 @@ class MaterialManager {
     }, []);
   }
 
-  async assignOperationsToMaterials(
+  /** Each unlinked material, paired with the first operation of its method. */
+  assignOperationsToMaterials(
     validMaterialIds: string[],
     operationsByJobMakeMethodId: Record<string, BaseOperation[]>
-  ) {
+  ): { materialId: string; operationId: string }[] {
+    const valid = new Set(validMaterialIds);
     const updates: { materialId: string; operationId: string }[] = [];
 
-    for await (const material of this.materialsWithoutOperations) {
-      if (!validMaterialIds.includes(material.id)) {
-        continue;
-      }
+    for (const material of this.materialsWithoutOperations) {
+      if (!valid.has(material.id)) continue;
 
       const operations =
         operationsByJobMakeMethodId[material.jobMakeMethodId] || [];
@@ -61,17 +57,7 @@ class MaterialManager {
       }
     }
 
-    if (updates.length > 0) {
-      for await (const update of updates) {
-        await this.db
-          .updateTable("jobMaterial")
-          .set({
-            jobOperationId: update.operationId
-          })
-          .where("id", "=", update.materialId)
-          .execute();
-      }
-    }
+    return updates;
   }
 
   getMaterialIds(): string[] {

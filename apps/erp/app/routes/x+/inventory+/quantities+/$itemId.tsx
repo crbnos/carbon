@@ -6,26 +6,19 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
+  RecordOutlet,
   ResizableHandle,
   ResizablePanel,
   ScrollArea,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["itemId"], search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -109,7 +102,7 @@ export default function ItemInventoryRoute() {
             itemType={item.type}
           />
           <VStack className="p-2">
-            <Outlet />
+            <RecordOutlet />
           </VStack>
         </ScrollArea>
       </ResizablePanel>

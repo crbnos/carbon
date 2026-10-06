@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ClientOnly } from "@carbon/react";
+import { withUnorderedLast } from "@carbon/utils";
 import type {
   Announcements,
   DragEndEvent,
@@ -19,11 +20,15 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import type { Column, DisplaySettings, Item } from "./types";
 import { coordinateGetter, hasDraggableData } from "./utils";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };
 
 interface Progress {
   totalDuration: number;
@@ -47,36 +52,32 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const { t } = useLingui();
-  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    // Get stored column order from localStorage
-    const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
-    if (storedOrder) {
-      const parsedOrder = JSON.parse(storedOrder) as string[];
-      // Add any new columns that aren't in stored order
-      const newOrder = [...parsedOrder];
-      columns.forEach((col) => {
-        if (!newOrder.includes(col.id)) {
-          newOrder.push(col.id);
-        }
-      });
-      return newOrder;
-    }
-    return columns.map((col) => col.id);
+  // Only the order the user chose is state. The columns come from the loader
+  // and change while the board is open (a filter, a work center's first
+  // operation): one copied in at mount never showed a column that arrived later.
+  const [storedOrder, setStoredOrder] = useState<string[]>(() => {
+    const stored = localStorage.getItem(COLUMN_ORDER_KEY);
+    return stored ? (JSON.parse(stored) as string[]) : [];
   });
+  const columnOrder = useMemo(
+    () =>
+      withUnorderedLast(
+        storedOrder,
+        columns.map((col) => col.id)
+      ),
+    [storedOrder, columns]
+  );
 
-  // Update localStorage when column order changes
   useEffect(() => {
-    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(columnOrder));
-  }, [columnOrder]);
+    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(storedOrder));
+  }, [storedOrder]);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   const announcements: Announcements = {
@@ -204,12 +205,10 @@ const Kanban = ({
     const isActiveAColumn = activeData?.type === "column";
     if (!isActiveAColumn) return;
 
-    setColumnOrder((prevOrder) => {
-      const activeColumnIndex = prevOrder.findIndex((id) => id === activeId);
-      const overColumnIndex = prevOrder.findIndex((id) => id === overId);
-
-      return arrayMove(prevOrder, activeColumnIndex, overColumnIndex);
-    });
+    const activeColumnIndex = columnOrder.findIndex((id) => id === activeId);
+    const overColumnIndex = columnOrder.findIndex((id) => id === overId);
+    if (activeColumnIndex < 0 || overColumnIndex < 0) return;
+    setStoredOrder(arrayMove(columnOrder, activeColumnIndex, overColumnIndex));
   }
 };
 

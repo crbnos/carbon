@@ -123,6 +123,8 @@ export type Events = {
     data: {
       modelId: string;
       companyId: string;
+      /** Model towards camera (Z up). Absent = the viewer's home view. */
+      direction?: [number, number, number];
     };
   };
 
@@ -557,6 +559,15 @@ export type Events = {
     data: {
       companyId?: string;
     };
+  };
+
+  // Sent by pg_cron when there is work (`util.sweep_notification_digest`,
+  // `util.sweep_workflow_run_retention`), never by app code.
+  "carbon/notification-digest.process": {
+    data: Record<string, never>;
+  };
+  "carbon/workflow-run-retention.process": {
+    data: Record<string, never>;
   };
 
   // Weekly tasks

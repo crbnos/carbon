@@ -6,7 +6,7 @@
 
 import { forwardRef, useState } from "react";
 import type { LinkProps } from "react-router";
-import { Link, PrefetchPageLinks, useHref } from "react-router";
+import { Link, PrefetchPageLinks, useHref, useLocation } from "react-router";
 
 const ABSOLUTE_URL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 
@@ -16,9 +16,13 @@ const ABSOLUTE_URL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
  * `prefetch="intent"` prefetches on a 100 ms hover, so moving the mouse down a
  * list ran every hovered page's loaders for a click that mostly never came. A
  * press is a commitment: it costs one request, and the page gets the time
- * between press and release as a head start. Chromium serves the click from
- * the prefetched response; a browser that does not reuse it makes one extra
- * request per click, never one per hover.
+ * between press and release as a head start.
+ *
+ * The click reuses the prefetched response only because
+ * `prefetchCacheMiddleware` (`@carbon/utils`) lets the browser keep it for a
+ * few seconds. Without that header both requests reach the server, and the
+ * browser holds the click's request until the prefetch's response arrives:
+ * slower than no prefetch at all.
  *
  * Use this instead of `<Link prefetch="intent">`.
  */
@@ -27,8 +31,15 @@ export const PrefetchLink = forwardRef<
   Omit<LinkProps, "prefetch">
 >(({ onPointerDown, ...props }, ref) => {
   const href = useHref(props.to, { relative: props.relative });
-  // A new key remounts the prefetch tags, so each press prefetches again.
-  const [presses, setPresses] = useState(0);
+  const location = useLocation();
+  // The tags live only on the page that was showing when the link was pressed.
+  // Left mounted, they prefetched the destination again after every later
+  // navigation, for routes that page did not have yet. A new count remounts
+  // them, so each press prefetches again.
+  const [pressed, setPressed] = useState<{
+    locationKey: string;
+    count: number;
+  } | null>(null);
   const canPrefetch =
     props.to !== "#" &&
     !(typeof props.to === "string" && ABSOLUTE_URL.test(props.to));
@@ -48,10 +59,17 @@ export const PrefetchLink = forwardRef<
             !event.ctrlKey &&
             !event.shiftKey &&
             !event.altKey;
-          if (plain && canPrefetch) setPresses((n) => n + 1);
+          if (plain && canPrefetch) {
+            setPressed((last) => ({
+              locationKey: location.key,
+              count: (last?.count ?? 0) + 1
+            }));
+          }
         }}
       />
-      {presses > 0 && <PrefetchPageLinks key={presses} page={href} />}
+      {pressed?.locationKey === location.key && (
+        <PrefetchPageLinks key={pressed.count} page={href} />
+      )}
     </>
   );
 });

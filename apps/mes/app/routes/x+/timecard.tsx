@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -49,7 +50,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import {
   clockIn,
@@ -177,7 +178,13 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function MESTimecardPage() {
   const { entries, openEntry, weekOffset, weekStart, weekEnd } =
     useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSettled: (data) => {
+      if (data) {
+        setEditingId(null);
+      }
+    }
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editClockIn, setEditClockIn] = useState<CalendarDateTime | null>(null);
   const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(
@@ -197,12 +204,6 @@ export default function MESTimecardPage() {
     const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (fetcher.data && fetcher.state === "idle") {
-      setEditingId(null);
-    }
-  }, [fetcher.data, fetcher.state]);
 
   function startEdit(entry: {
     id: string;

@@ -36,6 +36,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   digitalQuoteValidator,
   getCompanySettings,
@@ -219,15 +220,15 @@ export default function SalesSettingsRoute() {
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
 
-  const [requireCustomerContactAndLocation, setRequireCustomerContact] =
-    useState(
-      (companySettings as { requireCustomerContactAndLocation?: boolean })
-        .requireCustomerContactAndLocation ?? false
-    );
+  const requireCustomerContactAndLocation = useSavedToggle(
+    toggleFetcher,
+    "requireCustomerContactAndLocationToggle",
+    (companySettings as { requireCustomerContactAndLocation?: boolean })
+      .requireCustomerContactAndLocation ?? false
+  );
 
   const handleRequireCustomerContactToggle = useCallback(
     (checked: boolean) => {
-      setRequireCustomerContact(checked);
       toggleFetcher.submit(
         {
           intent: "requireCustomerContactAndLocationToggle",
@@ -239,12 +240,14 @@ export default function SalesSettingsRoute() {
     [toggleFetcher]
   );
 
-  const [showCustomerReadableIdEnabled, setShowCustomerReadableIdEnabled] =
-    useState(companySettings.showCustomerReadableId ?? false);
+  const showCustomerReadableIdEnabled = useSavedToggle(
+    toggleFetcher,
+    "showCustomerReadableIdToggle",
+    companySettings.showCustomerReadableId ?? false
+  );
 
   const handleShowCustomerReadableIdToggle = useCallback(
     (checked: boolean) => {
-      setShowCustomerReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showCustomerReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }

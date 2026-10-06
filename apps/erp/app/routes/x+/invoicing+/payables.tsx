@@ -3,12 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime, isUnaffectedByNavigation } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   ARAPWorkbench,
@@ -22,6 +19,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: ["purchaseInvoice", "payment"],
   breadcrumb: msg`Payables`,
   to: path.to.payables,
   module: "invoicing"
@@ -34,11 +32,6 @@ function parseBuckets(raw: string | null): [number, number, number] {
   }
   return [30, 60, 90];
 }
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

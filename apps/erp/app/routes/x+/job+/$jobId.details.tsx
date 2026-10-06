@@ -32,7 +32,7 @@ import {
   SupplierAvatar
 } from "~/components";
 import { usePanels } from "~/components/Layout";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
@@ -77,12 +77,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  // `client` is the service role (bypassRls) and every read keys on the URL id.
-  await requireCompanyRecord(client, "job", companyId, { id: jobId });
-
-  // After the guard, these three need only the job id: read together, not one
-  // after another.
-  const [job, rootMethod, tags] = await Promise.all([
+  // `client` is the service role (bypassRls) and every read keys on the URL id,
+  // so the job must be this company's. The check runs beside the reads it
+  // guards, not before them: it rejects the whole batch, and nothing read here
+  // is returned unless it passes.
+  const [, job, rootMethod, tags] = await Promise.all([
+    requireCompanyRecord(client, "job", companyId, { id: jobId }),
     getJob(client, jobId),
     getRootMakeMethod(client, jobId, companyId),
     getTagsList(client, companyId, "operation")
@@ -287,14 +287,9 @@ export default function JobDetailsRoute() {
     }
   });
 
-  const jobData = useRouteData<{
-    job: Job;
-    files: Promise<StorageItem[]> | StorageItem[];
-  }>(path.to.job(jobId));
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
-
-  useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
   const methodId = makeMethod?.id;
 

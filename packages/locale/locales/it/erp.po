@@ -77,7 +77,7 @@ msgstr "{0, plural, one {# riga si collega ai dati al di fuori di questa Azienda
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
-msgstr "{0, plural, one {Il pianificatore tratta questo componente come un corpo rigido — un passo nelle istruzioni. Esegui di nuovo il piano per applicare.} other {Il pianificatore tratta questi # componenti come un corpo rigido — un passo nelle istruzioni. Esegui di nuovo il piano per applicare.}}"
+msgstr "{0, plural, one {Il pianificatore tratta questo componente come un corpo rigido — un passo nelle istruzioni. Riesegui la pianificazione per applicare.} other {Il pianificatore tratta questi # componenti come un corpo rigido — un passo nelle istruzioni. Riesegui la pianificazione per applicare.}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -359,6 +359,21 @@ msgstr "{count, plural, one {# conto con saldo} other {# conti con saldo}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Sciogli # lotto di produzione} other {Sciogli # lotti di produzione}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {Sciolto # lotto di produzione} other {Sciolti # lotti di produzione}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Rilascia # lotto di produzione} other {Rilascia # lotti di produzione}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {Liberato # lotto di produzione} other {Liberati # lotti di produzione}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {Rilasciato # ordine di produzione} other {Rilasciati # ordini di produzione}}"
+
 msgid "{count} of {total} units"
 msgstr "{count} di {total} unità"
 
@@ -508,7 +523,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# riga non conteggiata} other {# righe non conteggiate}}"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
-msgstr "{unmappedRequiredCount, plural, one {Mappa il # conto richiesto rimanente per primo.} other {Mappa i # conti richiesti rimanenti per primo.}}"
+msgstr "{unmappedRequiredCount, plural, one {Mappa prima il # account richiesto rimanente.} other {Mappa prima i # account richiesti rimanenti.}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} non può essere programmato"
@@ -2548,7 +2563,7 @@ msgstr "Sei sicuro di voler attivare questo strumento di misura?."
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Sei sicuro di voler cancellare {0}? Sarà chiuso e in sola lettura fino a quando non lo riapri."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Sei sicuro di voler annullare {0}? Questo annullerà anche tutte le offerte del fornitore correlate."
 
@@ -2904,7 +2919,7 @@ msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare questo rischio? Questa azione non può essere annullata."
 
 msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
-msgstr "Sei sicuro di voler eliminare questa regola di vendita? Anche gli incarichi verranno rimossi."
+msgstr "Sei sicuro di voler eliminare questa regola di vendita? Verranno rimossi anche gli incarichi."
 
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "Sei sicuro di voler eliminare questa proposta? Questa azione non può essere annullata."
@@ -2928,8 +2943,8 @@ msgstr "Sei sicuro di voler lasciare questa pagina?"
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "Sei sicuro di voler superare questo checkpoint? La fase {0} ha ancora attività non completate."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Sei sicuro di voler eliminare permanentemente {0}?"
 
@@ -4198,7 +4213,7 @@ msgid "Changes"
 msgstr "Modifiche"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
-msgstr "Cambiare i componenti ridefinisce il gruppo. Rieseguire Motion Planning per applicare la modifica ai passi."
+msgstr "La modifica dei componenti ridefinisce il gruppo. Riesegui Motion Planning per applicare la modifica ai passi."
 
 msgid "Changing this will overwrite the existing method"
 msgstr "Modificare questo sovrascriverà il metodo esistente"
@@ -4385,7 +4400,7 @@ msgid "Clock Out"
 msgstr "Timbra fine"
 
 msgid "Clocked in"
-msgstr "Registrato"
+msgstr "Timbratura registrata"
 
 msgid "Clocked in since <0/>"
 msgstr "In servizio da <0/>"
@@ -4629,7 +4644,7 @@ msgid "Component group name"
 msgstr "Nome del gruppo di componenti"
 
 msgid "Component group updated — re-run motion planning to apply the change"
-msgstr "Gruppo di componenti aggiornato — rieseguire la pianificazione del movimento per applicare la modifica"
+msgstr "Gruppo di componenti aggiornato — riesegui motion planning per applicare la modifica"
 
 msgid "Components"
 msgstr "Componenti"
@@ -5390,7 +5405,9 @@ msgid "Could not read the document: {0}"
 msgstr "Non è stato possibile leggere il documento: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Non è stato possibile rilasciare {0}: {1}"
 
@@ -6497,7 +6514,7 @@ msgstr "Elimina addebito"
 
 #. placeholder {0}: unit.name
 msgid "Delete component group {0}"
-msgstr "Elimina gruppo di componenti {0}"
+msgstr "Elimina il gruppo di componenti {0}"
 
 msgid "Delete Consumable"
 msgstr "Elimina Materiale di consumo"
@@ -6728,7 +6745,7 @@ msgid "Delete Storage Unit"
 msgstr "Elimina Unità di stoccaggio"
 
 msgid "Delete Sub-Assembly"
-msgstr "Elimina Sottoassemblea"
+msgstr "Elimina sottoassembly"
 
 msgid "Delete Substance"
 msgstr "Elimina Sostanza"
@@ -6760,7 +6777,7 @@ msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Eliminare lo scaglione di prezzo per la quantità {0}? Questa azione non può essere annullata."
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
-msgstr "Eliminare questa sottoassemblea e tutti i suoi passi? Questa azione non può essere annullata."
+msgstr "Eliminare questo sottoassembly e tutti i suoi passi? Questa azione non può essere annullata."
 
 msgid "Delete Timecard"
 msgstr "Elimina Foglio Presenze"
@@ -7114,19 +7131,11 @@ msgstr "Disposizioni"
 msgid "Dissolve"
 msgstr "Sciogliere"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Dissolvi {0} lotti"
-
 msgid "Dissolve batch"
 msgstr "Elimina batch"
 
 msgid "Dissolve Batch"
 msgstr "Sciogliere Lotto"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Dissolti {0} lotti"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -7196,7 +7205,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "Fatto quando le operazioni quotidiane funzionano senza di noi in sala."
 
 msgid "Double-click to open this sub-assembly"
-msgstr "Fai doppio clic per aprire questo sottoassieme"
+msgstr "Fai doppio clic per aprire questo sottoassembly"
 
 msgid "Double-click to play this step"
 msgstr "Fai doppio clic per riprodurre questo passo"
@@ -7251,7 +7260,7 @@ msgid "Drag handle"
 msgstr "Maniglia di trascinamento"
 
 msgid "Drag steps here to build them on their own."
-msgstr "Trascina i passi qui per costruirli separatamente."
+msgstr "Trascina i passi qui per costruirli da soli."
 
 msgid "Drag the red waypoints in the viewer"
 msgstr "Trascina i waypoint rossi nel visualizzatore"
@@ -7572,7 +7581,7 @@ msgstr "Modifica gruppo componenti"
 
 #. placeholder {0}: unit.name
 msgid "Edit component group {0}"
-msgstr "Modifica gruppo componenti {0}"
+msgstr "Modifica il gruppo di componenti {0}"
 
 msgid "Edit Contact"
 msgstr "Modifica Contatto"
@@ -9135,7 +9144,7 @@ msgid "First invoice"
 msgstr "Prima fattura"
 
 msgid "First Invoice"
-msgstr "Prima Fattura"
+msgstr "Attiva su righe offerta, righe ordine di vendita e righe fattura di vendita."
 
 msgid "First light, {name}."
 msgstr "Prima luce, {name}."
@@ -9727,7 +9736,7 @@ msgid "Headers"
 msgstr "Intestazioni"
 
 msgid "healthy"
-msgstr "Sano"
+msgstr "sano"
 
 msgid "Help"
 msgstr "Aiuto"
@@ -9934,7 +9943,7 @@ msgid "How strictly each material property must match for operations to share a 
 msgstr "Quanto rigorosamente ogni proprietà del materiale deve corrispondere affinché le operazioni condividano un lotto su questo processo."
 
 msgid "How the finished sub-assembly joins the main build."
-msgstr "Come il sottoassieme finito si unisce alla costruzione principale."
+msgstr "Come il sottoassembly finito si unisce alla build principale."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Come si classifica l'ordine di produzione quando il scheduler distribuisce la capacità — i claim ASAP vanno per primo, quindi Scadenza rigida, Scadenza flessibile e Nessuna scadenza per ultimo. Solo un segnale di classificazione; nessun tipo di scadenza blocca o limita il posizionamento."
@@ -10193,7 +10202,7 @@ msgid "In-Service Date"
 msgstr "Data di entrata in servizio"
 
 msgid "inactive"
-msgstr "Inattivo"
+msgstr "inattivo"
 
 msgid "Inactive"
 msgstr "Inattivo"
@@ -10302,7 +10311,7 @@ msgstr "Inserisci token"
 
 #. placeholder {0}: stepTitles.get(headerId) ?? ""
 msgid "inside {0}"
-msgstr "Dentro {0}"
+msgstr "dentro {0}"
 
 msgid "Inspect"
 msgstr "Ispeziona"
@@ -10655,6 +10664,9 @@ msgstr "è"
 msgid "is any of"
 msgstr "è uno di"
 
+msgid "is between"
+msgstr "è compreso tra"
+
 msgid "Is console operator"
 msgstr "È operatore console"
 
@@ -10669,6 +10681,12 @@ msgstr "È gruppo tipo dipendente"
 
 msgid "Is identity group"
 msgstr "È gruppo identità"
+
+msgid "is on or after"
+msgstr "è dal"
+
+msgid "is on or before"
+msgstr "è fino al"
 
 msgid "Is supplier org group"
 msgstr "È gruppo organizzativo fornitore"
@@ -11510,7 +11528,7 @@ msgid "Machine"
 msgstr "Macchina"
 
 msgid "Machine Costs"
-msgstr "Costi di macchina"
+msgstr "Costi macchina"
 
 msgid "Machine Hours"
 msgstr "Ore di macchina"
@@ -11555,7 +11573,7 @@ msgid "Magic link"
 msgstr "Link Magico"
 
 msgid "Main build (after its last step)"
-msgstr "Costruzione principale (dopo l'ultimo passo)"
+msgstr "Costruzione principale (dopo il suo ultimo passo)"
 
 msgid "Maintain a single part and item master"
 msgstr "Mantenere un singolo master di parte e articolo"
@@ -11624,7 +11642,7 @@ msgid "Make size {0} default?"
 msgstr "Rendere la dimensione {0} predefinita?"
 
 msgid "Make Sub-Assembly"
-msgstr "Produzione di sotto-assieme"
+msgstr "Produzione sub-assemblaggio"
 
 msgid "Make the final go / no-go call"
 msgstr "Prendi la decisione finale go / no-go"
@@ -11775,7 +11793,7 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Segna la persona come assente per ogni giorno nell'intervallo. Non verranno programmati mentre sono via."
 
 msgid "Markup by Category"
-msgstr "Ricarico per categoria"
+msgstr "Margine per categoria"
 
 msgid "Markup Percent"
 msgstr "Percentuale di ricarico"
@@ -12237,13 +12255,13 @@ msgid "Move entities…"
 msgstr "Sposta entità…"
 
 msgid "Move Into"
-msgstr "Sposta in"
+msgstr "Sposta dentro"
 
 msgid "Move item"
 msgstr "Sposta elemento"
 
 msgid "Move Out of Sub-Assembly"
-msgstr "Sposta fuori dal sotto-assieme"
+msgstr "Sposta fuori da sub-assemblaggio"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Sposta parte della quantità in una nuova riga di disposizione in modo che il MRB possa decidere ciascuna porzione separatamente (ad es. scartare alcuni, rilavorare altri)."
@@ -12934,7 +12952,7 @@ msgid "No completion date"
 msgstr "Nessuna data di completamento"
 
 msgid "No components — add a selection or cancel."
-msgstr "Nessun componente — aggiungi una selezione o annulla."
+msgstr "Nessun componente — Aggiungi una selezione o Annulla."
 
 msgid "No components yet"
 msgstr "Nessun componente ancora"
@@ -13361,7 +13379,7 @@ msgid "No steps match \"{search}\""
 msgstr "Nessun passo corrisponde a \"{search}\""
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
-msgstr "Nessun passo ancora. Trascina i passi al suo interno, o usa Sposta In dal menu di un passo."
+msgstr "Nessun passo ancora. Trascina i passi dentro, o usa Sposta dentro dal menu del passo."
 
 msgid "No stock"
 msgstr "Nessun stock"
@@ -13369,11 +13387,17 @@ msgstr "Nessun stock"
 msgid "No stock at this location"
 msgstr "Nessuno stock in questa posizione"
 
+msgid "No stock on hand at this location."
+msgstr "Nessuna giacenza disponibile in questa ubicazione."
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Nessuna rottura di stock prevista nei prossimi 48 settimane"
 
 msgid "No storage unit"
 msgstr "Nessuna unità di stoccaggio"
+
+msgid "No storage units or tracking numbers match."
+msgstr "Nessuna unità di stoccaggio o numero di tracciamento corrisponde."
 
 msgid "No suppliers yet"
 msgstr "Nessun fornitore ancora"
@@ -13645,7 +13669,7 @@ msgid "of {0}h"
 msgstr "di {0}h"
 
 msgid "Off"
-msgstr "Disattivato"
+msgstr "Spento"
 
 msgid "Off — handled outside the sync"
 msgstr "Disattivato — gestito al di fuori della sincronizzazione"
@@ -13666,7 +13690,7 @@ msgid "On"
 msgstr "Attivato"
 
 msgid "On {sentDate}"
-msgstr "Il {sentDate}"
+msgstr "Acceso"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Nel giorno del cutover, esegui la checklist sottostante in ordine. I test di accettazione provengono dai tuoi requisiti in ambito. I dettagli di supporto sono in fondo."
@@ -13866,7 +13890,7 @@ msgid "Open a change notice"
 msgstr "Apri un avviso di modifica"
 
 msgid "Open Account Mapping"
-msgstr "Mappatura Account Aperta"
+msgstr "Apri mappatura account"
 
 msgid "Open Actions"
 msgstr "Azioni Aperte"
@@ -13956,7 +13980,7 @@ msgid "Open Scheduled"
 msgstr "Programmato Aperto"
 
 msgid "Open Sub-Assembly"
-msgstr "Sottogruppo Aperto"
+msgstr "Apri sub-assemblaggio"
 
 msgid "Open task details"
 msgstr "Apri dettagli attività"
@@ -14419,7 +14443,7 @@ msgid "Part Being Replaced"
 msgstr "Componente Sostituito"
 
 msgid "Part Cost"
-msgstr "Costo del Componente"
+msgstr "Costo del componente"
 
 msgid "Part Details"
 msgstr "Dettagli Parte"
@@ -14762,7 +14786,7 @@ msgstr "Quantità prelevata"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
-msgstr "Passo prelevato {0}"
+msgstr "Passo {0} prelevato"
 
 msgid "picking in place of {substitutedFrom}, the item on the job"
 msgstr "prelievo al posto di {substitutedFrom}, l'articolo sull'ordine di produzione"
@@ -15027,7 +15051,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-compilato per un nuovo articolo quando la scadenza è Durata Fissa."
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
-msgstr "Guardie guidate da predicati che si attivano sulle righe di vendita. Blocca con errori o avvisa con riconoscimento per continuare."
+msgstr "Guard basate su predicati che si attivano sulle righe di vendita. Blocca con errori o avvisa con conferma per continuare."
 
 msgid "Predict lead time"
 msgstr "Prevedi il lead time"
@@ -15139,7 +15163,7 @@ msgid "Price override"
 msgstr "Forzatura del prezzo"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr "Prezzo stabilito prima che fossero registrate le tracce di prezzo — questo è il calcolo di oggi."
+msgstr "Prezzato prima che le tracce di determinazione dei prezzi fossero registrate — questo è il calcolo di oggi."
 
 msgid "Prices"
 msgstr "Prezzi"
@@ -15311,10 +15335,6 @@ msgstr "Percentuale di profitto"
 msgid "Progress"
 msgstr "Progresso"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Prev. {0}"
-
 msgid "Project"
 msgstr "Progetto"
 
@@ -15329,10 +15349,6 @@ msgstr "Piano di Progetto"
 
 msgid "Project start"
 msgstr "Inizio progetto"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Previsto {0}"
 
 msgid "Projected completion"
 msgstr "Completamento previsto"
@@ -16191,7 +16207,7 @@ msgid "Records"
 msgstr "Registri"
 
 msgid "Records and posted journals are being sent to and received from this provider."
-msgstr "I record e le prime note registrate vengono inviati e ricevuti da questo provider."
+msgstr "I record e le prime note registrate vengono inviate e ricevute da questo provider."
 
 msgid "Recovery Period"
 msgstr "Registrare"
@@ -16316,10 +16332,6 @@ msgstr "Cronologia relativa · date da confermare"
 msgid "Release"
 msgstr "Rilascio"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Rilascia {0} lotti di produzione"
-
 msgid "Release Batch"
 msgstr "Rilascia lotto"
 
@@ -16340,12 +16352,11 @@ msgstr "Controllo Rilascio"
 msgid "Release Job"
 msgstr "Rilascia Commessa"
 
+msgid "Release Jobs"
+msgstr "Rilascia Ordini di produzione"
+
 msgid "Released"
 msgstr "Rilasciato"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "Rilasciati {0} lotti di produzione"
 
 msgid "Released date"
 msgstr "Data di rilascio"
@@ -16355,6 +16366,10 @@ msgstr "Revisione rilasciata"
 
 msgid "Released revision is locked"
 msgstr "La revisione rilasciata è bloccata"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Rilasciato con problemi: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Rilasciare il lotto di produzione rilascia i suoi ordini di produzione, e ognuno deve essere pronto per l'officina."
@@ -16637,7 +16652,7 @@ msgstr "Riprezzi con le regole attuali"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr "Il ripprezzo con le regole e i costi odierni dà <0>{0}</0>."
+msgstr "Il riprezzamento con le regole e i costi di oggi dà <0>{0}</0>."
 
 msgid "Reprint"
 msgstr "Ristampa"
@@ -17801,6 +17816,9 @@ msgstr "Cerca record…"
 msgid "Search related items..."
 msgstr "Cerca elementi correlati..."
 
+msgid "Search storage units and tracking numbers"
+msgstr "Cerca unità di stoccaggio e numeri di tracciamento"
+
 msgid "Search suppliers..."
 msgstr "Cerca fornitori..."
 
@@ -18290,7 +18308,7 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Imposta la data di inizio dell'accordo per vedere il trattamento contabile."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "Imposta l'ora in cui hai smesso di lavorare o riconosci che stai ancora lavorando."
+msgstr "Imposta l'ora in cui hai smesso di lavorare, o conferma che stai ancora lavorando."
 
 msgid "Set up authenticator app"
 msgstr "Configura app autenticatore"
@@ -18601,7 +18619,7 @@ msgid "Show available tracking numbers"
 msgstr "Mostra numeri di tracciamento disponibili"
 
 msgid "Show calculation"
-msgstr "Mostra il calcolo"
+msgstr "Mostra calcolo"
 
 msgid "Show Customer IDs"
 msgstr "Mostra ID Cliente"
@@ -19058,12 +19076,12 @@ msgstr "Passo {0} · {1}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} is no longer over a drop position"
-msgstr "Il passo {0} non è più sopra una posizione di rilascio"
+msgstr "Il passo {0} non è più su una posizione di rilascio"
 
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} is over {1}"
-msgstr "Il passo {0} è sopra {1}"
+msgstr "Passo {0} è sopra {1}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} was dropped"
@@ -19072,7 +19090,7 @@ msgstr "Il passo {0} è stato rilasciato"
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} was dropped at {1}"
-msgstr "Il passo {0} è stato rilasciato a {1}"
+msgstr "Il passo {0} è stato rilasciato su {1}"
 
 msgid "Step {number}"
 msgstr "Passo {number}"
@@ -19108,7 +19126,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "I passi sono ereditati dal piano di controllo."
 
 msgid "Steps built on their own, then fitted as one piece: in the step that uses it, or, when nothing uses it, right after its own steps."
-msgstr "I passi vengono costruiti autonomamente, quindi montati come un unico pezzo: nel passo che li utilizza, oppure, quando nessuno li utilizza, subito dopo i loro stessi passi."
+msgstr "Passi costruiti separatamente, quindi montati come un'unica parte: nel passo che li utilizza, oppure, se non vengono utilizzati, subito dopo i loro passi."
 
 msgid "Still dark out on the floor."
 msgstr "Ancora buio in officina."
@@ -19239,18 +19257,18 @@ msgid "Sub-assembly"
 msgstr "Sotto-assieme"
 
 msgid "Sub-Assembly"
-msgstr "Sotto-Assieme"
+msgstr "Sotto-assemblaggio"
 
 msgid "Sub-Assembly · joins main build"
-msgstr "Sotto-Assemblaggio · si unisce alla build principale"
+msgstr "Sotto-assemblaggio · si unisce all'assemblaggio principale"
 
 msgid "Sub-Assembly · used in {usedInNumber}"
-msgstr "Sotto-Assemblaggio · usato in {usedInNumber}"
+msgstr "Sotto-assemblaggio · utilizzato in {usedInNumber}"
 
 #. placeholder {0}: used.number
 #. placeholder {1}: used.partCount
 msgid "Sub-Assembly {0} · {1, plural, one {# part} other {# parts}}"
-msgstr "Sotto-Assemblaggio {0} · {1, plural, one {# componente} other {# componenti}}"
+msgstr "Sotto-assemblaggio {0} · {1, plural, one {# componente} other {# componenti}}"
 
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
@@ -19259,10 +19277,10 @@ msgstr "Sotto-Assemblaggio {0} · {1} — mostrato separatamente"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
-msgstr "Sotto-Assemblaggio {0} · {openTitle}"
+msgstr "Sotto-assemblaggio {0} · {openTitle}"
 
 msgid "Sub-Assembly {number}"
-msgstr "Sotto-Assemblaggio {number}"
+msgstr "Sotto-assemblaggio {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "Solo scadenze dei sottoassiemi"
@@ -20358,7 +20376,7 @@ msgid "The material types you organize your stock by"
 msgstr "I tipi di materiale in base ai quali organizzi il tuo stock"
 
 msgid "The model is still loading."
-msgstr "Il modello è ancora in caricamento."
+msgstr "Il modello si sta ancora caricando."
 
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "Il mese in cui inizia il vostro anno fiscale; i periodi sono numerati a partire da questo mese."
@@ -20581,6 +20599,9 @@ msgstr "La stessa persona potrebbe ispezionare"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "L'URL dei metadati SAML pubblicati dal tuo provider di identità"
+
+msgid "The schedule could not be updated after the release"
+msgstr "Il programma non è stato aggiornato dopo il rilascio"
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Il programma utilizzato per distribuire il costo di questo asset nel corso della sua vita utile (lineare, quote decrescenti, unità di produzione)."
@@ -21124,7 +21145,7 @@ msgid "This station runs work with no ability requirement; operators assigned on
 msgstr "Questa stazione esegue lavori senza requisito di competenza; gli operatori assegnati sulla plancia di organico modellano la manodopera disponibile."
 
 msgid "This step is part of it"
-msgstr "Questo passo ne fa parte"
+msgstr "Questo passo fa parte di esso"
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -21441,7 +21462,7 @@ msgid "Tool ID"
 msgstr "ID Strumento"
 
 msgid "Tooling Cost"
-msgstr "Costo degli attrezzi"
+msgstr "Costo di utensili"
 
 msgid "tools"
 msgstr "Strumenti"
@@ -21475,7 +21496,7 @@ msgid "Total Construction Cost:"
 msgstr "Costo totale di costruzione:"
 
 msgid "Total Direct Cost"
-msgstr "Costo diretto totale"
+msgstr "Costo totale diretto"
 
 msgid "Total discount"
 msgstr "Sconto totale"
@@ -21484,7 +21505,7 @@ msgid "Total Due"
 msgstr "Totale Dovuto"
 
 msgid "Total Estimated Cost"
-msgstr "Costo stimato totale"
+msgstr "Costo totale stimato"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unità di produzione totali previste per ammortamento delle unità di produzione; il costo è distribuito per unità prodotta."
@@ -21496,13 +21517,13 @@ msgid "Total Indirect Cost"
 msgstr "Costo indiretto totale"
 
 msgid "Total Material Cost"
-msgstr "Costo materiale totale"
+msgstr "Costo totale materiale"
 
 msgid "Total Minutes"
 msgstr "Minuti totali"
 
 msgid "Total Outside Cost"
-msgstr "Costo esterno totale"
+msgstr "Costo totale esterno"
 
 msgid "Total Price"
 msgstr "Prezzo Totale"
@@ -21593,9 +21614,6 @@ msgstr "Il materiale tracciato è preselezionato per ordine di prelievo (FEFO), 
 
 msgid "Tracking"
 msgstr "Tracciamento"
-
-msgid "Tracking ID"
-msgstr "ID Tracciamento"
 
 msgid "Tracking method"
 msgstr "Metodo di tracciamento"
@@ -21835,7 +21853,7 @@ msgid "Unguaranteed Residual Value"
 msgstr "Valore residuo non garantito"
 
 msgid "unhealthy"
-msgstr "non integro"
+msgstr "anomalo"
 
 msgid "Uninstall"
 msgstr "Disinstalla"
@@ -22012,6 +22030,9 @@ msgstr "Riga senza titolo"
 msgid "Untitled step"
 msgstr "Passo senza titolo"
 
+msgid "Untracked"
+msgstr "Non tracciato"
+
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Materiale prelevato non utilizzato reso dal centro di lavoro al deposito."
 
@@ -22167,7 +22188,7 @@ msgid "Uploading {fileName}"
 msgstr "Caricamento in corso {fileName}"
 
 msgid "Uploading backup"
-msgstr "Caricamento backup"
+msgstr "Caricamento backup in corso"
 
 msgid "Uploading model"
 msgstr "Caricamento modello"
@@ -22224,7 +22245,7 @@ msgid "Use metric system for default material dimensions."
 msgstr "Utilizza il sistema metrico per le dimensioni predefinite dei materiali."
 
 msgid "Use Sub-Assembly"
-msgstr "Utilizza sotto-insieme"
+msgstr "Utilizza Sotto-insieme"
 
 msgid "Used in"
 msgstr "Utilizzato in"
@@ -23403,8 +23424,7 @@ msgstr "Puoi visualizzare questa chiave solo una volta. Conservala in modo sicur
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

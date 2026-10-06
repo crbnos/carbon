@@ -20,8 +20,13 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn checkout main` | cd into the main checkout (never creates a separate worktree). |
 | `crbn new [branch]` | Interactive worktree creation. Optional branch name pre-fills the prompt. |
 | `crbn list` | Show all worktrees with stack status. |
+| `crbn list --json` | The same list as JSON, for scripts and agents. |
 | `crbn remove` | Multi-select worktrees to delete (concurrent teardown with progress). |
+| `crbn remove <branch-or-path...>` | Remove the named worktrees without the picker (`CARBON_DEV_YES=1` skips the confirmation). |
 | `crbn remove --prune` | Also delete the git branch after removing each worktree. |
+| `crbn prune` | Destroy stacks no worktree can reach: slots whose directory is gone, and stacks with no slot. Lists them and confirms first; volumes are wiped. |
+| `crbn prune --all` | Destroy every crbn stack on the machine, running ones included. Worktrees, branches and live slots are kept; the next `crbn up` rebuilds the database. |
+| `crbn prune --tree` | Also clean up git worktrees: forget ones whose directory is gone. With `--all`, remove this repo's linked worktrees too. The main checkout, the current worktree, and any with uncommitted changes or a detached HEAD are kept; branches are never deleted. |
 
 ### Stack
 
@@ -32,12 +37,15 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn up --no-portless` | Localhost mode: fixed ports (API `:54321`, ERP `:3000`, MES `:3001`). |
 | `crbn up --borrow` | Reuse another worktree's running containers (DB, API, etc). |
 | `crbn up --no-apps` | Services only (postgres, kong, supabase, inngest, mail). |
+| `crbn up --full` | Also start Studio, Postgres-Meta, the edge runtime and imgproxy (HEIC conversion). They are off by default; `crbn reload studio` or `crbn reload imgproxy` starts one on a running stack. |
+| `crbn up --no-hibernate` | Keep everything up. By default the containers stop after 30 min without ERP/MES traffic (the next request wakes them in about 8 s), and the dev servers stop after 2 h (that wake takes about 40 s). `CRBN_IDLE_MINUTES` and `CRBN_APPS_IDLE_MINUTES` change the waits. |
 | `crbn up --no-migrate` | Skip database migrations. |
 | `crbn up --no-regen` | Skip type/swagger regeneration. |
 | `crbn up --pull` | Force `docker compose pull` even if images exist locally. |
 | `crbn down` | Stop stack (volumes preserved). |
 | `crbn reset` | Wipe volumes + flush redis db, then `up`. |
 | `crbn status` | Port assignment + container health. |
+| `crbn status --json` | The slot and containers as JSON, for scripts and agents. |
 | `crbn migrate` | Apply DB migrations against the running stack. |
 
 `CARBON_DEV_APPS` skips the picker: `CARBON_DEV_APPS=erp,mes,email crbn up`.

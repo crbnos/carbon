@@ -13,16 +13,13 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate, isUnaffectedByNavigation } from "@carbon/utils";
+import { formatDate } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -37,11 +34,6 @@ export const handle: Handle = {
   breadcrumb: msg`Depreciation`,
   to: path.to.depreciationRuns
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -95,7 +87,9 @@ export default function DepreciationRunsRoute() {
   // The modal proposes the next period but lets the user pick a later month
   // end (catching up several months at once). Depreciation is monthly, so any
   // picked date snaps to its month end.
-  const [periodEnd, setPeriodEnd] = useState(nextPeriodEnd);
+  // Only the user's pick is state; until they pick, the proposed period shows.
+  const [pickedPeriodEnd, setPeriodEnd] = useState<string | null>(null);
+  const periodEnd = pickedPeriodEnd ?? nextPeriodEnd;
 
   const canCreate =
     permissions.can("create", "accounting") && !hasDraftBlocking;

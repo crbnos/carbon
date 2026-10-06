@@ -7,9 +7,12 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import {
   isJobLocked,
+  scheduleOperationReorderValidator,
   scheduleOperationUpdateValidator
 } from "~/modules/production/production.models";
+import { reorderScheduleOperations } from "~/modules/production/production.server";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const invalidSchedulingRequest = () => ({
   success: false,
@@ -20,8 +23,49 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
+  const formData = await request.formData();
+
+  // A drop that renumbers several cards of a column sends them all at once.
+  const updates = formData.get("updates");
+  if (typeof updates === "string") {
+    let rows: unknown;
+    try {
+      rows = JSON.parse(updates);
+    } catch {
+      return { success: false, message: "Invalid form data" };
+    }
+    const reorder = scheduleOperationReorderValidator.safeParse({
+      columnId: formData.get("columnId"),
+      updates: rows
+    });
+    if (!reorder.success) {
+      return { success: false, message: "Invalid form data" };
+    }
+    const result = await reorderScheduleOperations(
+      client,
+      getDatabaseClient(),
+      {
+        companyId,
+        userId,
+        ...reorder.data
+      }
+    );
+    if (!result.success) return result;
+    // Same rule as the single move below: only a work-center change
+    // reschedules.
+    if (result.workCenterChanged) {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "work-center",
+        "Operation reassigned to a different work center",
+        reorder.data.columnId
+      );
+    }
+    return { success: true };
+  }
+
   const validation = await validator(scheduleOperationUpdateValidator).validate(
-    await request.formData()
+    formData
   );
 
   if (validation.error) {

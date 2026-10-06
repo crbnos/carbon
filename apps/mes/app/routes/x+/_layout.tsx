@@ -28,6 +28,8 @@ import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime } from "@carbon/query";
+import { setClientCompanyId } from "@carbon/query/cache";
 import {
   Button,
   Heading,
@@ -344,6 +346,8 @@ export default function AuthenticatedRoute() {
     mfaEnrollmentRequired,
     sessionTimeout
   } = loaderData;
+  // During render, not in an effect: the first child reads it.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
@@ -505,6 +509,7 @@ export default function AuthenticatedRoute() {
             }}
           >
             <RealtimeDataProvider>
+              {company?.id && <RouteRealtime companyId={company.id} />}
               <SidebarProvider defaultOpen={false}>
                 <TooltipProvider delayDuration={0}>
                   <AppSidebar

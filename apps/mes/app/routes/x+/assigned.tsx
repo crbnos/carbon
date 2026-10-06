@@ -42,6 +42,11 @@ import {
   getWorkCentersByCompany
 } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
+
+export const handle: Handle = {
+  realtime: ["jobOperation", "productionEvent"]
+};
 
 const log = getLogger("mes");
 

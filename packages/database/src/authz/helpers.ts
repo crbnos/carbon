@@ -21,7 +21,9 @@ import type { Client } from "pg";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const HELPERS_DIR = path.join(HERE, "helpers");
 export const EVENT_SYSTEM_DIR = path.join(HERE, "../event-system/functions");
-export const HELPER_DIRS = [HELPERS_DIR, EVENT_SYSTEM_DIR];
+/** The functions attachments.ts attaches to tables: interceptors and statement handlers. */
+export const EVENT_HANDLERS_DIR = path.join(HERE, "../event-system/handlers");
+export const HELPER_DIRS = [HELPERS_DIR, EVENT_SYSTEM_DIR, EVENT_HANDLERS_DIR];
 
 /** `schema` defaults to `public`. */
 export type Helper = { name: string; sql: string; schema?: string };

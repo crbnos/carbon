@@ -115,3 +115,42 @@ export function indexByMapped<T, K, V>(
   }
   return out;
 }
+
+/**
+ * A saved order of ids, followed by the current ids it does not name yet.
+ *
+ * For a list whose order the user chose and saved (a board's columns) but whose
+ * members come from loaded data: an id that appears later takes its place at
+ * the end instead of being left out. Ids the saved order names that are not
+ * current are kept, so a column hidden by a filter returns to its place.
+ */
+export function withUnorderedLast(
+  savedOrder: readonly string[],
+  currentIds: readonly string[]
+): string[] {
+  const known = new Set(savedOrder);
+  return [...savedOrder, ...currentIds.filter((id) => !known.has(id))];
+}
+
+/**
+ * A copy of a tree in which every node's id is the path to it.
+ *
+ * For a tree built from rows where one row can sit in several places (a
+ * sub-assembly used twice): each place needs an id of its own, and the id must
+ * be the same on every load. A random id per load changes the React key of
+ * every row, so a list keyed on it is torn down and rebuilt whenever its
+ * loader runs. A node that repeats under one parent gets `#n` on the path.
+ */
+export function withPathIds<N extends { id: string; children: N[] }>(
+  nodes: N[],
+  path = ""
+): N[] {
+  const seen = new Map<string, number>();
+  return nodes.map((node) => {
+    const count = seen.get(node.id) ?? 0;
+    seen.set(node.id, count + 1);
+    const base = path ? `${path}/${node.id}` : node.id;
+    const id = count === 0 ? base : `${base}#${count}`;
+    return { ...node, id, children: withPathIds(node.children, id) };
+  });
+}

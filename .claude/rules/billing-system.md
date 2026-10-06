@@ -236,12 +236,18 @@ whom it deleted.
   - Without replica permission it falls back to the plain cascade. A company with posted
     documents then fails, and is logged and skipped. So does the last company in a group,
     because its group's system accounts refuse deletion and the group would be stranded.
-  - Inside the same transaction, after the wipe and before the commit,
-    `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*` secrets, the
-    per-company bucket (already missing counts as done), and legacy files under
-    `private/<companyId>/` (listed strictly, so a listing error is a failure). Any failure
-    rolls the delete back, so the company row stays as the retry target and nothing is
-    orphaned once a delete commits. A company whose cleanup failed part-way may have
+  - BEFORE the transaction, `removeCompanyFiles` drains and deletes the per-company
+    bucket (already missing counts as done) and legacy files under `private/<companyId>/`
+    (listed strictly, so a listing error is a failure). Never inside it: storage deletes
+    its object rows on its own connection, `delete_orphaned_documents` then deletes the
+    matching `document` rows, and when the open purge transaction has already deleted
+    those rows storage waits on it until it times out (HTTP 544) and the purge rolls
+    back. The bucket is drained by listing, not `emptyBucket`, which only queues the
+    deletes and so makes the `deleteBucket` after it fail as "not empty". Any failure
+    keeps the company (the row is the retry target); `stillDue` is asked before the
+    files go and again in the transaction. `removeCompanySecrets` (the Vault
+    `integration:<companyId>:*` secrets) is plain SQL and stays inside the transaction.
+    A company whose cleanup failed part-way may have
     lost some files; it is still warned and due, so the next run finishes it. The search
     index and audit log tables (`searchIndex_<id>`, `auditLog_<id>`: named after the
     company, so outside the catalog) are dropped after the commit by `deleteCompanies`

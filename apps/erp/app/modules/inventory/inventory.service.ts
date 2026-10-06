@@ -14,7 +14,7 @@ import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime, getErrorMessage } from "@carbon/utils";
+import { async, datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -3674,13 +3674,17 @@ async function getWarehouseOnHand(
   }
   total = Math.max(0, total);
 
-  for (const [storageUnitId, qty] of perUnit) {
-    if (qty <= 0) continue;
-    const effectiveWc = await client.rpc("get_effective_work_center_id", {
-      p_storage_unit_id: storageUnitId
-    });
-    if (!effectiveWc.data) total += qty;
-  }
+  const stocked = Array.from(perUnit).filter(([, qty]) => qty > 0);
+  const workCenters = await async.map(
+    stocked,
+    async ([storageUnitId]) =>
+      await client.rpc("get_effective_work_center_id", {
+        p_storage_unit_id: storageUnitId
+      })
+  );
+  stocked.forEach(([, qty], index) => {
+    if (!workCenters[index]?.data) total += qty;
+  });
 
   return total;
 }

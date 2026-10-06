@@ -90,6 +90,24 @@ const M = {
       dot(574, 232, 5, ACCENT), hr(170, 522, 860)].join("\n");
   },
 
+  /* Response time falling: tall bars step down to one short accent bar, under the old level. */
+  speed: (r) => {
+    const heights = [224, 232, 216, 228, 150, 112, 84, 66, 54].map((h, i) => h + (i < 4 ? pick(r, -8, 8) : pick(r, -5, 5)));
+    const bars = heights.map((h, i) => {
+      const hot = i === heights.length - 1;
+      return `  <rect x="${218 + i * 58}" y="${510 - h}" width="34" height="${h}" rx="7" fill="${hot ? ACCENT : i < 4 ? "#20232A" : DIM}" stroke="${hot ? ACCENT : STROKE}" stroke-width="1.5"/>`;
+    });
+    return [panel(170, 146, 600, 400), chrome(170, 146, 600),
+      bar(206, 214, 96, MID, 10, 5), bar(206, 236, 150, DIM, 8, 4),
+      ...[0, 1, 2].map((i) => hr(206, 330 + i * 60, 528)),
+      `  <path d="M206 270 H734" stroke="${MID}" stroke-width="1.5" stroke-dasharray="5 7"/>`,
+      ...bars, hr(206, 510, 528, STROKE),
+      panel(700, 220, 330, 190, 20, PANEL2, ACCENT),
+      `  <path d="M776 262 L738 322 H764 L756 368 L796 304 H770 Z" fill="${ACCENT}" stroke="${ACCENT}" stroke-width="6" stroke-linejoin="round"/>`,
+      bar(836, 278, pick(r, 96, 124), MID, 14, 7),
+      bar(836, 312, 160, FAINT, 10, 5), bar(836, 312, pick(r, 44, 64), MID, 10, 5),
+      bar(836, 340, 110, DIM, 8, 4)].join("\n");
+  },
   merge: (r) => {
     const jobs = [0, 1, 2].map((i) => {
       const y = 206 + i * 100;
@@ -236,6 +254,7 @@ const M = {
  * match is the entry's real subject. "Ramp card transactions, batch materials, …"
  * is a ledger entry, not a batching one. Tags are a fallback only. */
 const MOTIFS = [
+  ["speed", /faster|speed|performance|latency/i],
   ["dashboard", /dashboard|time clock|timecard|report/i],
   ["gantt", /schedul|capacity|gantt/i],
   ["merge", /batching|batch |merge|consolidat/i],

@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import { Badge, HStack, IconButton, Subheading, VStack } from "@carbon/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LuCirclePlus, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Tool } from "~/components/Form";
@@ -31,15 +32,15 @@ export default function AssemblyStepTools({
   isDisabled
 }: AssemblyStepToolsProps) {
   const permissions = usePermissions();
-  const fetcher = useFetcher<{ success: boolean }>();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        setFormKey((key) => key + 1);
+      }
+    }
+  });
   // Remount the form after a successful add so the fields clear
   const [formKey, setFormKey] = useState(0);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      setFormKey((key) => key + 1);
-    }
-  }, [fetcher.state, fetcher.data]);
 
   return (
     <VStack spacing={2} className="w-full">

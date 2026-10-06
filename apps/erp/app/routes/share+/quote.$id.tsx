@@ -13,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  ClientOnly,
   cn,
   DisabledReason,
   generateHTML,
@@ -1406,14 +1407,20 @@ const Quote = ({ data }: { data: QuoteData }) => {
           </div>
         </CardContent>
       </Card>
-      {termsHTML && (
-        <div
-          className="prose dark:prose-invert text-muted-foreground max-w-5xl mx-auto"
-          dangerouslySetInnerHTML={{
-            __html: termsHTML
-          }}
-        />
-      )}
+      {/* generateHTML returns nothing on the server, so the server never
+          renders this block: rendering it during hydration would not match. */}
+      <ClientOnly>
+        {() =>
+          termsHTML ? (
+            <div
+              className="prose dark:prose-invert text-muted-foreground max-w-5xl mx-auto"
+              dangerouslySetInnerHTML={{
+                __html: termsHTML
+              }}
+            />
+          ) : null
+        }
+      </ClientOnly>
       {confirmQuoteModal.isOpen && (
         <Modal
           open

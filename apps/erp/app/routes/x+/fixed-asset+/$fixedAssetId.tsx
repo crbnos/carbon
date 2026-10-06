@@ -12,17 +12,15 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle
+  CardTitle,
+  RecordOutlet
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Link, Outlet, useLoaderData, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { Enumerable } from "~/components/Enumerable";
@@ -55,11 +53,6 @@ export const handle: Handle = {
   ),
   module: "accounting"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["fixedAssetId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -555,7 +548,7 @@ export default function FixedAssetDetailRoute() {
         </Card>
       )}
 
-      <Outlet />
+      <RecordOutlet />
     </DocumentPage>
   );
 }

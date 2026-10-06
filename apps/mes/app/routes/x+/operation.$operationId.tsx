@@ -41,8 +41,54 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 import { redirect } from "@carbon/utils";
 import { makeDurations } from "~/utils/durations";
-import { resolveOperationView } from "~/utils/operationView";
+import type { Handle } from "~/utils/handle";
+import {
+  OUTSIDE_PROCESSING_REFUSAL,
+  resolveOperationView
+} from "~/utils/operationView";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    // One operation of one job, unless it runs in a batch: a batch shows its
+    // members' steps, materials and timers, which belong to other jobs.
+    {
+      table: "job",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `id=eq.${data?.job?.id}`
+    },
+    {
+      // Every operation of the job: the one before this one gates it.
+      table: "jobOperation",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      table: "jobMaterial",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      table: "jobOperationStep",
+      filter: ({ data, params }) =>
+        data?.batch || !data?.job?.id
+          ? undefined
+          : `operationId=eq.${params.operationId}`
+    },
+    {
+      table: "jobOperationStepRecord",
+      filter: ({ data, params }) =>
+        data?.batch || !data?.job?.id
+          ? undefined
+          : `operationId=eq.${params.operationId}`
+    },
+    {
+      table: "pickingListLine",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    }
+  ]
+};
 
 const logger = getLogger("mes", "operation");
 
@@ -115,6 +161,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const op = operation.data?.[0];
+
+  // Subcontracted work runs at the supplier, never on the shop floor. The
+  // boards hide it; this refuses a job-view or direct link too.
+  if (op?.operationType === "Outside Processing") {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
+    );
+  }
 
   // Redirect guard (ADR-0005): each view has its own route. Guards only
   // redirect kinds they don't serve, so no loop.

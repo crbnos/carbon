@@ -359,6 +359,21 @@ msgstr "{count, plural, one {# account with a balance} other {# accounts with a 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Release # batch} other {Release # batches}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {Released # batch} other {Released # batches}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {Released # job} other {Released # jobs}}"
+
 msgid "{count} of {total} units"
 msgstr "{count} of {total} units"
 
@@ -2548,7 +2563,7 @@ msgstr "Are you sure you want to activate this gauge?."
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 
@@ -2928,8 +2943,8 @@ msgstr "Are you sure you want to leave this page?"
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Are you sure you want to permanently delete {0}?"
 
@@ -5390,7 +5405,9 @@ msgid "Could not read the document: {0}"
 msgstr "Could not read the document: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Could not release {0}: {1}"
 
@@ -7114,19 +7131,11 @@ msgstr "Dispositions"
 msgid "Dissolve"
 msgstr "Dissolve"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Dissolve {0} batches"
-
 msgid "Dissolve batch"
 msgstr "Dissolve batch"
 
 msgid "Dissolve Batch"
 msgstr "Dissolve Batch"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Dissolved {0} batches"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -10655,6 +10664,9 @@ msgstr "is"
 msgid "is any of"
 msgstr "is any of"
 
+msgid "is between"
+msgstr "is between"
+
 msgid "Is console operator"
 msgstr "Is console operator"
 
@@ -10669,6 +10681,12 @@ msgstr "Is employee type group"
 
 msgid "Is identity group"
 msgstr "Is identity group"
+
+msgid "is on or after"
+msgstr "is on or after"
+
+msgid "is on or before"
+msgstr "is on or before"
 
 msgid "Is supplier org group"
 msgstr "Is supplier org group"
@@ -13369,11 +13387,17 @@ msgstr "No stock"
 msgid "No stock at this location"
 msgstr "No stock at this location"
 
+msgid "No stock on hand at this location."
+msgstr "No stock on hand at this location."
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "No stockout projected in the next 48 weeks"
 
 msgid "No storage unit"
 msgstr "No storage unit"
+
+msgid "No storage units or tracking numbers match."
+msgstr "No storage units or tracking numbers match."
 
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
@@ -15311,10 +15335,6 @@ msgstr "Profit Percent"
 msgid "Progress"
 msgstr "Progress"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
-
 msgid "Project"
 msgstr "Project"
 
@@ -15329,10 +15349,6 @@ msgstr "Project Plan"
 
 msgid "Project start"
 msgstr "Project start"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Projected {0}"
 
 msgid "Projected completion"
 msgstr "Projected completion"
@@ -16316,10 +16332,6 @@ msgstr "Relative timeline · dates to be confirmed"
 msgid "Release"
 msgstr "Release"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Release {0} batches"
-
 msgid "Release Batch"
 msgstr "Release Batch"
 
@@ -16340,12 +16352,11 @@ msgstr "Release Control"
 msgid "Release Job"
 msgstr "Release Job"
 
+msgid "Release Jobs"
+msgstr "Release Jobs"
+
 msgid "Released"
 msgstr "Released"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "Released {0} batches"
 
 msgid "Released date"
 msgstr "Released date"
@@ -16355,6 +16366,10 @@ msgstr "Released revision"
 
 msgid "Released revision is locked"
 msgstr "Released revision is locked"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Released with problems: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Releasing the batch releases its jobs, and each one must be ready for the floor."
@@ -17800,6 +17815,9 @@ msgstr "Search records…"
 
 msgid "Search related items..."
 msgstr "Search related items..."
+
+msgid "Search storage units and tracking numbers"
+msgstr "Search storage units and tracking numbers"
 
 msgid "Search suppliers..."
 msgstr "Search suppliers..."
@@ -20582,6 +20600,9 @@ msgstr "The same person may inspect"
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "The SAML metadata URL published by your identity provider"
 
+msgid "The schedule could not be updated after the release"
+msgstr "The schedule could not be updated after the release"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 
@@ -21594,9 +21615,6 @@ msgstr "Tracked material is pre-selected by pick order (FEFO), even without a pi
 msgid "Tracking"
 msgstr "Tracking"
 
-msgid "Tracking ID"
-msgstr "Tracking ID"
-
 msgid "Tracking method"
 msgstr "Tracking method"
 
@@ -22011,6 +22029,9 @@ msgstr "Untitled line"
 
 msgid "Untitled step"
 msgstr "Untitled step"
+
+msgid "Untracked"
+msgstr "Untracked"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Unused picked material flushed back from the work center to the warehouse."
@@ -23403,13 +23424,11 @@ msgstr "You can only see this key once. Store it safely."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr ""
-"You completed {leftoverQuantity} more \n"
+msgstr "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

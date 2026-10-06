@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Input, TextArea, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -44,7 +45,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   LuChevronRight,
   LuCirclePlus,
@@ -52,7 +53,7 @@ import {
   LuPencil
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import {
@@ -834,18 +835,18 @@ const Quote = ({
 
   const submitModal = useDisclosure();
   const declineModal = useDisclosure();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSettled: () => {
+      if (submitted.current) {
+        submitModal.onClose();
+        declineModal.onClose();
+        submitted.current = false;
+      }
+    }
+  });
   const submitted = useRef<boolean>(false);
   const mode = useMode();
   const logo = mode === "dark" ? company?.logoDark : company?.logoLight;
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      submitModal.onClose();
-      declineModal.onClose();
-      submitted.current = false;
-    }
-  }, [fetcher.state, submitModal, declineModal]);
 
   // Initialize selected lines from existing pricing data
   const [selectedLines, setSelectedLines] = useState<

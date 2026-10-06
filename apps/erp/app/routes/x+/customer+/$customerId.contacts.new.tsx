@@ -8,10 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import {
   customerContactValidator,
@@ -21,7 +18,6 @@ import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { customerContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -124,21 +120,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.customerContacts(customerId),
         await flash(request, success("Customer contact created"))
       );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { customerId } = params;
-
-  if (customerId) {
-    window.clientCache?.setQueryData(
-      customerContactsQuery(customerId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function CustomerContactsNewRoute() {

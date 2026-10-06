@@ -10,14 +10,10 @@ import {
   getSalesRulesList
 } from "@carbon/ee/rules";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
 import {
@@ -42,11 +38,6 @@ import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCompany } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["itemId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -235,7 +226,7 @@ export default function PartSalesRoute() {
         library={salesRuleLibrary as never}
       />
       {/* The drawers of the customer part and rental rate child routes. */}
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -15,6 +15,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Use subagents liberally to keep the main context window clean.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
+- Resolve every merge or rebase conflict with the `resolving-merge-conflicts` skill (`.claude/skills/resolving-merge-conflicts/SKILL.md`): load it before touching a conflicted file. Its checks here are the scoped typecheck and tests, Biome, and `pnpm --filter @carbon/checks clobbers` when migrations are involved.
 - Never claim work is complete without running verification commands. Evidence before assertions — run the command, read the output, then state the result.
 
 ## Ask First
@@ -63,7 +64,7 @@ outside that set. A package whose task reads other paths declares them in its ow
 artifact depends on the task that makes it (`apps/erp/turbo.json`).
 
 Both `db:check:*` commands read your live local schema. They run from
-`.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
+`scripts/git-hooks/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
 the dataset check fail for the wrong reason and makes the backup check refuse to give
 a verdict at all. Run by hand, both write nothing; from the hook, `db:check:backups`
 additionally regenerates and stages `packages/jobs/manifests/schema.json` on success.
@@ -133,6 +134,9 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Linear integration | `.claude/rules/linear-integration.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
+| Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |
+| Realtime (broadcast, `handle.realtime`, live lists, change log) | `.claude/rules/realtime-system.md` + `packages/query/AGENTS.md` |
+| Event triggers and interceptors (attachments manifest) | `.claude/rules/authz-manifest.md` |
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
 | Date & time handling (no JS `Date`) | `.claude/rules/date-handling.md` |
@@ -165,6 +169,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
+| Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
+| Test-first work: good tests, seams, anti-patterns | `.claude/skills/tdd/SKILL.md` + `.claude/skills/test-driven-development/SKILL.md` |
 
 ## Core Principles
 
@@ -205,7 +211,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 28 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Packages**: 29 under `packages/` — auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

@@ -37,9 +37,9 @@ Schema lives in these migrations (newest wins):
 `20260524143826_fixed-asset-enums.sql`, `20260524143827_fixed-assets.sql`,
 `20260525084319_seed-fixed-asset-classes.sql`,
 `20260717031529_split-asset-gain-loss-disposal-accounts.sql`,
-`20261005010301_fleet-rental-lease-enums.sql`, `20261005010401_fleet-bridge.sql`,
-`20261005010501_rental-agreements.sql` (rentals, the sales-type lease schedule and the
-`fleetAssets` view) and `20261005011701_complete-job-to-asset.sql`. Design:
+`20261006130301_fleet-rental-lease-enums.sql`, `20261006130401_fleet-bridge.sql`,
+`20261006130501_rental-agreements.sql` (rentals, the sales-type lease schedule and the
+`fleetAssets` view) and `20261006131701_complete-job-to-asset.sql`. Design:
 `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` §2 and §4.
 
 ## Tables (current schema)
@@ -52,7 +52,7 @@ Schema lives in these migrations (newest wins):
   (Units of Production), `locationId`, `disposalDate`, `disposalMethod`,
   `saleProceeds`. Tax columns: `taxDepreciationMethod`, `taxUsefulLifeMonths`,
   `taxResidualValuePercent`, `macrsPropertyClass`, `macrsConvention`,
-  `bonusDepreciationPercent`. **Fleet bridge** (`20261005010401`): `itemId`
+  `bonusDepreciationPercent`. **Fleet bridge** (`20261006130401`): `itemId`
   (FK `item`), `trackedEntityId` (FK `trackedEntity`; partial unique index
   `fixedAsset_trackedEntity_live_idx` on `(companyId, trackedEntityId)` while
   `status <> 'Disposed'`), `quantity NUMERIC NOT NULL DEFAULT 1` (CHECK
@@ -67,7 +67,7 @@ Schema lives in these migrations (newest wins):
   column, backfilled to the loss account where no gain account resolved).
   `isConstructionInProgress BOOLEAN NOT NULL DEFAULT false` marks a CIP class.
   Also default depreciation/tax settings. Seeded with Buildings / Machinery &
-  Equipment / Vehicles, plus (`20261005010401` for existing companies,
+  Equipment / Vehicles, plus (`20261006130401` for existing companies,
   `packages/database/src/seed-data.ts` for new ones) **Rental Fleet** (Straight Line,
   60 months, 20 % residual, asset `1370 Rental Fleet`, accumulated
   `1380 Accumulated Depreciation – Rental Fleet`) and **Construction in
@@ -96,7 +96,7 @@ Schema lives in these migrations (newest wins):
   `netBookValue` and a **derived** `fleetStatus`: Disposed + `disposalMethod
   'Transfer to Inventory'` → `Returned to Stock`; any other Disposed → `Sold`;
   `Under Construction`; `outOfServiceSince` set → `In Maintenance`; else
-  `Available`. `20261005010501_rental-agreements.sql` recreated it with a
+  `Available`. `20261006130501_rental-agreements.sql` recreated it with a
   `LEFT JOIN LATERAL` on the newest LIVE `rentalAgreementLine` of the asset
   (`status IN ('Pending','On Rent')`, joined to its `rentalAgreement`) and
   exposes that line's `rentalAgreementId`, `customerId`, `customerLocationId`.
@@ -118,7 +118,7 @@ Schema lives in these migrations (newest wins):
   older backups restore — readers fall back to the run's `periodEnd`),
   `amount`, `taxAmount`, `journalId` (that month's journal) and
   `deferredTaxJournalId` (that month's deferred tax journal, migration
-  `20261005011801`).
+  `20261006131801`).
 - **`fixedAssetDisposal`** — disposal record: `disposalMethod`, `disposalDate`,
   `saleProceeds`, `netBookValueAtDisposal`, `gainLoss`, `journalId`.
 - **`fixedAssetUsageLog`** — Units of Production input: `periodStart`,
@@ -133,11 +133,11 @@ the job → asset branch inside `complete_job_to_inventory` (Make to Asset).
 ## Enums
 
 - `fixedAssetStatus`: `Draft`, `Active`, `Fully Depreciated`, `Disposed`,
-  `Under Construction` (`20261005010301`)
+  `Under Construction` (`20261006130301`)
 - `depreciationMethod`: `Straight Line`, `Declining Balance`, `Units of Production`
 - `taxDepreciationMethod`: `Straight Line`, `Declining Balance`, `MACRS`
 - `disposalMethod`: `Sale`, `Scrapping`, `Transfer to Inventory`
-  (`20261005010301`; only `post-asset-transfer` writes the third — the UI
+  (`20261006130301`; only `post-asset-transfer` writes the third — the UI
   `disposalMethods` array still lists the first two)
 - `fixedAssetTransferType`: `Capitalization`, `Return to Inventory`
 - `fixedAssetTransferSourceType`: `Inventory`, `Job`, `Construction in Progress`
@@ -303,7 +303,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    cost; see **post-asset-transfer** below.
 
 **Make to Asset.** The branch lives inside `complete_job_to_inventory`
-(`20261005011701_complete-job-to-asset.sql`, forked from the guarded definition in
+(`20261006131701_complete-job-to-asset.sql`, forked from the guarded definition in
 `20260925121735_rpc-function-guards.sql`), so every
 completion path (ERP route, API/MCP, the `sync_finish_job_operation` trigger)
 gets it. `v_asset_target` is `'asset'` when `job.fixedAssetId` is set, `'class'`
@@ -311,7 +311,7 @@ when `job.fixedAssetClassId` is, else null (the ordinary receipt). Guards, all
 raised before anything moves: a job with a `salesOrderLineId` ("A job linked to
 a sales order line cannot complete to a fixed asset"); a class target with a
 non-serial item at any quantity ("A job that completes to a fixed asset class
-needs a serialized item", `20261005011701` — every asset it makes is a fleet unit,
+needs a serialized item", `20261006131701` — every asset it makes is a fleet unit,
 and Return to Inventory / capitalization follow the serial); an asset target
 with a non-serial item completing anything but exactly 1 ("Make to Asset needs a
 serialized item or a quantity of one"); a `fixedAssetId` whose class is not CIP ("Job … targets fixed
@@ -614,7 +614,7 @@ two-step (ship → invoice) flow.
   Draft-review UI on the column without adding the poster.
 - A fleet asset's unit must be serialized: `fixedAsset.quantity` is CHECKed to 1
   and `complete_job_to_inventory` refuses a non-serial item for any class job.
-  Assets made before `20261005011701` by a single-unit untracked job have no
+  Assets made before `20261006131701` by a single-unit untracked job have no
   `trackedEntityId`, and `post-asset-transfer` needs one to return a unit to
   inventory.
 - Any Disposed asset that was not returned to stock reads `Sold` (a scrapped

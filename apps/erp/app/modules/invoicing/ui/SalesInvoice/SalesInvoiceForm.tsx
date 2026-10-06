@@ -70,18 +70,11 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
     paymentTermId: initialValues.paymentTermId
   });
 
-  const [customer, setCustomer] = useState<{
-    id: string | undefined;
-  }>({
-    id: initialValues.customerId
-  });
-
   const onCustomerChange = async (
     newValue: {
       value: string | undefined;
     } | null
   ) => {
-    setCustomer({ id: newValue?.value });
     if (newValue?.value !== invoiceCustomer.id) {
       onInvoiceCustomerChange(newValue);
     }
@@ -223,7 +216,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               <CustomerLocation
                 name="invoiceCustomerLocationId"
                 label={t`Invoice Customer Location`}
-                customer={customer.id}
+                customer={invoiceCustomer.id}
                 value={invoiceCustomer.invoiceCustomerLocationId}
                 onChange={(newValue) => {
                   if (newValue?.id) {
@@ -237,7 +230,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               <CustomerContact
                 name="invoiceCustomerContactId"
                 label={t`Invoice Customer Contact`}
-                customer={customer.id}
+                customer={invoiceCustomer.id}
                 value={invoiceCustomer.invoiceCustomerContactId}
                 onChange={(newValue) => {
                   if (newValue?.id) {

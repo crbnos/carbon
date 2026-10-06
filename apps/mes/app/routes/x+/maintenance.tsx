@@ -41,7 +41,12 @@ import {
 } from "~/services/maintenance.service";
 import { maintenanceDispatchPriority } from "~/services/models";
 import { getWorkCentersByLocation } from "~/services/operations.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["maintenanceDispatch"]
+};
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});

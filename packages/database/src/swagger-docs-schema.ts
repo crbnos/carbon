@@ -80199,6 +80199,150 @@ export default {
         tags: ["paymentTerm"]
       }
     },
+    "/tableChange": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.table"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.rowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.xid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/tableChange"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["tableChange"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.tableChange"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["tableChange"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.table"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.rowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.xid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["tableChange"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.table"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.rowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.xid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.tableChange"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["tableChange"]
+      }
+    },
     "/rework": {
       get: {
         parameters: [
@@ -103115,6 +103259,88 @@ export default {
         tags: ["(rpc) is_claims_admin"]
       }
     },
+    "/rpc/get_item_change_notices": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: '"changeOrderStatus"[]',
+            in: "query",
+            name: "statuses",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_change_notices"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                statuses: {
+                  format: '"changeOrderStatus"[]',
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["item_id", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_change_notices"]
+      }
+    },
     "/rpc/xid": {
       post: {
         parameters: [
@@ -109416,6 +109642,74 @@ export default {
         tags: ["(rpc) delete_old_audit_logs"]
       }
     },
+    "/rpc/get_item_used_in": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_used_in"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["item_id", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_used_in"]
+      }
+    },
     "/rpc/get_job_quantity_on_hand": {
       post: {
         parameters: [
@@ -112376,6 +112670,66 @@ export default {
           }
         },
         tags: ["(rpc) get_purchasing_planning"]
+      }
+    },
+    "/rpc/set_event_triggers": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                after_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                before_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                queue_events: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                statement_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                table_name_text: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["table_name_text"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_event_triggers"]
       }
     },
     "/rpc/create_event_system_subscription": {
@@ -151166,6 +151520,40 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    tableChange: {
+      required: ["id", "companyId", "table", "xid", "createdAt"],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "bigint",
+          type: "integer"
+        },
+        companyId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        table: {
+          format: "text",
+          type: "string"
+        },
+        rowId: {
+          format: "text",
+          type: "string"
+        },
+        xid: {
+          default: "pg_current_xact_id()",
+          format: "xid8",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -203612,6 +204000,51 @@ export default {
     },
     "rowFilter.paymentTerm.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.tableChange": {
+      name: "tableChange",
+      description: "tableChange",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/tableChange"
+      }
+    },
+    "rowFilter.tableChange.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.table": {
+      name: "table",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.rowId": {
+      name: "rowId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.xid": {
+      name: "xid",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"

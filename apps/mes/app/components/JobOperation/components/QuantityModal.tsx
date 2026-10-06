@@ -8,6 +8,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -24,9 +25,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import {
   finishValidator,
   nonScrapQuantityValidator,
@@ -78,7 +78,13 @@ export function QuantityModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<ProductionQuantity>();
+  const fetcher = useAction<ProductionQuantity>({
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+      }
+    }
+  });
   const [quantity, setQuantity] = useState(parentIsSerial ? 1 : 0);
   const [confirmedUnissued, setConfirmedUnissued] = useState(false);
   const submitted = useRef(false);
@@ -95,17 +101,11 @@ export function QuantityModal({
     reworked: operation.quantityReworked ?? 0
   };
 
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
-
   const titleMap = {
     scrap: t`Log scrap for ${operation.itemReadableId}`,
     rework: t`Log rework for ${operation.itemReadableId}`,
     complete: t`Log completed for ${operation.itemReadableId}`,
-    finish: t`Finish ${operation.itemReadableId}`
+    finish: t`Mark ${operation.itemReadableId} as Done`
   };
 
   // operationQuantity is Math.ceil'd upstream (recalculate/get-method), so a 1.5-unit
@@ -119,7 +119,7 @@ export function QuantityModal({
     scrap: t`Select a scrap quantity and reason`,
     rework: t`Select a rework quantity`,
     complete: t`Select a completion quantity`,
-    finish: t`Are you sure you want to finish this operation? This will end all active production events for this operation.`
+    finish: t`Are you sure you want to mark this operation as done? This will end all active production events for this operation.`
   };
 
   const actionMap = {
@@ -133,7 +133,7 @@ export function QuantityModal({
     scrap: t`Log Scrap`,
     rework: t`Log Rework`,
     complete: t`Log Completed`,
-    finish: isOperationComplete ? t`Finish` : t`Finish Anyways`
+    finish: isOperationComplete ? t`Mark as Done` : t`Mark as Done Anyways`
   };
 
   const validatorMap = {

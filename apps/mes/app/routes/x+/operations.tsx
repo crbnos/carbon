@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { useChangedRows } from "@carbon/query";
 import {
   Button,
   CarbonPulse,
@@ -24,7 +25,6 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
@@ -59,7 +59,12 @@ import {
 import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["job", "jobOperation"]
+};
 
 const log = getLogger("mes");
 
@@ -116,8 +121,33 @@ function collapseBatches(
   }
   for (const [batchId, members] of byBatch) {
     const total = batchTotals.get(batchId);
+    // The batch runs as one, so any member projected late makes the run late.
+    const conflicted = members.filter((m) => m.hasConflict);
+    // The earliest dated member deadline is the batch's binding constraint.
+    // Only Hard and Soft Deadline carry a due date; an ASAP job can still hold
+    // a stale one.
+    const earliest = members.reduce<Item | undefined>((acc, m) => {
+      if (
+        !m.dueDate ||
+        m.deadlineType === "ASAP" ||
+        m.deadlineType === "No Deadline"
+      )
+        return acc;
+      if (!acc?.dueDate || m.dueDate < acc.dueDate) return m;
+      return acc;
+    }, undefined);
     result.push({
       ...members[0],
+      dueDate: earliest?.dueDate ?? members[0].dueDate,
+      deadlineType: earliest?.deadlineType ?? members[0].deadlineType,
+      hasConflict: conflicted.length > 0 || undefined,
+      conflictReason: conflicted.length
+        ? conflicted
+            .map((m) =>
+              m.conflictReason ? `${m.title}: ${m.conflictReason}` : m.title
+            )
+            .join("\n")
+        : undefined,
       batchSize: total?.size ?? members.length,
       batchJobReadableIds:
         total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
@@ -223,12 +253,16 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   // assignment for today and no explicit work-center filter (and hasn't
   // dismissed the default this session), open on their station.
   const effectiveUserId = context.get(userContext)?.effectiveUserId;
+  // The factory's calendar day: card urgency and the people assignment both
+  // read it, never the operator device's day.
+  const today = locationId
+    ? datetime
+        .today(await getLocationTimeZone(serviceRole, locationId, companyId))
+        .toString()
+    : null;
   let peopleStation: { workCenterId: string; name: string } | null = null;
   let peopleDate: string | null = null;
-  if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
-    const today = datetime
-      .today(await getLocationTimeZone(serviceRole, locationId, companyId))
-      .toString();
+  if (selectedWorkCenterIds.length === 0 && effectiveUserId && today) {
     peopleDate = today;
     const dismissed = await getPeopleOverride(request);
     if (dismissed !== today) {
@@ -358,6 +392,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     {
       peopleStation,
       peopleDate,
+      today,
       columns: filteredWorkCenters
         .map((wc: any) => ({
           id: wc.id!,
@@ -382,7 +417,9 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
             title: op.jobReadableId,
             subtitle: op.itemReadableId,
             description: op.description,
-            dueDate: op.operationDueDate,
+            // The JOB's due date, as on the operation view: the op's need-by
+            // target labelled "Due" read as the job being due weeks early.
+            dueDate: op.jobDueDate ?? undefined,
             duration:
               operation.setupDuration +
               Math.max(operation.laborDuration, operation.machineDuration),
@@ -850,84 +887,59 @@ function useProgressByOperation(
     }
   }, [productionEventsByOperation]);
 
-  useRealtimeChannel({
-    topic: `kanban-schedule:${companyId}`,
-    dependencies: [items.length],
-    setup(channel) {
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=in.(${items.map((item) => item.id).join(",")})`
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "UPDATE": {
-                const { new: updated } = payload;
-                setItems((prevItems: Item[]) =>
-                  sortItems(
-                    prevItems.map((item: Item) => {
-                      if (item.id === updated.id) {
-                        return {
-                          ...item,
-                          columnId: updated.workCenterId,
-                          priority: updated.priority
-                        };
-                      }
-                      return item;
-                    })
-                  )
-                );
-                break;
-              }
-              case "DELETE": {
-                const { old: deleted } = payload;
-                setItems((prevItems: Item[]) =>
-                  sortItems(
-                    prevItems.filter((item: Item) => item.id !== deleted.id)
-                  )
-                );
-                break;
-              }
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `companyId=eq.${companyId}`
-          },
-          (payload) => {
-            if (payload.new) {
-              const event = payload.new as Event;
-              if (items.some((item) => item.id === event.jobOperationId)) {
-                setProductionEventsByOperation((prev) => ({
-                  ...prev,
-                  [event.jobOperationId]: [
-                    ...(prev[event.jobOperationId] ?? []),
-                    event
-                  ]
-                }));
-              }
-            } else if (payload.old) {
-              const event = payload.old as Event;
-              if (items.some((item) => item.id === event.jobOperationId)) {
-                setProductionEventsByOperation((prev) => ({
-                  ...prev,
-                  [event.jobOperationId]: (
-                    prev[event.jobOperationId] ?? []
-                  ).filter((e) => e.id !== event.id)
-                }));
-              }
-            }
-          }
+  useChangedRows<{ id: string; workCenterId: string; priority: number }>({
+    companyId,
+    table: "jobOperation",
+    columns: "id, workCenterId, priority",
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        setItems((prevItems: Item[]) =>
+          sortItems(prevItems.filter((item: Item) => !ids.includes(item.id)))
         );
+        return;
+      }
+      const changed = new Map(rows.map((row) => [row.id, row]));
+      setItems((prevItems: Item[]) =>
+        sortItems(
+          prevItems.map((item: Item) => {
+            const updated = changed.get(item.id);
+            return updated
+              ? {
+                  ...item,
+                  columnId: updated.workCenterId,
+                  priority: updated.priority
+                }
+              : item;
+          })
+        )
+      );
+    }
+  });
+
+  useChangedRows<Event>({
+    companyId,
+    table: "productionEvent",
+    onChange: ({ op, ids, rows }) => {
+      setProductionEventsByOperation((prev) => {
+        if (op === "DELETE") {
+          return Object.fromEntries(
+            Object.entries(prev).map(([operationId, events]) => [
+              operationId,
+              events.filter((event) => !ids.includes(event.id))
+            ])
+          );
+        }
+        const next = { ...prev };
+        for (const row of rows) {
+          if (!row.jobOperationId) continue;
+          if (!items.some((item) => item.id === row.jobOperationId)) continue;
+          const events = next[row.jobOperationId] ?? [];
+          next[row.jobOperationId] = events.some((event) => event.id === row.id)
+            ? events.map((event) => (event.id === row.id ? row : event))
+            : [...events, row];
+        }
+        return next;
+      });
     }
   });
 

@@ -189,7 +189,7 @@ grep -c "CREATE TYPE" packages/database/supabase/migrations/*_contract-enums.sql
 **Depends on:** 2
 **Files:**
 - Create: `packages/database/supabase/migrations/<timestamp>_contracts.sql` (via `pnpm db:migrate:new contracts`)
-- Copy from (precedent): `packages/database/supabase/migrations/20261005010501_rental-agreements.sql`. Copy its table shape (lines 30–80), the sequence backfill (section "10) Sequence per company", around line 271) and the `salesInvoiceLines` view recreation (line 217).
+- Copy from (precedent): `packages/database/supabase/migrations/20261006130501_rental-agreements.sql`. Copy its table shape (lines 30–80), the sequence backfill (section "10) Sequence per company", around line 271) and the `salesInvoiceLines` view recreation (line 217).
 
 **Steps:**
 1. `pnpm db:migrate:new contracts`. It must be newer than `_contract-enums.sql`.

@@ -27,6 +27,8 @@ import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime } from "@carbon/query";
+import { setClientCompanyId } from "@carbon/query/cache";
 import {
   ItarEntityCertification,
   ItarEntityPendingBlock,
@@ -71,11 +73,13 @@ import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import { employeeCompaniesOf, getEmployeeCompanies } from "~/modules/settings";
-import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
+import {
+  getAppShell,
+  getCustomFieldsSchemas,
+  getImplementationSignals
+} from "~/modules/shared/shared.server";
 import { getItarCertificationStatus } from "~/modules/users";
 import { getUserClaims } from "~/modules/users/users.server";
-import { getAppShell } from "~/services/app-shell.server";
-import { getImplementationSignals } from "~/services/implementation-signals.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -371,6 +375,8 @@ export default function AuthenticatedRoute() {
     mfaEnrollment,
     sessionTimeout
   } = loaderData;
+  // During render, not in an effect: clientLoaders and the first child read it.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
@@ -511,6 +517,7 @@ export default function AuthenticatedRoute() {
             }}
           >
             <RealtimeDataProvider>
+              {company?.id && <RouteRealtime companyId={company.id} />}
               <TooltipProvider>
                 <SidebarProvider
                   defaultOpen={false}

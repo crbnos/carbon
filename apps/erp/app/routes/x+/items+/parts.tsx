@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getParts } from "~/modules/items";
 import { PartsTable } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
@@ -19,6 +19,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { useRealtime } from "../../../hooks";
 
 export const handle: Handle = {
+  realtime: ["item"],
   breadcrumb: msg`Parts`,
   to: path.to.parts
 };
@@ -71,7 +72,7 @@ export default function PartsSearchRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <PartsTable data={parts} count={count} tags={tags} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

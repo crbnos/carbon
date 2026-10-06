@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useEffect, useState } from "react";
+import { useLoaderQuery } from "@carbon/query";
+import { useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
@@ -21,16 +22,12 @@ export function AgentThreadList({
   onSelect: (id: string) => void;
   onDelete?: (id: string) => void;
 }) {
-  const fetcher = useFetcher<{ threads: Thread[] }>();
+  const fetcher = useLoaderQuery<{ threads: Thread[] }>(
+    path.to.api.agentThreads
+  );
   const deleteFetcher = useFetcher();
   const [query, setQuery] = useState("");
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && !fetcher.data) {
-      fetcher.load(path.to.api.agentThreads);
-    }
-  }, [fetcher]);
 
   const threads = (fetcher.data?.threads ?? []).filter(
     (t) => !deletedIds.has(t.id)

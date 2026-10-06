@@ -176,6 +176,10 @@ ERP and MES are React Router apps over a single Postgres database. Permissions (
   <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
 </a>
 
+![Carbon Functionality](https://github.com/user-attachments/assets/d73b3297-afb4-4bd4-a381-61b31a78aa38)
+
+![Carbon Architecture](https://github.com/user-attachments/assets/e5532a5f-609c-4404-8706-aa9bd59e180b)
+
 <br />
 
 ## Tech Stack

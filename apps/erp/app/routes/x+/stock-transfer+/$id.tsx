@@ -6,13 +6,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
 import StockTransferDocuments from "~/modules/inventory/ui/StockTransfers/StockTransferDocuments";
@@ -23,17 +21,16 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "stockTransfer", column: "id", param: "id" },
+    { table: "stockTransferLine", column: "stockTransferId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Stock Transfers`, to: path.to.stockTransfers },
     (data) => data?.stockTransfer?.stockTransferId
   ),
   module: "inventory"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -92,7 +89,7 @@ export default function StockTransferRoute() {
           notes={(stockTransfer.notes ?? {}) as JSONContent}
         />
       </DocumentPage>
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

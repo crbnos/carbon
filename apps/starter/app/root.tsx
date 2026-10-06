@@ -16,7 +16,12 @@ import { validator } from "@carbon/form";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import { Button, Heading, Toaster, useMode } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
-import { colorSchemeHintScript, modeValidator, themes } from "@carbon/utils";
+import {
+  colorSchemeHintScript,
+  modeValidator,
+  prefetchCacheMiddleware,
+  themes
+} from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
@@ -48,7 +53,8 @@ export const middleware = [
   requestIdMiddleware,
   securityMiddleware,
   formBodyMiddleware,
-  flashMiddleware
+  flashMiddleware,
+  prefetchCacheMiddleware
 ];
 export const clientMiddleware = [flashClientMiddleware];
 

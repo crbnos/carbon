@@ -7,17 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
 import { procedureValidator } from "~/modules/production/production.models";
 import { upsertProcedure } from "~/modules/production/production.service";
 import ProcedureForm from "~/modules/production/ui/Procedures/ProcedureForm";
 import { path } from "~/utils/path";
-import { getCompanyId, proceduresQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -80,14 +75,6 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.procedure(insertProcedure.data.id),
     await flash(request, success("Procedure created"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    proceduresQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewProcedureRoute() {

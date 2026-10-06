@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   Combobox,
@@ -28,10 +29,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   memo,
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
-  useState,
-  useTransition
+  useState
 } from "react";
 import {
   LuBlocks,
@@ -95,7 +96,14 @@ const PlanningTable = memo(
     const unitOfMeasures = useUnitOfMeasure();
     const [suppliers] = useSuppliers();
 
-    const mrpFetcher = useFetcher<typeof mrpAction>();
+    const mrpFetcher = useAction<typeof mrpAction>({
+      onSettled: (data) => {
+        if (data) {
+          clearOrdersCache();
+          setOrdersMap({}); // Reset local state to force recalculation
+        }
+      }
+    });
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -204,17 +212,26 @@ const PlanningTable = memo(
 
     // Auto-computed planned orders for every row, used as the fallback when
     // bulk-submitting items the user never opened in the drawer.
-    const [ordersByItemId, setOrdersByItemId] = useState<
-      Map<string, PlannedOrder[]>
-    >(new Map());
-
-    // Clear cache when MRP completes
-    useEffect(() => {
-      if (mrpFetcher.state === "idle" && mrpFetcher.data) {
-        clearOrdersCache();
-        setOrdersMap({}); // Reset local state to force recalculation
+    // Computed from the rows and the supplier chosen for each, a render
+    // behind them so a large plan does not block typing; `isPending` covers
+    // the gap.
+    const deferredData = useDeferredValue(data);
+    const isPending = deferredData !== data;
+    const ordersByItemId = useMemo(() => {
+      const orders = new Map<string, PlannedOrder[]>();
+      for (const item of deferredData) {
+        orders.set(
+          item.id,
+          getPurchaseOrdersFromPlanning(
+            item,
+            periods,
+            items,
+            suppliersMap[item.id]
+          )
+        );
       }
-    }, [mrpFetcher.state, mrpFetcher.data]);
+      return orders;
+    }, [deferredData, periods, items, suppliersMap]);
 
     // Clear local state when data changes (e.g., filters, search)
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -313,27 +330,6 @@ const PlanningTable = memo(
       },
       []
     );
-
-    const [isPending, startTransition] = useTransition();
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-    useEffect(() => {
-      startTransition(() => {
-        const ordersByItemId = new Map<string, PlannedOrder[]>();
-        data.forEach((item) => {
-          ordersByItemId.set(
-            item.id,
-            getPurchaseOrdersFromPlanning(
-              item,
-              periods,
-              items,
-              suppliersMap[item.id]
-            )
-          );
-        });
-        setOrdersByItemId(ordersByItemId);
-      });
-    }, [data]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<PurchasingPlanningItem>[]>(() => {

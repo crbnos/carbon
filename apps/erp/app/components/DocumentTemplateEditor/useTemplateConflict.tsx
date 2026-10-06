@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRealtimeChannel } from "@carbon/react";
+import { useChangedRows } from "@carbon/query";
 import { useState } from "react";
 import { useUser } from "~/hooks";
 
@@ -20,28 +20,19 @@ export function useTemplateConflict(documentType: string) {
   const { id: userId, company } = useUser();
   const [conflict, setConflict] = useState(false);
 
-  useRealtimeChannel({
-    topic: `document-template-conflict:${documentType}`,
-    dependencies: [company.id, documentType, userId],
-    setup(channel) {
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "documentTemplate",
-          filter: `companyId=eq.${company.id}`
-        },
-        (payload) => {
-          const row = payload.new as
-            | { documentType?: string; updatedBy?: string }
-            | undefined;
-          // Only this template, and only someone else's write.
-          if (!row || row.documentType !== documentType) return;
-          if (!row.updatedBy || row.updatedBy === userId) return;
-          setConflict(true);
-        }
+  useChangedRows<{ id: string; documentType?: string; updatedBy?: string }>({
+    companyId: company.id,
+    table: "documentTemplate",
+    columns: "id, documentType, updatedBy",
+    onChange: ({ rows }) => {
+      // Only this template, and only someone else's write.
+      const theirs = rows.some(
+        (row) =>
+          row.documentType === documentType &&
+          row.updatedBy &&
+          row.updatedBy !== userId
       );
+      if (theirs) setConflict(true);
     }
   });
 

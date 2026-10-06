@@ -188,11 +188,11 @@ msgstr "Вы уверены, что хотите удалить этот таб�
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Вы уверены, что хотите завершить все производственные события? Это прекратит все активные операции без их завершения."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Вы уверены, что хотите завершить эту операцию? Это завершит все активные производственные события для этой операции."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Вы уверены, что хотите покинуть эту страницу?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Вы уверены, что хотите отметить эту операцию как выполненную? Это завершит все активные производственные события для этой операции."
 
 msgid "Assembly steps"
 msgstr "Шаги сборки"
@@ -320,7 +320,7 @@ msgid "Clock Out"
 msgstr "Окончание работы"
 
 msgid "Clocked in"
-msgstr "В работе"
+msgstr "На работе"
 
 msgid "Clocked in since <0/>"
 msgstr "Отметился в системе с <0/>"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "Покупатель"
 
 msgid "Dark"
-msgstr "Тёмная"
+msgstr "Темный"
 
 msgid "Date"
 msgstr "Дата"
@@ -509,9 +509,9 @@ msgstr "Перетаскивание {0} отменено."
 msgid "Due"
 msgstr "Срок"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -657,13 +657,6 @@ msgstr "Фильтровать по площадке"
 
 msgid "Finish"
 msgstr "Завершить"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Завершить {0}"
-
-msgid "Finish Anyways"
-msgstr "Завершить в любом случае"
 
 msgid "Finish setting up your account"
 msgstr "Завершите настройку вашего аккаунта"
@@ -821,7 +814,7 @@ msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
 msgid "Light"
-msgstr "Светлая"
+msgstr "Светлый"
 
 msgid "lines"
 msgstr "строки"
@@ -903,6 +896,16 @@ msgstr "Добавить номенклатуру на склад вручную
 
 msgid "Manually remove items from inventory"
 msgstr "Вручную убрать позиции из запасов"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "Отметить {0} как выполненное"
+
+msgid "Mark as Done"
+msgstr "Отметить как выполненное"
+
+msgid "Mark as Done Anyways"
+msgstr "Всё равно отметить как выполненное"
 
 msgid "Mark Short"
 msgstr "Отметить как недостача"
@@ -1162,7 +1165,11 @@ msgstr "Открытые производственные заказы"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr "Открыть под-сборку {0}: {1}"
+msgstr "Открыть под-узел {0}: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Операция нужна к {0}"
 
 msgid "Operations"
 msgstr "Операции"
@@ -1311,11 +1318,6 @@ msgstr "Процессы"
 
 msgid "Progress"
 msgstr "Прогресс"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Прогноз. {0}"
 
 msgid "Quality Issue"
 msgstr "Проблема качества"
@@ -1575,7 +1577,7 @@ msgid "Set Clock Out"
 msgstr "Установить окончание работы"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "Установите время завершения работы или подтвердите, что вы все еще работаете."
+msgstr "Установите время окончания работы или подтвердите, что вы все еще работаете."
 
 msgid "Set up in Carbon"
 msgstr "Настроить в Carbon"
@@ -1673,19 +1675,19 @@ msgid "Storage Unit"
 msgstr "Единица хранения"
 
 msgid "Sub-Assembly"
-msgstr "Под-сборка"
+msgstr "Под-узел"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr "Под-сборка {0} · {1}"
+msgstr "Под-узел {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Под-сборка {0} · {1} — показана отдельно"
+msgstr "Под-узел {0} · {1} — показывается отдельно"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
@@ -1894,7 +1896,7 @@ msgid "View maintenance dispatch"
 msgstr "Просмотреть заявку на техобслуживание"
 
 msgid "View or open"
-msgstr "Просмотреть или открыть"
+msgstr "Просмотр или открытие"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."

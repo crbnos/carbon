@@ -6,6 +6,7 @@ import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
+import { attachments } from "../event-system/attachments";
 import { loadHelpers } from "./helpers";
 import { manifest } from "./manifest";
 import {
@@ -27,11 +28,12 @@ const migrations = (files: Record<string, string>) => {
 describe("unshipped: production gets every rule and helper through a migration", () => {
   test("the repository ships everything the manifest and helpers say", async () => {
     expect(
-      await unshipped(manifest, await loadHelpers()),
+      await unshipped(manifest, await loadHelpers(), undefined, attachments),
       "Production would not get these. Run: pnpm --filter @carbon/database authz migration <name>"
     ).toEqual({
       tables: [],
       helpers: [],
+      attachments: [],
       problems: []
     });
   });
@@ -97,8 +99,13 @@ describe("unshipped: production gets every rule and helper through a migration",
         .filter(([, sql]) => sql.startsWith(GENERATED_HEADER))
     );
     const dir = migrations({ ...generated, "20270101000001_ship.sql": sql });
-    const result = await unshipped(edited, helpers, dir);
-    expect(result).toEqual({ tables: [], helpers: [], problems: [] });
+    const result = await unshipped(edited, helpers, dir, attachments);
+    expect(result).toEqual({
+      tables: [],
+      helpers: [],
+      attachments: [],
+      problems: []
+    });
   });
 
   test("the header cannot carry anything `authz migration` does not write", async () => {
@@ -114,6 +121,37 @@ describe("unshipped: production gets every rule and helper through a migration",
     const result = await unshipped(manifest, await loadHelpers(), dir);
     expect(result.problems.join("\n")).toContain("GRANT ALL");
     expect(result.tables).toContain("note");
+  });
+
+  test("a table outside public ships its policies without touching its RLS switch", async () => {
+    const only = {
+      "realtime.messages": manifest["realtime.messages"]
+    } as Manifest;
+    const sql = await renderMigration(only, [], ["realtime.messages"]);
+    expect(sql).toContain(`ON "realtime"."messages"`);
+    expect(sql).toContain("schemaname = 'realtime' AND tablename = 'messages'");
+    expect(sql).not.toContain("ENABLE ROW LEVEL SECURITY");
+
+    const shipped = migrations({ "20270101000001_realtime.sql": sql });
+    expect(await unshipped(only, [], shipped)).toEqual({
+      tables: [],
+      helpers: [],
+      attachments: [],
+      problems: []
+    });
+    expect((await unshipped(only, [], migrations({}))).tables).toEqual([
+      "realtime.messages"
+    ]);
+  });
+
+  test("an edited, a new and a removed attachment are unshipped", async () => {
+    const { customer: _, ...rest } = attachments;
+    const result = await unshipped(manifest, await loadHelpers(), undefined, {
+      ...rest,
+      item: { events: true },
+      note: { events: true }
+    });
+    expect(result.attachments).toEqual(["customer", "item", "note"]);
   });
 
   test("a retired helper is accepted only in the migration that last shipped it", async () => {

@@ -6,6 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Button,
   DatePicker,
+  RecordOutlet,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -20,7 +21,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { getRevenueRecognitionRuns } from "~/modules/accounting";
@@ -93,7 +94,9 @@ export default function RevenueRecognitionRunsRoute() {
   // end: a first run made late, or a period skipped on purpose. Recognition
   // runs are monthly, so any picked date snaps to its month end — the date
   // the confirm text names is the one the run gets.
-  const [periodEnd, setPeriodEnd] = useState(nextPeriodEnd);
+  // Only the user's pick is state; until they pick, the proposed period shows.
+  const [pickedPeriodEnd, setPeriodEnd] = useState<string | null>(null);
+  const periodEnd = pickedPeriodEnd ?? nextPeriodEnd;
 
   const canCreate =
     permissions.can("create", "accounting") && !hasDraftBlocking;
@@ -157,7 +160,7 @@ export default function RevenueRecognitionRunsRoute() {
         <input type="hidden" name="periodEnd" value={periodEnd} />
       </Confirm>
 
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

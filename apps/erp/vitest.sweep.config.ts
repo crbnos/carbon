@@ -4,7 +4,6 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { lingui } from "@lingui/vite-plugin";
-import babelMacros from "vite-plugin-babel-macros";
 import { defineConfig } from "vitest/config";
 
 /**
@@ -36,7 +35,7 @@ function readEnvFiles(spec: string | undefined): Record<string, string> {
 export default defineConfig({
   // The services import the glossary, whose strings are Lingui macros: without
   // the app's own transform `msg` is not a function.
-  plugins: [babelMacros(), lingui()],
+  plugins: [lingui({ macroTransform: true })],
   resolve: { tsconfigPaths: true },
   test: {
     include: ["test/sweep/**/*.sweep.ts"],

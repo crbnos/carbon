@@ -3,15 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+
 import { GroupedContentSidebar } from "~/components/Layout";
 import { useInventorySubmodules } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";
@@ -37,9 +32,6 @@ export const handle: Handle = {
   sidebar: InventorySidebar
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
@@ -59,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function InventoryRoute() {
   return (
     <VStack spacing={0} className="h-full">
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

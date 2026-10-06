@@ -10,7 +10,11 @@ import {
   canSetReplicationRole,
   getCompanyTableCatalog
 } from "../tasks/company-backup";
-import { purgeCompany } from "./purge-company";
+import {
+  dropCompanyTables,
+  dropOrphanCompanyTables,
+  purgeCompany
+} from "./purge-company";
 
 const runDatabaseTests = process.env.RUN_PURGE_DB_TESTS === "true";
 
@@ -88,11 +92,49 @@ describe.skipIf(!runDatabaseTests)("purgeCompany (Postgres)", () => {
           .execute();
         expect(left).toEqual([]);
 
+        await dropCompanyTables(trx, companyId);
+        const tables = await sql<{ search: string | null }>`
+          SELECT to_regclass(${`public."searchIndex_${companyId}"`})::text AS search`.execute(
+          trx
+        );
+        expect(tables.rows[0]!.search).toBeNull();
+
         const after = await danglingForeignKeys(trx);
         const added = [...after].filter(
           ([key, n]) => n > (before.get(key) ?? 0)
         );
         expect(added).toEqual([]);
+        throw new Rollback();
+      })
+    ).rejects.toBeInstanceOf(Rollback);
+  }, 300_000);
+
+  it("drops a company table whose company is gone, and no other", async () => {
+    const db = getJobDatabaseClient();
+    await expect(
+      db.transaction().execute(async (trx) => {
+        await sql`CREATE TABLE public."searchIndex_purgetestorphan0000000" (id text)`.execute(
+          trx
+        );
+        // Shares the prefix, but the rest is not a company id: never dropped.
+        await sql`CREATE TABLE public."searchIndex_staging" (id text)`.execute(
+          trx
+        );
+        const live = await sql<{ name: string }>`
+          SELECT 'searchIndex_' || id AS name FROM "company"`.execute(trx);
+
+        const dropped = await dropOrphanCompanyTables(trx, 10_000);
+
+        expect(dropped).toContain("searchIndex_purgetestorphan0000000");
+        expect(dropped).not.toContain("searchIndex_staging");
+        for (const { name } of live.rows) expect(dropped).not.toContain(name);
+        const left = await sql<{ n: number }>`
+          SELECT count(*)::int AS n FROM pg_class c
+          JOIN pg_namespace ns ON ns.oid = c.relnamespace
+          WHERE ns.nspname = 'public' AND c.relname = ANY(${dropped})`.execute(
+          trx
+        );
+        expect(left.rows[0]!.n).toBe(0);
         throw new Rollback();
       })
     ).rejects.toBeInstanceOf(Rollback);

@@ -4,9 +4,9 @@
 
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import {
   batchRuleInitialValues,
   type getProcessesList
@@ -71,11 +71,9 @@ Processes.displayName = "Process";
 export default Processes;
 
 export const useProcesses = () => {
-  const fetcher = useFetcher<Awaited<ReturnType<typeof getProcessesList>>>();
-
-  useMount(() => {
-    fetcher.load(path.to.api.processes);
-  });
+  const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getProcessesList>>>(
+    path.to.api.processes
+  );
 
   const options = useMemo(
     () =>

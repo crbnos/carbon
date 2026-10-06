@@ -15,11 +15,12 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
 import { getItemReadableId, redirect, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import {
   getSalesInvoice,
@@ -281,7 +282,7 @@ export default function EditSalesInvoiceLineRoute() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

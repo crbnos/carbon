@@ -4,7 +4,7 @@
 
 import type { SelectProps } from "@carbon/form";
 import { SelectControlled } from "@carbon/form";
-import { Trans } from "@lingui/macro";
+import { Trans } from "@lingui/react/macro";
 import { getValidMethodTypes } from "~/modules/shared/shared.models";
 import { MethodIcon } from "../Icons";
 

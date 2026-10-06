@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getPickingList,
@@ -28,17 +26,20 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "pickingList", column: "id", param: "pickingListId" },
+    {
+      table: "pickingListLine",
+      column: "pickingListId",
+      param: "pickingListId"
+    }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
     (data) => data?.pickingList?.pickingListId
   ),
   module: "inventory"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["pickingListId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -104,7 +105,7 @@ export default function PickingListDetailRoute() {
         />
       }
     >
-      <Outlet />
+      <RecordOutlet />
     </DocumentPage>
   );
 }

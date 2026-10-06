@@ -188,11 +188,11 @@ msgstr "क्या आप वाकई इस टाइमकार्ड क�
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "क्या आप सभी उत्पादन इवेंट को समाप्त करना चाहते हैं? यह सभी चल रहे ऑपरेशन को पूर्ण किए बिना समाप्त कर देगा।"
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन को समाप्त करना चाहते हैं? यह इस ऑपरेशन के लिए सभी सक्रिय उत्पादन इवेंट को समाप्त कर देगा।"
-
 msgid "Are you sure you want to leave this page?"
 msgstr "क्या आप वाकई इस पृष्ठ को छोड़ना चाहते हैं?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन को पूर्ण के रूप में चिह्नित करना चाहते हैं? यह इस ऑपरेशन के लिए सभी सक्रिय उत्पादन इवेंट को समाप्त कर देगा।"
 
 msgid "Assembly steps"
 msgstr "असेंबली चरण"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "कार्य प्रारंभ"
 
 msgid "Clock out"
-msgstr "कार्य समाप्त करें"
+msgstr "कार्य समाप्त"
 
 msgid "Clock Out"
 msgstr "कार्य समाप्त"
 
 msgid "Clocked in"
-msgstr "कार्य शुरू"
+msgstr "समय दर्ज"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से घड़ी चालू है"
@@ -509,9 +509,9 @@ msgstr "\"{0}\" को ड्रैग करना रद्द किया �
 msgid "Due"
 msgstr "अंतिम तारीख"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Due {0} के लिए"
 
@@ -658,13 +658,6 @@ msgstr "स्थान के अनुसार फ़िल्टर कर�
 msgid "Finish"
 msgstr "समाप्त करें"
 
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "{0} को समाप्त करें"
-
-msgid "Finish Anyways"
-msgstr "वैसे भी समाप्त करें"
-
 msgid "Finish setting up your account"
 msgstr "अपना खाता सेट अप करना पूर्ण करें"
 
@@ -728,7 +721,7 @@ msgid "in {0}"
 msgstr "{0} में"
 
 msgid "In an open menu"
-msgstr "एक खुले मेनू में"
+msgstr "खुले मेनू में"
 
 msgid "In Progress"
 msgstr "प्रगति में"
@@ -903,6 +896,16 @@ msgstr "इन्वेंटरी में आइटम मैन्युअ
 
 msgid "Manually remove items from inventory"
 msgstr "इन्वेंटरी से मैनुअल रूप से आइटम निकालें"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} को पूर्ण के रूप में चिह्नित करें"
+
+msgid "Mark as Done"
+msgstr "पूर्ण के रूप में चिह्नित करें"
+
+msgid "Mark as Done Anyways"
+msgstr "फिर भी पूर्ण के रूप में चिह्नित करें"
 
 msgid "Mark Short"
 msgstr "कम चिह्नित करें"
@@ -1162,7 +1165,11 @@ msgstr "खुली जॉब्स"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr "खुली उप-असेंबली {0}: {1}"
+msgstr "सब-असेंबली {0} खोलें: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "ऑपरेशन {0} तक आवश्यक"
 
 msgid "Operations"
 msgstr "ऑपरेशन"
@@ -1311,11 +1318,6 @@ msgstr "प्रक्रियाएं"
 
 msgid "Progress"
 msgstr "प्रगति"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "प्रोज. {0}"
 
 msgid "Quality Issue"
 msgstr "गुणवत्ता समस्या"
@@ -1575,7 +1577,7 @@ msgid "Set Clock Out"
 msgstr "कार्य समाप्ति सेट करें"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr "अपने काम रोकने का समय सेट करें, या यह स्वीकार करें कि आप अभी भी काम कर रहे हैं।"
+msgstr "वह समय निर्धारित करें जब आपने काम करना बंद किया, या स्वीकार करें कि आप अभी भी काम कर रहे हैं।"
 
 msgid "Set up in Carbon"
 msgstr "Carbon में सेट अप करें"
@@ -1673,19 +1675,19 @@ msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
 msgid "Sub-Assembly"
-msgstr "उप-असेंबली"
+msgstr "सब-असेंबली"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr "उप-असेंबली {0} · {1}"
+msgstr "सब-असेंबली {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "उप-असेंबली {0} · {1} — अपने आप पर दिखाया गया"
+msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
@@ -1882,7 +1884,7 @@ msgstr "पूर्णता पर स्वचालित रूप से �
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr "उपयोग करता है {0} · {1}"
+msgstr "{0} · {1} का उपयोग करता है"
 
 msgid "Value"
 msgstr "मान"

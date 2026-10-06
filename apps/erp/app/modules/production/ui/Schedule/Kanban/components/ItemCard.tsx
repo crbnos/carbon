@@ -29,8 +29,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
+import { memo } from "react";
 import {
-  LuCalendarClock,
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
@@ -40,6 +40,7 @@ import {
   LuGripVertical,
   LuPencil,
   LuPlay,
+  LuSquareChartGantt,
   LuSquareUser,
   LuTimer,
   LuTrash,
@@ -57,9 +58,9 @@ import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationSta
 import { getPrivateUrl, path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
+import { DUE_URGENCY_BORDER, getDueUrgency } from "../dueUrgency";
 import type { Item, OperationItem } from "../types";
 import { isBatchItem } from "../types";
-import { useScheduleToday } from "../useScheduleToday";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 interface Progress {
@@ -117,10 +118,7 @@ function OperationCard({
   isOverlay?: boolean;
   progressByItemId: Record<string, Progress>;
 }) {
-  const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings, selectedGroup, setSelectedGroup, tags } =
-    useKanban();
+  const { selectedGroup, scheduleToday } = useKanban();
   const {
     setNodeRef,
     attributes,
@@ -140,17 +138,67 @@ function OperationCard({
   });
 
   const isHighlighted = selectedGroup === item.jobReadableId;
-  const scheduleToday = useScheduleToday();
+  const itemProgress = progressByItemId[item.id];
+  const status = itemProgress?.active ? "In Progress" : item.status;
 
   const style = {
     transition,
     transform: CSS.Translate.toString(transform)
   };
+  const urgency = getDueUrgency({ ...item, status }, scheduleToday);
+
+  // This shell re-renders whenever the drop target changes; the body does
+  // not. It is the expensive part (a form, avatars and menus per card), and
+  // rendering every card's body on each change made a drag stutter.
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group/card max-w-[330px]",
+        cardVariants({
+          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+          // @ts-expect-error TS2322 - TODO: fix type
+          status: status,
+          highlighted: isHighlighted
+        }),
+        urgency && DUE_URGENCY_BORDER[urgency]
+      )}
+    >
+      <OperationCardBody
+        item={item}
+        itemProgress={itemProgress}
+        isHighlighted={isHighlighted}
+        attributes={attributes}
+        listeners={listeners}
+      />
+    </Card>
+  );
+}
+
+const OperationCardBody = memo(function OperationCardBody({
+  item,
+  itemProgress,
+  isHighlighted,
+  attributes,
+  listeners
+}: {
+  item: Exclude<Item, { batchId: string }>;
+  itemProgress: Progress | undefined;
+  isHighlighted: boolean;
+  attributes: ReturnType<typeof useSortable>["attributes"];
+  listeners: ReturnType<typeof useSortable>["listeners"];
+}) {
+  const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
+  const { displaySettings, setSelectedGroup, tags, scheduleToday } =
+    useKanban();
 
   const isOverdue =
-    item.deadlineType !== "No Deadline" && item.dueDate
-      ? item.dueDate < scheduleToday
-      : false;
+    item.deadlineType !== "ASAP" &&
+    item.deadlineType !== "No Deadline" &&
+    !!item.dueDate &&
+    item.dueDate < scheduleToday;
 
   const projectedCompletionDate = item.projectedCompletionAt
     ? item.projectedCompletionAt.slice(0, 10)
@@ -163,29 +211,14 @@ function OperationCard({
       : 0;
   const isBehindTarget = daysBehindTarget > 0;
 
-  const progress = progressByItemId[item.id]?.progress ?? 0;
-  const status = progressByItemId[item.id]?.active
-    ? "In Progress"
-    : item.status;
-  const employeeIds = progressByItemId[item.id]?.employees
-    ? Array.from(progressByItemId[item.id].employees!)
+  const progress = itemProgress?.progress ?? 0;
+  const status = itemProgress?.active ? "In Progress" : item.status;
+  const employeeIds = itemProgress?.employees
+    ? Array.from(itemProgress.employees)
     : undefined;
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "group/card max-w-[330px]",
-        item.hasConflict && "border-red-500 border-2",
-        cardVariants({
-          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
-          // @ts-expect-error TS2322 - TODO: fix type
-          status: status,
-          highlighted: isHighlighted
-        })
-      )}
-    >
+    <>
       <CardHeader className="flex flex-col justify-between relative gap-2">
         <div className="flex w-full max-w-full justify-between items-start gap-0">
           <div className="flex flex-col space-y-0 min-w-0">
@@ -371,12 +404,12 @@ function OperationCard({
         />
         {displaySettings.showDueDate && projectedCompletionDate && (
           <HStack className="justify-start space-x-2">
-            <LuCalendarClock className="text-muted-foreground" />
+            <LuSquareChartGantt className="text-muted-foreground" />
             {isBehindTarget ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Badge variant="red">
-                    {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                    {formatDate(projectedCompletionDate)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -385,7 +418,7 @@ function OperationCard({
               </Tooltip>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                {formatDate(projectedCompletionDate)}
               </span>
             )}
           </HStack>
@@ -443,9 +476,9 @@ function OperationCard({
           <JobOperationTags operation={item} availableTags={tags} />
         </HStack>
       </CardFooter>
-    </Card>
+    </>
   );
-}
+});
 
 function JobOperationTags({
   operation,

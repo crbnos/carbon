@@ -12,6 +12,7 @@ import {
   company,
   custom,
   exists,
+  external,
   group,
   inCompany,
   inGroup,
@@ -1461,6 +1462,9 @@ export const manifest = {
   supplyForecast: company("inventory", {
     read: "inventory_view"
   }),
+  // Written by the log_*_changes triggers and read through table_changes_since,
+  // which checks the caller's company itself. No API access.
+  tableChange: serviceOnly(),
   tableView: policies({
     select: or(
       owner("createdBy"),
@@ -1637,5 +1641,13 @@ export const manifest = {
     update: false,
     delete: "workflows_update"
   }),
-  workflowVersion: company("workflows", { read: "workflows_view" })
+  workflowVersion: company("workflows", { read: "workflows_view" }),
+  // Who may join a private Realtime broadcast topic. The policy is checked once,
+  // when the client joins; the topic itself names the company or the user.
+  "realtime.messages": external(
+    "the row has no company or user column: the topic (company:<id>:<table>, user:<id>:<table>) carries the scope",
+    (t) => `
+    CREATE POLICY "company topic" ON ${t} FOR SELECT TO authenticated USING ((split_part(realtime.topic(), ':', 1) = 'company') AND (split_part(realtime.topic(), ':', 2) = ANY ((SELECT get_companies_with_employee_role())::text[])));
+    CREATE POLICY "user topic" ON ${t} FOR SELECT TO authenticated USING ((split_part(realtime.topic(), ':', 1) = 'user') AND (split_part(realtime.topic(), ':', 2) = ((SELECT auth.uid()))::text));`
+  )
 } satisfies Manifest;

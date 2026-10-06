@@ -295,6 +295,9 @@ export function ValidatedForm<
 }: FormProps<DataType, Subaction>) {
   const formId = useFormId(id);
   const providedDefaultValues = useDeepEqualsMemo(unMemoizedDefaults);
+  // See `ownsState`. State, not a ref: the fields must render again once it
+  // is true. A form with no `id` has a key of its own and owns it from the start.
+  const [ownsState, setOwnsState] = useState(id === undefined);
   const contextValue = useMemo<InternalFormContextValue>(
     () => ({
       formId,
@@ -302,9 +305,18 @@ export function ValidatedForm<
       subaction,
       defaultValuesProp: providedDefaultValues,
       fetcher,
-      validatorSchema: validator
+      validatorSchema: validator,
+      ownsState
     }),
-    [action, fetcher, formId, providedDefaultValues, subaction, validator]
+    [
+      action,
+      fetcher,
+      formId,
+      ownsState,
+      providedDefaultValues,
+      subaction,
+      validator
+    ]
   );
   const formStateValue = useMemo(
     () => ({ isDisabled, isReadOnly }),
@@ -362,6 +374,7 @@ export function ValidatedForm<
   // There must be a nice way to avoid this.
   useIsomorphicLayoutEffect(() => {
     registerForm(formId);
+    setOwnsState(true);
     return () => cleanupForm(formId);
   }, [cleanupForm, formId, registerForm]);
 

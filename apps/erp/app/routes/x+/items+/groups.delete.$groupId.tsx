@@ -8,16 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteItemPostingGroup, getItemPostingGroup } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -71,14 +66,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.itemPostingGroups,
     await flash(request, success("Successfully deleted item group"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    itemPostingGroupsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function DeleteItemPostingGroupRoute() {

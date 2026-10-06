@@ -436,8 +436,11 @@ crbn — Carbon dev CLI
     crbn new [branch]               Interactive worktree creation.
     crbn init                       Provision the current worktree (slug/env/skills).
     crbn list                       Show all worktrees with stack status.
-    crbn remove [--prune]           Multi-select worktrees to delete.
+    crbn remove [--prune] [name...] Delete worktrees (picker, or named by branch/path).
                                     --prune also deletes the git branch.
+    crbn prune                      Destroy stacks whose worktree is gone.
+    crbn prune --all                Destroy every stack on this machine (worktrees kept).
+    crbn prune --tree               Also forget missing worktrees; with --all, remove clean ones.
 
   Stack:
     crbn up                         Boot compose stack + apps.
@@ -445,10 +448,13 @@ crbn — Carbon dev CLI
     crbn up --no-portless           Localhost mode (API:54321 ERP:3000 MES:3001).
     crbn up --borrow                Reuse another worktree's containers.
     crbn up --no-apps               Services only, no dev servers.
+    crbn up --full                  Also start Studio, Postgres-Meta, edge runtime, imgproxy.
+    crbn up --no-hibernate          Don't stop the containers when ERP/MES go quiet.
     crbn down                       Stop stack (volumes preserved).
     crbn down --purge               Stop stack, wipe volumes, release the slot.
     crbn reset                      Wipe volumes + redis, then up.
     crbn status                     Port assignment + container health.
+    crbn status --json              Same, as JSON (also: crbn list --json).
     crbn migrate                    Apply DB migrations (loads .env.local).
     crbn restore <file>             Restore a prod backup, then apply migrations it predates.
     crbn reload <service...>        Recreate compose services (apply compose/env edits, apps untouched).
@@ -482,13 +488,11 @@ case "$cmd" in
   checkout)
     cmd_checkout "$@"
     ;;
-  copy|env|up|down|reset|status|migrate|restore|new|init|list|remove|reload|complete)
-    delegate_ts "$cmd" "$@"
-    ;;
   *)
-    echo "crbn: unknown command '$cmd'" >&2
-    echo >&2
-    print_help >&2
-    exit 2
+    # Everything else belongs to the TypeScript CLI, which reports an unknown
+    # command itself. No allow-list here: this router runs from the main
+    # checkout while the CLI runs from the current worktree, so a list would
+    # reject subcommands a branch adds.
+    delegate_ts "$cmd" "$@"
     ;;
 esac

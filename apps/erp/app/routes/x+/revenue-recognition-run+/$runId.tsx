@@ -10,13 +10,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  HStack
+  HStack,
+  RecordOutlet
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useUser } from "~/hooks";
@@ -352,7 +353,7 @@ export default function RevenueRecognitionRunDetailRoute() {
         })
       )}
 
-      <Outlet />
+      <RecordOutlet />
     </DocumentPage>
   );
 }

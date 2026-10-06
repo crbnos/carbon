@@ -38,6 +38,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   accountsReceivableBillingAddressValidator,
   accountsReceivableEmailValidator,
@@ -256,7 +257,9 @@ export default function InvoicingSettingsRoute() {
     useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
-  const [arAddressEnabled, setArAddressEnabled] = useState(
+  const arAddressEnabled = useSavedToggle(
+    toggleFetcher,
+    "accountsReceivableAddressToggle",
     companySettings.accountsReceivableAddress ?? false
   );
 
@@ -269,13 +272,17 @@ export default function InvoicingSettingsRoute() {
     "Post and Email": t`Post and email`,
     "Post and Send via Stripe": t`Post and send via Stripe`
   };
-  const [invoiceAutomation, setInvoiceAutomation] = useState<string>(
-    companySettings.invoiceAutomation ?? "Post and Email"
-  );
+  // Only the user's pick is state; until they pick, the saved mode shows.
+  const [pickedInvoiceAutomation, setInvoiceAutomation] = useState<
+    string | null
+  >(null);
+  const invoiceAutomation =
+    pickedInvoiceAutomation ??
+    companySettings.invoiceAutomation ??
+    "Post and Email";
 
   const handleArAddressToggle = useCallback(
     (checked: boolean) => {
-      setArAddressEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "accountsReceivableAddressToggle",

@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import type { getPaymentTermsList } from "~/modules/accounting";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
@@ -86,12 +86,9 @@ PaymentTerm.displayName = "PaymentTerm";
 export default PaymentTerm;
 
 export const usePaymentTerm = () => {
-  const paymentTermFetcher =
-    useFetcher<Awaited<ReturnType<typeof getPaymentTermsList>>>();
-
-  useMount(() => {
-    paymentTermFetcher.load(path.to.api.paymentTerms);
-  });
+  const paymentTermFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getPaymentTermsList>>
+  >(path.to.api.paymentTerms);
 
   const options = useMemo(() => {
     return (paymentTermFetcher.data?.data ?? []).map((c) => ({

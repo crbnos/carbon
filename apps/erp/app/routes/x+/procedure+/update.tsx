@@ -4,11 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { unchecked } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { getCompanyId, proceduresQuery } from "~/utils/react-query";
+import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {
@@ -52,12 +48,4 @@ export async function action({ request }: ActionFunctionArgs) {
     default:
       return { error: { message: "Invalid field" }, data: null };
   }
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    proceduresQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }

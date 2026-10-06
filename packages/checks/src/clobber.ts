@@ -29,11 +29,10 @@ const OBJECT_PATTERNS: { kind: string; re: RegExp }[] = [
       String.raw`create\s+or\s+replace\s+function\s+${QUALIFIER}"?([a-zA-Z0-9_]+)"?`,
       "gi"
     )
-  },
-  {
-    kind: "event-trigger",
-    re: /attach_event_trigger\(\s*'([a-zA-Z0-9_]+)'/gi
   }
+  // Event triggers are not listed: a migration may no longer attach one
+  // (`no-authz-ddl-in-migrations`). They are declared in the attachments
+  // manifest, where two branches changing one table is an ordinary merge.
 ];
 
 /** The set of `kind:name` objects redefined by a SQL string. */

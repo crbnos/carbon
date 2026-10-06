@@ -13,11 +13,7 @@ import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -60,7 +56,6 @@ import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { configurableItemsQuery, getCompanyId } from "~/utils/react-query";
 
 const logger = getLogger("erp", "itemid-details");
 
@@ -241,14 +236,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.part(itemId),
     await flash(request, success("Updated part"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    configurableItemsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function PartDetailsRoute() {
