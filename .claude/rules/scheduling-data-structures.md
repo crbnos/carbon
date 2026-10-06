@@ -465,14 +465,22 @@ the "conflict" count.)
 ## Read RPCs (display only; do not compute schedules)
 
 ### `get_active_job_operations_by_location(location_id, work_center_ids[])`
-Newest: `20260818031629_dual-dates.sql` (forked from `20260720121629_capacity-planning.sql`
-+ a `projectedCompletionAt TIMESTAMPTZ` output column; prior revisions:
-capacity-planning added `hasConflict`/`conflictReason`,
-`20260531084723_rework-serial-flow.sql`
+Newest: `20261006021134_mes-hide-outside-processing.sql` (excludes
+`operationType = 'Outside Processing'`; prior revisions:
+`20260905132037_job-operation-batching.sql` added the batch columns and the
+membership-handoff floor rule, `20260818031629_dual-dates.sql` added
+`projectedCompletionAt TIMESTAMPTZ`, `20260720121629_capacity-planning.sql` added
+`hasConflict`/`conflictReason`, `20260531084723_rework-serial-flow.sql`
 added `quantityReworked`/`reworkId`, `20260304000000` added `operationDueDate`).
+It feeds the MES Work Centers board, the ERP Priority board and the API tool
+`production_getActiveJobOperationsByLocation`. Outside Processing is filtered by
+TYPE, not by a null `workCenterId`: both boards' columns are work centers, so an
+outside operation holding a stale work center (left over from an in-house type)
+otherwise lands in that column for an operator to start. Pinned by
+`supabase/tests/mes-board-outside-processing.test.sql`.
 TS wrappers (identical): `apps/mes/app/services/operations.service.ts`
 `getActiveJobOperationsByLocation` and
-`apps/erp/app/modules/production/production.service.ts`. Returns 41 cols incl.:
+`apps/erp/app/modules/production/production.service.ts`. Returns 44 cols incl.:
 `id, jobId, jobMakeMethodId, operationOrder` (← `jo."order"`)`, priority, processId,
 workCenterId, description, setup/labor/machineTime+Unit, operationOrderType` (←
 `jo."operationOrder"`, serial/parallel enum)`, jobReadableId, jobStatus, jobDueDate,
@@ -483,8 +491,8 @@ salesOrderId/LineId/ReadableId, assignee, tags, thumbnailPath, operationDueDate`
 (← `jo."dueDate"`, the need-by target)`,
 reworkId, hasConflict` (COALESCEd, never null)`, conflictReason,
 projectedCompletionAt` (← `jo."projectedCompletionAt"`, the projected finish
-instant). The ERP ops board
-(`schedule+/operations.tsx` → `ItemCard`) and MES schedule loader map
+instant)`, processBatchable, jobOperationBatchId, batchReadableId`. The ERP ops board
+(`priority+/operations.tsx` → `ItemCard`) and MES schedule loader map
 `hasConflict`/`conflictReason` onto Kanban items (red border + triangle tooltip on
 the ERP card); the dual dates drive the amber behind-target state (projected day >
 need-by). The same dual-dates migration also forks `get_job_operation_by_id`
