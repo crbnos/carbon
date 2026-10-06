@@ -284,9 +284,17 @@ in `packages/ee/src/onshape/panel/properties.ts` (tested).
   `createRevision` from the base or a fresh item. BOM children that are not
   release items are resolved with one bulk lookup (purchased hardware is
   reused). Release lines are inserted in one batch per method.
-- One **Draft** change notice records the push. A released method in Carbon is
-  not edited: its BOM is reported as skipped. Idempotent on
-  partNumber+letter.
+- What the push creates is staged under one **Draft** change notice, inserted
+  before the first item write (if that fails, nothing is written).
+  `stageChangeNoticeItem` (`onshape-push.server.ts`) does what
+  `createChangeNoticeDraftMethod` does for a Revision or New Part: the item is
+  inactive, it and its Draft method carry the notice's id, and an affected row
+  names the base item, `newItemId` and both methods. Releasing the notice
+  (`applyChangeNotice`) activates them and supersedes the old revision.
+  `updateDefaultRevision` runs only on the no-notice path (API
+  `createChangeNotice: false`). A notice whose every create failed is deleted.
+- A released method in Carbon is not edited: its BOM is reported as skipped.
+  Idempotent on partNumber+letter.
 - Model exports carry the revision's `partId` and configuration
   (`releaseExportSelection`); the configuration is sent as Onshape returned it.
   A Part Studio item with no single `partId` is reported as skipped.

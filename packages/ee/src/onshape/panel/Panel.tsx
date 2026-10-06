@@ -460,7 +460,9 @@ function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
     ? "Revisions already in Carbon — BOMs refreshed"
     : `${s.revisionsCreated} revisions + ${s.itemsCreated} new items, ` +
       `${s.linesWritten} BOM lines` +
-      (s.changeNotice ? ` · change notice ${s.changeNotice}` : "");
+      (s.changeNotice
+        ? ` · change notice ${s.changeNotice} (release it in Carbon to activate them)`
+        : "");
   return { text, skipped: s.skipped, errors: s.errors };
 }
 
@@ -3323,17 +3325,19 @@ function ReleaseReviewSection({
     (item) => item.methodStatus === "active"
   ).length;
   /*
-   * Fixed behaviour, stated rather than chosen: a release push records a
-   * change notice when it creates revisions, and the new revisions become the
-   * default. Both follow from the release having been approved in Onshape.
+   * Fixed behaviour, stated rather than chosen: a release push stages what it
+   * creates under a change notice, and releasing the notice in Carbon makes
+   * it active.
    */
   const outcomes = [
     review.changeNotice
       ? `Records change notice "${review.changeNotice.name}"`
       : null,
-    count("revision") + count("create") > 0
-      ? "New revisions become the default"
-      : null
+    review.changeNotice
+      ? "New revisions stay inactive until it is released in Carbon"
+      : count("revision") + count("create") > 0
+        ? "New revisions become the default"
+        : null
   ].filter((line): line is string => !!line);
 
   return (
