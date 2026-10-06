@@ -3783,18 +3783,30 @@ export async function insertJob(
  * Best-effort and cheap: it skips the operation entirely unless the item has
  * an `itemSerialSequence` configured. Shared by every job-creation path so serial
  * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ *
+ * Skipped entirely when `companySettings.serialNumberTiming = 'production'`: the
+ * job's tracked entities are then created unnumbered and each unit draws its
+ * number the first time it is worked on (first production event, first operation
+ * completion, or scrap). See the `serialNumberTiming` migration.
  */
 async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: { jobId: string; itemId: string; companyId: string; userId: string }
 ) {
-  const serialSequence = await client
-    .from("itemSerialSequence")
-    .select("id")
-    .eq("itemId", args.itemId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
+  const [serialSequence, settings] = await Promise.all([
+    client
+      .from("itemSerialSequence")
+      .select("id")
+      .eq("itemId", args.itemId)
+      .eq("companyId", args.companyId)
+      .maybeSingle(),
+    client
+      .from("companySettings")
+      .select("serialNumberTiming")
+      .eq("id", args.companyId)
+      .maybeSingle()
+  ]);
   // A query error (DB/RLS) also returns null data — distinguish it from "no
   // sequence configured" so a failure can't silently create an unnumbered job.
   if (serialSequence.error) {
@@ -3806,6 +3818,16 @@ async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
+  // A settings read failure falls back to the default ('jobCreation'), which is
+  // the behavior every company had before this setting existed.
+  if (settings.error) {
+    logger.error("Failed to read serial number timing", {
+      error: settings.error,
+      companyId: args.companyId
+    });
+  }
+  if (settings.data?.serialNumberTiming === "production") return;
+
   const { error } = await serverFns
     .as({ client, db, companyId: args.companyId, userId: args.userId })
     .invoke("assign-serial-numbers", {

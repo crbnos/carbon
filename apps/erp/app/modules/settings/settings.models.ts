@@ -318,6 +318,17 @@ export const returnPickedMaterialTimingValidator = z.object({
   returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
 });
 
+// When a produced unit's serial number is drawn from the item's serial sequence.
+// 'jobCreation' (default) reserves one number per unit as soon as the job exists;
+// 'production' waits until the unit is first touched on the floor — its first
+// production event, its first operation completion, or its scrap.
+export const serialNumberTimings = ["jobCreation", "production"] as const;
+export type SerialNumberTiming = (typeof serialNumberTimings)[number];
+
+export const serialNumberTimingValidator = z.object({
+  serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
+});
+
 export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
 });

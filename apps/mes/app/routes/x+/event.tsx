@@ -14,6 +14,7 @@ import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { productionEventValidator } from "~/services/models";
 import {
+  assignSerialNumberOnFirstTouch,
   endProductionEvent,
   getOperationEligibility,
   startProductionEvent
@@ -115,6 +116,15 @@ export async function action({ request }: ActionFunctionArgs) {
         {},
         await flash(request, error(startEvent.error, "Failed to start event"))
       );
+    }
+
+    // First touch: number the unit if the company defers serials to production.
+    if (trackedEntityId) {
+      await assignSerialNumberOnFirstTouch(getDatabaseClient(), {
+        trackedEntityId,
+        companyId,
+        userId
+      });
     }
 
     return data(

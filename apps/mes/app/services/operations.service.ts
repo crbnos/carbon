@@ -2475,6 +2475,35 @@ export async function endProductionEvent(
     .select("*");
 }
 
+/**
+ * Number a unit from its item's serial sequence the first time work starts on it
+ * (`companySettings.serialNumberTiming = 'production'`). Best-effort: a failure
+ * must never stop a timer from starting, and the completion and scrap hooks in
+ * the `issue` function will number the unit later if this call was lost.
+ *
+ * No-ops server-side when the unit already has a number, so it is safe to fire
+ * on every start — including the default 'jobCreation' timing, where the number
+ * is already there. Runs as the system: the caller has already admitted the
+ * operator to start the operation, and an operator does not necessarily hold
+ * `production_update`, which `assign-serial-numbers` requires.
+ */
+export async function assignSerialNumberOnFirstTouch(
+  db: Kysely<KyselyDatabase>,
+  args: { trackedEntityId: string; companyId: string; userId: string }
+) {
+  const { error } = await serverFns
+    .system({ db, companyId: args.companyId, userId: args.userId })
+    .invoke("assign-serial-numbers", {
+      trackedEntityId: args.trackedEntityId
+    });
+  if (error) {
+    log.error("Failed to assign serial number on first touch", {
+      error,
+      trackedEntityId: args.trackedEntityId
+    });
+  }
+}
+
 export async function endProductionEventsForJobOperation(
   client: SupabaseClient<Database>,
   args: {

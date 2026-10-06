@@ -1133,6 +1133,9 @@ msgstr "Una registrazione temporale di Attrezzaggio, Manodopera, o lavoro di Mac
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un utensile è un articolo fisico usato per fare un componente che può essere usato su più ordini di produzione"
 
+msgid "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Un utente registra la data di scadenza su ogni lotto o numero seriale quando i beni vengono ricevuti. Utilizzare quando i fornitori spediscono lotti con date di scadenza diverse."
 
@@ -5662,6 +5665,9 @@ msgstr "Decidi cosa vede un operatore se tenta di emettere un lotto o un numero 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decidi cosa accade quando un operatore preme Fine in officina con materiale ancora non prelevato."
 
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
+
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Decidere quando il materiale prelevato a un centro di lavoro ma non consumato ritorna al deposito."
 
@@ -7523,6 +7529,9 @@ msgstr "Ogni Attività richiesta deve essere Fatta o Saltata prima che il period
 
 msgid "Every row was imported successfully."
 msgstr "Ogni riga è stata importata correttamente."
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Tutti devono configurare un'app autenticatore prima di aprire questa azienda."
@@ -21007,6 +21016,9 @@ msgstr "Quando la richiesta del cliente non è più attuale; dopo questa data, l
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Quando i beni sono effettivamente arrivati; registrato sulla ricevuta e utilizzato per il punteggio di puntualità di consegna del fornitore."
 
+msgid "When the job is created"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Quando la carta kanban viene scansionata, il lavoro viene automaticamente spostato dalla bozza e rilasciato al piano."
 
@@ -21018,6 +21030,9 @@ msgstr "Quando il fornitore si è impegnato a consegnare; la pianificazione util
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Quando la determinazione dei prezzi del fornitore non è più onorata; la conversione di questa quotazione a un ordine di acquisto dopo questa data potrebbe richiedere una nuova quotazione."
+
+msgid "When the unit is produced"
+msgstr ""
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Quando questo strumento di misura è scaduto per la taratura; una volta scaduto, indica Non tarato."

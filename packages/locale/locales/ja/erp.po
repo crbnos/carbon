@@ -1133,6 +1133,9 @@ msgstr "ジョブ指図工程に対して記録された段取り、労務、ま
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "工具は部品を製造するために使用され、複数の製造指図で使用できる物理的アイテムです"
 
+msgid "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
 
@@ -5662,6 +5665,9 @@ msgstr "作業者が既に期限切れのバッチまたはシリアルを出庫
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "作業者が製造現場で完了を押したときに、ピック待ちの材料がある場合に何が起こるかを決定します。"
 
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
+
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "作業区にピッキングされたが消費済みでない材料がいつ倉庫に戻されるかを決定"
 
@@ -7523,6 +7529,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "この会社を開く前に、誰もが認証器アプリをセットアップする必要があります。"
@@ -21007,6 +21016,9 @@ msgstr "得意先のリクエストが現在のものでなくなった日。こ
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "商品が実際に到着した日時。入荷に記録され、仕入先の定時配達スコアリングに使用されます。"
 
+msgid "When the job is created"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "かんばんカードがスキャンされると、製造指図は自動的に下書きから移動され、フロアにリリース済となります。"
 
@@ -21018,6 +21030,9 @@ msgstr "仕入先が配達を約束した日時。計画はこの日付を使用
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "仕入先の価格設定が有効でなくなる日時。この日付以降にこの見積をPOに変換する場合、再見積が必要な場合があります。"
+
+msgid "When the unit is produced"
+msgstr ""
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "この測定器が校正の対象日となる日時。期限を過ぎるとOut-of-Calibrationと表示されます。"

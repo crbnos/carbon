@@ -1133,6 +1133,9 @@ msgstr "A timed record of Setup, Labor, or Machine work logged against a job ope
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A tool is a physical item used to make a part that can be used across multiple jobs"
 
+msgid "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+msgstr "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 
@@ -5662,6 +5665,9 @@ msgstr "Decide what an operator sees if they try to issue a batch or serial that
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Decide when material picked to a work center but not consumed flows back to the warehouse."
 
@@ -7523,6 +7529,9 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr "Every unit is numbered up front, so serials can be printed before work starts."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
@@ -21007,6 +21016,9 @@ msgstr "When the customer's request stops being current; past this date the RFQ 
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 
+msgid "When the job is created"
+msgstr "When the job is created"
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 
@@ -21018,6 +21030,9 @@ msgstr "When the supplier committed to deliver; planning uses this date for the 
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
+
+msgid "When the unit is produced"
+msgstr "When the unit is produced"
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."

@@ -49,6 +49,7 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { assignSerialNumberIfMissing } from "../lib/assign-serial-number";
 import { calculateCOGS } from "../lib/calculate-cogs";
 import {
   getCurrentAccountingPeriod,
@@ -1930,6 +1931,11 @@ async function produceBatchOutput(
     throw new NotFoundError("Tracked entity not found");
   }
 
+  // First-touch numbering (serialNumberTiming = 'production'). No-ops when the
+  // unit is already numbered — which is every unit under the default
+  // 'jobCreation' timing.
+  await assignSerialNumberIfMissing(trx, { trackedEntityId, companyId });
+
   if (trackedEntity.status !== "Consumed") {
     const activityId = nanoid();
     await trx
@@ -2353,6 +2359,14 @@ const issue = defineServerFn({
             throw new NotFoundError("Tracked entity not found");
           }
 
+          // First-touch numbering (serialNumberTiming = 'production'). No-ops
+          // when the unit is already numbered — which is every unit under the
+          // default 'jobCreation' timing.
+          await assignSerialNumberIfMissing(trx, {
+            trackedEntityId,
+            companyId
+          });
+
           if (trackedEntity.status !== "Consumed") {
             const activityId = nanoid();
             await trx
@@ -2702,6 +2716,16 @@ const issue = defineServerFn({
             }
             scrappedEntityAttributes =
               entity.attributes as TrackedEntityAttributes;
+
+            // A unit scrapped before it ever completed an operation has never
+            // hit a completion hook, so number it here. It consumed real
+            // material (backflushed above) and needs an identifier on its scrap
+            // journal, NCR and lineage — its replacement must not take the
+            // number this unit should have had.
+            await assignSerialNumberIfMissing(trx, {
+              trackedEntityId: scrapEntityId,
+              companyId
+            });
 
             const scrapActivityId = nanoid();
             await trx

@@ -12,8 +12,10 @@ import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
+  assignSerialNumberOnFirstTouch,
   getNextIncompleteSerialEntity,
   getOperationEligibility,
   getTrackedEntitiesByMakeMethodId,
@@ -266,6 +268,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.operations,
       await flash(request, error(startEvent.error, "Failed to start event"))
     );
+  }
+
+  // First touch: number the unit if the company defers serials to production.
+  if (trackedEntityId) {
+    await assignSerialNumberOnFirstTouch(getDatabaseClient(), {
+      trackedEntityId,
+      companyId,
+      userId
+    });
   }
 
   throw redirect(path.to.operation(operationId));

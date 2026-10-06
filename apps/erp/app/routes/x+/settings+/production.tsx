@@ -6,7 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { Submit, ValidatedForm, validator } from "@carbon/form";
+import {
+  Hidden,
+  Submit,
+  useControlField,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -14,6 +20,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  ChoiceSelect,
   Heading,
   HStack,
   Label,
@@ -27,13 +34,15 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
-import { LuMapPin } from "react-icons/lu";
+import { LuFactory, LuMapPin, LuTicket } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
+import type { SerialNumberTiming } from "~/modules/settings";
 import {
   getCompanySettings,
   jobCompletedValidator,
+  serialNumberTimingValidator,
   updateAutoSelectMaterialWithoutPickingListSetting,
   updateIncludeMaterialsOnTravelerSetting,
   updateIncludeOperationsOnTravelerSetting
@@ -160,6 +169,25 @@ export async function action({ request }: ActionFunctionArgs) {
         includeOperationsOnTraveler ? "enabled" : "disabled"
       }`
     };
+  }
+
+  if (intent === "serialNumberTiming") {
+    const validation = await validator(serialNumberTimingValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
+
+    const update = await client
+      .from("companySettings")
+      .update({ serialNumberTiming: validation.data.serialNumberTiming })
+      .eq("id", companyId);
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return { success: true, message: "Serial number timing updated" };
   }
 
   if (intent === "autoSelectMaterialWithoutPickingListToggle") {
@@ -495,6 +523,44 @@ export default function ProductionSettingsRoute() {
         </Card>
 
         <Card>
+          <ValidatedForm
+            method="post"
+            validator={serialNumberTimingValidator}
+            defaultValues={{
+              serialNumberTiming:
+                (companySettings.serialNumberTiming as
+                  | SerialNumberTiming
+                  | null
+                  | undefined) ?? "jobCreation"
+            }}
+            fetcher={fetcher}
+          >
+            <CardHeader>
+              <CardTitle>
+                <Trans>Serial Numbers</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide when a produced unit draws its number from the item's
+                  serial sequence. Items without a sequence are unaffected.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="serialNumberTiming" />
+              <div className="flex flex-col gap-3 max-w-[640px]">
+                <SerialNumberTimingChoice />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle>
               <Trans>Scheduling</Trans>
@@ -610,5 +676,38 @@ export default function ProductionSettingsRoute() {
         </Card>
       </VStack>
     </ScrollArea>
+  );
+}
+
+// ChoiceSelect for when a produced unit draws its serial number. Mirrors the
+// timing choices in Settings → Inventory: a compact trigger plus a hidden input
+// so the value posts with the surrounding ValidatedForm.
+function SerialNumberTimingChoice() {
+  const { t } = useLingui();
+  const [value, setValue] =
+    useControlField<SerialNumberTiming>("serialNumberTiming");
+  const current: SerialNumberTiming = value ?? "jobCreation";
+  return (
+    <>
+      <ChoiceSelect<SerialNumberTiming>
+        value={current}
+        onChange={setValue}
+        options={[
+          {
+            value: "jobCreation",
+            title: t`When the job is created`,
+            description: t`Every unit is numbered up front, so serials can be printed before work starts.`,
+            icon: <LuTicket />
+          },
+          {
+            value: "production",
+            title: t`When the unit is produced`,
+            description: t`A unit draws its number the first time it is worked on, so cancelled jobs burn none.`,
+            icon: <LuFactory />
+          }
+        ]}
+      />
+      <input type="hidden" name="serialNumberTiming" value={current} />
+    </>
   );
 }

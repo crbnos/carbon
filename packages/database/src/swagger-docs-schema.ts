@@ -92803,6 +92803,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93021,6 +93024,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93191,6 +93197,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -151437,7 +151446,8 @@ export default {
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
-        "showBomExplorerReadableId"
+        "showBomExplorerReadableId",
+        "serialNumberTiming"
       ],
       properties: {
         id: {
@@ -151729,6 +151739,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        serialNumberTiming: {
+          default: "jobCreation",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -201662,6 +201677,12 @@ export default {
     },
     "rowFilter.companySettings.showBomExplorerReadableId": {
       name: "showBomExplorerReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serialNumberTiming": {
+      name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"

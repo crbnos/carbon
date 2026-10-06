@@ -1133,6 +1133,9 @@ msgstr "Bir iş emri operasyonuna karşı kaydedilen Hazırlık, İşçilik veya
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Takım, bir Parça yapmak için kullanılan ve birden fazla İş emirlerine göre kullanılabilen fiziksel bir Stok kartıdır."
 
+msgid "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
 
@@ -5662,6 +5665,9 @@ msgstr "Süresi dolmuş bir Parti veya seri için Malzeme çıkışı yapmaya ç
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Bir operatör atölyede henüz çıkış yapılmamış malzeme varken Bitir'e bastığında ne olacağını belirleyin."
 
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
+
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri akışının ne zaman gerçekleşeceğine karar verin."
 
@@ -7523,6 +7529,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Herkes bu şirketi açmadan önce bir kimlik doğrulaması uygulaması kurması gerekir."
@@ -21007,6 +21016,9 @@ msgstr "Müşterinin talebi geçerli olmaktan çıktığında; bu tarihten sonra
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Mallar gerçekten geldiğinde; makbuzda kaydedilmiş ve tedarikçinin zamanında teslimat puanlaması için kullanılmıştır."
 
+msgid "When the job is created"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarılır ve yere yayınlanır."
 
@@ -21018,6 +21030,9 @@ msgstr "Tedarikçi teslim etmeyi ne zaman taahhüt etti; planlama bu tarihi gele
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Tedarikçi fiyatlandırması artık kabul edilmediğinde; bu fiyatlandırmayı bu tarihten sonra bir PO'ya dönüştürmek yeniden fiyatlandırma gerektirebilir."
+
+msgid "When the unit is produced"
+msgstr ""
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtikten sonra Kalibrasyondan Çıktı olarak okunur."

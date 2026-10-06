@@ -1133,6 +1133,9 @@ msgstr "针对工单工序记录的换型、人工或机器工作的计时记录
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "刀具是用于制造零件的物理物料，可在多个工单中使用"
 
+msgid "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收货时记录每个生产批次或序列号的有效期。当供应商发运具有不同有效期的批次时使用。"
 
@@ -5662,6 +5665,9 @@ msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "决定当操作员在车间按下完成时且原材料仍未拣货时发生的情况。"
 
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
+
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库。"
 
@@ -7523,6 +7529,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
@@ -21007,6 +21016,9 @@ msgstr "当客户请求不再最新时;此日期之后,RFQ将自动关闭,除非
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "货物实际到达时;在收据上记录,用于供应商准时交货评分。"
 
+msgid "When the job is created"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "当扫描看板卡时，工单自动从草稿移出并已下达到工厂。"
 
@@ -21018,6 +21030,9 @@ msgstr "供应商何时承诺交货;计划使用该日期进行入库库存到�
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "供应商定价不再被遵守时;此日期之后将该报价转换为PO可能需要重新报价。"
+
+msgid "When the unit is produced"
+msgstr ""
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "该量具何时需要校准；过期后读数显示为失准。"

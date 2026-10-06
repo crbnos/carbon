@@ -1133,6 +1133,9 @@ msgstr "Um registro cronometrado de trabalho de Setup, Mão de obra ou Máquina 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Uma ferramenta é um item físico usado para fabricar uma peça que pode ser usada em múltiplas ordens de produção"
 
+msgid "A unit draws its number the first time it is worked on, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Um usuário registra a validade em cada lote de produção ou serial quando as mercadorias são recebidas. Use quando fornecedores enviam lotes com datas de validade diferentes."
 
@@ -5662,6 +5665,9 @@ msgstr "Decida o que um operador vê se tentar requisitar um lote de produção 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decida o que acontece quando um operador pressiona Concluir no chão de fábrica com material ainda não retirado."
 
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
+
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Decida quando o material coletado para um centro de trabalho, mas não consumido, flui de volta para o armazém."
 
@@ -7523,6 +7529,9 @@ msgstr "Cada tarefa necessária deve estar Feita ou Ignorada antes que o períod
 
 msgid "Every row was imported successfully."
 msgstr "Cada linha foi importada com sucesso."
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Todos devem configurar um aplicativo autenticador antes de abrir esta empresa."
@@ -21007,6 +21016,9 @@ msgstr "Quando a solicitação do cliente deixa de ser atual; após esta data, a
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Quando os bens realmente chegaram; registrado na nota fiscal e usado para pontuar o desempenho de entrega no prazo do fornecedor."
 
+msgid "When the job is created"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Quando o cartão kanban é escaneado, o trabalho é automaticamente retirado do rascunho e liberado para o piso."
 
@@ -21018,6 +21030,9 @@ msgstr "Quando o fornecedor se comprometeu a entregar; o planejamento usa esta d
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Quando o preço do fornecedor deixa de ser honrado; converter este orçamento em Pedido de compra após esta data pode precisar de uma nova cotação."
+
+msgid "When the unit is produced"
+msgstr ""
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Quando este Instrumento de medição vence para calibração; uma vez vencido, mostra Fora de calibração."

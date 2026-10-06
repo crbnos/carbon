@@ -1352,7 +1352,7 @@
     {"name":"settings_getCompany","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"8abc93835023","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCompanyIntegrations","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"3a98b34db51d","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCompanyPlan","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"none","injectAuth":"companyId","permission":"settings:view","paginates":false},
-    {"name":"settings_getCompanySettings","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"d401a021a6d8","injectAuth":"companyId","permission":"settings:view","paginates":false},
+    {"name":"settings_getCompanySettings","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"2da841f2c2cb","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getConfig","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"aa1021ff34cf","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCurrentSequence","classification":"READ","paramCount":1,"schema":"f55836d6d401","response":"00404e686415","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCustomField","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"a533a796c094","injectAuth":"companyId","permission":"settings:view","paginates":false},

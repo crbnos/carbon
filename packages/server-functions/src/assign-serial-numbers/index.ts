@@ -7,11 +7,17 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { assignSerialNumberIfMissing } from "../lib/assign-serial-number";
 import { attributesContain } from "../tracked-entity-attributes";
 
-export const assignSerialNumbersInput = z.object({
-  jobId: z.string()
-});
+// Two modes, distinguished by which id is supplied. `jobId` numbers a whole
+// job up front (serialNumberTiming = 'jobCreation'); `trackedEntityId` numbers
+// one unit that is being touched for the first time on the floor
+// (serialNumberTiming = 'production').
+export const assignSerialNumbersInput = z.union([
+  z.object({ jobId: z.string() }),
+  z.object({ trackedEntityId: z.string() })
+]);
 
 /**
  * Assigns configured serial numbers to a job's tracked entities at creation time.
@@ -23,13 +29,30 @@ export const assignSerialNumbersInput = z.object({
  * item's sequence (atomic counter) with %{...} date/week/location tokens.
  *
  * Idempotent: it no-ops when the seed is already numbered or already split.
+ *
+ * With `trackedEntityId` instead of `jobId` it numbers that ONE entity if it has
+ * none. The MES start route calls it this way when a unit's first production
+ * event begins; the `issue` function does the same work inside its own
+ * transaction at its first-touch points (completion and scrap).
  */
 const assignSerialNumbers = defineServerFn({
   name: "assign-serial-numbers",
   input: assignSerialNumbersInput,
   permissions: { update: "production" },
-  async run(ctx, { jobId }) {
+  async run(ctx, input) {
     const { db, companyId } = ctx;
+
+    if ("trackedEntityId" in input) {
+      const readableId = await db.transaction().execute((trx) =>
+        assignSerialNumberIfMissing(trx, {
+          trackedEntityId: input.trackedEntityId,
+          companyId
+        })
+      );
+      return { assigned: readableId ? 1 : 0, readableId };
+    }
+
+    const { jobId } = input;
 
     return db.transaction().execute(async (trx) => {
       // 1. The job
