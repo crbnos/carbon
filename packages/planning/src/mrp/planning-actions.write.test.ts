@@ -117,6 +117,22 @@ describe("writePlanningActionDiff", () => {
     expect(periodOnly?.sql).not.toContain("suggestedQuantity");
   });
 
+  // The diff skips an overridden assignee when it READS the row; a planner
+  // who assigns between that read and the write (Assign takes no lock) must
+  // still win, so the statement re-checks the flag on the row itself.
+  it("keeps a planner's overridden assignee in the statement itself", async () => {
+    const [statement] = await write({
+      updates: [{ id: "a1", patch: { assignee: "u2", suggestedQuantity: 3 } }]
+    });
+    expect(statement?.sql).toContain(
+      `"assignee" = CASE WHEN t."assigneeOverridden" THEN t."assignee" ELSE v."assignee"::text END`
+    );
+    // The other columns of the same statement still update unconditionally.
+    expect(statement?.sql).toContain(
+      `"suggestedQuantity" = v."suggestedQuantity"::numeric`
+    );
+  });
+
   it("writes trigger values as JSON", async () => {
     const [statement] = await write({
       updates: [{ id: "a1", patch: { triggerValues: { reorderPoint: 5 } } }]

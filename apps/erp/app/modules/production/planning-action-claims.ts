@@ -18,20 +18,42 @@ type Handle = Kysely<KyselyDatabase> | Transaction<KyselyDatabase>;
  * loaded, and the caller leaves its target alone — a stale page never
  * overwrites a later manual edit. The conditional update is the lock.
  */
+export type ClaimedPlanningAction = {
+  suggestedDate: string | null;
+  suggestedQuantity: number | null;
+};
+
+/**
+ * The claim RETURNS the suggestion as it is at the moment of the claim. The
+ * caller read the actions a request earlier, and an MRP run in between may
+ * have moved an Open action's quantity or date in place; applying the values
+ * from the page would write the stale suggestion. Apply what was claimed.
+ */
 export async function claimPlanningActions(
   trx: Handle,
   args: { ids: string[]; companyId: string; userId: string; now: string }
-): Promise<Set<string>> {
-  if (args.ids.length === 0) return new Set();
+): Promise<Map<string, ClaimedPlanningAction>> {
+  if (args.ids.length === 0) return new Map();
   const rows = await trx
     .updateTable("planningAction")
     .set({ status: "Actioned", updatedBy: args.userId, updatedAt: args.now })
     .where("id", "in", args.ids)
     .where("companyId", "=", args.companyId)
     .where("status", "=", "Open")
-    .returning("id")
+    .returning(["id", "suggestedDate", "suggestedQuantity"])
     .execute();
-  return new Set(rows.map((row) => row.id));
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        suggestedDate: row.suggestedDate ?? null,
+        suggestedQuantity:
+          row.suggestedQuantity === null || row.suggestedQuantity === undefined
+            ? null
+            : Number(row.suggestedQuantity)
+      }
+    ])
+  );
 }
 
 /**

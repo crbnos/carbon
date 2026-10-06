@@ -120,6 +120,9 @@ export async function companiesWithPlanningWork(
     .union(db.selectFrom("demandProjection").select("companyId"))
     .union(db.selectFrom("demandForecastSource").select("companyId"))
     .union(db.selectFrom("supplyForecast").select("companyId"))
+    // A run clears the worklist of a company whose demand is gone; without
+    // this a company with no other planning work keeps its stale actions.
+    .union(db.selectFrom("planningAction").select("companyId"))
     .union(
       db
         .selectFrom("demandForecast")

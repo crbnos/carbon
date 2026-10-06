@@ -56,7 +56,8 @@ Phase-7 write) and throws on failure.
    that one company. A `find-companies` step selects all rows from `company`,
    narrowed to the due ones and then by `companiesWithPlanningWork`
    (`scheduled/mrp-companies.ts`): one UNION over the open demand/supply views,
-   `demandProjection`, and the rows an earlier run wrote (`demandForecast` with
+   `demandProjection`, and the rows an earlier run wrote (`planningAction`,
+   `demandForecast` with
    `forecastMethod = 'mrp'`, `demandForecastSource`, `supplyForecast`, non-zero
    actuals). A company in none of them would read nothing and write nothing, so
    it is skipped; a failed lookup plans for every due company. Then **one
@@ -605,6 +606,14 @@ never offered a Cancel, Defer or Expedite.
   parameters, never a URL. The set-based Apply claims and changes a batch in
   one transaction; the per-job path claims each action right BEFORE its own
   change, so a request that dies there strands at most the actions in flight.
+  Every claim (`claimPlanningActions`, `markPlanningActionsActioned`) RETURNS
+  the row's `suggestedQuantity` and `suggestedDate`, and Apply writes THOSE —
+  an MRP run between the page's read and the claim can move an Open action in
+  place, and the page's values would be the stale suggestion. A date apply
+  (`applyProductionPlanningDateActions`, `updatePlanningJob`) also restates a
+  "No Deadline" job as `Soft Deadline` (`deadlineTypeForPlanningDate`): the job
+  form hides the due-date field for No Deadline, and `nextJobPriority` would
+  rank the dated job with the undated weight.
   - Purchasing quantities are in PURCHASE units (the line's
     `purchaseQuantity`; the open-lines view reports inventory units), and an
     action's suggested quantity is converted and rounded up as Apply does. The

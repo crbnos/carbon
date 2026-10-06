@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -138,6 +139,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
     const fetcher = useFetcher<typeof bulkUpdateAction>();
+    const revalidator = useRevalidator();
     const { carbon } = useCarbon();
 
     const formatter = useCurrencyFormatter();
@@ -337,7 +339,13 @@ export const PurchasingPlanningOrderDrawer = memo(
             success?: boolean;
             message?: string;
           } | null;
-          if (response.ok && result?.success) return true;
+          if (response.ok && result?.success) {
+            // A plain fetch bypasses the router: refresh the grid row behind
+            // the drawer, which otherwise shows the old value until the next
+            // navigation.
+            void revalidator.revalidate();
+            return true;
+          }
           toast.error(
             result?.message ?? t`Failed to update purchase order line`
           );
@@ -347,7 +355,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           return false;
         }
       },
-      [locationId, t]
+      [locationId, revalidator, t]
     );
 
     const renderOpenOrderStatus = useCallback(

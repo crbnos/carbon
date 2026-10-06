@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -102,6 +103,7 @@ export const ProductionPlanningOrderDrawer = memo(
     locationToday
   }: ProductionPlanningOrderDrawerProps) => {
     const fetcher = useFetcher<typeof bulkUpdateAction>();
+    const revalidator = useRevalidator();
     const { t } = useLingui();
     const { locale } = useLocale();
     const fenceLabel = timeFenceDate
@@ -259,6 +261,10 @@ export const ProductionPlanningOrderDrawer = memo(
           if (response.ok && result?.success) {
             // Saved, but a follow-up step failed: keep the new value and say so.
             if (result.warning) toast.error(result.warning);
+            // A plain fetch bypasses the router: refresh the grid row behind
+            // the drawer, which otherwise shows the old value until the next
+            // navigation.
+            void revalidator.revalidate();
             return true;
           }
           toast.error(result?.message ?? t`Failed to update job`);
@@ -268,7 +274,7 @@ export const ProductionPlanningOrderDrawer = memo(
           return false;
         }
       },
-      [locationId, t]
+      [locationId, revalidator, t]
     );
 
     const renderOpenJobStatus = useCallback(

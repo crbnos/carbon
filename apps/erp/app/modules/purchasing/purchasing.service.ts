@@ -2277,7 +2277,19 @@ export async function applyPurchasingPlanningActions(
       userId,
       now
     });
-    const held = actions.filter((a) => claimed.has(a.planningActionId));
+    // The quantity and date come from the claim, not from the page's read
+    // (see claimPlanningActions); the page's values are only the fallback.
+    const held = actions.flatMap((a) => {
+      const claim = claimed.get(a.planningActionId);
+      if (!claim) return [];
+      return [
+        {
+          ...a,
+          suggestedDate: claim.suggestedDate ?? a.suggestedDate,
+          suggestedQuantity: claim.suggestedQuantity ?? a.suggestedQuantity
+        }
+      ];
+    });
     for (const action of actions) {
       if (!claimed.has(action.planningActionId)) {
         result.alreadyApplied.push(action.planningActionId);

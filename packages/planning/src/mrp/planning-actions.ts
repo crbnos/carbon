@@ -747,12 +747,16 @@ export async function writePlanningActionDiff(
         throw new Error(`No column type for planning action patch "${column}"`);
       }
     }
+    // The diff skipped an overridden assignee when it READ the row, but a
+    // planner can assign between that read and this write (Assign does not
+    // take the run's lock), so the statement re-checks the flag on the row.
     const assignments = sql.join(
-      columns.map(
-        (column) =>
-          sql`${sql.id(column)} = v.${sql.id(column)}::${sql.raw(
-            PATCH_COLUMN_TYPES[column]!
-          )}`
+      columns.map((column) =>
+        column === "assignee"
+          ? sql`"assignee" = CASE WHEN t."assigneeOverridden" THEN t."assignee" ELSE v."assignee"::text END`
+          : sql`${sql.id(column)} = v.${sql.id(column)}::${sql.raw(
+              PATCH_COLUMN_TYPES[column]!
+            )}`
       )
     );
     const valueColumns = sql.join(["id", ...columns].map((c) => sql.id(c)));

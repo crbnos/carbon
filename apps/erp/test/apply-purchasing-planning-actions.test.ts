@@ -206,6 +206,35 @@ describe("applyPurchasingPlanningActions", () => {
     );
   });
 
+  // An MRP run between the page's read and the claim can move an Open action's
+  // quantity or date in place. The claim RETURNS the row's values, and those
+  // are what is written: 75 inventory units at 10 per purchase unit is
+  // 7.5 → 8, tax 2 × 8 at 10% = 1.60 — not the page's 55.
+  it("applies the quantity and date from the claim, not from the page", async () => {
+    const { db, driver } = database((q) =>
+      is.claim(q)
+        ? [
+            { id: "a-date", suggestedDate: "2026-11-09", suggestedQuantity: null },
+            { id: "a-qty", suggestedDate: null, suggestedQuantity: 75 }
+          ]
+        : everythingLands(q)
+    );
+    await applyPurchasingPlanningActions(db, {
+      ...scope,
+      actions: [expedite, increase]
+    });
+    const dates = driver.sent.find(is.dates)!;
+    expect(dates.parameters).toEqual(
+      expect.arrayContaining(["pol-date", "2026-11-09"])
+    );
+    expect(dates.parameters).not.toContain("2026-11-02");
+    const quantities = driver.sent.find(is.quantities)!;
+    expect(quantities.parameters).toEqual(
+      expect.arrayContaining(["pol-qty", 8, 0.1, 1.6])
+    );
+    expect(quantities.parameters).not.toContain(6);
+  });
+
   // Another apply took the row first: its line is never written here.
   it("leaves an action another apply already claimed alone", async () => {
     const { db, driver } = database((q) =>

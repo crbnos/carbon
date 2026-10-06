@@ -500,6 +500,21 @@ const DEADLINE_TYPE_PRIORITY: Record<string, number> = {
  * one's, else at the end. Pure, so a batch can place several jobs on one date
  * in turn by appending each result to the siblings it passes for the next.
  */
+/**
+ * The deadline type a job carries once planning gives it a due date. The job
+ * form hides the due-date field for "No Deadline" (`deadlineRequiresDueDate`),
+ * so a date written under that type is one the planner can neither see nor
+ * edit on the job, and `nextJobPriority` would rank it with the undated
+ * weight. The Order path sets Soft Deadline the same way.
+ */
+export function deadlineTypeForPlanningDate(
+  deadlineType: string
+): (typeof deadlineTypes)[number] {
+  return deadlineType === "No Deadline"
+    ? "Soft Deadline"
+    : (deadlineType as (typeof deadlineTypes)[number]);
+}
+
 export function nextJobPriority(
   siblings: { priority: number | null; deadlineType: string }[],
   deadlineType: (typeof deadlineTypes)[number]
@@ -3914,7 +3929,25 @@ export async function updatePlanningJob(
     dueDate?: string;
   }
 ): Promise<{ updated: boolean; error: PostgrestError | null }> {
-  const { id, companyId, updatedBy, ...updates } = input;
+  const { id, companyId, updatedBy, ...changes } = input;
+  const updates: typeof changes & {
+    deadlineType?: (typeof deadlineTypes)[number];
+  } = { ...changes };
+  if (updates.dueDate !== undefined) {
+    const existing = await client
+      .from("job")
+      .select("deadlineType")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error) return { updated: false, error: existing.error };
+    const deadlineType = deadlineTypeForPlanningDate(
+      existing.data.deadlineType
+    );
+    if (deadlineType !== existing.data.deadlineType) {
+      updates.deadlineType = deadlineType;
+    }
+  }
   const priority = await priorityForDateChange(client, id, updates);
 
   let scrap: { scrapQuantity: number } | undefined;
@@ -10775,7 +10808,8 @@ export async function markPlanningActionsActioned(
       .where("id", "in", args.ids)
       .where("companyId", "=", args.companyId)
       .where("status", "=", "Open")
-      .returning("id")
+      // The suggestion as it is at the claim — see claimPlanningActions.
+      .returning(["id", "suggestedQuantity", "suggestedDate"])
       .execute()
   );
 }
@@ -10938,7 +10972,14 @@ export async function applyProductionPlanningDateActions(
       userId,
       now
     });
-    const held = actions.filter((a) => claimed.has(a.planningActionId));
+    // The date comes from the claim, not from the page's read (see
+    // claimPlanningActions); the page's value is only the fallback for a row
+    // that somehow carries none.
+    const held = actions.flatMap((a) => {
+      const claim = claimed.get(a.planningActionId);
+      if (!claim) return [];
+      return [{ ...a, suggestedDate: claim.suggestedDate ?? a.suggestedDate }];
+    });
     for (const action of actions) {
       if (!claimed.has(action.planningActionId)) {
         result.alreadyApplied.push(action.planningActionId);
@@ -10977,19 +11018,26 @@ export async function applyProductionPlanningDateActions(
       siblingsByKey.set(key, list);
     }
 
-    const values: { jobId: string; dueDate: string; priority: number }[] = [];
+    const values: {
+      jobId: string;
+      dueDate: string;
+      deadlineType: (typeof deadlineTypes)[number];
+      priority: number;
+    }[] = [];
     for (const action of held) {
       const job = jobById.get(action.jobId);
       if (!job) continue; // refused below: no row changed
+      const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
       const key = `${job.locationId}\u001f${action.suggestedDate}`;
       const siblings = siblingsByKey.get(key) ?? [];
-      const priority = nextJobPriority(siblings, job.deadlineType);
-      siblings.push({ priority, deadlineType: job.deadlineType });
+      const priority = nextJobPriority(siblings, deadlineType);
+      siblings.push({ priority, deadlineType });
       siblings.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
       siblingsByKey.set(key, siblings);
       values.push({
         jobId: action.jobId,
         dueDate: action.suggestedDate,
+        deadlineType,
         priority
       });
     }
@@ -10999,12 +11047,16 @@ export async function applyProductionPlanningDateActions(
       const rows = await sql<{ id: string }>`
         UPDATE "job" AS j
         SET "dueDate" = v."dueDate"::date,
+            "deadlineType" = v."deadlineType"::"deadlineType",
             "priority" = v."priority"::numeric,
             "updatedBy" = ${userId},
             "updatedAt" = ${now}
         FROM (VALUES ${sql.join(
-          values.map((v) => sql`(${v.jobId}, ${v.dueDate}, ${v.priority})`)
-        )}) AS v("id", "dueDate", "priority")
+          values.map(
+            (v) =>
+              sql`(${v.jobId}, ${v.dueDate}, ${v.deadlineType}, ${v.priority})`
+          )
+        )}) AS v("id", "dueDate", "deadlineType", "priority")
         WHERE j."id" = v."id"
           AND j."companyId" = ${companyId}
           AND j."status" IN (${sql.join(

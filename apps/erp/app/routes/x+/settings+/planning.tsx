@@ -13,7 +13,7 @@ import { parseTime } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { z } from "zod";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
@@ -126,9 +126,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (intent) {
     case "setCompanyDefault": {
-      const employeeId = employeeIdValidator.parse(
+      const parsedEmployeeId = employeeIdValidator.safeParse(
         formData.get("employeeId") ?? undefined
       );
+      if (!parsedEmployeeId.success) {
+        return data(
+          { success: false, message: "Invalid employee" },
+          { status: 400 }
+        );
+      }
+      const employeeId = parsedEmployeeId.data;
       if (
         employeeId &&
         !(await isActiveCompanyEmployee(client, companyId, employeeId))
@@ -157,9 +164,16 @@ export async function action({ request }: ActionFunctionArgs) {
       if (typeof locationId !== "string" || !locationId) {
         return { success: false, message: "Location is required" };
       }
-      const employeeId = employeeIdValidator.parse(
+      const parsedEmployeeId = employeeIdValidator.safeParse(
         formData.get("employeeId") ?? undefined
       );
+      if (!parsedEmployeeId.success) {
+        return data(
+          { success: false, message: "Invalid employee" },
+          { status: 400 }
+        );
+      }
+      const employeeId = parsedEmployeeId.data;
       if (
         employeeId &&
         !(await isActiveCompanyEmployee(client, companyId, employeeId))
@@ -202,9 +216,16 @@ export async function action({ request }: ActionFunctionArgs) {
           message: "Location and item group are required"
         };
       }
-      const employeeId = employeeIdValidator.parse(
+      const parsedEmployeeId = employeeIdValidator.safeParse(
         formData.get("employeeId") ?? undefined
       );
+      if (!parsedEmployeeId.success) {
+        return data(
+          { success: false, message: "Invalid employee" },
+          { status: 400 }
+        );
+      }
+      const employeeId = parsedEmployeeId.data;
       if (
         employeeId &&
         !(await isActiveCompanyEmployee(client, companyId, employeeId))

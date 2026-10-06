@@ -189,6 +189,64 @@ describe("applyProductionPlanningDateActions", () => {
     );
   });
 
+  // An MRP run between the page's read and the claim can move an Open action's
+  // date in place. The claim RETURNS the row's date, and that is what is
+  // written; the page's date is only the fallback for a row that has none.
+  it("applies the date from the claim, not from the page", async () => {
+    const { db, driver } = database((q) =>
+      is.claim(q)
+        ? [
+            { id: "a1", suggestedDate: "2026-11-09", suggestedQuantity: null },
+            { id: "a2", suggestedDate: null, suggestedQuantity: null }
+          ]
+        : everythingLands(q)
+    );
+    await applyProductionPlanningDateActions(db, {
+      ...scope,
+      actions: [moveA, moveB]
+    });
+    const write = driver.sent.find(is.dates)!;
+    expect(write.parameters).toEqual(
+      expect.arrayContaining(["job-a", "2026-11-09", "job-b", "2026-11-02"])
+    );
+    expect(write.parameters).not.toContain("2026-11-02\u0000");
+    // The siblings read asks for the claimed date, not the page's.
+    const siblings = driver.sent.find(is.siblings)!;
+    expect(siblings.parameters).toContain("2026-11-09");
+  });
+
+  // The job form hides the due-date field for "No Deadline", so a date written
+  // under that type could be neither seen nor edited on the job, and the
+  // priority would carry the undated weight. The date apply restates the type
+  // as the Order path does.
+  it("gives a No Deadline job a Soft Deadline with its date", async () => {
+    const { db, driver } = database((q) =>
+      is.jobs(q)
+        ? [
+            { id: "job-a", locationId: "loc", deadlineType: "No Deadline" },
+            { id: "job-b", locationId: "loc", deadlineType: "ASAP" }
+          ]
+        : everythingLands(q)
+    );
+    await applyProductionPlanningDateActions(db, {
+      ...scope,
+      actions: [moveA, moveB]
+    });
+    const write = driver.sent.find(is.dates)!;
+    expect(write.sql).toContain(
+      `"deadlineType" = v."deadlineType"::"deadlineType"`
+    );
+    // job-a ranks as a Soft Deadline: after the sibling at 4 → 5, not before it.
+    expect(write.parameters).toEqual(
+      expect.arrayContaining(["job-a", "2026-11-02", "Soft Deadline", 5])
+    );
+    expect(write.parameters).not.toContain("No Deadline");
+    // A job that already has a dated type keeps it.
+    expect(write.parameters).toEqual(
+      expect.arrayContaining(["job-b", "ASAP", 2])
+    );
+  });
+
   it("leaves an action another apply already claimed alone", async () => {
     const { db, driver } = database((q) =>
       is.claim(q) ? ids(["a2"]) : everythingLands(q)

@@ -913,7 +913,11 @@ export async function action({ request }: ActionFunctionArgs) {
       // dies here strands at most the actions in flight, which the next MRP
       // run re-emits as fresh Open actions (the natural-key index ignores
       // Actioned rows).
-      const claim = async (planningActionId: string): Promise<boolean> => {
+      // Resolves to the claimed suggestion (see claimPlanningActions), or
+      // null when the claim did not land.
+      const claim = async (
+        planningActionId: string
+      ): Promise<{ suggestedQuantity: number | null } | null> => {
         const claimed = await markPlanningActionsActioned(db, {
           ids: [planningActionId],
           companyId,
@@ -928,15 +932,22 @@ export async function action({ request }: ActionFunctionArgs) {
           errors.push(
             `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
           );
-          return false;
+          return null;
         }
-        if (claimed.data.length === 0) {
+        const [row] = claimed.data;
+        if (!row) {
           errors.push(
             `Planning action ${planningActionId} was already applied`
           );
-          return false;
+          return null;
         }
-        return true;
+        return {
+          suggestedQuantity:
+            row.suggestedQuantity === null ||
+            row.suggestedQuantity === undefined
+              ? null
+              : Number(row.suggestedQuantity)
+        };
       };
 
       const perJobActions = toClaim.filter(
@@ -957,7 +968,8 @@ export async function action({ request }: ActionFunctionArgs) {
         [...byJob.values()],
         async (group) => {
           for (const { planningActionId, row } of group) {
-            if (!(await claim(planningActionId))) continue;
+            const claimedRow = await claim(planningActionId);
+            if (!claimedRow) continue;
             const jobId = row.jobId!;
 
             if (row.type === "Cancel") {
@@ -982,7 +994,9 @@ export async function action({ request }: ActionFunctionArgs) {
                 id: jobId,
                 companyId,
                 updatedBy: userId,
-                quantity: Number(row.suggestedQuantity)
+                quantity: Number(
+                  claimedRow.suggestedQuantity ?? row.suggestedQuantity
+                )
               });
               if (update.error) {
                 await releaseClaim(planningActionId);
