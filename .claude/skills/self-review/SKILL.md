@@ -38,6 +38,15 @@ Actively hunt for:
 
 Call out **missing** work, not just flaws in what's present.
 
+Then run `.claude/rules/write-time-checklist.md` over every hunk. For each
+file in the diff, pick the sections for what it touches (a write, tenancy, a
+read at volume, errors, dates, a migration, UI, types, docs, tests) and answer
+each question against the hunk. Every "no" is a finding with `file:line`. This
+is the same list the writer answered in `/execute` Step 2 and `/fix` 3.4; the
+review asks it again, and a question the writer skipped is the first thing to
+look for. The list's tests section is a finding when a guard in the diff has
+no test that submits what it rejects.
+
 ## Step 3: Docs freshness
 
 For every package or module directory the diff touches:

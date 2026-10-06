@@ -6,6 +6,7 @@ Conformance checking, clobber detection, invariant queries, and module structure
 
 - **Run checks against real migrations and module directories** — `collectFindings(root)` scans both SQL migrations and app module structure
 - **Use `newViolations()` for CI** — filters findings against the baseline so only new violations fail the build
+- **The conformance gate runs in four places, all the same command** (`pnpm --filter @carbon/checks exec vitest run src/run.test.ts`): CI (`.github/workflows/check.yml`), the harness (`packages/harness/src/gates.ts`), the pre-commit hook (`scripts/git-hooks/pre-commit`, on any staged `.ts`/`.tsx`/`.sql` under `apps/` or `packages/`; `CARBON_SKIP_CONFORMANCE_CHECK=1` skips) and `/check-and-commit` Gate 2b. A new violation is fixed in the code; the baseline grandfathers pre-existing sites only
 - **Add new conformance rules to the array that matches the rule's SOURCE** — `CONFORMANCE_CHECKS` (SQL migrations), `SERVER_CHECKS` (server-only TS), `TS_CHECKS` (all app + shared-package TS, client and server), `EDGE_FUNCTION_CHECKS` (one source per edge function, all of its `.ts` files joined — `sources/edge-functions.ts`), `SERVER_FN_CHECKS` (one source per `@carbon/server-functions` directory, same loader), or `STRUCTURE_CHECKS` (module layout). Follow the `ConformanceCheck` / `StructureCheck` interface
 - **Write invariants as `.sql` files** — each returns rows that VIOLATE the rule (empty = healthy); loaded from directory by `loadInvariants(dir)`
 

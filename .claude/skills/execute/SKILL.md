@@ -28,13 +28,24 @@ For each unchecked task, in dependency order:
 
 1. **Read the task** and every file it lists (including the precedent file for
    UI tasks).
-2. **Do exactly the steps.** Exact paths, exact code, exact commands. If the
+2. **Answer the write-time checklist** (`.claude/rules/write-time-checklist.md`)
+   for every file the task creates or edits, BEFORE writing it: open the
+   sections for what the file touches (a write, tenancy, a read at volume,
+   errors, dates, a migration, UI, types, docs, tests) and answer each
+   question from the code. Read `.ai/lessons.md` for the area. A question you
+   cannot answer from the plan is a plan gap → Step 3.
+3. **Do exactly the steps.** Exact paths, exact code, exact commands. If the
    task says "copy from precedent X", open X and match its structure and idiom.
-3. **Run the task's Verify block** and compare against the expected output. A
+4. **Run the task's Verify block** and compare against the expected output. A
    verification you didn't run counts as failed.
-4. **Commit via `/check-and-commit`** (it runs the gates, stages the task's
-   files specifically, and writes a conventional commit). One commit per task.
-5. **Check the task off** in the plan file's Progress list.
+5. **Re-answer the checklist over the task's diff** (`git diff HEAD`): the same
+   sections, against what you actually wrote. Fix every "no" before the
+   commit. The tests section is not optional — a guard without the test that
+   submits what it rejects is unfinished.
+6. **Commit via `/check-and-commit`** (it runs the gates, including the
+   `@carbon/checks` conformance gate, stages the task's files specifically, and
+   writes a conventional commit). One commit per task.
+7. **Check the task off** in the plan file's Progress list.
 
 Reminders that override anything the plan forgot:
 
@@ -63,11 +74,14 @@ Red flags — thinking any of these means you are improvising; STOP instead:
 - "I'll run all the verifications together at the end"
 - "this extra fix is obviously needed" (out-of-scope is a blocker, not a favor)
 - "the verification failed but the code looks right"
+- "the checklist section doesn't apply to a change this small"
 
 ## Step 4: Parallel tasks (optional)
 
 Tasks marked independent may be dispatched to subagents — one task per subagent,
-each given the full task text verbatim plus the branch name. Never let two
+each given the full task text verbatim, the branch name, and the path
+`.claude/rules/write-time-checklist.md` with the sections that apply named in
+the prompt (a subagent does not inherit this skill's Step 2). Never let two
 subagents touch the same file. Verify and commit each result through the same
 per-task loop; you (the main agent) run the gates, not the subagent.
 
