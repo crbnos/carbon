@@ -36,6 +36,10 @@ describe("effectiveFenceDate", () => {
     expect(effectiveFenceDate(null, undefined)).toBeNull();
     expect(effectiveFenceDate(undefined, null)).toBeNull();
   });
+
+  it("has no fence when the planner cleared a saved horizon", () => {
+    expect(effectiveFenceDate("2026-10-31", null)).toBeNull();
+  });
 });
 
 describe("actionsInsideFence", () => {

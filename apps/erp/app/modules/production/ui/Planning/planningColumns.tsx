@@ -249,11 +249,16 @@ export function planningColumns<T extends PlanningRow>(ctx: {
       accessorKey: "timeFenceDate",
       header: i18n._(LABELS.timeFence),
       cell: ({ row }) => (
-        <TimeFenceCell
-          fenceDate={timeFence.fenceDateFor(row.original)}
-          isOverridden={timeFence.isOverridden(row.original)}
-          onChange={(date) => onFenceChange(row.original.id, date)}
-        />
+        // The row toggles its expanded actions on click. React events bubble
+        // through the calendar's portal, so every click in the picker would
+        // reach the row without this.
+        <div onClick={(event) => event.stopPropagation()}>
+          <TimeFenceCell
+            fenceDate={timeFence.fenceDateFor(row.original)}
+            isOverridden={timeFence.isOverridden(row.original)}
+            onChange={(date) => onFenceChange(row.original.id, date)}
+          />
+        </div>
       ),
       meta: {
         icon: <LuCalendarRange />,
