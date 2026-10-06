@@ -6,10 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Outlet, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getEffectiveWorkCenterId,
   getStorageUnit,
@@ -121,7 +121,7 @@ export default function EditStorageUnitRoute() {
         inheritedWorkCenter={inheritedWorkCenter}
         onClose={() => closeRoute()}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

@@ -5,12 +5,12 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
 import {
   financialReportParamsValidator,
@@ -270,7 +270,7 @@ export default function TrialBalanceRoute() {
         search={search}
         ledgerPath={path.to.trialBalanceLedger}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

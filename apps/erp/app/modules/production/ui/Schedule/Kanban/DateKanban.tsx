@@ -26,6 +26,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -280,14 +281,7 @@ const DateKanban = ({
   );
 
   // For date-based kanban, always use the column order from props (don't persist)
-  const [columnOrder, setColumnOrder] = useState<string[]>(
-    columns.map((col) => col.id)
-  );
-
-  // Update column order when columns change (e.g., navigating to a different week/month)
-  useEffect(() => {
-    setColumnOrder(columns.map((col) => col.id));
-  }, [columns]);
+  const columnOrder = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const itemsById = new Map<string, JobItem>(
     initialItems.map((item) => [item.id, item])

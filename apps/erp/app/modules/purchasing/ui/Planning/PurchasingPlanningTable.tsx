@@ -28,10 +28,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   memo,
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
-  useState,
-  useTransition
+  useState
 } from "react";
 import {
   LuBookMarked,
@@ -273,9 +273,27 @@ const PlanningTable = memo(
 
     // Auto-computed planned orders for every row, used as the fallback when
     // bulk-submitting items the user never opened in the drawer.
-    const [ordersByItemId, setOrdersByItemId] = useState<
-      Map<string, PlannedOrder[]>
-    >(new Map());
+    // Computed from the rows and the supplier chosen for each, a render
+    // behind them so a large plan does not block typing; `isPending` covers
+    // the gap.
+    const deferredData = useDeferredValue(data);
+    const isPending = deferredData !== data;
+    const ordersByItemId = useMemo(() => {
+      const orders = new Map<string, PlannedOrder[]>();
+      for (const item of deferredData) {
+        orders.set(
+          item.id,
+          getPurchaseOrdersFromPlanning(
+            item,
+            periods,
+            locationToday,
+            items,
+            suppliersMap[item.id]
+          )
+        );
+      }
+      return orders;
+    }, [deferredData, periods, locationToday, items, suppliersMap]);
 
     // The drawer's draft orders are page state keyed by item. They are
     // dropped when the page's scope changes (location, filters, search, sort,
@@ -460,28 +478,6 @@ const PlanningTable = memo(
 
     // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
     // Assign controls as the expanded row, through the same single fetcher.
-
-    const [isPending, startTransition] = useTransition();
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-    useEffect(() => {
-      startTransition(() => {
-        const ordersByItemId = new Map<string, PlannedOrder[]>();
-        data.forEach((item) => {
-          ordersByItemId.set(
-            item.id,
-            getPurchaseOrdersFromPlanning(
-              item,
-              periods,
-              locationToday,
-              items,
-              suppliersMap[item.id]
-            )
-          );
-        });
-        setOrdersByItemId(ordersByItemId);
-      });
-    }, [data]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<PurchasingPlanningItem>[]>(() => {

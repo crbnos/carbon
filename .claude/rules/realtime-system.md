@@ -98,10 +98,8 @@ loader entries and revalidates the page. A burst is one reload; a route and a
 component following the same table reload once; a reload waits while a fetcher
 is submitting or a navigation is in flight, and runs when both are done
 (`useRevalidator` from `@carbon/query`, the only one app code may import). During
-an action React Router drops the fetcher's redirect; during the navigation that
-follows a save, a revalidation restarts it WITHOUT the submission, and every
-layout whose `shouldRevalidate` skips a plain navigation then keeps its data
-from before the save. The save's own broadcast arrives in exactly that window.
+an action React Router drops the fetcher's redirect, and a revalidation during
+the navigation that follows a save restarts that navigation.
 
 - Update the list when the loader starts reading a new table. Nothing checks
   that a list is COMPLETE, only that each name can broadcast.
@@ -177,6 +175,12 @@ company) is the only reader, and the backup engine skips the table.
   token every call resets, until the hourly `util.purge_table_changes()` writes
   a new one. A writer that runs with triggers off (company restore) inserts a
   null-`rowId` row per `CHANGE_LOGGED_TABLES` entry itself.
+- **A writer with triggers off must also broadcast.** The log only answers a
+  client that asks, and an open tab asks when a broadcast tells it to (or once an
+  hour). `wipeAndLoad` (backup restore, template revert) therefore sends a
+  null-`ids` message on every `REALTIME_TABLES` topic of the company, in its
+  transaction. Without it a tab kept a reverted template's parts in its pickers,
+  and creating a job with one of them returned 404.
 - **`table_changes_since` must stay `STABLE`**: the read of the log and
   `pg_current_snapshot()` then share one snapshot. As `VOLATILE`, a change
   committed between the two is skipped for good.

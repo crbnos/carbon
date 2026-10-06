@@ -63,10 +63,12 @@ import type {
   ShipmentSourceDocument,
   shipmentStatusType
 } from "~/modules/inventory";
+// From the models file, not the module barrel: the barrel re-exports this
+// form, and the cycle left `ShipmentForm` read before it was defined in dev.
 import {
   shipmentSourceDocumentType,
   shipmentValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import { path } from "~/utils/path";

@@ -13,12 +13,12 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { breakQuantities, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, Outlet, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
@@ -567,7 +567,7 @@ export default function QuoteLine() {
 
       <QuoteLineRiskRegister quoteLineId={lineId} itemId={line.itemId ?? ""} />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

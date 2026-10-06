@@ -39,6 +39,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   accountsReceivableBillingAddressValidator,
   defaultCustomerCcValidator,
@@ -298,19 +299,21 @@ export default function SalesSettingsRoute() {
   const { companySettings, arBillingAddress } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
-  const [arAddressEnabled, setArAddressEnabled] = useState(
+  const arAddressEnabled = useSavedToggle(
+    toggleFetcher,
+    "accountsReceivableAddressToggle",
     companySettings.accountsReceivableAddress ?? false
   );
 
-  const [requireCustomerContactAndLocation, setRequireCustomerContact] =
-    useState(
-      (companySettings as { requireCustomerContactAndLocation?: boolean })
-        .requireCustomerContactAndLocation ?? false
-    );
+  const requireCustomerContactAndLocation = useSavedToggle(
+    toggleFetcher,
+    "requireCustomerContactAndLocationToggle",
+    (companySettings as { requireCustomerContactAndLocation?: boolean })
+      .requireCustomerContactAndLocation ?? false
+  );
 
   const handleRequireCustomerContactToggle = useCallback(
     (checked: boolean) => {
-      setRequireCustomerContact(checked);
       toggleFetcher.submit(
         {
           intent: "requireCustomerContactAndLocationToggle",
@@ -324,7 +327,6 @@ export default function SalesSettingsRoute() {
 
   const handleArAddressToggle = useCallback(
     (checked: boolean) => {
-      setArAddressEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "accountsReceivableAddressToggle",
@@ -336,12 +338,14 @@ export default function SalesSettingsRoute() {
     [toggleFetcher]
   );
 
-  const [showCustomerReadableIdEnabled, setShowCustomerReadableIdEnabled] =
-    useState(companySettings.showCustomerReadableId ?? false);
+  const showCustomerReadableIdEnabled = useSavedToggle(
+    toggleFetcher,
+    "showCustomerReadableIdToggle",
+    companySettings.showCustomerReadableId ?? false
+  );
 
   const handleShowCustomerReadableIdToggle = useCallback(
     (checked: boolean) => {
-      setShowCustomerReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showCustomerReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }

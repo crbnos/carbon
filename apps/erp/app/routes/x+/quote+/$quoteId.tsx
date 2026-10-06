@@ -5,18 +5,15 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useParams, useSubmit } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getExchangeRate } from "~/modules/accounting";
 import { getSupplierPriceBreaksForItems } from "~/modules/items";
@@ -47,6 +44,7 @@ export const handle: Handle = {
   realtime: [
     { table: "quote", column: "id", param: "quoteId" },
     { table: "quoteLine", column: "quoteId", param: "quoteId" },
+    { table: "quoteLinePrice", column: "quoteId", param: "quoteId" },
     { table: "quoteMaterial", column: "quoteId", param: "quoteId" },
     { table: "quoteOperation", column: "quoteId", param: "quoteId" },
     { table: "quoteMakeMethod", column: "quoteId", param: "quoteId" }
@@ -57,11 +55,6 @@ export const handle: Handle = {
   ),
   module: "sales"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["quoteId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -267,7 +260,7 @@ export default function QuoteRoute() {
                 content={
                   <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
                     <VStack spacing={4} className="p-4">
-                      <Outlet />
+                      <RecordOutlet />
                     </VStack>
                   </div>
                 }

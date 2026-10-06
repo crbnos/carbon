@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ClientOnly, cn, toast } from "@carbon/react";
+import { withUnorderedLast } from "@carbon/utils";
 import type {
   Active,
   Announcements,
@@ -401,27 +402,25 @@ const Kanban = ({
   }, [batchUpdateFetchers]);
 
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    // Get stored column order from localStorage
-    const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
-    if (storedOrder) {
-      const parsedOrder = JSON.parse(storedOrder) as string[];
-      // Add any new columns that aren't in stored order
-      const newOrder = [...parsedOrder];
-      columns.forEach((col) => {
-        if (!newOrder.includes(col.id)) {
-          newOrder.push(col.id);
-        }
-      });
-      return newOrder;
-    }
-    return columns.map((col) => col.id);
+  // Only the order the user chose is state. The columns come from the loader
+  // and change while the board is open (a filter, a work center's first
+  // operation): one copied in at mount never showed a column that arrived later.
+  const [storedOrder, setStoredOrder] = useState<string[]>(() => {
+    const stored = localStorage.getItem(COLUMN_ORDER_KEY);
+    return stored ? (JSON.parse(stored) as string[]) : [];
   });
+  const columnOrder = useMemo(
+    () =>
+      withUnorderedLast(
+        storedOrder,
+        columns.map((col) => col.id)
+      ),
+    [storedOrder, columns]
+  );
 
-  // Update localStorage when column order changes
   useEffect(() => {
-    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(columnOrder));
-  }, [columnOrder]);
+    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(storedOrder));
+  }, [storedOrder]);
 
   const pendingItems = usePendingItems();
   // The board re-renders on every drag state change. Deriving these once per
@@ -725,7 +724,7 @@ const Kanban = ({
         const overColumnIndex = columnOrder.findIndex((id) => id === overId);
 
         if (activeColumnIndex >= 0 && overColumnIndex >= 0) {
-          setColumnOrder(
+          setStoredOrder(
             arrayMove(columnOrder, activeColumnIndex, overColumnIndex)
           );
         }

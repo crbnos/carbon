@@ -20,18 +20,15 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  RecordOutlet,
   useDisclosure
 } from "@carbon/react";
-import { formatDate, isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   Link,
-  Outlet,
   useFetcher,
   useLoaderData,
   useNavigate,
@@ -57,11 +54,6 @@ export const handle: Handle = {
   ),
   module: "accounting"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["depreciationRunId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -312,7 +304,7 @@ export default function DepreciationRunDetailRoute() {
           </CardContent>
         </Card>
 
-        <Outlet />
+        <RecordOutlet />
 
         <ConfirmDelete
           action={path.to.deleteDepreciationRun(depreciationRunId)}

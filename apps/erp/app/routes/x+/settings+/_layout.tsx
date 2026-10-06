@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+
 import { GroupedContentSidebar } from "~/components/Layout";
 import { useSettingsSubmodules } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -35,7 +35,7 @@ export default function SettingsRoute() {
       spacing={0}
       className="overflow-y-auto scrollbar-hide h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

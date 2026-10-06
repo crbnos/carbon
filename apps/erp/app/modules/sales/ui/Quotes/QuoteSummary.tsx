@@ -25,8 +25,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
-import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import {
@@ -51,53 +50,24 @@ import type {
   QuotationShipment,
   SalesOrderLine
 } from "../../types";
-
-type SelectedLine = {
-  quantity: number;
-  netUnitPrice: number;
-  convertedNetUnitPrice: number;
-  addOn: number;
-  convertedAddOn: number;
-  taxableAddOn: number;
-  convertedTaxableAddOn: number;
-  leadTime: number;
-  shippingCost: number;
-  convertedShippingCost: number;
-  taxPercent: number;
-  discountPercent: number;
-  unitPrice: number;
-  convertedUnitPrice: number;
-};
-
-const deselectedLine: SelectedLine = {
-  addOn: 0,
-  convertedAddOn: 0,
-  taxableAddOn: 0,
-  convertedTaxableAddOn: 0,
-  netUnitPrice: 0,
-  convertedNetUnitPrice: 0,
-  quantity: 0,
-  leadTime: 0,
-  shippingCost: 0,
-  convertedShippingCost: 0,
-  taxPercent: 0,
-  discountPercent: 0,
-  unitPrice: 0,
-  convertedUnitPrice: 0
-};
+import {
+  deselectedLine,
+  type SelectedLine,
+  selectQuoteLines
+} from "./quote-summary-selection";
 
 const LineItems = ({
   currencyCode,
   formatter,
   locale,
   selectedLines,
-  setSelectedLines
+  onSelectQuantity
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
   locale: string;
   selectedLines: Record<string, SelectedLine>;
-  setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
+  onSelectQuantity: (lineId: string, quantity: number) => void;
 }) => {
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -263,7 +233,7 @@ const LineItems = ({
                 shouldConvertCurrency={shouldConvertCurrency}
                 locale={locale}
                 selectedLine={selectedLine}
-                setSelectedLines={setSelectedLines}
+                onSelectQuantity={onSelectQuantity}
               />
             </motion.div>
           </motion.div>
@@ -282,7 +252,7 @@ type LinePricingOptionsProps = {
   locale: string;
   formatter: Intl.NumberFormat;
   selectedLine: SelectedLine;
-  setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
+  onSelectQuantity: (lineId: string, quantity: number) => void;
 };
 
 const LinePricingOptions = ({
@@ -294,7 +264,7 @@ const LinePricingOptions = ({
   locale,
   formatter,
   selectedLine,
-  setSelectedLines
+  onSelectQuantity
 }: LinePricingOptionsProps) => {
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
@@ -306,9 +276,7 @@ const LinePricingOptions = ({
     salesOrderLines: SalesOrderLine[];
   }>(path.to.quote(quoteId));
 
-  const [selectedValue, setSelectedValue] = useState<string | null>(
-    selectedLine?.quantity?.toString() ?? null
-  );
+  const selectedValue = selectedLine.quantity.toString();
 
   const additionalChargesByQuantity =
     line.quantity?.reduce(
@@ -328,33 +296,6 @@ const LinePricingOptions = ({
 
   const convertedAdditionalChargesByQuantity = Object.entries(
     additionalChargesByQuantity
-  ).reduce<Record<number, number>>(
-    (acc, [quantity, amount]) => {
-      acc[Number(quantity)] = amount * quoteExchangeRate;
-      return acc;
-    },
-    { 0: 0 }
-  );
-
-  const taxableAdditionalChargesByQuantity =
-    line.quantity?.reduce(
-      (acc, quantity) => {
-        const charges = Object.values(line.additionalCharges ?? {}).reduce(
-          (chargeAcc, charge) => {
-            if (charge.taxable === false) return chargeAcc;
-            const amount = charge.amounts?.[quantity];
-            return chargeAcc + amount;
-          },
-          0
-        );
-        acc[quantity] = charges;
-        return acc;
-      },
-      { 0: 0 } as Record<number, number>
-    ) ?? {};
-
-  const convertedTaxableAdditionalChargesByQuantity = Object.entries(
-    taxableAdditionalChargesByQuantity
   ).reduce<Record<number, number>>(
     (acc, [quantity, amount]) => {
       acc[Number(quantity)] = amount * quoteExchangeRate;
@@ -388,48 +329,16 @@ const LinePricingOptions = ({
     <VStack spacing={4}>
       <RadioGroup
         className="w-full"
-        value={selectedValue ?? undefined}
+        value={selectedValue}
         disabled={["Ordered", "Partial", "Expired", "Cancelled"].includes(
           routeData?.quote.status ?? ""
         )}
         onValueChange={(value) => {
-          const selectedOption =
-            value === "0"
-              ? deselectedLine
-              : options.find((opt) => opt.quantity.toString() === value);
-
-          if (selectedOption) {
-            setSelectedLines((prev) => ({
-              ...prev,
-              [line.id!]: {
-                quantity: selectedOption.quantity,
-                netUnitPrice: selectedOption.netUnitPrice ?? 0,
-                convertedNetUnitPrice:
-                  selectedOption.convertedNetUnitPrice ?? 0,
-                addOn:
-                  additionalChargesByQuantity[selectedOption.quantity] || 0,
-                convertedAddOn:
-                  convertedAdditionalChargesByQuantity[
-                    selectedOption.quantity
-                  ] || 0,
-                taxableAddOn:
-                  taxableAdditionalChargesByQuantity[selectedOption.quantity] ||
-                  0,
-                convertedTaxableAddOn:
-                  convertedTaxableAdditionalChargesByQuantity[
-                    selectedOption.quantity
-                  ] || 0,
-                leadTime: selectedOption.leadTime,
-                shippingCost: selectedOption.shippingCost ?? 0,
-                convertedShippingCost:
-                  selectedOption.convertedShippingCost ?? 0,
-                taxPercent: line.taxPercent ?? 0,
-                discountPercent: selectedOption.discountPercent ?? 0,
-                unitPrice: selectedOption.unitPrice ?? 0,
-                convertedUnitPrice: selectedOption.convertedUnitPrice ?? 0
-              }
-            }));
-            setSelectedValue(value);
+          if (
+            value === "0" ||
+            options.some((opt) => opt.quantity.toString() === value)
+          ) {
+            onSelectQuantity(line.id!, Number(value));
           }
         }}
       >
@@ -702,123 +611,38 @@ const QuoteSummary = ({
     routeData?.quote?.currencyCode ?? "USD"
   );
 
-  const [selectedLines, setSelectedLines] = useState<
-    Record<string, SelectedLine>
-  >(() => {
-    return (
-      routeData?.lines?.reduce<Record<string, SelectedLine>>((acc, line) => {
-        const salesOrderLine = routeData?.salesOrderLines?.find(
-          (salesOrderLine) => salesOrderLine.id === line.id
-        );
+  // Only what the user picked; everything else follows the quote's data.
+  const [picks, setPicks] = useState<Record<string, number>>({});
+  const selectedLines = useMemo(
+    () =>
+      selectQuoteLines({
+        lines: routeData?.lines,
+        prices: routeData?.prices,
+        salesOrderLines: routeData?.salesOrderLines,
+        exchangeRate: routeData?.quote.exchangeRate ?? 1,
+        picks
+      }),
+    [
+      routeData?.lines,
+      routeData?.prices,
+      routeData?.salesOrderLines,
+      routeData?.quote.exchangeRate,
+      picks
+    ]
+  );
+  const onSelectQuantity = useCallback(
+    (lineId: string, quantity: number) =>
+      setPicks((prev) => ({ ...prev, [lineId]: quantity })),
+    []
+  );
 
-        if (
-          Array.isArray(routeData?.salesOrderLines) &&
-          routeData?.salesOrderLines.length > 0 &&
-          !salesOrderLine
-        ) {
-          acc[line.id!] = deselectedLine;
-          return acc;
-        }
+  // The selection is seeded once, so a line deleted since then still has an
+  // entry — total only the lines the quote still has.
+  const currentLines = (routeData?.lines ?? []).flatMap((line) =>
+    line.id && selectedLines[line.id] ? [selectedLines[line.id]] : []
+  );
 
-        const price = salesOrderLine
-          ? routeData?.prices?.find(
-              (price) =>
-                price.quoteLineId === salesOrderLine.id &&
-                price.quantity === salesOrderLine.saleQuantity
-            )
-          : routeData?.prices?.find(
-              (price) =>
-                price.quoteLineId === line.id &&
-                line.quantity?.includes(price.quantity)
-            );
-        if (!line.id) {
-          return acc;
-        }
-
-        if (!price) {
-          acc[line.id] = deselectedLine;
-          return acc;
-        }
-
-        const additionalChargesByQuantity =
-          line.quantity?.reduce(
-            (acc, quantity) => {
-              const charges = Object.values(
-                line.additionalCharges ?? {}
-              ).reduce((chargeAcc, charge) => {
-                const amount = charge.amounts?.[quantity];
-                return chargeAcc + amount;
-              }, 0);
-              acc[quantity] = charges;
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        const convertedAdditionalChargesByQuantity =
-          Object.entries(additionalChargesByQuantity).reduce<
-            Record<number, number>
-          >(
-            (acc, [quantity, amount]) => {
-              acc[Number(quantity)] =
-                amount * (routeData?.quote.exchangeRate ?? 1);
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        const taxableAdditionalChargesByQuantity =
-          line.quantity?.reduce(
-            (acc, quantity) => {
-              const charges = Object.values(
-                line.additionalCharges ?? {}
-              ).reduce((chargeAcc, charge) => {
-                if (charge.taxable === false) return chargeAcc;
-                const amount = charge.amounts?.[quantity];
-                return chargeAcc + amount;
-              }, 0);
-              acc[quantity] = charges;
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        const convertedTaxableAdditionalChargesByQuantity =
-          Object.entries(taxableAdditionalChargesByQuantity).reduce<
-            Record<number, number>
-          >(
-            (acc, [quantity, amount]) => {
-              acc[Number(quantity)] =
-                amount * (routeData?.quote.exchangeRate ?? 1);
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        acc[line.id] = {
-          quantity: price.quantity ?? 0,
-          netUnitPrice: price.netUnitPrice ?? 0,
-          convertedNetUnitPrice: price.convertedNetUnitPrice ?? 0,
-          addOn: additionalChargesByQuantity[price.quantity] || 0,
-          convertedAddOn:
-            convertedAdditionalChargesByQuantity[price.quantity] || 0,
-          taxableAddOn: taxableAdditionalChargesByQuantity[price.quantity] || 0,
-          convertedTaxableAddOn:
-            convertedTaxableAdditionalChargesByQuantity[price.quantity] || 0,
-          leadTime: price.leadTime,
-          shippingCost: price.shippingCost ?? 0,
-          convertedShippingCost: price.convertedShippingCost ?? 0,
-          taxPercent: line.taxPercent ?? 0,
-          discountPercent: price.discountPercent ?? 0,
-          unitPrice: price.unitPrice ?? 0,
-          convertedUnitPrice: price.convertedUnitPrice ?? 0
-        };
-        return acc;
-      }, {}) ?? {}
-    );
-  });
-
-  const subtotal = Object.values(selectedLines).reduce((acc, line) => {
+  const subtotal = currentLines.reduce((acc, line) => {
     return (
       acc +
       (line.convertedNetUnitPrice ?? 0) * line.quantity +
@@ -826,7 +650,7 @@ const QuoteSummary = ({
       (line.convertedShippingCost ?? 0)
     );
   }, 0);
-  const totalDiscount = Object.values(selectedLines).reduce((acc, line) => {
+  const totalDiscount = currentLines.reduce((acc, line) => {
     return (
       acc +
       (line.convertedUnitPrice ?? 0) *
@@ -834,7 +658,7 @@ const QuoteSummary = ({
         (line.discountPercent ?? 0)
     );
   }, 0);
-  const tax = Object.values(selectedLines).reduce((acc, line) => {
+  const tax = currentLines.reduce((acc, line) => {
     return (
       acc +
       ((line.convertedNetUnitPrice ?? 0) * line.quantity +
@@ -882,7 +706,7 @@ const QuoteSummary = ({
           locale={locale}
           formatter={formatter}
           selectedLines={selectedLines}
-          setSelectedLines={setSelectedLines}
+          onSelectQuantity={onSelectQuantity}
         />
 
         <VStack spacing={2} className="mt-8">

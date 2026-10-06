@@ -222,15 +222,17 @@ const ViewsReorderGroup = ({
     return [];
   });
 
-  const viewNames = views
-    .map((view) => view.name)
+  // Everything a row shows or links to. Names alone missed a view whose
+  // filters or position changed: its link stayed the old one until a reload.
+  const viewsSignature = views
+    .map((view) => `${view.id}|${view.name}|${view.to}|${view.sortOrder}`)
     .sort()
     .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // biome-ignore lint/correctness/useExhaustiveDependencies: views is followed by value
   useEffect(() => {
     setSortedViews([...views].sort((a, b) => a.sortOrder - b.sortOrder));
-  }, [views.length, viewNames]);
+  }, [viewsSignature]);
 
   const debouncedOnReorder = useDebounce(onReorder, 500, true);
 

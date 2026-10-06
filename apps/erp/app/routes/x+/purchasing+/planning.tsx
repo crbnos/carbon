@@ -6,14 +6,16 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { datetime, isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import {
+  RecordOutlet,
+  ResizablePanel,
+  ResizablePanelGroup,
+  VStack
+} from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getPlanningActions,
   resolvePlanningActionScope
@@ -36,11 +38,6 @@ export const handle: Handle = {
   breadcrumb: msg`Material Planning`,
   to: path.to.purchasingPlanning
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -164,7 +161,7 @@ export default function PurchasingPlanningRoute() {
             locationToday={locationToday}
           />
         </ResizablePanel>
-        <Outlet />
+        <RecordOutlet />
       </ResizablePanelGroup>
     </VStack>
   );

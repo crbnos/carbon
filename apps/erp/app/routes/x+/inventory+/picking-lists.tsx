@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getPickingLists } from "~/modules/inventory";
 import type { PickingList } from "~/modules/inventory/ui/PickingLists";
 import { PickingListsTable } from "~/modules/inventory/ui/PickingLists";
@@ -72,7 +72,7 @@ export default function PickingListsRoute() {
         data={pickingLists as PickingList[]}
         count={pickingListCount}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }
