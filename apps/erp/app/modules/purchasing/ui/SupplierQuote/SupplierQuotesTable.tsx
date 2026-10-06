@@ -158,6 +158,9 @@ const SupplierQuotesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -168,6 +171,9 @@ const SupplierQuotesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

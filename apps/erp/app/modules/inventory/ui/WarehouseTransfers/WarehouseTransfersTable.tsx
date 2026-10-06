@@ -120,6 +120,9 @@ const WarehouseTransfersTable = memo(
             return date ? <DateTime value={date} variant="date" /> : "N/A";
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -131,6 +134,9 @@ const WarehouseTransfersTable = memo(
             return date ? <DateTime value={date} variant="date" /> : "N/A";
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

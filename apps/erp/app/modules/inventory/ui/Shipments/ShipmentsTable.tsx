@@ -225,6 +225,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

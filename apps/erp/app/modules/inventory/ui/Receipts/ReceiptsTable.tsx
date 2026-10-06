@@ -195,6 +195,9 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

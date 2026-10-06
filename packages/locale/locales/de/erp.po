@@ -319,6 +319,21 @@ msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {# Los auflösen} other {# Lose auflösen}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {# Los aufgelöst} other {# Lose aufgelöst}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {# Los freigeben} other {# Lose freigeben}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {# Los freigegeben} other {# Lose freigegeben}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {# Fertigungsauftrag freigegeben} other {# Fertigungsaufträge freigegeben}}"
+
 msgid "{days}d"
 msgstr "{days}T"
 
@@ -4825,7 +4840,9 @@ msgid "Could not read the document: {0}"
 msgstr "Dokument konnte nicht gelesen werden: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Konnte {0} nicht freigeben: {1}"
 
@@ -6390,19 +6407,11 @@ msgstr "Verwendungsentscheide"
 msgid "Dissolve"
 msgstr "Auflösen"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Auflösen {0} Chargen"
-
 msgid "Dissolve batch"
 msgstr "Batch auflösen"
 
 msgid "Dissolve Batch"
 msgstr "Batch auflösen"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Aufgelöst {0} Chargen"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -9662,6 +9671,9 @@ msgstr "ist"
 msgid "is any of"
 msgstr "ist einer von"
 
+msgid "is between"
+msgstr "liegt zwischen"
+
 msgid "Is console operator"
 msgstr "Ist Konsolenbediener"
 
@@ -9676,6 +9688,12 @@ msgstr "Ist Mitarbeitertyp-Gruppe"
 
 msgid "Is identity group"
 msgstr "Ist Identitätsgruppe"
+
+msgid "is on or after"
+msgstr "liegt am oder nach"
+
+msgid "is on or before"
+msgstr "liegt am oder vor"
 
 msgid "Is supplier org group"
 msgstr "Ist Lieferantenorganisationsgruppe"
@@ -12176,7 +12194,7 @@ msgid "No stock at this location"
 msgstr "Kein Bestand an diesem Ort"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "Kein Bestand an diesem Standort vorhanden."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Kein Fehlbestand für die nächsten 48 Wochen erwartet"
@@ -12185,7 +12203,7 @@ msgid "No storage unit"
 msgstr "Keine Lagereinheit"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Keine Lagereinheiten oder Verfolgungsnummern stimmen überein."
 
 msgid "No suppliers yet"
 msgstr "Noch keine Lieferanten"
@@ -14842,10 +14860,6 @@ msgstr "Relative Zeitleiste · Daten müssen noch bestätigt werden"
 msgid "Release"
 msgstr "Freigeben"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "{0} Lose freigeben"
-
 msgid "Release Batch"
 msgstr "Los freigeben"
 
@@ -14866,12 +14880,11 @@ msgstr "Freigabenkontrolle"
 msgid "Release Job"
 msgstr "Auftrag freigeben"
 
+msgid "Release Jobs"
+msgstr "Fertigungsaufträge freigeben"
+
 msgid "Released"
 msgstr "Freigegeben"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "{0} Lose freigegeben"
 
 msgid "Released date"
 msgstr "Freigabedatum"
@@ -14881,6 +14894,10 @@ msgstr "Freigegebene Revision"
 
 msgid "Released revision is locked"
 msgstr "Freigegebene Revision ist gesperrt"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Freigegeben mit Problemen: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Die Freigabe des Loses gibt seine Fertigungsaufträge frei, und jeder muss für die Werkstatt bereit sein."
@@ -15099,7 +15116,7 @@ msgid "Reports"
 msgstr "Berichte"
 
 msgid "Reprice with current rules"
-msgstr "Mit aktuellen Regeln neu bewerten"
+msgstr "Mit aktuellen Regeln neu bepreisen"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -16127,7 +16144,7 @@ msgid "Search related items..."
 msgstr "Nach verwandten Elementen suchen..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Lagereinheiten und Verfolgungsnummern suchen"
 
 msgid "Search suppliers..."
 msgstr "Lieferanten durchsuchen..."
@@ -17319,7 +17336,7 @@ msgstr "Schritt {0} ist nicht mehr über einer Drop-Position"
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} is over {1}"
-msgstr "Schritt {0} ist über {1}"
+msgstr "Schritt {0} befindet sich über {1}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} was dropped"
@@ -17486,7 +17503,7 @@ msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stil der Kanban-Ausgabe, die in der Kanban-Tabelle angezeigt werden soll"
 
 msgid "Sub-assembly"
-msgstr "Unterbaugruppe"
+msgstr "Baugruppe"
 
 msgid "Sub-Assembly"
 msgstr "Unterbaugruppe"
@@ -17505,7 +17522,7 @@ msgstr "Unterbaugruppe {0} · {1, plural, one {# Teil} other {# Teile}}"
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Unterbaugruppe {0} · {1} — wird separat angezeigt"
+msgstr "Baugruppe {0} · {1} — wird separat angezeigt"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -18727,6 +18744,9 @@ msgstr "Dieselbe Person darf überprüfen"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "Die von Ihrem Identitätsanbieter veröffentlichte SAML-Metadaten-URL"
+
+msgid "The schedule could not be updated after the release"
+msgstr "Der Terminplan konnte nach der Freigabe nicht aktualisiert werden."
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Der Zeitplan, der verwendet wird, um die Kosten dieses Vermögenswerts über seine Nutzungsdauer zu verteilen (linear, degressiv, Produktionseinheiten)."
@@ -19999,7 +20019,7 @@ msgid "Untitled step"
 msgstr "Unbenannter Schritt"
 
 msgid "Untracked"
-msgstr ""
+msgstr "Nicht verfolgt"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Ungenutzte kommissionierte Materialien werden vom Arbeitsplatz zurück ins Lager geleitet."

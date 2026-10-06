@@ -78,6 +78,7 @@ export const CalendarGrid = ({
                       state={state as CalendarState}
                       date={date}
                       currentMonth={startDate}
+                      isMarked={isDateMarked?.(date) ?? false}
                     />
                   )
                 ) : (
