@@ -1277,63 +1277,74 @@ export async function generatePlanningActions(
     for (const row of production.data ?? []) process(row, "Make");
   }
 
-  // ── diff-write
-  const existingRows = await db
-    .selectFrom("planningAction")
-    .select([
-      "id",
-      "itemId",
-      "locationId",
-      "periodId",
-      "type",
-      "status",
-      "suggestedQuantity",
-      "suggestedDate",
-      "horizonDate",
-      "latestOrderDate",
-      "isASAP",
-      "purchaseOrderLineId",
-      "jobId",
-      "requiresManualAction",
-      "supplierId",
-      "policyName",
-      "reason",
-      "triggerValues",
-      "assignee",
-      "assigneeOverridden"
-    ])
-    .where("companyId", "=", companyId)
-    .where("status", "!=", "Actioned")
-    .execute();
+  // ── diff-write. One transaction holds a per-company advisory lock across
+  // the read and the write: two runs for one company can overlap (the cron
+  // racing a route-triggered run), and both reading "no row" for a natural
+  // key then inserting fails the second on planningAction_natural_key_idx —
+  // which rolls back the whole write. Under the lock the second run reads
+  // the first run's rows and updates them in place instead.
+  const diff = await db.transaction().execute(async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${companyId}`}, 0))`.execute(
+      trx
+    );
 
-  const existing: ExistingPlanningAction[] = existingRows.map((row) => ({
-    ...row,
-    type: row.type as PlanningActionType,
-    status: row.status as "Open" | "Dismissed",
-    suggestedQuantity: Number(row.suggestedQuantity),
-    suggestedDate: toIsoDate(row.suggestedDate as unknown as string | Date)!,
-    horizonDate: toIsoDate(row.horizonDate as unknown as string | Date)!,
-    latestOrderDate: row.latestOrderDate
-      ? toIsoDate(row.latestOrderDate as unknown as string | Date)
-      : null,
-    triggerValues: row.triggerValues ?? null
-  }));
+    const existingRows = await trx
+      .selectFrom("planningAction")
+      .select([
+        "id",
+        "itemId",
+        "locationId",
+        "periodId",
+        "type",
+        "status",
+        "suggestedQuantity",
+        "suggestedDate",
+        "horizonDate",
+        "latestOrderDate",
+        "isASAP",
+        "purchaseOrderLineId",
+        "jobId",
+        "requiresManualAction",
+        "supplierId",
+        "policyName",
+        "reason",
+        "triggerValues",
+        "assignee",
+        "assigneeOverridden"
+      ])
+      .where("companyId", "=", companyId)
+      .where("status", "!=", "Actioned")
+      .execute();
 
-  const diff = diffPlanningActions({
-    existing,
-    candidates,
-    periods,
-    toleranceDays
-  });
+    const existing: ExistingPlanningAction[] = existingRows.map((row) => ({
+      ...row,
+      type: row.type as PlanningActionType,
+      status: row.status as "Open" | "Dismissed",
+      suggestedQuantity: Number(row.suggestedQuantity),
+      suggestedDate: toIsoDate(row.suggestedDate as unknown as string | Date)!,
+      horizonDate: toIsoDate(row.horizonDate as unknown as string | Date)!,
+      latestOrderDate: row.latestOrderDate
+        ? toIsoDate(row.latestOrderDate as unknown as string | Date)
+        : null,
+      triggerValues: row.triggerValues ?? null
+    }));
 
-  await db.transaction().execute((trx) =>
-    writePlanningActionDiff(trx, {
+    const diff = diffPlanningActions({
+      existing,
+      candidates,
+      periods,
+      toleranceDays
+    });
+
+    await writePlanningActionDiff(trx, {
       companyId,
       userId,
       diff,
       updatedAt: datetime.timestamp()
-    })
-  );
+    });
+
+    return diff;
+  });
 
   logger.info("planning actions written", {
     companyId,

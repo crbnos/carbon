@@ -111,6 +111,9 @@ export const plannedOrderValidator = z.object({
   periodId: z.string().min(1, { message: "Period is required" }),
   quantity: zfd.numeric(z.number().min(0)),
   existingId: zfd.text(z.string().optional()),
+  // The chart and the drawer's open-order rows use this to tell an existing
+  // line from a suggested order. The Order action ignores it: an existing
+  // line is edited only through updatePurchaseOrderLineSchedule.
   existingLineId: zfd.text(z.string().optional()),
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),

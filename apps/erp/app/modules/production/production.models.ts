@@ -90,12 +90,6 @@ export {
   resolvePlanningActionScope
 } from "./ui/Planning/planning-action-scope";
 
-export const planningActionDismissValidator = z.object({
-  ids: z
-    .array(z.string().min(1))
-    .min(1, { message: "Select at least one action" })
-});
-
 /**
  * The job statuses planning may change: Apply on a planning action and the
  * order drawer's inline edits. An allowlist on purpose — a job past Planned is
@@ -108,11 +102,6 @@ export function isJobEditableFromPlanning(
 ): boolean {
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
-
-export const planningActionAssignValidator = z.object({
-  id: z.string().min(1, { message: "Action is required" }),
-  assignee: zfd.text(z.string().optional())
-});
 
 export const JOB_LOCKED_STATUSES = [
   "Completed",

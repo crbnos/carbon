@@ -1060,6 +1060,9 @@ export const manifest = {
   // point an action's jobId / purchaseOrderLineId at another company's row
   // (single-column foreign keys), which the service-role read then shows.
   planningAction: company("production", {
+    // Read by the production AND purchasing planning pages with the user's
+    // client; the row names a supplier, an open quantity and an assignee.
+    read: anyOf("production_view", "purchasing_view"),
     create: false,
     update: false,
     delete: false

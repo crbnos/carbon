@@ -203,7 +203,14 @@ Phase-7 write) and throws on failure.
      `userId` (`"system"` for cron).
    - **Planning actions**: after the Phase-7 transaction commits, `runMrp` calls
      `generatePlanningActions` (`planning-actions.ts`), which diff-writes the
-     `planningAction` worklist in its own transaction. Its errors propagate, so
+     `planningAction` worklist in its own transaction. That transaction takes
+     `pg_advisory_xact_lock` on `planning-actions:<companyId>` BEFORE it reads
+     the existing rows: nothing else serialises `runMrp` per company (the cron
+     and the five route-triggered runs can overlap), and two runs that both
+     read "no row" for a natural key both insert — the second fails on
+     `planningAction_natural_key_idx` and rolls the whole write back. Under
+     the lock the second run reads the first run's rows and updates them in
+     place. Its errors propagate, so
      a run whose actions failed reports failure even though the forecast rows
      are already committed. The write is `writePlanningActionDiff`
      (RecordingDriver-tested in `planning-actions.write.test.ts`): its DELETE
@@ -491,8 +498,10 @@ never offered a Cancel, Defer or Expedite.
   `update` for everything else, plus `purchasing_delete` (read from the claims)
   for a Cancel that deletes a PO line. An assignee or responsible employee is
   saved only after `isActiveCompanyEmployee` (`shared.server.ts`), and
-  `planningAction` is read-only through the API (manifest rule; MRP and these
-  routes write it with the service role).
+  `planningAction` is read-only through the API (manifest rule: read is
+  `anyOf("production_view", "purchasing_view")`, since both planning pages
+  read it with the user's client; MRP and these routes write it with the
+  service role).
   The Actions column filter (`filter=planningActions:eq:<type>`) and the
   Assignee column's people filter (`filter=planningAssignee:in:<userId>,…` —
   the same people list every other assignee filter uses; the column is hidden

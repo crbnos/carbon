@@ -196,15 +196,16 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedBy: string;
         }> = [];
 
-        // Separate existing-line updates from new orders, and group new
-        // orders by supplier so every supplier gets exactly one PO per
-        // submit. Each line keeps its own requiredDate, so per-period timing
-        // lives on the lines rather than on separate headers.
+        // Group new orders by supplier so every supplier gets exactly one PO
+        // per submit. Each line keeps its own requiredDate, so per-period
+        // timing lives on the lines rather than on separate headers. An
+        // existing line is never edited here: the drawer's inline edit and
+        // Apply go through updatePurchaseOrderLineSchedule, which carries the
+        // status, promised-date and tax-pair guards.
         type OrderEntry = {
           itemId: string;
           order: (typeof itemsToOrder)[0]["orders"][0];
         };
-        const existingLineUpdates: OrderEntry[] = [];
         const ordersBySupplier = new Map<string, OrderEntry[]>();
         const errors: string[] = [];
 
@@ -215,10 +216,7 @@ export async function action({ request }: ActionFunctionArgs) {
             if (order.supplierId) supplierIds.add(order.supplierId);
             if (order.periodId) periodIds.add(order.periodId);
 
-            if (order.existingLineId) {
-              existingLineUpdates.push({ itemId: item.id, order });
-              itemHasUsableOrder = true;
-            } else if (order.supplierId && order.periodId) {
+            if (order.supplierId && order.periodId) {
               if (!ordersBySupplier.has(order.supplierId)) {
                 ordersBySupplier.set(order.supplierId, []);
               }
@@ -241,7 +239,6 @@ export async function action({ request }: ActionFunctionArgs) {
           userId,
           locationId,
           itemCount: itemsToOrder.length,
-          existingLineUpdates: existingLineUpdates.length,
           suppliers: Array.from(ordersBySupplier, ([supplierId, orders]) => ({
             supplierId,
             orderCount: orders.length
@@ -249,48 +246,30 @@ export async function action({ request }: ActionFunctionArgs) {
         });
 
         // bypassRls hands back the service role, and every id below comes
-        // from the request body: the location, items and existing lines must
-        // belong to this company before anything is read or written by them
+        // from the request body: the location and items must belong to this
+        // company before anything is read or written by them
         // (supplyForecast upserts on (itemId, locationId, periodId) alone).
-        const existingLineIds = existingLineUpdates.map(
-          ({ order }) => order.existingLineId!
-        );
         await requireCompanyRecord(client, "location", companyId, {
           id: locationId
         });
-        const [ownedItems, ownedLines] = await Promise.all([
-          client
-            .from("item")
-            .select("id")
-            .in("id", Array.from(itemIds))
-            .eq("companyId", companyId),
-          existingLineIds.length > 0
-            ? client
-                .from("purchaseOrderLine")
-                .select("id")
-                .in("id", existingLineIds)
-                .eq("companyId", companyId)
-            : Promise.resolve({ data: [] as { id: string }[], error: null })
-        ]);
+        const ownedItems = await client
+          .from("item")
+          .select("id")
+          .in("id", Array.from(itemIds))
+          .eq("companyId", companyId);
         if (
           ownedItems.error ||
-          ownedLines.error ||
-          (ownedItems.data?.length ?? 0) !== itemIds.size ||
-          (ownedLines.data?.length ?? 0) !== new Set(existingLineIds).size
+          (ownedItems.data?.length ?? 0) !== itemIds.size
         ) {
           logger.error("Planning order references records outside company", {
             companyId,
             userId,
             locationId,
             itemIds: Array.from(itemIds),
-            existingLineIds,
-            error: ownedItems.error ?? ownedLines.error
+            error: ownedItems.error
           });
           return data(
-            {
-              success: false,
-              message: "Item or purchase order line not found"
-            },
+            { success: false, message: "Item not found" },
             { status: 404 }
           );
         }
@@ -367,31 +346,6 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
         let processedItems = 0;
-
-        // ── UPDATE existing draft/planned lines ──
-        for (const { order } of existingLineUpdates) {
-          const updateLine = await client
-            .from("purchaseOrderLine")
-            .update({
-              purchaseQuantity: order.quantity,
-              requiredDate: order.dueDate ?? null,
-              updatedBy: userId
-            })
-            .eq("id", order.existingLineId!)
-            .eq("companyId", companyId);
-          if (updateLine.error) {
-            logger.error("Failed to update existing PO line", {
-              companyId,
-              userId,
-              locationId,
-              purchaseOrderLineId: order.existingLineId,
-              error: updateLine.error
-            });
-            errors.push(
-              `Failed to update existing PO line ${order.existingLineId}: ${updateLine.error.message}`
-            );
-          }
-        }
 
         // ── CREATE new PO lines, one PO per supplier ──
         // Track readable id too so the client can present a clickable toast.
