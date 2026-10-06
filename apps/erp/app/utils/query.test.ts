@@ -14,7 +14,14 @@ vi.mock("@carbon/auth", () => ({
   parseNumberFromUrlParam: vi.fn()
 }));
 
-const { getSearchTokens, setSearchFilter } = await import("./query");
+const {
+  formatRangeFilter,
+  getGenericFilter,
+  getGenericQueryFilters,
+  getSearchTokens,
+  parseRangeFilter,
+  setSearchFilter
+} = await import("./query");
 
 describe("getSearchTokens", () => {
   it("splits a multi-word search into tokens", () => {
@@ -84,10 +91,60 @@ describe("setSearchFilter", () => {
   });
 });
 
+describe("between filter", () => {
+  it("round-trips a closed range and both open-ended ranges", () => {
+    for (const [from, to] of [
+      ["2026-10-01", "2026-10-31"],
+      ["2026-10-01", null],
+      [null, "2026-10-31"]
+    ]) {
+      const value = formatRangeFilter(from, to);
+      expect(value).not.toBeNull();
+      expect(parseRangeFilter(value!)).toEqual({ from, to });
+    }
+  });
+
+  it("has no value when neither bound is set", () => {
+    expect(formatRangeFilter(null, undefined)).toBeNull();
+  });
+
+  it("survives the URL: an open-ended range still parses as a filter", () => {
+    const params = new URLSearchParams();
+    params.append(
+      "filter",
+      `startDate:between:${formatRangeFilter(null, "2026-10-31")}`
+    );
+
+    expect(getGenericQueryFilters(params).filters).toEqual([
+      { column: "startDate", operator: "between", value: ",2026-10-31" }
+    ]);
+  });
+
+  it("applies an inclusive bound for each side that is set", () => {
+    const both = createQueryStub();
+    getGenericFilter(both, "dueDate", "between", "2026-10-01,2026-10-31");
+    expect(both.gte).toHaveBeenCalledWith("dueDate", "2026-10-01");
+    expect(both.lte).toHaveBeenCalledWith("dueDate", "2026-10-31");
+
+    const fromOnly = createQueryStub();
+    getGenericFilter(fromOnly, "dueDate", "between", "2026-10-01,");
+    expect(fromOnly.gte).toHaveBeenCalledWith("dueDate", "2026-10-01");
+    expect(fromOnly.lte).not.toHaveBeenCalled();
+
+    const toOnly = createQueryStub();
+    getGenericFilter(toOnly, "dueDate", "between", ",2026-10-31");
+    expect(toOnly.gte).not.toHaveBeenCalled();
+    expect(toOnly.lte).toHaveBeenCalledWith("dueDate", "2026-10-31");
+  });
+});
+
 function createQueryStub() {
+  const self = function (this: unknown) {
+    return this;
+  };
   return {
-    or: vi.fn(function (this: unknown) {
-      return this;
-    })
+    or: vi.fn(self),
+    gte: vi.fn(self),
+    lte: vi.fn(self)
   };
 }

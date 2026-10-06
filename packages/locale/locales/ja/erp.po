@@ -319,6 +319,21 @@ msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {# バッチを解散} other {# バッチを解散}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {# バッチが解散} other {# バッチが解散}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {# バッチをリリース} other {# バッチをリリース}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {# バッチがリリース済} other {# バッチがリリース済}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {# 製造指図がリリース済} other {# 製造指図がリリース済}}"
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -4139,7 +4154,7 @@ msgid "Component details: {0}"
 msgstr "コンポーネント詳細: {0}"
 
 msgid "Component group name"
-msgstr "コンポーネント グループ名"
+msgstr "コンポーネントグループ名"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "コンポーネント グループが更新されました — モーション計画を再実行して変更を適用してください"
@@ -4825,7 +4840,9 @@ msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "{0}をリリースできませんでした: {1}"
 
@@ -6390,19 +6407,11 @@ msgstr "処置"
 msgid "Dissolve"
 msgstr "解散"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "バッチ {0} を解散"
-
 msgid "Dissolve batch"
 msgstr "バッチを解除"
 
 msgid "Dissolve Batch"
 msgstr "バッチを解散"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "{0} バッチを解散しました"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -6802,7 +6811,7 @@ msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
 
 msgid "Edit Component Group"
-msgstr "コンポーネント グループを編集"
+msgstr "コンポーネントグループを編集"
 
 #. placeholder {0}: unit.name
 msgid "Edit component group {0}"
@@ -9662,6 +9671,9 @@ msgstr "です"
 msgid "is any of"
 msgstr "のいずれかである"
 
+msgid "is between"
+msgstr "〜の間である"
+
 msgid "Is console operator"
 msgstr "コンソールオペレーターである"
 
@@ -9676,6 +9688,12 @@ msgstr "従業員タイプグループです"
 
 msgid "Is identity group"
 msgstr "アイデンティティグループです"
+
+msgid "is on or after"
+msgstr "〜以降である"
+
+msgid "is on or before"
+msgstr "〜以前である"
 
 msgid "Is supplier org group"
 msgstr "仕入先組織グループです"
@@ -12164,7 +12182,7 @@ msgid "No step selected"
 msgstr "ステップが選択されていない"
 
 msgid "No steps match \"{search}\""
-msgstr "「{search}」に一致するステップがありません。"
+msgstr "「{search}」に一致するステップはありません。"
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
 msgstr "ステップがまだありません。ステップをドラッグするか、ステップのメニューから「移動先」を使用します。"
@@ -12176,7 +12194,7 @@ msgid "No stock at this location"
 msgstr "この場所には在庫がありません"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "この拠点に在庫がありません。"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "今後48週間に欠品は予測されていません"
@@ -12185,7 +12203,7 @@ msgid "No storage unit"
 msgstr "保管ユニットがありません"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
 
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
@@ -13947,10 +13965,6 @@ msgstr "利益パーセント"
 msgid "Progress"
 msgstr "進捗"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "予定. {0}"
-
 msgid "Project"
 msgstr "プロジェクト"
 
@@ -13965,10 +13979,6 @@ msgstr "プロジェクト計画"
 
 msgid "Project start"
 msgstr "プロジェクト開始"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "予定: {0}"
 
 msgid "Projected completion"
 msgstr "予測完了"
@@ -14850,10 +14860,6 @@ msgstr "相対的なタイムライン・確認待ちの日付"
 msgid "Release"
 msgstr "リリース"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "{0}個のバッチをリリース"
-
 msgid "Release Batch"
 msgstr "バッチをリリース"
 
@@ -14874,12 +14880,11 @@ msgstr "リリース管理"
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
+msgid "Release Jobs"
+msgstr "製造指図をリリース"
+
 msgid "Released"
 msgstr "リリース済み"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "{0}個のバッチがリリース済"
 
 msgid "Released date"
 msgstr "リリース日"
@@ -14889,6 +14894,10 @@ msgstr "リリースされたリビジョン"
 
 msgid "Released revision is locked"
 msgstr "発行済みリビジョンはロック中です"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "リリース済（警告あり）: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
@@ -16135,7 +16144,7 @@ msgid "Search related items..."
 msgstr "関連アイテムを検索..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "保管ユニットとトラッキング番号を検索"
 
 msgid "Search suppliers..."
 msgstr "仕入先を検索..."
@@ -18736,6 +18745,9 @@ msgstr "同じ個人が検査できます"
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "あなたのアイデンティティプロバイダーによって公開されたSAMLメタデータURL"
 
+msgid "The schedule could not be updated after the release"
+msgstr "リリース後、スケジュールを更新できませんでした。"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "この資産の原価を耐用年数にわたって配分するために使用されるスケジュール（定額法、定率法、生産単位法）。"
 
@@ -20007,7 +20019,7 @@ msgid "Untitled step"
 msgstr "無題のステップ"
 
 msgid "Untracked"
-msgstr ""
+msgstr "未追跡"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用のピッキング済み材料が作業区から倉庫に戻されました。"

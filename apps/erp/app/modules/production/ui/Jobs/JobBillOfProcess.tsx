@@ -87,6 +87,7 @@ import {
   LuRefreshCcw,
   LuSend,
   LuShieldX,
+  LuSquareChartGantt,
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useFetchers, useParams } from "react-router";
@@ -341,8 +342,9 @@ function makeItem(
             (behindDays > 0 ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="red">
-                    <Trans>Projected {formatDate(projectedDate)}</Trans>
+                  <Badge variant="red" className="gap-1">
+                    <LuSquareChartGantt className="size-3 shrink-0" />
+                    {formatDate(projectedDate)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -352,8 +354,9 @@ function makeItem(
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                <Trans>Projected {formatDate(projectedDate)}</Trans>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                <LuSquareChartGantt className="size-3 shrink-0" />
+                {formatDate(projectedDate)}
               </span>
             ))}
           <OperationDueDatePicker

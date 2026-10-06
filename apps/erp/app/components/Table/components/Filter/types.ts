@@ -43,4 +43,9 @@ export type ColumnFilterData =
       isArray?: boolean;
       render: (ctx: CustomFilterRenderContext) => ReactNode;
       getLabel?: (value: string) => ReactNode;
+    }
+  | {
+      /** From / To date pickers on a DATE column; either bound may be open */
+      type: "dateRange";
+      isArray?: never;
     };

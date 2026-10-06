@@ -86,7 +86,7 @@ title), `primaryAction`, `headerActions`, `table` + `withSavedView` (top-level l
 caller orders `data` by it; e.g. Outbound grouped by day), `defaultColumnVisibility`, `defaultColumnPinning`, `compact` (embedded),
 `emptyState`, `importCSV`, `getRowClassName`, `withInlineEditing` + `editableComponents`.
 
-Column `meta` (`components/Table/types.ts`): `icon`, `filter` (`static | fetcher | custom`,
+Column `meta` (`components/Table/types.ts`): `icon`, `filter` (`static | fetcher | custom | dateRange`,
 `isArray`), `filterHeader`, `pluralHeader`, `renderTotal` + `formatter` (footer aggregate),
 `exportValue`, `exportOnly`, `sortBy`. CSV rules: `.claude/rules/table-csv-export.md`
 (export = what the user sees; no `_` in accessorKey).
@@ -182,8 +182,11 @@ const WidgetsTable = memo(({ data, count }: Props) => {
 
 - **Search:** built in (`?search=`, debounced); server-side matching.
 - **Filters:** per column `meta.filter` — `static` options (label may be the cell component,
-  e.g. the Status pill), `fetcher` (endpoint), `custom`. Active filters show as chips under the
-  toolbar. `pluralHeader` for the chip label.
+  e.g. the Status pill), `fetcher` (endpoint), `custom`, `dateRange` (From / To pickers on a
+  DATE column, `?filter=col:between:from,to`, either side open). Active filters show as chips
+  under the toolbar. `pluralHeader` for the chip label. The From / To pickers themselves are
+  `DateRangeFields` (`components/DateRangeFields.tsx`) — reuse it for a date range kept in
+  local state rather than the URL (e.g. the batch builder's Custom due filter).
 - **Sort:** header click menu; `?sort=`; `meta.sortBy` to redirect.
 - **Views:** `withSavedView` + `table="…"` on every top-level module list; views appear in the
   module sub-nav under the matching submodule (same `table` key).

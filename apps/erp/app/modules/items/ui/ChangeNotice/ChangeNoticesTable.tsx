@@ -222,6 +222,9 @@ const ChangeNoticesTable = memo(
             <DateTime value={row.original.openDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         }

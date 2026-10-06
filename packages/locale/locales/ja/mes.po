@@ -188,11 +188,11 @@ msgstr "このタイムカードを削除してもよろしいですか？この
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "すべての生産イベントを終了してもよろしいですか？すべてのアクティブな工程が完了せずに終了します。"
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "この操作を終了してもよろしいですか？これにより、この操作のすべてのアクティブな生産イベントが終了します。"
-
 msgid "Are you sure you want to leave this page?"
 msgstr "このページを離れてもよろしいですか？"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "この工程を完了としてマークしてもよろしいですか？これにより、この工程のすべてのアクティブな生産イベントが終了します。"
 
 msgid "Assembly steps"
 msgstr "組立ステップ"
@@ -509,9 +509,9 @@ msgstr "ドラッグ {0} キャンセル済。"
 msgid "Due"
 msgstr "期日"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
 
@@ -657,13 +657,6 @@ msgstr "拠点で絞り込み"
 
 msgid "Finish"
 msgstr "完了"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "完了 {0}"
-
-msgid "Finish Anyways"
-msgstr "とにかく完了"
 
 msgid "Finish setting up your account"
 msgstr "アカウントのセットアップを完了する"
@@ -903,6 +896,16 @@ msgstr "手動で在庫に品目を追加"
 
 msgid "Manually remove items from inventory"
 msgstr "在庫から品目を手動で除去"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} を完了としてマーク"
+
+msgid "Mark as Done"
+msgstr "完了としてマーク"
+
+msgid "Mark as Done Anyways"
+msgstr "それでも完了としてマーク"
 
 msgid "Mark Short"
 msgstr "短い数量をマーク"
@@ -1164,6 +1167,10 @@ msgstr "オープンな製造指図"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "サブアセンブリ {0} を開く: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "工程の必要期日: {0}"
+
 msgid "Operations"
 msgstr "工程"
 
@@ -1311,11 +1318,6 @@ msgstr "プロセス一覧"
 
 msgid "Progress"
 msgstr "進捗"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "予定 {0}"
 
 msgid "Quality Issue"
 msgstr "品質問題"

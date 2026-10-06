@@ -10,8 +10,7 @@
  * calculator (spec .ai/specs/2026-08-15-dual-dates-due-vs-projected.md):
  * reverse topological order from the job's due date, each operation due at the
  * earliest dependent constraint (dependent's need-by start minus that
- * dependent's `operationLeadTime`, minus `assemblyLeadTime` at assembly
- * edges), with two upgrades over main:
+ * dependent's `operationLeadTime`), with three changes from main:
  *
  * 1. Real day lengths — duration-in-days uses the work center's calendar
  *    (`calendarHoursPerDay`), not a hardcoded 8h business day, and the
@@ -19,6 +18,8 @@
  *    hardcoded Sat/Sun.
  * 2. No conflict flags — lateness verdicts come from comparing the forward
  *    projection against these targets, never from this pass.
+ * 3. No item lead time at assembly edges — the subassembly's operations are
+ *    walked explicitly, so its manufacturing lead time would count twice.
  *
  * HARD RULE: the result is written to `jobOperation.dueDate` and read by
  * NOTHING in the placement path. Targets never floor, delay, or otherwise
@@ -86,8 +87,8 @@ function subtractWorkingDays(
  * - Leaf operations (no dependents) are due on the job due date.
  * - An operation with dependents is due at the EARLIEST dependent constraint:
  *   the dependent's need-by START, minus that dependent's `operationLeadTime`
- *   working days, minus this op's `assemblyLeadTime` working days when the
- *   edge crosses make methods (a subassembly's output feeding its parent).
+ *   working days. An edge that crosses make methods (a subassembly's output
+ *   feeding its parent) is treated the same way.
  * - Need-by start = due minus `ceil(durationHours / calendarHoursPerDay(wc))`
  *   working days (min 1 day) on the op's own calendar.
  * - "With Previous" operations copy their partner's target dates (the nearest
@@ -228,23 +229,6 @@ export function computeNeedByDates(args: {
             constraint,
             operationLeadTime,
             isWorkingDayFor(dependentOp?.workCenterId)
-          );
-        }
-
-        // Assembly boundary: this op is a subassembly's operation feeding a
-        // parent make method's operation. Pull the target back by the
-        // subassembly item's manufacturing lead time so the whole subassembly
-        // targets finishing that many days early.
-        const isAssemblyEdge =
-          !!op.jobMakeMethodId &&
-          !!dependentOp?.jobMakeMethodId &&
-          op.jobMakeMethodId !== dependentOp.jobMakeMethodId;
-        const assemblyLeadTime = op.assemblyLeadTime ?? 0;
-        if (isAssemblyEdge && assemblyLeadTime > 0) {
-          constraint = subtractWorkingDays(
-            constraint,
-            assemblyLeadTime,
-            isWorkingDayFor(op.workCenterId)
           );
         }
 

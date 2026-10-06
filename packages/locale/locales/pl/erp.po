@@ -319,6 +319,21 @@ msgstr "{count, plural, one {# konto z saldem} other {# konta z saldem}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Rozpuść # partię produkcyjną} few {Rozpuść # partie produkcyjne} many {Rozpuść # partii produkcyjnych} other {Rozpuść # partii produkcyjnych}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {Rozpuszczono # partię produkcyjną} few {Rozpuszczono # partie produkcyjne} many {Rozpuszczono # partii produkcyjnych} other {Rozpuszczono # partii produkcyjnych}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Zwolnij # partię produkcyjną} few {Zwolnij # partie produkcyjne} many {Zwolnij # partii produkcyjnych} other {Zwolnij # partii produkcyjnych}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {Zwolniono # partię produkcyjną} few {Zwolniono # partie produkcyjne} many {Zwolniono # partii produkcyjnych} other {Zwolniono # partii produkcyjnych}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {Zwolniono # zlecenie produkcyjne} few {Zwolniono # zlecenia produkcyjne} many {Zwolniono # zleceń produkcyjnych} other {Zwolniono # zleceń produkcyjnych}}"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -4139,7 +4154,7 @@ msgid "Component details: {0}"
 msgstr "Szczegóły komponenty: {0}"
 
 msgid "Component group name"
-msgstr "Nazwa grupy składników"
+msgstr "Nazwa grupy komponentów"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "Grupa składników zaktualizowana — uruchom ponownie motion planning, aby zastosować zmianę"
@@ -4825,7 +4840,9 @@ msgid "Could not read the document: {0}"
 msgstr "Nie można odczytać dokumentu: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Nie można było zwolnić {0}: {1}"
 
@@ -6390,19 +6407,11 @@ msgstr "Dyspozycje"
 msgid "Dissolve"
 msgstr "Rozpuść"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Rozwiązać {0} partii"
-
 msgid "Dissolve batch"
 msgstr "Rozwiązać partię"
 
 msgid "Dissolve Batch"
 msgstr "Rozpuść partię"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Rozwiązane {0} partii"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -6802,7 +6811,7 @@ msgid "Edit column visibility"
 msgstr "Edytuj widoczność kolumn"
 
 msgid "Edit Component Group"
-msgstr "Edytuj grupę składników"
+msgstr "Edytuj grupę komponentów"
 
 #. placeholder {0}: unit.name
 msgid "Edit component group {0}"
@@ -9662,6 +9671,9 @@ msgstr "jest"
 msgid "is any of"
 msgstr "jest dowolnym z"
 
+msgid "is between"
+msgstr "jest między"
+
 msgid "Is console operator"
 msgstr "Czy jest operatorem konsoli"
 
@@ -9676,6 +9688,12 @@ msgstr "Czy jest grupą typów pracowników"
 
 msgid "Is identity group"
 msgstr "Czy jest grupą tożsamości"
+
+msgid "is on or after"
+msgstr "jest na lub po"
+
+msgid "is on or before"
+msgstr "jest na lub przed"
 
 msgid "Is supplier org group"
 msgstr "Czy jest grupą organizacyjną dostawcy"
@@ -10004,7 +10022,7 @@ msgid "Labor & Machine Variance (default)"
 msgstr "Robocizna i odchylenie maszyn (domyślnie)"
 
 msgid "Labor Costs"
-msgstr "Koszty Robocizny"
+msgstr "Koszty robocizny"
 
 msgid "Labor Hours"
 msgstr "Godziny Robocizny"
@@ -10475,7 +10493,7 @@ msgid "Machine"
 msgstr "Maszyna"
 
 msgid "Machine Costs"
-msgstr "Koszty Maszyn"
+msgstr "Koszty maszyny"
 
 msgid "Machine Hours"
 msgstr "Godziny Maszyn"
@@ -10728,7 +10746,7 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Oznacza osobę jako nieobecną na każdy dzień z zakresu. Nie będą zaplanowani, gdy są nieobecni."
 
 msgid "Markup by Category"
-msgstr "Marża wg Kategorii"
+msgstr "Marża według kategorii"
 
 msgid "Markup Percent"
 msgstr "Procent Marży"
@@ -11289,7 +11307,7 @@ msgid "Net Income"
 msgstr "Przychody netto"
 
 msgid "Net Unit Price"
-msgstr "Netto Cena Jednostkowa"
+msgstr "Cena jednostkowa netto"
 
 msgid "Network error"
 msgstr "Błąd sieci"
@@ -12176,7 +12194,7 @@ msgid "No stock at this location"
 msgstr "Brak magazynu w tej lokalizacji"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "Brak zapasu w tej lokalizacji."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Brak prognozowanego braku zapasów w ciągu następnych 48 tygodni"
@@ -12185,7 +12203,7 @@ msgid "No storage unit"
 msgstr "Brak jednostki magazynowania"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Brak zgodnych jednostek magazynowych ani numerów śledzenia."
 
 msgid "No suppliers yet"
 msgstr "Brak dostawców"
@@ -13947,10 +13965,6 @@ msgstr "Procent Zysku"
 msgid "Progress"
 msgstr "Postęp"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
-
 msgid "Project"
 msgstr "Projekt"
 
@@ -13965,10 +13979,6 @@ msgstr "Plan Projektu"
 
 msgid "Project start"
 msgstr "Początek projektu"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Prognozowana {0}"
 
 msgid "Projected completion"
 msgstr "Przewidywane zakończenie"
@@ -14850,10 +14860,6 @@ msgstr "Względna oś czasu · daty do potwierdzenia"
 msgid "Release"
 msgstr "Zwolnienie"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Zwolnij {0} partie produkcyjne"
-
 msgid "Release Batch"
 msgstr "Zwolnij partię produkcyjną"
 
@@ -14874,12 +14880,11 @@ msgstr "Kontrola Zwolnienia"
 msgid "Release Job"
 msgstr "Zwolnij zadanie"
 
+msgid "Release Jobs"
+msgstr "Zwolnij zlecenia produkcyjne"
+
 msgid "Released"
 msgstr "Wydane"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "Zwolniono {0} partie produkcyjne"
 
 msgid "Released date"
 msgstr "Data wydania"
@@ -14889,6 +14894,10 @@ msgstr "Zwolniona rewizja"
 
 msgid "Released revision is locked"
 msgstr "Zwolniona rewizja jest zablokowana"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Zwolniono z problemami: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Zwolnienie partii produkcyjnej zwalnia jej zlecenia produkcyjne, a każde musi być gotowe na halę produkcyjną."
@@ -15107,7 +15116,7 @@ msgid "Reports"
 msgstr "Raporty"
 
 msgid "Reprice with current rules"
-msgstr "Wycen z bieżącymi regułami"
+msgstr "Wycen ponownie według bieżących reguł"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -16135,7 +16144,7 @@ msgid "Search related items..."
 msgstr "Szukaj powiązanych elementów..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Szukaj jednostek magazynowych i numerów śledzenia"
 
 msgid "Search suppliers..."
 msgstr "Szukaj dostawców..."
@@ -18736,6 +18745,9 @@ msgstr "Ta sama osoba może inspekcjonować"
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "Adres URL metadanych SAML opublikowany przez dostawcę tożsamości"
 
+msgid "The schedule could not be updated after the release"
+msgstr "Nie można było zaktualizować harmonogramu po zwolnieniu"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Harmonogram używany do rozłożenia kosztu tego zasobu na jego okres użytkowania (liniowy, metoda degresywna, jednostki produkcji)."
 
@@ -19518,7 +19530,7 @@ msgid "Total Hours"
 msgstr "Łącznie godzin"
 
 msgid "Total Indirect Cost"
-msgstr "Całkowity koszt pośredni"
+msgstr "Suma kosztów pośrednich"
 
 msgid "Total Material Cost"
 msgstr "Całkowity koszt materiałów"
@@ -19833,7 +19845,7 @@ msgid "Undo"
 msgstr "Cofnij"
 
 msgid "Ungroup"
-msgstr "Rozgrupuj"
+msgstr "Rozdziel"
 
 msgid "unhealthy"
 msgstr "w złym stanie"
@@ -20007,7 +20019,7 @@ msgid "Untitled step"
 msgstr "Krok bez tytułu"
 
 msgid "Untracked"
-msgstr ""
+msgstr "Nieśledzone"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Materiał pobrany, ale nieużywany, zwracany ze stanowiska roboczego do magazynu."

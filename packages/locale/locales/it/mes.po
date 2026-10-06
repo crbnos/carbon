@@ -188,11 +188,11 @@ msgstr "Sei sicuro di voler eliminare questo cartellino? Questa azione non può 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Sei sicuro di voler terminare tutti gli eventi di produzione? Questo terminerà tutte le operazioni attive senza completarle o finalizzarle."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Sei sicuro di voler terminare questa operazione? Questo terminerà tutti gli eventi di produzione attivi per questa operazione."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Sei sicuro di voler lasciare questa pagina?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Sei sicuro di voler segnare questa operazione come completata? Questo terminerà tutti gli eventi di produzione attivi per questa operazione."
 
 msgid "Assembly steps"
 msgstr "Passi di assemblaggio"
@@ -509,9 +509,9 @@ msgstr "Trascinamento di {0} annullato."
 msgid "Due"
 msgstr "Scadenza"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Scadenza {0}"
 
@@ -657,13 +657,6 @@ msgstr "Filtra per ubicazione"
 
 msgid "Finish"
 msgstr "Termina"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Termina {0}"
-
-msgid "Finish Anyways"
-msgstr "Termina comunque"
 
 msgid "Finish setting up your account"
 msgstr "Completa la configurazione del tuo account"
@@ -903,6 +896,16 @@ msgstr "Aggiungi manualmente articoli all'inventario"
 
 msgid "Manually remove items from inventory"
 msgstr "Rimuovi manualmente articoli dall'inventario"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "Segna {0} come completato"
+
+msgid "Mark as Done"
+msgstr "Segna come completato"
+
+msgid "Mark as Done Anyways"
+msgstr "Segna comunque come completato"
 
 msgid "Mark Short"
 msgstr "Segna Mancante"
@@ -1164,6 +1167,10 @@ msgstr "Ordini di produzione aperti"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Apri sottoassieme {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Operazione necessaria entro il {0}"
+
 msgid "Operations"
 msgstr "Operazioni"
 
@@ -1311,11 +1318,6 @@ msgstr "Processi"
 
 msgid "Progress"
 msgstr "Avanzamento"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Prev. {0}"
 
 msgid "Quality Issue"
 msgstr "Problema di qualità"

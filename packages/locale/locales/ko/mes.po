@@ -188,11 +188,11 @@ msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 �
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "모든 생산 이벤트를 종료하시겠습니까? 이 작업은 완료 처리 없이 모든 진행 중인 공정작업을 종료합니다."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "이 공정작업을 완료하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "이 페이지를 나가시겠습니까?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "이 공정작업을 완료로 표시하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
 
 msgid "Assembly steps"
 msgstr "조립 단계"
@@ -509,9 +509,9 @@ msgstr "{0} 드래그 취소됨."
 msgid "Due"
 msgstr "기한"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
 
@@ -657,13 +657,6 @@ msgstr "위치별 필터"
 
 msgid "Finish"
 msgstr "마감"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "{0} 완료"
-
-msgid "Finish Anyways"
-msgstr "그래도 완료"
 
 msgid "Finish setting up your account"
 msgstr "계정 설정을 완료하세요"
@@ -903,6 +896,16 @@ msgstr "재고에 품목을 수동으로 추가"
 
 msgid "Manually remove items from inventory"
 msgstr "재고에서 품목을 수동으로 제거"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} 완료로 표시"
+
+msgid "Mark as Done"
+msgstr "완료로 표시"
+
+msgid "Mark as Done Anyways"
+msgstr "그래도 완료로 표시"
 
 msgid "Mark Short"
 msgstr "부족으로 표시"
@@ -1164,6 +1167,10 @@ msgstr "작업 지시 열기"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "하위 조립체 {0} 열기: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "공정 필요일: {0}"
+
 msgid "Operations"
 msgstr "공정작업"
 
@@ -1311,11 +1318,6 @@ msgstr "공정"
 
 msgid "Progress"
 msgstr "진행 상황"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "예상. {0}"
 
 msgid "Quality Issue"
 msgstr "품질 이슈"

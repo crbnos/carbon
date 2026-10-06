@@ -193,6 +193,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -203,6 +206,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -213,6 +219,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -223,6 +232,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

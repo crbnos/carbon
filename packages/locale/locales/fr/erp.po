@@ -319,6 +319,21 @@ msgstr "{count, plural, one {# compte avec un solde} other {# comptes avec un so
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# cours} other {# cours}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Dissoudre # lot de production} other {Dissoudre # lots de production}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {# lot de production dissous} other {# lots de production dissous}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Lancer # lot de production} other {Lancer # lots de production}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {# lot de production lancé} other {# lots de production lancés}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {# ordre de fabrication lancé} other {# ordres de fabrication lancés}}"
+
 msgid "{days}d"
 msgstr "{days}j"
 
@@ -4825,7 +4840,9 @@ msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Impossible de lancer {0} : {1}"
 
@@ -6390,19 +6407,11 @@ msgstr "Traitements"
 msgid "Dissolve"
 msgstr "Dissoudre"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Dissoudre {0} lots"
-
 msgid "Dissolve batch"
 msgstr "Dissoudre le lot"
 
 msgid "Dissolve Batch"
 msgstr "Dissoudre le lot"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Dissous {0} lots"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -9662,6 +9671,9 @@ msgstr "est"
 msgid "is any of"
 msgstr "est l'un de"
 
+msgid "is between"
+msgstr "est entre"
+
 msgid "Is console operator"
 msgstr "Est opérateur de console"
 
@@ -9676,6 +9688,12 @@ msgstr "Est un groupe de type d'employé"
 
 msgid "Is identity group"
 msgstr "Est un groupe d'identité"
+
+msgid "is on or after"
+msgstr "est le ou après"
+
+msgid "is on or before"
+msgstr "est le ou avant"
 
 msgid "Is supplier org group"
 msgstr "Est un groupe d'organisation fournisseur"
@@ -12164,7 +12182,7 @@ msgid "No step selected"
 msgstr "Aucune étape sélectionnée"
 
 msgid "No steps match \"{search}\""
-msgstr "Aucune étape ne correspond à « {search} »"
+msgstr "Aucune étape ne correspond à «{search}»"
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
 msgstr "Aucune étape pour le moment. Glissez les étapes dedans, ou utilisez Déplacer vers depuis le menu d'une étape."
@@ -12176,7 +12194,7 @@ msgid "No stock at this location"
 msgstr "Pas de stock à cet endroit"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "Aucun stock disponible sur ce site."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Aucune rupture de stock prévue au cours des 48 prochaines semaines"
@@ -12185,7 +12203,7 @@ msgid "No storage unit"
 msgstr "Aucune unité de stockage"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Aucune unité de stockage ou numéro de suivi ne correspond."
 
 msgid "No suppliers yet"
 msgstr "Aucun fournisseur pour le moment"
@@ -12375,7 +12393,7 @@ msgid "Nothing in the archive"
 msgstr "Rien dans l'archive"
 
 msgid "Nothing is synced until you turn sync on."
-msgstr "Rien n'est synchronisé tant que vous n'activez pas la synchronisation."
+msgstr "Rien n'est synchronisé jusqu'à ce que vous activiez la synchronisation."
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Rien n'est synchronisé tant que vous n'activez pas la synchronisation. Chaque compte obligatoire est mappé."
@@ -13947,10 +13965,6 @@ msgstr "Pourcentage de profit"
 msgid "Progress"
 msgstr "Progression"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
-
 msgid "Project"
 msgstr "Projet"
 
@@ -13965,10 +13979,6 @@ msgstr "Plan de projet"
 
 msgid "Project start"
 msgstr "Démarrage du projet"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Projeté {0}"
 
 msgid "Projected completion"
 msgstr "Achèvement projeté"
@@ -14850,10 +14860,6 @@ msgstr "Chronologie relative · dates à confirmer"
 msgid "Release"
 msgstr "Lancer"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Lancer {0} lots de production"
-
 msgid "Release Batch"
 msgstr "Lancer le lot de production"
 
@@ -14874,12 +14880,11 @@ msgstr "Contrôle de lancement"
 msgid "Release Job"
 msgstr "Lancer le travail"
 
+msgid "Release Jobs"
+msgstr "Lancer les ordres de fabrication"
+
 msgid "Released"
 msgstr "Libéré"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "{0} lots de production lancés"
 
 msgid "Released date"
 msgstr "Date de libération"
@@ -14889,6 +14894,10 @@ msgstr "Révision publiée"
 
 msgid "Released revision is locked"
 msgstr "La révision publiée est verrouillée"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Lancé avec des problèmes : {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Lancer le lot de production lance ses ordres de fabrication, et chacun doit être prêt pour l'atelier."
@@ -15107,7 +15116,7 @@ msgid "Reports"
 msgstr "Rapports"
 
 msgid "Reprice with current rules"
-msgstr "Retarifier avec les règles actuelles"
+msgstr "Rétarifier avec les règles actuelles"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -16135,7 +16144,7 @@ msgid "Search related items..."
 msgstr "Rechercher les articles associés..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Rechercher les unités de stockage et numéros de suivi"
 
 msgid "Search suppliers..."
 msgstr "Rechercher des fournisseurs..."
@@ -17497,7 +17506,7 @@ msgid "Sub-assembly"
 msgstr "Sous-assemblage"
 
 msgid "Sub-Assembly"
-msgstr "Sous-assemblage"
+msgstr "Sous-Assemblage"
 
 msgid "Sub-Assembly · joins main build"
 msgstr "Sous-assemblage · rejoint la construction principale"
@@ -17513,7 +17522,7 @@ msgstr "Sous-assemblage {0} · {1, plural, one {# pièce} other {# pièces}}"
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Sous-assemblage {0} · {1} — affiché indépendamment"
+msgstr "Sous-Assemblage {0} · {1} — affiché seul"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -18736,6 +18745,9 @@ msgstr "La même personne peut inspecter"
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "L'URL des métadonnées SAML publiée par votre fournisseur d'identité"
 
+msgid "The schedule could not be updated after the release"
+msgstr "Le planning n'a pas pu être mis à jour après le lancement"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Le planning utilisé pour étaler le coût de cet actif sur sa durée d'utilité (linéaire, dégressif, unités de production)."
 
@@ -19518,7 +19530,7 @@ msgid "Total Hours"
 msgstr "Heures totales"
 
 msgid "Total Indirect Cost"
-msgstr "Coût indirect total"
+msgstr "Coût total indirect"
 
 msgid "Total Material Cost"
 msgstr "Coût des matières total"
@@ -20007,7 +20019,7 @@ msgid "Untitled step"
 msgstr "Étape sans titre"
 
 msgid "Untracked"
-msgstr ""
+msgstr "Non suivi"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Matière prélevée inutilisée renvoyée du poste de travail à l'entrepôt."
@@ -20164,7 +20176,7 @@ msgid "Uploading {fileName}"
 msgstr "Téléchargement de {fileName}"
 
 msgid "Uploading backup"
-msgstr "Téléversement de la sauvegarde en cours"
+msgstr "Téléversement de la sauvegarde"
 
 msgid "Uploading model"
 msgstr "Téléchargement du modèle"

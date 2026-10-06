@@ -128,6 +128,9 @@ const SalesReturnOrdersTable = memo(
           header: t`Order Date`,
           cell: (item) => formatDate(item.getValue<string>()),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

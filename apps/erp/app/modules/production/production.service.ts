@@ -16,6 +16,7 @@ import type { JSONContent } from "@carbon/react";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
   async,
+  chunkArray,
   datetime,
   getErrorMessage,
   groupBy,
@@ -2903,6 +2904,29 @@ export async function updateJobBatchNumber(
     .select("id, readableId");
 }
 
+// An `in` filter rides in the request URL and a response stops at PostgREST's
+// row cap, so a read keyed by an id list walks the ids in groups and pages each
+// group. A read cut short either way would say "nothing there" for the rest.
+const IN_FILTER_BATCH_SIZE = 100;
+
+async function fetchAllByIds<T extends object>(
+  ids: string[],
+  buildQuery: (batch: string[]) => {
+    range(
+      from: number,
+      to: number
+    ): PromiseLike<{ data: T[] | null; error: PostgrestError | null }>;
+  }
+): Promise<{ data: T[] | null; error: PostgrestError | null }> {
+  const rows: T[] = [];
+  for (const batch of chunkArray(ids, IN_FILTER_BATCH_SIZE)) {
+    const result = await fetchAllRecords(() => buildQuery(batch));
+    if (result.error) return { data: null, error: result.error };
+    rows.push(...result.data);
+  }
+  return { data: rows, error: null };
+}
+
 export type JobReleaseReadiness = {
   jobs: {
     id: string;
@@ -2917,6 +2941,8 @@ export type JobReleaseReadiness = {
       description: string;
       missing: "none" | "choose";
     }[];
+    // The suppliers this job's outside operations go on a purchase order for.
+    supplierIds: string[];
   }[];
   // Suppliers whose outside operations release will put on a purchase order,
   // with the Draft POs the planner may add them to instead of a new one.
@@ -2939,33 +2965,45 @@ export async function getJobReleaseReadiness(
     return { data: { jobs: [], suppliers: [] }, error: null };
 
   const [jobs, roots, materials, operations] = await Promise.all([
-    client
-      .from("job")
-      .select(
-        "id, jobId, status, item(itemReplenishment(manufacturingBlocked))"
-      )
-      .in("id", jobIds)
-      .eq("companyId", companyId),
-    client
-      .from("jobMakeMethod")
-      .select("id, jobId")
-      .in("jobId", jobIds)
-      .eq("companyId", companyId)
-      .is("parentMaterialId", null),
-    client
-      .from("jobMaterialWithMakeMethodId")
-      .select(
-        "jobId, jobMaterialMakeMethodId, methodType, kit, description, itemReadableId"
-      )
-      .in("jobId", jobIds)
-      .eq("companyId", companyId),
-    client
-      .from("jobOperation")
-      .select(
-        "id, jobId, jobMakeMethodId, operationType, operationSupplierProcessId, processId, description"
-      )
-      .in("jobId", jobIds)
-      .eq("companyId", companyId)
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("job")
+        .select(
+          "id, jobId, status, item(itemReplenishment(manufacturingBlocked))"
+        )
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobMakeMethod")
+        .select("id, jobId")
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .is("parentMaterialId", null)
+        .order("id")
+    ),
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobMaterialWithMakeMethodId")
+        .select(
+          "jobId, jobMaterialMakeMethodId, methodType, kit, description, itemReadableId"
+        )
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobOperation")
+        .select(
+          "id, jobId, jobMakeMethodId, operationType, operationSupplierProcessId, processId, description"
+        )
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
@@ -2974,13 +3012,14 @@ export async function getJobReleaseReadiness(
   const outsideOperationIds = (operations.data ?? [])
     .filter((op) => op.operationType === "Outside Processing")
     .map((op) => op.id);
-  const purchaseOrderLines = outsideOperationIds.length
-    ? await client
-        .from("purchaseOrderLine")
-        .select("jobOperationId")
-        .in("jobOperationId", outsideOperationIds)
-        .eq("companyId", companyId)
-    : { data: [], error: null };
+  const purchaseOrderLines = await fetchAllByIds(outsideOperationIds, (batch) =>
+    client
+      .from("purchaseOrderLine")
+      .select("jobOperationId")
+      .in("jobOperationId", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   if (purchaseOrderLines.error)
     return { data: null, error: purchaseOrderLines.error };
 
@@ -3007,20 +3046,22 @@ export async function getJobReleaseReadiness(
     )
   ];
   const [ownSupplierProcesses, processSupplierProcesses] = await Promise.all([
-    ownSupplierProcessIds.length
-      ? client
-          .from("supplierProcess")
-          .select("id, supplierId, processId")
-          .in("id", ownSupplierProcessIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null },
-    processIds.length
-      ? client
-          .from("supplierProcess")
-          .select("id, supplierId, processId")
-          .in("processId", processIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null }
+    fetchAllByIds(ownSupplierProcessIds, (batch) =>
+      client
+        .from("supplierProcess")
+        .select("id, supplierId, processId")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(processIds, (batch) =>
+      client
+        .from("supplierProcess")
+        .select("id, supplierId, processId")
+        .in("processId", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
   const supplierProcessError =
     ownSupplierProcesses.error ?? processSupplierProcesses.error;
@@ -3058,14 +3099,16 @@ export async function getJobReleaseReadiness(
     resolved.filter(({ supplier }) => "missing" in supplier),
     ({ op }) => op.jobId
   );
-  const drafts = supplierIds.length
-    ? await client
-        .from("purchaseOrder")
-        .select("id, purchaseOrderId, supplierId")
-        .eq("status", "Draft")
-        .in("supplierId", supplierIds)
-        .eq("companyId", companyId)
-    : { data: [], error: null };
+  const resolvedByJob = groupBy(resolved, ({ op }) => op.jobId);
+  const drafts = await fetchAllByIds(supplierIds, (batch) =>
+    client
+      .from("purchaseOrder")
+      .select("id, purchaseOrderId, supplierId")
+      .eq("status", "Draft")
+      .in("supplierId", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   if (drafts.error) return { data: null, error: drafts.error };
 
   const materialsByJob = groupBy(materials.data ?? [], (m) => m.jobId ?? "");
@@ -3103,7 +3146,16 @@ export async function getJobReleaseReadiness(
           id: op.id,
           description: op.description ?? op.id,
           missing: "missing" in supplier ? supplier.missing : "none"
-        }))
+        })),
+        supplierIds: [
+          ...new Set(
+            (resolvedByJob[job.id] ?? []).flatMap(({ supplier }) =>
+              "supplierProcess" in supplier
+                ? [supplier.supplierProcess.supplierId]
+                : []
+            )
+          )
+        ]
       })),
       suppliers: supplierIds.map((supplierId) => ({
         supplierId,
@@ -3125,9 +3177,14 @@ export async function updateJobStatus(
     status: (typeof jobStatus)[number];
     assignee?: string | null;
     updatedBy: string;
+    // Flip only from one of these statuses. A release reads the status, then
+    // runs for a while (recalculate, MRP) before it writes; a job someone
+    // cancelled in between must not come back as Ready. `updated` is false
+    // when the row no longer matched.
+    fromStatuses?: (typeof jobStatus)[number][];
   }
 ) {
-  const { id, companyId, status, assignee, updatedBy } = params;
+  const { id, companyId, status, assignee, updatedBy, fromStatuses } = params;
 
   // Reopening a job (leaving a completed state) must clear completedDate so it
   // isn't left stale. Done in the same UPDATE as status so the job event
@@ -3144,7 +3201,7 @@ export async function updateJobStatus(
     .eq("companyId", companyId)
     .maybeSingle();
 
-  const result = await client
+  const update = client
     .from("job")
     .update({
       status,
@@ -3153,9 +3210,15 @@ export async function updateJobStatus(
       updatedAt: new Date().toISOString(),
       ...(clearsCompletion ? { completedDate: null } : {})
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("companyId", companyId);
+  const result = fromStatuses
+    ? await update.in("status", fromStatuses).select("id")
+    : await update;
+  const updated =
+    !result.error && (!fromStatuses || (result.data?.length ?? 0) > 0);
 
-  if (!result.error && prior.data && prior.data.status !== status) {
+  if (updated && prior.data && prior.data.status !== status) {
     if (status === "Ready") {
       await raiseMoment("production.jobReleased", {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
@@ -3179,7 +3242,7 @@ export async function updateJobStatus(
     }
   }
 
-  return result;
+  return { ...result, updated };
 }
 
 /** @mcp update */

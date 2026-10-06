@@ -319,6 +319,21 @@ msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesap
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {# partiyi çöz} other {# partileri çöz}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {# parti çözüldü} other {# partiler çözüldü}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {# partiyi serbest bırak} other {# partileri serbest bırak}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {# parti serbest bırakıldı} other {# partiler serbest bırakıldı}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {# iş emri serbest bırakıldı} other {# iş emirleri serbest bırakıldı}}"
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -4825,7 +4840,9 @@ msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "{0} serbest bırakılamadı: {1}"
 
@@ -6390,19 +6407,11 @@ msgstr "Kararlar"
 msgid "Dissolve"
 msgstr "Çöz"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "{0} parti çöz"
-
 msgid "Dissolve batch"
 msgstr "Toplu İşi Kaldır"
 
 msgid "Dissolve Batch"
 msgstr "Toplu İşi Çöz"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "{0} parti çözüldü"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -9662,6 +9671,9 @@ msgstr "eşittir"
 msgid "is any of"
 msgstr "herhangi biri"
 
+msgid "is between"
+msgstr "arasında"
+
 msgid "Is console operator"
 msgstr "Konsol operatörü mü"
 
@@ -9676,6 +9688,12 @@ msgstr "Çalışan türü grubu mu"
 
 msgid "Is identity group"
 msgstr "Kimlik grubu mu"
+
+msgid "is on or after"
+msgstr "şu tarihte veya sonrasında"
+
+msgid "is on or before"
+msgstr "şu tarihte veya öncesinde"
 
 msgid "Is supplier org group"
 msgstr "Tedarikçi kuruluş grubu mu"
@@ -10728,7 +10746,7 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Kişiyi aralıktaki her gün için işaretler. Uzakta iken çizelgelenmazlar."
 
 msgid "Markup by Category"
-msgstr "Kategoriye Göre Kar Marjı"
+msgstr "Kategoriye Göre Marj"
 
 msgid "Markup Percent"
 msgstr "Kar Marjı Yüzdesi"
@@ -12164,7 +12182,7 @@ msgid "No step selected"
 msgstr "Adım seçilmedi"
 
 msgid "No steps match \"{search}\""
-msgstr "Hiçbir adım «{search}» ile eşleşmiyor."
+msgstr "Hiç adım \"{search}\" ile eşleşmiyor"
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
 msgstr "Henüz adım yok. Adımları içine sürükleyin veya bir adımın menüsünden İçine Taşı seçeneğini kullanın."
@@ -12176,7 +12194,7 @@ msgid "No stock at this location"
 msgstr "Bu konumda stok yok"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "Bu lokasyonda stok yoktur."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Sonraki 48 hafta içinde stoksuzluk öngörülmedi"
@@ -12185,7 +12203,7 @@ msgid "No storage unit"
 msgstr "Depolama birimi yok"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
 
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
@@ -13947,10 +13965,6 @@ msgstr "Kar Yüzdesi"
 msgid "Progress"
 msgstr "İlerleme"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
-
 msgid "Project"
 msgstr "Proje"
 
@@ -13965,10 +13979,6 @@ msgstr "Proje Planı"
 
 msgid "Project start"
 msgstr "Proje başlangıcı"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Planlanan {0}"
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -14850,10 +14860,6 @@ msgstr "Göreceli zaman çizelgesi · tarihler teyit edilecektir"
 msgid "Release"
 msgstr "Serbest Bırakma"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "{0} partiyi serbest bırak"
-
 msgid "Release Batch"
 msgstr "Partiyi Serbest Bırak"
 
@@ -14874,12 +14880,11 @@ msgstr "Serbest Bırakma Kontrolü"
 msgid "Release Job"
 msgstr "İş emrini serbest bırak"
 
+msgid "Release Jobs"
+msgstr "İş emirlerini Serbest Bırak"
+
 msgid "Released"
 msgstr "Yayınlandı"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "{0} parti serbest bırakıldı"
 
 msgid "Released date"
 msgstr "Yayın tarihi"
@@ -14889,6 +14894,10 @@ msgstr "Yayınlanan revizyon"
 
 msgid "Released revision is locked"
 msgstr "Yayınlanan revizyon kilitlidir"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Sorunlarla serbest bırakıldı: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birinin atölye için hazır olması gerekir."
@@ -15107,7 +15116,7 @@ msgid "Reports"
 msgstr "Raporlar"
 
 msgid "Reprice with current rules"
-msgstr "Geçerli kurallarla yeniden fiyatlandır"
+msgstr "Mevcut kurallarla yeniden fiyatlandır"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -16135,7 +16144,7 @@ msgid "Search related items..."
 msgstr "İlgili öğeleri ara..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Depolama birimlerini ve takip numaralarını ara"
 
 msgid "Search suppliers..."
 msgstr "Tedarikçileri ara..."
@@ -17494,7 +17503,7 @@ msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"
 
 msgid "Sub-assembly"
-msgstr "Alt-montaj"
+msgstr "Alt montaj"
 
 msgid "Sub-Assembly"
 msgstr "Alt-Montaj"
@@ -17513,7 +17522,7 @@ msgstr "Alt-Montaj {0} · {1, plural, one {# parça} other {# parça}}"
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Alt-Montaj {0} · {1} — kendi başında gösterilen"
+msgstr "Alt Montaj {0} · {1} — kendi başına gösterilir"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -18735,6 +18744,9 @@ msgstr "Aynı kişi denetim yapabilir"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "Kimlik sağlayıcınız tarafından yayınlanan SAML meta veri URL'si"
+
+msgid "The schedule could not be updated after the release"
+msgstr "Serbest bırakıldıktan sonra çizelge güncellenemedi."
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Bu varlığın Maliyetini Faydalı ömrü boyunca yaymak için kullanılan amortisman yöntemi (doğrusal, Azalan bakiye, üretim birimleri)."
@@ -20007,7 +20019,7 @@ msgid "Untitled step"
 msgstr "Başlıksız Adım"
 
 msgid "Untracked"
-msgstr ""
+msgstr "İzlenmeyen"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme."
@@ -20167,7 +20179,7 @@ msgid "Uploading backup"
 msgstr "Yedekleme yükleniyor"
 
 msgid "Uploading model"
-msgstr "Model Yükleniyor"
+msgstr "Model yükleniyor"
 
 msgid "Uploading the backup file"
 msgstr "Yedekleme Dosyası Yükleniyor"
@@ -20224,7 +20236,7 @@ msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
 
 msgid "Use Sub-Assembly"
-msgstr "Alt Montajı Kullan"
+msgstr "Alt Montaj Kullanın"
 
 msgid "Used in"
 msgstr "Kullanıldığı Yer"

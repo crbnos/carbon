@@ -88,7 +88,11 @@ vi.mock("~/modules/production/production.server", async () => {
           updatedBy: userId
         });
       }
-      return { error: null };
+      return {
+        error: null,
+        purchaseOrdersBySupplierId: {},
+        releasedJobIds: jobIds
+      };
     })
   };
 });
@@ -159,7 +163,8 @@ function setup() {
           status: "Draft",
           manufacturingBlocked: false,
           missingAssemblies: [],
-          outsideOperationsWithoutSupplier: []
+          outsideOperationsWithoutSupplier: [],
+          supplierIds: []
         }
       ],
       suppliers: []
@@ -249,7 +254,8 @@ describe("Job release status action", () => {
             missingAssemblies: [
               { makeMethodId: "mm-2", description: "Bracket" }
             ],
-            outsideOperationsWithoutSupplier: []
+            outsideOperationsWithoutSupplier: [],
+            supplierIds: []
           }
         ],
         suppliers: []

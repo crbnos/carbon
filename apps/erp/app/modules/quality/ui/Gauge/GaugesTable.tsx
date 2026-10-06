@@ -218,6 +218,9 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <DateTime value={row.original.nextCalibrationDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -228,6 +231,9 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <DateTime value={row.original.lastCalibrationDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

@@ -16,7 +16,10 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  MENU_ITEM_SHORTCUTS
+  MENU_ITEM_SHORTCUTS,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
@@ -30,6 +33,7 @@ import {
   LuPrinter,
   LuSquareUser,
   LuTrash,
+  LuTriangleAlert,
   LuUsers,
   LuX
 } from "react-icons/lu";
@@ -44,6 +48,7 @@ import {
   sortableCardProps
 } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
+import { DUE_URGENCY_BORDER, getBatchDueUrgency } from "../dueUrgency";
 import type { BatchItem, OperationItem } from "../types";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
@@ -139,16 +144,28 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
     0
   );
   const totalDuration = members.reduce((sum, m) => sum + (m.duration ?? 0), 0);
-  // The earliest member due date is the batch's binding constraint.
+  // The earliest dated member deadline is the batch's binding constraint. Only
+  // Hard and Soft Deadline carry a due date; an ASAP or No Deadline member can
+  // still hold a stale one. With no dated member, show the first member's type.
   const earliest = members.reduce<OperationItem | undefined>((acc, m) => {
-    if (!m.dueDate) return acc;
+    if (
+      !m.dueDate ||
+      m.deadlineType === "ASAP" ||
+      m.deadlineType === "No Deadline"
+    )
+      return acc;
     if (!acc?.dueDate || m.dueDate < acc.dueDate) return m;
     return acc;
   }, undefined);
-  const isOverdue =
-    earliest?.deadlineType !== "No Deadline" && earliest?.dueDate
-      ? earliest.dueDate < scheduleToday
-      : false;
+  const deadline = earliest ?? members[0];
+  const isOverdue = earliest?.dueDate
+    ? earliest.dueDate < scheduleToday
+    : false;
+  // The batch runs as one, so any member the scheduler projects late makes the
+  // whole run late — flag it the way the operation card does.
+  const conflictedMembers = members.filter((m) => m.hasConflict);
+  const hasConflict = conflictedMembers.length > 0;
+  const urgency = getBatchDueUrgency(members, scheduleToday);
   const distinctCustomers = [
     ...new Set(members.map((m) => m.customerId).filter(Boolean))
   ] as string[];
@@ -175,6 +192,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
         className={cn(
           "max-w-[330px]",
           KANBAN_CARD_SHELL,
+          urgency && DUE_URGENCY_BORDER[urgency],
           isPlanned && "border-dashed",
           isOverlay && "ring-2 ring-primary",
           isDragging && "ring-2 ring-primary opacity-30"
@@ -192,6 +210,21 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
               </span>
             </HStack>
             <HStack spacing={1} className="flex-shrink-0 -mr-2">
+              {hasConflict && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {conflictedMembers.map((m) => (
+                      <div key={m.id}>
+                        {m.jobReadableId}:{" "}
+                        {m.conflictReason ?? t`Scheduling conflict`}
+                      </div>
+                    ))}
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {!isCompleting && (
                 <IconButton
                   aria-label={t`Move batch`}
@@ -288,8 +321,8 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
             showDuration={displaySettings.showDuration && totalDuration > 0}
             duration={totalDuration}
             showDueDate={displaySettings.showDueDate}
-            deadlineType={earliest?.deadlineType}
-            dueDate={earliest?.dueDate}
+            deadlineType={deadline?.deadlineType}
+            dueDate={deadline?.dueDate}
             isOverdue={isOverdue}
             formatRelativeTime={formatRelativeTime}
           />

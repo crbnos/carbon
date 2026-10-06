@@ -319,6 +319,21 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {关闭 # 生产批次} other {关闭 # 生产批次}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {已关闭 # 生产批次} other {已关闭 # 生产批次}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {下达 # 生产批次} other {下达 # 生产批次}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {已发布 # 生产批次} other {已发布 # 生产批次}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {已下达 # 工单} other {已下达 # 工单}}"
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -4139,7 +4154,7 @@ msgid "Component details: {0}"
 msgstr "组件详情：{0}"
 
 msgid "Component group name"
-msgstr "组件组名称"
+msgstr "零件组名称"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "组件组已更新 — 重新运行运动规划以应用更改"
@@ -4825,7 +4840,9 @@ msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "无法下达{0}：{1}"
 
@@ -6390,19 +6407,11 @@ msgstr "处置"
 msgid "Dissolve"
 msgstr "解散"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "解散 {0} 批次"
-
 msgid "Dissolve batch"
 msgstr "解散批次"
 
 msgid "Dissolve Batch"
 msgstr "解散批次"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "已解散 {0} 批次"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -6802,7 +6811,7 @@ msgid "Edit column visibility"
 msgstr "编辑列可见性"
 
 msgid "Edit Component Group"
-msgstr "编辑组件组"
+msgstr "编辑零件组"
 
 #. placeholder {0}: unit.name
 msgid "Edit component group {0}"
@@ -9662,6 +9671,9 @@ msgstr "是"
 msgid "is any of"
 msgstr "是以下任何一个"
 
+msgid "is between"
+msgstr "介于...之间"
+
 msgid "Is console operator"
 msgstr "是控制台操作员"
 
@@ -9676,6 +9688,12 @@ msgstr "是员工类型组"
 
 msgid "Is identity group"
 msgstr "是身份组"
+
+msgid "is on or after"
+msgstr "在...或之后"
+
+msgid "is on or before"
+msgstr "在...或之前"
 
 msgid "Is supplier org group"
 msgstr "是供应商组织组"
@@ -12164,7 +12182,7 @@ msgid "No step selected"
 msgstr "未选择步骤"
 
 msgid "No steps match \"{search}\""
-msgstr "没有步骤与「{search}」匹配"
+msgstr "没有步骤匹配 \"{search}\""
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
 msgstr "还没有步骤。将步骤拖入其中，或从步骤菜单中使用\"移动到\"。"
@@ -12176,7 +12194,7 @@ msgid "No stock at this location"
 msgstr "此位置没有库存"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "此地点没有库存。"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "未来 48 周内没有预计缺货"
@@ -12185,7 +12203,7 @@ msgid "No storage unit"
 msgstr "无存储单元"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "没有存储单元或追踪号与之匹配。"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -12375,7 +12393,7 @@ msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
 msgid "Nothing is synced until you turn sync on."
-msgstr "在您打开同步之前，没有任何内容被同步。"
+msgstr "在打开同步之前，没有任何内容被同步。"
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "在您打开同步之前，没有任何内容被同步。每个必需的账户都已映射。"
@@ -13947,10 +13965,6 @@ msgstr "利润百分比"
 msgid "Progress"
 msgstr "进度"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "预计 {0}"
-
 msgid "Project"
 msgstr "项目"
 
@@ -13965,10 +13979,6 @@ msgstr "项目计划"
 
 msgid "Project start"
 msgstr "项目开始"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "预计 {0}"
 
 msgid "Projected completion"
 msgstr "预计完成"
@@ -14850,10 +14860,6 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "下达{0}个生产批次"
-
 msgid "Release Batch"
 msgstr "下达生产批次"
 
@@ -14874,12 +14880,11 @@ msgstr "下达控制"
 msgid "Release Job"
 msgstr "下达工单"
 
+msgid "Release Jobs"
+msgstr "下达工单"
+
 msgid "Released"
 msgstr "已下达"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "已下达{0}个生产批次"
 
 msgid "Released date"
 msgstr "下达日期"
@@ -14889,6 +14894,10 @@ msgstr "已下达修订版"
 
 msgid "Released revision is locked"
 msgstr "已下达修订版已锁定"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "已下达，存在问题：{0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
@@ -16135,7 +16144,7 @@ msgid "Search related items..."
 msgstr "搜索相关物料..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "搜索存储单元和追踪号"
 
 msgid "Search suppliers..."
 msgstr "搜索供应商..."
@@ -17494,7 +17503,7 @@ msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
 
 msgid "Sub-assembly"
-msgstr "子装配体"
+msgstr "子组件"
 
 msgid "Sub-Assembly"
 msgstr "子装配体"
@@ -17513,7 +17522,7 @@ msgstr "子装配体 {0} · {1, plural, one {# 个零件} other {# 个零件}}"
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "子装配体 {0} · {1} — 单独显示"
+msgstr "子组件 {0} · {1} — 单独显示"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -18735,6 +18744,9 @@ msgstr "同一个人可以检查"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "您的身份提供商发布的 SAML 元数据 URL"
+
+msgid "The schedule could not be updated after the release"
+msgstr "下达后无法更新排程。"
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、余额递减法、生产单位法）。"
@@ -20007,7 +20019,7 @@ msgid "Untitled step"
 msgstr "未命名步骤"
 
 msgid "Untracked"
-msgstr ""
+msgstr "未追踪"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
@@ -20224,7 +20236,7 @@ msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"
 
 msgid "Use Sub-Assembly"
-msgstr "使用子装配体"
+msgstr "使用子组件"
 
 msgid "Used in"
 msgstr "用在"
