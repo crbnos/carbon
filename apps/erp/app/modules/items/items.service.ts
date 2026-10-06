@@ -523,7 +523,6 @@ export async function createRevision(
 }
 
 // getNextRevision — numeric → +1, A → …→ Z → AA, AA → AB, etc.
-/** @mcp read */
 export function getNextRevision(maxRevision: string): string {
   if (/^\d+$/.test(maxRevision)) {
     return (parseInt(maxRevision) + 1).toString();
@@ -734,7 +733,6 @@ export async function deleteMethodMaterial(
   return client.from("methodMaterial").delete().eq("id", id);
 }
 
-/** @mcp action */
 export async function assertMethodOperationIsDraft(
   client: SupabaseClient<Database>,
   operationId: string
@@ -3948,7 +3946,7 @@ export async function matchItemIdByText(
  * Resolve extracted document line text to an item id: first through the
  * party's part mapping (customerPartToItem / supplierPart), then by exact
  * readableId/name match. Returns null when nothing matches directly.
- * @mcp action
+ * @mcp read
  */
 export async function resolveItemIdFromExtractedText(
   client: SupabaseClient<Database>,
@@ -8761,9 +8759,6 @@ export type DiffMethodResult = {
 // rows (live method rows as `base`, CO-staged rows as `target`), and optionally
 // the per-operation child buckets to also diff steps/parameters/tools, and the
 // two items' supplier parts.
-/**
- * @mcp read
- */
 export function diffMethod(input: DiffMethodInput): DiffMethodResult {
   return {
     materials: diffRows(

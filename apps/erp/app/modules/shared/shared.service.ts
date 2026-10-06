@@ -452,7 +452,6 @@ export async function updateSavedViewOrder(
  * Core sync lookup: given price break tiers and a requested quantity,
  * return the unit price from the highest qualifying tier
  * (where tier.quantity <= requestedQty). Falls back to fallbackPrice.
- * @mcp read
  */
 export function lookupPriceFromBreaks(
   priceBreaks: PriceBreak[],
@@ -471,7 +470,6 @@ export function lookupPriceFromBreaks(
 /**
  * Map-aware wrapper: look up itemId in a SupplierPriceMap, then resolve
  * via lookupPriceFromBreaks. Used by useLineCosts for BOM tree costing.
- * @mcp read
  */
 export function lookupBuyPriceFromMap(
   itemId: string,
@@ -495,7 +493,6 @@ export function lookupBuyPriceFromMap(
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
  * Mirrored in `packages/database/src/methods.ts`.
- * @mcp action
  */
 export function resolveBuyUnitCost(
   material: {
@@ -526,7 +523,6 @@ export function resolveBuyUnitCost(
  *
  * @param fallbackUnitPrice base currency, used when no break matches
  * @returns the price in the supplier's currency
- * @mcp read
  */
 export function resolveSupplierPrice(
   priceBreaks: PriceBreak[],

@@ -272,22 +272,20 @@ describe("mcp tool-metadata generator", () => {
 
   // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
   it("resolves Array<T> generic params to typed arrays", () => {
-    const sourceTools = props(get("production_maxToolQuantityByItem")).sourceTools;
-    expect(sourceTools?.type).toBe("array");
-    expect(Object.keys(sourceTools?.items?.properties ?? {})).toContain("itemId");
+    const dimensions = props(get("accounting_saveJournalLineDimensions")).dimensions;
+    expect(dimensions?.type).toBe("array");
+    expect(Object.keys(dimensions?.items?.properties ?? {})).toContain(
+      "dimensionId"
+    );
   });
 
   // A bare type alias declared in the module's own sources (service file,
   // types.ts, models, or shared) resolves; Partial<{...}> drops required.
-  // `diffMethod(input: DiffMethodInput)` — DiffMethodInput is a named type
-  // alias declared in items.service.ts, so it must resolve to real properties
-  // rather than an opaque {}.
+  // resolvePrice takes PriceResolutionInput from sales/types.ts.
   it("resolves module-local type aliases and Partial wrappers", () => {
-    const input = props(get("items_diffMethod")).input;
+    const input = props(get("sales_resolvePrice")).input;
     const inputBranches = input?.anyOf ?? [input];
-    expect(
-      Object.keys(inputBranches[0]?.properties ?? {}).length
-    ).toBeGreaterThan(0);
+    expect(Object.keys(inputBranches[0]?.properties ?? {})).toContain("itemId");
 
     // updateAbility takes an optional `name` and an optional cadence, so the
     // published schema has both fields and no required list.
@@ -433,5 +431,47 @@ describe("published defaults", () => {
     expect(delivery.upsert).toBeUndefined();
     expect(delivery.schema.required).toContain("id");
     expect(publishes(delivery)).toBe(false);
+  });
+
+  it("publishes select-only helpers as reads", () => {
+    for (const name of [
+      "sales_resolvePrice",
+      "sales_resolvePriceList",
+      "production_calculateJobPriority",
+      "inventory_expandStorageUnitIdsWithDescendants",
+      "items_resolveItemIdFromExtractedText",
+      "resources_resolveEmployeeAbilityExpiresAt",
+      "settings_resolveSections",
+      "users_resolveUserSelectIds",
+      "accounting_translateCompanyBalances"
+    ]) {
+      expect(get(name).classification, name).toBe("READ");
+    }
+  });
+
+  it("does not publish helpers that take no client", () => {
+    for (const name of [
+      "items_diffMethod",
+      "items_getNextRevision",
+      "production_toViewerStep",
+      "production_maxToolQuantityByItem",
+      "shared_lookupPriceFromBreaks",
+      "shared_lookupBuyPriceFromMap",
+      "shared_resolveBuyUnitCost",
+      "shared_resolveSupplierPrice"
+    ]) {
+      expect(byName.has(name), name).toBe(false);
+    }
+  });
+
+  it("does not publish helpers that only check or build rows", () => {
+    for (const name of [
+      "items_assertMethodOperationIsDraft",
+      "sales_buildMakeToOrderPriceRows",
+      "sales_buildPullFromInventoryPriceRows",
+      "sales_buildPurchaseToOrderPriceRows"
+    ]) {
+      expect(byName.has(name), name).toBe(false);
+    }
   });
 });

@@ -773,7 +773,7 @@ export async function deleteDocumentSection(
 
 /**
  * Fetch the given section ids and return them keyed by id for rendering.
- * @mcp action
+ * @mcp read
  */
 export async function resolveSections(
   client: SupabaseClient<Database>,

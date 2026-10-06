@@ -90,12 +90,15 @@ the API only with an `@mcp` JSDoc tag, gated by `MCP_MODULE_ALLOWLIST`
 1468. That matters here for one reason: **`classifyFunction` is now
 load-bearing.** It was a name-verb heuristic feeding a metadata field; it now
 decides whether a function needs a tag at all, so its errors change what is
-published. Three reads are already misclassified WRITE and had to be tagged to
-stay exposed — `items_diffMethod`, `items_lookupBuyPrice`,
-`shared_lookupPriceFromBreaks` (also `items_matchItemIdByText`,
+published. Seven reads were misclassified WRITE and were tagged so they
+stayed published: `items_diffMethod`, `items_lookupBuyPrice`,
+`items_matchItemIdByText`, `production_maxToolQuantityByItem`,
+`shared_lookupBuyPriceFromMap`, `shared_lookupPriceFromBreaks`,
+`shared_resolveSupplierPrice`. `@mcp` means "expose", not "this writes".
+The ones with no client are not tools anymore (`items_diffMethod`,
 `production_maxToolQuantityByItem`, `shared_lookupBuyPriceFromMap`,
-`shared_resolveSupplierPrice`). `@mcp` means "expose", not "this writes", so
-they are harmless today, but the inaccuracy now leaks into exposure decisions.
+`shared_lookupPriceFromBreaks`, `shared_resolveSupplierPrice`).
+`items_lookupBuyPrice` and `items_matchItemIdByText` stay, tagged `@mcp read`.
 
 **The audit-column analysis was measured against a ts-morph prototype**, and the
 result was not the expected one. Over the pre-fix baseline: 58 of 77 drops
@@ -176,12 +179,11 @@ Phase 2 carries three sub-goals the original draft did not have:
 
 **2a — `classifyFunction` becomes structural, because exposure now depends on
 it.** A `.delete(` substring cannot tell a call from a comment, a string, or a
-nested closure, and it is the reason seven read helpers are classified WRITE and
-need an `@mcp` tag to stay exposed. On the AST the question is exact: does the
-function contain a `CallExpression` whose callee is a `.delete` / `.deleteFrom`
-member, and does it contain any write call at all. Expect `classification` to
-change for those seven; each is a read gaining its correct label, and each drops
-its now-unnecessary tag in the same commit.
+nested closure. The no-client helpers listed above are already unpublished.
+`items_lookupBuyPrice` and `items_matchItemIdByText` stay `@mcp read`. On the
+AST the question is exact: does the function contain a `CallExpression` whose
+callee is a `.delete` / `.deleteFrom` member, and does it contain any write
+call at all.
 
 **2b — the audit-column rule keeps its asymmetry and gains conflict
 reporting.** Per write call site, resolve that site's OWN table (so the 36
@@ -279,12 +281,10 @@ None.
       green, and CI runs them
 - [ ] `pnpm exec turbo run typecheck --filter='*' --concurrency=1` is 33/33 and
       `pnpm run test` is green after each phase
-- [ ] The seven reads currently classified WRITE (`items_diffMethod`,
-      `items_lookupBuyPrice`, `items_matchItemIdByText`,
+- [ ] Helpers with no client stay unpublished (`items_diffMethod`,
       `production_maxToolQuantityByItem`, `shared_lookupBuyPriceFromMap`,
-      `shared_lookupPriceFromBreaks`, `shared_resolveSupplierPrice`) are
-      classified READ after 2a, and their `@mcp` tags are removed in the same
-      commit
+      `shared_lookupPriceFromBreaks`, `shared_resolveSupplierPrice`).
+      `items_lookupBuyPrice` and `items_matchItemIdByText` stay `@mcp read`
 - [ ] A function whose payload reaches `functions.invoke` / `.rpc` / another
       function is listed by name in the generator output, with a count
 - [ ] A multi-table conflict is reported and the field KEPT — verified by

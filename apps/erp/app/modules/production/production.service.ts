@@ -442,7 +442,7 @@ export async function convertSalesOrderLinesToJobs(
  * @param client - Supabase client
  * @param params - Job details
  * @returns The calculated priority number
- * @mcp action
+ * @mcp read
  */
 export async function calculateJobPriority(
   client: SupabaseClient<Database>,
@@ -9471,7 +9471,6 @@ export function planAssemblyStepMarkerSync(
 /**
  * The re-sync ratchets a tool's operation-level quantity up to the max quantity
  * any source step asks for (operation-level rows are never lowered or deleted).
- * @mcp read
  */
 export function maxToolQuantityByItem(
   sourceTools: { itemId: string; quantity: number | null }[]
@@ -10262,7 +10261,6 @@ export async function generateAssemblyStepsFromPlan(
  * Maps a DB step row to the viewer's step shape. JSONB columns are validated
  * defensively — `path` motions with invalid keyframes throw inside the viewer,
  * so anything that fails the schema falls back to a safe default.
- * @mcp action
  */
 export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
   const motion = motionSchema.safeParse(step.motion);

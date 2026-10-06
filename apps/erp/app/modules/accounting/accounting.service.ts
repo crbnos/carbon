@@ -4799,7 +4799,7 @@ export async function saveJournalLineDimensions(
   );
 }
 
-/** @mcp action */
+/** @mcp read */
 export async function translateCompanyBalances(
   client: SupabaseClient<Database>,
   companyGroupId: string,

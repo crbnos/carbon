@@ -2668,7 +2668,7 @@ export async function getStorageUnitDescendants(
     .contains("ancestorPath", [storageUnitId]);
 }
 
-/** @mcp action */
+/** @mcp read */
 export async function expandStorageUnitIdsWithDescendants(
   client: SupabaseClient<Database>,
   storageUnitIds: string[]

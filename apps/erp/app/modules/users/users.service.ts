@@ -508,17 +508,18 @@ export async function searchUsersForSelect(
   return query;
 }
 
-/** @mcp action */
+/** @mcp read */
 export async function resolveUserSelectIds(
   client: SupabaseClient<Database>,
   companyId: string,
   ids: string[]
 ) {
-  const [users, groups] = await Promise.all([
+  const [members, groups] = await Promise.all([
     client
-      .from("user")
-      .select("id, firstName, lastName, fullName, email, avatarUrl")
-      .in("id", ids),
+      .from("groupMembers")
+      .select("memberUserId")
+      .eq("companyId", companyId)
+      .in("memberUserId", ids),
     client
       .from("group")
       .select("id, name")
@@ -526,6 +527,27 @@ export async function resolveUserSelectIds(
       .eq("companyId", companyId)
       .eq("isIdentityGroup", false)
   ]);
+
+  if (members.error) {
+    return { users: { data: null, error: members.error }, groups };
+  }
+
+  const memberIds = [
+    ...new Set(
+      (members.data ?? [])
+        .map((row) => row.memberUserId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (memberIds.length === 0) {
+    return { users: { data: [], error: null }, groups };
+  }
+
+  const users = await client
+    .from("user")
+    .select("id, firstName, lastName, fullName, email, avatarUrl")
+    .in("id", memberIds);
+
   return { users, groups };
 }
 

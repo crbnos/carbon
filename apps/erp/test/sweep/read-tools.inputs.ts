@@ -32,6 +32,9 @@ export function givenInputs(today: string): Record<string, Record<string, Planne
     accounting_getConsolidatedBalances: {
       targetCurrency: from("company", "baseCurrencyCode")
     },
+    accounting_translateCompanyBalances: {
+      targetCurrency: from("company", "baseCurrencyCode")
+    },
     accounting_getConsolidatedPeriodSeries: {
       targetCurrency: from("company", "baseCurrencyCode")
     },
@@ -39,7 +42,6 @@ export function givenInputs(today: string): Record<string, Record<string, Planne
     items_getConsumable: { itemId: from("consumables") },
     items_getService: { itemId: from("services") },
     items_getTool: { itemId: from("tools") },
-    items_getNextRevision: { maxRevision: value("A") },
     items_findOtherOpenChangeNoticesForItem: {
       excludeChangeNoticeId: from("changeOrder")
     },

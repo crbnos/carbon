@@ -1349,7 +1349,7 @@ export async function updateAbility(
  * Resolves the qualification expiry for an employee ability. An explicit
  * expiresAt wins; otherwise it is computed from lastTrainingDate + the
  * ability's recertifyEveryDays (null when the ability never expires).
- * @mcp action
+ * @mcp read
  */
 export async function resolveEmployeeAbilityExpiresAt(
   client: SupabaseClient<Database>,
