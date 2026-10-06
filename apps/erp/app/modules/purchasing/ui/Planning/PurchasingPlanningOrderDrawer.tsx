@@ -156,9 +156,11 @@ export const PurchasingPlanningOrderDrawer = memo(
     // Re-read when the item's actions change: applying one rewrites its line.
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
 
+    // Only while open: the drawer stays mounted on its last item so it can
+    // slide out, and that item's actions change with every Apply on the grid.
     // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
     useEffect(() => {
-      if (!carbon || !selectedItem.id) return;
+      if (!isOpen || !carbon || !selectedItem.id) return;
       let isCurrent = true;
 
       (async () => {
@@ -242,7 +244,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
-    }, [carbon, selectedItem.id, locationId, actionsKey]);
+    }, [isOpen, carbon, selectedItem.id, locationId, actionsKey]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openOrders)) return openOrders;

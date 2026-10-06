@@ -42,7 +42,7 @@ Builds on `.ai/plans/2026-09-08-mrp-planning-actions.md` and
       filter inputs instead of item ids.
 - [x] 5. Services + loaders: grid RPCs, actions loaded for the page's items only
       (removes the 500-action cap).
-- [x] 6. Grids (both): Item Group, Time Fence (editable), 1st Negative columns;
+- [x] 6. Grids (both): Item Group, Planning Horizon (editable), 1st Negative columns;
       fence-aware Actions cell, expanded row, bulk apply and bulk Order.
 - [x] 7. Drawers (both): orders trimmed to the fence with an "include the rest"
       control, fence marker on the chart, the item's change actions listed.
@@ -55,9 +55,9 @@ Builds on `.ai/plans/2026-09-08-mrp-planning-actions.md` and
   redefinitions: the base stays the one definition of the projection.
 - `planningAction.horizonDate` = earlier of the target order's current date and the
   suggested date; `latestOrderDate` = required date less lead time (new supply only).
-- The drawer lists suggested changes with `PlanningActionTable` (its own layout), not the
+- The drawer lists suggested changes with the open-orders grid (`OpenOrdersGrid` in `PlanningOrderGrids.tsx`, each open order carrying its action), not the
   grid's `PlanningActionLines` — see the `@container` lesson in `.ai/lessons.md`.
-- The drawer has its own Time Fence control; moving the fence re-splits the suggested
+- The drawer has its own Planning Horizon control; moving the fence re-splits the suggested
   orders and re-merges the existing ones.
 - Browser pass done on the demo company at 1440 and 1100 px (fence in grid and drawer,
   pull-in, suggested-changes table, expanded row, chart marker).

@@ -1093,6 +1093,9 @@ msgstr "Шаг должен иметь имя."
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "Сохраненное бронирование рабочего центра или оператора на время размещения одной операции — материализованный результат запуска планирования и то, что отображает Прогноз."
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Предложение, которое MRP создает после каждого запуска: заказать или начать производство нового обеспечения, или ускорить, отсрочить, увеличить, уменьшить или отменить строку открытого заказа поставщику или производственный заказ. Примените его со страницы планирования, отклоните его или назначьте его."
+
 msgid "A supplier contact and location are optional"
 msgstr "Контактное лицо и площадка поставщика опциональны"
 
@@ -8449,6 +8452,9 @@ msgstr "для чего угодно. Они привлекут нужного �
 msgid "Forecast"
 msgstr "Прогноз"
 
+msgid "Forecast consumption"
+msgstr "Потребление прогноза"
+
 msgid "Forecast Consumption"
 msgstr "Потребление прогноза"
 
@@ -9049,6 +9055,9 @@ msgstr "Сколько дней после даты расчета скидка 
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Сколько дней после даты расчета полная сумма становится подлежащей уплате."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "Количество дней, на которое открытый заказ может отклониться от требуемой даты до того, как MRP предложит его перенести. Установить в Настройки → Планирование; по умолчанию 7 дней."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "Количество дней от даты счета-фактуры, отведенных покупателю на оплату; определяет срок выполнения по умолчанию на счетах-фактурах покупателя."
@@ -12295,7 +12304,7 @@ msgid "No stock at this location"
 msgstr "Нет запасов в этом месте"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "На этой площадке нет запаса."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Отсутствие дефицита запасов не прогнозируется в течение следующих 48 недель"
@@ -12304,7 +12313,7 @@ msgid "No storage unit"
 msgstr "Нет единицы хранения"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Никакие единицы хранения или номера отслеживания не совпадают."
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -13685,6 +13694,9 @@ msgstr "Плановое время"
 msgid "Planning"
 msgstr "Планирование"
 
+msgid "Planning action"
+msgstr "Действие планирования"
+
 msgid "Planning horizon"
 msgstr "Горизонт планирования"
 
@@ -14719,6 +14731,9 @@ msgstr "Готово к предложению"
 msgid "ready to keep or revert"
 msgstr "готово к сохранению или восстановлению"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "Реальные заказы сначала потребляют прогноз потребности на их собственную неделю, затем на более ранние и более поздние недели в пределах окна компании, поэтому прогноз и фактическая потребность никогда не планируются для одних и тех же единиц одновременно."
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Видимость запасов и производства в реальном времени"
 
@@ -15372,6 +15387,9 @@ msgstr "Требует ремонта"
 
 msgid "Requires staffing"
 msgstr "Требует персонала"
+
+msgid "Reschedule tolerance"
+msgstr "Допуск переноса"
 
 msgid "Reschedule Tolerance"
 msgstr "Допуск переноса"
@@ -16308,7 +16326,7 @@ msgid "Search related items..."
 msgstr "Поиск связанных элементов..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Поиск единиц хранения и номеров отслеживания"
 
 msgid "Search suppliers..."
 msgstr "Поиск поставщиков..."
@@ -18821,6 +18839,9 @@ msgstr "Процент скидки при оплате наличными. Ис
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Набор прав доступа, который автоматически получают новые сотрудники этого типа; редактирование здесь изменяет шаблон только для будущих сотрудников — существующие сотрудники сохраняют свои права, пока их явно не обновить массово."
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "Лицо, которому назначено действие планирования: ответственный номенклатуры на этой площадке, иначе ответственный группы номенклатуры, иначе ответственный площадки, иначе ответственный организации по умолчанию."
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Заводы, склады и объекты, где находятся ваша работа и запасы"
 
@@ -20201,7 +20222,7 @@ msgid "Untitled step"
 msgstr "Шаг без названия"
 
 msgid "Untracked"
-msgstr ""
+msgstr "Без отслеживания"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."

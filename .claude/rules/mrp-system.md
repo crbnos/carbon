@@ -2,9 +2,15 @@
 description: MRP (Material Requirements Planning) — run flow, data model, planning UI
 paths:
   - "packages/jobs/src/inngest/functions/scheduled/mrp.ts"
+  - "packages/jobs/src/inngest/functions/scheduled/mrp-companies.ts"
   - "packages/planning/src/mrp/**"
   - "packages/database/src/mrp-engine.ts"
+  - "packages/utils/src/planning-sizing.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
+  - "apps/erp/app/modules/production/planning-action-claims.ts"
+  - "apps/erp/app/modules/settings/ui/Planning/**"
+  - "apps/erp/app/routes/x+/{production,purchasing}+/planning*.tsx"
+  - "apps/erp/app/routes/x+/settings+/planning.tsx"
 ---
 
 # MRP (Material Requirements Planning)

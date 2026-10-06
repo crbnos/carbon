@@ -1093,6 +1093,9 @@ msgstr "एक चरण को एक नाम की आवश्यकता
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "एक वर्क सेंटर या ऑपरेटर की एक संग्रहीत बुकिंग एक ऑपरेशन की रखी गई समय अवधि के लिए — एक शेड्यूलिंग रन का मूर्त आउटपुट, और जो पूर्वानुमान में दिखाई देता है।"
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "एक सुझाव जो MRP प्रत्येक रन के बाद लिखता है: नई आपूर्ति के लिए ऑर्डर करें या निर्माण करें, या किसी खुली क्रय आदेश पंक्ति या जॉब को तेज़ करें, स्थगित करें, बढ़ाएं, घटाएं या रद्द करें। इसे योजना पृष्ठ से लागू करें, इसे खारिज करें, या इसे असाइन करें।"
+
 msgid "A supplier contact and location are optional"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान वैकल्पिक हैं"
 
@@ -8449,6 +8452,9 @@ msgstr "किसी भी चीज़ के लिए। वे सही �
 msgid "Forecast"
 msgstr "पूर्वानुमान"
 
+msgid "Forecast consumption"
+msgstr "पूर्वानुमान की खपत"
+
 msgid "Forecast Consumption"
 msgstr "पूर्वानुमान खपत"
 
@@ -9049,6 +9055,9 @@ msgstr "गणना की तारीख के बाद कितने द
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "गणना की तारीख के बाद कितने दिनों में पूरी राशि देय है।"
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "एक खुला ऑर्डर आवश्यक तारीख से कितने दिन आगे आ सकता है, इससे पहले कि MRP इसे स्थानांतरित करने का सुझाव दे। सेटिंग्स → योजना में सेट करें; डिफ़ॉल्ट 7 दिन है।"
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "यह ग्राहक को चालान तारीख से भुगतान करने के लिए कितने दिन दिए जाते हैं; ग्राहक चालान पर डिफ़ॉल्ट नियत तिथि निर्धारित करता है।"
@@ -12295,7 +12304,7 @@ msgid "No stock at this location"
 msgstr "इस स्थान पर कोई स्टॉक नहीं"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "इस स्थान पर कोई स्टॉक नहीं है।"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "अगले 48 सप्ताह में कोई स्टॉकआउट प्रक्षेपित नहीं है"
@@ -12304,7 +12313,7 @@ msgid "No storage unit"
 msgstr "कोई भंडारण इकाई नहीं"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "कोई भंडारण इकाई या ट्रैकिंग संख्या मेल नहीं खाती।"
 
 msgid "No suppliers yet"
 msgstr "अभी तक कोई आपूर्तिकर्ता नहीं"
@@ -13685,6 +13694,9 @@ msgstr "योजनाबद्ध समय"
 msgid "Planning"
 msgstr "योजना"
 
+msgid "Planning action"
+msgstr "योजना कार्रवाई"
+
 msgid "Planning horizon"
 msgstr "योजना क्षितिज"
 
@@ -14719,6 +14731,9 @@ msgstr "कोटेशन के लिए तैयार"
 msgid "ready to keep or revert"
 msgstr "रखने या पूर्ववत् करने के लिए तैयार"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "वास्तविक ऑर्डर पहले अपने सप्ताह के लिए मांग पूर्वानुमान का उपयोग करते हैं, फिर कंपनी की विंडो के भीतर उससे पहले और बाद के सप्ताहों में, इसलिए पूर्वानुमान और वास्तविक मांग कभी भी एक ही इकाइयों के लिए दोनों योजनाबद्ध नहीं होते।"
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "रीयल-टाइम इन्वेंटरी और शॉप-फ्लोर दृश्यमानता"
 
@@ -15372,6 +15387,9 @@ msgstr "मरम्मत की आवश्यकता है"
 
 msgid "Requires staffing"
 msgstr "स्टाफिंग आवश्यक है"
+
+msgid "Reschedule tolerance"
+msgstr "पुनर्निर्धारण सहिष्णुता"
 
 msgid "Reschedule Tolerance"
 msgstr "पुनर्निर्धारण सहनशीलता"
@@ -16308,7 +16326,7 @@ msgid "Search related items..."
 msgstr "संबंधित आइटम खोजें..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "भंडारण इकाइयों और ट्रैकिंग संख्याओं को खोजें"
 
 msgid "Search suppliers..."
 msgstr "आपूर्तिकर्ताओं को खोजें..."
@@ -18821,6 +18839,9 @@ msgstr "नकद छूट का प्रतिशत। कोई छूट 
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "अनुमति सेट जो इस प्रकार के नए कर्मचारी स्वचालित रूप से प्राप्त करते हैं; यहाँ संपादन केवल भविष्य की भर्ती के लिए टेम्पलेट को बदलता है - मौजूदा कर्मचारी जो उनके पास है वह रखते हैं जब तक कि स्पष्ट रूप से बड़े पैमाने पर अद्यतन नहीं किया जाता।"
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "वह व्यक्ति जिसे योजना कार्रवाई असाइन की गई है: उस स्थान पर आइटम का स्वामी, अन्यथा आइटम समूह का, अन्यथा स्थान का, अन्यथा कंपनी का डिफ़ॉल्ट।"
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "वह संयंत्र, गोदाम, और साइटें जहां आपका काम और स्टॉक रहता है"
 
@@ -20201,7 +20222,7 @@ msgid "Untitled step"
 msgstr "बिना शीर्षक वाला चरण"
 
 msgid "Untracked"
-msgstr ""
+msgstr "अनुरेखित नहीं"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "अप्रयुक्त सामग्री को वर्क सेंटर से गोदाम में वापस भेजा गया।"

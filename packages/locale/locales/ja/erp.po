@@ -1093,6 +1093,9 @@ msgstr "ステップには名前が必要です。"
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "作業区または作業者の予約で、1つの工程の配置された時間帯のもの — スケジュール実行の具現化された出力で、予測が描画するもの"
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRPが各実行後に生成する提案：新しい供給を発注または内製する、もしくはオープン状態の発注書明細または製造指図を早める、延期する、数量を増やす、減らす、またはキャンセルする。計画ページから適用するか、却下するか、割り当ててください。"
+
 msgid "A supplier contact and location are optional"
 msgstr "仕入先の担当者と拠点は任意です"
 
@@ -8449,6 +8452,9 @@ msgstr "何でも構いません。彼らが適切な人を連れてきます。
 msgid "Forecast"
 msgstr "予測"
 
+msgid "Forecast consumption"
+msgstr "予測所要量の消費"
+
 msgid "Forecast Consumption"
 msgstr "予測消費"
 
@@ -9049,6 +9055,9 @@ msgstr "計算日の後、早期支払割引が利用可能な日数。"
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "計算日から何日後に全額が期日となるか。"
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "MRPが移動を提案する前に、オープン状態の発注がそれが必要とされる日付から到着できる日数。設定 → 計画で設定します。デフォルトは7日です。"
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "得意先が支払うまでの請求書日付からの日数。得意先請求書のデフォルト期日を設定します"
@@ -12295,7 +12304,7 @@ msgid "No stock at this location"
 msgstr "この場所には在庫がありません"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "この拠点に在庫がありません。"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "今後48週間に欠品は予測されていません"
@@ -12304,7 +12313,7 @@ msgid "No storage unit"
 msgstr "保管ユニットがありません"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "保管ユニットまたは追跡番号が一致しません。"
 
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
@@ -13685,6 +13694,9 @@ msgstr "予定時間"
 msgid "Planning"
 msgstr "計画"
 
+msgid "Planning action"
+msgstr "計画提案"
+
 msgid "Planning horizon"
 msgstr "計画期間"
 
@@ -14719,6 +14731,9 @@ msgstr "見積準備完了"
 msgid "ready to keep or revert"
 msgstr "保持または復元の準備完了"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "実際の注文は最初に自社の週の所要量予測を消費し、その後会社の時間枠内でそれより前の週と後の週を消費するため、予測と実績の所要量が同じユニットに対して両方計画されることはありません。"
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "リアルタイム在庫と工場フロアの可視性"
 
@@ -15372,6 +15387,9 @@ msgstr "修理が必要"
 
 msgid "Requires staffing"
 msgstr "スタッフが必要"
+
+msgid "Reschedule tolerance"
+msgstr "再スケジュール許容日数"
 
 msgid "Reschedule Tolerance"
 msgstr "スケジュール変更許容値"
@@ -16308,7 +16326,7 @@ msgid "Search related items..."
 msgstr "関連アイテムを検索..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "保管ユニットと追跡番号を検索"
 
 msgid "Search suppliers..."
 msgstr "仕入先を検索..."
@@ -18821,6 +18839,9 @@ msgstr "現金割引の割合。割引がない場合は0を使用してくだ�
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "このタイプの新しい従業員が自動的に受け取る権限セット。ここで編集すると、将来の雇用のみがテンプレートを変更します。既存の従業員は、明示的に大量更新されない限り、持っているものを保持します。"
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "計画提案が割り当てられる個人：その拠点での品目の責任者。該当なければアイテムグループの責任者。該当なければ拠点の責任者。該当なければ会社のデフォルト。"
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサイト"
 
@@ -20201,7 +20222,7 @@ msgid "Untitled step"
 msgstr "無題のステップ"
 
 msgid "Untracked"
-msgstr ""
+msgstr "未追跡"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用のピッキング済み材料が作業区から倉庫に戻されました。"

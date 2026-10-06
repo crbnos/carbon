@@ -45,7 +45,6 @@ export function useTimeFenceOverrides() {
 
   return useMemo(
     () => ({
-      overrides,
       setFenceDate,
       fenceDateFor: (row: FenceRow) =>
         effectiveFenceDate(row.timeFenceDate, overrides[row.id]),

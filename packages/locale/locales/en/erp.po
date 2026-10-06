@@ -1093,6 +1093,9 @@ msgstr "A step needs a name."
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+
 msgid "A supplier contact and location are optional"
 msgstr "A supplier contact and location are optional"
 
@@ -8449,6 +8452,9 @@ msgstr "for anything. They'll pull in the right person."
 msgid "Forecast"
 msgstr "Forecast"
 
+msgid "Forecast consumption"
+msgstr "Forecast consumption"
+
 msgid "Forecast Consumption"
 msgstr "Forecast Consumption"
 
@@ -9049,6 +9055,9 @@ msgstr "How many days after the calculation date the early-payment discount is s
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "How many days after the calculation date the full amount is due."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
@@ -13685,6 +13694,9 @@ msgstr "Planned time"
 msgid "Planning"
 msgstr "Planning"
 
+msgid "Planning action"
+msgstr "Planning action"
+
 msgid "Planning horizon"
 msgstr "Planning horizon"
 
@@ -14719,6 +14731,9 @@ msgstr "Ready for Quote"
 msgid "ready to keep or revert"
 msgstr "ready to keep or revert"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Real-time inventory and shop-floor visibility"
 
@@ -15372,6 +15387,9 @@ msgstr "Requires Repair"
 
 msgid "Requires staffing"
 msgstr "Requires staffing"
+
+msgid "Reschedule tolerance"
+msgstr "Reschedule tolerance"
 
 msgid "Reschedule Tolerance"
 msgstr "Reschedule Tolerance"
@@ -18820,6 +18838,9 @@ msgstr "The percentage of the cash discount. Use 0 for no discount."
 
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
+
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "The plants, warehouses, and sites where your work and stock live"

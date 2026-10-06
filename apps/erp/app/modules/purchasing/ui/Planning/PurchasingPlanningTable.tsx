@@ -260,7 +260,7 @@ const PlanningTable = memo(
     }, [data]);
 
     const isDisabled =
-      !permissions.can("create", "production") ||
+      !permissions.can("create", "purchasing") ||
       bulkUpdateFetcher.state !== "idle" ||
       mrpFetcher.state !== "idle";
 
@@ -699,6 +699,8 @@ const PlanningTable = memo(
         }
       ];
     }, [
+      t,
+      i18n,
       suppliers,
       numberFormatter,
       unitOfMeasures,

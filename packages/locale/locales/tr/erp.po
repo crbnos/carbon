@@ -1093,6 +1093,9 @@ msgstr "Bir adım bir ada ihtiyaç duyuyor."
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "Bir operasyon'un yerleştirilmiş zaman aralığı için iş merkezi veya operatör'ün saklı bir rezervasyonu — bir planlama çalışmasının gerçekleştirilmiş çıktısı ve Tahmin'in çizdiği şey."
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRP'nin her çalışmasından sonra yazdığı bir öneri: Yeni arz sipariş ver veya üret, ya da açık bir satın alma siparişi satırını veya iş emrini hızlandır, ertele, artır, azalt veya iptal et. Planlama sayfasından uygula, kapat veya bir kişiye ata."
+
 msgid "A supplier contact and location are optional"
 msgstr "Bir tedarikçi ilgili kişisi ve lokasyonu isteğe bağlıdır"
 
@@ -8449,6 +8452,9 @@ msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 msgid "Forecast"
 msgstr "Tahmin"
 
+msgid "Forecast consumption"
+msgstr "Tahmin tüketimi"
+
 msgid "Forecast Consumption"
 msgstr "Tahmin Tüketimi"
 
@@ -9049,6 +9055,9 @@ msgstr "Hesaplama tarihinden sonra erken ödeme iskontosunun kaç gün daha kull
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Hesaplama tarihinden sonra kaç gün tam tutar ödenmesi gerekir."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "Açık bir siparişin ihtiyaç duyulan tarihten ne kadar gün sonra gelebileceği, MRP bunu hareket ettirmeyi önerilmeden önce. Ayarlar → Planlama'da ayarlanır; varsayılan değer 7 gündür."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "Bu müşteri fatura tarihinden itibaren kaç gün ödeme yapmak için sahip; müşteri faturalarında varsayılan son tarihi belirler."
@@ -12295,7 +12304,7 @@ msgid "No stock at this location"
 msgstr "Bu konumda stok yok"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "Bu lokasyonda el altında stok yok."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Sonraki 48 hafta içinde stoksuzluk öngörülmedi"
@@ -12304,7 +12313,7 @@ msgid "No storage unit"
 msgstr "Depolama birimi yok"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Depolama birimleri veya izleme numaraları eşleşmiyor."
 
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
@@ -13685,6 +13694,9 @@ msgstr "Planlanan Zaman"
 msgid "Planning"
 msgstr "Planlama"
 
+msgid "Planning action"
+msgstr "Planlama aksiyonu"
+
 msgid "Planning horizon"
 msgstr "Planlama ufku"
 
@@ -14719,6 +14731,9 @@ msgstr "Teklif İçin Hazır"
 msgid "ready to keep or revert"
 msgstr "tutmak veya geri almak için hazır"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "Gerçek siparişler önce kendi haftalı talep tahminlerini tüketir, ardından şirketin penceresindeki daha önceki ve daha sonraki haftaları, böylece tahmin ve gerçek talep hiçbir zaman aynı adetler için planlanmaz."
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Gerçek zamanlı envanter ve atölye tabanı görünürlüğü"
 
@@ -15372,6 +15387,9 @@ msgstr "Onarım Gerektirir"
 
 msgid "Requires staffing"
 msgstr "Personel gerektirir"
+
+msgid "Reschedule tolerance"
+msgstr "Yeniden planlama toleransı"
 
 msgid "Reschedule Tolerance"
 msgstr "Yeniden Planlama Toleransı"
@@ -16308,7 +16326,7 @@ msgid "Search related items..."
 msgstr "İlgili öğeleri ara..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Depolama birimleri ve izleme numaralarını ara"
 
 msgid "Search suppliers..."
 msgstr "Tedarikçileri ara..."
@@ -18821,6 +18839,9 @@ msgstr "Peşin ödeme iskontosunun yüzdesi. İskonto yoksa 0 kullanın."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Bu tür yeni çalışanların otomatik olarak aldığı izin kümesi; burada düzenleme, yalnızca gelecekteki işe almalar için şablonu değiştirir - mevcut çalışanlar, açıkça toplu güncellenmediği sürece sahip olduklarını tutarlar."
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "Planlama aksiyonunun atandığı kişi: o lokasyondaki stok kartının sahibi, değilse stok kartı grubunun, değilse lokasyonun, değilse şirketin varsayılanı."
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Çalışmanızın ve stokunuzun bulunduğu fabrikalar, depolar ve tesisler"
 
@@ -20201,7 +20222,7 @@ msgid "Untitled step"
 msgstr "Başlıksız Adım"
 
 msgid "Untracked"
-msgstr ""
+msgstr "İzlenmeyen"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme."

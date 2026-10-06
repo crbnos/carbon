@@ -403,7 +403,7 @@ export async function setForecastConsumptionWindow(
 ```
 
 2. `planning.tsx` loader: read both columns from the existing `getCompanySettings` result with `?? 4` / `?? 1` fallbacks, alongside `rescheduleToleranceDays`.
-3. `planning.tsx` validator + action: inline `const consumptionValidator = z.coerce.number().int().min(0).max(52);` next to the existing `toleranceValidator` (line ~72); new `case "setForecastConsumption"` parsing `backwardPeriods` and `forwardPeriods` form fields, calling `setForecastConsumptionWindow`, returning `{ success, message }` in the same shape as `setTolerance`.
+3. `planning.tsx` validator + action: inline `const consumptionValidator = z.coerce.number().int().min(0).max(52);` next to the existing `rescheduleToleranceValidator` (now `forecastConsumptionValidator`, both in `settings.models.ts`); new `case "setForecastConsumption"` parsing `backwardPeriods` and `forwardPeriods` form fields, calling `setForecastConsumptionWindow`, returning `{ success, message }` in the same shape as `setTolerance`.
 4. `ForecastConsumptionCard.tsx`: clone `RescheduleToleranceCard`'s structure — one Card, two labelled `NumberField`s (min 0, max 52): "Consume forecast backward (weeks)" and "Consume forecast forward (weeks)", copy explaining: "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back (then forward) instead of double-counting." Submit both values with `intent=setForecastConsumption` via `useFetcher`. Wrap user-facing strings in Lingui (`t` / `<Trans>`) if and only if `ResponsibleEmployeeCard.tsx` does — match the host file's i18n usage exactly.
 5. Render `<ForecastConsumptionCard …/>` in `planning.tsx` directly after `<RescheduleToleranceCard …/>` (~line 190). Export the new card from the `ui/Planning` barrel if one exists (check `apps/erp/app/modules/settings/ui/Planning/index.ts`; if absent, import directly like `RescheduleToleranceCard` is).
 
@@ -466,7 +466,7 @@ grep -n "consumedValues" apps/erp/app/modules/production/ui/DemandProjection/Dem
 
 **Depends on:** Task 4 (describe reality, not intent)
 **Files:**
-- Modify: `docs/content/docs/reference/forecast.mdx` — the additive-demand paragraph + stale paths. (CORRECTED during execution: the plan originally named `apps/erp/app/modules/agent/kb/docs/reference/forecast.md`, but that file is GENERATED from `docs/content/**` per `.claude/rules/agent-knowledge-base.md` — edit the source and run `pnpm run generate:agent-kb`, committing the regenerated kb/ alongside.)
+- Modify: `docs/content/docs/reference/forecast.mdx` — the additive-demand paragraph + stale paths. (CORRECTED during execution: the plan originally named `apps/erp/app/modules/agent/kb/docs/reference/forecast.md`, but the agent knowledge base is baked from `docs/content/**` at build time per `.claude/rules/agent-knowledge-base.md` — edit the source page; nothing is generated or committed separately.)
 - Modify: `.claude/rules/mrp-system.md` — run-flow inputs + new settings
 - Modify: `.ai/specs/2026-08-22-mrp-v2-planned-order-generation.md` — changelog note
 - Modify: `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md` — changelog + status
@@ -479,9 +479,9 @@ grep -n "consumedValues" apps/erp/app/modules/production/ui/DemandProjection/Dem
 
 **Verify:**
 ```bash
-grep -n "consumedQuantity" apps/erp/app/modules/agent/kb/docs/reference/forecast.md .claude/rules/mrp-system.md
+grep -n "consumedQuantity" docs/content/docs/reference/forecast.mdx .claude/rules/mrp-system.md
 # Expected: both files describe the consumption model
-grep -c "added in full alongside" apps/erp/app/modules/agent/kb/docs/reference/forecast.md
+grep -c "added in full alongside" docs/content/docs/reference/forecast.mdx
 # Expected: 0
 ```
 

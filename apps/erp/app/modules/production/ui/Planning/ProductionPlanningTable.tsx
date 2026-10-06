@@ -602,6 +602,8 @@ const ProductionPlanningTable = ({
       }
     ];
   }, [
+    t,
+    i18n,
     numberFormatter,
     unitOfMeasures,
     isDisabled,

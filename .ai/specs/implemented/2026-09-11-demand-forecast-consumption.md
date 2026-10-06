@@ -223,7 +223,7 @@ No RLS changes (existing table policies cover the new columns). No new enums.
 
 ## Docs / knowledge sync (required by keep-sources-in-sync)
 
-- `apps/erp/app/modules/agent/kb/docs/reference/forecast.md` — currently documents the
+- `docs/content/docs/reference/forecast.mdx` (the agent knowledge base is baked from it) — currently documents the
   additive behavior as intentional; rewrite for consumption (and fix its stale paths).
 - `.claude/rules/mrp-system.md` — describe consumption in the run flow.
 - MRP v2 spec (`.ai/specs/2026-08-22-mrp-v2-planned-order-generation.md`) — changelog

@@ -248,7 +248,7 @@ If the ported math diverges from `calculateOrders` in any policy branch (parity 
 
 **Depends on:** Task 2
 **Files:**
-- Modify: `apps/erp/app/modules/production/production.models.ts` — add `planningActionType`/`planningActionStatus` string-tuple constants + `planningActionValidator` (for mutations) and any filter enums
+- Modify: `apps/erp/app/modules/production/production.models.ts` — add `planningActionType`/`planningActionStatus` string-tuple constants + `planningActionDismissValidator` / `planningActionAssignValidator` (for mutations) and any filter enums
 - Modify: `apps/erp/app/modules/production/types.ts` — derived `PlanningAction` type
 - Copy from (precedent): `apps/erp/app/modules/purchasing/purchasing.models.ts` (validator style, `zfd` usage) and the enum-tuple pattern used for `purchaseOrderStatusType`
 
@@ -351,14 +351,14 @@ If the open-order-to-requirement matching cannot be made deterministic from the 
 
 **Depends on:** Task 4
 **Files:**
-- Modify: `apps/erp/app/modules/production/production.service.ts` — `getPlanningActions`, `dismissPlanningAction`, `markPlanningActionActioned`
+- Modify: `apps/erp/app/modules/production/production.service.ts` — `getPlanningActions`, `dismissPlanningActions`, `markPlanningActionsActioned`
 - Modify: `apps/erp/app/modules/production/production.models.ts` — (validators from Task 4)
 - Copy from (precedent): `getPurchasingPlanning` (`purchasing.service.ts:460`) for the `GenericQueryFilters` + `client.from(...)`/`client.rpc(...)` shape; `assign()` in `apps/erp/app/modules/shared/shared.server.ts` for assignment
 
 **Steps:**
 1. `getPlanningActions(client, { companyId, locationId, replenishmentSystem: "Buy" | "Make", filters })` — selects `planningAction` joined to item (readable id, name) for the location, filtered to `status <> 'Actioned'` by default, honoring `GenericQueryFilters` (assignee, type, status, search, sorts, pagination). **Also join through `purchaseOrderLine` to select the parent `purchaseOrderId` (+ its readable id)** — `planningAction` stores the LINE id, and `path.to.purchaseOrder(...)` needs the PO id, so "Review on PO" navigation would otherwise be a broken link. Include the job's readable id for the job case. Buy page passes the Buy set (`type IN ('Order','Expedite','Defer','Cancel','Increase','Decrease')` for items whose `replenishmentSystem != 'Make'`); Make page the Make set. Returns raw `{ data, error }`.
-2. `dismissPlanningAction(client, { ids, userId })` — set `status = 'Dismissed'`, `updatedBy`, `updatedAt` for the ids (bulk).
-3. `markPlanningActionActioned(client, { ids, userId })` — set `status = 'Actioned'` (called by the apply route after a successful apply — Task 8).
+2. `dismissPlanningActions(db, { ids, companyId, userId })` — set `status = 'Dismissed'`, `updatedBy`, `updatedAt` for the ids (bulk).
+3. `markPlanningActionsActioned(db, { ids, companyId, userId })` — set `status = 'Actioned'` (called by the apply route after a successful apply — Task 8).
 4. Assignment reuses the shared **`assign()`** service against `table: "planningAction"` (the column is named `assignee`), and additionally sets `assigneeOverridden = true`. Add a small `assignPlanningAction(client, { id, assignee, userId })` that does both in one update (do NOT route through `api/assign`, because that path also fires table→NotificationEvent mapping we don't want here; a dedicated fn keeps it quiet). Confirm no `NotificationEvent` is wired for `planningAction` in `api+/assign.ts`.
 
 **Verify:**
@@ -390,7 +390,7 @@ pnpm exec turbo run typecheck --filter=erp
    - Expedite/Defer on a job → **exactly one path**: `updateJob({ dueDate: suggestedDate })` (the job's demand target; it recomputes priority), then `notifyScheduleInputsChanged(companyId, "reorder", reason, jobId)` (there is no `"job"` kind — use `"reorder"`). Do NOT call `updateJobOperationDueDate` — that pins an *operation* need-by and sets `manuallyScheduled`, a different input — and never write `jobOperation` dates directly.
    - Increase/Decrease on a job → `updateJob({ quantity })` then `recalculateJobRequirements`.
    - Cancel on a job → `updateJobStatus({ id, companyId, status: "Cancelled", updatedBy })`.
-4. On success, call `markPlanningActionActioned(client, { ids: [planningActionId], userId })`.
+4. On success, call `markPlanningActionsActioned(db, { ids: [planningActionId], companyId, userId })`.
 5. Preserve the JSON-body + `action`-discriminator contract and the plain-object return shape (no redirect) both routes use today.
 
 **Verify:**
@@ -436,7 +436,7 @@ pnpm exec turbo run typecheck --filter=erp
 - Create/modify route: `apps/erp/app/routes/x+/settings+/planning.tsx` (new settings route) — loader + `intent`-switched action
 - Modify: `apps/erp/app/utils/path.ts` — add `settingsPlanning: \`${x}/settings/planning\``
 - Modify: settings navigation config to add the new settings link (find where `printing` settings link is registered and mirror it)
-- Modify: `apps/erp/app/modules/settings/settings.service.ts` (or the appropriate settings service) — `setResponsibleEmployee` writers for company default / per-location / per-item-group
+- Modify: `apps/erp/app/modules/settings/settings.service.ts` (or the appropriate settings service) — `setDefaultResponsibleEmployee` / `setLocationResponsibleEmployee` / `upsertItemPostingGroupResponsibility` writers for company default / per-location / per-item-group
 - Copy from (precedent): `apps/erp/app/modules/settings/ui/Printing/AssignmentsCard.tsx` + `apps/erp/app/routes/x+/settings+/printing.tsx` (fetcher + `intent` action returning `{success,message}`, Combobox-per-row, no ValidatedForm)
 
 **Steps:**
@@ -451,7 +451,7 @@ pnpm exec turbo run typecheck --filter=erp
    - `setItemGroup` (locationId, itemPostingGroupId, employee) → **upsert** `itemPostingGroupResponsibility` on `(companyId, locationId, itemPostingGroupId)` (delete the row when employee is cleared, matching the printer "unset → inherit" behavior).
    Each returns `{ success, message }` (no redirect; fetcher + toast).
 4. Register the settings link + `path.to.settingsPlanning`.
-5. Settings writers go in the appropriate settings service (`setResponsibleEmployeeDefault`, `setLocationResponsibleEmployee`, `upsertItemPostingGroupResponsibility`).
+5. Settings writers go in the appropriate settings service (`setDefaultResponsibleEmployee`, `setLocationResponsibleEmployee`, `upsertItemPostingGroupResponsibility`).
 6. Expose **`rescheduleToleranceDays`** on the same screen as a plain number field (its own small card above the ownership card), zod-validated `z.number().int().min(0).max(365)` in the mutation (the DB `CHECK (>= 0)` is the backstop; a negative value would make every gap actionable).
 
 **Verify:**

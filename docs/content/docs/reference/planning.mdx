@@ -9,11 +9,11 @@ Planning determines what to make or buy and in what quantity. Carbon's <Term>MRP
 
 Planning has two distinct stages:
 
-1. **MRP, explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand forecasts (plus the demand and supply *actuals* it read). It does **not** apply <Term id="reorder-point">reorder points</Term> and does **not** create orders.
-2. **Planning views, suggest a quantity.** The production and purchasing planning pages read those forecasts, project running stock week by week, and apply each item's **<Term id="reordering-policy">reorder policy</Term>** to propose a quantity to order.
+1. **MRP, explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand forecasts (plus the demand and supply *actuals* it read). It then sizes each shortage with the item's <Term id="reordering-policy">reorder policy</Term> and writes a <Term id="planning-action">planning action</Term> for it, and one for every open order whose date or quantity no longer fits.
+2. **Planning views, show and apply.** The production and purchasing planning pages project running stock week by week, show the actions on each row, and let you apply them.
 
 <Callout type="note">
-MRP **suggests, it never auto-orders.** The engine only writes forecasts; turning a suggestion into a real job or PO is an explicit action you take on the planning page.
+MRP **suggests, it never auto-orders.** The engine writes forecasts and suggestions; turning a suggestion into a real job or PO, or moving an existing one, is an explicit action you take on the planning page.
 </Callout>
 
 ## When it runs
@@ -42,6 +42,41 @@ An item's **<Term>replenishment system</Term>** determines where its shortage ap
 **"Planned"** is a real, saved job or PO that came from a planning suggestion and is waiting to be released — distinct from a hand-started **"Draft"**.
 </Callout>
 
+## Planning actions
+
+Every MRP run leaves a worklist on the planning pages. Each row's **Actions** column shows one chip per open action type; expand the row to see each action with its target order, quantity, date and reason.
+
+| Action | Target | What applying it does |
+| --- | --- | --- |
+| **Order** / **Make** | none yet | Opens the order drawer; the existing **Order** button creates the PO or job. |
+| **Expedite** / **Defer** | an open PO line or job | Moves the required date (PO line) or the due date (job) to the suggested date. |
+| **Increase** / **Decrease** | an open PO line or job | Sets the line's purchase quantity, or the job's quantity, to the suggested quantity. |
+| **Cancel** | an open PO line or job | Deletes the PO line, or cancels the job, when nothing needs it. |
+
+**Apply** is offered only while the target can still change from planning: a PO at **"Draft"** or **"Planned"**, a job at **"Draft"** or **"Planned"**. A PO that has been sent or is in approval, a job on the floor, or a PO line whose date the supplier has promised shows **Review** instead, and you make the change on the order itself. Select several rows and choose **Apply Suggested Changes** to apply every open action on them at once.
+
+<Callout type="info" title="A dismissed action stays dismissed until the need changes">
+**Dismiss** hides an action you have decided not to take. The next MRP runs keep it hidden while the suggested quantity and date stay the same; a material change reopens it. **Reopen** brings it back by hand. **Assign to Me** sets the owner, and MRP keeps a hand-set owner on later runs.
+</Callout>
+
+An applied action is finished: the next run re-evaluates the changed order and writes a fresh action only if something still does not fit.
+
+<Screenshot label="Production planning grid with the Actions column and one row expanded to its action lines" caption="Each row carries its open actions; expand it to apply, dismiss or assign them." ratio="wide" />
+
+## Planning horizon
+
+The **Planning Horizon** column is a date per row: today plus the item's horizon in days. A row shows only the actions and suggested orders due on or before that date, so a long planning window does not bury next week's work. Set the company default in **Settings → Planning → Planning Horizon**, and override it per item on the item's planning tab (**Planning Horizon (Days)**). An item set to 0 shows everything MRP plans, whatever the company default.
+
+Moving the date in the column widens or narrows that one row for this page view only; it never changes the item.
+
+## Reschedule tolerance
+
+MRP suggests **Expedite** or **Defer** only when an open order lands more than the tolerance away from the date it is needed. The default is 7 days. Set it in **Settings → Planning → Reschedule Tolerance**; 0 suggests a move for any date difference.
+
+## Planning ownership
+
+Each action gets a <Term id="responsible-employee">responsible employee</Term>, resolved from the most specific setting that names one: the item at that location, then the item group at that location, then the location, then the company default. Set the rungs in **Settings → Planning → Planning Ownership** and on the item's planning tab (**Responsible Employee**). Filter the grid by assignee to see your own worklist.
+
 ## Planning vs scheduling
 
 Planning determines quantities; **scheduling** determines timing and work-center allocation. After a job exists, scheduling places its <Term id="operation">operations</Term> on <Term id="work-center">work centers</Term> and calculates dates without changing quantities.
@@ -54,6 +89,12 @@ Planning determines quantities; **scheduling** determines timing and work-center
   </Card>
   <Card title="Jobs" href="/docs/reference/jobs">
     What a Make suggestion becomes once you order it.
+  </Card>
+  <Card title="Demand forecasts" href="/docs/reference/forecast">
+    The projections MRP plans against, and how real orders consume them.
+  </Card>
+  <Card title="Company settings" href="/docs/reference/company-settings">
+    The planning settings behind the horizon, the tolerance and the owner ladder.
   </Card>
 </Cards>
 
@@ -71,4 +112,13 @@ The job was created but copying the item's method into it failed — usually the
 
 ### "Failed to load any locations"
 Planning needs at least one location. Create one in settings and set a default.
+
+### "Planning action … was already applied"
+Another planner applied the same action after this page loaded. Reload the planning page; the action is gone and the order already carries the change.
+
+### "… is committed — review on the order"
+The target left Draft / Planned between the page load and Apply (the PO was sent or put in approval, the job was released). The action stays open as Review; make the change on the order.
+
+### Mechanics
+Actions are rows in `planningAction` (`type` Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` Open / Dismissed / Actioned), written by `generatePlanningActions` after every MRP run as a diff against the previous run. Apply runs as one transaction per batch: the claim (Open → Actioned) and the change commit together. The horizon is `itemPlanning.planningHorizonDays`, else `companySettings.defaultPlanningHorizonDays`; 0 at either level means no horizon. The tolerance is `companySettings.rescheduleToleranceDays`. The owner ladder is `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` → `location.responsibleEmployee` → `companySettings.defaultResponsibleEmployee`.
 </AgentContext>

@@ -1093,6 +1093,9 @@ msgstr "Un paso necesita un nombre."
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "Una reserva almacenada de un centro de trabajo u operario para el lapso de tiempo colocado de una operación — el resultado materializado de una ejecución de programación, y lo que el Pronóstico dibuja."
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Una sugerencia que MRP escribe después de cada ejecución: Pedir o Fabricar nuevo suministro, o Adelantar, Diferir, Aumentar, Disminuir o Cancelar una línea de orden de compra abierta u orden de trabajo. Aplícala desde la página de planificación, descártala o asígnala."
+
 msgid "A supplier contact and location are optional"
 msgstr "Un contacto de proveedor y una ubicación son opcionales"
 
@@ -8449,6 +8452,9 @@ msgstr "para cualquier cosa. Ellos traerán a la persona indicada."
 msgid "Forecast"
 msgstr "Pronóstico"
 
+msgid "Forecast consumption"
+msgstr "Pronóstico de consumo"
+
 msgid "Forecast Consumption"
 msgstr "Consumo de Pronóstico"
 
@@ -9049,6 +9055,9 @@ msgstr "Cuántos días después de la fecha de cálculo el descuento por pago an
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Cuántos días después de la fecha de cálculo el monto completo es debido."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "Cuántos días una orden abierta puede atrasarse desde la fecha en que se necesita antes de que MRP sugiera adelantarla. Configurar en Configuración → Planificación; el valor predeterminado es 7 días."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "Cuántos días desde la fecha de la factura este cliente tiene para pagar; determina la fecha de vencimiento predeterminada en las facturas de clientes."
@@ -12295,7 +12304,7 @@ msgid "No stock at this location"
 msgstr "Sin stock en esta ubicación"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "No hay existencias en esta ubicación."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Sin proyección de rotura de stock en las próximas 48 semanas"
@@ -12304,7 +12313,7 @@ msgid "No storage unit"
 msgstr "Sin unidad de almacenamiento"
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "Ninguna unidad de almacenamiento o número de seguimiento coincide."
 
 msgid "No suppliers yet"
 msgstr "Sin proveedores aún"
@@ -13685,6 +13694,9 @@ msgstr "Tiempo planificado"
 msgid "Planning"
 msgstr "Planificación"
 
+msgid "Planning action"
+msgstr "Acción de planificación"
+
 msgid "Planning horizon"
 msgstr "Horizonte de planificación"
 
@@ -14719,6 +14731,9 @@ msgstr "Listo para cotizar"
 msgid "ready to keep or revert"
 msgstr "listo para mantener o revertir"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "Las órdenes reales consumen el pronóstico de demanda de su propia semana primero, luego las semanas anteriores y posteriores dentro de la ventana de la empresa, por lo que el pronóstico y la demanda real nunca se planifican ambos para las mismas unidades."
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Visibilidad del inventario y la planta de producción en tiempo real"
 
@@ -15372,6 +15387,9 @@ msgstr "Requiere Reparación"
 
 msgid "Requires staffing"
 msgstr "Requiere personal"
+
+msgid "Reschedule tolerance"
+msgstr "Tolerancia de reprogramación"
 
 msgid "Reschedule Tolerance"
 msgstr "Tolerancia de Reprogramación"
@@ -16308,7 +16326,7 @@ msgid "Search related items..."
 msgstr "Buscar elementos relacionados..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "Buscar unidades de almacenamiento y números de seguimiento"
 
 msgid "Search suppliers..."
 msgstr "Buscar proveedores..."
@@ -18821,6 +18839,9 @@ msgstr "El porcentaje del descuento en efectivo. Utiliza 0 para sin descuento."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "El conjunto de permisos que reciben automáticamente los nuevos empleados de este tipo; editar aquí cambia la plantilla solo para futuras contrataciones - los empleados existentes conservan lo que tienen a menos que se actualicen explícitamente en masa."
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "La persona a quien se asigna una acción de planificación: el propietario del artículo en esa ubicación; en su defecto, el del grupo de artículos; en su defecto, el de la ubicación; en su defecto, el valor predeterminado de la empresa."
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Las plantas, almacenes y sitios donde viven tu trabajo e inventario"
 
@@ -20201,7 +20222,7 @@ msgid "Untitled step"
 msgstr "Paso sin título"
 
 msgid "Untracked"
-msgstr ""
+msgstr "Sin seguimiento"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Material recogido no utilizado devuelto desde el centro de trabajo al almacén."

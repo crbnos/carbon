@@ -1093,6 +1093,9 @@ msgstr "단계에 이름이 필요합니다."
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "작업장 또는 작업자의 한 공정의 배치 시간 범위에 대한 저장된 예약 — 일정 생성 실행의 구체화된 결과물이며, 예측이 표시하는 대상입니다."
 
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRP가 각 실행 후 작성하는 제안입니다: 새로운 공급을 발주하거나 생산하거나, 미결 발주서 라인 또는 작업 지시를 가속화, 연기, 증가, 감소 또는 취소합니다. 계획 페이지에서 적용하거나, 무시하거나, 할당할 수 있습니다."
+
 msgid "A supplier contact and location are optional"
 msgstr "공급업체 담당자 및 사업장은 선택사항입니다"
 
@@ -8449,6 +8452,9 @@ msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 msgid "Forecast"
 msgstr "예측"
 
+msgid "Forecast consumption"
+msgstr "예측 소모"
+
 msgid "Forecast Consumption"
 msgstr "예측 소모"
 
@@ -9049,6 +9055,9 @@ msgstr "계산 날짜 이후 선급 할인을 사용할 수 있는 일 수입니
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "계산일로부터 전체 금액이 만기되는 일수입니다."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "미결 발주가 필요한 날짜로부터 이 일수의 범위 내에 도착하면 MRP가 일정 변경을 제안하지 않습니다. 설정 → 계획에서 설정하며, 기본값은 7일입니다."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "이 고객이 송장 날짜로부터 지불하는 데 주어진 일수입니다. 고객 송장의 기본 마감일을 결정합니다."
@@ -12295,7 +12304,7 @@ msgid "No stock at this location"
 msgstr "이 위치에 재고가 없습니다"
 
 msgid "No stock on hand at this location."
-msgstr ""
+msgstr "이 사업장에는 재고가 없습니다."
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "향후 48주 내에 재고 부족이 예상되지 않습니다."
@@ -12304,7 +12313,7 @@ msgid "No storage unit"
 msgstr "보관 단위가 없습니다."
 
 msgid "No storage units or tracking numbers match."
-msgstr ""
+msgstr "보관 단위 또는 추적 번호가 일치하는 것이 없습니다."
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -13685,6 +13694,9 @@ msgstr "계획된 시간"
 msgid "Planning"
 msgstr "계획"
 
+msgid "Planning action"
+msgstr "계획 조치"
+
 msgid "Planning horizon"
 msgstr "계획 호라이즌"
 
@@ -14719,6 +14731,9 @@ msgstr "견적 준비 완료"
 msgid "ready to keep or revert"
 msgstr "유지하거나 되돌릴 준비됨"
 
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "실제 주문은 먼저 해당 주의 수요 예측을 소모한 후, 회사의 범위 내에서 이전 및 이후 주의 수요를 소모합니다. 따라서 예측 수요와 실제 수요가 동일한 단위에 대해 동시에 계획되지 않습니다."
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "실시간 재고 및 현장 가시성"
 
@@ -15372,6 +15387,9 @@ msgstr "수리 필요"
 
 msgid "Requires staffing"
 msgstr "인력 필수"
+
+msgid "Reschedule tolerance"
+msgstr "재일정 허용 범위"
 
 msgid "Reschedule Tolerance"
 msgstr "재일정 허용도"
@@ -16308,7 +16326,7 @@ msgid "Search related items..."
 msgstr "관련 품목 검색..."
 
 msgid "Search storage units and tracking numbers"
-msgstr ""
+msgstr "보관 단위 및 추적 번호 검색"
 
 msgid "Search suppliers..."
 msgstr "공급업체 검색..."
@@ -18821,6 +18839,9 @@ msgstr "현금 할인 비율입니다. 할인이 없으면 0을 사용하세요.
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "이 유형의 신규 직원이 자동으로 받는 권한 세트입니다. 여기서 수정하면 이후 신규 채용자에게만 템플릿이 적용되며, 기존 직원은 명시적으로 일괄 업데이트하지 않는 한 현재 권한을 유지합니다."
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "계획 조치가 할당되는 사람입니다: 해당 사업장의 품목 책임자, 없으면 품목 그룹의 책임자, 없으면 사업장의 책임자, 없으면 회사 기본 책임자입니다."
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "작업과 재고가 위치하는 공장, 창고, 사업장"
 
@@ -20201,7 +20222,7 @@ msgid "Untitled step"
 msgstr "제목 없는 단계"
 
 msgid "Untracked"
-msgstr ""
+msgstr "미추적"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "작업장에서 창고로 반환된 미사용 선택 재료."

@@ -698,9 +698,11 @@ export async function action({ request }: ActionFunctionArgs) {
     case "increase":
     case "decrease":
     case "cancel": {
+      // The same id twice (a row selected in two places) is one action.
       const parsedIds = z
         .array(z.string().min(1))
         .min(1)
+        .transform((ids) => [...new Set(ids)])
         .safeParse(planningActionIds);
       if (!parsedIds.success) {
         return data(
@@ -1060,9 +1062,11 @@ export async function action({ request }: ActionFunctionArgs) {
     // changes materially; assign sets assigneeOverridden so the next MRP
     // diff-write never re-resolves the owner from the ladder.
     case "dismiss": {
+      // The same id twice (a row selected in two places) is one action.
       const parsedIds = z
         .array(z.string().min(1))
         .min(1)
+        .transform((ids) => [...new Set(ids)])
         .safeParse(planningActionIds);
       if (!parsedIds.success) {
         return data(
@@ -1076,6 +1080,12 @@ export async function action({ request }: ActionFunctionArgs) {
         userId
       });
       if (result.error) {
+        logger.error("Failed to dismiss planning actions", {
+          companyId,
+          userId,
+          planningActionIds: parsedIds.data,
+          error: result.error
+        });
         return data(
           { success: false, message: "Failed to dismiss planning actions" },
           { status: 500 }
@@ -1101,9 +1111,11 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
     case "reopen": {
+      // The same id twice (a row selected in two places) is one action.
       const parsedIds = z
         .array(z.string().min(1))
         .min(1)
+        .transform((ids) => [...new Set(ids)])
         .safeParse(planningActionIds);
       if (!parsedIds.success) {
         return data(
@@ -1117,6 +1129,12 @@ export async function action({ request }: ActionFunctionArgs) {
         userId
       });
       if (result.error) {
+        logger.error("Failed to reopen planning actions", {
+          companyId,
+          userId,
+          planningActionIds: parsedIds.data,
+          error: result.error
+        });
         return data(
           { success: false, message: "Failed to reopen planning actions" },
           { status: 500 }
@@ -1142,9 +1160,11 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
     case "assign": {
+      // The same id twice (a row selected in two places) is one action.
       const parsedIds = z
         .array(z.string().min(1))
         .min(1)
+        .transform((ids) => [...new Set(ids)])
         .safeParse(planningActionIds);
       if (!parsedIds.success) {
         return data(
@@ -1178,6 +1198,12 @@ export async function action({ request }: ActionFunctionArgs) {
         userId
       });
       if (result.error) {
+        logger.error("Failed to assign planning actions", {
+          companyId,
+          userId,
+          planningActionIds: parsedIds.data,
+          error: result.error
+        });
         return data(
           { success: false, message: "Failed to assign planning actions" },
           { status: 500 }

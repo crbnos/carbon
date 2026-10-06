@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { Heading, ScrollArea, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
@@ -40,6 +41,8 @@ import {
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "planning");
 
 export const handle: Handle = {
   breadcrumb: msg`Planning`,
@@ -76,6 +79,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
+  }
+
+  // A failed list read renders as "no locations / groups / owners", which
+  // reads as a clean company; log it so it is not silent.
+  for (const [name, read] of [
+    ["location", locations],
+    ["itemPostingGroup", itemGroups],
+    ["itemPostingGroupResponsibility", responsibilities]
+  ] as const) {
+    if (read.error) {
+      logger.error("Failed to load planning settings", {
+        companyId,
+        table: name,
+        error: read.error
+      });
+    }
   }
 
   return {
@@ -124,6 +143,11 @@ export async function action({ request }: ActionFunctionArgs) {
         employeeId: employeeId || null
       });
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return { success: false, message: "Failed to update company default" };
       }
       return { success: true, message: "Company default updated" };
@@ -152,6 +176,11 @@ export async function action({ request }: ActionFunctionArgs) {
         userId
       });
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return {
           success: false,
           message: "Failed to update location ownership"
@@ -193,6 +222,11 @@ export async function action({ request }: ActionFunctionArgs) {
         userId
       });
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return {
           success: false,
           message: "Failed to update item group ownership"
@@ -215,6 +249,11 @@ export async function action({ request }: ActionFunctionArgs) {
         days: validation.data.days
       });
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return { success: false, message: "Failed to update tolerance" };
       }
       return { success: true, message: "Reschedule tolerance updated" };
@@ -234,6 +273,11 @@ export async function action({ request }: ActionFunctionArgs) {
         days: validation.data.days ?? null
       });
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return { success: false, message: "Failed to update planning horizon" };
       }
       return { success: true, message: "Planning horizon updated" };
@@ -254,6 +298,11 @@ export async function action({ request }: ActionFunctionArgs) {
         forwardPeriods: validation.data.forwardPeriods
       });
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return {
           success: false,
           message: "Failed to update forecast consumption"
@@ -279,6 +328,11 @@ export async function action({ request }: ActionFunctionArgs) {
           : null
       );
       if (result.error) {
+        logger.error("Failed to save planning setting", {
+          companyId,
+          intent,
+          error: result.error
+        });
         return { success: false, message: "Failed to update MRP schedule" };
       }
       return { success: true, message: "MRP schedule updated" };
