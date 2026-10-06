@@ -6250,6 +6250,15 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Detach"
+msgstr "分离"
+
+msgid "Detach from Onshape?"
+msgstr "从 Onshape 分离?"
+
+msgid "Detach to edit them in Carbon."
+msgstr "分离以在 Carbon 中编辑它们。"
+
 msgid "Detail"
 msgstr "详情"
 
@@ -10087,6 +10096,9 @@ msgstr "姓氏"
 msgid "Last Name"
 msgstr "姓氏"
 
+msgid "Last pushed {lastPushed}."
+msgstr "最后推送：{lastPushed}。"
+
 msgid "Last Quarter"
 msgstr "上一季度"
 
@@ -10303,6 +10315,9 @@ msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe �
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
+
+msgid "Linked"
+msgstr "已链接"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12697,6 +12712,9 @@ msgstr "打开于变更通知 {ids}。下达它们来创建新版本或修订版
 
 msgid "Open in MES"
 msgstr "在 MES 中打开"
+
+msgid "Open in Onshape"
+msgstr "在 Onshape 中打开"
 
 msgid "Open Issues"
 msgstr "未结领料"
@@ -16866,6 +16884,12 @@ msgstr "短缺"
 
 msgid "Short"
 msgstr "缺货"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "简短描述和长描述由 Onshape 管理。"
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "简短描述和长描述将可在 Carbon 中编辑，并停止同步 Onshape。从 Onshape 再次推送此零件将恢复链接。"
 
 msgid "Short Description"
 msgstr "简短描述"

@@ -538,6 +538,7 @@
   "no-raw-rounding::packages/ee/src/accounting/providers/rillet/entities/journal-entry.ts::amount: roundCurrency(Math.abs(signedAmount)).toFixed(2),",
   "no-raw-rounding::packages/ee/src/accounting/providers/xero/provider.ts::Number.isNaN(sinceMs) ? Date.now() : Math.floor(sinceMs / 1000) * 1000",
   "no-raw-rounding::packages/ee/src/onshape/lib/client.ts::`Onshape external data ${foreignId} exceeds the ${Math.round(",
+  "no-raw-rounding::packages/ee/src/onshape/panel/session-policy.ts::Math.min(PANEL_SESSION_TTL_SECONDS, Math.floor(remainingMs / 1000))",
   "no-raw-rounding::packages/ee/src/slack/lib/client.ts::const currentTime = Math.floor(Date.now() / 1000);",
   "no-raw-rounding::packages/ee/src/slack/lib/messages.ts::? `on <!date^${Math.floor(",
   "no-raw-rounding::packages/ee/src/slack/lib/messages.ts::? `• Completed <!date^${Math.floor(",

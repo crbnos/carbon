@@ -6250,6 +6250,15 @@ msgstr "Descrição da Alteração"
 msgid "Description of Issue"
 msgstr "Descrição do Problema"
 
+msgid "Detach"
+msgstr "Desconectar"
+
+msgid "Detach from Onshape?"
+msgstr "Desconectar de Onshape?"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Desconecte para editá-los no Carbon."
+
 msgid "Detail"
 msgstr "Detalhe"
 
@@ -10087,6 +10096,9 @@ msgstr "Sobrenome"
 msgid "Last Name"
 msgstr "Sobrenome"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Último envio em {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Último Trimestre"
 
@@ -10303,6 +10315,9 @@ msgstr "Vincule este cliente Carbon a um deles ou crie um cliente Stripe separad
 
 msgid "Link to sales order line"
 msgstr "Vincular à linha do pedido de venda"
+
+msgid "Linked"
+msgstr "Vinculado"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12697,6 +12712,9 @@ msgstr "Aberto em avisos de alteração {ids}. Libere-os para criar novas versõ
 
 msgid "Open in MES"
 msgstr "Abrir no MES"
+
+msgid "Open in Onshape"
+msgstr "Abrir no Onshape"
 
 msgid "Open Issues"
 msgstr "Problemas Abertos"
@@ -16866,6 +16884,12 @@ msgstr "curto"
 
 msgid "Short"
 msgstr "Falta"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "A descrição breve e a descrição longa são gerenciadas no Onshape."
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "A descrição breve e a descrição longa ficam editáveis no Carbon e deixam de acompanhar o Onshape. Enviar esta peça novamente do Onshape vincula-a outra vez."
 
 msgid "Short Description"
 msgstr "Descrição Breve"

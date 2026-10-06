@@ -4,8 +4,16 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { getOnshapeClient } from "./lib/client";
-import { getOnshapeIntegration } from "./lib/connection";
+import {
+  getOnshapeIntegration,
+  type OnshapeIntegrationId
+} from "./lib/connection";
+import type { OnshapeOAuthIntegrationId } from "./lib/integration-id";
+import { patchOnshapeCompanyId } from "./lib/state";
+
+const logger = getLogger("ee", "onshape");
 
 // The release webhook's callback path for a company. We match/deregister by this
 // PATH (not the full URL) so a host change — localhost, a tunnel, or the prod
@@ -48,17 +56,19 @@ async function resolveAndStoreOnshapeCompanyId(
   const resolved = companies[0]?.id;
   if (!resolved) return null;
 
-  const update = await carbon
-    .from("companyIntegration")
-    .update({ metadata: { ...metadata, onshapeCompanyId: resolved } })
-    .eq("id", integrationId)
-    .eq("companyId", companyId);
-  if (update.error) {
+  try {
+    await patchOnshapeCompanyId(
+      carbon,
+      companyId,
+      integrationId as OnshapeIntegrationId,
+      resolved
+    );
+  } catch (error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall
     // back to their own getCompanies() resolve if the store didn't stick.
     console.error(
       "onshape: failed to persist resolved Onshape company id",
-      update.error
+      error
     );
   }
   return resolved;
@@ -189,4 +199,42 @@ export async function ensureOnshapeReleaseWebhook(
 // Disconnect: remove the subscription so it doesn't keep firing at a dead callback.
 export async function onshapeOnUninstall(companyId: string): Promise<void> {
   await deregisterOnshapeWebhooks(companyId);
+}
+
+/**
+ * Whether an Onshape connection's grant still works. Building the client
+ * refreshes an expired token, and one read proves the token is accepted, so a
+ * revoked grant or a dead refresh token shows as unhealthy on the integration
+ * card; the fix is Reconnect. The settings page caches a healthy answer for
+ * five hours (`getIntegrationHealth`), which bounds the quota this spends and
+ * also how long a grant that has since died still reads healthy.
+ */
+export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
+  return async (companyId: string): Promise<boolean> => {
+    try {
+      const onshape = await getOnshapeClient(
+        getCarbonServiceRole(),
+        companyId,
+        "system",
+        integrationId
+      );
+      if (!onshape.client) {
+        logger.warn("Onshape healthcheck: no client", {
+          companyId,
+          integrationId,
+          error: onshape.error
+        });
+        return false;
+      }
+      await onshape.client.getCompanies();
+      return true;
+    } catch (error) {
+      logger.warn("Onshape healthcheck: request failed", {
+        companyId,
+        integrationId,
+        error
+      });
+      return false;
+    }
+  };
 }

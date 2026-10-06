@@ -53,6 +53,13 @@ pnpm --filter @carbon/auth test
 SAML SSO lives in `@carbon/ee/sso.server` (Enterprise-gated), NOT here — auth
 only carries `AuthSession.ssoProviderId` and its preservation across refresh.
 
+The Onshape panel's bearer credential (the `cps_` iframe session) also lives in
+`@carbon/ee`, NOT here — `@carbon/ee/onshape/panel-session.server` mints/resolves
+it and exposes `requireOnshapePanelPermissions` (its own gate). `requirePermissions`
+is deliberately cookie/API-key only and has no panel branch; ee imports
+`getUserClaims`, `userHasVerifiedTotpFactor`, `getUserScopedClient` and
+`hasPermission` back from auth, never the reverse.
+
 ## Cross-References
 
 - `.claude/rules/authentication-system.md` — full auth architecture, login flows, claims caching
