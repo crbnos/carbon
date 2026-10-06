@@ -540,12 +540,10 @@ const JobBillOfProcess = ({
     });
 
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const operationsById = new Map<
     string,
@@ -1113,7 +1111,8 @@ function StepsForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");

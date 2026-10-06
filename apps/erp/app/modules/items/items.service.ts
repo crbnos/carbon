@@ -13,9 +13,8 @@ import type {
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
-import { datetime } from "@carbon/utils";
+import { datetime, withPathIds } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -2022,13 +2021,6 @@ export async function getMethodTreeArray(
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
-  function traverseAndRenameIds(node: MethodTreeItem) {
-    const clone = structuredClone(node);
-    clone.id = nanoid();
-    clone.children = clone.children.map((n) => traverseAndRenameIds(n));
-    return clone;
-  }
-
   const rootItems: MethodTreeItem[] = [];
   const lookup: { [id: string]: MethodTreeItem } = {};
 
@@ -2059,7 +2051,9 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     }
   }
 
-  return rootItems.map((item) => traverseAndRenameIds(item));
+  // A sub-assembly used in two places is one node above: give each place an
+  // id of its own, the same on every load (see `withPathIds`).
+  return withPathIds(rootItems);
 }
 
 export type BomItemAttributes = {

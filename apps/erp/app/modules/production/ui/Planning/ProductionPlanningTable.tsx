@@ -26,10 +26,10 @@ import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
-  useState,
-  useTransition
+  useState
 } from "react";
 import {
   LuBlocks,
@@ -204,9 +204,17 @@ const ProductionPlanningTable = ({
     {}
   );
 
-  const [ordersByItemId, setOrdersByItemId] = useState<
-    Map<string, ProductionOrder[]>
-  >(new Map());
+  // Computed from the rows, a render behind them so a large plan does not
+  // block typing; `isPending` covers the gap.
+  const deferredData = useDeferredValue(data);
+  const isPending = deferredData !== data;
+  const ordersByItemId = useMemo(() => {
+    const orders = new Map<string, ProductionOrder[]>();
+    for (const item of deferredData) {
+      orders.set(item.id, getProductionOrdersFromPlanning(item, periods));
+    }
+    return orders;
+  }, [deferredData, periods]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
@@ -280,22 +288,6 @@ const ProductionPlanningTable = ({
     },
     []
   );
-
-  const [isPending, startTransition] = useTransition();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    startTransition(() => {
-      const ordersByItemId = new Map<string, ProductionOrder[]>();
-      data.forEach((item) => {
-        ordersByItemId.set(
-          item.id,
-          getProductionOrdersFromPlanning(item, periods)
-        );
-      });
-      setOrdersByItemId(ordersByItemId);
-    });
-  }, [data]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const columns = useMemo<ColumnDef<ProductionPlanningItem>[]>(() => {
