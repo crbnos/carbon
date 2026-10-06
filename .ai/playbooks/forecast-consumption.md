@@ -61,6 +61,39 @@ Routes: `/x/settings/planning`, `/x/production/demand-forecasts`,
 3. Click "Recalculate" on Material Planning again.
 4. Expect "Qty to Order" back at the sales-order total (90).
 
+## Test: 0/0 window
+
+1. On `/x/settings/planning`, set "Look back (weeks)" and "Look ahead (weeks)" to 0.
+   The last 2 textboxes on the page are these fields. requestSubmit the form of
+   `input[name=backwardPeriods]`.
+2. Add a SAW-001 forecast: Week 2 = 20, Week 4 = 30, Week 9 = 10.
+3. Click "Recalculate". On 2026-10-06: consumed 20, 0, 0, and Qty to Order 130.
+4. Set 4 / 1 again and click "Recalculate". Expect consumed 20, 30, 10, and Qty
+   to Order 90. This proves that the next run heals the result.
+5. Delete the forecast.
+
+## Test: late orders consume no forecast
+
+1. Use a part with no other demand. On 2026-10-06: ANT-PATCH-01
+   (`item_8ErCmrbQ6o6EPQabHXDKMt`).
+2. Add a forecast of 25 in Week 1 (the current week).
+3. Create a sales order at `/x/sales-order/new`. Customer: "Apex Space Research".
+4. Add a line at `/x/sales-order/<id>/new`: the part, quantity 10, a promised date
+   in the current week. Type the date into the day segment as `DDMMYYYY`.
+5. Click "Confirm", then requestSubmit the "Confirm" button in the dialog. The
+   confirm action runs MRP. Expect consumed 10 and Qty to Order 25.
+6. Click "More options" → "Reopen". Open `/x/sales-order/<id>/<lineId>/details`.
+   Set the day to a date before the current week. Save.
+7. Confirm again. Expect consumed 0 and Qty to Order 35 (10 + 25).
+8. Check that `demandActual.updatedAt` is later than the order's confirm time.
+   Then you know that the run counted the order.
+9. Clean up: Reopen, then "More options" → "Delete Sales Order". Delete the
+   forecast. Click "Recalculate".
+
+Leftovers after cleanup: deleting a sales order keeps its `opportunity` row and
+the confirm PDFs in storage (`<companyId>/opportunity/<oppId>/`). MRP sets a
+`demandActual` row to 0. It does not delete the row.
+
 ## Selector Notes
 
 - `/x/production/demand-forecasts/delete/<item>/<loc>` is an action-only route.
@@ -69,6 +102,12 @@ Routes: `/x/settings/planning`, `/x/production/demand-forecasts`,
 - `agent-browser screenshot <path>` needs an absolute path.
 
 ## Common Failures
+
+- A `To Ship` or `To Ship and Invoice` order is locked. Reopen it before you edit a
+  line.
+- If the dev server rebuilds (for example after another session changes files),
+  the browser can hang. Check `ps` for the `react-router dev` process. When its CPU
+  use drops, open the page again.
 
 - An item whose sales orders are `Confirmed` or `In Progress` shows them in the
   Inventory "On Sales Order" column, but MRP ignores them. Nothing is consumed.
