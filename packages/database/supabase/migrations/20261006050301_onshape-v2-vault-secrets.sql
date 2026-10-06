@@ -8,7 +8,7 @@
 -- the plaintext cannot outlive the vault write. Idempotent — a row already
 -- stripped has nothing to vault and is skipped.
 --
--- The jsonschema needs no change: 20260930224500 already left the token paths
+-- The jsonschema needs no change: 20261006050300 already left the token paths
 -- out of it.
 DO $$
 DECLARE

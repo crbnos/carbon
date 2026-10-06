@@ -58,7 +58,7 @@ either sync connection.
   an expired token) and read `/companies`. A revoked grant or dead refresh token
   reads unhealthy on the card. `getIntegrationHealth` caches a healthy answer
   for five hours.
-- Migration `20260930224500_onshape-v2-integration.sql` seeds the `integration`
+- Migration `20261006050300_onshape-v2-integration.sql` seeds the `integration`
   row; `…501_onshape-v2-vault-secrets.sql` puts `onshape-v2` in `SECRET_KEYS`,
   so its tokens live in Supabase Vault.
 - The V2 integration form holds the five push defaults (`config-v2.tsx`, "Push
