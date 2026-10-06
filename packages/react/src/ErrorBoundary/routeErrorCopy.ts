@@ -49,7 +49,8 @@ export function routeErrorCopy(error: unknown): RouteErrorCopy {
     };
   }
 
-  const detail = responseMessage(error.data);
+  // React Router's own 4xx (no route, no action) carries developer text.
+  const detail = isInternal(error) ? undefined : responseMessage(error.data);
   return {
     status: error.status,
     title: TITLES[error.status] ?? "This request could not be completed",
@@ -59,6 +60,10 @@ export function routeErrorCopy(error: unknown): RouteErrorCopy {
       "The request was refused. Go back and try again.",
     canRetry: false
   };
+}
+
+function isInternal(error: object): boolean {
+  return "internal" in error && error.internal === true;
 }
 
 function responseMessage(data: unknown): string | undefined {

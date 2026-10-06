@@ -37,6 +37,15 @@ describe("routeErrorCopy", () => {
     );
   });
 
+  it("does not show React Router's own message", () => {
+    const copy = routeErrorCopy({
+      ...response(405, 'Error: You made a POST request to "/x/job"'),
+      internal: true
+    });
+    expect(copy.status).toBe(405);
+    expect(copy.message).not.toMatch(/POST/);
+  });
+
   it("never shows the text of a 5xx or a thrown Error", () => {
     for (const error of [
       response(500, 'relation "item" does not exist'),

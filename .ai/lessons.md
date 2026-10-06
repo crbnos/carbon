@@ -3093,7 +3093,6 @@ And a delete whose failure the caller ignores is not a delete: return the error.
 
 **Applies to:** every layout route; `packages/utils/src/revalidate.ts`; the record loaders (`purchase-order+/$orderId`, `supplier+/$supplierId`, `sales-invoice+/$invoiceId`, `part+/$itemId`, `sales-order+/$orderId`, `quote+/$quoteId`).
 
-
 ## A restore told the change log but not the open tabs
 
 **Context:** Backup restore and template revert reload a company through `wipeAndLoad` with triggers off (`session_replication_role = replica`). The live lists (items, customers, suppliers, people) are kept in the browser and updated from broadcasts; the change log (`tableChange`) is what a tab reads when it loads or reconnects.
