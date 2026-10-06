@@ -563,7 +563,16 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   overdue flag read the JOB's `jobDueDate`; the op target is shown under it as
   "Operation needed by …" and only drives the behind-target projection badge.
   Labelling the op target "Due" with the job's deadline icon read as the job
-  being due weeks early. `getJobPromiseDate` returns `job.projectedCompletionAt` or
+  being due weeks early. The MES Work Centers board cards follow the same rule:
+  `Item.dueDate` is `jobDueDate`, so the "Due …" line, the overdue flag, the
+  urgency border (`getDueUrgency`) and a collapsed batch's earliest member
+  deadline all read the job's date, against the location's `today` from the
+  loader rather than the device's day. The ERP Priority board still maps
+  `operationDueDate`, since its card carries the behind-target badge. The
+  urgency classifiers and both boards' batch reductions ignore an ASAP or No
+  Deadline due date — only Hard and Soft Deadline carry one
+  (`deadlineRequiresDueDate`), but an ASAP job can still hold a stale date.
+  `getJobPromiseDate` returns `job.projectedCompletionAt` or
   null (its old max-op-dueDate fallback would now just echo the job due date and
   was removed).
 - Editing the ERP ops board (`operations.update.tsx`) does NOT re-run the engine and does

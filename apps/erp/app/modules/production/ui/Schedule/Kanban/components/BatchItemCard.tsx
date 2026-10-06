@@ -144,16 +144,23 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
     0
   );
   const totalDuration = members.reduce((sum, m) => sum + (m.duration ?? 0), 0);
-  // The earliest member due date is the batch's binding constraint.
+  // The earliest dated member deadline is the batch's binding constraint. Only
+  // Hard and Soft Deadline carry a due date; an ASAP or No Deadline member can
+  // still hold a stale one. With no dated member, show the first member's type.
   const earliest = members.reduce<OperationItem | undefined>((acc, m) => {
-    if (!m.dueDate) return acc;
+    if (
+      !m.dueDate ||
+      m.deadlineType === "ASAP" ||
+      m.deadlineType === "No Deadline"
+    )
+      return acc;
     if (!acc?.dueDate || m.dueDate < acc.dueDate) return m;
     return acc;
   }, undefined);
-  const isOverdue =
-    earliest?.deadlineType !== "No Deadline" && earliest?.dueDate
-      ? earliest.dueDate < scheduleToday
-      : false;
+  const deadline = earliest ?? members[0];
+  const isOverdue = earliest?.dueDate
+    ? earliest.dueDate < scheduleToday
+    : false;
   // The batch runs as one, so any member the scheduler projects late makes the
   // whole run late — flag it the way the operation card does.
   const conflictedMembers = members.filter((m) => m.hasConflict);
@@ -314,8 +321,8 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
             showDuration={displaySettings.showDuration && totalDuration > 0}
             duration={totalDuration}
             showDueDate={displaySettings.showDueDate}
-            deadlineType={earliest?.deadlineType}
-            dueDate={earliest?.dueDate}
+            deadlineType={deadline?.deadlineType}
+            dueDate={deadline?.dueDate}
             isOverdue={isOverdue}
             formatRelativeTime={formatRelativeTime}
           />

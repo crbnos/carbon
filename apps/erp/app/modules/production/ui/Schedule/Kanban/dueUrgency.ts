@@ -27,7 +27,14 @@ export function getDueUrgency(
 ): DueUrgency | null {
   if (item.hasConflict) return "late";
   if (FINISHED_STATUSES.has(item.status ?? "")) return null;
-  if (!item.dueDate || item.deadlineType === "No Deadline") return null;
+  // Only Hard and Soft Deadline carry a due date; an ASAP job can still hold a
+  // stale one (deadlineRequiresDueDate in production.models).
+  if (
+    !item.dueDate ||
+    item.deadlineType === "ASAP" ||
+    item.deadlineType === "No Deadline"
+  )
+    return null;
   if (item.dueDate < today) return "late";
   const tomorrow = parseDate(today).add({ days: 1 }).toString();
   return item.dueDate <= tomorrow ? "dueSoon" : null;

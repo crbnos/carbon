@@ -195,9 +195,10 @@ const OperationCardBody = memo(function OperationCardBody({
     useKanban();
 
   const isOverdue =
-    item.deadlineType !== "No Deadline" && item.dueDate
-      ? item.dueDate < scheduleToday
-      : false;
+    item.deadlineType !== "ASAP" &&
+    item.deadlineType !== "No Deadline" &&
+    !!item.dueDate &&
+    item.dueDate < scheduleToday;
 
   const projectedCompletionDate = item.projectedCompletionAt
     ? item.projectedCompletionAt.slice(0, 10)

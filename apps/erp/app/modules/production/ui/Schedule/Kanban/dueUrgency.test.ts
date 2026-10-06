@@ -41,6 +41,23 @@ describe("getDueUrgency", () => {
     expect(getDueUrgency({ dueDate: null }, TODAY)).toBeNull();
   });
 
+  it("ignores a due date left on an ASAP job", () => {
+    // Only Hard and Soft Deadline carry a due date (deadlineRequiresDueDate);
+    // an ASAP job can still hold a stale one.
+    expect(
+      getDueUrgency({ dueDate: "2026-09-21", deadlineType: "ASAP" }, TODAY)
+    ).toBeNull();
+    expect(
+      getDueUrgency({ dueDate: "2026-10-05", deadlineType: "ASAP" }, TODAY)
+    ).toBeNull();
+    expect(
+      getDueUrgency(
+        { hasConflict: true, dueDate: "2026-09-21", deadlineType: "ASAP" },
+        TODAY
+      )
+    ).toBe("late");
+  });
+
   it("crosses a month boundary", () => {
     expect(getDueUrgency({ dueDate: "2026-11-01" }, "2026-10-31")).toBe(
       "dueSoon"
