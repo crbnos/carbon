@@ -6,13 +6,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+
 import {
   getSupplier,
   getSupplierContacts,
@@ -33,11 +31,6 @@ export const handle: Handle = {
   ),
   module: "purchasing"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["supplierId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -96,7 +89,7 @@ export default function SupplierRoute() {
       <SupplierHeader />
       <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
         <SupplierSidebar />
-        <Outlet />
+        <RecordOutlet />
       </div>
     </>
   );

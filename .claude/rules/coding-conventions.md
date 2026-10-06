@@ -106,11 +106,16 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
-- A route with children that has a loader exports `shouldRevalidate`. Single fetch
-  re-runs every matched loader on every navigation otherwise. Use
-  `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`, naming the
-  route params the loader reads and either the search params it reads or `search: "all"`
-  for a list loader. Shell data that does not gate rendering is returned as a promise
+- A layout does NOT export `shouldRevalidate` to skip its loader. Single fetch
+  re-runs every matched loader on every navigation, and that is what keeps a page
+  correct after a save, a redirect or another user's change. The skip was tried
+  (2026-10-01 to 2026-10-06, 186 layouts) and removed: it depended on what React
+  Router passes along, which is lost on a second redirect, and on realtime covering
+  every table a layout reads. A slow layout loader is made faster (one query, the
+  direct connection, work shared through middleware context), not skipped. The two
+  exceptions are the root (same-pathname navigations) and the app shell (re-runs
+  after five minutes), whose data does not change with the record on screen.
+  Shell data that does not gate rendering is returned as a promise
   and read with `useResolved` (`~/hooks/useResolved`) when a late value is harmless.
   Data that adds or removes something on first paint (a nav item, a card) is awaited
   instead: streamed in, it arrives after the page is drawn and pushes it around — the
@@ -121,6 +126,11 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
+- A route under `/x` renders `<RecordOutlet />` from `@carbon/react`, never a plain
+  `<Outlet />`. React Router keeps a page mounted when only its params change, so
+  a form's default values, an editor's content or a `useState` copy would stay the
+  previous record's. `RecordOutlet` remounts the page for another record and
+  leaves it mounted when a drawer opens over it. Enforced by `no-bare-outlet`.
 - An index route that only redirects (`/x/issue/:id` → `…/details`, a module root →
   its first page) also exports `middleware = [redirectBeforeLoaders(loader)]` from
   `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every
@@ -155,6 +165,11 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   same name may only re-export it. Enforced by the `no-duplicated-app-file` check
   (`@carbon/checks`); the copies that predate it are baselined.
 - Functional components, props typed inline or via `type`/`z.infer<typeof validator>`.
+- Do not seed `useState` from loader or route data: it is a copy that no reload
+  updates. Compute a derived value during render; keep only the user's own input
+  in state and combine it with the current data. Do not add an effect that copies
+  the data in again. Enforced, for a hook result used in the same file, by
+  `no-state-copy-of-loader-data` (`@carbon/checks`).
 - Styling is Tailwind. Theme colors are CSS variables — use `hsl(var(--primary))`
   for theme-aware fills (e.g. Recharts), not hard-coded colors.
 

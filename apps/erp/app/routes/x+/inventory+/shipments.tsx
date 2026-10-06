@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getShipments } from "~/modules/inventory";
 import ShipmentsTable from "~/modules/inventory/ui/Shipments/ShipmentsTable";
 import type { Handle } from "~/utils/handle";
@@ -60,7 +60,7 @@ export default function ShipmentsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ShipmentsTable data={shipments} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

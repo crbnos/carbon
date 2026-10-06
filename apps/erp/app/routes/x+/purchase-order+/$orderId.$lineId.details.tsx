@@ -8,10 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
@@ -240,7 +241,7 @@ export default function EditPurchaseOrderLineRoute() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

@@ -7,13 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import {
   getMemo,
@@ -46,15 +42,6 @@ export const handle: Handle = {
   },
   module: "invoicing"
 };
-
-// A memo is just the credit/debit document — create it, then post it. Applying
-// it to invoices happens on the payment/receipt screen (alongside cash), so the
-// settlement UI lives in one place. The invoice's "Applied" panel shows where a
-// posted credit ended up.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["memoId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

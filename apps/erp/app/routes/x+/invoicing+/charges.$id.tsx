@@ -23,13 +23,10 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate, isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -37,11 +34,6 @@ import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { ChargeStatus, getCharge } from "~/modules/invoicing";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(

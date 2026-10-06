@@ -18,12 +18,7 @@ import {
 } from "@carbon/documents/template";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
@@ -46,11 +41,6 @@ import { path } from "~/utils/path";
 export const handle: Handle = {
   breadcrumb: (params: { type?: string }) => getDocumentLabel(params.type ?? "")
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["type"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

@@ -15,7 +15,7 @@ import {
   useInterval,
   useMode
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyPlayerHandle,
@@ -31,11 +31,7 @@ import {
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
   useFetcher,
@@ -79,11 +75,6 @@ export const handle: Handle = {
   ),
   module: "production"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

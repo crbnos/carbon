@@ -98,10 +98,8 @@ loader entries and revalidates the page. A burst is one reload; a route and a
 component following the same table reload once; a reload waits while a fetcher
 is submitting or a navigation is in flight, and runs when both are done
 (`useRevalidator` from `@carbon/query`, the only one app code may import). During
-an action React Router drops the fetcher's redirect; during the navigation that
-follows a save, a revalidation restarts it WITHOUT the submission, and every
-layout whose `shouldRevalidate` skips a plain navigation then keeps its data
-from before the save. The save's own broadcast arrives in exactly that window.
+an action React Router drops the fetcher's redirect, and a revalidation during
+the navigation that follows a save restarts that navigation.
 
 - Update the list when the loader starts reading a new table. Nothing checks
   that a list is COMPLETE, only that each name can broadcast.

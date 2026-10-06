@@ -4,12 +4,10 @@
 
 import type { ConformanceCheck, Violation } from "../check";
 
-// React Router's `revalidate()` during the navigation that follows a save
-// restarts that navigation without the submission. Every layout whose
-// `shouldRevalidate` skips a plain navigation then keeps its data from before
-// the save: a new quote line was missing from the quote's explorer until a
-// reload, because the save's own realtime broadcast revalidated mid-redirect.
-// `useRevalidator` from `@carbon/query` holds the call until the router is idle.
+// React Router's `revalidate()` during an action drops the fetcher's redirect,
+// and during the navigation that follows a save it restarts that navigation
+// without the submission. `useRevalidator` from `@carbon/query` holds the call
+// until the router is idle.
 const ROUTER_IMPORT =
   /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*["']react-router["']/g;
 // The wrapper itself: the one place that takes React Router's.
@@ -35,7 +33,7 @@ export const noRawRevalidator: ConformanceCheck = {
         line,
         snippet: contents.split("\n")[line - 1]?.trim() ?? "",
         message:
-          'Import `useRevalidator` from "@carbon/query": React Router\'s restarts the navigation after a save and the layouts skip their reload'
+          "Import `useRevalidator` from \"@carbon/query\": React Router's can drop a save's redirect or restart the navigation that follows it"
       });
     }
     return violations;

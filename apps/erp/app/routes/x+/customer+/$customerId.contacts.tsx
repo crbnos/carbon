@@ -5,20 +5,12 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import { redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { getCustomerContacts } from "~/modules/sales";
 import { CustomerContacts } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["customerId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
