@@ -4,6 +4,7 @@
 
 import type { Integration } from "@carbon/ee";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -19,7 +20,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
-import { Link, useFetcher, useNavigate, useRevalidator } from "react-router";
+import { Link, useFetcher, useNavigate } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
