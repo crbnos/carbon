@@ -70,6 +70,22 @@ const SHORT = "public, max-age=3600";
 // Paths that are a file or nothing.
 const NEVER_A_PAGE = /^\/(assets|_vercel)\//;
 
+/**
+ * Whether an `Accept-Encoding` header names Brotli and does not rule it out:
+ * `br;q=0` is a caller saying it cannot take it.
+ */
+export function takesBrotli(header: string | string[] | undefined): boolean {
+  for (const part of String(header ?? "").split(",")) {
+    const [name, ...params] = part.split(";").map((piece) => piece.trim());
+    if (name?.toLowerCase() !== "br") continue;
+    const quality = params.find((param) =>
+      param.toLowerCase().startsWith("q=")
+    );
+    return quality === undefined || Number(quality.slice(2)) > 0;
+  }
+  return false;
+}
+
 const contentType = (file: string) =>
   TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream";
 
@@ -222,9 +238,7 @@ export async function createApp({
         // between has to know that — whichever one it is handed.
         reply.header("Vary", "Accept-Encoding");
         // Every browser takes Brotli; a monitor or a script may not.
-        const brotli = /\bbr\b/.test(
-          String(req.headers["accept-encoding"] ?? "")
-        );
+        const brotli = takesBrotli(req.headers["accept-encoding"]);
         return reply.sendFile(brotli ? `${rel}.br` : rel);
       }
       // A chunk from before the last deploy, or Vercel's analytics script

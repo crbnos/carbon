@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { brotliCompressSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { allowedActionOrigins, createApp } from "./index.ts";
+import { allowedActionOrigins, createApp, takesBrotli } from "./index.ts";
 
 const SCRIPT = "console.log('carbon');\n".repeat(200);
 
@@ -25,6 +25,17 @@ describe("allowedActionOrigins", () => {
     expect(allowedActionOrigins(undefined)).toEqual([]);
     expect(allowedActionOrigins("")).toEqual([]);
     expect(allowedActionOrigins("erp.acme.com")).toEqual([]);
+  });
+});
+
+describe("takesBrotli", () => {
+  it("is what the header says, a refusal included", () => {
+    expect(takesBrotli("gzip, deflate, br")).toBe(true);
+    expect(takesBrotli("BR;q=0.5, gzip")).toBe(true);
+    expect(takesBrotli("gzip, br;q=0")).toBe(false);
+    expect(takesBrotli("gzip, br; q=0.0")).toBe(false);
+    expect(takesBrotli("gzip, brotli")).toBe(false);
+    expect(takesBrotli(undefined)).toBe(false);
   });
 });
 
@@ -90,6 +101,15 @@ describe("createApp", () => {
     expect(res.headers["content-type"]).toContain("text/javascript");
     expect(res.headers.vary).toContain("Accept-Encoding");
     expect(res.rawPayload.length).toBeLessThan(SCRIPT.length / 10);
+  });
+
+  it("sends the file itself to a caller that refuses Brotli", async () => {
+    const res = await app.inject({
+      url: "/assets/entry-abc123.js",
+      headers: { "accept-encoding": "br;q=0" }
+    });
+    expect(res.headers["content-encoding"]).toBeUndefined();
+    expect(res.payload).toBe(SCRIPT);
   });
 
   it("sends the file itself to a caller that cannot take Brotli", async () => {
