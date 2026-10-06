@@ -29,6 +29,7 @@ import {
   SHARED_APP_DIRS
 } from "./conformance/no-duplicated-app-file";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -39,6 +40,7 @@ import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noPostgresChanges } from "./conformance/no-postgres-changes";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRedirect } from "./conformance/no-raw-redirect";
+import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
@@ -170,6 +172,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawForwardedHeaders,
       noInterpolatedErrorLog,
       noRawRedirect
+    ]),
+    ...scanAll(loadTypescriptFiles(root), [
+      noRawRevalidator,
+      noInlineSensorOptions
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders

@@ -1060,6 +1060,23 @@ export const scheduleOperationUpdateValidator = z.object({
   priority: schedulePriorityValidator
 });
 
+// A drop that renumbers several cards of one column, sent as one request.
+export const scheduleOperationReorderValidator = z.object({
+  columnId: z.string().min(1, { message: "Column is required" }),
+  updates: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        priority: z.number().refine(Number.isFinite, "Priority must be finite")
+      })
+    )
+    .min(1)
+    .max(1000)
+    .refine((rows) => new Set(rows.map((r) => r.id)).size === rows.length, {
+      message: "Each operation may appear once"
+    })
+});
+
 export const scheduleJobUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
   locationId: z.string().trim().min(1, { message: "Location is required" }),

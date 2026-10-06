@@ -76,6 +76,42 @@ export function isSalesInvoiceLocked(
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+type InvoiceCurrency = { currencyCode: string; exchangeRate: number };
+
+/**
+ * The columns written when a sales invoice's invoice customer changes. It
+ * never writes `customerId`, the sold-to customer. A customer with no
+ * currency (`currency` null) leaves the invoice's currency as it is.
+ */
+export function salesInvoiceCustomerChange(
+  invoiceCustomerId: string,
+  currency: InvoiceCurrency | null
+) {
+  return {
+    invoiceCustomerId,
+    invoiceCustomerContactId: null,
+    invoiceCustomerLocationId: null,
+    ...currency
+  };
+}
+
+/**
+ * The columns written when a purchase invoice's invoice supplier changes. It
+ * never writes `supplierId`. A supplier with no currency (`currency` null)
+ * leaves the invoice's currency as it is.
+ */
+export function purchaseInvoiceSupplierChange(
+  invoiceSupplierId: string,
+  currency: InvoiceCurrency | null
+) {
+  return {
+    invoiceSupplierId,
+    invoiceSupplierContactId: null,
+    invoiceSupplierLocationId: null,
+    ...currency
+  };
+}
+
 export const purchaseInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),

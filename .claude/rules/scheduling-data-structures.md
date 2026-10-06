@@ -248,8 +248,8 @@ is a separate per-job backward re-plan, not a whole-location regen.
 ## Engine pipeline (`scheduling-engine.ts` `run()`)
 
 `initialize → assignMaterials → createDependencies → calculateDates →
-computeNeedBys → selectWorkCenters → calculatePriorities → persistChanges` (the last
-is skipped when `persist: false`, i.e. the expedite what-if). **There is no backward
+computeNeedBys → selectWorkCenters → calculatePriorities → buildWrites` (the engine
+writes nothing; the location run stores the result, the expedite what-if drops it). **There is no backward
 JIT pass in PLACEMENT and no `initial`/`reschedule` mode split** — everything places
 FORWARD-ASAP, and the projected finish IS the overdue forecast (slack is real). The
 backward need-by pass (`computeNeedBys`, below) computes demand-anchored TARGETS
@@ -263,8 +263,18 @@ only; its output is read by nothing in the placement path (spec
   `dueDate ASC NULLS LAST → job.priority ASC → createdAt ASC` — so a no-due-date ASAP
   order claims capacity first. Each job's engine run **excludes the jobs not yet run
   (itself + later)** from the reservation snapshot, so it sees non-batch reservations
-  plus the just-persisted placements of already-run jobs → sequential capacity
-  claiming, no pre-clear step.
+  plus the placements of already-run jobs → sequential capacity
+  claiming, no pre-clear step. **Nothing is written while the jobs run.** The
+  engine only computes: `engine.getWrites()` returns a `JobWrites`
+  (`run-overlay.ts`), `provider.recordJob(writes)` makes that job's reservations
+  and operation placements visible to the jobs after it (`beginRun` reads the
+  live reservations once; the rules are the pure `visibleReservations` /
+  `mergeCrossJobOperations`), and `persistLocationWrites`
+  (`persist-location.ts`) stores the whole location in ONE transaction at the
+  end. A job that throws while computing is left out of the write and keeps its
+  stored reservations visible to later jobs; a database error in the write
+  rolls the location back and `runLocationSchedule` throws. This replaced a
+  write per job (about 17 statements each, 500 for a 28-job location).
 - **Sequencing** (`dependency-manager.ts`): the `jobOperation."operationOrder"` enum
   (`methodOperationOrder` = `'After Previous' | 'With Previous'`) decides serial vs
   parallel, plus assembly edges (a sub-make-method's last op feeds the parent's
@@ -369,19 +379,20 @@ only; its output is read by nothing in the placement path (spec
   dispatch-sequencing policy** — the old per-work-center policy table, its rule enum,
   and the FIFO/EDD/SPT/… comparators were all removed; placement order is the only
   sequence.
-- **`persistChanges` (one transaction, only when `persist`)** writes, for every op whose
-  values changed (`isDistinctFromAny` guards the UPDATE in SQL, so a quiet regen writes no
+- **`persistLocationWrites` (one transaction per location run; the expedite what-if
+  never calls it)** writes, for every op whose
+  values changed (an `is distinct from` guard in the UPDATE, so a quiet regen writes no
   `jobOperation` or `job` row and queues no audit/search event), the
   forward placement's results — `startDate` (projected start, business day) +
   `jobOperation.projectedCompletionAt` (exact placed-end instant, timestamptz) +
   `priority` + `workCenterId` + conflict flags. `dueDate` is the backward need-by and
   is DIFF-written: only when the computed target differs from the stored value (a
   quiet regen touches zero `dueDate`s), and never for a `manuallyScheduled` op — a
-  human owns that target. It rebuilds this job's `capacityReservation` rows
-  (delete-by-job where `scenarioId IS NULL`, then bulk insert — a materialized OUTPUT,
+  human owns that target. It rebuilds the jobs' `capacityReservation` rows
+  (one delete for all the run's jobs where `scenarioId IS NULL`, then bulk insert — a materialized OUTPUT,
   `WorkCenter`/`Employee` kinds); and writes `job.projectedCompletionAt` (= the max
   placed end, the forecast finish) while clearing
-  `scheduleOutdatedReason`/`scheduleOutdatedAt` for that job. It also computes the
+  `scheduleOutdatedReason`/`scheduleOutdatedAt` for each job. The engine's `buildWrites` also computes the
   **newly-late** flag (was on-time-or-unforecast before, now projected past `dueDate`
   on the location calendar) for the wave's digest.
 - **Behind-target attribution (informational only):** when the JOB's verdict is late,
@@ -401,7 +412,7 @@ only; its output is read by nothing in the placement path (spec
 (`20260525143721_manual-scheduling.sql` — adds only this column). Under dual dates a
 pin means **a human owns the need-by TARGET**, not the placement: the backward pass
 takes the pinned op's stored `dueDate` as-is and derives upstream ops' targets from
-it (the pin propagates), and `persistChanges()` never writes `dueDate` for a pinned
+it (the pin propagates), and the location write never includes `dueDate` for a pinned
 op. Forward placement schedules pinned ops **normally** — the old frozen-window
 branch (reserve the pinned span, skip placement) was REMOVED with the dual-dates
 split, so a pinned op's `startDate`/`projectedCompletionAt` are re-projected every

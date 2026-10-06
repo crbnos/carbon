@@ -35,6 +35,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { replaceEqualDeep } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuCirclePlus,
@@ -595,8 +596,10 @@ function KanbanSchedule() {
     [displaySettings]
   );
 
+  // A reload hands over new objects for every card. Keeping the ones that did
+  // not change lets their memoized cards skip the render.
   useEffect(() => {
-    setItems(initialItems);
+    setItems((previous) => replaceEqualDeep(previous, initialItems));
   }, [initialItems]);
 
   const sortItems = useCallback((items: Item[]) => {

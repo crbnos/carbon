@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { isPreviewableDocumentType, storage } from "@carbon/files";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   Card,
@@ -61,7 +61,6 @@ import {
   useFetcher,
   useFetchers,
   useParams,
-  useRevalidator,
   useSubmit
 } from "react-router";
 import {

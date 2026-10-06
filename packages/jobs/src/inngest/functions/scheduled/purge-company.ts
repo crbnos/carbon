@@ -102,6 +102,61 @@ export async function removeCompanySecrets(
   );
 }
 
+// Tables named after a company (`searchIndex_<id>`, `auditLog_<id>`), which the
+// table catalog cannot list.
+const COMPANY_TABLE_PREFIXES = ["searchIndex_", "auditLog_"] as const;
+
+/**
+ * A company's own tables. Run inside the purge transaction, so they go with
+ * the rows or not at all. Dropped over the direct connection because it owns
+ * them: the service role does not, and its `drop_company_search_index` call
+ * was refused for every purged company, leaving the table behind.
+ */
+export async function dropCompanyTables(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<void> {
+  for (const prefix of COMPANY_TABLE_PREFIXES) {
+    await sql`DROP TABLE IF EXISTS ${sql.id("public", prefix + companyId)} CASCADE`.execute(
+      trx
+    );
+  }
+}
+
+/**
+ * Drop company tables whose company no longer exists, and return their names.
+ * One statement per table, so each drop takes and releases its own locks.
+ */
+export async function dropOrphanCompanyTables(
+  db: Kysely<KyselyDatabase>,
+  limit: number
+): Promise<string[]> {
+  // starts_with, not LIKE: `_` is a LIKE wildcard. The rest of the name must
+  // look like a company id (xid or base58), so a table that only shares the
+  // prefix is never dropped.
+  const { rows } = await sql<{ name: string }>`
+    SELECT c.relname AS name
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN unnest(${[...COMPANY_TABLE_PREFIXES]}::text[]) AS p(prefix)
+      ON starts_with(c.relname, p.prefix)
+    WHERE n.nspname = 'public'
+      AND c.relkind = 'r'
+      AND substr(c.relname, length(p.prefix) + 1) ~ '^[A-Za-z0-9]{20,}$'
+      AND NOT EXISTS (
+        SELECT 1 FROM "company" co WHERE p.prefix || co.id = c.relname
+      )
+    ORDER BY c.relname
+    LIMIT ${limit}`.execute(db);
+
+  for (const { name } of rows) {
+    await sql`DROP TABLE IF EXISTS ${sql.id("public", name)} CASCADE`.execute(
+      db
+    );
+  }
+  return rows.map((row) => row.name);
+}
+
 /**
  * A company's files: its own storage bucket, and pre-bucket-migration files
  * under `<companyId>/` in the shared private bucket. Returns the failures; each

@@ -18,6 +18,7 @@ import {
   validationError,
   validator
 } from "@carbon/form";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -40,13 +41,7 @@ import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  useFetcher,
-  useFetchers,
-  useLoaderData,
-  useRevalidator
-} from "react-router";
+import { data, useFetcher, useFetchers, useLoaderData } from "react-router";
 import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";

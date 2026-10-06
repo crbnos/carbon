@@ -562,7 +562,7 @@ export class WorkCenterSelector {
       // Remaining-work netting: a started operation reserves only the work
       // left. Labor + machine scale by remaining quantity; setup is done once
       // any production event exists. A fully-complete op nets to 0 hours and is
-      // filtered from the reservation set in persistChanges (endAt > startAt).
+      // filtered from the reservation set in buildWrites (endAt > startAt).
       const { setup: setupFrac, work: workFrac } = remainingFractions(
         op,
         ctx.operationsWithEvents.has(op.id)

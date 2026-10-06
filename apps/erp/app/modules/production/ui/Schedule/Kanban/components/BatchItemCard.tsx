@@ -19,9 +19,8 @@ import {
   MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   LuCircleCheck,
   LuEllipsisVertical,
@@ -39,10 +38,13 @@ import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
-import { KANBAN_CARD_SHELL } from "../cardShell";
+import {
+  KANBAN_CARD_SHELL,
+  type SortableCardProps,
+  sortableCardProps
+} from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import type { BatchItem, OperationItem } from "../types";
-import { useScheduleToday } from "../useScheduleToday";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 // The order a batch summary reports its members' statuses in: the most "live"
@@ -78,41 +80,42 @@ function rollupStatus(members: OperationItem[]): OperationItem["status"] {
 // card's information design — the same display-setting rows (status, progress,
 // due date, customer, duration, materials) rolled up across members — rather
 // than dropping them; the member list sits beneath that summary.
-export function BatchItemCard({
-  item,
-  isOverlay
-}: {
+type BatchItemCardProps = {
   item: BatchItem;
   isOverlay?: boolean;
-}) {
+};
+
+export function BatchItemCard(props: BatchItemCardProps) {
+  const sortable = useSortable({
+    id: props.item.id,
+    data: { type: "item", item: props.item },
+    attributes: { roleDescription: "item" },
+    disabled: props.item.batchStatus === "Completing"
+  });
+  return <BatchItemCardBody {...props} {...sortableCardProps(sortable)} />;
+}
+
+const BatchItemCardBody = memo(function BatchItemCardBody({
+  item,
+  isOverlay,
+  setNodeRef,
+  attributes,
+  listeners,
+  transform,
+  transition,
+  isDragging
+}: BatchItemCardProps & SortableCardProps) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings } = useKanban();
-  const scheduleToday = useScheduleToday();
+  const { displaySettings, scheduleToday } = useKanban();
   const fetcher = useFetcher();
   const isCompleting = item.batchStatus === "Completing";
   // Planned = composed but not yet on the floor. Visually distinct (dashed
   // border, outline badge) but still draggable — work-center reassignment is
   // legal pre-release.
   const isPlanned = item.batchStatus === "Planned";
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({
-    id: item.id,
-    data: { type: "item", item },
-    attributes: { roleDescription: "item" },
-    disabled: isCompleting
-  });
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform)
-  };
+  const style = { transition, transform };
 
   const members = item.members;
   const totalQty = members.reduce((sum, m) => sum + (m.quantity ?? 0), 0);
@@ -363,4 +366,4 @@ export function BatchItemCard({
       )}
     </>
   );
-}
+});

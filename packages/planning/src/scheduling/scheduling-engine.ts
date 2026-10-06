@@ -5,9 +5,8 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type Kysely, sql } from "kysely";
+import type { Kysely } from "kysely";
 import {
   AssemblyHandler,
   buildMakeMethodDependencies
@@ -47,6 +46,11 @@ import {
   calculatePrioritiesByWorkCenter,
   toOperationWithJobInfo
 } from "./priority-calculator.ts";
+import {
+  dependencyEdgesEqual,
+  type JobWrites,
+  type PlacementWrite
+} from "./run-overlay.ts";
 import type {
   AssemblyNode,
   BaseOperation,
@@ -67,79 +71,6 @@ import {
 export { SCHEDULING_HORIZON_DAYS } from "./finite-context.ts";
 
 const log = getLogger("planning", "schedule");
-
-/**
- * True when writing `values` would change the row. Compared in Postgres so a
- * stored DATE or timestamptz is matched in its own type, not as a JS string.
- * With nothing to compare it is true, so the write goes ahead.
- */
-export function isDistinctFromAny(values: Record<string, unknown>) {
-  const comparisons = Object.entries(values)
-    .filter(([, value]) => value !== undefined)
-    .map(
-      ([column, value]) => sql`${sql.ref(column)} is distinct from ${value}`
-    );
-  if (comparisons.length === 0) return sql<boolean>`true`;
-  return sql<boolean>`(${sql.join(comparisons, sql` or `)})`;
-}
-
-const PLACEMENT_CASTS = {
-  startDate: "date",
-  projectedCompletionAt: "timestamptz",
-  dueDate: "date",
-  priority: "float8",
-  workCenterId: "text",
-  hasConflict: "boolean",
-  conflictReason: "text"
-} as const;
-
-type PlacementColumn = keyof typeof PLACEMENT_CASTS;
-type PlacementWrite = Partial<Record<PlacementColumn, unknown>>;
-
-const PLACEMENT_COLUMNS = Object.keys(PLACEMENT_CASTS) as PlacementColumn[];
-
-/**
- * Write the placements of operations that all set the same columns, in one
- * statement. Every UPDATE is queued for the audit/search handlers, so a row
- * whose placement is unchanged is not written at all.
- */
-async function updatePlacements(
-  trx: Kysely<DB>,
-  rows: { id: string; placement: PlacementWrite }[],
-  userId: string
-) {
-  const columns = PLACEMENT_COLUMNS.filter(
-    (column) => rows[0]!.placement[column] !== undefined
-  );
-  const value = (column: PlacementColumn) =>
-    sql`v.${sql.ref(column)}::${sql.raw(PLACEMENT_CASTS[column])}`;
-
-  await sql`
-    update "jobOperation" as o
-    set ${sql.join([
-      ...columns.map((c) => sql`${sql.ref(c)} = ${value(c)}`),
-      sql`"updatedAt" = ${datetime.timestamp()}`,
-      sql`"updatedBy" = ${userId}`
-    ])}
-    from (values ${sql.join(
-      rows.map(
-        (row) =>
-          sql`(${sql.join([row.id, ...columns.map((c) => row.placement[c])])})`
-      )
-    )}) as v(${sql.join(["id", ...columns].map((c) => sql.ref(c)))})
-    where o."id" = v."id"
-      and ${
-        columns.length === 0
-          ? sql`true`
-          : sql`(${sql.join(
-              columns.map(
-                (c) => sql`o.${sql.ref(c)} is distinct from ${value(c)}`
-              ),
-              sql` or `
-            )})`
-      }
-  `.execute(trx);
-}
 
 /**
  * Unified Scheduling Engine
@@ -176,8 +107,15 @@ export class SchedulingEngine {
    * epoch-ms.
    */
   private now: number;
-  /** When false, run() simulates without writing anything (expedite what-if). */
-  private persist: boolean;
+  /**
+   * The engine writes nothing: run() leaves what it wants stored here, and the
+   * caller persists it (or, for the expedite what-if, drops it).
+   */
+  private writes: JobWrites | null = null;
+  /** Materials this run puts on an operation: material id → operation id. */
+  private materialLinks = new Map<string, string>();
+  private dependencyWrite: JobWrites["dependencies"] = null;
+  private readyOperationIds: string[] = [];
   /**
    * Job ids whose live reservations to EXCLUDE from the snapshot — the whole
    * batch, so each run sees only non-batch reservations plus the in-run
@@ -192,7 +130,7 @@ export class SchedulingEngine {
   /**
    * Backward need-by targets per operation id ("YYYY-MM-DD" | null), computed
    * by computeNeedBys() BEFORE placement and read by NOTHING in the placement
-   * path — persistChanges diff-writes them to jobOperation.dueDate
+   * path — the location write diff-writes them to jobOperation.dueDate
    * (spec 2026-08-15 dual dates).
    */
   private needByByOperation: Map<string, string | null> = new Map();
@@ -220,8 +158,6 @@ export class SchedulingEngine {
       provider?: MasterDataProvider;
       /** Shared run clock (epoch-ms); defaults to a fresh clock if omitted. */
       now?: number;
-      /** Simulate-only when false (no writes). Defaults to true. */
-      persist?: boolean;
       /** Batch job ids to exclude from the reservation snapshot. */
       excludeJobIds?: string[];
       /**
@@ -238,7 +174,6 @@ export class SchedulingEngine {
     this.companyId = options.companyId;
     this.userId = options.userId;
     this.now = options.now ?? Date.now();
-    this.persist = options.persist ?? true;
     this.batchPlacements = options.batchPlacements ?? null;
     this.excludeJobIds =
       options.excludeJobIds && options.excludeJobIds.length > 0
@@ -250,7 +185,7 @@ export class SchedulingEngine {
       new KyselyMasterDataProvider(this.db, this.client, this.companyId);
 
     this.assemblyHandler = new AssemblyHandler(this.provider);
-    this.materialManager = new MaterialManager(this.db, this.provider);
+    this.materialManager = new MaterialManager(this.provider);
   }
 
   /**
@@ -295,9 +230,8 @@ export class SchedulingEngine {
     // Initialize material manager
     await this.materialManager.initialize(this.jobId);
 
-    // Assign operations to materials that don't have one. Dry-run (expedite
-    // what-if) writes nothing, so skip this DB mutation.
-    if (this.operations.length > 0 && this.persist) {
+    // Assign operations to materials that don't have one.
+    if (this.operations.length > 0) {
       const operationsByJobMakeMethodId = this.operations.reduce<
         Record<string, BaseOperation[]>
       >((acc, op) => {
@@ -309,10 +243,12 @@ export class SchedulingEngine {
       }, {});
 
       const materialIds = this.materialManager.getMaterialIds();
-      await this.materialManager.assignOperationsToMaterials(
+      for (const link of this.materialManager.assignOperationsToMaterials(
         materialIds,
         operationsByJobMakeMethodId
-      );
+      )) {
+        this.materialLinks.set(link.materialId, link.operationId);
+      }
     }
 
     // Build assembly tree and get depth
@@ -397,8 +333,11 @@ export class SchedulingEngine {
     const jobMakeMethodToOperationId: Record<string, string | null> = {};
     for (const m of jobMaterials) {
       if (m.jobMaterialMakeMethodId) {
+        // A material this run put on an operation is not stored yet.
         jobMakeMethodToOperationId[m.jobMaterialMakeMethodId] =
-          m.jobOperationId;
+          m.jobOperationId ??
+          (m.id ? this.materialLinks.get(m.id) : undefined) ??
+          null;
       }
     }
 
@@ -469,7 +408,6 @@ export class SchedulingEngine {
       }
     }
 
-    // Delete existing dependencies, preserving rework operation dependencies
     const reworkOpIds = allOperations
       .filter((op) => op.reworkId)
       .map((op) => op.id!);
@@ -480,99 +418,54 @@ export class SchedulingEngine {
       this.companyId
     );
 
-    // Dry-run (expedite what-if) computes the dependency graph in memory but
-    // writes nothing. One transaction otherwise: a partial rebuild (edges
-    // deleted but not re-inserted) would corrupt the graph for the next run.
+    // The non-rework edges are rebuilt only when they differ from the stored
+    // ones: a routing changes far less often than its schedule does.
+    const reworkOps = new Set(reworkOpIds);
+    const storedEdges = this.dependencies.filter(
+      (d) => !reworkOps.has(d.operationId) && !reworkOps.has(d.dependsOnId)
+    );
+    this.dependencyWrite = dependencyEdgesEqual(storedEdges, records)
+      ? null
+      : {
+          reworkOpIds,
+          edges: records.map((r) => ({
+            operationId: r.operationId,
+            dependsOnId: r.dependsOnId
+          }))
+        };
+
+    // Unblock dependency-free operations to Ready. Two guards keep this from
+    // RE-OPENING work that is already finished or in flight:
     //
-    // Rebuild atomically with a per-job advisory lock: two schedule runs for
-    // the same job can overlap (an Inngest retry racing a still-running
-    // invocation, or a direct in-process run alongside the queued one);
-    // interleaved delete/insert then violates jobOperationDependency_pk. The
-    // lock serializes the rebuild per job, and onConflict absorbs any edge that
-    // survives a race with trigger-rework's inserts.
-    if (this.persist) {
-      await this.db.transaction().execute(async (trx) => {
-        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`schedule:dependencies:${this.jobId}`}, 0))`.execute(
-          trx
-        );
-
-        let deleteQuery = trx
-          .deleteFrom("jobOperationDependency")
-          .where("jobId", "=", this.jobId);
-
-        if (reworkOpIds.length > 0) {
-          deleteQuery = deleteQuery
-            .where("operationId", "not in", reworkOpIds)
-            .where("dependsOnId", "not in", reworkOpIds);
-        }
-
-        await deleteQuery.execute();
-
-        if (records.length > 0) {
-          await trx
-            .insertInto("jobOperationDependency")
-            .values(records)
-            .onConflict((oc) =>
-              oc.columns(["operationId", "dependsOnId"]).doNothing()
-            )
-            .execute();
-        }
-      });
-    }
-
-    if (this.persist) {
-      // Unblock dependency-free operations to Ready (outside the rebuild txn so
-      // the advisory lock is held only for the delete/insert). Two guards keep
-      // this from RE-OPENING work that is already finished or in flight:
-      //
-      //  1. Only OPEN jobs. A terminal job (Completed/Closed/Cancelled) or a
-      //     pre-release Draft/Planned job is never re-opened by a regen. Open
-      //     work is `capacityHoldingJobStatuses`; the batch loader already
-      //     filters to these, so this is defense-in-depth for any direct caller.
-      //  2. Only resettable operation statuses. Never overwrite an operation
-      //     that is Done/Canceled (finished) or In Progress/Paused (running) —
-      //     only Ready/Waiting/Todo become Ready. Without this, a first op that
-      //     an operator already completed was flipped back to Ready, and because
-      //     `is_last_job_operation` requires EVERY op Done, the finished job
-      //     could then never auto-complete (it sat stuck as open work).
-      const jobIsOpen =
-        this.job?.status != null &&
-        (capacityHoldingJobStatuses as readonly string[]).includes(
-          this.job.status
-        );
-      if (jobIsOpen) {
-        const resettable = new Set(
-          allOperations
-            .filter(
-              (op) =>
-                ![
-                  "Ready",
-                  "Done",
-                  "Canceled",
-                  "In Progress",
-                  "Paused"
-                ].includes(op.status ?? "")
-            )
-            .map((op) => op.id)
-        );
-        const unblocked = [...allDependencies]
-          .filter(([opId, deps]) => deps.size === 0 && resettable.has(opId))
-          .map(([opId]) => opId);
-        if (unblocked.length > 0) {
-          await this.db
-            .updateTable("jobOperation")
-            .set({ status: "Ready" })
-            .where("id", "in", unblocked)
-            .where("status", "not in", [
-              "Ready",
-              "Done",
-              "Canceled",
-              "In Progress",
-              "Paused"
-            ])
-            .execute();
-        }
-      }
+    //  1. Only OPEN jobs. A terminal job (Completed/Closed/Cancelled) or a
+    //     pre-release Draft/Planned job is never re-opened by a regen. Open
+    //     work is `capacityHoldingJobStatuses`; the batch loader already
+    //     filters to these, so this is defense-in-depth for any direct caller.
+    //  2. Only resettable operation statuses. Never overwrite an operation
+    //     that is Done/Canceled (finished) or In Progress/Paused (running) —
+    //     only Ready/Waiting/Todo become Ready. Without this, a first op that
+    //     an operator already completed was flipped back to Ready, and because
+    //     `is_last_job_operation` requires EVERY op Done, the finished job
+    //     could then never auto-complete (it sat stuck as open work).
+    const jobIsOpen =
+      this.job?.status != null &&
+      (capacityHoldingJobStatuses as readonly string[]).includes(
+        this.job.status
+      );
+    if (jobIsOpen) {
+      const resettable = new Set(
+        allOperations
+          .filter(
+            (op) =>
+              !["Ready", "Done", "Canceled", "In Progress", "Paused"].includes(
+                op.status ?? ""
+              )
+          )
+          .map((op) => op.id)
+      );
+      this.readyOperationIds = [...allDependencies]
+        .filter(([opId, deps]) => deps.size === 0 && resettable.has(opId))
+        .map(([opId]) => opId);
     }
 
     // Store dependencies for date calculation (non-rework edges rebuilt above)
@@ -631,7 +524,7 @@ export class SchedulingEngine {
    * Backward need-by pass (spec 2026-08-15 dual dates): demand-anchored
    * targets walked back from the job's due date on the same calendar physics
    * as placement (shared windows fetch). The result is persisted to
-   * jobOperation.dueDate by persistChanges and read by NOTHING in the
+   * jobOperation.dueDate by the location write and read by NOTHING in the
    * placement path — targets are outputs, never constraints.
    */
   private async computeNeedBys(): Promise<void> {
@@ -901,9 +794,11 @@ export class SchedulingEngine {
     const makeMethodIds =
       this.assemblyHandler.getAllJobMakeMethodIds(assemblyTree);
 
-    // Get materials that need assignment
-    const materials =
-      await this.provider.getUnassignedMakeToOrderMaterials(makeMethodIds);
+    // Materials that still need assignment: the stored ones, less those
+    // initialize() already put on an operation in this run.
+    const materials = (
+      await this.provider.getUnassignedMakeToOrderMaterials(makeMethodIds)
+    ).filter((m) => !m.id || !this.materialLinks.has(m.id));
 
     // Group non-rework operations by jobMakeMethodId
     const operationsByMethod = new Map<string, BaseOperation[]>();
@@ -917,7 +812,6 @@ export class SchedulingEngine {
     }
 
     // Assign first operation of each method to its materials
-    const materialIdsByFirstOp = new Map<string, string[]>();
     for (const material of materials) {
       if (!material.jobMakeMethodId) continue;
 
@@ -927,26 +821,14 @@ export class SchedulingEngine {
       );
       const firstOpId = sortedOps[0]?.id;
       if (!firstOpId || !material.id) continue;
-      const ids = materialIdsByFirstOp.get(firstOpId) ?? [];
-      ids.push(material.id);
-      materialIdsByFirstOp.set(firstOpId, ids);
-    }
-
-    // Dry-run writes nothing (expedite what-if).
-    if (!this.persist) return;
-    for (const [jobOperationId, ids] of materialIdsByFirstOp) {
-      await this.db
-        .updateTable("jobMaterial")
-        .set({ jobOperationId })
-        .where("id", "in", ids)
-        .execute();
+      this.materialLinks.set(material.id, firstOpId);
     }
   }
 
   /**
-   * Persist all changes to the database
+   * Collect everything this run wants stored.
    */
-  async persistChanges(): Promise<void> {
+  private buildWrites(): void {
     // Zero-duration operations (all times = 0) place a start === end slot,
     // which occupies no capacity and violates the endAt > startAt check.
     const planned = (
@@ -972,119 +854,57 @@ export class SchedulingEngine {
       this.newlyLate = false;
     }
 
-    // One transaction: a partial write (reservations deleted but not
-    // re-inserted) would free this job's capacity to other jobs' replans
-    // while its operations already carry the new plan.
-    await this.db.transaction().execute(async (trx) => {
-      const placements = new Map<
-        string,
-        { id: string; placement: PlacementWrite }[]
-      >();
-      for (const op of this.scheduledOperations.values()) {
-        const originalOp = this.operations.find((o) => o.id === op.id);
-        const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
-        // Never clobber a work center the user (or method) already set.
-        // Auto-selection may only fill null/empty work centers.
-        const originalWorkCenterId = originalOp?.workCenterId;
-        const workCenterId =
-          originalWorkCenterId != null && originalWorkCenterId !== ""
-            ? originalWorkCenterId
-            : op.workCenterId;
+    const placements: JobWrites["placements"] = [];
+    for (const op of this.scheduledOperations.values()) {
+      const originalOp = this.operations.find((o) => o.id === op.id);
+      const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
+      // Never clobber a work center the user (or method) already set.
+      // Auto-selection may only fill null/empty work centers.
+      const originalWorkCenterId = originalOp?.workCenterId;
+      const workCenterId =
+        originalWorkCenterId != null && originalWorkCenterId !== ""
+          ? originalWorkCenterId
+          : op.workCenterId;
 
-        // dueDate is the backward need-by target and is DIFF-written: only
-        // when the computed value differs from the stored one (a quiet regen
-        // touches zero dueDate values), and never for a pinned op —
-        // manuallyScheduled means a human owns that target.
-        const needBy = this.needByByOperation.get(op.id) ?? null;
-        const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
-        const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
+      // dueDate is the backward need-by target and is DIFF-written: only
+      // when the computed value differs from the stored one (a quiet regen
+      // touches zero dueDate values), and never for a pinned op —
+      // manuallyScheduled means a human owns that target.
+      const needBy = this.needByByOperation.get(op.id) ?? null;
+      const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
+      const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
 
-        const placement: PlacementWrite = {
-          startDate: op.startDate,
-          projectedCompletionAt: op.projectedCompletionAt ?? null,
-          ...(writeDueDate ? { dueDate: needBy } : {}),
-          ...(op.priority != null ? { priority: op.priority } : {}),
-          workCenterId,
-          hasConflict: op.hasConflict,
-          conflictReason: op.conflictReason
-        };
-        // Rows that write the same columns go in one statement.
-        const shape = PLACEMENT_COLUMNS.filter(
-          (column) => placement[column] !== undefined
-        ).join();
-        const group = placements.get(shape);
-        if (group) group.push({ id: op.id, placement });
-        else placements.set(shape, [{ id: op.id, placement }]);
-      }
+      const placement: PlacementWrite = {
+        startDate: op.startDate,
+        projectedCompletionAt: op.projectedCompletionAt ?? null,
+        ...(writeDueDate ? { dueDate: needBy } : {}),
+        ...(op.priority != null ? { priority: op.priority } : {}),
+        workCenterId,
+        hasConflict: op.hasConflict,
+        conflictReason: op.conflictReason
+      };
+      placements.push({ id: op.id, placement });
+    }
 
-      for (const rows of placements.values()) {
-        await updatePlacements(trx, rows, this.userId);
-      }
-
-      // Rebuild this job's live capacity reservations from this run's
-      // placements (reservations are authoritative across jobs and runs).
-      // Batch-tagged rows are spared: a member job's regen must never destroy
-      // the batch's coalesced reservation.
-      await trx
-        .deleteFrom("capacityReservation")
-        .where("jobId", "=", this.jobId)
-        .where("companyId", "=", this.companyId)
-        .where("scenarioId", "is", null)
-        .where("jobOperationBatchId", "is", null)
-        .execute();
-
-      if (planned.length > 0) {
-        await trx
-          .insertInto("capacityReservation")
-          .values(
-            planned.map((p) => ({
-              resourceKind: p.resourceKind,
-              resourceId: p.resourceId,
-              operationId: p.operationId,
-              jobId: this.jobId,
-              companyId: this.companyId,
-              startAt: msToInstantIso(p.startAt),
-              endAt: msToInstantIso(p.endAt),
-              earliestStartAt:
-                p.earliestStartAt !== undefined
-                  ? msToInstantIso(p.earliestStartAt)
-                  : null,
-              scheduleNote: p.scheduleNote ?? null,
-              workHours: p.workHours ?? null,
-              isPlaceholder: p.isPlaceholder ?? false,
-              createdBy: this.userId
-            }))
-          )
-          .execute();
-      }
-
-      // Write the forecast and clear the stale-schedule stamps for this job in
-      // the SAME transaction. The scheduler is status-neutral: it forecasts and
-      // reserves capacity for jobs already released (Ready/In Progress/Paused).
-      // Releasing a job to Ready is the app's job-status flow (which raises
-      // jobReleased), never a side effect of scheduling.
-      await trx
-        .updateTable("job")
-        .set({
-          projectedCompletionAt: this.projectedCompletionAt,
-          scheduleOutdatedReason: null,
-          scheduleOutdatedAt: null,
-          updatedAt: datetime.timestamp(),
-          updatedBy: this.userId
-        })
-        .where("id", "=", this.jobId)
-        .where("companyId", "=", this.companyId)
-        .where(
-          isDistinctFromAny({
-            projectedCompletionAt: this.projectedCompletionAt,
-            scheduleOutdatedReason: null,
-            scheduleOutdatedAt: null
-          })
-        )
-        .execute();
-    });
-
+    this.writes = {
+      jobId: this.jobId,
+      jobStatus: this.job?.status ?? null,
+      materialLinks: [...this.materialLinks].map(
+        ([materialId, jobOperationId]) => ({ materialId, jobOperationId })
+      ),
+      dependencies: this.dependencyWrite,
+      readyOperationIds: this.readyOperationIds,
+      placements,
+      reservations: planned,
+      projectedCompletionAt: this.projectedCompletionAt
+    };
     this.reservationsWritten = planned.length;
+  }
+
+  /** What this run wants stored; available after run(). */
+  getWrites(): JobWrites {
+    if (!this.writes) throw new Error("getWrites() called before run()");
+    return this.writes;
   }
 
   /**
@@ -1121,7 +941,7 @@ export class SchedulingEngine {
 
   /**
    * Job-level behind-target attribution (spec 2026-08-15 dual dates). Only
-   * when the JOB's verdict is late — the same judgment persistChanges uses
+   * when the JOB's verdict is late — the same judgment buildWrites uses
    * for newly-late: projected finish past the due date on the FACTORY
    * calendar — walk the operations in topological order and name the first
    * one whose projected finish misses its backward need-by target. Purely
@@ -1176,9 +996,9 @@ export class SchedulingEngine {
   }
 
   /**
-   * Run the full scheduling process. When `persist` is false (expedite
-   * what-if), everything runs EXCEPT the write — the forecast is computed and
-   * returned but nothing touches the database.
+   * Run the full scheduling process. Nothing is written: the forecast is
+   * computed in memory and the caller stores getWrites() — or does not (the
+   * expedite what-if).
    */
   async run(): Promise<SchedulingResult> {
     await this.initialize();
@@ -1196,9 +1016,7 @@ export class SchedulingEngine {
     await this.selectWorkCenters();
     await this.calculatePriorities();
 
-    if (this.persist) {
-      await this.persistChanges();
-    }
+    this.buildWrites();
 
     return this.getResult();
   }

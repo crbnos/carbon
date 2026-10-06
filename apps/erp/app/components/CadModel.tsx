@@ -5,6 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   CardHeader,
@@ -32,7 +33,7 @@ import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
-import { useFetcher, useRevalidator } from "react-router";
+import { useFetcher } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import type { ViewDirection } from "~/utils/model-thumbnail";

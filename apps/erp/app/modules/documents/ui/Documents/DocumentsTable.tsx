@@ -4,6 +4,7 @@
 
 import { getBrowserEnv } from "@carbon/auth";
 import { convertKbToString } from "@carbon/files";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   BadgeCloseButton,
@@ -42,7 +43,6 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
-import { useRevalidator } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
