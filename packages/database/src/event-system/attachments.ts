@@ -260,6 +260,7 @@ export const attachments = {
     events: true,
     statement: ["broadcast_table_changes"]
   },
+  quoteLinePrice: { statement: ["broadcast_table_changes"] },
   quoteMakeMethod: { statement: ["broadcast_table_changes"] },
   quoteMaterial: {
     before: ["sync_update_quote_material_make_method_item_id"],

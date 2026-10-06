@@ -47,6 +47,7 @@ export const handle: Handle = {
   realtime: [
     { table: "quote", column: "id", param: "quoteId" },
     { table: "quoteLine", column: "quoteId", param: "quoteId" },
+    { table: "quoteLinePrice", column: "quoteId", param: "quoteId" },
     { table: "quoteMaterial", column: "quoteId", param: "quoteId" },
     { table: "quoteOperation", column: "quoteId", param: "quoteId" },
     { table: "quoteMakeMethod", column: "quoteId", param: "quoteId" }
