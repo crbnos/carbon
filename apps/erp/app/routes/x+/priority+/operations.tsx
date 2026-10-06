@@ -26,7 +26,6 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -43,10 +42,7 @@ import {
   LuSettings2,
   LuTriangleAlert
 } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -84,11 +80,6 @@ export const handle: Handle = {
   to: path.to.priorityOperation,
   module: "schedule"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

@@ -62,7 +62,7 @@ pnpm run lint
 | `apiKey` | Hashed API keys with per-module scopes |
 | `webhook` / `webhookTable` | Outbound webhooks and the tables they may subscribe to |
 | `companyAccountsPayableBillingAddress` / `companyAccountsReceivableBillingAddress` | Remit-to / bill-to addresses printed on documents |
-| `itemPostingGroupResponsibility` | Planning ownership: the responsible employee for an item group AT a location (`locationId`, `itemPostingGroupId`; UNIQUE `(companyId, locationId, itemPostingGroupId)`, the upsert's conflict target; RLS employee read, `settings_update` writes — `20261006030100`) — one rung of the MRP action owner ladder (see Planning below) |
+| `itemPostingGroupResponsibility` | Planning ownership: the responsible employee for an item group AT a location (`locationId`, `itemPostingGroupId`; UNIQUE `(companyId, locationId, itemPostingGroupId)`, the upsert's conflict target; RLS employee read, `settings_update` writes — `20261006130100`) — one rung of the MRP action owner ladder (see Planning below) |
 | `employeeType` / `employeeTypePermission` / `employee` | Written only by `updateConsoleSetting` (now in the commercial `@carbon/ee/console.server`, gated to Business via the `PERMISSIONS` feature), which provisions a "Console Operator" type |
 
 ## Key Service Functions

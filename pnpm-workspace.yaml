@@ -89,9 +89,11 @@ catalog:
   '@react-email/components': 0.3.3
   '@react-pdf/renderer': 3.4.5
   '@react-aria/optimize-locales-plugin': 2.0.2
+  '@fastify/compress': 9.2.0
+  '@fastify/static': 10.1.5
+  '@medicomind/rolldown-compression': 2.5.3
   '@react-router/dev': 7.18.4
   '@react-router/remix-routes-option-adapter': 7.18.4
-  '@react-router/serve': 7.18.4
   '@shikijs/langs': 4.2.0
   '@shikijs/themes': 4.2.0
   '@shikijs/types': 4.2.0
@@ -135,6 +137,7 @@ catalog:
   cross-env: 7.0.3
   dompurify: 3.4.0
   fast-xml-parser: 5.3.1
+  fastify: 5.12.5
   intl-parse-accept-language: 1.0.0
   isbot: '5'
   jose: 6.0.11

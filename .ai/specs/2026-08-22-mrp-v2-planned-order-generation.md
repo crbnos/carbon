@@ -1712,7 +1712,7 @@ except `api+/planning.what-if.ts`.
   user row (`20230123004317_companies-rls.sql`).
 
 - **2026-09-11**: `demandProjection` now DOES gain a column — `consumedQuantity`
-  (forecast consumption, migration `20261006030001`), superseding this spec's
+  (forecast consumption, migration `20261006130001`), superseding this spec's
   "demandProjection gains no columns" scope note (§ suggested projections, ~line
   1230; that section's own scope is unchanged — suggestions still write ordinary
   rows). Design + rationale: `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md`.

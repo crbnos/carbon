@@ -42,7 +42,10 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import type { PlanningAction } from "~/modules/production";
-import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
+import {
+  type PlanningActionHandlers,
+  reviewPathFor
+} from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
   PlanningPolicySummary,
@@ -102,8 +105,8 @@ type PurchasingPlanningOrderDrawerProps = {
   /** True when the fence was moved on screen, away from the saved horizon. */
   isTimeFenceOverridden: boolean;
   /** Move this row's fence without leaving the drawer — the same on-screen
-   *  override as the grid's Planning Horizon cell. `null` returns to the saved
-   *  horizon. The suggested orders re-split around the new date. */
+   *  override as the grid's Planning Horizon cell. `null` clears the fence
+   *  for this view. The suggested orders re-split around the new date. */
   onTimeFenceChange: (date: string | null) => void;
   /** The item's change actions on existing orders, inside the fence. Each one
    *  is shown on the row of the order it targets. */
@@ -282,7 +285,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         return {
           id: order.existingLineId,
           documentPath: order.existingId
-            ? path.to.purchaseOrder(order.existingId)
+            ? path.to.purchaseOrderLine(order.existingId, order.existingLineId)
             : null,
           readableId: order.existingReadableId ?? "",
           status: order.existingStatus ?? null,
@@ -322,9 +325,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         if (rows.some((row) => row.action?.id === action.id)) continue;
         rows.push({
           id: action.id,
-          documentPath: action.purchaseOrderId
-            ? path.to.purchaseOrder(action.purchaseOrderId)
-            : null,
+          documentPath: reviewPathFor(action),
           readableId: action.purchaseOrderReadableId ?? "—",
           status: action.purchaseOrderStatus ?? null,
           quantity: null,

@@ -18,13 +18,11 @@ let held = false;
  * `useRevalidator` whose `revalidate` never starts during a save. Import this
  * one, never React Router's (the `no-raw-revalidator` check enforces it).
  *
- * A revalidation that starts during a save does harm twice over:
+ * A revalidation that starts during a save does harm:
  * - during the action, React Router drops the fetcher's redirect;
  * - during the navigation that follows the save, it restarts that navigation
- *   without the submission. The restarted one looks like a plain navigation,
- *   so every layout whose `shouldRevalidate` skips those keeps its data from
- *   before the save (a new quote line was missing from the quote's explorer
- *   until a reload: the save's own realtime broadcast arrived mid-redirect).
+ *   without the submission, so the page loads twice and anything that reads
+ *   "this follows a save" from the navigation no longer sees it.
  *
  * A call made while a fetcher is submitting or a navigation is in flight is
  * held and runs once the router is idle. The promise of a held call resolves

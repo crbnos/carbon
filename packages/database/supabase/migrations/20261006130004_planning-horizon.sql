@@ -9,7 +9,7 @@
 -- MRP v2 spec for the auto-firm fence, which is a different concept.
 --
 -- The fence is compared against planningAction."horizonDate", defined with the
--- table in 20261006030000_mrp-planning-actions.sql.
+-- table in 20261006130000_mrp-planning-actions.sql.
 
 -- 1. Per item + location horizon, with a company-wide default.
 ALTER TABLE "itemPlanning"

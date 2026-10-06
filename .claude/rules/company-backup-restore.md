@@ -104,7 +104,7 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   is deliberately kept: it has a user-forecast write path and no such CHECK.
   `planningAction` is kept too — `Dismissed` and `assigneeOverridden` are the
   planner's own state, not regenerable — even though it has a comparable CHECK
-  (`planningAction_change_target_chk`, `20261006030000`: a change action keeps
+  (`planningAction_change_target_chk`, `20261006130000`: a change action keeps
   its `jobId` or `purchaseOrderLineId`). Its target FKs are nullable with ON
   DELETE CASCADE, so a consistent snapshot never carries a dangling target; a
   remapped restore that did would null the FK and fail that CHECK. The dataset

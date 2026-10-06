@@ -31,12 +31,13 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { Users } from "~/components/Form";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -163,14 +164,15 @@ export default function QualitySettingsRoute() {
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
 
-  const [fourEyesEnabled, setFourEyesEnabled] = useState(
+  const fourEyesEnabled = useSavedToggle(
+    toggleFetcher,
+    "enforceInspectionFourEyes",
     (companySettings as { enforceInspectionFourEyes?: boolean })
       .enforceInspectionFourEyes ?? false
   );
 
   const handleFourEyesToggle = useCallback(
     (checked: boolean) => {
-      setFourEyesEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "enforceInspectionFourEyes",

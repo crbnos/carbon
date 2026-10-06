@@ -46,7 +46,7 @@ import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
-  useDrawerItem,
+  useLinkedDrawerItem,
   useMrpScheduleDescription,
   usePermissions,
   useQuantityFormatter,
@@ -56,7 +56,8 @@ import type { SupplierPart } from "~/modules/items/types";
 import type { PlanningAction } from "~/modules/production";
 import {
   PLANNING_ACTIONS_COLUMN,
-  PLANNING_ASSIGNEE_COLUMN
+  PLANNING_ASSIGNEE_COLUMN,
+  PLANNING_DRAWER_PARAM
 } from "~/modules/production";
 import {
   isApplyablePlanningAction,
@@ -87,6 +88,8 @@ import { usePurchaseOrderPlanningCommands } from "./usePurchaseOrderPlanningComm
 
 type PlanningTableProps = {
   data: PurchasingPlanningItem[];
+  /** The row a `?item=` link opens the drawer on when it is not in `data`. */
+  drawerItem: PurchasingPlanningItem | null;
   count: number;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
@@ -104,6 +107,7 @@ type PlanningTableProps = {
 const PlanningTable = memo(
   ({
     data,
+    drawerItem,
     count,
     locationId,
     periods,
@@ -130,6 +134,13 @@ const PlanningTable = memo(
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
+    // What the order drawer can open on: the page's rows, plus the row a link
+    // names when it is not on this page.
+    const drawerRows = useMemo(
+      () => (drawerItem ? [...data, drawerItem] : data),
+      [data, drawerItem]
+    );
+
     // ── Planning actions (the MRP worklist) ──────────────────────────────────
     const user = useUser();
     const canUpdateActions = permissions.can("update", "purchasing");
@@ -144,7 +155,7 @@ const PlanningTable = memo(
       visibleActionsByItemId,
       submitActions
     } = usePlanningActions({
-      data,
+      data: drawerRows,
       planningActions,
       actionTypes,
       locationId,
@@ -243,7 +254,8 @@ const PlanningTable = memo(
       }
     );
 
-    // Re-seed default suppliers whenever the planning rows change. The useState
+    // Re-seed default suppliers whenever the planning rows (or a linked
+    // drawer row) change. The useState
     // initializer above only runs once at mount, so an item that gained a
     // supplier after the page loaded — data revalidated after adding a supplier
     // part, running MRP, filtering, or an initially-empty list — would never get
@@ -254,7 +266,7 @@ const PlanningTable = memo(
       setSuppliersMap((prev) => {
         const next = { ...prev };
         let changed = false;
-        for (const item of data) {
+        for (const item of drawerRows) {
           if (next[item.id]) continue;
           const seed =
             item.preferredSupplierId ??
@@ -266,7 +278,7 @@ const PlanningTable = memo(
         }
         return changed ? next : prev;
       });
-    }, [data]);
+    }, [drawerRows]);
 
     const isDisabled =
       !permissions.can("create", "purchasing") ||
@@ -317,7 +329,12 @@ const PlanningTable = memo(
     // inside the drawer revalidate it, and that used to wipe the planner's
     // edits in the suggested-orders table above them.
     const [searchParams] = useSearchParams();
-    const pageScope = searchParams.toString();
+    // The open drawer is in the address too, and is not a change of scope.
+    const pageScope = useMemo(() => {
+      const scope = new URLSearchParams(searchParams);
+      scope.delete(PLANNING_DRAWER_PARAM);
+      return scope.toString();
+    }, [searchParams]);
     // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
     useEffect(() => {
       setOrdersMap({});
@@ -444,7 +461,10 @@ const PlanningTable = memo(
       key: drawerKey,
       open: openDrawer,
       close: closeDrawer
-    } = useDrawerItem<PurchasingPlanningItem>();
+    } = useLinkedDrawerItem({
+      param: PLANNING_DRAWER_PARAM,
+      rows: drawerRows
+    });
 
     const setOrders = useCallback(
       (item: PurchasingPlanningItem, orders: PlannedOrder[]) => {

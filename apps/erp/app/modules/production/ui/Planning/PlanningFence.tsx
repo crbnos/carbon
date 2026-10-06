@@ -27,18 +27,15 @@ export type FenceRow = { id: string; timeFenceDate: string | null };
 /**
  * Per-row fence overrides, keyed by item id. `fenceDateFor` is the row's
  * effective fence: the override when there is one, else the saved horizon.
+ * A `null` override is a cleared fence: the row shows every week. Picking the
+ * saved date again, or a reload, returns the row to its saved horizon.
  */
 export function useTimeFenceOverrides() {
-  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const [overrides, setOverrides] = useState<Record<string, string | null>>({});
 
   const setFenceDate = useCallback((itemId: string, date: string | null) => {
     setOverrides((prev) => {
-      if (date === null) {
-        if (!(itemId in prev)) return prev;
-        const { [itemId]: _removed, ...rest } = prev;
-        return rest;
-      }
-      if (prev[itemId] === date) return prev;
+      if (itemId in prev && prev[itemId] === date) return prev;
       return { ...prev, [itemId]: date };
     });
   }, []);
@@ -49,7 +46,7 @@ export function useTimeFenceOverrides() {
       fenceDateFor: (row: FenceRow) =>
         effectiveFenceDate(row.timeFenceDate, overrides[row.id]),
       isOverridden: (row: FenceRow) =>
-        row.id in overrides && overrides[row.id] !== row.timeFenceDate
+        row.id in overrides && overrides[row.id] !== (row.timeFenceDate ?? null)
     }),
     [overrides, setFenceDate]
   );
@@ -57,8 +54,7 @@ export function useTimeFenceOverrides() {
 
 /**
  * The grid's Planning Horizon cell: the row's fence date with a calendar to
- * move it. Clearing the picker drops the override and returns to the saved
- * horizon.
+ * move it. Clearing the picker removes the fence for this view.
  */
 export const TimeFenceCell = memo(function TimeFenceCell({
   fenceDate,
@@ -67,7 +63,7 @@ export const TimeFenceCell = memo(function TimeFenceCell({
 }: {
   fenceDate: string | null;
   isOverridden: boolean;
-  /** `null` = drop the override (back to the item's saved horizon). */
+  /** `null` = no fence for this view. */
   onChange: (date: string | null) => void;
 }) {
   const { t } = useLingui();

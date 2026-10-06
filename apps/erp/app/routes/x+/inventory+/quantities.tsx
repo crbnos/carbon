@@ -5,13 +5,15 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, pluckUnique, redirect } from "@carbon/utils";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import {
+  RecordOutlet,
+  ResizablePanel,
+  ResizablePanelGroup,
+  VStack
+} from "@carbon/react";
+import { pluckUnique, redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import type { InventoryItem } from "~/modules/inventory";
 import {
   expandStorageUnitIdsWithDescendants,
@@ -34,11 +36,6 @@ import { getGenericQueryFilters } from "~/utils/query";
 export const handle: Handle = {
   realtime: ["itemStockQuantities"]
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -173,7 +170,7 @@ export default function QuantitiesRoute() {
             storageUnits={storageUnits}
           />
         </ResizablePanel>
-        <Outlet />
+        <RecordOutlet />
       </ResizablePanelGroup>
     </VStack>
   );

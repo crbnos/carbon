@@ -10,6 +10,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  RecordOutlet,
   Spinner,
   Tabs,
   TabsContent,
@@ -17,16 +18,13 @@ import {
   TabsTrigger,
   useRouteData
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Await, Outlet, useLoaderData, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ToolSummary } from "~/modules/items";
@@ -65,11 +63,6 @@ export const handle: Handle = {
   ),
   module: "items"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["itemId"], search: ["methodId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -579,7 +572,7 @@ export default function ToolRoute() {
             }
             content={
               <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-                <Outlet />
+                <RecordOutlet />
               </div>
             }
             properties={<ToolProperties key={itemId} />}

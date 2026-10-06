@@ -20,6 +20,7 @@ import {
   type ManagedFunction,
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
+import { noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -43,6 +44,7 @@ import { noRawRedirect } from "./conformance/no-raw-redirect";
 import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
@@ -175,7 +177,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanAll(loadTypescriptFiles(root), [
       noRawRevalidator,
-      noInlineSensorOptions
+      noInlineSensorOptions,
+      noBareOutlet,
+      noStateCopyOfLoaderData
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders

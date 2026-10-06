@@ -2719,10 +2719,9 @@ GET navigation, so every reused ancestor loader re-runs unless its route exports
 only opted out for same-pathname navigations, and the part layouts not at all. The burst is
 what makes each call slow: the first concurrent wave ran ~200 ms per call, later ones 30–60 ms.
 
-**Rule:** A layout loader with children exports `shouldRevalidate` and re-runs only when what
-it reads changes — `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`,
-naming the route and search params the loader reads. Mutations and
-`useRevalidator().revalidate()` still reach it. Data in a shell loader that does not gate
+**Rule (superseded 2026-10-06, see "A layout that skips its loader is only as correct as its
+skip rule"):** layouts no longer export `shouldRevalidate`; the skip was removed and slow layout
+loaders are made faster instead. Data in a shell loader that does not gate
 rendering is returned as a promise and read with `useResolved` (`~/hooks/useResolved`), never
 awaited.
 
@@ -3193,3 +3192,35 @@ And a delete whose failure the caller ignores is not a delete: return the error.
 **Rule:** Filter on the fact that decides whether a row belongs, never on a column that only usually agrees with it. When a type makes a field meaningless, clear the field in the one function every writer goes through (`normalizeOperationSourceIds`), because hiding the input does not clear it. Hiding a row from a list is not a gate: refuse it in the routes that open and start it too.
 
 **Applies to:** `get_active_job_operations_by_location`; `get_batchable_operations` and the `batch-operations` `assertEligible`; the MES operation, start and event routes; any form that hides a field by type; any list whose visibility rests on a NULL.
+
+
+## State seeded from loaded data is a copy that nothing updates
+
+**Context:** A route's components stay mounted when only its params change, and loaded data changes under a mounted component constantly: a save's revalidation, a realtime reload, a layout that reloads after its page has mounted.
+
+**Problem:** `useState(valueFromLoaderData)` reads the value once. Two bugs came from it (2026-10-06). The quote summary summed its totals from lines copied into state at mount, so a deleted line stayed in the subtotal until a reload. And a notes editor seeded from record A stayed mounted on record B: B showed A's notes, and the first keystroke saved A's text into B. An audit of 467 seeded `useState` calls found 17 confirmed cases. Reloading every layout on every navigation had hidden most of the first kind, not fixed it.
+
+**Rule:** Do not copy loaded data into state. A value computed from the data is computed during render (`useMemo`). The user's choices over the data are the only state, combined with the current data during render (`selectQuoteLines`). A draft the user edits is fine as state because the page it lives in remounts for another record: every route under `/x` renders `RecordOutlet` (`@carbon/react`), never a plain `<Outlet>`. Do not write an effect that copies the data into state again. Checks: `no-bare-outlet` and `no-state-copy-of-loader-data` (`@carbon/checks`; the second sees only a hook result used by name in the same file, not a copy seeded from a prop).
+
+**Applies to:** every component that reads `useLoaderData`, `useRouteData` or props that come from them; every route with a param in its path.
+
+
+## A layout that skips its loader is only as correct as its skip rule
+
+**Context:** 186 layouts exported `shouldRevalidate` and skipped a GET navigation that left their params unchanged (`isUnaffectedByNavigation`, 2026-10-01), to save a layout loader run on each click.
+
+**Problem:** The rule inferred "nothing changed" from `formMethod`. React Router passes a fetcher's submission to the first navigation after it only, so a delete that redirected to a record's bare URL, whose index route redirects again, arrived as a plain navigation and every layout kept its data (2026-10-06). An earlier patch had fixed the same blind spot for a revalidation restarting a navigation. 154 of the 186 layouts also declared no realtime tables, so another user's change did not show until the record changed. A module-level "a save happened" flag closed the redirect case and was rejected: one package set it, another cleared it, a third read it.
+
+**Rule:** Layouts do not skip their loaders. Do not export `shouldRevalidate` from a layout to save a loader run; make the loader cheaper instead (one query, the direct connection, shared work through middleware context). The root and the app shell are the only exceptions. To see which loaders a navigation asked for, read the `_routes` query of its `.data` request. Estimated cost of removing the skip, from production traces: 100 to 300 ms on a click that used to skip, until the dozen slow record loaders are optimised.
+
+**Applies to:** every layout route; `packages/utils/src/revalidate.ts`; the record loaders (`purchase-order+/$orderId`, `supplier+/$supplierId`, `sales-invoice+/$invoiceId`, `part+/$itemId`, `sales-order+/$orderId`, `quote+/$quoteId`).
+
+## A restore told the change log but not the open tabs
+
+**Context:** Backup restore and template revert reload a company through `wipeAndLoad` with triggers off (`session_replication_role = replica`). The live lists (items, customers, suppliers, people) are kept in the browser and updated from broadcasts; the change log (`tableChange`) is what a tab reads when it loads or reconnects.
+
+**Problem:** With triggers off nothing was broadcast. `wipeAndLoad` wrote a reset row to the change log, but an open tab only reads the log when a broadcast tells it to, or once an hour. After a demo template was reverted and applied again, a tab's part picker held the reverted parts next to the new ones, and creating a job with a reverted part returned 404 (2026-10-06, production). The first reproductions missed it because they applied a template (triggers on), which broadcasts correctly.
+
+**Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.

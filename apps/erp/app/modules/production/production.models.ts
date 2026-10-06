@@ -88,6 +88,7 @@ export {
   actionsOfTypes,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
+  PLANNING_DRAWER_PARAM,
   resolvePlanningActionScope
 } from "./ui/Planning/planning-action-scope";
 

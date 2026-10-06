@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true
+  },
+  "exclude": ["node_modules"],
+  "extends": "@carbon/config/tsconfig/base.json",
+  "include": ["src"]
+}

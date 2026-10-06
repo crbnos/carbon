@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import {
   getWarehouseTransfer,
   getWarehouseTransferLines
@@ -34,11 +32,6 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["transferId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -91,7 +84,7 @@ export default function WarehouseTransferRoute() {
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
         <div className="flex flex-col gap-4 pb-16 w-full">
-          <Outlet />
+          <RecordOutlet />
         </div>
       </div>
     </div>

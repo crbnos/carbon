@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { indexBy, indexByMapped, pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import type { SupplierReportContactsBySupplierId } from "~/modules/purchasing";
 import { getSupplierReportContacts, getSuppliers } from "~/modules/purchasing";
 import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
@@ -104,7 +104,7 @@ export default function PurchasingSuppliersRoute() {
         tags={tags}
         supplierReportContacts={supplierReportContacts}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

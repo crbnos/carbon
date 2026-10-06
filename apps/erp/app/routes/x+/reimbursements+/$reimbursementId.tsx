@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { Outlet } from "react-router";
+
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -27,7 +28,7 @@ export default function ReimbursementRoute() {
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <Outlet />
+        <RecordOutlet />
       </div>
     </div>
   );

@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import fs from "node:fs";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
+import { brotliCompress, constants } from "node:zlib";
 import { loadEnv } from "vite";
 
 /**
@@ -131,4 +134,98 @@ export function stackActivity() {
       });
     },
   };
+}
+
+/**
+ * Compresses the client build once, at build time: a `.br` at Brotli's
+ * highest setting is written beside each asset. `@carbon/serve` sends the
+ * `.br` as it is, where the stock server compressed the same never-changing
+ * file again on every request, at a setting weak enough to do that fast.
+ * The originals stay, for a caller that does not take Brotli and for
+ * anything else that reads the build.
+ *
+ * Every production build does this except Vercel's: Vercel serves the
+ * files from its own CDN and compresses them there, and never asks for a
+ * `.br`. Client build only: nobody downloads the server bundle.
+ *
+ * The plugin is native code, imported only when it is going to run, so
+ * `vite dev` never loads it.
+ *
+ * @param {{ command: "build" | "serve", mode: string }} env what Vite
+ *   hands a config function
+ * @returns {Promise<import("vite").Plugin[]>}
+ */
+export async function precompressedAssets({ command, mode }) {
+  if (command !== "build" || mode !== "production" || process.env.VERCEL) {
+    return [];
+  }
+  const { compression, defineAlgorithm } = await import(
+    "@medicomind/rolldown-compression"
+  );
+  /** @type {string | undefined} */
+  let clientDirectory;
+  return [
+    {
+      ...compression({
+        // Under this a response is one packet either way.
+        threshold: 1024,
+        algorithms: [defineAlgorithm("brotli", { quality: 11 })],
+        // From disk, after everything is written. In memory the plugin
+        // sees each chunk before Vite has finished it — the preload lists
+        // are still `__VITE_PRELOAD__` — and the `.br` it wrote was of code
+        // that throws the first time it lazy-loads anything.
+        stream: true,
+      }),
+      applyToEnvironment: (environment) => environment.name === "client",
+    },
+    {
+      // React Router writes its route manifest after the client build's
+      // plugins have run, so the largest script in the build was the one
+      // file left without a `.br`. Once the server build is done, it is
+      // there to compress.
+      name: "carbon:compress-remaining",
+      applyToEnvironment: (environment) => environment.name === "ssr",
+      configResolved(config) {
+        const outDir = config.environments?.client?.build?.outDir;
+        if (outDir) clientDirectory = path.resolve(config.root, outDir);
+      },
+      closeBundle: {
+        order: "post",
+        sequential: true,
+        async handler(error) {
+          if (error || !clientDirectory) return;
+          await compressRemaining(clientDirectory);
+        },
+      },
+    },
+  ];
+}
+
+/** @param {Buffer} source */
+const brotli = (source) =>
+  promisify(brotliCompress)(source, {
+    params: {
+      [constants.BROTLI_PARAM_QUALITY]: 11,
+      [constants.BROTLI_PARAM_SIZE_HINT]: source.length,
+    },
+  });
+
+/**
+ * Writes a `.br` beside every script and stylesheet under `directory` that
+ * is worth compressing and has none.
+ *
+ * @param {string} directory
+ */
+export async function compressRemaining(directory) {
+  const entries = await readdir(directory, {
+    recursive: true,
+    withFileTypes: true,
+  });
+  const files = new Set(entries.map((e) => path.join(e.parentPath, e.name)));
+  for (const file of files) {
+    if (!/\.(js|css)$/.test(file) || files.has(`${file}.br`)) continue;
+    const source = await readFile(file);
+    if (source.length < 1024) continue;
+    await writeFile(`${file}.br`, await brotli(source));
+  }
 }

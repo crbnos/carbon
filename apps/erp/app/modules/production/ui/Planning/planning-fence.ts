@@ -28,12 +28,14 @@ export function isInsideFence(
 /**
  * The row's effective fence: the planner's on-screen override when there is
  * one, else the saved horizon the RPC resolved (`timeFenceDate`), else none.
+ * An override of `null` is a cleared fence — no fence for this view — and
+ * `undefined` is no override at all.
  */
 export function effectiveFenceDate(
   savedFenceDate: string | null | undefined,
   override: string | null | undefined
 ): string | null {
-  return override ?? savedFenceDate ?? null;
+  return override !== undefined ? override : (savedFenceDate ?? null);
 }
 
 /** The actions a row surfaces under its fence (open and dismissed alike). */

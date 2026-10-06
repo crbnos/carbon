@@ -5,14 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { getPurchaseOrders } from "~/modules/purchasing";
 import { PurchaseOrdersTable } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { Handle } from "~/utils/handle";
@@ -24,11 +21,6 @@ export const handle: Handle = {
   breadcrumb: msg`Orders`,
   to: path.to.purchaseOrders
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -77,7 +69,7 @@ export default function PurchaseOrdersSearchRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <PurchaseOrdersTable data={purchasOrders} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

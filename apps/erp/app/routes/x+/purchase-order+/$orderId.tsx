@@ -21,19 +21,15 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
@@ -426,11 +422,6 @@ export async function action(args: ActionFunctionArgs) {
   );
 }
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["orderId"] })
-    ? false
-    : args.defaultShouldRevalidate;
-
 const toAttachments = (docs: FileObject[], folder: string) =>
   docs.map((d) => ({
     source: "po" as const,
@@ -623,7 +614,7 @@ export default function PurchaseOrderRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }
