@@ -64,7 +64,7 @@ describe("commitment gates", () => {
       "To Invoice",
       "Completed",
       "Closed"
-    ]) {
+    ] as const) {
       expect(isCommittedPurchaseOrderStatus(status)).toBe(true);
     }
   });

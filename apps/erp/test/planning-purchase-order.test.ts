@@ -32,7 +32,7 @@ describe("isPurchaseOrderEditableFromPlanning", () => {
   });
 
   it("refuses a PO in approval", () => {
-    for (const status of ["Needs Approval", "To Review", "Rejected"]) {
+    for (const status of ["Needs Approval", "To Review", "Rejected"] as const) {
       expect(isPurchaseOrderEditableFromPlanning(status)).toBe(false);
     }
   });

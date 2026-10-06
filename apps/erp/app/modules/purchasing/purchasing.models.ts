@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import {
   bicMatchesCountry,
   getBankFieldConfig,
@@ -117,7 +118,7 @@ export const plannedOrderValidator = z.object({
   existingLineId: zfd.text(z.string().optional()),
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),
-  existingStatus: zfd.text(z.string().optional()),
+  existingStatus: zfd.text(z.enum(purchaseOrderStatusType).optional()),
   supplierId: zfd.text(z.string().optional()),
   itemReadableId: zfd.text(z.string().optional()),
   unitPrice: zfd.numeric(z.number().optional()),
@@ -761,7 +762,7 @@ export const PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES = [
 ] as const;
 
 export function isPurchaseOrderEditableFromPlanning(
-  status: string | null | undefined
+  status: Database["public"]["Enums"]["purchaseOrderStatus"] | null | undefined
 ): boolean {
   return PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES.some(
     (editable) => editable === status

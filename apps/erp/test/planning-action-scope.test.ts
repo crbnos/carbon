@@ -118,12 +118,12 @@ describe("actionsOfTypes", () => {
     { id: "b", type: "Defer" },
     { id: "c", type: "Expedite" },
     { id: "d", type: "Cancel" }
-  ];
+  ] as const;
 
   it("shows every action when the grid is not filtered by type", () => {
-    expect(actionsOfTypes(actions, undefined)).toBe(actions);
-    expect(actionsOfTypes(actions, null)).toBe(actions);
-    expect(actionsOfTypes(actions, [])).toBe(actions);
+    expect(actionsOfTypes(actions, undefined)).toEqual([...actions]);
+    expect(actionsOfTypes(actions, null)).toEqual([...actions]);
+    expect(actionsOfTypes(actions, [])).toEqual([...actions]);
   });
 
   it("keeps only the filtered type, in the original order", () => {

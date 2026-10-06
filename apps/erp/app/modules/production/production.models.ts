@@ -98,7 +98,7 @@ export {
 export const PLANNING_EDITABLE_JOB_STATUSES = ["Draft", "Planned"] as const;
 
 export function isJobEditableFromPlanning(
-  status: string | null | undefined
+  status: Database["public"]["Enums"]["jobStatus"] | null | undefined
 ): boolean {
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
@@ -1020,7 +1020,7 @@ export const productionOrderValidator = z.object({
   existingId: zfd.text(z.string().optional()),
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),
-  existingStatus: zfd.text(z.string().optional()),
+  existingStatus: zfd.text(z.enum(jobStatus).optional()),
   isASAP: z.boolean().optional()
 });
 

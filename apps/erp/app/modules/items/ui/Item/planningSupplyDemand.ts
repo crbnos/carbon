@@ -4,6 +4,15 @@
 
 import type { PlannedOrder } from "../../../purchasing/purchasing.models";
 
+/**
+ * An order the planning chart draws: purchasing's `PlannedOrder` or
+ * production's `ProductionOrder`. Each carries its own document's status enum
+ * (purchase order / job), so the chart reads the status as text.
+ */
+export type ChartPlannedOrder = Omit<PlannedOrder, "existingStatus"> & {
+  existingStatus?: string;
+};
+
 export const supplySourceTypes = [
   "Purchase Order",
   "Production Order"
@@ -24,13 +33,13 @@ export type SupplyDemandRow = {
   documentReadableId: string | null;
 };
 
-export function existingRowId(order: PlannedOrder) {
+export function existingRowId(order: ChartPlannedOrder) {
   return order.existingLineId ?? order.existingId;
 }
 
 export function mergePlannedOrders<T extends SupplyDemandRow>(
   rows: T[],
-  plannedOrders: PlannedOrder[],
+  plannedOrders: ChartPlannedOrder[],
   conversionFactor: number,
   quantityOnHand: number
 ) {

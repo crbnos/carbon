@@ -5,6 +5,7 @@
 import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { applyRate, SCALE, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -55,7 +56,9 @@ type PlanningLine = {
   purchaseOrderId: string;
   conversionFactor: number | null;
   promisedDate: string | null;
-  purchaseOrderStatus: string | null;
+  purchaseOrderStatus:
+    | Database["public"]["Enums"]["purchaseOrderStatus"]
+    | null;
   receiptPromisedDate: string | null;
 };
 

@@ -486,7 +486,9 @@ export async function calculateJobPriority(
   return nextJobPriority(existingJobs ?? [], deadlineType);
 }
 
-const DEADLINE_TYPE_PRIORITY: Record<string, number> = {
+type DeadlineType = Database["public"]["Enums"]["deadlineType"];
+
+const DEADLINE_TYPE_PRIORITY: Record<DeadlineType, number> = {
   ASAP: 0,
   "Hard Deadline": 1,
   "Soft Deadline": 2,
@@ -508,16 +510,14 @@ const DEADLINE_TYPE_PRIORITY: Record<string, number> = {
  * weight. The Order path sets Soft Deadline the same way.
  */
 export function deadlineTypeForPlanningDate(
-  deadlineType: string
-): (typeof deadlineTypes)[number] {
-  return deadlineType === "No Deadline"
-    ? "Soft Deadline"
-    : (deadlineType as (typeof deadlineTypes)[number]);
+  deadlineType: DeadlineType
+): DeadlineType {
+  return deadlineType === "No Deadline" ? "Soft Deadline" : deadlineType;
 }
 
 export function nextJobPriority(
-  siblings: { priority: number | null; deadlineType: string }[],
-  deadlineType: (typeof deadlineTypes)[number]
+  siblings: { priority: number | null; deadlineType: DeadlineType }[],
+  deadlineType: DeadlineType
 ): number {
   if (siblings.length === 0) return 0;
 
@@ -3930,9 +3930,9 @@ export async function updatePlanningJob(
   }
 ): Promise<{ updated: boolean; error: PostgrestError | null }> {
   const { id, companyId, updatedBy, ...changes } = input;
-  const updates: typeof changes & {
-    deadlineType?: (typeof deadlineTypes)[number];
-  } = { ...changes };
+  const updates: typeof changes & { deadlineType?: DeadlineType } = {
+    ...changes
+  };
   if (updates.dueDate !== undefined) {
     const existing = await client
       .from("job")
@@ -11009,7 +11009,7 @@ export async function applyProductionPlanningDateActions(
       .execute();
     const siblingsByKey = new Map<
       string,
-      { priority: number | null; deadlineType: string }[]
+      { priority: number | null; deadlineType: DeadlineType }[]
     >();
     for (const row of siblingRows) {
       const key = `${row.locationId}\u001f${row.dueDate}`;
@@ -11021,7 +11021,7 @@ export async function applyProductionPlanningDateActions(
     const values: {
       jobId: string;
       dueDate: string;
-      deadlineType: (typeof deadlineTypes)[number];
+      deadlineType: DeadlineType;
       priority: number;
     }[] = [];
     for (const action of held) {

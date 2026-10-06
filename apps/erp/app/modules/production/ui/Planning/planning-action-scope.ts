@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 // Pure helpers for the planning grid's Actions and Assignee filters.
 // No JSX, no lingui — unit-tested by apps/erp/test/planning-action-scope.test.ts.
 
@@ -65,10 +66,9 @@ export function resolvePlanningActionScope(args: { filters?: GridFilter[] }): {
  * each row's Defer and Cancel read as an unfiltered grid. No types (no filter)
  * shows everything.
  */
-export function actionsOfTypes<A extends { type: string }>(
-  actions: A[],
-  types: string[] | null | undefined
-): A[] {
-  if (!types || types.length === 0) return actions;
+export function actionsOfTypes<
+  A extends { type: Database["public"]["Enums"]["planningActionType"] }
+>(actions: readonly A[], types: readonly string[] | null | undefined): A[] {
+  if (!types || types.length === 0) return [...actions];
   return actions.filter((action) => types.includes(action.type));
 }

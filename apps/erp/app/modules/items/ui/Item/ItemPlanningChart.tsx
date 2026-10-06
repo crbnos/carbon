@@ -58,9 +58,9 @@ import { DateTime, Empty, Hyperlink } from "~/components";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
-import type { PlannedOrder } from "../../../purchasing/purchasing.models";
 import { DemandForecastSourcesPopover } from "./DemandForecastSourcesPopover";
 import { PlannedOrderDetailsPopover } from "./PlannedOrderDetailsPopover";
+import type { ChartPlannedOrder } from "./planningSupplyDemand";
 import {
   demandSourceTypes,
   mergePlannedOrders,
@@ -160,7 +160,7 @@ export const ItemPlanningChart = ({
   compact?: boolean;
   itemId: string;
   locationId: string;
-  plannedOrders?: PlannedOrder[];
+  plannedOrders?: ChartPlannedOrder[];
   safetyStock?: number;
   conversionFactor?: number;
   /** The planning horizon's cutoff (ISO date). Marked on the chart as a
@@ -1328,7 +1328,7 @@ interface PlanningItem {
   // Planned-row metadata (only set on rows with sourceType === "Planned").
   // Carries enough info for PlannedOrderDetailsPopover to render order facts,
   // policy reasoning, and the linked PO section.
-  plannedOrder?: PlannedOrder;
+  plannedOrder?: ChartPlannedOrder;
 }
 
 const sourceTypeIcons: Record<SourceType, JSX.Element> = {

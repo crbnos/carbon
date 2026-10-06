@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { async, scrapAllowance } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -803,7 +804,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // One statement, like the reads above: the id list goes to Postgres as a
       // parameter, never into a PostgREST URL.
       const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
-      let jobStatusById: Map<string, string>;
+      let jobStatusById: Map<string, Database["public"]["Enums"]["jobStatus"]>;
       try {
         const jobs =
           jobIds.length > 0

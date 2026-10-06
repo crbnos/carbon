@@ -134,12 +134,16 @@ export function laterDate(a: string, b: string): string {
  * (mirrors PURCHASE_ORDER_LOCKED_STATUSES in purchasing.models.ts). Never gate
  * on orderDate — insertPurchaseOrder defaults it to today for planned POs.
  */
-export function isCommittedPurchaseOrderStatus(status: string): boolean {
+export function isCommittedPurchaseOrderStatus(
+  status: Database["public"]["Enums"]["purchaseOrderStatus"] | null | undefined
+): boolean {
   return status !== "Planned" && status !== "Draft";
 }
 
 /** Job statuses at/after release-to-floor are committed supply. */
-export function isCommittedJobStatus(status: string): boolean {
+export function isCommittedJobStatus(
+  status: Database["public"]["Enums"]["jobStatus"] | null | undefined
+): boolean {
   return status === "Ready" || status === "In Progress" || status === "Paused";
 }
 
@@ -1016,7 +1020,11 @@ export async function generatePlanningActions(
 
   const jobById = new Map<
     string,
-    { status: string; quantity: number; quantityReceivedToInventory: number }
+    {
+      status: Database["public"]["Enums"]["jobStatus"];
+      quantity: number;
+      quantityReceivedToInventory: number;
+    }
   >();
   for (const row of openJobRows) {
     if (!row.status) continue;
@@ -1043,7 +1051,7 @@ export async function generatePlanningActions(
       purchaseOrderLineId: line.id,
       quantity,
       dueDate,
-      requiresManualAction: isCommittedPurchaseOrderStatus(line.status ?? ""),
+      requiresManualAction: isCommittedPurchaseOrderStatus(line.status),
       dateIsPromised: Boolean(line.promisedDate),
       supplierId: line.supplierId
     });
@@ -1066,7 +1074,7 @@ export async function generatePlanningActions(
       // the same date the projection buckets this job on — an undated job is
       // supply there, so it is supply here too
       dueDate: jobCompletionDate(job, todayDate),
-      requiresManualAction: isCommittedJobStatus(details?.status ?? "")
+      requiresManualAction: isCommittedJobStatus(details?.status)
     });
   }
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 // When open supply (a purchase order line, a job) arrives, for planning purposes.
 //
 // ONE definition each, used by the projection (`runMrp`) and by the reschedule
@@ -50,7 +51,7 @@ const NO_DEADLINE_DAYS = 30;
 
 export type JobDates = {
   dueDate?: string | null;
-  deadlineType?: string | null;
+  deadlineType?: Database["public"]["Enums"]["deadlineType"] | null;
 };
 
 /**
