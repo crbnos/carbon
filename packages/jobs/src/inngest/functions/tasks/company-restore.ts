@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { CHANGE_LOGGED_TABLES } from "@carbon/database/realtime-tables";
+import {
+  CHANGE_LOGGED_TABLES,
+  REALTIME_TABLES
+} from "@carbon/database/realtime-tables";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
@@ -243,6 +246,28 @@ export async function wipeAndLoad(
         CHANGE_LOGGED_TABLES.map((table) => ({ companyId, table, rowId: null }))
       )
       .execute();
+
+    // The log only answers a client that asks, and an open tab asks when a
+    // broadcast tells it to. With triggers off none was sent: after a template
+    // was reverted, a tab kept the reverted parts in its pickers for up to an
+    // hour, and creating a job with one of them failed. Say on every table's
+    // topic that it changed in bulk (null ids): a list reads the log again and
+    // a page reloads. Sent with the transaction, so nothing hears of a restore
+    // that rolled back.
+    const realtime = await sql<{ present: boolean }>`
+      SELECT to_regprocedure('realtime.send(jsonb,text,text,boolean)') IS NOT NULL AS present
+    `.execute(trx);
+    if (realtime.rows[0]?.present) {
+      await sql`
+        SELECT realtime.send(
+          jsonb_build_object('table', t, 'op', 'UPDATE', 'ids', NULL, 'parents', NULL),
+          'UPDATE',
+          'company:' || ${companyId} || ':' || t,
+          true
+        )
+        FROM unnest(${[...REALTIME_TABLES]}::text[]) AS t
+      `.execute(trx);
+    }
   });
 
   return { rows: inserted, idRewrite };

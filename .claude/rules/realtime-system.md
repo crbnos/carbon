@@ -175,6 +175,12 @@ company) is the only reader, and the backup engine skips the table.
   token every call resets, until the hourly `util.purge_table_changes()` writes
   a new one. A writer that runs with triggers off (company restore) inserts a
   null-`rowId` row per `CHANGE_LOGGED_TABLES` entry itself.
+- **A writer with triggers off must also broadcast.** The log only answers a
+  client that asks, and an open tab asks when a broadcast tells it to (or once an
+  hour). `wipeAndLoad` (backup restore, template revert) therefore sends a
+  null-`ids` message on every `REALTIME_TABLES` topic of the company, in its
+  transaction. Without it a tab kept a reverted template's parts in its pickers,
+  and creating a job with one of them returned 404.
 - **`table_changes_since` must stay `STABLE`**: the read of the log and
   `pg_current_snapshot()` then share one snapshot. As `VOLATILE`, a change
   committed between the two is skipped for good.
