@@ -72,7 +72,7 @@ import {
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
-import { parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
@@ -97,6 +97,7 @@ import {
   LuPackageCheck,
   LuPrinter,
   LuQrCode,
+  LuSquareChartGantt,
   LuSquareUser,
   LuTimer,
   LuTriangleAlert,
@@ -344,19 +345,19 @@ export const JobOperation = ({
       (m) =>
         m.job as {
           deadlineType?: string | null;
+          dueDate?: string | null;
           customer?: { name?: string | null } | null;
         } | null
     );
     const unique = (values: (string | null | undefined)[]) => [
       ...new Set(values.filter((v): v is string => !!v))
     ];
-    const dueDates = members
+    const dueDates = jobs
       .filter(
-        (m, i) =>
-          m.dueDate &&
-          !["ASAP", "No Deadline"].includes(jobs[i]?.deadlineType ?? "")
+        (j) =>
+          j?.dueDate && !["ASAP", "No Deadline"].includes(j.deadlineType ?? "")
       )
-      .map((m) => m.dueDate as string)
+      .map((j) => (j?.dueDate as string).slice(0, 10))
       .sort();
     return {
       customers: unique(jobs.map((j) => j?.customer?.name)),
@@ -371,9 +372,9 @@ export const JobOperation = ({
           : "No Deadline"
     };
   }, [batch]);
-  // Same instant comparison the job's own deadline uses (useOperation).
+  // Same day comparison the job's own deadline uses (useOperation).
   const batchOverdue = batchFacts?.dueDate
-    ? new Date(batchFacts.dueDate) < new Date()
+    ? parseDate(batchFacts.dueDate).compare(today(getLocalTimeZone())) < 0
     : false;
   const batchCompleteModal = useDisclosure();
   // The completion fetcher lives HERE, not in BatchCompleteModal: a successful
@@ -963,7 +964,18 @@ export const JobOperation = ({
                 )}
                 {scope === "job" && (
                   <DropdownMenuItem asChild>
-                    <Link to={path.to.jobDetail(operation.jobId)}>
+                    <Link
+                      to={
+                        // A subassembly's operation opens its own make method,
+                        // not the job header.
+                        operation.parentMaterialId
+                          ? path.to.jobMakeMethodDetail(
+                              operation.jobId,
+                              operation.jobMakeMethodId
+                            )
+                          : path.to.jobDetail(operation.jobId)
+                      }
+                    >
                       <DropdownMenuIcon icon={<LuCirclePlay />} />
                       <Trans>Job Details</Trans>
                     </Link>
@@ -1111,11 +1123,9 @@ export const JobOperation = ({
                   >
                     {["ASAP", "No Deadline"].includes(operation.jobDeadlineType)
                       ? operation.jobDeadlineType
-                      : operation.operationDueDate
+                      : operation.jobDueDate
                         ? t`Due ${formatRelativeTime(
-                            convertDateStringToIsoString(
-                              operation.operationDueDate
-                            )
+                            convertDateStringToIsoString(operation.jobDueDate)
                           )}`
                         : "–"}
                   </span>
@@ -1313,30 +1323,38 @@ export const JobOperation = ({
                               operation.jobDeadlineType
                             )
                               ? operation.jobDeadlineType
-                              : operation.operationDueDate
+                              : operation.jobDueDate
                                 ? t`Due ${formatRelativeTime(
                                     convertDateStringToIsoString(
-                                      operation.operationDueDate
+                                      operation.jobDueDate
                                     )
                                   )}`
                                 : "–"}
                           </Heading>
                           <span className="text-muted-foreground text-sm">
-                            {operation.operationDueDate ? (
+                            {operation.jobDueDate ? (
                               <DateTime
-                                value={operation.operationDueDate}
+                                value={operation.jobDueDate}
                                 variant="date"
                               />
                             ) : null}
                           </span>
+                          {operation.operationDueDate &&
+                            operation.operationDueDate.slice(0, 10) !==
+                              operation.jobDueDate?.slice(0, 10) && (
+                              <span className="text-muted-foreground text-sm">
+                                {t`Operation needed by ${formatDate(
+                                  operation.operationDueDate
+                                )}`}
+                              </span>
+                            )}
                           {projectedCompletionDate &&
                             (isBehindTarget ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Badge variant="red">
-                                    {t`Proj. ${formatDate(
-                                      projectedCompletionDate
-                                    )}`}
+                                  <Badge variant="red" className="gap-1">
+                                    <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                    {formatDate(projectedCompletionDate)}
                                   </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1344,8 +1362,9 @@ export const JobOperation = ({
                                 </TooltipContent>
                               </Tooltip>
                             ) : (
-                              <span className="text-sm text-muted-foreground">
-                                {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                              <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                                <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                {formatDate(projectedCompletionDate)}
                               </span>
                             ))}
                         </VStack>
@@ -3200,7 +3219,7 @@ export const JobOperation = ({
                   >
                     <LuCheck className="size-4 shrink-0 stroke-muted-foreground" />
                     <span className="text-base/6 font-medium">
-                      <Trans>Finish</Trans>
+                      <Trans>Mark as Done</Trans>
                     </span>
                   </button>
                 </>

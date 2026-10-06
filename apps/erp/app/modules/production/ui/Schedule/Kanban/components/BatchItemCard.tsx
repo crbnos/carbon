@@ -16,7 +16,10 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  MENU_ITEM_SHORTCUTS
+  MENU_ITEM_SHORTCUTS,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
@@ -30,6 +33,7 @@ import {
   LuPrinter,
   LuSquareUser,
   LuTrash,
+  LuTriangleAlert,
   LuUsers,
   LuX
 } from "react-icons/lu";
@@ -44,6 +48,7 @@ import {
   sortableCardProps
 } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
+import { DUE_URGENCY_BORDER, getBatchDueUrgency } from "../dueUrgency";
 import type { BatchItem, OperationItem } from "../types";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
@@ -149,6 +154,11 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
     earliest?.deadlineType !== "No Deadline" && earliest?.dueDate
       ? earliest.dueDate < scheduleToday
       : false;
+  // The batch runs as one, so any member the scheduler projects late makes the
+  // whole run late — flag it the way the operation card does.
+  const conflictedMembers = members.filter((m) => m.hasConflict);
+  const hasConflict = conflictedMembers.length > 0;
+  const urgency = getBatchDueUrgency(members, scheduleToday);
   const distinctCustomers = [
     ...new Set(members.map((m) => m.customerId).filter(Boolean))
   ] as string[];
@@ -175,6 +185,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
         className={cn(
           "max-w-[330px]",
           KANBAN_CARD_SHELL,
+          urgency && DUE_URGENCY_BORDER[urgency],
           isPlanned && "border-dashed",
           isOverlay && "ring-2 ring-primary",
           isDragging && "ring-2 ring-primary opacity-30"
@@ -192,6 +203,21 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
               </span>
             </HStack>
             <HStack spacing={1} className="flex-shrink-0 -mr-2">
+              {hasConflict && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {conflictedMembers.map((m) => (
+                      <div key={m.id}>
+                        {m.jobReadableId}:{" "}
+                        {m.conflictReason ?? t`Scheduling conflict`}
+                      </div>
+                    ))}
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {!isCompleting && (
                 <IconButton
                   aria-label={t`Move batch`}

@@ -21,6 +21,7 @@ import {
   convertDateStringToIsoString,
   formatDurationMilliseconds
 } from "@carbon/utils";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
@@ -41,6 +42,7 @@ import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { DeadlineIcon } from "~/components/Icons";
 import { useDateFormatter } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
+import { DUE_URGENCY_BORDER, getDueUrgency } from "../dueUrgency";
 import type { DisplaySettings, Item } from "../types";
 
 interface Progress {
@@ -111,6 +113,10 @@ export function ItemCard({
     : undefined;
 
   const isBatch = (item.batchSize ?? 0) > 1 && !!item.batchId;
+  const urgency = getDueUrgency(
+    { ...item, status },
+    today(getLocalTimeZone()).toString()
+  );
 
   return (
     <Link
@@ -119,10 +125,10 @@ export function ItemCard({
       <Card
         className={cn(
           "max-w-[330px]",
-          item.hasConflict && "border-red-500 border-2",
           cardVariants({
             status: status
-          })
+          }),
+          urgency && DUE_URGENCY_BORDER[urgency]
         )}
       >
         <CardHeader className="flex flex-col justify-between relative gap-2">
@@ -145,7 +151,7 @@ export function ItemCard({
                   <TooltipTrigger>
                     <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="whitespace-pre-line">
                     {item.conflictReason ?? t`Scheduling conflict`}
                   </TooltipContent>
                 </Tooltip>

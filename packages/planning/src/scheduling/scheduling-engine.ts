@@ -219,10 +219,6 @@ export class SchedulingEngine {
     // Load operations
     this.operations = await this.provider.getOperations(this.jobId);
 
-    // Enrich each operation with its make method item's manufacturing lead time
-    // so the date calculator can pull subassemblies earlier at assembly edges.
-    await this.assignAssemblyLeadTimes();
-
     // Load existing dependencies as a starting point; createDependencies()
     // rebuilds the non-rework edges before placement.
     this.dependencies = await this.provider.getDependencies(this.jobId);
@@ -273,37 +269,6 @@ export class SchedulingEngine {
       includeDone: true
     });
     return this.allOperations;
-  }
-
-  /**
-   * Populate `assemblyLeadTime` on each loaded operation from the manufacturing
-   * lead time (itemReplenishment.leadTime) of the item its make method builds.
-   * Used at assembly boundaries in date calculation so a subassembly finishes
-   * its lead time (in business days) before the parent operation that consumes it.
-   */
-  private async assignAssemblyLeadTimes(): Promise<void> {
-    const makeMethodIds = [
-      ...new Set(
-        this.operations
-          .map((op) => op.jobMakeMethodId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    if (makeMethodIds.length === 0) return;
-
-    const leadTimes = await this.provider.getMakeMethodLeadTimes(makeMethodIds);
-
-    // NUMERIC columns can come back from pg as strings — coerce to a number.
-    const toLeadTimeDays = (value: unknown): number => {
-      const n = Number(value ?? 0);
-      return Number.isFinite(n) && n > 0 ? n : 0;
-    };
-
-    for (const op of this.operations) {
-      if (op.jobMakeMethodId) {
-        op.assemblyLeadTime = toLeadTimeDays(leadTimes.get(op.jobMakeMethodId));
-      }
-    }
   }
 
   /**

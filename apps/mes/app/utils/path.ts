@@ -163,6 +163,8 @@ export const path = {
       `${getAppUrl()}${x}/${type.toLowerCase()}/${itemId}/details`,
     jobDag: (id: string) => generatePath(`${x}/job/${id}`),
     jobDetail: (id: string) => `${getAppUrl()}${x}/job/${id}/details`,
+    jobMakeMethodDetail: (jobId: string, makeMethodId: string) =>
+      `${getAppUrl()}${x}/job/${jobId}/make/${makeMethodId}`,
     jobs: `${x}/jobs`,
     kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     location: `${x}/location`,

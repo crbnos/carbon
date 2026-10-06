@@ -2678,7 +2678,7 @@ export function AssemblyView({
               />
               <ActionSheetButton
                 icon={<LuCheck className="size-4 shrink-0" />}
-                label="Finish"
+                label="Mark as Done"
                 onClick={() => {
                   actionsSheet.onClose();
                   finishModal.onOpen();

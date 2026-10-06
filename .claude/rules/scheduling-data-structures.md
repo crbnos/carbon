@@ -293,8 +293,11 @@ only; its output is read by nothing in the placement path (spec
   `job.dueDate` (null due date ⇒ all-null targets); leaves are due on the job due
   date; an op with dependents is due at the earliest dependent constraint — the
   dependent's need-by START minus that dependent's `operationLeadTime` working
-  days, minus this op's `assemblyLeadTime` at assembly edges (a sub-make-method
-  feeding its parent); "With Previous" ops copy their partner's target dates; a
+  days. An assembly edge (a sub-make-method feeding its parent) subtracts NO
+  item lead time: the subassembly's own ops are in the walk, so adding
+  `itemReplenishment.leadTime` (default 7) counted the build twice per BOM
+  level and put targets weeks before the job's start. "With Previous" ops copy
+  their partner's target dates; a
   pinned op's stored `dueDate` is taken as-is AND propagates upstream. Day math
   runs on real calendars via `calendarAdapters` over the SAME availability-ladder
   windows placement uses (one shared `loadAvailabilityWindows()` fetch):
@@ -545,10 +548,14 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   `jobOperation.dueDate` is the backward demand-anchored need-by target (DATE, stable
   — changes only when the job due date, routing, or lead times change; a pinned op's
   is human-owned). The job-level forecast finish is `job.projectedCompletionAt`.
-  Consumers that key urgency on op `dueDate` (MES queue sort + overdue flags,
+  Consumers that key urgency on op `dueDate` (MES queue sort,
   the People Capacity view's Demand buckets, `get_picking_schedule` ordering) are
   deliberately unchanged — they now honestly read "when work is needed", not the
-  sim's last forecast. `getJobPromiseDate` returns `job.projectedCompletionAt` or
+  sim's last forecast. The MES operation view's "Due" header, Due Date card and
+  overdue flag read the JOB's `jobDueDate`; the op target is shown under it as
+  "Operation needed by …" and only drives the behind-target projection badge.
+  Labelling the op target "Due" with the job's deadline icon read as the job
+  being due weeks early. `getJobPromiseDate` returns `job.projectedCompletionAt` or
   null (its old max-op-dueDate fallback would now just echo the job due date and
   was removed).
 - Editing the ERP ops board (`operations.update.tsx`) does NOT re-run the engine and does

@@ -13947,10 +13947,6 @@ msgstr "Procent Zysku"
 msgid "Progress"
 msgstr "Postęp"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
-
 msgid "Project"
 msgstr "Projekt"
 
@@ -13965,10 +13961,6 @@ msgstr "Plan Projektu"
 
 msgid "Project start"
 msgstr "Początek projektu"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Prognozowana {0}"
 
 msgid "Projected completion"
 msgstr "Przewidywane zakończenie"

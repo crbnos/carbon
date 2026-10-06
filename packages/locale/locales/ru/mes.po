@@ -188,11 +188,11 @@ msgstr "Вы уверены, что хотите удалить этот таб�
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Вы уверены, что хотите завершить все производственные события? Это прекратит все активные операции без их завершения."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Вы уверены, что хотите завершить эту операцию? Это завершит все активные производственные события для этой операции."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Вы уверены, что хотите покинуть эту страницу?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Вы уверены, что хотите отметить эту операцию как выполненную? Это завершит все активные производственные события для этой операции."
 
 msgid "Assembly steps"
 msgstr "Шаги сборки"
@@ -509,9 +509,9 @@ msgstr "Перетаскивание {0} отменено."
 msgid "Due"
 msgstr "Срок"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -657,13 +657,6 @@ msgstr "Фильтровать по площадке"
 
 msgid "Finish"
 msgstr "Завершить"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Завершить {0}"
-
-msgid "Finish Anyways"
-msgstr "Завершить в любом случае"
 
 msgid "Finish setting up your account"
 msgstr "Завершите настройку вашего аккаунта"
@@ -903,6 +896,16 @@ msgstr "Добавить номенклатуру на склад вручную
 
 msgid "Manually remove items from inventory"
 msgstr "Вручную убрать позиции из запасов"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "Отметить {0} как выполненное"
+
+msgid "Mark as Done"
+msgstr "Отметить как выполненное"
+
+msgid "Mark as Done Anyways"
+msgstr "Всё равно отметить как выполненное"
 
 msgid "Mark Short"
 msgstr "Отметить как недостача"
@@ -1164,6 +1167,10 @@ msgstr "Открытые производственные заказы"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Операция нужна к {0}"
+
 msgid "Operations"
 msgstr "Операции"
 
@@ -1311,11 +1318,6 @@ msgstr "Процессы"
 
 msgid "Progress"
 msgstr "Прогресс"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Прогноз. {0}"
 
 msgid "Quality Issue"
 msgstr "Проблема качества"

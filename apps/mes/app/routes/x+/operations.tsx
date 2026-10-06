@@ -121,8 +121,26 @@ function collapseBatches(
   }
   for (const [batchId, members] of byBatch) {
     const total = batchTotals.get(batchId);
+    // The batch runs as one, so any member projected late makes the run late.
+    const conflicted = members.filter((m) => m.hasConflict);
+    // The earliest member deadline is the batch's binding constraint.
+    const earliest = members.reduce<Item | undefined>((acc, m) => {
+      if (!m.dueDate || m.deadlineType === "No Deadline") return acc;
+      if (!acc?.dueDate || m.dueDate < acc.dueDate) return m;
+      return acc;
+    }, undefined);
     result.push({
       ...members[0],
+      dueDate: earliest?.dueDate ?? members[0].dueDate,
+      deadlineType: earliest?.deadlineType ?? members[0].deadlineType,
+      hasConflict: conflicted.length > 0 || undefined,
+      conflictReason: conflicted.length
+        ? conflicted
+            .map((m) =>
+              m.conflictReason ? `${m.title}: ${m.conflictReason}` : m.title
+            )
+            .join("\n")
+        : undefined,
       batchSize: total?.size ?? members.length,
       batchJobReadableIds:
         total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),

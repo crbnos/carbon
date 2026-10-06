@@ -177,10 +177,6 @@ export interface MasterDataProvider {
   getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }>;
-  /** Manufacturing lead time (raw, in days) of the item each make method builds. */
-  getMakeMethodLeadTimes(
-    makeMethodIds: string[]
-  ): Promise<Map<string, unknown>>;
   /** The location's timezone, falling back to the company's. */
   getLocationTimeZone(locationId: string): Promise<string>;
   getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]>;
@@ -287,7 +283,6 @@ type JobPreload = {
   jobIdByMakeMethodId: Map<string, string>;
   rootByJobId: Map<string, { id: string; itemId: string | null }>;
   treeByRootId: Record<string, JobMethod[]>;
-  leadTimeByMakeMethodId: Map<string, unknown>;
   operationIds: Set<string>;
   operationsWithEvents: Set<string>;
 };
@@ -391,14 +386,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
     const roots = makeMethods.filter((m) => m.parentMaterialId === null);
     const rootIds = roots.map((m) => m.id);
-    const itemIds = [
-      ...new Set(
-        makeMethods.map((m) => m.itemId).filter((id): id is string => !!id)
-      )
-    ];
     const operationIds = operations.map((o) => o.id);
 
-    const [trees, replenishments, withEvents] = await Promise.all([
+    const [trees, withEvents] = await Promise.all([
       rootIds.length === 0
         ? { rows: [] as (JobMethod & { rootMethodId: string })[] }
         : sql<JobMethod & { rootMethodId: string }>`
@@ -407,20 +397,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
               LATERAL get_job_methods_by_method_id(r.id) WITH ORDINALITY AS t
             ORDER BY r.id, t.ordinality
           `.execute(this.db),
-      itemIds.length === 0
-        ? ([] as { itemId: string; leadTime: number }[])
-        : this.db
-            .selectFrom("itemReplenishment")
-            .select(["itemId", "leadTime"])
-            .where("itemId", "in", itemIds)
-            .where("companyId", "=", this.companyId)
-            .execute(),
       this.readOperationsWithEvents(operationIds)
     ]);
 
-    const leadTimeByItemId = new Map<string, unknown>(
-      replenishments.map((r) => [r.itemId, r.leadTime])
-    );
     const preload: JobPreload = {
       jobs: new Map(jobs.map((j) => [j.id as string, toJob(j)])),
       operations: groupBy(operations, (o) => o.jobId as string),
@@ -430,9 +409,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       jobIdByMakeMethodId: new Map(makeMethods.map((m) => [m.id, m.jobId])),
       rootByJobId: new Map(roots.map((m) => [m.jobId, m])),
       treeByRootId: groupBy(trees.rows, (t) => t.rootMethodId),
-      leadTimeByMakeMethodId: new Map(
-        makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "")])
-      ),
       operationIds: new Set(operationIds),
       operationsWithEvents: withEvents,
       jobIds: new Set(jobIds)
@@ -625,38 +601,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     const rows = this.preload?.treeByRootId[methodId];
     if (rows) return { data: getJobMethodTreeArrayToTree(rows), error: null };
     return await getJobMethodTree(this.db, methodId);
-  }
-
-  async getMakeMethodLeadTimes(
-    makeMethodIds: string[]
-  ): Promise<Map<string, unknown>> {
-    const preloaded = this.preload?.leadTimeByMakeMethodId;
-    if (preloaded && makeMethodIds.every((id) => preloaded.has(id))) {
-      return preloaded;
-    }
-    if (makeMethodIds.length === 0) return new Map();
-    const makeMethods = await this.db
-      .selectFrom("jobMakeMethod")
-      .select(["id", "itemId"])
-      .where("id", "in", makeMethodIds)
-      .execute();
-    const itemIds = [
-      ...new Set(
-        makeMethods.map((m) => m.itemId).filter((id): id is string => !!id)
-      )
-    ];
-    if (itemIds.length === 0) return new Map();
-    const replenishments = await this.db
-      .selectFrom("itemReplenishment")
-      .select(["itemId", "leadTime"])
-      .where("itemId", "in", itemIds)
-      .execute();
-    const leadTimeByItemId = new Map<string, unknown>(
-      replenishments.map((r) => [r.itemId, r.leadTime])
-    );
-    return new Map(
-      makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "")])
-    );
   }
 
   getLocationTimeZone(locationId: string): Promise<string> {
