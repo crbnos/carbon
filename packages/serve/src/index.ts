@@ -61,18 +61,6 @@ const SHUTDOWN_MS = 20_000;
 const NEVER_A_PAGE = /^\/(assets|_vercel)\//;
 
 /**
- * Whether an `Accept-Encoding` header takes Brotli. Left to `negotiator`,
- * which is what Express answers this with: `br;q=0` is a refusal, `*`
- * takes it, and a refusal outranks a `*` beside it.
- */
-export function takesBrotli(header: string | string[] | undefined): boolean {
-  const negotiator = new Negotiator({
-    headers: { "accept-encoding": header }
-  });
-  return negotiator.encodings(["br"]).length > 0;
-}
-
-/**
  * What a file is, by its name: asked of the library that sends the files,
  * so an asset's Brotli copy is called exactly what its original is.
  */
@@ -229,9 +217,10 @@ export async function createApp({
         // Which of the two is sent depends on the caller, and a cache in
         // between has to know that — whichever one it is handed.
         reply.header("Vary", "Accept-Encoding");
-        // Every browser takes Brotli; a monitor or a script may not.
-        const brotli = takesBrotli(req.headers["accept-encoding"]);
-        return reply.sendFile(brotli ? `${rel}.br` : rel);
+        // Every browser accepts Brotli; a monitor or a script may not, and
+        // `br;q=0` is one saying so.
+        const [accepted] = new Negotiator(req.raw).encodings(["br"]);
+        return reply.sendFile(accepted === "br" ? `${rel}.br` : rel);
       }
       // A chunk from before the last deploy, or Vercel's analytics script
       // off Vercel: there is no page to render for these, and rendering the
