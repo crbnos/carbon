@@ -12,6 +12,5 @@ export function precompressedAssets(env: {
   mode: string;
 }): Promise<Plugin[]>;
 export function compressRemaining(directory: string): Promise<void>;
-export function removeCompressedOriginals(directory: string): Promise<number>;
 
 export function linguiWithoutIdQuery<T>(plugins: T[]): T[];

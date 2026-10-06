@@ -36,7 +36,8 @@ describe("createApp", () => {
   beforeAll(async () => {
     root = mkdtempSync(path.join(tmpdir(), "carbon-serve-"));
     mkdirSync(path.join(root, "assets"));
-    // As the build leaves it: Brotli only, the original removed.
+    // As the build leaves it: the file, and a Brotli copy beside it.
+    writeFileSync(path.join(root, "assets", "entry-abc123.js"), SCRIPT);
     writeFileSync(
       path.join(root, "assets", "entry-abc123.js.br"),
       brotliCompressSync(SCRIPT)
@@ -86,14 +87,20 @@ describe("createApp", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-encoding"]).toBe("br");
     expect(res.headers["cache-control"]).toContain("immutable");
+    expect(res.headers["content-type"]).toContain("text/javascript");
+    expect(res.headers.vary).toContain("Accept-Encoding");
     expect(res.rawPayload.length).toBeLessThan(SCRIPT.length / 10);
   });
 
-  it("decompresses it for a caller that cannot take Brotli", async () => {
+  it("sends the file itself to a caller that cannot take Brotli", async () => {
     const res = await app.inject({ url: "/assets/entry-abc123.js" });
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-encoding"]).toBeUndefined();
-    expect(res.headers["content-type"]).toContain("text/javascript");
+    expect(res.headers["content-type"]).toContain("javascript");
+    expect(res.headers["cache-control"]).toContain("immutable");
+    // A cache in between must not hand this copy to a browser, or the
+    // other way round.
+    expect(res.headers.vary).toContain("Accept-Encoding");
     expect(res.payload).toBe(SCRIPT);
   });
 

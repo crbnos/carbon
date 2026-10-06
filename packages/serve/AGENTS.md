@@ -22,11 +22,9 @@ options, so nothing could be put between a request and React Router.
   `MES_URL`. Unset, nothing is added.
 - **Static files are sent as the build left them.** A build (see
   `precompressedAssets` in `@carbon/dev/vite`; every production build but
-  Vercel's)
-  keeps one Brotli file per asset and deletes the original. The `.br` goes
-  as it is to anything that accepts Brotli, and is decompressed for a caller
-  that does not. Where the originals are still there, they are served as
-  they are.
+  Vercel's) writes a `.br` beside each asset and keeps the original. The
+  `.br` goes as it is to anything that accepts Brotli; the original to a
+  caller that does not. Both answers carry `Vary: Accept-Encoding`.
 - **Which files exist is read once, at start.** `@fastify/static` is only
   used to send the file that index names (`serve: false`, `reply.sendFile`).
   Left to find files itself it lists the parent directory on every request,

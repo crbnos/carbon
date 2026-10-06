@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import fs from "node:fs";
-import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { brotliCompress, constants } from "node:zlib";
@@ -137,16 +137,16 @@ export function stackActivity() {
 }
 
 /**
- * Compresses the client build once, at build time, and keeps only the
- * result: each asset becomes a `.br` at Brotli's highest setting and the
- * original is removed. `@carbon/serve` sends the `.br` as it is, where the
- * stock server compressed the same never-changing file again on every
- * request, at a setting weak enough to do that fast.
+ * Compresses the client build once, at build time: a `.br` at Brotli's
+ * highest setting is written beside each asset. `@carbon/serve` sends the
+ * `.br` as it is, where the stock server compressed the same never-changing
+ * file again on every request, at a setting weak enough to do that fast.
+ * The originals stay, for a caller that does not take Brotli and for
+ * anything else that reads the build.
  *
  * Every production build does this except Vercel's: Vercel serves the
- * files from its own CDN, compresses them there, and would have nothing to
- * send once the originals were gone. Client build only: nobody downloads
- * the server bundle.
+ * files from its own CDN and compresses them there, and never asks for a
+ * `.br`. Client build only: nobody downloads the server bundle.
  *
  * The plugin is native code, imported only when it is going to run, so
  * `vite dev` never loads it.
@@ -179,10 +179,11 @@ export async function precompressedAssets({ command, mode }) {
       applyToEnvironment: (environment) => environment.name === "client",
     },
     {
-      // The originals go last, once the server build is done. The plugin's
-      // own `deleteOriginalAssets` takes them out of the bundle while React
-      // Router still reads it, and the build fails on "Chunk not found".
-      name: "carbon:keep-compressed-only",
+      // React Router writes its route manifest after the client build's
+      // plugins have run, so the largest script in the build was the one
+      // file left without a `.br`. Once the server build is done, it is
+      // there to compress.
+      name: "carbon:compress-remaining",
       applyToEnvironment: (environment) => environment.name === "ssr",
       configResolved(config) {
         const outDir = config.environments?.client?.build?.outDir;
@@ -193,12 +194,7 @@ export async function precompressedAssets({ command, mode }) {
         sequential: true,
         async handler(error) {
           if (error || !clientDirectory) return;
-          // React Router writes its route manifest after the client
-          // build's plugins have run, so the largest script in the build
-          // was the one file left without a `.br`.
           await compressRemaining(clientDirectory);
-          const removed = await removeCompressedOriginals(clientDirectory);
-          this.info(`kept only the Brotli copy of ${removed} client asset(s)`);
         },
       },
     },
@@ -232,28 +228,4 @@ export async function compressRemaining(directory) {
     if (source.length < 1024) continue;
     await writeFile(`${file}.br`, await brotli(source));
   }
-}
-
-/**
- * Deletes every file under `directory` that has a `.br` beside it.
- *
- * @param {string} directory
- * @returns {Promise<number>} how many were removed
- */
-export async function removeCompressedOriginals(directory) {
-  let removed = 0;
-  for (const entry of await readdir(directory, {
-    recursive: true,
-    withFileTypes: true,
-  })) {
-    if (!entry.isFile() || !entry.name.endsWith(".br")) continue;
-    const original = path.join(entry.parentPath, entry.name.slice(0, -3));
-    try {
-      await unlink(original);
-      removed++;
-    } catch (error) {
-      if (error?.code !== "ENOENT") throw error;
-    }
-  }
-  return removed;
 }

@@ -16,13 +16,13 @@
 //    http, the browser says https, and every submit was a 400. The
 //    deployment already says where the app lives (`siteUrl`); that host is
 //    allowed, through the option React Router has for it.
-//  - Static files compressed once at build (Brotli, the originals removed),
+//  - Static files compressed once at build (a `.br` beside each one) are
 //    sent as they are instead of being compressed again on every request.
 
-import { createReadStream, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
-import { pipeline, Readable } from "node:stream";
-import { constants, createBrotliDecompress } from "node:zlib";
+import { Readable } from "node:stream";
+import { constants } from "node:zlib";
 import fastifyCompress from "@fastify/compress";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
@@ -47,8 +47,7 @@ export function allowedActionOrigins(siteUrl: string | undefined): string[] {
   }
 }
 
-// What the build compresses, and so the only types a `.br` with no original
-// beside it can be.
+// What the build compresses, and so the only types a `.br` can be of.
 const TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -196,11 +195,10 @@ export async function createApp({
       const urlPath = `/${path.relative(root, filePath).split(path.sep).join("/")}`;
       reply.header("Cache-Control", cacheControl(urlPath));
       if (!filePath.endsWith(".br")) return;
-      // The build left only the Brotli file; say what it is a file of.
+      // Say what it is a file of, not that it is Brotli.
       reply
         .header("Content-Type", contentType(filePath.slice(0, -3)))
-        .header("Content-Encoding", "br")
-        .header("Vary", "Accept-Encoding");
+        .header("Content-Encoding", "br");
     }
   });
 
@@ -218,25 +216,16 @@ export async function createApp({
       } catch {
         // Not a path at all: React Router's to refuse.
       }
-      if (files.has(rel)) return reply.sendFile(rel);
-      if (files.has(`${rel}.br`)) {
-        if (/\bbr\b/.test(String(req.headers["accept-encoding"] ?? "")))
-          return reply.sendFile(`${rel}.br`);
+      if (files.has(rel)) {
+        if (!files.has(`${rel}.br`)) return reply.sendFile(rel);
+        // Which of the two is sent depends on the caller, and a cache in
+        // between has to know that — whichever one it is handed.
+        reply.header("Vary", "Accept-Encoding");
         // Every browser takes Brotli; a monitor or a script may not.
-        reply
-          .header("Content-Type", contentType(rel))
-          .header("Cache-Control", cacheControl(urlPath))
-          .header("Vary", "Accept-Encoding");
-        if (method === "HEAD") return reply.send();
-        // `pipeline`, so a failed read ends the response instead of the
-        // process.
-        return reply.send(
-          pipeline(
-            createReadStream(path.join(root, `${rel}.br`)),
-            createBrotliDecompress(),
-            () => {}
-          )
+        const brotli = /\bbr\b/.test(
+          String(req.headers["accept-encoding"] ?? "")
         );
+        return reply.sendFile(brotli ? `${rel}.br` : rel);
       }
       // A chunk from before the last deploy, or Vercel's analytics script
       // off Vercel: there is no page to render for these, and rendering the
