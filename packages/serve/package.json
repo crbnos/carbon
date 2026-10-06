@@ -2,7 +2,9 @@
   "name": "@carbon/serve",
   "dependencies": {
     "@fastify/compress": "catalog:",
+    "@fastify/send": "4.1.1",
     "@fastify/static": "catalog:",
+    "close-with-grace": "2.5.0",
     "fastify": "catalog:",
     "negotiator": "1.0.0",
     "react-router": "catalog:"

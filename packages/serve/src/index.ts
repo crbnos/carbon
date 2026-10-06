@@ -24,7 +24,9 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { constants } from "node:zlib";
 import fastifyCompress from "@fastify/compress";
+import { isUtf8MimeType, mime } from "@fastify/send";
 import fastifyStatic from "@fastify/static";
+import closeWithGrace from "close-with-grace";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import Negotiator from "negotiator";
 import {
@@ -48,25 +50,12 @@ export function allowedActionOrigins(siteUrl: string | undefined): string[] {
   }
 }
 
-// What the build compresses, and so the only types a `.br` can be of.
-const TYPES: Record<string, string> = {
-  ".css": "text/css; charset=utf-8",
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".toml": "text/plain; charset=utf-8",
-  ".txt": "text/plain; charset=utf-8",
-  ".wasm": "application/wasm",
-  ".xml": "application/xml; charset=utf-8",
-  ".yaml": "text/plain; charset=utf-8",
-  ".yml": "text/plain; charset=utf-8"
-};
-
 // Fingerprinted by the build: the name changes when the bytes do.
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const SHORT = "public, max-age=3600";
+
+// How long a shutdown waits for requests in flight.
+const SHUTDOWN_MS = 20_000;
 
 // Paths that are a file or nothing.
 const NEVER_A_PAGE = /^\/(assets|_vercel)\//;
@@ -83,8 +72,14 @@ export function takesBrotli(header: string | string[] | undefined): boolean {
   return negotiator.encodings(["br"]).length > 0;
 }
 
-const contentType = (file: string) =>
-  TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream";
+/**
+ * What a file is, by its name: asked of the library that sends the files,
+ * so an asset's Brotli copy is called exactly what its original is.
+ */
+function contentType(file: string): string {
+  const type = mime.getType(file) ?? "application/octet-stream";
+  return isUtf8MimeType(type) ? `${type}; charset=utf-8` : type;
+}
 
 const cacheControl = (urlPath: string) =>
   urlPath.startsWith("/assets/") ? IMMUTABLE : SHORT;
@@ -315,11 +310,14 @@ export async function serve({
       handler(request, new RouterContextProvider())
   });
 
-  for (const signal of ["SIGTERM", "SIGINT"]) {
-    process.once(signal, () => {
-      app.close().finally(() => process.exit(0));
-    });
-  }
+  // On SIGTERM or SIGINT, and on an error nothing caught: stop taking
+  // requests, let those in flight finish, then exit. Bounded, so a request
+  // that never ends cannot hold a rollout — and under the thirty seconds
+  // Kubernetes and ECS both wait before they kill the process outright.
+  closeWithGrace({ delay: SHUTDOWN_MS }, async ({ err }) => {
+    if (err) console.error("[carbon] shutting down after an error", err);
+    await app.close();
+  });
 
   const address = await app.listen({
     port: port ?? Number(process.env.PORT ?? 3000),

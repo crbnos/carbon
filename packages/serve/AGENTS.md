@@ -41,6 +41,11 @@ options, so nothing could be put between a request and React Router.
   proxy's idle timeout, and `requestTimeout` is Node's 300s (Fastify sets
   none). `bodyLimit` does not apply: no body is parsed here. A request whose `Content-Type` is not a
   media type at all is a 415 from Fastify before React Router sees it.
+- **What a library already answers is left to it.** `negotiator` reads
+  `Accept-Encoding` (a `br;q=0` is a refusal), `@fastify/send` names a
+  file's content type — the same code that sends the original, so both
+  copies of an asset are called one thing — and `close-with-grace` shuts
+  the server down: requests in flight finish, bounded at twenty seconds.
 - Routes that should not go through React Router at all belong here, in front
   of the catch-all — not as a path check inside a route.
 

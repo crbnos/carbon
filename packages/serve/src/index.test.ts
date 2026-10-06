@@ -101,7 +101,9 @@ describe("createApp", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-encoding"]).toBe("br");
     expect(res.headers["cache-control"]).toContain("immutable");
-    expect(res.headers["content-type"]).toContain("text/javascript");
+    expect(res.headers["content-type"]).toBe(
+      "application/javascript; charset=utf-8"
+    );
     expect(res.headers.vary).toContain("Accept-Encoding");
     expect(res.rawPayload.length).toBeLessThan(SCRIPT.length / 10);
   });
