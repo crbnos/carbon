@@ -500,6 +500,7 @@ export function BatchOverview({
               {members.map((m) => {
                 const job = m.job as {
                   deadlineType?: string | null;
+                  dueDate?: string | null;
                   customer?: { name?: string | null } | null;
                 } | null;
                 const toRun = remaining(m);
@@ -546,9 +547,9 @@ export function BatchOverview({
                     >
                       {["ASAP", "No Deadline"].includes(
                         job?.deadlineType ?? ""
-                      ) || !m.dueDate
+                      ) || !job?.dueDate
                         ? (job?.deadlineType ?? "—")
-                        : formatDate(m.dueDate)}
+                        : formatDate(job.dueDate)}
                     </Td>
                     {showLots && (
                       <Td

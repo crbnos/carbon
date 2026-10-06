@@ -121,8 +121,33 @@ function collapseBatches(
   }
   for (const [batchId, members] of byBatch) {
     const total = batchTotals.get(batchId);
+    // The batch runs as one, so any member projected late makes the run late.
+    const conflicted = members.filter((m) => m.hasConflict);
+    // The earliest dated member deadline is the batch's binding constraint.
+    // Only Hard and Soft Deadline carry a due date; an ASAP job can still hold
+    // a stale one.
+    const earliest = members.reduce<Item | undefined>((acc, m) => {
+      if (
+        !m.dueDate ||
+        m.deadlineType === "ASAP" ||
+        m.deadlineType === "No Deadline"
+      )
+        return acc;
+      if (!acc?.dueDate || m.dueDate < acc.dueDate) return m;
+      return acc;
+    }, undefined);
     result.push({
       ...members[0],
+      dueDate: earliest?.dueDate ?? members[0].dueDate,
+      deadlineType: earliest?.deadlineType ?? members[0].deadlineType,
+      hasConflict: conflicted.length > 0 || undefined,
+      conflictReason: conflicted.length
+        ? conflicted
+            .map((m) =>
+              m.conflictReason ? `${m.title}: ${m.conflictReason}` : m.title
+            )
+            .join("\n")
+        : undefined,
       batchSize: total?.size ?? members.length,
       batchJobReadableIds:
         total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
@@ -228,12 +253,16 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   // assignment for today and no explicit work-center filter (and hasn't
   // dismissed the default this session), open on their station.
   const effectiveUserId = context.get(userContext)?.effectiveUserId;
+  // The factory's calendar day: card urgency and the people assignment both
+  // read it, never the operator device's day.
+  const today = locationId
+    ? datetime
+        .today(await getLocationTimeZone(serviceRole, locationId, companyId))
+        .toString()
+    : null;
   let peopleStation: { workCenterId: string; name: string } | null = null;
   let peopleDate: string | null = null;
-  if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
-    const today = datetime
-      .today(await getLocationTimeZone(serviceRole, locationId, companyId))
-      .toString();
+  if (selectedWorkCenterIds.length === 0 && effectiveUserId && today) {
     peopleDate = today;
     const dismissed = await getPeopleOverride(request);
     if (dismissed !== today) {
@@ -363,6 +392,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     {
       peopleStation,
       peopleDate,
+      today,
       columns: filteredWorkCenters
         .map((wc: any) => ({
           id: wc.id!,
@@ -387,7 +417,9 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
             title: op.jobReadableId,
             subtitle: op.itemReadableId,
             description: op.description,
-            dueDate: op.operationDueDate,
+            // The JOB's due date, as on the operation view: the op's need-by
+            // target labelled "Due" read as the job being due weeks early.
+            dueDate: op.jobDueDate ?? undefined,
             duration:
               operation.setupDuration +
               Math.max(operation.laborDuration, operation.machineDuration),

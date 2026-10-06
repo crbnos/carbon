@@ -31,7 +31,6 @@ import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import { memo } from "react";
 import {
-  LuCalendarClock,
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
@@ -41,6 +40,7 @@ import {
   LuGripVertical,
   LuPencil,
   LuPlay,
+  LuSquareChartGantt,
   LuSquareUser,
   LuTimer,
   LuTrash,
@@ -58,6 +58,7 @@ import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationSta
 import { getPrivateUrl, path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
+import { DUE_URGENCY_BORDER, getDueUrgency } from "../dueUrgency";
 import type { Item, OperationItem } from "../types";
 import { isBatchItem } from "../types";
 import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
@@ -117,7 +118,7 @@ function OperationCard({
   isOverlay?: boolean;
   progressByItemId: Record<string, Progress>;
 }) {
-  const { selectedGroup } = useKanban();
+  const { selectedGroup, scheduleToday } = useKanban();
   const {
     setNodeRef,
     attributes,
@@ -144,6 +145,7 @@ function OperationCard({
     transition,
     transform: CSS.Translate.toString(transform)
   };
+  const urgency = getDueUrgency({ ...item, status }, scheduleToday);
 
   // This shell re-renders whenever the drop target changes; the body does
   // not. It is the expensive part (a form, avatars and menus per card), and
@@ -154,13 +156,13 @@ function OperationCard({
       style={style}
       className={cn(
         "group/card max-w-[330px]",
-        item.hasConflict && "border-red-500 border-2",
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
           // @ts-expect-error TS2322 - TODO: fix type
           status: status,
           highlighted: isHighlighted
-        })
+        }),
+        urgency && DUE_URGENCY_BORDER[urgency]
       )}
     >
       <OperationCardBody
@@ -193,9 +195,10 @@ const OperationCardBody = memo(function OperationCardBody({
     useKanban();
 
   const isOverdue =
-    item.deadlineType !== "No Deadline" && item.dueDate
-      ? item.dueDate < scheduleToday
-      : false;
+    item.deadlineType !== "ASAP" &&
+    item.deadlineType !== "No Deadline" &&
+    !!item.dueDate &&
+    item.dueDate < scheduleToday;
 
   const projectedCompletionDate = item.projectedCompletionAt
     ? item.projectedCompletionAt.slice(0, 10)
@@ -401,12 +404,12 @@ const OperationCardBody = memo(function OperationCardBody({
         />
         {displaySettings.showDueDate && projectedCompletionDate && (
           <HStack className="justify-start space-x-2">
-            <LuCalendarClock className="text-muted-foreground" />
+            <LuSquareChartGantt className="text-muted-foreground" />
             {isBehindTarget ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Badge variant="red">
-                    {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                    {formatDate(projectedCompletionDate)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -415,7 +418,7 @@ const OperationCardBody = memo(function OperationCardBody({
               </Tooltip>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                {formatDate(projectedCompletionDate)}
               </span>
             )}
           </HStack>

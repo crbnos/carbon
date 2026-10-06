@@ -91,6 +91,9 @@ const JournalEntriesTable = memo(
             <DateTime value={row.original.postingDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

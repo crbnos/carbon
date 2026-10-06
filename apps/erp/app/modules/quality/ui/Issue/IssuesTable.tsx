@@ -266,6 +266,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <DateTime value={row.original.openDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -276,6 +279,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <DateTime value={row.original.closeDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

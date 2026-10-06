@@ -9,6 +9,8 @@ import {
   getLocalTimeZone,
   now,
   parseAbsolute,
+  parseDate,
+  today,
   toZoned
 } from "@internationalized/date";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -347,8 +349,12 @@ export function useOperation({
     finishModal,
     issueModal,
     serialModal,
-    isOverdue: operation.operationDueDate
-      ? new Date(operation.operationDueDate) < new Date()
+    // The JOB's deadline. The operation's own `operationDueDate` is the
+    // scheduler's need-by target for this step, shown separately.
+    isOverdue: operation.jobDueDate
+      ? parseDate(operation.jobDueDate.slice(0, 10)).compare(
+          today(getLocalTimeZone())
+        ) < 0
       : false,
     selectedMaterial,
     setSelectedMaterial,

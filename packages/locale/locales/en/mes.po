@@ -188,11 +188,11 @@ msgstr "Are you sure you want to delete this timecard? This cannot be undone."
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "Are you sure you want to finish this operation? This will end all active production events for this operation."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "Are you sure you want to leave this page?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 
 msgid "Assembly steps"
 msgstr "Assembly steps"
@@ -509,9 +509,9 @@ msgstr "Dragging {0} cancelled."
 msgid "Due"
 msgstr "Due"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -657,13 +657,6 @@ msgstr "Filter by location"
 
 msgid "Finish"
 msgstr "Finish"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "Finish {0}"
-
-msgid "Finish Anyways"
-msgstr "Finish Anyways"
 
 msgid "Finish setting up your account"
 msgstr "Finish setting up your account"
@@ -903,6 +896,16 @@ msgstr "Manually add items to inventory"
 
 msgid "Manually remove items from inventory"
 msgstr "Manually remove items from inventory"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "Mark {0} as Done"
+
+msgid "Mark as Done"
+msgstr "Mark as Done"
+
+msgid "Mark as Done Anyways"
+msgstr "Mark as Done Anyways"
 
 msgid "Mark Short"
 msgstr "Mark Short"
@@ -1164,6 +1167,10 @@ msgstr "Open Jobs"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Open sub-assembly {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "Operation needed by {0}"
+
 msgid "Operations"
 msgstr "Operations"
 
@@ -1311,11 +1318,6 @@ msgstr "Processes"
 
 msgid "Progress"
 msgstr "Progress"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Proj. {0}"
 
 msgid "Quality Issue"
 msgstr "Quality Issue"

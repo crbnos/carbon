@@ -409,6 +409,20 @@ export class WorkCenterSelector {
             }
           }
         }
+        // Late vs the JOB due date, like any other placement: the batch's
+        // window is shared, so a member can finish after its own job is due.
+        if (!conflict && jobDueDate) {
+          const placedEndDate = businessDayFromMs(
+            batchPlacement.endAt,
+            ctx.timeZone
+          );
+          if (placedEndDate > jobDueDate) {
+            conflict = composeLateConflict(placedEndDate, jobDueDate, {
+              kind: "batch",
+              batchReadableId: batchPlacement.batchReadableId
+            });
+          }
+        }
         placedEndByOperation.set(op.id, batchPlacement.endAt);
         selections.set(op.id, {
           workCenterId: batchPlacement.workCenterId,

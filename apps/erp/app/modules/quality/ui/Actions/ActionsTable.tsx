@@ -167,6 +167,9 @@ const ActionsTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -206,6 +209,9 @@ const ActionsTable = memo(
             <DateTime value={row.original.completedDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

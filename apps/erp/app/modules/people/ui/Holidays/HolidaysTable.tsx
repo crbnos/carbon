@@ -68,6 +68,9 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendarDays />
         }
       }

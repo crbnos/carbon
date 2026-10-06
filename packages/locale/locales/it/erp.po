@@ -329,6 +329,20 @@ msgstr "{count, plural, one {# corso} other {# corsi}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# altri dopo {fenceLabel}} other {# altri dopo {fenceLabel}}}"
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Sciogli # lotto di produzione} other {Sciogli # lotti di produzione}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {Sciolto # lotto di produzione} other {Sciolti # lotti di produzione}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Rilascia # lotto di produzione} other {Rilascia # lotti di produzione}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {Liberato # lotto di produzione} other {Liberati # lotti di produzione}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {Rilasciato # ordine di produzione} other {Rilasciati # ordini di produzione}}"
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -4875,7 +4889,9 @@ msgid "Could not read the document: {0}"
 msgstr "Non è stato possibile leggere il documento: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Non è stato possibile rilasciare {0}: {1}"
 
@@ -6452,19 +6468,11 @@ msgstr "Disposizioni"
 msgid "Dissolve"
 msgstr "Sciogliere"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Dissolvi {0} lotti"
-
 msgid "Dissolve batch"
 msgstr "Elimina batch"
 
 msgid "Dissolve Batch"
 msgstr "Sciogliere Lotto"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Dissolti {0} lotti"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -6867,7 +6875,7 @@ msgid "Edit column visibility"
 msgstr "Modifica visibilità colonna"
 
 msgid "Edit Component Group"
-msgstr "Modifica il gruppo di componenti"
+msgstr "Modifica gruppo di componenti"
 
 #. placeholder {0}: unit.name
 msgid "Edit component group {0}"
@@ -9760,6 +9768,9 @@ msgstr "è"
 msgid "is any of"
 msgstr "è uno di"
 
+msgid "is between"
+msgstr "è compreso tra"
+
 msgid "Is console operator"
 msgstr "È operatore console"
 
@@ -9774,6 +9785,12 @@ msgstr "È gruppo tipo dipendente"
 
 msgid "Is identity group"
 msgstr "È gruppo identità"
+
+msgid "is on or after"
+msgstr "è dal"
+
+msgid "is on or before"
+msgstr "è fino al"
 
 msgid "Is supplier org group"
 msgstr "È gruppo organizzativo fornitore"
@@ -10588,7 +10605,7 @@ msgid "Machine"
 msgstr "Macchina"
 
 msgid "Machine Costs"
-msgstr "Costi di macchina"
+msgstr "Costi macchina"
 
 msgid "Machine Hours"
 msgstr "Ore di macchina"
@@ -10841,7 +10858,7 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Segna la persona come assente per ogni giorno nell'intervallo. Non verranno programmati mentre sono via."
 
 msgid "Markup by Category"
-msgstr "Ricarico per categoria"
+msgstr "Margine per categoria"
 
 msgid "Markup Percent"
 msgstr "Percentuale di ricarico"
@@ -14111,10 +14128,6 @@ msgstr "Percentuale di profitto"
 msgid "Progress"
 msgstr "Progresso"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Prev. {0}"
-
 msgid "Project"
 msgstr "Progetto"
 
@@ -15026,10 +15039,6 @@ msgstr "Cronologia relativa · date da confermare"
 msgid "Release"
 msgstr "Rilascio"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Rilascia {0} lotti di produzione"
-
 msgid "Release Batch"
 msgstr "Rilascia lotto"
 
@@ -15050,12 +15059,11 @@ msgstr "Controllo Rilascio"
 msgid "Release Job"
 msgstr "Rilascia Commessa"
 
+msgid "Release Jobs"
+msgstr "Rilascia Ordini di produzione"
+
 msgid "Released"
 msgstr "Rilasciato"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "Rilasciati {0} lotti di produzione"
 
 msgid "Released date"
 msgstr "Data di rilascio"
@@ -15065,6 +15073,10 @@ msgstr "Revisione rilasciata"
 
 msgid "Released revision is locked"
 msgstr "La revisione rilasciata è bloccata"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Rilasciato con problemi: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Rilasciare il lotto di produzione rilascia i suoi ordini di produzione, e ognuno deve essere pronto per l'officina."
@@ -15284,6 +15296,7 @@ msgstr "Rapporti"
 
 msgid "Reprice with current rules"
 msgstr "Ricalcola il prezzo con le regole attuali"
+msgstr "Riprezzi con le regole attuali"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -17521,7 +17534,7 @@ msgstr "Il passo {0} non è più su una posizione di rilascio"
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} is over {1}"
-msgstr "Il passo {0} è su {1}"
+msgstr "Passo {0} è sopra {1}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} was dropped"
@@ -17691,7 +17704,7 @@ msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stile dell'output kanban da mostrare nella tabella Kanban"
 
 msgid "Sub-assembly"
-msgstr "Sotto-assemblaggio"
+msgstr "Sottoassemblea"
 
 msgid "Sub-Assembly"
 msgstr "Sotto-assemblaggio"
@@ -17710,7 +17723,7 @@ msgstr "Sotto-assemblaggio {0} · {1, plural, one {# componente} other {# compon
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Sotto-assemblaggio {0} · {1} — mostrato separatamente"
+msgstr "Sottoassemblea {0} · {1} — mostrata da sola"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -18945,6 +18958,9 @@ msgstr "La stessa persona potrebbe ispezionare"
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "L'URL dei metadati SAML pubblicati dal tuo provider di identità"
 
+msgid "The schedule could not be updated after the release"
+msgstr "Il programma non è stato aggiornato dopo il rilascio"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Il programma utilizzato per distribuire il costo di questo asset nel corso della sua vita utile (lineare, quote decrescenti, unità di produzione)."
 
@@ -19734,6 +19750,7 @@ msgstr "Ore totali"
 
 msgid "Total Indirect Cost"
 msgstr "Totale Costo Indiretto"
+msgstr "Costo indiretto totale"
 
 msgid "Total Material Cost"
 msgstr "Costo totale materiale"
@@ -20048,7 +20065,7 @@ msgid "Undo"
 msgstr "Annulla"
 
 msgid "Ungroup"
-msgstr "Sgruppa"
+msgstr "Separa"
 
 msgid "unhealthy"
 msgstr "anomalo"
@@ -20379,7 +20396,7 @@ msgid "Uploading {fileName}"
 msgstr "Caricamento in corso {fileName}"
 
 msgid "Uploading backup"
-msgstr "Caricamento backup"
+msgstr "Caricamento backup in corso"
 
 msgid "Uploading model"
 msgstr "Caricamento modello"

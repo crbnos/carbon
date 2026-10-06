@@ -92,6 +92,27 @@ export function getGenericQueryFilters(
   return { limit, offset, sorts, filters };
 }
 
+/**
+ * Value of a `between` filter: `from,to`, inclusive. Either side may be empty
+ * for an open-ended range (`2026-10-01,` is "on or after").
+ */
+export function parseRangeFilter(value: string): {
+  from: string | null;
+  to: string | null;
+} {
+  const [from, to] = value.split(",");
+  return { from: from || null, to: to || null };
+}
+
+/** Inverse of `parseRangeFilter`; null when neither bound is set. */
+export function formatRangeFilter(
+  from: string | null | undefined,
+  to: string | null | undefined
+): string | null {
+  if (!from && !to) return null;
+  return `${from ?? ""},${to ?? ""}`;
+}
+
 export function getGenericFilter<
   T extends GenericSchema,
   U extends Record<string, unknown>,
@@ -122,6 +143,12 @@ export function getGenericFilter<
       return query.ilike(column, `${value}%`);
     case "in":
       return query.in(column, value.split(",") as any);
+    case "between": {
+      const { from, to } = parseRangeFilter(value);
+      if (from) query = query.gte(column, getSafeNumber(from));
+      if (to) query = query.lte(column, getSafeNumber(to));
+      return query;
+    }
     default:
       throw badRequest(`Invalid filter operator: ${operator}`);
   }

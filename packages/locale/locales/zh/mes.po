@@ -188,11 +188,11 @@ msgstr "确定要删除此考勤记录吗？此操作无法撤销。"
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "您确定要结束所有生产事件吗？这会结束所有活跃工序而不完成或结束它们。"
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "您确定要完成此工序吗？这会结束此工序的所有活跃生产事件。"
-
 msgid "Are you sure you want to leave this page?"
 msgstr "您确定要离开此页面吗？"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "您确定要将此工序标记为完成吗？这会结束此工序的所有活跃生产事件。"
 
 msgid "Assembly steps"
 msgstr "装配步骤"
@@ -509,9 +509,9 @@ msgstr "拖拽 {0} 已取消。"
 msgid "Due"
 msgstr "应交期"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -657,13 +657,6 @@ msgstr "按位置筛选"
 
 msgid "Finish"
 msgstr "完成"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "完成 {0}"
-
-msgid "Finish Anyways"
-msgstr "仍然完成"
 
 msgid "Finish setting up your account"
 msgstr "完成账户设置"
@@ -903,6 +896,16 @@ msgstr "手动添加物料至库存管理"
 
 msgid "Manually remove items from inventory"
 msgstr "手动从库存管理中移除物料"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "将 {0} 标记为完成"
+
+msgid "Mark as Done"
+msgstr "标记为完成"
+
+msgid "Mark as Done Anyways"
+msgstr "仍然标记为完成"
 
 msgid "Mark Short"
 msgstr "标记短缺"
@@ -1164,6 +1167,10 @@ msgstr "未结工单"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "工序需求日期：{0}"
+
 msgid "Operations"
 msgstr "工序"
 
@@ -1311,11 +1318,6 @@ msgstr "工艺"
 
 msgid "Progress"
 msgstr "进度"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "预计 {0}"
 
 msgid "Quality Issue"
 msgstr "质量问题"

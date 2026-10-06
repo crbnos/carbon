@@ -22,9 +22,10 @@ export type OperationView = "operation" | "assembly" | "inspection";
 
 /**
  * Resolve the view for an operation type. Anything unrecognized — including
- * `null`/`undefined`, the default `Process`, and `Outside Processing` (subcontracted
- * work has no execution view of its own) — falls back to the Operation view, so the
- * route is always safe to open (ADR-0001).
+ * `null`/`undefined` and the default `Process` — falls back to the Operation view, so
+ * the route is always safe to open (ADR-0001). `Outside Processing` maps there too,
+ * but subcontracted work runs at the supplier: the operation and start routes refuse
+ * it before any view renders.
  */
 export function resolveOperationView(
   type: OperationType | null | undefined
@@ -38,3 +39,11 @@ export function resolveOperationView(
       return "operation";
   }
 }
+
+/**
+ * Subcontracted work runs at the supplier, never on the shop floor. The boards
+ * hide it (get_active_job_operations_by_location); the operation view, the start
+ * route and the production-event Start action refuse it with this message.
+ */
+export const OUTSIDE_PROCESSING_REFUSAL =
+  "Outside processing is done by the supplier and can't be run on the shop floor";

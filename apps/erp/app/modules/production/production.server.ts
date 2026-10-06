@@ -6,6 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -19,6 +20,9 @@ import {
   runMRP,
   updateJobStatus
 } from "./production.service";
+import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
+
+const logger = getLogger("erp", "production");
 
 // The geometry (assembler) service backs model conversion and motion planning.
 // When it's unreachable those actions can't run, so loaders probe its health and
@@ -76,7 +80,11 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
 //
 // `purchaseOrdersBySupplierId` maps a supplier to "new" or a Draft PO id; a
 // supplier's first "new" PO is reused for the jobs after it, so a batch puts
-// each supplier's outside operations from every member job on one PO.
+// each supplier's outside operations from every member job on one PO. The map
+// is returned with those POs filled in, for a caller releasing job by job.
+// `releasedJobIds` are the jobs that ARE Ready when this returns — on an error
+// after the status flip (purchase orders) the job is released, and the caller
+// must still schedule it and say so.
 // Validation (getJobReleaseReadiness) is the caller's, BEFORE this runs.
 export async function releaseJobs({
   client,
@@ -92,9 +100,19 @@ export async function releaseJobs({
   companyId: string;
   userId: string;
   purchaseOrdersBySupplierId: Record<string, string>;
-}): Promise<{ error: string | null }> {
+}): Promise<{
+  error: string | null;
+  purchaseOrdersBySupplierId: Record<string, string>;
+  releasedJobIds: string[];
+}> {
   const serviceRole = getCarbonServiceRole();
   const purchaseOrders = { ...purchaseOrdersBySupplierId };
+  const releasedJobIds: string[] = [];
+  const fail = (error: string) => ({
+    error,
+    purchaseOrdersBySupplierId: purchaseOrders,
+    releasedJobIds
+  });
 
   for (const id of jobIds) {
     const recalc = await recalculateJobRequirements(serviceRole, db, {
@@ -102,17 +120,39 @@ export async function releaseJobs({
       companyId,
       userId
     });
-    if (recalc.error) return { error: `Failed to recalculate job ${id}` };
+    if (recalc.error) return fail("The job could not be recalculated");
 
-    await runMRP(serviceRole, db, { type: "job", id, companyId, userId });
+    // A failed plan never blocks a release: the scheduled MRP run (every 3
+    // hours) and Material Planning's Recalculate both repair it.
+    const mrp = await runMRP(serviceRole, db, {
+      type: "job",
+      id,
+      companyId,
+      userId
+    });
+    if (mrp.error) {
+      logger.error("MRP failed during job release", {
+        companyId,
+        jobId: id,
+        error: mrp.error
+      });
+    }
 
+    // Only a job still waiting for release flips: the caller checked the
+    // status before the recalculation and MRP above, and someone may have
+    // cancelled or released it since.
     const update = await updateJobStatus(client, {
       id,
       companyId,
       status: "Ready",
-      updatedBy: userId
+      updatedBy: userId,
+      fromStatuses: ["Draft", "Planned"]
     });
-    if (update.error) return { error: `Failed to release job ${id}` };
+    if (update.error) return fail("The job could not be released");
+    if (!update.updated) {
+      return fail("The job is no longer Draft or Planned");
+    }
+    releasedJobIds.push(id);
 
     const purchaseOrder = await serverFns
       .system({ db, companyId, userId })
@@ -122,25 +162,41 @@ export async function releaseJobs({
         purchaseOrdersBySupplierId: purchaseOrders
       });
     if (purchaseOrder.error) {
-      return {
-        error: getErrorMessage(
+      return fail(
+        `The job is released, but its purchase orders could not be created: ${getErrorMessage(
           purchaseOrder.error,
-          `Failed to create purchase orders for job ${id}`
-        )
-      };
+          "unknown error"
+        )}`
+      );
     }
     Object.assign(
       purchaseOrders,
       purchaseOrder.data?.purchaseOrderIdsBySupplierId ?? {}
     );
 
-    await client
+    // The date feeds the completion-time KPI and nothing else writes it, so a
+    // silent failure would be permanent.
+    const stamped = await client
       .from("job")
       .update({ releasedDate: datetime.timestamp() })
       .eq("id", id)
       .eq("companyId", companyId);
+    if (stamped.error) {
+      logger.error("Failed to stamp the release date", {
+        companyId,
+        jobId: id,
+        error: stamped.error
+      });
+      return fail(
+        "The job is released, but its release date could not be saved"
+      );
+    }
   }
-  return { error: null };
+  return {
+    error: null,
+    purchaseOrdersBySupplierId: purchaseOrders,
+    releasedJobIds
+  };
 }
 
 // Cancel a job. The one cancel path: the job status route and the planning
@@ -240,25 +296,9 @@ export async function releaseBatchMemberJobs({
     return { error: "Failed to validate the batch's jobs" };
   }
 
-  const problems = readiness.data.jobs.flatMap((job) => [
-    ...(job.manufacturingBlocked
-      ? [`${job.jobId}: manufacturing is blocked`]
-      : []),
-    ...(job.missingAssemblies.length > 0
-      ? [
-          `${job.jobId}: no operations on ${job.missingAssemblies
-            .map((m) => m.description)
-            .join(", ")}`
-        ]
-      : []),
-    // No per-operation supplier picker here: an ambiguous or missing supplier
-    // is settled on the job's own Release.
-    ...job.outsideOperationsWithoutSupplier.map((op) =>
-      op.missing === "choose"
-        ? `${job.jobId}: choose a supplier for ${op.description} on the job`
-        : `${job.jobId}: ${op.description} has no supplier`
-    )
-  ]);
+  const problems = readiness.data.jobs.flatMap((job) =>
+    jobReleaseProblems(job).map((problem) => `${job.jobId}: ${problem}`)
+  );
   if (problems.length > 0) {
     return { error: `Fix these jobs before releasing: ${problems.join("; ")}` };
   }

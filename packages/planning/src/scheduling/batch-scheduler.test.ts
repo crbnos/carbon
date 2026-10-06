@@ -486,3 +486,46 @@ it("a predecessor freshly placed past the batch start flags a conflict on the me
   // The window itself is still the batch's — pinned, not re-placed.
   assertEquals(memberSelection.placedStart, "2026-01-05T01:00:00.000Z");
 });
+
+it("a batch window finishing after the job's due date flags the member late", async () => {
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  selector.setFiniteContext(makeContext());
+
+  const member = makeOp({
+    id: "op-batch",
+    workCenterId: "wc1",
+    setupTime: 0,
+    laborTime: 1,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0
+  });
+
+  const selections = await selector.selectWorkCentersForOperations([member], {
+    jobDueDate: "2026-01-04",
+    batchPlacements: new Map([
+      ["op-batch", batchWindowPlacement(NOW + 3_600_000, NOW + 2 * 3_600_000)]
+    ])
+  });
+
+  const conflict = selections.get("op-batch")!.conflict;
+  assert(conflict, "member past the job's due date carries a late conflict");
+  assert(
+    conflict!.includes("Finishes 2026-01-05 but the job is due 2026-01-04"),
+    "conflict states the lateness"
+  );
+  assert(conflict!.includes("BAT000001"), "conflict names the batch");
+
+  // On time: no conflict.
+  const onTime = await selector.selectWorkCentersForOperations([member], {
+    jobDueDate: "2026-01-05",
+    batchPlacements: new Map([
+      ["op-batch", batchWindowPlacement(NOW + 3_600_000, NOW + 2 * 3_600_000)]
+    ])
+  });
+  assertEquals(onTime.get("op-batch")!.conflict ?? null, null);
+});

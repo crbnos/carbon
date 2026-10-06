@@ -33,6 +33,8 @@ const DatePicker = (
     helperText?: string;
     closeOnSelect?: boolean;
     size?: "sm" | "md" | "lg";
+    /** Days to flag with a dot in the calendar, e.g. days that have work due. */
+    isDateMarked?: (date: CalendarDate) => boolean;
   }
 ) => {
   const state = useDatePickerState({
@@ -113,7 +115,7 @@ const DatePicker = (
                 >
                   <DateField {...fieldProps} size={props.size} />
                   {state.isInvalid && (
-                    <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
+                    <LuBan className="!text-destructive-foreground ml-auto shrink-0 self-center" />
                   )}
                 </div>
                 {/* Anchor (not Trigger) so the calendar button isn't wrapped
@@ -142,7 +144,7 @@ const DatePicker = (
           )}
         </HStack>
         <PopoverContent align="end" {...dialogProps}>
-          <Calendar {...calendarProps} />
+          <Calendar {...calendarProps} isDateMarked={props.isDateMarked} />
           <PopoverFooter>
             <Button onClick={() => state.setValue(null)} variant="secondary">
               Clear

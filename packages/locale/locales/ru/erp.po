@@ -329,6 +329,20 @@ msgstr "{count, plural, one {# курс} other {# курсов}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# еще после {fenceLabel}} few {# еще после {fenceLabel}} many {# еще после {fenceLabel}} other {# еще после {fenceLabel}}}"
+msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
+msgstr "{count, plural, one {Расформировать # серию} few {Расформировать # серии} many {Расформировать # серий} other {Расформировать # серий}}"
+
+msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
+msgstr "{count, plural, one {Расформирована # серия} few {Расформированы # серии} many {Расформированы # серий} other {Расформированы # серий}}"
+
+msgid "{count, plural, one {Release # batch} other {Release # batches}}"
+msgstr "{count, plural, one {Запустить в работу # серию} few {Запустить в работу # серии} many {Запустить в работу # серий} other {Запустить в работу # серий}}"
+
+msgid "{count, plural, one {Released # batch} other {Released # batches}}"
+msgstr "{count, plural, one {Запущена # серия} few {Запущены # серии} many {Запущены # серий} other {Запущены # серий}}"
+
+msgid "{count, plural, one {Released # job} other {Released # jobs}}"
+msgstr "{count, plural, one {Запущен # производственный заказ} few {Запущено # производственных заказа} many {Запущено # производственных заказов} other {Запущено # производственных заказов}}"
 
 msgid "{days}d"
 msgstr "{days}д"
@@ -4875,7 +4889,9 @@ msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Не удалось запустить в работу {0}: {1}"
 
@@ -6452,19 +6468,11 @@ msgstr "Решения"
 msgid "Dissolve"
 msgstr "Распустить"
 
-#. placeholder {0}: dissolvable.length
-msgid "Dissolve {0} batches"
-msgstr "Растворить {0} партий"
-
 msgid "Dissolve batch"
 msgstr "Разбить партию"
 
 msgid "Dissolve Batch"
 msgstr "Распустить партию"
-
-#. placeholder {0}: d.dissolved
-msgid "Dissolved {0} batches"
-msgstr "Растворено {0} партий"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -9760,6 +9768,9 @@ msgstr "это"
 msgid "is any of"
 msgstr "является одним из"
 
+msgid "is between"
+msgstr "находится между"
+
 msgid "Is console operator"
 msgstr "Является оператором консоли"
 
@@ -9774,6 +9785,12 @@ msgstr "Является группой типов сотрудников"
 
 msgid "Is identity group"
 msgstr "Является группой идентификации"
+
+msgid "is on or after"
+msgstr "находится на или после"
+
+msgid "is on or before"
+msgstr "находится на или до"
 
 msgid "Is supplier org group"
 msgstr "Является группой организаций поставщиков"
@@ -12292,7 +12309,7 @@ msgid "No step selected"
 msgstr "Шаг не выбран"
 
 msgid "No steps match \"{search}\""
-msgstr "Нет шагов, соответствующих «{search}»"
+msgstr "Нет этапов, соответствующих «{search}»"
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
 msgstr "Нет шагов. Перетащите шаги в него или используйте «Переместить в» из меню шага."
@@ -12314,6 +12331,7 @@ msgstr "Нет единицы хранения"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Никакие единицы хранения или номера отслеживания не совпадают."
+msgstr "Единицы хранения или номера отслеживания не совпадают."
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -14111,10 +14129,6 @@ msgstr "Процент прибыли"
 msgid "Progress"
 msgstr "Прогресс"
 
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "Прогн. {0}"
-
 msgid "Project"
 msgstr "Проект"
 
@@ -15026,10 +15040,6 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
-#. placeholder {0}: releasable.length
-msgid "Release {0} batches"
-msgstr "Запустить в работу {0} серий"
-
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
@@ -15050,12 +15060,11 @@ msgstr "Управление запуском в работу"
 msgid "Release Job"
 msgstr "Запустить производственный заказ в работу"
 
+msgid "Release Jobs"
+msgstr "Запустить в работу производственные заказы"
+
 msgid "Released"
 msgstr "Выпущено"
-
-#. placeholder {0}: d.released
-msgid "Released {0} batches"
-msgstr "Запущено {0} серий"
 
 msgid "Released date"
 msgstr "Дата выпуска"
@@ -15065,6 +15074,10 @@ msgstr "Выпущенная ревизия"
 
 msgid "Released revision is locked"
 msgstr "Выпущенная ревизия заблокирована"
+
+#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+msgid "Released with problems: {0}"
+msgstr "Запущено с проблемами: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
@@ -17691,7 +17704,7 @@ msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
 
 msgid "Sub-assembly"
-msgstr "Подсборка"
+msgstr "узел"
 
 msgid "Sub-Assembly"
 msgstr "Подсборка"
@@ -17710,7 +17723,7 @@ msgstr "Подсборка {0} · {1, plural, one {# деталь} other {# де
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr "Подсборка {0} · {1} — показана отдельно"
+msgstr "Узел {0} · {1} — показано отдельно"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
@@ -18945,6 +18958,9 @@ msgstr "Тот же инспектор может проверять"
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "URL метаданных SAML, опубликованный вашим поставщиком удостоверений"
 
+msgid "The schedule could not be updated after the release"
+msgstr "График не удалось обновить после запуска в работу"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "График, используемый для распределения Себестоимости этого актива в течение его Срока полезного использования (линейный, Уменьшаемый остаток, единицы производства)."
 
@@ -19734,6 +19750,7 @@ msgstr "Всего часов"
 
 msgid "Total Indirect Cost"
 msgstr "Всего косвенные затраты"
+msgstr "Итого косвенная себестоимость"
 
 msgid "Total Material Cost"
 msgstr "Итоговая себестоимость материалов"

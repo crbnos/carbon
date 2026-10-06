@@ -19,6 +19,7 @@ import {
   getTrackedEntitiesByMakeMethodId,
   startProductionEvent
 } from "~/services/operations.service";
+import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "start-operation");
@@ -69,6 +70,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         request,
         error("You are not authorized to start this operation", "Unauthorized")
       )
+    );
+  }
+
+  // Subcontracted work runs at the supplier and is never startable here. Like
+  // the floor rule below, this must run BEFORE the timer re-open.
+  if (jobOperation.data.operationType === "Outside Processing") {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
     );
   }
 

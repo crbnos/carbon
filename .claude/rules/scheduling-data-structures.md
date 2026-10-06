@@ -293,8 +293,11 @@ only; its output is read by nothing in the placement path (spec
   `job.dueDate` (null due date ⇒ all-null targets); leaves are due on the job due
   date; an op with dependents is due at the earliest dependent constraint — the
   dependent's need-by START minus that dependent's `operationLeadTime` working
-  days, minus this op's `assemblyLeadTime` at assembly edges (a sub-make-method
-  feeding its parent); "With Previous" ops copy their partner's target dates; a
+  days. An assembly edge (a sub-make-method feeding its parent) subtracts NO
+  item lead time: the subassembly's own ops are in the walk, so adding
+  `itemReplenishment.leadTime` (default 7) counted the build twice per BOM
+  level and put targets weeks before the job's start. "With Previous" ops copy
+  their partner's target dates; a
   pinned op's stored `dueDate` is taken as-is AND propagates upstream. Day math
   runs on real calendars via `calendarAdapters` over the SAME availability-ladder
   windows placement uses (one shared `loadAvailabilityWindows()` fetch):
@@ -462,14 +465,22 @@ the "conflict" count.)
 ## Read RPCs (display only; do not compute schedules)
 
 ### `get_active_job_operations_by_location(location_id, work_center_ids[])`
-Newest: `20260818031629_dual-dates.sql` (forked from `20260720121629_capacity-planning.sql`
-+ a `projectedCompletionAt TIMESTAMPTZ` output column; prior revisions:
-capacity-planning added `hasConflict`/`conflictReason`,
-`20260531084723_rework-serial-flow.sql`
+Newest: `20261006021134_mes-hide-outside-processing.sql` (excludes
+`operationType = 'Outside Processing'`; prior revisions:
+`20260905132037_job-operation-batching.sql` added the batch columns and the
+membership-handoff floor rule, `20260818031629_dual-dates.sql` added
+`projectedCompletionAt TIMESTAMPTZ`, `20260720121629_capacity-planning.sql` added
+`hasConflict`/`conflictReason`, `20260531084723_rework-serial-flow.sql`
 added `quantityReworked`/`reworkId`, `20260304000000` added `operationDueDate`).
+It feeds the MES Work Centers board, the ERP Priority board and the API tool
+`production_getActiveJobOperationsByLocation`. Outside Processing is filtered by
+TYPE, not by a null `workCenterId`: both boards' columns are work centers, so an
+outside operation holding a stale work center (left over from an in-house type)
+otherwise lands in that column for an operator to start. Pinned by
+`supabase/tests/outside-processing-off-the-floor.test.sql`.
 TS wrappers (identical): `apps/mes/app/services/operations.service.ts`
 `getActiveJobOperationsByLocation` and
-`apps/erp/app/modules/production/production.service.ts`. Returns 41 cols incl.:
+`apps/erp/app/modules/production/production.service.ts`. Returns 44 cols incl.:
 `id, jobId, jobMakeMethodId, operationOrder` (← `jo."order"`)`, priority, processId,
 workCenterId, description, setup/labor/machineTime+Unit, operationOrderType` (←
 `jo."operationOrder"`, serial/parallel enum)`, jobReadableId, jobStatus, jobDueDate,
@@ -480,8 +491,8 @@ salesOrderId/LineId/ReadableId, assignee, tags, thumbnailPath, operationDueDate`
 (← `jo."dueDate"`, the need-by target)`,
 reworkId, hasConflict` (COALESCEd, never null)`, conflictReason,
 projectedCompletionAt` (← `jo."projectedCompletionAt"`, the projected finish
-instant). The ERP ops board
-(`schedule+/operations.tsx` → `ItemCard`) and MES schedule loader map
+instant)`, processBatchable, jobOperationBatchId, batchReadableId`. The ERP ops board
+(`priority+/operations.tsx` → `ItemCard`) and MES schedule loader map
 `hasConflict`/`conflictReason` onto Kanban items (red border + triangle tooltip on
 the ERP card); the dual dates drive the amber behind-target state (projected day >
 need-by). The same dual-dates migration also forks `get_job_operation_by_id`
@@ -545,10 +556,23 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   `jobOperation.dueDate` is the backward demand-anchored need-by target (DATE, stable
   — changes only when the job due date, routing, or lead times change; a pinned op's
   is human-owned). The job-level forecast finish is `job.projectedCompletionAt`.
-  Consumers that key urgency on op `dueDate` (MES queue sort + overdue flags,
+  Consumers that key urgency on op `dueDate` (MES queue sort,
   the People Capacity view's Demand buckets, `get_picking_schedule` ordering) are
   deliberately unchanged — they now honestly read "when work is needed", not the
-  sim's last forecast. `getJobPromiseDate` returns `job.projectedCompletionAt` or
+  sim's last forecast. The MES operation view's "Due" header, Due Date card and
+  overdue flag read the JOB's `jobDueDate`; the op target is shown under it as
+  "Operation needed by …" and only drives the behind-target projection badge.
+  Labelling the op target "Due" with the job's deadline icon read as the job
+  being due weeks early. The MES Work Centers board cards follow the same rule:
+  `Item.dueDate` is `jobDueDate`, so the "Due …" line, the overdue flag, the
+  urgency border (`getDueUrgency`) and a collapsed batch's earliest member
+  deadline all read the job's date, against the location's `today` from the
+  loader rather than the device's day. The ERP Priority board still maps
+  `operationDueDate`, since its card carries the behind-target badge. The
+  urgency classifiers and both boards' batch reductions ignore an ASAP or No
+  Deadline due date — only Hard and Soft Deadline carry one
+  (`deadlineRequiresDueDate`), but an ASAP job can still hold a stale date.
+  `getJobPromiseDate` returns `job.projectedCompletionAt` or
   null (its old max-op-dueDate fallback would now just echo the job due date and
   was removed).
 - Editing the ERP ops board (`operations.update.tsx`) does NOT re-run the engine and does

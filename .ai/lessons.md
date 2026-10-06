@@ -2229,7 +2229,9 @@ invisible to the missing-translation gate because the placeholder IS filled.
 **Rule:** Never put a pluralizing (or any word-choosing) ternary inside a
 `t` tagged template or `<Trans>`. Use the ICU plural macro: `<Plural value={n}
 one="# day" other="# days" />` from `@lingui/react/macro` (or `plural()` in
-non-JSX). The whole phrase with `#` goes in each branch
+non-JSX — but not inside a `memo(…)`-wrapped component, see "Lingui: `plural()`
+inside a `memo(…)` component calls the global i18n" below). The whole phrase
+with `#` goes in each branch
 (`one="# operation has no time standards"`), so the words are extracted and
 translated. After adding one, re-run `lingui:extract` + `/translate` — the new
 ICU msgid needs its own filled `msgstr` per locale (locales with more CLDR
@@ -3169,3 +3171,25 @@ And a delete whose failure the caller ignores is not a delete: return the error.
 **Rule:** A sortable card is a thin shell that calls `useSortable` and a `memo`ized body that takes plain props (`sortableCardProps` in `Schedule/Kanban/cardShell.ts`). `useSensor` options are a module constant (`no-inline-sensor-options` check). A context every card reads must have a stable value. To find what re-renders, count renders per component during a scripted drag; do not guess.
 
 **Applies to:** `apps/erp/app/modules/production/ui/Schedule/Kanban/**`; any dnd-kit board or list with more than a few dozen items.
+
+
+## Lingui: `plural()` inside a `memo(…)` component calls the global i18n
+
+**Context:** The jobs table's bulk-release toast needed "Released 1 job" / "Released N jobs". The table is `memo((props) => { … })`, and the toast text was written as `` t`${plural(count, { one: "Released # job", other: "Released # jobs" })}` `` with `t` from `useLingui()` and `plural` from `@lingui/core/macro`.
+
+**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, Biome and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
+
+**Rule:** Do not call `plural()` (or `select()`) from `@lingui/core/macro` inside a component passed inline to `memo(…)` or any other call. Use `<Plural>` in JSX. For a string (a toast), either build it in a function-declaration hook (`function useX() { const { t } = useLingui(); return (n: number) => t`${plural(n, …)}`; }`), or choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. When in doubt, read the compiled module (Vite `transformRequest` on the file) and check for an import of `i18n` from `@lingui/core`.
+
+**Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
+
+
+## A row stayed off a screen only because a column happened to be null
+
+**Context:** The MES Work Centers board, the ERP Priority board and the API read `get_active_job_operations_by_location`. Both boards group operations into work-center columns.
+
+**Problem:** An Outside Processing operation showed up on the MES board for an operator to start (2026-10-05). The function never filtered on `operationType`; subcontracted operations stayed off the boards only because they usually have no work center, so they had no column. The work center came back two ways. The operation forms hide the Work Center field for Outside Processing, and a hidden field is omitted from the submit, not cleared, so an update left the work center from the operation's earlier in-house type. Batching was the second way: `get_batchable_operations` offered outside operations, and releasing a batch writes the batch's work center onto every member.
+
+**Rule:** Filter on the fact that decides whether a row belongs, never on a column that only usually agrees with it. When a type makes a field meaningless, clear the field in the one function every writer goes through (`normalizeOperationSourceIds`), because hiding the input does not clear it. Hiding a row from a list is not a gate: refuse it in the routes that open and start it too.
+
+**Applies to:** `get_active_job_operations_by_location`; `get_batchable_operations` and the `batch-operations` `assertEligible`; the MES operation, start and event routes; any form that hides a field by type; any list whose visibility rests on a NULL.
