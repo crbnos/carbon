@@ -620,7 +620,7 @@ type CompanyScopedTable = {
 }[keyof Tables];
 
 /**
- * Throws a 404 `Response` unless a row of `table` in `companyId` matches every
+ * Throws a 404 `Response` naming the record unless a row of `table` in `companyId` matches every
  * column in `match` — e.g. `{ id: lineId, quoteId }` proves the line exists,
  * belongs to the company AND hangs off that quote. One query.
  *
@@ -652,12 +652,25 @@ export async function requireCompanyRecord(
       match,
       error
     });
-    throw new Response("Not found", { status: 404 });
+    // The check itself failed: nothing is known about the record.
+    throw new Response(`Failed to verify the ${recordName(table)}`, {
+      status: 500
+    });
   }
   if (!data) {
     logger.error("{table} not found for company", { table, companyId, match });
-    throw new Response("Not found", { status: 404 });
+    // One message for a missing row and another company's row: the caller
+    // must not learn which.
+    throw new Response(
+      `The ${recordName(table)} could not be found. It may have been deleted, or it belongs to another company.`,
+      { status: 404 }
+    );
   }
+}
+
+/** `quoteLine` → `quote line`, for a message a person reads. */
+function recordName(table: string): string {
+  return table.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 }
 
 // What `get_app_shell` returns: the rows the shell used to read with nine
