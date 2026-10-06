@@ -329,6 +329,7 @@ msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# अधिक {fenceLabel} के बाद} other {# अधिक {fenceLabel} के बाद}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# बैच विघटित करें} other {# बैच विघटित करें}}"
 
@@ -12321,7 +12322,6 @@ msgid "No stock at this location"
 msgstr "इस स्थान पर कोई स्टॉक नहीं"
 
 msgid "No stock on hand at this location."
-msgstr "इस स्थान पर कोई स्टॉक नहीं है।"
 msgstr "इस स्थान पर कोई स्टॉक उपलब्ध नहीं है।"
 
 msgid "No stockout projected in the next 48 weeks"
@@ -14146,10 +14146,6 @@ msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Projected"
 msgstr "अनुमानित"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "अनुमानित {0}"
 
 msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
@@ -20238,7 +20234,6 @@ msgid "Untitled step"
 msgstr "बिना शीर्षक वाला चरण"
 
 msgid "Untracked"
-msgstr "अनुरेखित नहीं"
 msgstr "अनट्रैक"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."

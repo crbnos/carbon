@@ -329,6 +329,7 @@ msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# daha {fenceLabel} sonra} other {# daha {fenceLabel} sonra}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# partiyi çöz} other {# partileri çöz}}"
 
@@ -12321,7 +12322,6 @@ msgid "No stock at this location"
 msgstr "Bu konumda stok yok"
 
 msgid "No stock on hand at this location."
-msgstr "Bu lokasyonda el altında stok yok."
 msgstr "Bu lokasyonda stok yoktur."
 
 msgid "No stockout projected in the next 48 weeks"
@@ -12331,7 +12331,6 @@ msgid "No storage unit"
 msgstr "Depolama birimi yok"
 
 msgid "No storage units or tracking numbers match."
-msgstr "Depolama birimleri veya izleme numaraları eşleşmiyor."
 msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
 
 msgid "No suppliers yet"
@@ -14147,10 +14146,6 @@ msgstr "Proje başlangıcı"
 
 msgid "Projected"
 msgstr "Öngörülen"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Planlanan {0}"
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -16340,7 +16335,6 @@ msgid "Search related items..."
 msgstr "İlgili öğeleri ara..."
 
 msgid "Search storage units and tracking numbers"
-msgstr "Depolama birimleri ve izleme numaralarını ara"
 msgstr "Depolama birimlerini ve takip numaralarını ara"
 
 msgid "Search suppliers..."

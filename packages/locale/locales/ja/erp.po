@@ -329,6 +329,7 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel}以降の追加 # 件}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# バッチを解散} other {# バッチを解散}}"
 
@@ -12330,7 +12331,6 @@ msgid "No storage unit"
 msgstr "保管ユニットがありません"
 
 msgid "No storage units or tracking numbers match."
-msgstr "保管ユニットまたは追跡番号が一致しません。"
 msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
 
 msgid "No suppliers yet"
@@ -14146,10 +14146,6 @@ msgstr "プロジェクト開始"
 
 msgid "Projected"
 msgstr "予測"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "予定: {0}"
 
 msgid "Projected completion"
 msgstr "予測完了"
@@ -16339,7 +16335,6 @@ msgid "Search related items..."
 msgstr "関連アイテムを検索..."
 
 msgid "Search storage units and tracking numbers"
-msgstr "保管ユニットと追跡番号を検索"
 msgstr "保管ユニットとトラッキング番号を検索"
 
 msgid "Search suppliers..."

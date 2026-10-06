@@ -329,6 +329,7 @@ msgstr "{count, plural, one {# corso} other {# corsi}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# altri dopo {fenceLabel}} other {# altri dopo {fenceLabel}}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Sciogli # lotto di produzione} other {Sciogli # lotti di produzione}}"
 
@@ -14146,10 +14147,6 @@ msgstr "Inizio progetto"
 msgid "Projected"
 msgstr "Proiettato"
 
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Previsto {0}"
-
 msgid "Projected completion"
 msgstr "Completamento previsto"
 
@@ -15295,7 +15292,6 @@ msgid "Reports"
 msgstr "Rapporti"
 
 msgid "Reprice with current rules"
-msgstr "Ricalcola il prezzo con le regole attuali"
 msgstr "Riprezzi con le regole attuali"
 
 #. placeholder {0}: format(repricedPrice)
@@ -19749,7 +19745,6 @@ msgid "Total Hours"
 msgstr "Ore totali"
 
 msgid "Total Indirect Cost"
-msgstr "Totale Costo Indiretto"
 msgstr "Costo indiretto totale"
 
 msgid "Total Material Cost"

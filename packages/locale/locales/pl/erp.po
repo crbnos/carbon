@@ -329,6 +329,7 @@ msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# więcej po {fenceLabel}} few {# więcej po {fenceLabel}} many {# więcej po {fenceLabel}} other {# więcej po {fenceLabel}}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Rozpuść # partię produkcyjną} few {Rozpuść # partie produkcyjne} many {Rozpuść # partii produkcyjnych} other {Rozpuść # partii produkcyjnych}}"
 
@@ -10605,7 +10606,6 @@ msgid "Machine"
 msgstr "Maszyna"
 
 msgid "Machine Costs"
-msgstr "Koszty Maszyny"
 msgstr "Koszty maszyny"
 
 msgid "Machine Hours"
@@ -10859,7 +10859,6 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Oznacza osobę jako nieobecną na każdy dzień z zakresu. Nie będą zaplanowani, gdy są nieobecni."
 
 msgid "Markup by Category"
-msgstr "Marża Handlowa wg Kategorii"
 msgstr "Marża według kategorii"
 
 msgid "Markup Percent"
@@ -12323,7 +12322,6 @@ msgid "No stock at this location"
 msgstr "Brak magazynu w tej lokalizacji"
 
 msgid "No stock on hand at this location."
-msgstr "Brak zapasu na stanie w tej lokalizacji."
 msgstr "Brak zapasu w tej lokalizacji."
 
 msgid "No stockout projected in the next 48 weeks"
@@ -12333,7 +12331,6 @@ msgid "No storage unit"
 msgstr "Brak jednostki magazynowania"
 
 msgid "No storage units or tracking numbers match."
-msgstr "Brak zgodnych jednostek magazynowych lub numerów śledzenia."
 msgstr "Brak zgodnych jednostek magazynowych ani numerów śledzenia."
 
 msgid "No suppliers yet"
@@ -14150,10 +14147,6 @@ msgstr "Początek projektu"
 msgid "Projected"
 msgstr "Prognozowane"
 
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Prognozowana {0}"
-
 msgid "Projected completion"
 msgstr "Przewidywane zakończenie"
 
@@ -15299,7 +15292,6 @@ msgid "Reports"
 msgstr "Raporty"
 
 msgid "Reprice with current rules"
-msgstr "Wycenić ponownie z bieżącymi regułami"
 msgstr "Wycen ponownie według bieżących reguł"
 
 #. placeholder {0}: format(repricedPrice)
@@ -20242,7 +20234,6 @@ msgid "Untitled step"
 msgstr "Krok bez tytułu"
 
 msgid "Untracked"
-msgstr "Bez śledzenia"
 msgstr "Nieśledzone"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."

@@ -329,6 +329,7 @@ msgstr "{count, plural, one {# курс} other {# курсов}}"
 
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# еще после {fenceLabel}} few {# еще после {fenceLabel}} many {# еще после {fenceLabel}} other {# еще после {fenceLabel}}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Расформировать # серию} few {Расформировать # серии} many {Расформировать # серий} other {Расформировать # серий}}"
 
@@ -12330,7 +12331,6 @@ msgid "No storage unit"
 msgstr "Нет единицы хранения"
 
 msgid "No storage units or tracking numbers match."
-msgstr "Никакие единицы хранения или номера отслеживания не совпадают."
 msgstr "Единицы хранения или номера отслеживания не совпадают."
 
 msgid "No suppliers yet"
@@ -14146,10 +14146,6 @@ msgstr "Начало проекта"
 
 msgid "Projected"
 msgstr "Спрогнозировано"
-
-#. placeholder {0}: formatDate(projectedDate)
-msgid "Projected {0}"
-msgstr "Прогнозируемое {0}"
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -19749,7 +19745,6 @@ msgid "Total Hours"
 msgstr "Всего часов"
 
 msgid "Total Indirect Cost"
-msgstr "Всего косвенные затраты"
 msgstr "Итого косвенная себестоимость"
 
 msgid "Total Material Cost"
