@@ -83,6 +83,14 @@ member jobs via a two-step `.or(status.in…, id.in…)` (quoted statuses — "I
 Progress" has a space). List visibility alone was the leak: nothing else gated
 a direct operation URL.
 
+**Outside Processing never runs on the floor.** Subcontracted work runs at the
+supplier: `get_active_job_operations_by_location` filters it by type (not by a
+null `workCenterId`, which a stale value defeats), and the operation loader, the
+`start.$operationId.tsx` loader (before its timer re-open) and `event.tsx`'s
+Start branch all refuse it with `OUTSIDE_PROCESSING_REFUSAL`
+(`utils/operationView.ts`). `resolveOperationView` still maps it to the Operation
+view so the resolver stays total; the refusal is the routes' job.
+
 
 There is **no separate batch page** — the operation view IS the batch UI. In
 batch mode the job heading is replaced by ONE scope switcher — an outlined

@@ -42,7 +42,10 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 import { redirect } from "@carbon/utils";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
-import { resolveOperationView } from "~/utils/operationView";
+import {
+  OUTSIDE_PROCESSING_REFUSAL,
+  resolveOperationView
+} from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -158,6 +161,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const op = operation.data?.[0];
+
+  // Subcontracted work runs at the supplier, never on the shop floor. The
+  // boards hide it; this refuses a job-view or direct link too.
+  if (op?.operationType === "Outside Processing") {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
+    );
+  }
 
   // Redirect guard (ADR-0005): each view has its own route. Guards only
   // redirect kinds they don't serve, so no loop.

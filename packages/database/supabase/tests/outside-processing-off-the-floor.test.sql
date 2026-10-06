@@ -1,11 +1,13 @@
--- The work centers board (get_active_job_operations_by_location — MES board,
--- ERP Priority board, API) never lists an Outside Processing operation, even
--- one that carries a work center. The board's columns are work centers, so an
--- outside operation used to stay off it only while its work center was null;
--- a stale one (left over from an in-house type) put it in that column for an
--- operator to start.
+-- Outside Processing runs at the supplier, never on the shop floor.
+-- 1. The work centers board (get_active_job_operations_by_location — MES board,
+--    ERP Priority board, API) never lists one, even one that carries a work
+--    center. The board's columns are work centers, so an outside operation used
+--    to stay off it only while its work center was null; a stale one (left over
+--    from an in-house type) put it in that column for an operator to start.
+-- 2. The batch builder (get_batchable_operations) never offers one: releasing a
+--    batch stamps its work center onto every member.
 -- Isolated fixture company; no existing business data is read or edited. Always rolls back.
--- Run: pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -f packages/database/supabase/tests/mes-board-outside-processing.test.sql
+-- Run: pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -f packages/database/supabase/tests/outside-processing-off-the-floor.test.sql
 \set ON_ERROR_STOP on
 BEGIN;
 SET LOCAL statement_timeout = '60s';
@@ -50,6 +52,7 @@ BEGIN
     VALUES ('T-BRACKET', 'Bracket', 'Part', 'Make', 'Inventory', 'EA', v_company_id, 'system') RETURNING id INTO v_item;
   INSERT INTO process (name, "processType", "defaultStandardFactor", "companyId", "createdBy")
     VALUES ('Plating', 'Process', 'Hours/Piece', v_company_id, 'system') RETURNING id INTO v_process;
+  UPDATE process SET batchable = TRUE WHERE id = v_process;
   INSERT INTO "workCenter" (name, "locationId", "laborRate", "machineRate", "overheadRate", "defaultStandardFactor", "companyId", "createdBy")
     VALUES ('Plating line', v_location_id, 0, 0, 0, 'Hours/Piece', v_company_id, 'system') RETURNING id INTO v_work_center;
 
@@ -71,7 +74,15 @@ BEGIN
     WHERE id = v_outside
   ), 'An Outside Processing operation must stay off a work-center-filtered board';
 
-  RAISE NOTICE 'ALL BOARD OUTSIDE-PROCESSING CASES PASSED (in-house listed, outside hidden, outside hidden under a work-center filter)';
+  -- The batch builder offers the in-house operation, never the outside one.
+  ASSERT EXISTS (
+    SELECT 1 FROM get_batchable_operations(v_location_id, v_process) WHERE id = v_inside
+  ), 'An unstarted in-house operation on a batchable process must be a batch candidate';
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM get_batchable_operations(v_location_id, v_process) WHERE id = v_outside
+  ), 'An Outside Processing operation must never be a batch candidate';
+
+  RAISE NOTICE 'ALL OUTSIDE-PROCESSING CASES PASSED (in-house listed, outside hidden, outside hidden under a work-center filter, outside never a batch candidate)';
 END;
 $cases$;
 

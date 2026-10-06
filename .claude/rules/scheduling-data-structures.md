@@ -477,7 +477,7 @@ It feeds the MES Work Centers board, the ERP Priority board and the API tool
 TYPE, not by a null `workCenterId`: both boards' columns are work centers, so an
 outside operation holding a stale work center (left over from an in-house type)
 otherwise lands in that column for an operator to start. Pinned by
-`supabase/tests/mes-board-outside-processing.test.sql`.
+`supabase/tests/outside-processing-off-the-floor.test.sql`.
 TS wrappers (identical): `apps/mes/app/services/operations.service.ts`
 `getActiveJobOperationsByLocation` and
 `apps/erp/app/modules/production/production.service.ts`. Returns 44 cols incl.:
