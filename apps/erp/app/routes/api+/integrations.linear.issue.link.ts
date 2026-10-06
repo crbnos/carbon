@@ -18,7 +18,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { requireChangeNoticeEditable } from "~/modules/items/items.server";
+import { requireChangeNoticeActionTaskEditable } from "~/modules/items/items.server";
 import { getActionTaskWithParent } from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-link");
@@ -54,10 +54,10 @@ export const action: ActionFunction = async ({ request }) => {
       );
 
       const locked = task.parentId
-        ? await requireChangeNoticeEditable(client, {
+        ? await requireChangeNoticeActionTaskEditable(client, {
+            actionTaskId: actionId,
             changeNoticeId: task.parentId,
-            companyId,
-            scope: "workflow"
+            companyId
           })
         : { error: { message: "Could not find change notice" } };
 

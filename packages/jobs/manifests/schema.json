@@ -1579,7 +1579,8 @@
         "createdBy",
         "updatedAt",
         "updatedBy",
-        "actionTypeId"
+        "actionTypeId",
+        "taskOrigin"
       ]
     },
     {
@@ -3116,6 +3117,91 @@
         "createdAt",
         "createdBy",
         "updatedAt",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "changeOrderImpactDecision",
+      "rows": 0,
+      "columns": [
+        "assessmentSnapshot",
+        "snapshotVersion",
+        "assessedAt",
+        "revision",
+        "createdAt",
+        "updatedAt",
+        "id",
+        "companyId",
+        "changeNoticeId",
+        "targetType",
+        "targetId",
+        "decisionStatus",
+        "noActionReasonCode",
+        "rationale",
+        "resolutionNote",
+        "assessedBy",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "changeOrderImpactDecisionActionTask",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "updatedAt",
+        "decisionId",
+        "actionTaskId",
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "changeOrderImpactDecisionAffectedItem",
+      "rows": 0,
+      "columns": [
+        "startedAt",
+        "endedAt",
+        "createdAt",
+        "updatedAt",
+        "id",
+        "companyId",
+        "decisionId",
+        "affectedItemId",
+        "affectedItemSourceId",
+        "affectedItemLabel",
+        "startedBy",
+        "endedBy",
+        "endedReason",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "changeOrderImpactDecisionHistory",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "createdAt",
+        "previousSnapshot",
+        "newSnapshot",
+        "priorAssessmentWasChanged",
+        "id",
+        "companyId",
+        "decisionId",
+        "targetType",
+        "targetId",
+        "eventType",
+        "previousStatus",
+        "newStatus",
+        "previousReasonCode",
+        "newReasonCode",
+        "rationale",
+        "resolutionNote",
+        "relatedActionTaskId",
+        "relatedAffectedItemId",
+        "createdBy",
         "updatedBy"
       ]
     },

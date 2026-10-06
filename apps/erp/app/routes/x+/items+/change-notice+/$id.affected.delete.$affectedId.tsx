@@ -16,7 +16,7 @@ import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -44,7 +44,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     client,
     getDatabaseClient(),
     affectedId,
-    companyId
+    changeNoticeId,
+    companyId,
+    userId
   );
 
   if (remove.error) {

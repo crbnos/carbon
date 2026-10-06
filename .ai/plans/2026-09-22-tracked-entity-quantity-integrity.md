@@ -70,7 +70,7 @@ text`.
 - [x] Rounding + split gates: `issue` (both children loops, every
       `quantityIssued` write, the dispatch-item quantity), `post-picking` (line
       locks in all seven handlers, entity lock + `resolvePick` in the three
-      accumulate paths, `settleQuantity` for the unpick child), 
+      accumulate paths, `settleQuantity` for the unpick child),
       `post-stock-transfer` (serial entity lock, split operands, unpick),
       `post-shipment` (all three split decisions), `post-inventory-adjustment`
       (three drain flips → `settleQuantity`), `correct-stock-movement`,

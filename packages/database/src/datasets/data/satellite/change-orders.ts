@@ -17,6 +17,14 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         changeType: "Version",
         sortOrder: 1
       }
+    ],
+    impactJobs: [
+      {
+        job: "floor-saw",
+        rationale:
+          "Review the in-progress SAW-001 build for the cell string layout change before continuing assembly.",
+        taskName: "Review SAW-001 traveler for cell string layout change"
+      }
     ]
   },
   {

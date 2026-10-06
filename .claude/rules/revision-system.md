@@ -101,17 +101,21 @@ the type-scoped `revisions` array.
   carries them. `deleteItemsWithPriceBreaks(trx, { itemIds, companyId })` deletes
   the price breaks and then the items, scoped to the company, inside the
   caller's Kysely transaction — so an item delete Postgres refuses (ledger
-  history, tracked entities) leaves the price breaks in place. Two callers, both
-  gated by `assert_company_access(companyId, 'parts_delete')` (the `item` /
-  `makeMethod` DELETE rule):
+  history, tracked entities) leaves the price breaks in place. Change Notice
+  cleanup also passes `changeNoticeId`, retaining the inactive owned-draft
+  predicates and checking the delete count. Callers are gated by
+  `assert_company_access(companyId, 'parts_delete')` (the `item` / `makeMethod`
+  DELETE rule):
   - `deleteItem(client, db, id, companyId)` — the Item Master delete. A refusal
     keeps its SQLSTATE (`23503`), which the route maps to its message.
-  - `discardChangeNoticeDrafts(client, db, drafts, companyId)` — every draft of
-    the call (draft items, and Version draft methods) in ONE transaction, and it
-    returns the error. `removeChangeNoticeAffectedItem` and `deleteChangeNotice`
-    stop on it, so the affected row / notice is never removed while its draft
-    survives; `updateChangeNoticeAffectedItemChangeType` checks `parts_delete`
-    before it creates the replacement draft, and reports a late failure.
+  - `removeChangeNoticeAffectedItem` and `deleteChangeNotice` clean up drafts
+    inside their own parent-locked transaction. Affected-item removal ends open
+    Impact provenance and records history in that same transaction; any draft
+    cleanup failure rolls it all back.
+  - `discardChangeNoticeDrafts(client, db, drafts, companyId)` cleans up all draft
+    items and Version draft methods in one transaction after a change-type swap.
+    `updateChangeNoticeAffectedItemChangeType` checks `parts_delete` before it
+    creates the replacement draft, and reports a late cleanup failure.
   Deleting a single **supplier part** that has price breaks
   (`deleteSupplierPart`) is still refused by the same constraint.
 - UI form: `RevisionForm.tsx`; version switcher menus ("Versions" submenu) live in

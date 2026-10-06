@@ -89,6 +89,28 @@ const managedAttribute = through(
   )
 );
 
+// Impact retains source identifiers after deletion: authorization follows targetType,
+// never a live FK to the purchase order line, job, or job material.
+const impactSourceVisible = or(
+  and(
+    where<"changeOrderImpactDecision">((eb) =>
+      eb("targetType", "=", "purchaseOrderLine")
+    ),
+    inCompany("companyId", "purchasing_view")
+  ),
+  and(
+    where<"changeOrderImpactDecision">((eb) =>
+      eb("targetType", "in", ["job", "jobMaterial"])
+    ),
+    inCompany("companyId", "production_view")
+  )
+);
+
+const impactDecisionVisible = and(
+  inCompany("companyId", "parts_view"),
+  impactSourceVisible
+);
+
 export const manifest = {
   ability: company("resources", {
     read: anyOf("resources_view", "production_view")
@@ -234,6 +256,55 @@ export const manifest = {
   changeOrder: company("parts", { read: "parts_view" }),
   changeOrderActionTask: company("parts", { read: "parts_view" }),
   changeOrderAffectedItem: company("parts", { read: "parts_view" }),
+  changeOrderImpactDecision: policies({
+    select: and(
+      impactDecisionVisible,
+      exists("changeOrder", "changeNoticeId", "parts_view", {
+        sameCompany: true
+      })
+    )
+  }),
+  changeOrderImpactDecisionActionTask: custom(
+    "the linked task must belong to the same Change Notice and company as the source-authorized decision; the join cannot be expressed by the shared EXISTS piece",
+    (t) => `
+    CREATE POLICY "SELECT" ON ${t} FOR SELECT USING (
+      "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_view'))::text[])
+      AND EXISTS (
+        SELECT 1 FROM "changeOrderImpactDecision" d
+        JOIN "changeOrderActionTask" task
+          ON task."changeOrderId" = d."changeNoticeId"
+         AND task."companyId" = d."companyId"
+        WHERE d."id" = "changeOrderImpactDecisionActionTask"."decisionId"
+          AND d."companyId" = "changeOrderImpactDecisionActionTask"."companyId"
+          AND task."id" = "changeOrderImpactDecisionActionTask"."actionTaskId"
+          AND d."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_view'))::text[])
+          AND (
+            (d."targetType" = 'purchaseOrderLine'
+              AND d."companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_view'))::text[]))
+            OR
+            (d."targetType" IN ('job', 'jobMaterial')
+              AND d."companyId" = ANY ((SELECT get_companies_with_employee_permission('production_view'))::text[]))
+          )
+      )
+    );
+    `
+  ),
+  changeOrderImpactDecisionAffectedItem: policies({
+    select: and(
+      inCompany("companyId", "parts_view"),
+      exists("changeOrderImpactDecision", "decisionId", impactDecisionVisible, {
+        sameCompany: true
+      })
+    )
+  }),
+  changeOrderImpactDecisionHistory: policies({
+    select: and(
+      inCompany("companyId", "parts_view"),
+      exists("changeOrderImpactDecision", "decisionId", impactDecisionVisible, {
+        sameCompany: true
+      })
+    )
+  }),
   changeOrderRequiredAction: company("parts"),
   changeOrderSupersession: company("parts", { read: "parts_view" }),
   changeOrderType: company("parts"),

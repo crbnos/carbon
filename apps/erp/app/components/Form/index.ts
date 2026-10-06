@@ -24,6 +24,7 @@ import {
   SelectControlled,
   Submit,
   TextArea,
+  TextAreaControlled,
   TimePicker
 } from "@carbon/form";
 
@@ -183,6 +184,7 @@ export {
   TaxFields,
   useTaxPair,
   TextArea,
+  TextAreaControlled,
   TimePicker,
   Timezone,
   Tool,

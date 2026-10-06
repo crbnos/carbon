@@ -17,6 +17,14 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         changeType: "Version",
         sortOrder: 1
       }
+    ],
+    impactJobs: [
+      {
+        job: "floor-harness",
+        rationale:
+          "Check the ready HRN-ARM-001 build for the wrist harness routing change before work starts.",
+        taskName: "Review HRN-ARM-001 traveler for wrist harness routing"
+      }
     ]
   },
   {

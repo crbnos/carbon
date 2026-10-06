@@ -31,7 +31,7 @@ let held = false;
  * at once, before that reload: awaiting it does not wait for the data.
  */
 export function useRevalidator() {
-  const revalidator = useRouterRevalidator();
+  const { revalidate: routerRevalidate, state } = useRouterRevalidator();
   const navigating = useNavigation().state !== "idle";
   const submitting = useFetchers().some((f) => f.state === "submitting");
   const busy = navigating || submitting;
@@ -43,18 +43,15 @@ export function useRevalidator() {
       held = true;
       return;
     }
-    await revalidator.revalidate();
-  }, [revalidator]);
+    await routerRevalidate();
+  }, [routerRevalidate]);
 
   useEffect(() => {
     if (!busy && held) {
       held = false;
-      void revalidator.revalidate();
+      void routerRevalidate();
     }
-  }, [busy, revalidator]);
+  }, [busy, routerRevalidate]);
 
-  return useMemo(
-    () => ({ revalidate, state: revalidator.state }),
-    [revalidate, revalidator.state]
-  );
+  return useMemo(() => ({ revalidate, state }), [revalidate, state]);
 }

@@ -13,7 +13,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId, client } = await requirePermissions(request, {
     delete: "parts"
   });
 
