@@ -42,7 +42,10 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import type { PlanningAction } from "~/modules/production";
-import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
+import {
+  type PlanningActionHandlers,
+  reviewPathFor
+} from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
   PlanningPolicySummary,
@@ -259,7 +262,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         return {
           id: order.existingLineId,
           documentPath: order.existingId
-            ? path.to.purchaseOrder(order.existingId)
+            ? path.to.purchaseOrderLine(order.existingId, order.existingLineId)
             : null,
           readableId: order.existingReadableId ?? "",
           status: order.existingStatus ?? null,
@@ -287,9 +290,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         if (rows.some((row) => row.action?.id === action.id)) continue;
         rows.push({
           id: action.id,
-          documentPath: action.purchaseOrderId
-            ? path.to.purchaseOrder(action.purchaseOrderId)
-            : null,
+          documentPath: reviewPathFor(action),
           readableId: action.purchaseOrderReadableId ?? "—",
           status: action.purchaseOrderStatus ?? null,
           quantity: null,

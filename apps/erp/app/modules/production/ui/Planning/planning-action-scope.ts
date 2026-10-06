@@ -17,6 +17,9 @@ export const PLANNING_ACTIONS_COLUMN = "planningActions";
  *  filter it is not an RPC column: the loader turns it into the RPC's
  *  assignees argument. */
 export const PLANNING_ASSIGNEE_COLUMN = "planningAssignee";
+/** Search param that carries the item whose order drawer is open
+ *  (`?item=<itemId>`), so a link to the grid opens the same drawer. */
+export const PLANNING_DRAWER_PARAM = "item";
 
 type GridFilter = { column: string; operator: string; value?: string };
 

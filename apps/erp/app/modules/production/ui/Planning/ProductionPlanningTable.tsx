@@ -50,7 +50,7 @@ import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
-  useDrawerItem,
+  useLinkedDrawerItem,
   useMrpScheduleDescription,
   usePermissions,
   useUser
@@ -62,7 +62,8 @@ import {
 import type { PlanningAction, ProductionOrder } from "~/modules/production";
 import {
   PLANNING_ACTIONS_COLUMN,
-  PLANNING_ASSIGNEE_COLUMN
+  PLANNING_ASSIGNEE_COLUMN,
+  PLANNING_DRAWER_PARAM
 } from "~/modules/production";
 import {
   isApplyablePlanningAction,
@@ -84,6 +85,8 @@ import { ProductionPlanningOrderDrawer } from "./ProductionPlanningOrderDrawer";
 
 type ProductionPlanningTableProps = {
   data: ProductionPlanningItem[];
+  /** The row a `?item=` link opens the drawer on when it is not in `data`. */
+  drawerItem: ProductionPlanningItem | null;
   count: number;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
@@ -107,6 +110,7 @@ const NUMBER_FORMAT_OPTIONS: Intl.NumberFormatOptions = {};
 
 const ProductionPlanningTable = ({
   data,
+  drawerItem,
   count,
   locationId,
   periods,
@@ -132,6 +136,13 @@ const ProductionPlanningTable = ({
   });
   const mrpScheduleDescription = useMrpScheduleDescription();
 
+  // What the order drawer can open on: the page's rows, plus the row a link
+  // names when it is not on this page.
+  const drawerRows = useMemo(
+    () => (drawerItem ? [...data, drawerItem] : data),
+    [data, drawerItem]
+  );
+
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
   const user = useUser();
   const canUpdateActions = permissions.can("update", "production");
@@ -145,7 +156,7 @@ const ProductionPlanningTable = ({
     visibleActionsByItemId,
     submitActions
   } = usePlanningActions({
-    data,
+    data: drawerRows,
     planningActions,
     actionTypes,
     locationId,
@@ -162,7 +173,12 @@ const ProductionPlanningTable = ({
   // drawer revalidate it, and that used to wipe the planner's edits in the
   // suggested-orders table above them.
   const [searchParams] = useSearchParams();
-  const pageScope = searchParams.toString();
+  // The open drawer is in the address too, and is not a change of scope.
+  const pageScope = useMemo(() => {
+    const scope = new URLSearchParams(searchParams);
+    scope.delete(PLANNING_DRAWER_PARAM);
+    return scope.toString();
+  }, [searchParams]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
   useEffect(() => {
     setOrdersMap({});
@@ -370,7 +386,10 @@ const ProductionPlanningTable = ({
     key: drawerKey,
     open: openDrawer,
     close: closeDrawer
-  } = useDrawerItem<ProductionPlanningItem>();
+  } = useLinkedDrawerItem({
+    param: PLANNING_DRAWER_PARAM,
+    rows: drawerRows
+  });
 
   const setOrders = useCallback(
     (item: ProductionPlanningItem, orders: ProductionOrder[]) => {

@@ -274,9 +274,18 @@ export function planningActionsExportValue(actions: PlanningAction[]) {
   return open.map((a) => a.type).join(", ");
 }
 
-function reviewPathFor(action: PlanningAction) {
-  if (action.purchaseOrderId)
-    return path.to.purchaseOrder(action.purchaseOrderId);
+/** The document an action changes: its purchase order LINE when it names one
+ *  (the line, not the order, is what the action resizes or moves), else the
+ *  purchase order, else the job. */
+export function reviewPathFor(action: PlanningAction) {
+  if (action.purchaseOrderId) {
+    return action.purchaseOrderLineId
+      ? path.to.purchaseOrderLine(
+          action.purchaseOrderId,
+          action.purchaseOrderLineId
+        )
+      : path.to.purchaseOrder(action.purchaseOrderId);
+  }
   if (action.jobId) return path.to.job(action.jobId);
   return null;
 }

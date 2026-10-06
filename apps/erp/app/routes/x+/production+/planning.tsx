@@ -20,6 +20,7 @@ import type { ProductionPlanningItem } from "~/modules/production";
 import {
   getPlanningActions,
   getProductionPlanning,
+  PLANNING_DRAWER_PARAM,
   resolvePlanningActionScope
 } from "~/modules/production";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
@@ -72,22 +73,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { gridFilters, actionTypes, actionAssignees } =
     resolvePlanningActionScope({ filters });
 
-  const items = await getProductionPlanning(
-    client,
-    locationId,
-    companyId,
-    periods.map((p) => p.id),
-    {
+  const periodIds = periods.map((p) => p.id);
+  const asOf = locationToday.toString();
+
+  // A link to a row's order drawer (`?item=`) opens it even when the row is
+  // not on this page — the plan has changed since the link was made, or it
+  // came from another page. That row is read on its own, alongside the page.
+  const drawerItemId = searchParams.get(PLANNING_DRAWER_PARAM);
+
+  const [items, drawerItemRead] = await Promise.all([
+    getProductionPlanning(client, locationId, companyId, periodIds, {
       search,
       limit,
       offset,
       sorts,
       filters: gridFilters,
-      asOf: locationToday.toString(),
+      asOf,
       actionTypes,
       actionAssignees
-    }
-  );
+    }),
+    drawerItemId
+      ? getProductionPlanning(client, locationId, companyId, periodIds, {
+          search: null,
+          limit: 1,
+          offset: 0,
+          sorts: [],
+          filters: [{ column: "id", operator: "eq", value: drawerItemId }],
+          asOf
+        })
+      : null
+  ]);
 
   if (items.error) {
     redirect(
@@ -96,14 +111,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // The persisted MRP action worklist for the rows on THIS page. Every action
-  // is loaded, whatever its date: the grid hides the ones beyond each row's
-  // time fence, and a planner can widen one row's fence without a reload.
+  // A failed read of the linked row only leaves its drawer closed: the grid
+  // drops a link it cannot resolve.
+  if (drawerItemRead?.error) {
+    logger.error("Failed to load the linked planning item", {
+      companyId,
+      locationId,
+      itemId: drawerItemId,
+      error: drawerItemRead.error
+    });
+  }
+  const pageItems = (items.data ?? []) as ProductionPlanningItem[];
+  const linkedItem = (drawerItemRead?.data?.[0] ??
+    null) as ProductionPlanningItem | null;
+  const drawerItem =
+    linkedItem && !pageItems.some((item) => item.id === linkedItem.id)
+      ? linkedItem
+      : null;
+
+  // The persisted MRP action worklist for the rows on THIS page (and the
+  // drawer's row). Every action is loaded, whatever its date: the grid hides
+  // the ones beyond each row's time fence, and a planner can widen one row's
+  // fence without a reload.
   const planningActions = await getPlanningActions(client, {
     companyId,
     locationId,
     kind: "Make",
-    itemIds: (items.data ?? []).map((item) => item.id)
+    itemIds: [...pageItems, ...(drawerItem ? [drawerItem] : [])].map(
+      (item) => item.id
+    )
   });
 
   // No fallback to an empty list: a grid with no actions reads as "nothing to
@@ -118,7 +154,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    items: (items.data ?? []) as ProductionPlanningItem[],
+    items: pageItems,
+    // The row a `?item=` link opens the drawer on, when it is not in `items`.
+    drawerItem,
     count: items.count ?? 0,
     planningActions: planningActions.data ?? [],
     // The Actions-column filter the rows were matched on: each row shows only
@@ -135,6 +173,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function ProductionPlanningRoute() {
   const {
     items,
+    drawerItem,
     count,
     locationId,
     periods,
@@ -154,6 +193,7 @@ export default function ProductionPlanningRoute() {
         >
           <ProductionPlanningTable
             data={items}
+            drawerItem={drawerItem}
             count={count}
             locationId={locationId}
             periods={periods}
