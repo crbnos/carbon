@@ -20,6 +20,7 @@ import {
   applyRequestBody,
   clearFieldErrors,
   createReview,
+  customFieldChangeText,
   defaultSelectedPartIds,
   describeMethod,
   editedItem,
@@ -861,6 +862,31 @@ describe("mapped value review text", () => {
       })
     ).toBe(
       "Default Method Type: Replaces Make to Order with Purchase to Order (goes with the change above)."
+    );
+  });
+
+  it("says what an every-push custom field write replaces or clears", () => {
+    const vendor = (
+      value: string | null,
+      replaces: string | null
+    ): PlanCustomField => ({
+      fieldId: "cf_vendor",
+      name: "Vendor",
+      mode: "everyPush",
+      dataTypeId: 5,
+      listOptions: null,
+      value,
+      onshapeName: "Vendor",
+      replaces
+    });
+    expect(customFieldChangeText(vendor("Acme Ltd", "Acme Co"))).toBe(
+      "Vendor: Replaces Acme Co with Acme Ltd (updated on every push)."
+    );
+    expect(customFieldChangeText(vendor("Acme Ltd", null))).toBe(
+      "Vendor: Sets Acme Ltd (updated on every push)."
+    );
+    expect(customFieldChangeText(vendor(null, "Acme Co"))).toBe(
+      "Vendor: Clears Acme Co (updated on every push)."
     );
   });
 });

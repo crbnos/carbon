@@ -31,6 +31,7 @@ import type {
 import {
   ITEM_REPLENISHMENT_SYSTEMS,
   ITEM_TRACKING_TYPES,
+  methodForReplenishment,
   reconcileMethodForReplenishment,
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./plan";
@@ -137,12 +138,19 @@ function FieldSelect<T extends string>({
 
 export function ItemFieldSelects({
   baseline,
+  existing,
   edit,
   disabled,
   onChange
 }: {
   /** Proposal (create) or the item's current values (existing). */
   baseline: ItemFieldSnapshot;
+  /**
+   * The item is in Carbon: a new Replenishment sets the method the item page
+   * sets (Make to Order for Make, Purchase to Order for Buy). A new item
+   * follows the Part form, which keeps a method the new Replenishment allows.
+   */
+  existing?: boolean;
   edit: ItemEdit | undefined;
   disabled?: boolean;
   onChange: (patch: Partial<ItemFieldSnapshot>) => void;
@@ -166,15 +174,14 @@ export function ItemFieldSelects({
         icon={replenishmentIcon}
         disabled={disabled}
         onChange={(next) =>
-          // Changing replenishment can invalidate the method, so reconcile it
-          // to a legal one — the same interlock the ERP's Part form enforces —
-          // and send both so the apply never sees an illegal pair.
+          // Changing replenishment can invalidate the method, so set a legal
+          // one, as the item page or the Part form would, and send both so
+          // the apply never sees an illegal pair.
           onChange({
             replenishmentSystem: next,
-            defaultMethodType: reconcileMethodForReplenishment(
-              next,
-              defaultMethodType
-            )
+            defaultMethodType: existing
+              ? methodForReplenishment(next, defaultMethodType)
+              : reconcileMethodForReplenishment(next, defaultMethodType)
           })
         }
       />

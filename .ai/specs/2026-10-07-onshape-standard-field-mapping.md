@@ -1,6 +1,6 @@
 # Onshape: map properties to Carbon item fields
 
-> Status: built; live spikes S1-S5 and the live push pending
+> Status: built; live push verified 2026-10-07 with built-in Onshape properties; the spikes on company custom properties (S1-S3) pending
 > Author: Raul (with Claude)
 > Date: 2026-10-07
 > Builds on: `.ai/specs/2026-08-28-onshape-app.md` (section "Custom fields")
@@ -300,6 +300,13 @@ The user must see what each mode does before a push changes Carbon data.
 | Review, existing item in "Update on every push" | "Replenishment: Replaces Make with Buy (updated on every push)." |
 | Review, a method that goes with a change | "Default Method Type: Replaces Make to Order with Purchase to Order (goes with the change above)." |
 | Review, a translation problem | "Make or buy: "Outsourced" has no Carbon value. Replenishment not written." |
+| Review, a custom field in "Update on every push" | "Vendor: Replaces Acme Co with Acme Ltd (updated on every push)." / "Vendor: Clears Acme Co (updated on every push)." |
+| Fields page, a target another property holds | "Replenishment · from Make or buy" (disabled in the select) |
+| Fields page, under the list | "Not listed: Mass, Center of mass, Inertia. Onshape's computed, user, file and category properties can't be mapped." |
+| Fields page, a property no Carbon field takes | "No Carbon field takes a DATE value. Add a Date part custom field in Carbon to map it." |
+| Fields save, two properties on one target | "Bought already maps to this Carbon field. A Carbon field takes one property." |
+| Fields save, a type an item field does not take | "An Onshape BOOL property can't set Manufacturer Part Number. It takes STRING, ENUM or OBJECT properties." |
+| Fields save, a custom field of another type | "Excluded from BOMs is a Yes/No field. An Onshape STRING property needs a Text field." |
 | Item card (`ExternalSource.tsx`), no mapping in "Update on every push" | "Pushes don't change this item's fields, so edits made here stay." |
 | Item card, one or more mappings in "Update on every push" | "Each push replaces: Long Description, Replenishment. Other edits stay." |
 | Item card, the user cannot read the integration's settings | "Pushes replace only the fields that Onshape's Fields page sets to Update on every push." |
@@ -394,42 +401,43 @@ become editable for a linked item because the lock goes.
 
 ## Acceptance Criteria
 
-- [ ] A company maps "Make or buy" to Replenishment. An assembly push creates a
+- [x] A company maps "Make or buy" to Replenishment. An assembly push creates a
       BOM leaf whose value is "Buy" as a Buy item. The item gets the push
       default method for bought parts.
-- [ ] A BOM leaf has "Outsourced", and no translation row matches it. The
+- [x] A BOM leaf has "Outsourced", and no translation row matches it. The
       review shows a problem. The push creates the item with the push default
       Replenishment.
-- [ ] With Replenishment in "Set at creation" mode, a push keeps an existing
+- [x] With Replenishment in "Set at creation" mode, a push keeps an existing
       item's Replenishment. The review shows "Onshape has Buy. Carbon keeps
       Make".
-- [ ] With Replenishment in "Update on every push" mode, a push moves a linked
+- [x] With Replenishment in "Update on every push" mode, a push moves a linked
       item from Make to Buy. Its lines on another assembly's Draft make method
       change method type.
-- [ ] A user edits the long description of a linked item in Carbon. Carbon
+- [x] A user edits the long description of a linked item in Carbon. Carbon
       saves it. The next push in "Set at creation" mode keeps it.
-- [ ] A mapped MPN reaches a new item from a part push and from a BOM row.
-- [ ] A mapped Sourcing of "Drop Ship" on a "Buy and Make" item sets Sourcing
+- [x] A mapped MPN reaches a new item from a part push and from a BOM row.
+- [x] A mapped Sourcing of "Drop Ship" on a "Buy and Make" item sets Sourcing
       and the method "Purchase to Order".
-- [ ] A mapped Sourcing on a Make item shows "Sourcing applies only to Buy and
+- [x] A mapped Sourcing on a Make item shows "Sourcing applies only to Buy and
       Make items". The push writes no Sourcing.
-- [ ] A mapped Default Method that does not fit the Replenishment shows a
+- [x] A mapped Default Method that does not fit the Replenishment shows a
       problem. The push skips the method.
-- [ ] A sub-assembly with "Show assembly only" and no mapped value becomes a
+- [x] A sub-assembly with "Show assembly only" and no mapped value becomes a
       Make item with no BOM. The review shows the "one unit in Onshape"
       warning.
 - [ ] A BOM row whose "Purchasing Level" column says "Purchased" is no longer
-      Buy because of that column.
-- [ ] In one push, a reviewer changes an existing child from Buy to Make. The
+      Buy because of that column. (Unit tests only: no live document has the
+      column.)
+- [x] In one push, a reviewer changes an existing child from Buy to Make. The
       new BOM line for that child shows "Make to Order".
-- [ ] A map saved before this change loads. Its mappings keep their custom
+- [x] A map saved before this change loads. Its mappings keep their custom
       field. Their mode shows as "Update on every push".
-- [ ] The fields route refuses 3 cases. They are 2 properties on one
+- [x] The fields route refuses 3 cases. They are 2 properties on one
       target, an unknown target, and a translation value outside the field's
       list.
-- [ ] `pnpm --filter @carbon/ee typecheck`, `pnpm --filter erp typecheck` and
+- [x] `pnpm --filter @carbon/ee typecheck`, `pnpm --filter erp typecheck` and
       the Onshape tests pass.
-- [ ] A live push on the local stack shows the mapped values, the problems
+- [x] A live push on the local stack shows the mapped values, the problems
       and the kept differences in the review. After the push, Carbon holds
       the expected values.
 
@@ -455,6 +463,18 @@ code is final. Use an existing release. Create no release.
 | S3 | Does the API return a list property's default for a part that never had the property set? Does a default added later apply to existing parts? | The docs tell the user to set the value on existing parts. |
 | S4 | Does a BOM row show that it comes from Standard content? | Remove precedence rule 4. The docs say so. |
 | S5 | Does the element metadata at a released version return the custom properties? | Released items use the push defaults. The docs say so. |
+
+Results (2026-10-07, on the WB-100 test documents; the development account has
+no company custom property yet, so S1-S3 are answered for built-in properties
+only):
+
+| # | Result |
+|---|--------|
+| S1 | Yes for built-in properties: every one comes back with `onlyVisibleColumns=false`, and its header id is its property id. A custom property is not yet checked. |
+| S2 | The metadata API gives a list's stored value (State "2"), the BOM cell its label ("Released"). `parseProperties` now reads the label from `enumValues`, so a part push and a BOM row give the same text. A custom list's options are not yet checked. |
+| S3 | Not checked: it needs a custom property with a default. |
+| S4 | Yes: `itemSource.isStandardContent` is true on every library fastener row (204 rows in one machine assembly). The fasteners in a pushed assembly came in as Buy. |
+| S5 | Yes for built-in properties: a release push read State at the released version and wrote the mapped Replenishment on the new revision. |
 
 ## Documentation
 
@@ -512,3 +532,19 @@ code is final. Use an existing release. Create no release.
      review conflict.
   3. The item card text drops "Linked to Onshape". The card's badge already
      says it.
+- 2026-10-07: Live push on the local stack, with built-in Onshape properties
+  (State → Replenishment, Unit of measure → Unit of Measure, Title 1-3 → MPN,
+  Default Method and Sourcing, Vendor and "Exclude from all BOMs" → part custom
+  fields). Fixes from it:
+  1. A list value from the metadata API is read as its label (S2).
+  2. A method change that goes with another one is listed after it, and a
+     mapping is credited only with its own value.
+  3. A change names the method Carbon stores, not the one the editor starts
+     from (Buy and Make with Make to Order).
+  4. An "Update on every push" custom field says what it replaces or clears.
+  5. The review's Replenishment select sets the item page's method on an
+     existing item.
+  6. The Fields page: Name and Description only as fixed rows, a held target
+     shown disabled with its property, unmappable properties named, and the
+     save's refusals name what fits.
+  7. The panel follows Onshape's light or dark theme, light by default.

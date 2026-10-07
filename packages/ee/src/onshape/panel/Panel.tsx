@@ -66,6 +66,7 @@ import type {
   PropertyMapTarget
 } from "./properties";
 import {
+  CUSTOM_FIELD_TYPE_LABELS,
   customFieldDisplayValue,
   MAPPABLE_VALUE_TYPES,
   propertyMapEqual,
@@ -86,6 +87,7 @@ import {
   CARBON_ONLY_NOTE,
   clearFieldErrors,
   createReview,
+  customFieldChangeText,
   describeMethod,
   indexFieldErrors,
   itemFieldChangeText,
@@ -249,6 +251,9 @@ type PanelFieldsState =
 
 /** Radix Select refuses an empty item value, so "not mapped" is named. */
 const FIELDS_NOT_MAPPED = "__not-mapped__";
+
+/** Every push reads these two into the descriptions: the fixed rows. */
+const DESCRIPTION_PROPERTY_NAMES = new Set(["Name", "Description"]);
 
 /**
  * The Carbon types an Onshape value type may map onto. MAPPABLE_VALUE_TYPES
@@ -2520,12 +2525,23 @@ function FieldsSection({
     state.entries.find((entry) => entry.onshapePropertyId === propertyId);
   /*
    * Only what the user can act on: a USER, BLOB or computed property has no
-   * Carbon field it can coerce into. An already-mapped property stays listed
-   * even if its type is not mappable, since the save posts the whole map and
-   * hiding the entry would leave it riding along with no way to remove it.
+   * Carbon field it can coerce into, and Name and Description are the fixed
+   * rows. An already-mapped property stays listed even if its type is not
+   * mappable, since the save posts the whole map and hiding the entry would
+   * leave it riding along with no way to remove it.
    */
   const visibleProperties = data.properties.filter(
-    (property) => property.mappable || !!entryFor(property.propertyId)
+    (property) =>
+      !!entryFor(property.propertyId) ||
+      (property.mappable && !DESCRIPTION_PROPERTY_NAMES.has(property.name))
+  );
+  // Named under the list, so a missing property has a reason.
+  const unmappable = data.properties.filter(
+    (property) => !property.mappable && !entryFor(property.propertyId)
+  );
+  // A Carbon field takes one property: the property each is mapped from.
+  const mappedFrom = new Map(
+    state.entries.map((entry) => [targetKey(entry.target), entry])
   );
   // The save posts the whole map, so a 422 can name a property mapped from
   // another element. It has no row here, so it renders on its own.
@@ -2608,6 +2624,7 @@ function FieldsSection({
               key={property.propertyId}
               property={property}
               entry={entryFor(property.propertyId)}
+              mappedFrom={mappedFrom}
               definitions={data.definitions}
               units={data.units}
               errors={state.fieldErrors[property.propertyId]}
@@ -2620,6 +2637,13 @@ function FieldsSection({
       </div>
       {visibleProperties.length === 0 ? (
         <PanelEmpty>No other mappable properties on this element</PanelEmpty>
+      ) : null}
+      {unmappable.length > 0 ? (
+        <p className="w-full text-xs text-muted-foreground">
+          Not listed: {unmappable.map((property) => property.name).join(", ")}.
+          Onshape's computed, user, file and category properties can't be
+          mapped.
+        </p>
       ) : null}
       {/* Pinned like a review's push button; see ReviewActionBar. */}
       <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
@@ -2732,6 +2756,7 @@ function DescriptionModeRow({
 function FieldsRow({
   property,
   entry,
+  mappedFrom,
   definitions,
   units,
   errors,
@@ -2741,6 +2766,8 @@ function FieldsRow({
 }: {
   property: PanelFieldsProperty;
   entry: FieldsDraftEntry | undefined;
+  /** The entry each Carbon field is mapped from, by `targetKey`. */
+  mappedFrom: Map<string, FieldsDraftEntry>;
   definitions: PlanCustomFieldDefinition[];
   units: PlanUnitOfMeasure[];
   errors: string[] | undefined;
@@ -2776,6 +2803,23 @@ function FieldsRow({
       : null;
   const itemField =
     target?.kind === "item" ? standardField(target.field) : undefined;
+  // A field another property is mapped to stays listed, disabled, with that
+  // property's name, so the clash shows before the save refuses it.
+  const heldBy = (key: string) => {
+    const holder = mappedFrom.get(key);
+    return holder && holder.onshapePropertyId !== property.propertyId
+      ? holder.onshapeName
+      : null;
+  };
+  const neededTypes = allowed
+    .map((dataTypeId) => CUSTOM_FIELD_TYPE_LABELS[dataTypeId])
+    .filter(Boolean)
+    .join(" or ");
+  const noTarget =
+    property.mappable &&
+    itemOptions.length === 0 &&
+    customOptions.length === 0 &&
+    neededTypes !== "";
   return (
     <li className="flex w-full flex-col gap-2 px-3 py-2">
       <div className="flex w-full items-center gap-3">
@@ -2810,30 +2854,44 @@ function FieldsRow({
               {itemOptions.length > 0 ? (
                 <SelectGroup>
                   <SelectLabel>Item fields</SelectLabel>
-                  {itemOptions.map((field) => (
-                    <SelectItem
-                      key={field.id}
-                      value={targetKey({ kind: "item", field: field.id })}
-                    >
-                      {field.label}
-                    </SelectItem>
-                  ))}
+                  {itemOptions.map((field) => {
+                    const key = targetKey({ kind: "item", field: field.id });
+                    const holder = heldBy(key);
+                    return (
+                      <SelectItem
+                        key={field.id}
+                        value={key}
+                        disabled={holder !== null}
+                      >
+                        {holder
+                          ? `${field.label} · from ${holder}`
+                          : field.label}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectGroup>
               ) : null}
               {customOptions.length > 0 || deletedFieldId ? (
                 <SelectGroup>
                   <SelectLabel>Custom fields</SelectLabel>
-                  {customOptions.map((definition) => (
-                    <SelectItem
-                      key={definition.id}
-                      value={targetKey({
-                        kind: "customField",
-                        fieldId: definition.id
-                      })}
-                    >
-                      {definition.name}
-                    </SelectItem>
-                  ))}
+                  {customOptions.map((definition) => {
+                    const key = targetKey({
+                      kind: "customField",
+                      fieldId: definition.id
+                    });
+                    const holder = heldBy(key);
+                    return (
+                      <SelectItem
+                        key={definition.id}
+                        value={key}
+                        disabled={holder !== null}
+                      >
+                        {holder
+                          ? `${definition.name} · from ${holder}`
+                          : definition.name}
+                      </SelectItem>
+                    );
+                  })}
                   {deletedFieldId ? (
                     <SelectItem
                       value={targetKey({
@@ -2851,6 +2909,12 @@ function FieldsRow({
           </Select>
         </div>
       </div>
+      {noTarget ? (
+        <p className="text-xs text-muted-foreground">
+          No Carbon field takes a {property.valueType} value. Add a{" "}
+          {neededTypes} part custom field in Carbon to map it.
+        </p>
+      ) : null}
       {entry ? (
         <ModeSelect
           mode={entry.mode}
@@ -3172,10 +3236,9 @@ function RowMappedFields({
   for (const field of row.customFields ?? []) {
     lines.push({
       key: `custom:${field.fieldId}`,
-      text:
-        isCreate || field.value !== null
-          ? `${field.name}: ${customFieldDisplayValue(field)} · from Onshape "${field.onshapeName}"`
-          : `${field.name}: will be cleared (updated on every push)`,
+      text: isCreate
+        ? `${field.name}: ${customFieldDisplayValue(field)} · from Onshape "${field.onshapeName}"`
+        : customFieldChangeText(field),
       tone: "muted"
     });
   }
@@ -3347,6 +3410,7 @@ function PartReviewSection({
                   return baseline ? (
                     <ItemFieldSelects
                       baseline={baseline}
+                      existing={!!row.current}
                       edit={review.edits[row.partId]}
                       disabled={busy}
                       onChange={(patch) => onEditItem(row.partId, patch)}
@@ -3615,6 +3679,7 @@ function AssemblyReviewSection({
             return baseline ? (
               <ItemFieldSelects
                 baseline={baseline}
+                existing={!!plan.root.current}
                 edit={review.edits[plan.root.partNumber]}
                 disabled={busy}
                 onChange={(patch) => onEditItem(plan.root.partNumber, patch)}
@@ -3656,6 +3721,7 @@ function AssemblyReviewSection({
               return baseline ? (
                 <ItemFieldSelects
                   baseline={baseline}
+                  existing={!!item.current}
                   edit={review.edits[item.partNumber]}
                   disabled={busy}
                   onChange={(patch) => onEditItem(item.partNumber, patch)}
@@ -3855,6 +3921,7 @@ function ReleaseReviewSection({
               return baseline ? (
                 <ItemFieldSelects
                   baseline={baseline}
+                  existing={!!item.current}
                   edit={review.edits[item.partNumber]}
                   disabled={busy}
                   onChange={(patch) => onEditItem(item.partNumber, patch)}
@@ -3901,6 +3968,7 @@ function ReleaseReviewSection({
                   return baseline ? (
                     <ItemFieldSelects
                       baseline={baseline}
+                      existing={!!child.current}
                       edit={review.edits[child.partNumber]}
                       disabled={busy}
                       onChange={(patch) => onEditItem(child.partNumber, patch)}

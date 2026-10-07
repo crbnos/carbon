@@ -14,7 +14,8 @@ import type {
   ProposedItem,
   ReleasePlan
 } from "./plan";
-import type { PlanItemField } from "./properties";
+import type { PlanCustomField, PlanItemField } from "./properties";
+import { customFieldDisplayValue } from "./properties";
 import type { PanelPartStatus } from "./status";
 
 /**
@@ -227,6 +228,18 @@ export function keptDifferenceText(kept: KeptDifference): string {
   return `${kept.label}: Onshape has ${kept.onshape}. Carbon keeps ${
     kept.carbon ?? "no value"
   } (set at creation only).`;
+}
+
+/** A custom field value an "everyPush" mapping writes over Carbon's. */
+export function customFieldChangeText(field: PlanCustomField): string {
+  const replaces = field.replaces ?? null;
+  const verb =
+    field.value === null
+      ? `Clears ${replaces ?? "the value"}`
+      : replaces === null
+        ? `Sets ${customFieldDisplayValue(field)}`
+        : `Replaces ${replaces} with ${customFieldDisplayValue(field)}`;
+  return `${field.name}: ${verb} (updated on every push).`;
 }
 
 /** A value an "everyPush" mapping writes over Carbon's. */

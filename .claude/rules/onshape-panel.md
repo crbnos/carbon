@@ -202,7 +202,11 @@ method is not released).
   "everyPush" mapping changes) or `current`. A create validates them with
   `mergeItemEdits`; an existing item with `mergeExistingItemEdits(current,
   edit, target)`, writing only what differs from `current`. A choice there is
-  written to Carbon only (`CARBON_ONLY_NOTE`).
+  written to Carbon only (`CARBON_ONLY_NOTE`). A new Replenishment sets the
+  method as Carbon does: on an existing item (`existing`) the item page's
+  `methodForReplenishment` (Make → Make to Order, Buy → Purchase to Order), on
+  a create the Part form's `reconcileMethodForReplenishment` (keep a method
+  the pair allows).
 - A part is `unchanged` when its microversion matches the one the last push
   recorded. Unchanged rows still resolve the map; if an "everyPush" value or
   description differs from Carbon's, the row becomes an `update` flagged
@@ -211,7 +215,8 @@ method is not released).
 - A new item's fields follow one precedence (`proposeMappedItem`, plan.ts):
   the reviewer's choice, the mapped value, a BOM row with children is Make, a
   Standard content row is Buy (`standardContent`, read from the BOM row's
-  `isStandardContent` — live check pending), then the push defaults from
+  `itemSource.isStandardContent`, verified live 2026-10-07), then the push
+  defaults from
   `parsePushDefaults` (`panel/preferences.ts`, fail-soft to
   `DEFAULT_PUSH_DEFAULTS`). A mapped Buy with no mapped method takes
   `methodTypeForBuy`. A null unit resolves from the company's list at plan
@@ -281,7 +286,14 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   to Order), the method (refused when the final Replenishment does not allow
   it), Sourcing (Buy and Make only, with the method it sets), then tracking,
   unit and MPN. The result is the row's `target` and `itemFieldChanges`;
-  "create" values that differ are `keptDifferences`. Apply:
+  "create" values that differ are `keptDifferences`. A change is credited
+  to its mapping only when its value is the mapped one; a change that goes
+  with another (the method Replenishment or Sourcing sets) has no
+  `onshapeName` and is listed after it. `from` names the method Carbon
+  stores (`item.defaultMethodType`): `currentItemFields` moves a pair the
+  item page leaves (Buy and Make with Make to Order) to one
+  `VALID_METHOD_TYPES_BY_REPLENISHMENT` allows. An "everyPush" custom field
+  write carries `replaces` (Carbon's value as text) for the review. Apply:
   `applyExistingItemFields` merges the reviewer's edits over `target` and
   writes through `applyItemFieldWrites` in writer order.
 - **New items** (`planCreatedItem`): every mapped value goes into the
@@ -291,10 +303,14 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   (`@carbon/ee/onshape.server`, one metadata read at `depth=2`); an
   assembly root from the element metadata the plan already reads; BOM rows
   from their cells (`parseBomTree` keeps them as `properties`, matched by
-  column id, then by column name; `withoutProperties` strips them before the
+  column id, then by column name, since a built-in property's column id is
+  its property id (verified live); `withoutProperties` strips them before the
   plan is stored); released items from metadata at the released version (one
   read per released element, only when the map or a description mode needs
-  it). A reused release BOM child is not linked and takes no value. Map
+  it; verified live for built-in properties). A reused release BOM child is
+  not linked and takes no value. A list (ENUM) value is read as its option's
+  label: the metadata API sends the stored value ("2"), the BOM cell the label
+  ("Released"), and `parseProperties` maps one to the other (`enumLabel`). Map
   empty → zero extra reads for mapped values. `loadPlanMapping` reads the map,
   the modes, the definitions and the held `part.customFields`.
 - The editor is the panel's **Fields** page: Onshape lists properties only from
@@ -306,7 +322,14 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   save refuses a target type `MAPPABLE_VALUE_TYPES` does not allow, an item
   field that does not take the value type, a translation value outside the
   field's list, two properties on one target, and deleted fields (422, per
-  property).
+  property). Each refusal names what fits: the other property on the target,
+  the value types an item field takes, the custom field type a value type
+  needs (`CUSTOM_FIELD_TYPE_LABELS`).
+- The Fields page lists Name and Description only as the two fixed rows. A
+  target another property holds stays in the select, disabled, as "Label ·
+  from Property". Unmappable properties are named under the list ("Not
+  listed: …"), and a mappable property no Carbon field takes says which part
+  custom field type to add.
 - `MAPPABLE_VALUE_TYPES` (custom fields): STRING/ENUM/OBJECT→Text,
   BOOL→Yes/No, INT/DOUBLE→Numeric, DATE→Date. USER/BLOB/COMPUTED/CATEGORY are
   not mappable, and no type maps to a List custom field.
@@ -314,8 +337,8 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   (shared across revisions, so a new revision is not a creation for them).
   Writes merge only the mapped keys (`mergeCustomFieldValues`); an
   "everyPush" value emptied in Onshape deletes the key. `customFieldWrites`
-  drops a clear for a field Carbon doesn't hold, so the review says "will be
-  cleared" only when something is. A Yes/No field stores the string `"on"`
+  drops a clear for a field Carbon doesn't hold, so the review says "Clears
+  …" only when something is (`customFieldChangeText`). A Yes/No field stores the string `"on"`
   (`BOOLEAN_TRUE`); a JSON boolean renders unticked.
 
 ## Push release
@@ -390,6 +413,12 @@ in batch order, so anything relying on `.order(...)` re-sorts afterwards.
   `partstudio | assembly | drawing`, retries 1, per-item concurrency 1.
 
 ## Panel layout — three pages
+
+The panel matches Onshape's theme: Onshape passes `theme` (light or dark) on
+the action URL, the `onshape+` layout declares `handle.hostMode`, and the root
+renders that mode in place of the user's own. Missing → light. The panel
+loads without Carbon's cookies, so the user's mode would otherwise follow the
+OS.
 
 The panel shows status and pushes. Anything a user would change lives in
 Onshape or on the Onshape V2 integration page in Carbon, except the property

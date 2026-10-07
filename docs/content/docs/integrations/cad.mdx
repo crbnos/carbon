@@ -336,7 +336,12 @@ panel because Onshape only lists properties from inside a document.
 
 **Custom fields:** create the field in Carbon first, then select it here. Text and
 enum properties map to Text fields, booleans to Yes/No, numbers to Numeric, dates to
-Date. Properties with no matching Carbon type are hidden unless already mapped.
+Date. Onshape's computed, user, file and category properties can't be mapped; the page
+names them under the list. A property with no Carbon field of its type says which part
+custom field type to add.
+
+Each Carbon field takes one property. A field another property already sets stays in
+the list, greyed out, with that property's name.
 
 **When Onshape writes a field.** Each mapping, and the item's Name and Description,
 has one of two settings:
@@ -351,7 +356,8 @@ has one of two settings:
 **Set up Buy or Make.** Onshape has no Buy/Make property. Create a list property in
 Onshape, for example *Make or buy*, with the options Buy, Make, and Buy and Make, and
 give it the default Make. Map it to Replenishment here. Change the value on the parts
-your company buys.
+your company buys. Parts from Onshape's Standard content library (fasteners and other
+hardware) come in as Buy when no property gives a value.
 
 **Refresh** re-reads the properties and the field list. **Save mappings** needs the
 **settings: update** permission in Carbon.

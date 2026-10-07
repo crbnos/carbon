@@ -66,6 +66,40 @@ describe("parseProperties", () => {
       }
     ]);
   });
+
+  it("reads a list value as its option's label, the text the BOM shows", () => {
+    const [state, unit, unknown] = parseProperties({
+      properties: [
+        {
+          propertyId: "p1",
+          name: "State",
+          valueType: "ENUM",
+          value: "2",
+          enumValues: [
+            { label: "In progress", value: "0" },
+            { label: "Released", value: "2" }
+          ]
+        },
+        {
+          propertyId: "p2",
+          name: "Unit of measure",
+          valueType: "ENUM",
+          value: "Each",
+          enumValues: [{ label: null, value: "Each" }]
+        },
+        {
+          propertyId: "p3",
+          name: "Finish",
+          valueType: "ENUM",
+          value: "9",
+          enumValues: [{ label: "Painted", value: "1" }]
+        }
+      ]
+    });
+    expect(state?.value).toBe("Released");
+    expect(unit?.value).toBe("Each");
+    expect(unknown?.value).toBe("9");
+  });
 });
 
 describe("partPropertiesFromElementMetadata", () => {

@@ -100,6 +100,11 @@ export type PlanCustomField = {
   value: string | number | boolean | null;
   /** The Onshape property it came from, for the review's provenance line. */
   onshapeName: string;
+  /**
+   * A write to an existing item only: Carbon's value it replaces, as display
+   * text; null when Carbon holds none.
+   */
+  replaces?: string | null;
 };
 
 /** A mapped item field on a plan row, with the property it came from. */
@@ -134,6 +139,15 @@ export const CUSTOM_FIELD_DATA_TYPES = {
   numeric: 4,
   text: 5
 } as const;
+
+/** A custom field type's name, as Carbon's custom field settings show it. */
+export const CUSTOM_FIELD_TYPE_LABELS: Record<number, string> = {
+  [CUSTOM_FIELD_DATA_TYPES.boolean]: "Yes/No",
+  [CUSTOM_FIELD_DATA_TYPES.date]: "Date",
+  [CUSTOM_FIELD_DATA_TYPES.list]: "List",
+  [CUSTOM_FIELD_DATA_TYPES.numeric]: "Numeric",
+  [CUSTOM_FIELD_DATA_TYPES.text]: "Text"
+};
 
 /**
  * Which Carbon data types an Onshape value type may map onto. Types absent
@@ -176,6 +190,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * A list value as its option's label. The metadata API sends a list's stored
+ * value ("2"), the BOM table its label ("Released"). Reading the label here
+ * gives a mapping the same text from a part push and a BOM row. A value with
+ * no option, or an option with no label, stays as it is.
+ */
+function enumLabel(value: unknown, options: unknown): unknown {
+  if (typeof value !== "string" || !Array.isArray(options)) return value;
+  const option = options.find(
+    (entry) => isRecord(entry) && entry.value === value
+  );
+  const label = isRecord(option) ? option.label : null;
+  return typeof label === "string" && label.trim() !== "" ? label : value;
+}
+
 /** The `properties` array of a metadata payload, normalised. */
 export function parseProperties(payload: unknown): OnshapePropertyValue[] {
   const properties = isRecord(payload) ? payload.properties : null;
@@ -191,7 +220,10 @@ export function parseProperties(payload: unknown): OnshapePropertyValue[] {
       propertyId,
       name,
       valueType: typeof valueType === "string" ? valueType : "STRING",
-      value: property.value,
+      value:
+        valueType === "ENUM"
+          ? enumLabel(property.value, property.enumValues)
+          : property.value,
       editable:
         typeof property.editable === "boolean" ? property.editable : undefined
     });

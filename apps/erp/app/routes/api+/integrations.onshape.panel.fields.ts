@@ -10,6 +10,7 @@ import type {
   PropertyMapEntry
 } from "@carbon/ee";
 import {
+  CUSTOM_FIELD_TYPE_LABELS,
   MAPPABLE_VALUE_TYPES,
   MAPPING_MODES,
   parseDescriptionModes,
@@ -212,14 +213,11 @@ const payloadSchema = z.object({
 
 type FieldError = { key: string; errors: string[] };
 
-function duplicates(values: string[]): Set<string> {
-  const seen = new Set<string>();
-  const twice = new Set<string>();
-  for (const value of values) {
-    if (seen.has(value)) twice.add(value);
-    else seen.add(value);
-  }
-  return twice;
+/** "A, B or C". */
+function orList(values: readonly string[]): string {
+  return values.length > 1
+    ? `${values.slice(0, -1).join(", ")} or ${values[values.length - 1]}`
+    : (values[0] ?? "");
 }
 
 /**
@@ -252,15 +250,26 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // A target takes one property.
-  const duplicateTargets = duplicates(
-    entries.map((entry) => targetKey(entry.target))
-  );
+  // A target takes one property; each clashing entry names the others.
+  const namesByTarget = new Map<string, string[]>();
   for (const entry of entries) {
-    if (duplicateTargets.has(targetKey(entry.target))) {
+    const key = targetKey(entry.target);
+    namesByTarget.set(key, [
+      ...(namesByTarget.get(key) ?? []),
+      entry.onshapeName || entry.onshapePropertyId
+    ]);
+  }
+  for (const entry of entries) {
+    const own = entry.onshapeName || entry.onshapePropertyId;
+    const others = (namesByTarget.get(targetKey(entry.target)) ?? []).filter(
+      (name) => name !== own
+    );
+    if (others.length > 0) {
       fieldErrors.push({
         key: entry.onshapePropertyId,
-        errors: ["Another property already maps to this Carbon field"]
+        errors: [
+          `${others.join(", ")} already maps to this Carbon field. A Carbon field takes one property.`
+        ]
       });
     }
   }
@@ -279,7 +288,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const errors: string[] = [];
     if (!field.valueTypes.includes(entry.valueType)) {
       errors.push(
-        `An Onshape ${entry.valueType} property can't set ${field.label}`
+        `An Onshape ${entry.valueType} property can't set ${field.label}. It takes ${orList(field.valueTypes)} properties.`
       );
     }
     errors.push(...translationErrors(field, entry.translations ?? [], units));
@@ -295,7 +304,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existingIds.length > 0) {
     const existing = await client
       .from("customField")
-      .select("id, dataTypeId")
+      .select("id, name, dataTypeId")
       .eq("companyId", companyId)
       .eq("table", "part")
       .in("id", existingIds);
@@ -306,13 +315,12 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       return data({ error: "Failed to read custom fields" }, { status: 500 });
     }
-    const dataTypes = new Map(
-      (existing.data ?? []).map((row) => [row.id, row.dataTypeId])
-    );
+    const fields = new Map((existing.data ?? []).map((row) => [row.id, row]));
     for (const entry of entries) {
       if (entry.target.kind !== "customField") continue;
-      const dataTypeId = dataTypes.get(entry.target.fieldId);
-      if (dataTypeId === undefined) {
+      const field = fields.get(entry.target.fieldId);
+      const dataTypeId = field?.dataTypeId;
+      if (field === undefined || dataTypeId === undefined) {
         fieldErrors.push({
           key: entry.onshapePropertyId,
           errors: ["The mapped Carbon field no longer exists"]
@@ -321,10 +329,15 @@ export async function action({ request }: ActionFunctionArgs) {
         Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType) &&
         !MAPPABLE_VALUE_TYPES[entry.valueType]?.includes(dataTypeId)
       ) {
+        const needed = orList(
+          (MAPPABLE_VALUE_TYPES[entry.valueType] ?? []).map(
+            (id) => CUSTOM_FIELD_TYPE_LABELS[id] ?? String(id)
+          )
+        );
         fieldErrors.push({
           key: entry.onshapePropertyId,
           errors: [
-            `An Onshape ${entry.valueType} property can't be stored in this field's type`
+            `${field.name} is a ${CUSTOM_FIELD_TYPE_LABELS[dataTypeId] ?? "different"} field. An Onshape ${entry.valueType} property needs a ${needed} field.`
           ]
         });
       }

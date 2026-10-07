@@ -201,6 +201,7 @@ export type {
 } from "./onshape/panel/properties";
 export {
   CUSTOM_FIELD_DATA_TYPES,
+  CUSTOM_FIELD_TYPE_LABELS,
   coerceOnshapeValue,
   customFieldDisplayValue,
   customFieldKeptDifferences,

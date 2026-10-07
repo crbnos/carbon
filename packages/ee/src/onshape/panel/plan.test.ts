@@ -1685,6 +1685,62 @@ describe("planExistingItem — modes", () => {
     ]);
   });
 
+  it("lists a method that goes with another change after it, and credits a mapping only for its own value", () => {
+    const planned = plan([
+      itemField("replenishmentSystem", "Buy and Make"),
+      itemField(
+        "defaultMethodType",
+        "Pull from Inventory",
+        "everyPush",
+        "Method"
+      ),
+      itemField("sourcingType", "Drop Ship", "everyPush", "Sourcing")
+    ]);
+    expect(
+      planned.itemFieldChanges?.map((change) => [
+        change.field,
+        change.onshapeName
+      ])
+    ).toEqual([
+      ["replenishmentSystem", "Make or buy"],
+      ["sourcingType", "Sourcing"],
+      ["defaultMethodType", null]
+    ]);
+  });
+
+  it("names the method Carbon holds, not the one the editor starts from", () => {
+    // The item page leaves Make to Order when Replenishment moves to Buy and
+    // Make; the snapshot reconciles it to a method the pair allows.
+    const row = {
+      name: "Bracket",
+      description: null,
+      replenishmentSystem: "Buy and Make",
+      defaultMethodType: "Make to Order",
+      itemTrackingType: "Inventory",
+      sourcingType: "Specified"
+    };
+    const planned = planExistingItem({
+      current: currentItemFields(row),
+      item: row,
+      onshape: { name: "Bracket", description: null },
+      resolved: {
+        fields: [],
+        itemFields: [
+          itemField("sourcingType", "Drop Ship", "everyPush", "Sourcing")
+        ],
+        problems: []
+      },
+      heldCustomFields: {},
+      descriptionModes: { name: "create", description: "create" },
+      units: options.unitsOfMeasure
+    });
+    expect(
+      planned.itemFieldChanges?.find(
+        (change) => change.field === "defaultMethodType"
+      )
+    ).toMatchObject({ from: "Make to Order", to: "Purchase to Order" });
+  });
+
   it("writes every-push custom fields and keeps Set at creation ones out", () => {
     const field = (
       fieldId: string,

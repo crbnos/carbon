@@ -839,7 +839,12 @@ export function planExistingItem({
   units
 }: {
   current: ItemFieldSnapshot;
-  item: { name?: string | null; description?: string | null };
+  item: {
+    name?: string | null;
+    description?: string | null;
+    /** The stored method, which `current` may have reconciled. */
+    defaultMethodType?: string | null;
+  };
   onshape: { name: string | null; description: string | null };
   resolved: {
     fields: PlanCustomField[];
@@ -885,14 +890,31 @@ export function planExistingItem({
     );
     const itemFieldChanges: ItemFieldChange[] = Object.entries(
       changedItemFields(current, interlocked.values)
-    ).map(([field, to]) => ({
-      field: field as StandardFieldId,
-      label: fieldLabel(field as StandardFieldId),
-      from:
-        (current[field as keyof ItemFieldSnapshot] as string | null) ?? null,
-      to: (to as string | null) ?? null,
-      onshapeName: sourceByField.get(field as StandardFieldId) ?? null
-    }));
+    )
+      .map(([field, to]) => {
+        const id = field as StandardFieldId;
+        return {
+          field: id,
+          label: fieldLabel(id),
+          // The value Carbon holds: `current` moves a method the item page
+          // leaves in place (Make to Order on a Buy and Make item) to one
+          // the pair allows, so the editor starts from a valid choice.
+          from:
+            (id === "defaultMethodType" ? item.defaultMethodType : null) ??
+            (current[field as keyof ItemFieldSnapshot] as string | null) ??
+            null,
+          to: (to as string | null) ?? null,
+          // A mapping is credited only with its own value; any other change
+          // goes with one of them (the method Replenishment or Sourcing sets).
+          onshapeName:
+            mapped.values[id] === to ? (sourceByField.get(id) ?? null) : null
+        };
+      })
+      // A change that goes with another one is listed after it.
+      .sort(
+        (a, b) =>
+          Number(a.onshapeName === null) - Number(b.onshapeName === null)
+      );
     if (itemFieldChanges.length > 0) {
       out.itemFieldChanges = itemFieldChanges;
       out.target = interlocked.values;
@@ -921,25 +943,31 @@ export function planExistingItem({
         ? heldCustomFields
         : {}
     ) as Record<string, unknown>;
+    // Carbon's value of a mapped custom field, as display text.
+    const heldText = (field: PlanCustomField) => {
+      const heldValue = held[field.fieldId];
+      return heldValue === undefined || heldValue === null || heldValue === ""
+        ? null
+        : customFieldDisplayValue({
+            value: heldValue as string | number | boolean,
+            dataTypeId:
+              definitions.get(field.fieldId)?.dataTypeId ?? field.dataTypeId
+          });
+    };
     for (const field of customFieldKeptDifferences(
       heldCustomFields,
       resolved.fields
     )) {
-      const definition = definitions.get(field.fieldId);
-      const heldValue = held[field.fieldId];
       kept.push({
         label: field.name,
         onshape: customFieldDisplayValue(field),
-        carbon:
-          heldValue === undefined || heldValue === null || heldValue === ""
-            ? null
-            : customFieldDisplayValue({
-                value: heldValue as string | number | boolean,
-                dataTypeId: definition?.dataTypeId ?? field.dataTypeId
-              })
+        carbon: heldText(field)
       });
     }
-    const customFields = customFieldWrites(heldCustomFields, resolved.fields);
+    const customFields = customFieldWrites(
+      heldCustomFields,
+      resolved.fields
+    ).map((field) => ({ ...field, replaces: heldText(field) }));
     if (customFields.length > 0) out.customFields = customFields;
 
     const itemFields = resolved.itemFields.filter(
