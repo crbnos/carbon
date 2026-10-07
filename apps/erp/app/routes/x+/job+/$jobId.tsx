@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { datetime, isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
 import type {
   LoaderFunctionArgs,
@@ -169,6 +169,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobRoute() {
+  const { t } = useLingui();
   const params = useParams();
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -182,6 +183,7 @@ export default function JobRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Bill of Materials`}
               explorer={
                 <div className="w-full h-full p-2">
                   <Suspense fallback={<ExplorerSkeleton />}>

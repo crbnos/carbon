@@ -9,7 +9,9 @@ export default function useEscape(
 ) {
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      // A Radix layer (menu, popover, sheet) that closed on this Escape has
+      // already handled it.
+      if (e.key === "Escape" && !e.defaultPrevented) {
         callback(e);
       }
     };

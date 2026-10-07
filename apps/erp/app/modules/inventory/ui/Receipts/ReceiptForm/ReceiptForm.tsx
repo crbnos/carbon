@@ -43,6 +43,10 @@ import {
   Location,
   Select
 } from "~/components/Form";
+import {
+  RecordAction,
+  RecordHeroTarget
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
@@ -134,8 +138,44 @@ const ReceiptForm = ({
     navigation.state !== "idle" &&
     navigation.location?.pathname === path.to.newPurchaseInvoice;
 
+  const statusBadge = <ReceiptStatus status={status} />;
+
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      {isPosted && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={
+              isVoided || isInvoiced || !permissions.can("update", "inventory")
+            }
+            destructive
+            onClick={voidModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuTicketX />} />
+            <Trans>Void</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          !permissions.can("delete", "inventory") || !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteDisclosure.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+
   return (
     <>
+      <RecordHeroTarget bleed />
       <Card>
         <ValidatedForm
           id={formId}
@@ -147,98 +187,76 @@ const ReceiptForm = ({
         >
           <DocumentHeader
             title={routeData?.receipt?.receiptId ?? ""}
-            status={<ReceiptStatus status={status} />}
-            menuItems={
-              <>
-                {auditLogTrigger}
-                {isPosted && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={
-                        isVoided ||
-                        isInvoiced ||
-                        !permissions.can("update", "inventory")
-                      }
-                      destructive
-                      onClick={voidModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTicketX />} />
-                      <Trans>Void</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    !permissions.can("delete", "inventory") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteDisclosure.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete</Trans>
-                </DropdownMenuItem>
-              </>
-            }
+            status={statusBadge}
+            menuItems={menuItems}
             actions={
               <>
                 {receiptLineTracking.length > 0 && (
-                  <PrintButton
-                    sourceDocument="Receipt"
-                    sourceDocumentId={receiptId}
-                    locationId={locationId ?? undefined}
-                    context="receiving"
-                    fileRoutes={{
-                      pdf: path.to.file.receiptLabelsPdf,
-                      zpl: path.to.file.receiptLabelsZpl
-                    }}
-                  />
+                  <RecordAction slot="overflow">
+                    <PrintButton
+                      sourceDocument="Receipt"
+                      sourceDocumentId={receiptId}
+                      locationId={locationId ?? undefined}
+                      context="receiving"
+                      fileRoutes={{
+                        pdf: path.to.file.receiptLabelsPdf,
+                        zpl: path.to.file.receiptLabelsZpl
+                      }}
+                    />
+                  </RecordAction>
                 )}
-                <SourceDocumentLink
-                  sourceDocument={
-                    routeData?.receipt?.sourceDocument ?? undefined
-                  }
-                  sourceDocumentId={
-                    routeData?.receipt?.sourceDocumentId ?? undefined
-                  }
-                  sourceDocumentReadableId={
-                    routeData?.receipt?.sourceDocumentReadableId ?? undefined
-                  }
-                />
-                <InspectionsLink
-                  inspections={routeData?.receiptInspections ?? []}
-                />
-                <Button
-                  variant={canInvoice ? "primary" : "secondary"}
-                  isDisabled={!canInvoice || isInvoicing}
-                  isLoading={isInvoicing}
-                  leftIcon={<LuCreditCard />}
-                  asChild
-                >
-                  <Link
-                    to={`${path.to.newPurchaseInvoice}?sourceDocument=Purchase Order&sourceDocumentId=${routeData?.receipt?.sourceDocumentId}`}
+                <RecordAction slot="overflow">
+                  <SourceDocumentLink
+                    sourceDocument={
+                      routeData?.receipt?.sourceDocument ?? undefined
+                    }
+                    sourceDocumentId={
+                      routeData?.receipt?.sourceDocumentId ?? undefined
+                    }
+                    sourceDocumentReadableId={
+                      routeData?.receipt?.sourceDocumentReadableId ?? undefined
+                    }
+                  />
+                </RecordAction>
+                <RecordAction slot="overflow">
+                  <InspectionsLink
+                    inspections={routeData?.receiptInspections ?? []}
+                  />
+                </RecordAction>
+                <RecordAction slot={isPosted ? "primary" : "overflow"}>
+                  <Button
+                    variant={canInvoice ? "primary" : "secondary"}
+                    isDisabled={!canInvoice || isInvoicing}
+                    isLoading={isInvoicing}
+                    leftIcon={<LuCreditCard />}
+                    asChild
                   >
-                    <Trans>Invoice</Trans>
-                  </Link>
-                </Button>
-                <Button
-                  variant={
-                    canPost && !isPosted && !isVoided ? "primary" : "secondary"
-                  }
-                  onClick={postModal.onOpen}
-                  isDisabled={
-                    !canPost ||
-                    isPosted ||
-                    isVoided ||
-                    !permissions.is("employee")
-                  }
-                  leftIcon={<LuCheckCheck />}
-                >
-                  <Trans>Post</Trans>
-                </Button>
+                    <Link
+                      to={`${path.to.newPurchaseInvoice}?sourceDocument=Purchase Order&sourceDocumentId=${routeData?.receipt?.sourceDocumentId}`}
+                    >
+                      <Trans>Invoice</Trans>
+                    </Link>
+                  </Button>
+                </RecordAction>
+                <RecordAction slot={isPosted ? "overflow" : "primary"}>
+                  <Button
+                    variant={
+                      canPost && !isPosted && !isVoided
+                        ? "primary"
+                        : "secondary"
+                    }
+                    onClick={postModal.onOpen}
+                    isDisabled={
+                      !canPost ||
+                      isPosted ||
+                      isVoided ||
+                      !permissions.is("employee")
+                    }
+                    leftIcon={<LuCheckCheck />}
+                  >
+                    <Trans>Post</Trans>
+                  </Button>
+                </RecordAction>
               </>
             }
           />

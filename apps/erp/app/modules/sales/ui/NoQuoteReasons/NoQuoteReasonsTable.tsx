@@ -39,6 +39,7 @@ const NoQuoteReasonsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         }

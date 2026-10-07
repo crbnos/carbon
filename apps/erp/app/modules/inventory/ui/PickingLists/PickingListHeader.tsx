@@ -4,16 +4,9 @@
 
 import {
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
@@ -30,13 +23,13 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuCircleStop,
-  LuEllipsisVertical,
   LuLoaderCircle,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
@@ -110,118 +103,119 @@ const PickingListHeader = () => {
     );
   };
 
+  const statusBadge = <PickingListStatus status={status} />;
+
+  const menuItems = (
+    <>
+      <DropdownMenuItem
+        disabled={
+          status === "Draft" ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("delete", "inventory")
+        }
+        onClick={() => submitStatus("Draft")}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          status !== "Draft" ||
+          hasPickedLines ||
+          !permissions.can("delete", "inventory") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Picking List</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{pickingList.pickingListId}</span>
-            </Heading>
-            <Copy text={pickingList.pickingListId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  disabled={
-                    status === "Draft" ||
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("delete", "inventory")
-                  }
-                  onClick={() => submitStatus("Draft")}
-                >
-                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                  <Trans>Reopen</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    status !== "Draft" ||
-                    hasPickedLines ||
-                    !permissions.can("delete", "inventory") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteModal.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Picking List</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <PickingListStatus status={status} />
-          </HStack>
-
-          <HStack>
-            <Assignee
-              size="md"
-              id={pickingListId}
-              value={assignee ?? ""}
-              table="pickingList"
-              isReadOnly={!permissions.can("update", "inventory")}
-            />
-            <Button
-              type="button"
-              leftIcon={<LuCirclePlay />}
-              variant={status === "Draft" ? "primary" : "secondary"}
-              isDisabled={
-                status !== "Draft" ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "In Progress"
-              }
-              onClick={() => submitStatus("In Progress")}
+      <RecordHeader
+        title={pickingList.pickingListId}
+        copyValue={pickingList.pickingListId ?? ""}
+        menu={menuItems}
+        status={statusBadge}
+        actions={
+          <>
+            <RecordAction slot="overflow">
+              <Assignee
+                size="md"
+                id={pickingListId}
+                value={assignee ?? ""}
+                table="pickingList"
+                isReadOnly={!permissions.can("update", "inventory")}
+              />
+            </RecordAction>
+            <RecordAction slot={status === "Draft" ? "primary" : "overflow"}>
+              <Button
+                type="button"
+                leftIcon={<LuCirclePlay />}
+                variant={status === "Draft" ? "primary" : "secondary"}
+                isDisabled={
+                  status !== "Draft" ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "inventory")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "In Progress"
+                }
+                onClick={() => submitStatus("In Progress")}
+              >
+                <Trans>Start</Trans>
+              </Button>
+            </RecordAction>
+            <RecordAction
+              slot={status === "In Progress" ? "primary" : "overflow"}
             >
-              <Trans>Start</Trans>
-            </Button>
-            <Button
-              type="button"
-              leftIcon={<LuCircleCheck />}
-              variant="secondary"
-              isDisabled={
-                status !== "In Progress" ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "Completed"
-              }
-              onClick={() => submitStatus("Completed")}
-            >
-              <Trans>Finish</Trans>
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={<LuCircleStop />}
-              isDisabled={
-                isClosed ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "Cancelled"
-              }
-              onClick={() => submitStatus("Cancelled")}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-          </HStack>
-        </HStack>
-      </div>
+              <Button
+                type="button"
+                leftIcon={<LuCircleCheck />}
+                variant="secondary"
+                isDisabled={
+                  status !== "In Progress" ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "inventory")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Completed"
+                }
+                onClick={() => submitStatus("Completed")}
+              >
+                <Trans>Finish</Trans>
+              </Button>
+            </RecordAction>
+            <RecordAction slot="overflow">
+              <Button
+                type="button"
+                variant="secondary"
+                leftIcon={<LuCircleStop />}
+                isDisabled={
+                  isClosed ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "inventory")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Cancelled"
+                }
+                onClick={() => submitStatus("Cancelled")}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+            </RecordAction>
+          </>
+        }
+      />
 
       {acknowledgeLines && (
         <Modal

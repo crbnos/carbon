@@ -151,6 +151,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />,
           // The accessor is the raw item id — export the readable id
           // the cell shows instead of a UUID.
@@ -171,6 +172,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuAlignJustify />
         }
       },
@@ -209,6 +211,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: itemReplenishmentSystems.map((type) => ({
@@ -684,7 +687,12 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuGroup />}
+                className="compact:hidden"
+                asChild
+              >
                 <Link to={path.to.itemPostingGroups}>
                   <Trans>Item Groups</Trans>
                 </Link>

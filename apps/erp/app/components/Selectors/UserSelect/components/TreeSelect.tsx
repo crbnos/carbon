@@ -182,7 +182,7 @@ const GroupRow = ({
           if (!expanded) prefetchGroup(group.id);
         }}
         className={cn(
-          "flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-2 hover:bg-muted/50 text-sm",
+          "flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-2 hover:bg-muted/50 text-sm compact:min-h-11",
           isFocused && "bg-muted/50",
           isSelected && "bg-accent",
           isDisabled && "opacity-50 pointer-events-none"
@@ -196,7 +196,7 @@ const GroupRow = ({
               e.stopPropagation();
               expanded ? onGroupCollapse(uid) : onGroupExpand(uid);
             }}
-            className="-m-1.5 flex items-center justify-center rounded-md p-1.5 hover:bg-muted pointer-events-auto"
+            className="-m-1.5 flex items-center justify-center rounded-md p-1.5 hover:bg-muted pointer-events-auto compact:relative compact:mr-1 compact:after:absolute compact:after:content-[''] compact:after:-inset-2.5"
           >
             <ExpandIcon isExpanded={expanded} />
           </button>

@@ -43,6 +43,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -51,6 +52,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
         header: t`Entity Type`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: dimensionEntityTypes.map((v) => ({
@@ -87,6 +89,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuShapes />
         }
       }

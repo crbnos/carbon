@@ -3,15 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, useCompact, VStack } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
 import { Outlet, useLoaderData, useNavigate } from "react-router";
+import { New } from "~/components";
 import { usePermissions } from "~/hooks";
 import { getFixedAssetClassesList, getFixedAssets } from "~/modules/accounting";
 import { FixedAssetsTable } from "~/modules/accounting/ui/FixedAssets";
@@ -68,8 +70,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function FixedAssetsRoute() {
   const { data, count, assetClasses } = useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
+  const isCompact = useCompact();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -78,7 +82,11 @@ export default function FixedAssetsRoute() {
         count={count}
         assetClasses={assetClasses}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.can("create", "accounting") &&
+          // Phones: Add becomes the app bar "+" like the other lists.
+          (isCompact ? (
+            <New label={t`Fixed Asset`} to={path.to.newFixedAsset} />
+          ) : (
             <Button
               leftIcon={<LuCirclePlus />}
               variant="primary"
@@ -86,7 +94,7 @@ export default function FixedAssetsRoute() {
             >
               Add Fixed Asset
             </Button>
-          )
+          ))
         }
       />
       <Outlet />

@@ -467,7 +467,7 @@ const PurchaseInvoiceLineForm = ({
             >
               <HStack
                 className={cn(
-                  "w-full justify-between items-start",
+                  "w-full justify-between items-start compact:flex-col compact:items-stretch compact:space-x-0",
                   type === "modal" && "pr-16"
                 )}
               >
@@ -527,7 +527,7 @@ const PurchaseInvoiceLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 compact:min-w-0 compact:overflow-x-auto compact:scroll-fade-x compact:px-4 compact:pb-2 compact:empty:hidden">
                   {!isEditing && (
                     <TabsList>
                       <TabsTrigger value="item">
@@ -582,7 +582,7 @@ const PurchaseInvoiceLineForm = ({
                         onTypeChange={onTypeChange}
                       />
 
-                      <FormControl className="col-span-2">
+                      <FormControl className="col-span-2 compact:col-span-full">
                         <FormLabel isOptional>
                           <Trans>Description</Trans>
                         </FormLabel>
@@ -827,7 +827,9 @@ const PurchaseInvoiceLineForm = ({
                         )}
                         <InputControlled
                           className={
-                            activeTab === "asset" ? "col-span-1" : "col-span-3"
+                            activeTab === "asset"
+                              ? "col-span-1"
+                              : "col-span-3 compact:col-span-full"
                           }
                           label={t`Description`}
                           name="description"

@@ -9,14 +9,18 @@ import {
   ResizableHandle,
   ResizablePanel,
   ScrollArea,
+  useCompact,
   VStack
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { useMemo } from "react";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
+import { useSetAppBarOverride } from "~/components/Layout/Mobile";
+import { useUrlParams } from "~/hooks";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
 import { resolveLocationId } from "~/modules/shared/location.server";
@@ -92,6 +96,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ItemInventoryRoute() {
   const { item } = useLoaderData<typeof loader>();
+  const isCompact = useCompact();
+  const [params] = useUrlParams();
+  const itemReadableId = item.readableIdWithRevision ?? item.readableId;
+  const backTo = `${path.to.inventory}?${params.toString()}`;
+
+  // Phones show this detail as its own screen: the item ID is the app bar
+  // title and Back returns to the list (the panel's ✕ and ID are hidden).
+  const appBarOverride = useMemo(
+    () =>
+      isCompact
+        ? {
+            kind: "pushed" as const,
+            title: itemReadableId,
+            backTo
+          }
+        : null,
+    [isCompact, itemReadableId, backTo]
+  );
+  useSetAppBarOverride(appBarOverride);
 
   return (
     <>
@@ -101,14 +124,15 @@ export default function ItemInventoryRoute() {
         maxSize={70}
         minSize={25}
         className="bg-muted"
+        compactFocus
       >
         <ScrollArea className="h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
           <InventoryItemHeader
-            itemReadableId={item.readableIdWithRevision ?? item.readableId}
+            itemReadableId={itemReadableId}
             // @ts-expect-error
             itemType={item.type}
           />
-          <VStack className="p-2">
+          <VStack className="p-2 compact:p-4">
             <Outlet />
           </VStack>
         </ScrollArea>

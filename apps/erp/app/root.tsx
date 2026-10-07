@@ -18,6 +18,7 @@ import { requestMiddleware } from "@carbon/logger/middleware.server";
 import { timedMiddleware } from "@carbon/logger/tracing.server";
 import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
+  CompactProvider,
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
@@ -27,6 +28,7 @@ import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
+  getCompactHint,
   getPreferenceHeaders,
   isSearchParamOnlyNavigation,
   modeValidator,
@@ -168,6 +170,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         XERO_CLIENT_ID
       },
       ...getMode(request),
+      compact: getCompactHint(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
       theme: getTheme(request)
@@ -252,10 +255,16 @@ export function Document({
       lang={lang}
       className={`${mode} h-full overflow-x-hidden`}
       style={themeStyle}
+      // Opts the ERP into the `compact:` (phone) variant; MES does not set it.
+      // CompactProvider below is the JS half of the same opt-in.
+      data-compact-ui=""
     >
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         {/* Before any paint: records the OS color scheme for a `system` user
             and reloads once if the server rendered the wrong mode. */}
         <script
@@ -327,24 +336,26 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={catalog}>
-          <I18nProvider locale={prefs.locale}>
-            <TooltipProvider>
-              <MotionConfig reducedMotion="user">
-                <Document
-                  mode={mode}
-                  theme={theme}
-                  lang={appLanguage}
-                  env={env}
-                >
-                  <Outlet />
-                  {/* Renders nothing outside development; the package strips itself. */}
-                  <ReactQueryDevtools buttonPosition="bottom-right" />
-                </Document>
-              </MotionConfig>
-            </TooltipProvider>
-          </I18nProvider>
-        </LocaleProvider>
+        <CompactProvider initialCompact={loaderData?.compact ?? false}>
+          <LocaleProvider locale={appLanguage} catalog={catalog}>
+            <I18nProvider locale={prefs.locale}>
+              <TooltipProvider>
+                <MotionConfig reducedMotion="user">
+                  <Document
+                    mode={mode}
+                    theme={theme}
+                    lang={appLanguage}
+                    env={env}
+                  >
+                    <Outlet />
+                    {/* Renders nothing outside development; the package strips itself. */}
+                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                  </Document>
+                </MotionConfig>
+              </TooltipProvider>
+            </I18nProvider>
+          </LocaleProvider>
+        </CompactProvider>
       </OperatingSystemContextProvider>
     </QueryClientProvider>
   );

@@ -35,6 +35,7 @@ const InventoryItemHeader = ({
           <Button
             isIcon
             variant="ghost"
+            className="compact:hidden"
             onClick={() =>
               navigate(`${path.to.inventory}?${params.toString()}`)
             }
@@ -42,8 +43,11 @@ const InventoryItemHeader = ({
             <LuX className="w-4 h-4" />
           </Button>
           <span className="flex items-center font-semibold text-center">
-            {itemReadableId}{" "}
-            <Link to={getLinkToItemDetails(itemType, itemId)} className="ml-2">
+            <span className="compact:hidden">{itemReadableId}</span>{" "}
+            <Link
+              to={getLinkToItemDetails(itemType, itemId)}
+              className="ml-2 compact:-mx-1.5 compact:-my-3.5 compact:p-3.5"
+            >
               <LuExternalLink />
             </Link>
           </span>

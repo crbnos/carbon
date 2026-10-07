@@ -98,7 +98,7 @@ export default function PurchasingPlanningRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}

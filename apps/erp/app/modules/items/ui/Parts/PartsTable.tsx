@@ -151,6 +151,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />,
           // The accessor is the raw item id — export the bare part number
           // (no revision suffix; the Revision column carries that) so the
@@ -184,6 +185,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuAlignJustify />
         }
       },
@@ -226,6 +228,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: itemReplenishmentSystems.map((type) => ({
@@ -726,7 +729,12 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuGroup />}
+                className="compact:hidden"
+                asChild
+              >
                 <Link to={path.to.itemPostingGroups}>
                   <Trans>Item Groups</Trans>
                 </Link>

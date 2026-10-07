@@ -134,6 +134,7 @@ const PeopleTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUsers />
           }
         },
@@ -159,6 +160,7 @@ const PeopleTable = memo(
           header: t`Email`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuMail />
           }
         },
@@ -228,6 +230,7 @@ const PeopleTable = memo(
             return <Badge variant="secondary">{t`Inactive`}</Badge>;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [

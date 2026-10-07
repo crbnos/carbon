@@ -7,7 +7,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getApprovalRulesForApprover } from "@carbon/ee/approvals.server";
 import {
-  Heading,
   HStack,
   Tabs,
   TabsContent,
@@ -16,7 +15,7 @@ import {
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type {
   LoaderFunctionArgs,
@@ -24,6 +23,7 @@ import type {
 } from "react-router";
 import { Outlet, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import { getCostCentersTree } from "~/modules/accounting";
 import {
   CostCentersListView,
@@ -96,7 +96,9 @@ export default function Route() {
   return (
     <Tabs defaultValue="tree" className="w-full">
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-        <Heading size="h3">Cost Centers</Heading>
+        <SettingsPageHeading>
+          <Trans>Cost Centers</Trans>
+        </SettingsPageHeading>
         <HStack>
           <TabsList>
             <TabsTrigger value="tree">Tree View</TabsTrigger>

@@ -38,6 +38,10 @@ import {
   Supplier,
   TextArea
 } from "~/components/Form";
+import {
+  RecordAction,
+  RecordHeroTarget
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
@@ -102,6 +106,24 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
     value: d
   }));
 
+  const statusNode = (
+    <>
+      <Enumerable value={typeLabel} />
+      <MemoStatus status={status} />
+    </>
+  );
+  const menuItems =
+    status === "Draft" && canDelete ? (
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete</Trans>
+      </DropdownMenuItem>
+    ) : undefined;
+
   return (
     <>
       <ValidatedForm
@@ -111,54 +133,43 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
         isDisabled={isEditing && isLocked}
         className="w-full"
       >
-        <Card>
+        {isEditing && <RecordHeroTarget bleed />}
+        <Card className={isEditing ? "compact:mt-4" : undefined}>
           {isEditing ? (
             <DocumentHeader
               title={initialValues.memoId ?? ""}
-              status={
-                <>
-                  <Enumerable value={typeLabel} />
-                  <MemoStatus status={status} />
-                </>
-              }
-              menuItems={
-                status === "Draft" && canDelete ? (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.delete}
-                    destructive
-                    onClick={deleteModal.onOpen}
-                  >
-                    <DropdownMenuIcon icon={<LuTrash />} />
-                    <Trans>Delete</Trans>
-                  </DropdownMenuItem>
-                ) : undefined
-              }
+              status={statusNode}
+              menuItems={menuItems}
               actions={
                 status === "Draft" ? (
-                  <Button
-                    leftIcon={<LuCheckCheck />}
-                    variant="primary"
-                    isLoading={post.state !== "idle"}
-                    isDisabled={!canMutate}
-                    onClick={() =>
-                      post.submit(null, {
-                        method: "post",
-                        action: path.to.memoPost(initialValues.id!)
-                      })
-                    }
-                  >
-                    <Trans>Post</Trans>
-                  </Button>
+                  <RecordAction slot="primary">
+                    <Button
+                      leftIcon={<LuCheckCheck />}
+                      variant="primary"
+                      isLoading={post.state !== "idle"}
+                      isDisabled={!canMutate}
+                      onClick={() =>
+                        post.submit(null, {
+                          method: "post",
+                          action: path.to.memoPost(initialValues.id!)
+                        })
+                      }
+                    >
+                      <Trans>Post</Trans>
+                    </Button>
+                  </RecordAction>
                 ) : status === "Posted" ? (
-                  <Button
-                    leftIcon={<LuTicketX />}
-                    variant="destructive"
-                    type="button"
-                    isDisabled={!canMutate}
-                    onClick={voidModal.onOpen}
-                  >
-                    <Trans>Void</Trans>
-                  </Button>
+                  <RecordAction slot="primary">
+                    <Button
+                      leftIcon={<LuTicketX />}
+                      variant="destructive"
+                      type="button"
+                      isDisabled={!canMutate}
+                      onClick={voidModal.onOpen}
+                    >
+                      <Trans>Void</Trans>
+                    </Button>
+                  </RecordAction>
                 ) : undefined
               }
             />
@@ -242,7 +253,7 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
               </div>
             </VStack>
           </CardContent>
-          <CardFooter>
+          <CardFooter sticky={!isEditing}>
             <Submit
               isDisabled={
                 isEditing

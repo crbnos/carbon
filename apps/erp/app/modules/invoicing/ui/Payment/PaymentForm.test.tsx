@@ -65,6 +65,10 @@ vi.mock("@carbon/react", () => {
     useMount: () => undefined
   };
 });
+vi.mock("~/components/Layout/RecordHeader", () => ({
+  RecordAction: ({ children }: { children?: ReactNode }) => children,
+  RecordHeroTarget: () => null
+}));
 vi.mock("@carbon/form", () => ({
   ValidatedForm: ({
     children,

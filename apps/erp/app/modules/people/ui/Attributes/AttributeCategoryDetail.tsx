@@ -32,6 +32,7 @@ import { LuGripVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewPlacementContext } from "~/components/New";
 import { useUrlParams } from "~/hooks";
 
 import { path } from "~/utils/path";
@@ -218,7 +219,10 @@ const AttributeCategoryDetail = ({
             )}
           </DrawerBody>
           <DrawerFooter>
-            <New to={`new?${params.toString()}`} label={t`Attribute`} />
+            {/* Inline on phones too: the app bar sits under this drawer. */}
+            <NewPlacementContext.Provider value="inline">
+              <New to={`new?${params.toString()}`} label={t`Attribute`} />
+            </NewPlacementContext.Provider>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

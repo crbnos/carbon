@@ -87,7 +87,7 @@ const ItemManufacturingForm = ({
                 termId="item-configured"
                 bordered
                 description={t`Part is configured for manufacturing`}
-                className="col-span-3"
+                className="col-span-3 compact:col-span-1"
               />
             )}
             <CustomFormFields table="partReplenishment" />

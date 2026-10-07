@@ -6,16 +6,9 @@ import type { Result } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
@@ -24,7 +17,6 @@ import {
   LuBarcode,
   LuCircleCheck,
   LuCirclePlay,
-  LuEllipsisVertical,
   LuLoaderCircle,
   LuTrash
 } from "react-icons/lu";
@@ -32,6 +24,7 @@ import { useFetcher, useParams } from "react-router";
 import { PrintButton } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { useAuditLog } from "~/components/AuditLog";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import {
@@ -107,145 +100,148 @@ const StockTransferHeader = () => {
     (line) => !!line.trackedEntityId
   );
 
+  const statusBadge = (
+    <StockTransferStatus status={routeData?.stockTransfer?.status} />
+  );
+
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        disabled={
+          ["Draft"].includes(routeData?.stockTransfer?.status ?? "") ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("delete", "inventory")
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            { status: "Draft" },
+            {
+              method: "post",
+              action: path.to.stockTransferStatus(id)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          !permissions.can("delete", "inventory") ||
+          !permissions.is("employee") ||
+          !["Released", "Draft"].includes(status) ||
+          hasPickedItems ||
+          isLocked
+        }
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Stock Transfer</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{routeData?.stockTransfer?.stockTransferId}</span>
-            </Heading>
-
-            <Copy text={routeData?.stockTransfer?.stockTransferId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {auditLogTrigger}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={
-                    ["Draft"].includes(
-                      routeData?.stockTransfer?.status ?? ""
-                    ) ||
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("delete", "inventory")
-                  }
-                  onClick={() => {
-                    statusFetcher.submit(
-                      { status: "Draft" },
-                      {
-                        method: "post",
-                        action: path.to.stockTransferStatus(id)
-                      }
-                    );
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                  <Trans>Reopen</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    !permissions.can("delete", "inventory") ||
-                    !permissions.is("employee") ||
-                    !["Released", "Draft"].includes(status) ||
-                    hasPickedItems ||
-                    isLocked
-                  }
-                  destructive
-                  onClick={deleteModal.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Stock Transfer</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <StockTransferStatus status={routeData?.stockTransfer?.status} />
-          </HStack>
-          <HStack>
-            <Assignee
-              size="md"
-              id={id}
-              value={assignee ?? ""}
-              table="stockTransfer"
-              isReadOnly={!permissions.can("update", "inventory")}
-            />
-            {hasTrackedLines && (
-              <PrintButton
-                sourceDocument="StockTransfer"
-                sourceDocumentId={id}
-                locationId={routeData?.stockTransfer?.locationId ?? undefined}
-                context="inventory"
-                fileRoutes={{
-                  pdf: path.to.file.stockTransferLabelsPdf,
-                  zpl: path.to.file.stockTransferLabelsZpl
-                }}
+      <RecordHeader
+        title={routeData?.stockTransfer?.stockTransferId}
+        copyValue={routeData?.stockTransfer?.stockTransferId ?? ""}
+        menu={menuItems}
+        status={statusBadge}
+        actions={
+          <>
+            <RecordAction slot="overflow">
+              <Assignee
+                size="md"
+                id={id}
+                value={assignee ?? ""}
+                table="stockTransfer"
+                isReadOnly={!permissions.can("update", "inventory")}
               />
+            </RecordAction>
+            {hasTrackedLines && (
+              <RecordAction slot="overflow">
+                <PrintButton
+                  sourceDocument="StockTransfer"
+                  sourceDocumentId={id}
+                  locationId={routeData?.stockTransfer?.locationId ?? undefined}
+                  context="inventory"
+                  fileRoutes={{
+                    pdf: path.to.file.stockTransferLabelsPdf,
+                    zpl: path.to.file.stockTransferLabelsZpl
+                  }}
+                />
+              </RecordAction>
             )}
-            <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
-              <a
-                target="_blank"
-                href={path.to.file.stockTransfer(id)}
-                rel="noreferrer"
+            <RecordAction slot="secondary">
+              <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
+                <a
+                  target="_blank"
+                  href={path.to.file.stockTransfer(id)}
+                  rel="noreferrer"
+                >
+                  <Trans>Pick List</Trans>
+                </a>
+              </Button>
+            </RecordAction>
+            <RecordAction slot={status === "Draft" ? "primary" : "overflow"}>
+              <Button
+                type="button"
+                leftIcon={<LuCirclePlay />}
+                variant={status === "Draft" ? "primary" : "secondary"}
+                isDisabled={
+                  status !== "Draft" ||
+                  releaseFetcher.state !== "idle" ||
+                  !permissions.can("update", "inventory")
+                }
+                isLoading={releaseFetcher.state !== "idle"}
+                onClick={() => {
+                  const fd = new FormData();
+                  fd.set("status", "Released");
+                  releaseRules.submit(fd);
+                }}
               >
-                <Trans>Pick List</Trans>
-              </a>
-            </Button>
-            <Button
-              type="button"
-              leftIcon={<LuCirclePlay />}
-              variant={status === "Draft" ? "primary" : "secondary"}
-              isDisabled={
-                status !== "Draft" ||
-                releaseFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={releaseFetcher.state !== "idle"}
-              onClick={() => {
-                const fd = new FormData();
-                fd.set("status", "Released");
-                releaseRules.submit(fd);
-              }}
-            >
-              <Trans>Release</Trans>
-            </Button>
+                <Trans>Release</Trans>
+              </Button>
+            </RecordAction>
             <releaseRules.ViolationModal />
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fd = new FormData();
-                fd.set("status", "Completed");
-                completeRules.submit(fd);
-              }}
-            >
-              <Button
-                type="submit"
-                variant={canComplete && !isCompleted ? "primary" : "secondary"}
-                isDisabled={
-                  !canComplete ||
-                  isCompleted ||
-                  !permissions.is("employee") ||
-                  completeFetcher.state !== "idle"
-                }
-                leftIcon={<LuCircleCheck />}
-                isLoading={completeFetcher.state !== "idle"}
+            <RecordAction slot={status === "Draft" ? "overflow" : "primary"}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData();
+                  fd.set("status", "Completed");
+                  completeRules.submit(fd);
+                }}
               >
-                <Trans>Complete</Trans>
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  variant={
+                    canComplete && !isCompleted ? "primary" : "secondary"
+                  }
+                  isDisabled={
+                    !canComplete ||
+                    isCompleted ||
+                    !permissions.is("employee") ||
+                    completeFetcher.state !== "idle"
+                  }
+                  leftIcon={<LuCircleCheck />}
+                  isLoading={completeFetcher.state !== "idle"}
+                >
+                  <Trans>Complete</Trans>
+                </Button>
+              </form>
+            </RecordAction>
             <completeRules.ViolationModal />
-          </HStack>
-        </HStack>
-      </div>
+          </>
+        }
+      />
 
       {postModal.isOpen && (
         <StockTransferCompleteModal onClose={postModal.onClose} />

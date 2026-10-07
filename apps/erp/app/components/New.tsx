@@ -3,12 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ButtonProps } from "@carbon/react";
-import { Button } from "@carbon/react";
+import { Button, IconButton, useCompact } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useSyncExternalStore } from "react";
-import { LuCirclePlus } from "react-icons/lu";
+import type { ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useSyncExternalStore
+} from "react";
+import { LuCirclePlus, LuPlus } from "react-icons/lu";
 import { Link } from "react-router";
 import { SHORTCUTS } from "~/shortcuts";
+import { AppBarActions } from "./Layout/Mobile/ChromeSlots";
+
+/**
+ * On phones a New button moves to the app bar as "+" unless the
+ * caller renders it inline, e.g. as an empty state's primary action.
+ */
+export const NewPlacementContext = createContext<"appBar" | "inline">("appBar");
 
 // `n` means "the New action" only while a screen shows exactly one New
 // button. With two visible Add buttons (e.g. Chart of Accounts renders
@@ -24,6 +37,58 @@ const subscribe = (listener: () => void) => {
 };
 const getCount = () => mountedCount;
 const getServerCount = () => 1;
+
+type NewActionProps = {
+  /** Accessible name of the phone "+". */
+  label: string;
+  isDisabled?: boolean;
+  /** The desktop control, rendered unchanged everywhere but the app bar. */
+  children: ReactNode;
+} & ({ to: string; onClick?: never } | { onClick: () => void; to?: never });
+
+/**
+ * A page's create action. On phones it becomes the app bar "+" (a link to
+ * `to`, or a button calling `onClick`) unless an ancestor places it inline,
+ * e.g. as an empty state's primary action. Elsewhere it renders `children`.
+ */
+export function NewAction({
+  label,
+  isDisabled,
+  to,
+  onClick,
+  children
+}: NewActionProps) {
+  const isCompact = useCompact();
+  const placement = useContext(NewPlacementContext);
+  if (!isCompact || placement !== "appBar") return <>{children}</>;
+
+  const icon = <LuPlus className="size-6" />;
+  return (
+    <AppBarActions>
+      {to ? (
+        <Button
+          asChild
+          isIcon
+          variant="ghost"
+          size="lg"
+          aria-label={label}
+          isDisabled={isDisabled}
+        >
+          <Link to={to}>{icon}</Link>
+        </Button>
+      ) : (
+        <IconButton
+          icon={icon}
+          variant="ghost"
+          size="lg"
+          aria-label={label}
+          isDisabled={isDisabled}
+          onClick={onClick}
+        />
+      )}
+    </AppBarActions>
+  );
+}
 
 type NewProps = {
   label?: string;
@@ -48,16 +113,19 @@ const New = ({ label, to, variant = "primary" }: NewProps) => {
   }, []);
   const isSoleNew =
     useSyncExternalStore(subscribe, getCount, getServerCount) <= 1;
+  const text = label ? `${t`Add`} ${label}` : t`Add`;
 
   return (
-    <Button
-      asChild
-      leftIcon={<LuCirclePlus />}
-      variant={variant}
-      shortcut={isSoleNew ? SHORTCUTS.newRecord : undefined}
-    >
-      <Link to={to}>{label ? `${t`Add`} ${label}` : t`Add`}</Link>
-    </Button>
+    <NewAction label={text} to={to}>
+      <Button
+        asChild
+        leftIcon={<LuCirclePlus />}
+        variant={variant}
+        shortcut={isSoleNew ? SHORTCUTS.newRecord : undefined}
+      >
+        <Link to={to}>{text}</Link>
+      </Button>
+    </NewAction>
   );
 };
 

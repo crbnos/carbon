@@ -19,14 +19,15 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger
+  TabsTrigger,
+  useCompact
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { LuDownload } from "react-icons/lu";
+import { LuDownload, LuEllipsis } from "react-icons/lu";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
@@ -34,6 +35,7 @@ import type {
 import { Outlet, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
+import { AppBarActions } from "~/components/Layout/Mobile";
 import { getDepartmentsTree } from "~/modules/people";
 import {
   DepartmentsListView,
@@ -78,6 +80,7 @@ export default function Route() {
   const { departments } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
+  const isCompact = useCompact();
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -109,42 +112,75 @@ export default function Route() {
     [navigate]
   );
 
+  const actionsMenuContent = (
+    <DropdownMenuContent align="end">
+      <DropdownMenuLabel>
+        <Trans>Bulk Import</Trans>
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onClick={() => setImportOpen(true)}>
+        <DropdownMenuIcon icon={<LuDownload />} />
+        {/* Reuses TableHeader's parameterized msgid rather than
+            introducing a second one that every catalog would have to
+            translate again. */}
+        {t`Import ${label} CSV`}
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
+
+  // Phones: List/Tree is a display-mode toggle, so it stays a segmented
+  // control instead of the compact underline tab row.
+  const segmentedTrigger =
+    "compact:hit-area compact:min-h-9 compact:rounded-md compact:border-b-0 compact:px-3 compact:data-[state=active]:bg-card compact:data-[state=active]:shadow-button-base";
+
   return (
     <Tabs defaultValue="tree" className="w-full">
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-        <Heading size="h3">Departments</Heading>
+        {/* The app bar already names the section on phones. */}
+        <Heading size="h3" className="compact:hidden">
+          <Trans>Departments</Trans>
+        </Heading>
         <HStack>
-          <TabsList>
-            <TabsTrigger value="tree">Tree View</TabsTrigger>
-            <TabsTrigger value="list">List View</TabsTrigger>
+          <TabsList className="compact:w-auto compact:gap-0 compact:rounded-lg compact:border compact:bg-muted compact:p-1">
+            <TabsTrigger value="tree" className={segmentedTrigger}>
+              <Trans>Tree View</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="list" className={segmentedTrigger}>
+              <Trans>List View</Trans>
+            </TabsTrigger>
           </TabsList>
           <New
             label={t`Department`}
             to={path.to.newDepartment}
             variant="primary"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`Table actions`}
-                variant="secondary"
-                icon={<BsThreeDotsVertical />}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                <Trans>Bulk Import</Trans>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setImportOpen(true)}>
-                <DropdownMenuIcon icon={<LuDownload />} />
-                {/* Reuses TableHeader's parameterized msgid rather than
-                    introducing a second one that every catalog would have to
-                    translate again. */}
-                {t`Import ${label} CSV`}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isCompact ? (
+            // Phones: the content ⋮ moves to the app bar ⋯.
+            <AppBarActions>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    aria-label={t`Table actions`}
+                    variant="ghost"
+                    size="lg"
+                    icon={<LuEllipsis />}
+                  />
+                </DropdownMenuTrigger>
+                {actionsMenuContent}
+              </DropdownMenu>
+            </AppBarActions>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label={t`Table actions`}
+                  variant="secondary"
+                  icon={<BsThreeDotsVertical />}
+                />
+              </DropdownMenuTrigger>
+              {actionsMenuContent}
+            </DropdownMenu>
+          )}
         </HStack>
       </div>
 

@@ -58,7 +58,7 @@ const InventoryCountsTable = memo(
               {row.original.inventoryCountId}
             </Hyperlink>
           ),
-          meta: { icon: <LuBookMarked /> }
+          meta: { mobile: "P1", icon: <LuBookMarked /> }
         },
         {
           accessorKey: "locationId",
@@ -67,6 +67,7 @@ const InventoryCountsTable = memo(
             locations.find((l) => l.id === row.original.locationId)?.name ??
             null,
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: locations.map((location) => ({
@@ -88,6 +89,7 @@ const InventoryCountsTable = memo(
             return <InventoryCountStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: Constants.public.Enums.inventoryCountStatus.map(

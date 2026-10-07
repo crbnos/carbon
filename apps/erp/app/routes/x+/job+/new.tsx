@@ -10,6 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { insertJob, jobValidator } from "~/modules/production";
@@ -135,8 +136,8 @@ export default function JobNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <JobForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

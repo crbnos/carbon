@@ -1504,7 +1504,10 @@ function StepsForm({
                 <Input name="name" label={t`Name`} />
               </div>
 
-              <VStack spacing={2} className="w-full col-span-2">
+              <VStack
+                spacing={2}
+                className="w-full col-span-2 compact:col-span-full"
+              >
                 <Label>
                   <Trans>Description</Trans>
                 </Label>
@@ -2154,7 +2157,10 @@ function StepsListItem({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 compact:col-span-full"
+            >
               <Label>
                 <Trans>Description</Trans>
               </Label>
@@ -3108,7 +3114,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 compact:col-span-full"
         />
 
         <Select

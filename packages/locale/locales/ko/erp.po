@@ -224,6 +224,7 @@ msgid "{0} scrapped"
 msgstr "{0} 폐기됨"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0}개 선택됨"
 
@@ -1448,6 +1449,9 @@ msgstr "결정에 대한 메모를 추가하세요..."
 msgid "Add Approval Requirement"
 msgstr "승인 요구사항 추가"
 
+msgid "Add Asset Class"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
@@ -1504,6 +1508,9 @@ msgstr "헤더 추가"
 
 msgid "Add Item"
 msgstr "품목 추가"
+
+msgid "Add Journal Entry"
+msgstr ""
 
 msgid "Add Line"
 msgstr "라인 추가"
@@ -1620,6 +1627,9 @@ msgstr "예비 부품 추가"
 msgid "Add station"
 msgstr "스테이션 추가"
 
+msgid "Add step"
+msgstr ""
+
 msgid "Add Step"
 msgstr "단계 추가"
 
@@ -1708,6 +1718,9 @@ msgstr "고급"
 
 msgid "Affected item not found."
 msgstr "영향받는 항목을 찾을 수 없습니다."
+
+msgid "Affected Items"
+msgstr ""
 
 msgid "After"
 msgstr "이후"
@@ -2743,6 +2756,9 @@ msgstr "조립품"
 msgid "Assembly"
 msgstr "조립"
 
+msgid "assembly instruction"
+msgstr ""
+
 msgid "Assembly instruction"
 msgstr "조립 지시사항"
 
@@ -2832,6 +2848,9 @@ msgstr "이 보관 단위를 작업장(라인사이드)에 할당합니다"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "라인사이드 자재를 위해 이 보관 단위를 작업장에 할당하므로 작업자들이 생산 화면에서 볼 수 있습니다. 부모 단위에 설정되면 상속됩니다."
+
+msgid "Associations"
+msgstr ""
 
 msgid "Assumptions"
 msgstr "가정사항"
@@ -3233,6 +3252,9 @@ msgstr "{0}에 의해 차단됨"
 msgid "Blocking sync"
 msgstr "동기화 차단"
 
+msgid "Blocks"
+msgstr ""
+
 msgid "Blocks Machine"
 msgstr "기계 차단"
 
@@ -3388,6 +3410,9 @@ msgstr "위치별"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
+
+msgid "By you · edited <0/>"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CAD 모델"
@@ -3829,6 +3854,9 @@ msgstr "시리얼 번호를 선택하십시오"
 msgid "choose a supplier for {0} on the job"
 msgstr "작업 지시의 {0}에 대한 공급업체를 선택하세요"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
 
@@ -3867,6 +3895,9 @@ msgstr "지우기"
 
 msgid "Clear due date"
 msgstr "마감일 지우기"
+
+msgid "Clear filters"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "필터 지우기"
@@ -4505,6 +4536,9 @@ msgstr "링크가 클립보드에 복사됨"
 msgid "Copied setup prompt to your clipboard"
 msgstr "셋업 프롬프트를 클립보드에 복사했습니다"
 
+msgid "Copied to clipboard"
+msgstr ""
+
 msgid "Copied!"
 msgstr "복사되었습니다!"
 
@@ -4892,8 +4926,7 @@ msgstr "배치"
 msgid "Create"
 msgstr "생성"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} 생성"
 
@@ -5902,11 +5935,17 @@ msgstr "휴일 삭제"
 msgid "Delete Inspection Plan"
 msgstr "검사 계획 삭제"
 
+msgid "Delete Instruction"
+msgstr ""
+
 msgid "Delete Issue"
 msgstr "이슈 삭제"
 
 msgid "Delete Item Group"
 msgstr "품목 그룹 삭제"
+
+msgid "Delete Job"
+msgstr ""
 
 msgid "Delete Journal Entry"
 msgstr "분개장 항목 삭제"
@@ -6220,6 +6259,9 @@ msgstr "감가상각 시작일"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "이 품목의 보존 기간을 위의 Days 필드를 무시하고 구성 요소의 가장 짧은 보존 기간에서 도출합니다."
+
+msgid "Descending"
+msgstr ""
 
 msgid "Description"
 msgstr "설명"
@@ -7090,6 +7132,9 @@ msgstr "웹훅 편집"
 msgid "Edit Work Center"
 msgstr "작업장 편집"
 
+msgid "edited <0/>"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "제거됨"
 
@@ -7719,9 +7764,6 @@ msgstr "유통기한은 선택된 공법이 시작될 때 시작됩니다."
 msgid "Expiry trace"
 msgstr "유통기한 추적"
 
-msgid "Explorer"
-msgstr "탐색기"
-
 msgid "Export"
 msgstr "내보내기"
 
@@ -8243,8 +8285,17 @@ msgstr "실행을 채움"
 msgid "Filter"
 msgstr "필터"
 
+msgid "Filter & sort"
+msgstr ""
+
+msgid "Filter and sort"
+msgstr ""
+
 msgid "Filter by…"
 msgstr "필터링…"
+
+msgid "Filters"
+msgstr ""
 
 msgid "Finalize"
 msgstr "확정"
@@ -8820,6 +8871,9 @@ msgstr "일정을 짤 수 없는 공정이 있습니다"
 msgid "Headers"
 msgstr "헤더"
 
+msgid "Heading {level}"
+msgstr ""
+
 msgid "healthy"
 msgstr "정상"
 
@@ -8885,6 +8939,9 @@ msgstr "휴일 이름"
 
 msgid "Holidays"
 msgstr "휴일"
+
+msgid "Home"
+msgstr ""
 
 msgid "Home Phone"
 msgstr "자택 전화번호"
@@ -10309,6 +10366,9 @@ msgstr "목록 파라미터"
 msgid "List view"
 msgstr "목록 보기"
 
+msgid "List View"
+msgstr ""
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -10322,6 +10382,9 @@ msgstr "실시간 새로고침"
 
 msgid "Load"
 msgstr "부하"
+
+msgid "Load more"
+msgstr ""
 
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
@@ -10519,6 +10582,9 @@ msgstr "MACRS 자산 분류"
 msgid "Magic link"
 msgstr "매직 링크"
 
+msgid "Main"
+msgstr ""
+
 msgid "Main build (after its last step)"
 msgstr "메인 빌드 (마지막 단계 후)"
 
@@ -10596,6 +10662,10 @@ msgstr "주문 생산"
 
 msgid "Make tracked entities available again"
 msgstr "추적되는 항목을 다시 가용하게 합니다"
+
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr ""
 
 msgid "Makes this document active again."
 msgstr "이 문서를 다시 활성 상태로 만듭니다."
@@ -11687,6 +11757,9 @@ msgstr "{0} 동기화 작업 없음"
 msgid "No {0} yet"
 msgstr "아직 {0}이(가) 없습니다"
 
+msgid "No {title} yet"
+msgstr ""
+
 msgid "No abilities added"
 msgstr "추가된 역량이 없습니다"
 
@@ -12365,6 +12438,9 @@ msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 msgid "Nothing here matches your search and filters."
 msgstr "검색 및 필터와 일치하는 항목이 없습니다."
 
+msgid "Nothing here yet"
+msgstr ""
+
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
@@ -12685,9 +12761,6 @@ msgstr "미결 작업 지시"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
-
-msgid "Open navigation"
-msgstr "탐색 열기"
 
 msgid "Open payables by supplier and age"
 msgstr "공급업체 및 기간별 미결 매입채무"
@@ -13049,6 +13122,9 @@ msgstr "{label}의 유효기한을 재정의합니다."
 msgid "Overtime"
 msgstr "초과근무"
 
+msgid "Overview"
+msgstr ""
+
 msgid "Overwrite Existing"
 msgstr "기존 항목 덮어쓰기"
 
@@ -13211,6 +13287,9 @@ msgstr "자격 증명 공급자가 메타데이터 URL을 게시하지 않는 �
 
 msgid "Path"
 msgstr "경로"
+
+msgid "Pause"
+msgstr ""
 
 msgid "Pay"
 msgstr "지불"
@@ -13707,6 +13786,9 @@ msgstr "현재 주"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "모든 페이지에서 ? 를 누르면 이 목록이 열립니다. 입력 필드에 입력 중일 때는 단축키가 작동하지 않습니다."
 
+msgid "Press '/' for commands"
+msgstr ""
+
 msgid "Prev"
 msgstr "이전"
 
@@ -14090,6 +14172,9 @@ msgstr "재고 사용"
 msgid "Pull, map, and load your data"
 msgstr "데이터를 가져와서 매핑하고 로드하세요"
 
+msgid "Purchase"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP 기반 구매 및 제조"
 
@@ -14384,6 +14469,9 @@ msgstr "분기별"
 msgid "Question"
 msgstr "질문"
 
+msgid "Questions"
+msgstr ""
+
 msgid "Queued"
 msgstr "대기열"
 
@@ -14509,6 +14597,9 @@ msgstr "원자재"
 
 msgid "Raw Materials (default)"
 msgstr "원자재 (기본값)"
+
+msgid "Re-convert Model"
+msgstr ""
 
 msgid "Re-date to first open day"
 msgstr "첫 개설 날짜로 다시 설정"
@@ -15316,6 +15407,9 @@ msgstr "결과"
 msgid "Results per page"
 msgstr "페이지당 결과 수"
 
+msgid "Resume"
+msgstr ""
+
 msgid "Resume Receiving"
 msgstr "수령 재개"
 
@@ -15427,11 +15521,17 @@ msgstr "역청구 판매세"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "역청구 판매세 (기본값)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "관련 전표를 역분개합니다."
 
 msgid "Reversed"
 msgstr "역분개됨"
+
+msgid "Reversing Entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "복원"
@@ -15882,6 +15982,9 @@ msgstr "담당자 저장"
 msgid "Save dimension settings"
 msgstr "차원 설정 저장"
 
+msgid "Save Draft"
+msgstr ""
+
 msgid "Save Method"
 msgstr "저장 방법"
 
@@ -15902,6 +16005,9 @@ msgstr "저장됨"
 
 msgid "Saved view"
 msgstr "저장된 보기"
+
+msgid "Saved views"
+msgstr ""
 
 msgid "Saved Views"
 msgstr "저장된 보기"
@@ -16050,6 +16156,9 @@ msgstr "검색"
 msgid "Search {gaugeTypeName}..."
 msgstr "검색 {gaugeTypeName}..."
 
+msgid "Search {title}"
+msgstr ""
+
 msgid "Search accounts"
 msgstr "계정 검색"
 
@@ -16153,9 +16262,6 @@ msgid "Secret copied to clipboard"
 msgstr "시크릿이 클립보드에 복사되었습니다"
 
 msgid "Section"
-msgstr "섹션"
-
-msgid "Sections"
 msgstr "섹션"
 
 msgid "Secure your account with 2FA"
@@ -16363,6 +16469,9 @@ msgstr "수량 선택"
 msgid "Select Reason"
 msgstr "사유 선택"
 
+msgid "Select row"
+msgstr ""
+
 msgid "Select Row"
 msgstr "행 선택"
 
@@ -16420,6 +16529,9 @@ msgstr "셀프서비스"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "docs.carbon.ms에서 셀프서비스 참고자료 확인"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Send"
 msgstr "전송"
@@ -16861,6 +16973,9 @@ msgstr "{0} 표시"
 msgid "Show {0} more"
 msgstr "{0}개 더 표시"
 
+msgid "Show {count} results"
+msgstr ""
+
 msgid "Show {label}"
 msgstr "{label} 표시"
 
@@ -16928,6 +17043,9 @@ msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{0}개 표시 (총 {totalFiltered}개) — 검색을 세밀하게 조정하세요"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}로 표시"
@@ -17068,17 +17186,11 @@ msgstr "솔루션 엔지니어"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF에서 추출된 일부 라인을 재고 품목에 자동으로 매핑할 수 없습니다. 아래에서 각 라인을 검토하고 매핑하세요."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "일부 레코드는 돌아오지 않습니다. 계속하려면 <0>{CONFIRM_WORD}</0>를 입력하세요."
 
 msgid "Some Shifts"
 msgstr "일부 교대조"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."
@@ -17427,6 +17539,9 @@ msgstr "이 날짜 이후로 기존 부품에 대한 새로운 구매 제안을 
 msgid "Storage client not available"
 msgstr "저장소 클라이언트를 사용할 수 없습니다."
 
+msgid "Storage Rule"
+msgstr ""
+
 msgid "Storage Rules"
 msgstr "저장 규칙"
 
@@ -17551,9 +17666,6 @@ msgstr "검사 제출"
 
 msgid "Submitted By"
 msgstr "제출자"
-
-msgid "Submodules"
-msgstr "하위 모듈"
 
 msgid "substance"
 msgstr "재질"
@@ -17843,6 +17955,9 @@ msgstr "전환"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "모듈을 끄면 요구사항, 데이터, 교육, 범위 등 모든 곳에서 제거됩니다."
+
+msgid "Switch company"
+msgstr ""
 
 msgid "Switch to pan mode"
 msgstr "팬 모드로 전환"
@@ -19616,6 +19731,9 @@ msgstr "추적 자재는 피킹 리스트가 없어도 피킹 순서(FEFO)에 �
 msgid "Tracking"
 msgstr "추적"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "추적 방법"
 
@@ -19705,6 +19823,9 @@ msgstr "운송 및 기관"
 
 msgid "Trash"
 msgstr "휴지통"
+
+msgid "Tree View"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "시산표"
@@ -20002,9 +20123,6 @@ msgstr "제목 없는 라인"
 
 msgid "Untitled step"
 msgstr "제목 없는 단계"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
@@ -20405,6 +20523,12 @@ msgstr "이메일을 인증하세요"
 
 msgid "Version"
 msgstr "버전"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -21285,6 +21409,9 @@ msgstr "설정 및 데이터에 대한 작업 세션"
 
 msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "평가감 계정"

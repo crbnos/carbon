@@ -72,6 +72,7 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
           className
         )}
         alt={name ?? "avatar"}
+        data-avatar={size ?? "sm"}
         src={src}
         onError={() => setError(true)}
       />
@@ -86,6 +87,7 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
           className
         )}
         style={name ? { background, color } : undefined}
+        data-avatar={size ?? "sm"}
         {...props}
         ref={ref}
       >

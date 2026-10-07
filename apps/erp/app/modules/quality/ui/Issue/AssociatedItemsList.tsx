@@ -403,8 +403,8 @@ export function AssociatedItemsList({
                   }
                 }}
               >
-                <div className="flex items-start w-full gap-4">
-                  <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-start w-full gap-4 compact:flex-wrap compact:gap-y-2">
+                  <div className="flex flex-col min-w-0 flex-1 compact:basis-full">
                     <h3 className="font-semibold truncate">
                       {item.readableIdWithRevision}
                     </h3>

@@ -23,6 +23,8 @@ const TabsList = forwardRef<
       // around the triggers is uniform on every side (a fixed h-* squeezed
       // them, and a border-b read as an extra pixel of bottom padding)
       "inline-flex items-center justify-center rounded-[0.5rem] bg-muted p-1 text-muted-foreground border border-border",
+      // Phones: an underline tab row that scrolls sideways, inset 16pt.
+      "compact:flex compact:w-full compact:justify-start compact:gap-5 compact:overflow-x-auto compact:scrollbar-hide compact:rounded-none compact:border-0 compact:border-b compact:bg-transparent compact:p-0 compact:px-4",
       className
     )}
     {...props}
@@ -41,6 +43,7 @@ const TabsTrigger = forwardRef<
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-[6px] border border-transparent px-3 py-1 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50",
       "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-button-base",
+      "compact:min-h-11 compact:min-w-11 compact:shrink-0 compact:rounded-none compact:border-0 compact:border-b-2 compact:border-transparent compact:px-0 compact:text-[15px] compact:data-[state=active]:border-foreground compact:data-[state=active]:bg-transparent compact:data-[state=active]:shadow-none",
 
       className
     )}

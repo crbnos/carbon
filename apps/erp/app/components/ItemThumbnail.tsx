@@ -88,13 +88,14 @@ const ItemThumbnail = ({
       loading="lazy"
       decoding="async"
       alt="thumbnail"
+      data-thumbnail={size}
       className={itemVariants({ size, withPadding: false })}
       key={thumbnailPath}
       onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
     />
   ) : (
-    <div className={cn(itemVariants({ size }))}>
+    <div data-thumbnail={size} className={cn(itemVariants({ size }))}>
       {type ? (
         <MethodItemTypeIcon className={iconVariants({ size })} type={type} />
       ) : (

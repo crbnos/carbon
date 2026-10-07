@@ -325,7 +325,7 @@ export default function PaymentDetailRoute() {
   };
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
+    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto compact:p-4">
       <PaymentForm key={payment.id} initialValues={initialValues} />
       <PaymentApplications
         applications={applications}

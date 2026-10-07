@@ -35,6 +35,7 @@ import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Form, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
+import { SettingsPage } from "~/components/SettingsPage";
 import { usePermissions, useUser } from "~/hooks";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -192,10 +193,7 @@ export default function PaymentSettings() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
+      <SettingsPage className="gap-4">
         <Heading size="h3">
           <Trans>Billing</Trans>
         </Heading>
@@ -344,7 +342,7 @@ export default function PaymentSettings() {
             </ValidatedForm>
           </>
         )}
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

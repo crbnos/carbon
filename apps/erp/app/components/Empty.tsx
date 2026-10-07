@@ -17,8 +17,8 @@ export default function Empty({
       className={cn("w-full h-full justify-center items-center", className)}
       {...props}
     >
-      <LuCircleDashed className="size-8 text-muted-foreground" />
-      <h3 className="text-xs text-muted-foreground">
+      <LuCircleDashed className="size-8 text-muted-foreground compact:size-[52px] compact:rounded-[14px] compact:bg-muted compact:p-3.5" />
+      <h3 className="text-xs text-muted-foreground compact:mt-1 compact:text-[17px] compact:font-semibold compact:text-foreground">
         <Trans>Looks empty here</Trans>&nbsp;&nbsp;👀
       </h3>
       {children}

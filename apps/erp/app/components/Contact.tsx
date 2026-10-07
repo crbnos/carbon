@@ -49,11 +49,14 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
       <VStack spacing={0}>
         <HStack>
           {url ? (
-            <Link to={url}>
-              <p className="text-sm font-bold">{name}</p>
+            <Link
+              to={url}
+              className="compact:relative compact:after:absolute compact:after:-inset-y-3 compact:after:inset-x-0"
+            >
+              <p className="text-sm font-bold compact:font-semibold">{name}</p>
             </Link>
           ) : (
-            <p className="text-sm font-bold">{name}</p>
+            <p className="text-sm font-bold compact:font-semibold">{name}</p>
           )}
 
           {userStatus === UserStatus.Active && (

@@ -88,7 +88,7 @@ export function PrintersCard({
   return (
     <>
       <Card>
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start compact:flex-col compact:items-stretch compact:gap-0">
           <CardHeader>
             <CardTitle>
               <Trans>Printers</Trans>
@@ -97,7 +97,7 @@ export function PrintersCard({
               <Trans>Physical printers available for assignment.</Trans>
             </CardDescription>
           </CardHeader>
-          <CardAction className="py-6">
+          <CardAction className="py-6 compact:pt-0 compact:pb-4 compact:px-4">
             <Button
               leftIcon={<LuPlus />}
               onClick={() => {

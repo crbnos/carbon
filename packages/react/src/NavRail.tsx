@@ -345,7 +345,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
           className={cn(
             "absolute left-7 right-3 min-w-32 group-data-[state=expanded]:left-12",
             "flex items-center gap-2",
-            "opacity-0 group-data-[state=expanded]:opacity-100"
+            "opacity-0 group-data-[state=expanded]:opacity-100 compact:opacity-100"
           )}
         >
           <span
@@ -434,7 +434,7 @@ export function NavRailBrand({
       </span>
       <span
         aria-hidden
-        className="min-w-0 flex-1 truncate opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
+        className="min-w-0 flex-1 truncate opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100 compact:opacity-100"
       >
         {label}
       </span>
@@ -457,7 +457,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100 compact:opacity-100">
           {label}
         </span>
       </div>

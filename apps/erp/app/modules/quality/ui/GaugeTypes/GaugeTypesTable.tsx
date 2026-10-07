@@ -39,6 +39,7 @@ const GaugeTypesTable = memo(({ data, count }: GaugeTypesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCircleGauge />
         }
       }

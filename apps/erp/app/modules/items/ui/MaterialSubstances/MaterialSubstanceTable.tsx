@@ -61,6 +61,7 @@ const MaterialSubstancesTable = memo(
               </Hyperlink>
             ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -69,6 +70,7 @@ const MaterialSubstancesTable = memo(
           header: t`Code`,
           cell: ({ row }) => row.original.code,
           meta: {
+            mobile: "P2",
             icon: <LuCode />
           }
         },

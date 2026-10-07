@@ -46,6 +46,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -54,6 +55,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
         header: t`Days Due`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P2",
           icon: <LuCalendar />
         }
       },
@@ -78,6 +80,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
         header: t`Calculation Method`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: paymentTermsCalculationMethod.map((v) => ({

@@ -24,9 +24,11 @@ import {
   Placeholder,
   renderItems
 } from "@carbon/tiptap";
+import { useLingui } from "@lingui/react/macro";
 import TextStyle from "@tiptap/extension-text-style";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useCompact } from "../Compact";
 import { Separator } from "../Separator";
 import { cn } from "../utils/cn";
 import { ColorSelector } from "./components/ColorSelector";
@@ -118,8 +120,21 @@ const Editor = ({
   toolbar,
   title
 }: EditorProp) => {
+  const { t } = useLingui();
+  const isCompact = useCompact();
   const titleMode = !!title;
   const titlePlaceholder = title?.placeholder ?? "Untitled";
+  // The editor reads its extensions only once on mount, so the placeholder
+  // reads the current (translated) text through a ref. Phones have no "/" key
+  // to press, so the body text differs there.
+  const placeholderTextRef = useRef<(node: any) => string>(() => "");
+  placeholderTextRef.current = (node) => {
+    if (node.type.name === "heading") {
+      const level = node.attrs.level;
+      return t`Heading ${level}`;
+    }
+    return isCompact ? t`Write a note…` : t`Press '/' for commands`;
+  };
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
@@ -189,26 +204,26 @@ const Editor = ({
   );
 
   const extensions = useMemo(() => {
-    // In title mode, swap the default placeholder for one that labels the
-    // locked first block "Untitled", and add the title-lock extension.
+    // Replaces the default placeholder. In title mode it also labels the
+    // locked first block "Untitled", and the title-lock extension is added.
+    const placeholder = Placeholder.configure({
+      placeholder: ({ node, pos }: { node: any; pos: number }) =>
+        titleMode && pos === 0
+          ? titlePlaceholder
+          : placeholderTextRef.current(node),
+      includeChildren: true
+    });
     const base = titleMode
       ? [
           ...defaultExtensions.filter(
             (ext) => (ext as { name?: string }).name !== "placeholder"
           ),
-          Placeholder.configure({
-            placeholder: ({ node, pos }: { node: any; pos: number }) => {
-              if (pos === 0) return titlePlaceholder;
-              if (node.type.name === "heading") {
-                return `Heading ${node.attrs.level}`;
-              }
-              return "Press '/' for commands";
-            },
-            includeChildren: true
-          }),
+          placeholder,
           DocumentTitle
         ]
-      : defaultExtensions;
+      : defaultExtensions.map((ext) =>
+          (ext as { name?: string }).name === "placeholder" ? placeholder : ext
+        );
 
     return [
       ...base,
@@ -286,7 +301,7 @@ const Editor = ({
               "prose dark:prose-invert focus:outline-none max-w-full",
               // Flush toolbar: pad the content, not the toolbar, and leave a
               // gap below the sticky toolbar.
-              titleMode && "px-8 pt-6 pb-24"
+              titleMode && "px-8 pt-6 pb-24 compact:px-4"
             )
           }
         }}

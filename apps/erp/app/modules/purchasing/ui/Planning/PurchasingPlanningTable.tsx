@@ -409,6 +409,7 @@ const PlanningTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -446,6 +447,7 @@ const PlanningTable = memo(
             return <SupplierAvatar supplierId={supplierId} />;
           },
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers.map((supplier) => ({
@@ -526,6 +528,7 @@ const PlanningTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuCirclePlay />
           }
         },

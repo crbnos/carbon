@@ -37,6 +37,7 @@ import {
 import { useFetcher } from "react-router";
 import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
@@ -87,7 +88,7 @@ export function BatchItemCard({
 }) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings } = useKanban();
+  const { displaySettings, moveTo } = useKanban();
   const scheduleToday = useScheduleToday();
   const fetcher = useFetcher();
   const isCompleting = item.batchStatus === "Completing";
@@ -238,6 +239,12 @@ export function BatchItemCard({
                       {t`Dissolve batch`}
                     </DropdownMenuItem>
                   )}
+                  {moveTo && !isCompleting && (
+                    <MoveToSubmenu
+                      getTargets={() => moveTo.targetsFor(item.id)}
+                      onMove={(columnId) => moveTo.onMove(item.id, columnId)}
+                    />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </HStack>
@@ -334,7 +341,7 @@ export function BatchItemCard({
                     icon={<LuX />}
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive compact:opacity-100"
                     onClick={() => setRemoving(m)}
                   />
                 )}

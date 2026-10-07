@@ -13,8 +13,8 @@ const textareaVariants = cva(
   {
     variants: {
       size: {
-        sm: "rounded-md px-3 py-1 text-sm",
-        md: "rounded-md px-3 py-2 text-sm",
+        sm: "rounded-md px-3 py-1 text-sm compact:text-base",
+        md: "rounded-md px-3 py-2 text-sm compact:text-base",
         lg: "rounded-lg px-4 py-3 text-base"
       }
     },

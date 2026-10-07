@@ -43,7 +43,8 @@ const MethodOperationsTable = memo(
             >
               {row.original.description}
             </Hyperlink>
-          )
+          ),
+          meta: { mobile: "P1" }
         },
         {
           accessorKey: "makeMethod.item.readableIdWithRevision",
@@ -52,6 +53,7 @@ const MethodOperationsTable = memo(
             return row.original.makeMethod?.item?.readableIdWithRevision;
           },
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -68,6 +70,7 @@ const MethodOperationsTable = memo(
             <Enumerable value={item.getValue<string>() ?? null} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: operationTypes.map((value) => ({

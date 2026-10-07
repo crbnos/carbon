@@ -60,7 +60,7 @@ const ItemPlanningForm = ({
         validator={itemPlanningValidator}
         defaultValues={initialValues}
       >
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start compact:items-center">
           <CardHeader>
             <CardTitle>
               <Trans>Planning</Trans>

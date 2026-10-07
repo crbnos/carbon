@@ -45,13 +45,15 @@ const MethodMaterialsTable = memo(
                 {row.original.makeMethod?.item?.readableIdWithRevision}
               </Hyperlink>
             </HStack>
-          )
+          ),
+          meta: { mobile: "P1" }
         },
         {
           accessorKey: "itemReadableIdWithRevision",
           header: t`Material ID`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -131,7 +133,8 @@ const MethodMaterialsTable = memo(
         {
           accessorKey: "quantity",
           header: t`Qty. per Parent`,
-          cell: (item) => item.getValue()
+          cell: (item) => item.getValue(),
+          meta: { mobile: "P2" }
         }
       ];
     }, [items, t]);

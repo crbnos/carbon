@@ -281,7 +281,7 @@ export default function ItemInventoryActivityRoute() {
   }, [carbon, itemId, companyId, locationId]);
 
   return (
-    <div className="w-full space-y-4 pt-6 px-4">
+    <div className="w-full space-y-4 pt-6 px-4 compact:p-0">
       <Heading size="h2" className="mb-4">
         <Trans>Activity</Trans>
       </Heading>

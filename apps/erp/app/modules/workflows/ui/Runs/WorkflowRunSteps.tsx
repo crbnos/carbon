@@ -176,7 +176,7 @@ function StepRow({
     <div className="border-b border-border/50">
       <button
         type="button"
-        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left"
+        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left compact:flex-wrap compact:gap-y-1"
         onClick={() => hasDetail && setExpanded((p) => !p)}
         disabled={!hasDetail}
       >
@@ -215,7 +215,7 @@ function StepRow({
             <p className="text-xs text-muted-foreground">{step.statusReason}</p>
           )}
         </div>
-        <div className="ml-auto flex items-center gap-2 shrink-0">
+        <div className="ml-auto flex items-center gap-2 shrink-0 compact:ml-0 compact:basis-full compact:pl-[52px]">
           <span className="text-xs text-muted-foreground tabular-nums">
             {durationLabel(step.durationMs)}
           </span>
@@ -227,7 +227,7 @@ function StepRow({
         <div className="px-10 pb-3 space-y-3">
           <button
             type="button"
-            className="text-xs text-muted-foreground underline underline-offset-2"
+            className="text-xs text-muted-foreground underline underline-offset-2 compact:hit-area"
             onClick={() => setRaw((p) => !p)}
           >
             {raw ? t`Show summary` : t`Show raw`}

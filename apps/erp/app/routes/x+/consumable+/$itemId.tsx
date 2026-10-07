@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { useRouteData } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import type {
   LoaderFunctionArgs,
@@ -93,6 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ConsumableRoute() {
+  const { t } = useLingui();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
@@ -111,6 +113,7 @@ export default function ConsumableRoute() {
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
+            explorerLabel={t`Used In`}
             explorer={
               <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto">

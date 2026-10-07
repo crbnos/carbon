@@ -3,15 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, useCompact, VStack } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
 import { Outlet, useLoaderData, useNavigate } from "react-router";
+import { New } from "~/components";
 import { usePermissions } from "~/hooks";
 import { getFixedAssetClasses } from "~/modules/accounting";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
@@ -64,8 +66,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AssetClassesRoute() {
   const { data, count, taxDepreciationEnabled } =
     useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
+  const isCompact = useCompact();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -74,15 +78,19 @@ export default function AssetClassesRoute() {
         count={count}
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.can("create", "accounting") &&
+          // Phones: Add becomes the app bar "+" like the other lists.
+          (isCompact ? (
+            <New label={t`Asset Class`} to={path.to.newAssetClass} />
+          ) : (
             <Button
               leftIcon={<LuCirclePlus />}
               variant="primary"
               onClick={() => navigate(path.to.newAssetClass)}
             >
-              Add Asset Class
+              <Trans>Add Asset Class</Trans>
             </Button>
-          )
+          ))
         }
       />
       <Outlet />

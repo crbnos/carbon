@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  useCompact,
   useDisclosure
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -31,6 +32,7 @@ const PersonHeader = () => {
 
   const { company } = useUser();
   const auditDrawer = useDisclosure();
+  const isCompact = useCompact();
   const routeData = useRouteData<{ employeeSummary: EmployeeSummary }>(
     path.to.person(personId)
   );
@@ -78,7 +80,8 @@ const PersonHeader = () => {
                 <Trans>Manager</Trans>
               </CardAttributeLabel>
               <CardAttributeValue>
-                {routeData?.employeeSummary?.managerName}
+                {routeData?.employeeSummary?.managerName ||
+                  (isCompact ? "—" : null)}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

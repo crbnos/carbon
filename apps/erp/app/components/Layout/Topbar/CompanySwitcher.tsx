@@ -35,22 +35,16 @@ export function useCompanySwitchRedirect() {
   return Object.keys(params).length === 0 ? `${pathname}${search}` : undefined;
 }
 
-const CompanySwitcher = () => {
-  const switchRedirect = useCompanySwitchRedirect();
+/**
+ * The user's companies grouped by company group (single-company groups fold
+ * into "Companies"). Used by the company switcher and the compact Profile sheet.
+ */
+export function useCompanyGroups() {
   const { t } = useLingui();
   const routeData = useRouteData<{ company: Company; companies: Company[] }>(
     path.to.authenticatedRoot
   );
-  const user = useUser();
-  const mode = useMode();
-
-  const hasMultipleCompanies = Boolean(
-    routeData?.companies && routeData?.companies.length > 1
-  );
-
-  const canSwitchCompany = hasMultipleCompanies;
-
-  const companyGroups = useMemo(() => {
+  return useMemo(() => {
     if (!routeData?.companies) return [];
 
     const groups = new Map<string, { name: string; companies: Company[] }>();
@@ -90,6 +84,23 @@ const CompanySwitcher = () => {
 
     return Array.from(result.values());
   }, [routeData?.companies, t]);
+}
+
+const CompanySwitcher = () => {
+  const switchRedirect = useCompanySwitchRedirect();
+  const routeData = useRouteData<{ company: Company; companies: Company[] }>(
+    path.to.authenticatedRoot
+  );
+  const user = useUser();
+  const mode = useMode();
+
+  const hasMultipleCompanies = Boolean(
+    routeData?.companies && routeData?.companies.length > 1
+  );
+
+  const canSwitchCompany = hasMultipleCompanies;
+
+  const companyGroups = useCompanyGroups();
 
   if (!canSwitchCompany) {
     // Just show the company logo without dropdown

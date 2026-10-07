@@ -7,6 +7,7 @@ import {
   Button,
   Checkbox,
   Combobox,
+  EnumerableAsText,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -19,6 +20,7 @@ import {
   ModalTitle,
   Spinner,
   toast,
+  useCompact,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -78,6 +80,7 @@ const StorageUnitsTable = memo(
   }: StorageUnitsTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const isCompact = useCompact();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -262,6 +265,16 @@ const StorageUnitsTable = memo(
     }, [displayRows]);
 
     const columns = useMemo<ColumnDef<StorageUnit>[]>(() => {
+      const renderStorageTypes = (ids: string[]) => (
+        <HStack spacing={1}>
+          {ids.map((id) => {
+            const label =
+              storageTypes?.find((st) => st.value === id)?.label ?? id;
+            return <Enumerable key={id} value={label} />;
+          })}
+        </HStack>
+      );
+
       return [
         {
           // The id "Select" opts into the Table's compact checkbox-column
@@ -296,7 +309,7 @@ const StorageUnitsTable = memo(
         {
           accessorKey: "name",
           header: t`Name`,
-          cell: ({ row }) => {
+          cell: ({ row, table }) => {
             const depth = Math.max(0, (row.original.depth ?? 1) - 1);
             const isExpanded = expandedIds.has(row.original.id);
             const isLoading = loadingIds.has(row.original.id);
@@ -308,10 +321,10 @@ const StorageUnitsTable = memo(
                   <div
                     key={i}
                     aria-hidden
-                    className="w-5 shrink-0 border-l border-border -my-2"
+                    className="w-5 shrink-0 border-l border-border -my-2 compact:border-l-0"
                   />
                 ))}
-                <div className="w-5 shrink-0 flex items-center justify-center self-center">
+                <div className="w-5 shrink-0 flex items-center justify-center self-center compact:self-start compact:h-[1lh]">
                   {hasChildren ? (
                     isLoading ? (
                       <Spinner className="size-3" />
@@ -321,7 +334,7 @@ const StorageUnitsTable = memo(
                         aria-label={
                           isExpanded ? t`Collapse subtree` : t`Expand subtree`
                         }
-                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        className="text-muted-foreground hover:text-foreground shrink-0 compact:hit-area"
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
@@ -337,7 +350,7 @@ const StorageUnitsTable = memo(
                     )
                   ) : null}
                 </div>
-                <div className="flex items-center py-1">
+                <div className="flex items-center py-1 compact:flex-col compact:items-start compact:gap-1 compact:py-0">
                   <Hyperlink
                     to={`${path.to.storageUnit(row.original.id)}?${params}`}
                   >
@@ -349,11 +362,23 @@ const StorageUnitsTable = memo(
                       {row.original.name}
                     </span>
                   </Hyperlink>
+                  {/* Phones: the context line sits under the name, so it
+                      shares the tree indent instead of starting at the gutter. */}
+                  {isCompact &&
+                  table.getColumn("storageTypeIds")?.getIsVisible() &&
+                  row.original.storageTypeIds?.length ? (
+                    <div className="text-[13px] font-normal text-muted-foreground">
+                      <EnumerableAsText value>
+                        {renderStorageTypes(row.original.storageTypeIds)}
+                      </EnumerableAsText>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );
           },
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -377,17 +402,10 @@ const StorageUnitsTable = memo(
           header: t`Storage Types`,
           cell: ({ row }) => {
             if (!row.original.storageTypeIds?.length) return null;
-            return (
-              <HStack spacing={1}>
-                {row.original.storageTypeIds.map((id) => {
-                  const label =
-                    storageTypes?.find((st) => st.value === id)?.label ?? id;
-                  return <Enumerable key={id} value={label} />;
-                })}
-              </HStack>
-            );
+            return renderStorageTypes(row.original.storageTypeIds);
           },
           meta: {
+            // No compact slot: the name cell renders it under the name (tree indent).
             filter: {
               type: "static",
               options: storageTypes?.map((st) => ({
@@ -419,6 +437,7 @@ const StorageUnitsTable = memo(
         }
       ];
     }, [
+      isCompact,
       locations,
       params,
       storageTypes,

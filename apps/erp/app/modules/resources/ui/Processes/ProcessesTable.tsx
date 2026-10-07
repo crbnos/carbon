@@ -99,6 +99,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuRedoDot />
         }
       },
@@ -126,6 +127,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuFactory />,
           filter: {
             type: "static",
@@ -159,6 +161,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuBuilding2 />,
           filter: {
             type: "static",

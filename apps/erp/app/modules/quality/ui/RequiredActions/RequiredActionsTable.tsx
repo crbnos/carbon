@@ -48,13 +48,17 @@ const RequiredActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuSquareCheck />
           }
         },
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => <Checkbox checked={row.original.active} />
+          cell: ({ row }) => <Checkbox checked={row.original.active} />,
+          meta: {
+            mobile: "P2"
+          }
         }
       ];
       return defaultColumns;

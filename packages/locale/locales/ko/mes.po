@@ -215,6 +215,9 @@ msgstr "가용"
 msgid "Available"
 msgstr "가용"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "배치로 돌아가기"
 
@@ -294,6 +297,9 @@ msgstr "이메일을 확인하세요"
 
 msgid "Choose a job"
 msgstr "작업 지시 선택"
+
+msgid "Choose an option"
+msgstr ""
 
 msgid "Clear"
 msgstr "지우기"
@@ -406,8 +412,7 @@ msgstr "클립보드에 복사"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} 생성"
 
@@ -695,6 +700,9 @@ msgstr "공정작업으로 돌아가기"
 
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "설명 숨기기"
@@ -1179,6 +1187,9 @@ msgstr "작업자 수행"
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "또는"
 
@@ -1272,6 +1283,9 @@ msgstr "PM 일정 만료됨"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "이전"
@@ -1916,6 +1930,9 @@ msgstr "작업장 화면"
 
 msgid "Work instructions"
 msgstr "작업 표준서"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "예"

@@ -26,7 +26,7 @@ export function PriceListScopeEmpty({
       heading={t`Price Lists`}
       description={t`Pick a customer or customer type to view their pricing.`}
     >
-      <div className="flex justify-center [&>[role=combobox]]:!min-w-[400px]">
+      <div className="flex justify-center [&>[role=combobox]]:!min-w-[400px] compact:[&>[role=combobox]]:!min-w-0 compact:[&>[role=combobox]]:w-full compact:[&>[role=combobox]]:h-11 compact:[&>[role=combobox]]:rounded-md compact:[&>[role=combobox]]:text-base">
         <ScopePicker
           size="md"
           value={value}

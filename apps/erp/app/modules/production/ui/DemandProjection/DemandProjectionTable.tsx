@@ -12,6 +12,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  useCompact,
   useUrlParams,
   VStack
 } from "@carbon/react";
@@ -56,6 +57,7 @@ const DemandProjectionsTable = memo(
     });
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const isCompact = useCompact();
     const permissions = usePermissions();
     const locations = useLocations();
     const [selectedItem, setSelectedItem] = useState<DemandProjection | null>(
@@ -115,7 +117,7 @@ const DemandProjectionsTable = memo(
             <Hyperlink
               to={path.to.demandProjection(row.original.id!, locationId)}
             >
-              <HStack className="py-1 cursor-pointer">
+              <HStack className="py-1 cursor-pointer compact:min-w-0">
                 <ItemThumbnail
                   size="sm"
                   thumbnailPath={row.original.thumbnailPath}
@@ -123,8 +125,10 @@ const DemandProjectionsTable = memo(
                   type={row.original.type}
                 />
 
-                <VStack spacing={0} className="font-medium">
-                  {row.original.readableIdWithRevision}
+                <VStack spacing={0} className="font-medium compact:min-w-0">
+                  <span className="compact:block compact:w-full compact:truncate">
+                    {row.original.readableIdWithRevision}
+                  </span>
                   <div className="w-full truncate text-muted-foreground text-xs">
                     {row.original.name}
                   </div>
@@ -133,6 +137,7 @@ const DemandProjectionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -194,6 +199,7 @@ const DemandProjectionsTable = memo(
     return (
       <>
         <Table<DemandProjection>
+          mobileLayout="table"
           data={data}
           columns={columns}
           count={count}
@@ -201,7 +207,7 @@ const DemandProjectionsTable = memo(
           title={t`Demand Forecasts`}
           table="production-planning"
           withSavedView
-          withSelectableRows
+          withSelectableRows={!isCompact}
           withSimpleSorting
           primaryAction={
             <div className="flex items-center gap-2">

@@ -224,6 +224,7 @@ msgid "{0} scrapped"
 msgstr "{0}廃棄"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} 件選択"
 
@@ -1448,6 +1449,9 @@ msgstr "あなたの決定についてのメモを追加してください..."
 msgid "Add Approval Requirement"
 msgstr "承認要求事項を追加"
 
+msgid "Add Asset Class"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "認証器アプリを追加"
 
@@ -1504,6 +1508,9 @@ msgstr "ヘッダーを追加"
 
 msgid "Add Item"
 msgstr "アイテムを追加"
+
+msgid "Add Journal Entry"
+msgstr ""
 
 msgid "Add Line"
 msgstr "行を追加"
@@ -1620,6 +1627,9 @@ msgstr "予備品を追加"
 msgid "Add station"
 msgstr "ステーションを追加"
 
+msgid "Add step"
+msgstr ""
+
 msgid "Add Step"
 msgstr "ステップを追加"
 
@@ -1708,6 +1718,9 @@ msgstr "詳細"
 
 msgid "Affected item not found."
 msgstr "影響を受けるアイテムが見つかりません。"
+
+msgid "Affected Items"
+msgstr ""
 
 msgid "After"
 msgstr "後"
@@ -2743,6 +2756,9 @@ msgstr "アセンブリ"
 msgid "Assembly"
 msgstr "組立"
 
+msgid "assembly instruction"
+msgstr ""
+
 msgid "Assembly instruction"
 msgstr "組立指示"
 
@@ -2832,6 +2848,9 @@ msgstr "この保管ユニットを作業区（ラインサイド）に割り当
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "この保管ユニットをラインサイド材料用の作業区に割り当てます。作業者は生産ビューでそれを参照できます。親ユニットで設定されている場合、そこから継承されます。"
+
+msgid "Associations"
+msgstr ""
 
 msgid "Assumptions"
 msgstr "前提条件"
@@ -3233,6 +3252,9 @@ msgstr "{0}によってブロックされています"
 msgid "Blocking sync"
 msgstr "ブロッキング同期"
 
+msgid "Blocks"
+msgstr ""
+
 msgid "Blocks Machine"
 msgstr "機械をブロック"
 
@@ -3388,6 +3410,9 @@ msgstr "場所別"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
+
+msgid "By you · edited <0/>"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CADモデル"
@@ -3829,6 +3854,9 @@ msgstr "シリアル番号を選択"
 msgid "choose a supplier for {0} on the job"
 msgstr "製造指図上の{0}の仕入先を選択してください"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
@@ -3867,6 +3895,9 @@ msgstr "クリア"
 
 msgid "Clear due date"
 msgstr "期日をクリア"
+
+msgid "Clear filters"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
@@ -4505,6 +4536,9 @@ msgstr "クリップボードにリンクをコピーしました"
 msgid "Copied setup prompt to your clipboard"
 msgstr "セットアップ プロンプトをクリップボードにコピーしました"
 
+msgid "Copied to clipboard"
+msgstr ""
+
 msgid "Copied!"
 msgstr "コピーしました！"
 
@@ -4892,8 +4926,7 @@ msgstr "配置"
 msgid "Create"
 msgstr "作成"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0}を作成"
 
@@ -5902,11 +5935,17 @@ msgstr "休日を削除"
 msgid "Delete Inspection Plan"
 msgstr "検査計画を削除"
 
+msgid "Delete Instruction"
+msgstr ""
+
 msgid "Delete Issue"
 msgstr "問題を削除"
 
 msgid "Delete Item Group"
 msgstr "アイテムグループを削除"
+
+msgid "Delete Job"
+msgstr ""
 
 msgid "Delete Journal Entry"
 msgstr "仕訳行を削除"
@@ -6220,6 +6259,9 @@ msgstr "減価償却開始日"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "この品目の保存期間を、その構成要素の最短保存期間から導出し、上記の日数フィールドを無視します。"
+
+msgid "Descending"
+msgstr ""
 
 msgid "Description"
 msgstr "説明"
@@ -7090,6 +7132,9 @@ msgstr "Webhookを編集"
 msgid "Edit Work Center"
 msgstr "作業区を編集"
 
+msgid "edited <0/>"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "削除済み"
 
@@ -7719,9 +7764,6 @@ msgstr "選択した工法が開始すると使用期限が開始します。"
 msgid "Expiry trace"
 msgstr "使用期限トレース"
 
-msgid "Explorer"
-msgstr "エクスプローラー"
-
 msgid "Export"
 msgstr "エクスポート"
 
@@ -8243,8 +8285,17 @@ msgstr "1 ラン分を満たす"
 msgid "Filter"
 msgstr "絞り込み"
 
+msgid "Filter & sort"
+msgstr ""
+
+msgid "Filter and sort"
+msgstr ""
+
 msgid "Filter by…"
 msgstr "絞り込み…"
+
+msgid "Filters"
+msgstr ""
 
 msgid "Finalize"
 msgstr "確定"
@@ -8820,6 +8871,9 @@ msgstr "スケジュール化できない工程があります"
 msgid "Headers"
 msgstr "ヘッダー"
 
+msgid "Heading {level}"
+msgstr ""
+
 msgid "healthy"
 msgstr "正常"
 
@@ -8885,6 +8939,9 @@ msgstr "休日名"
 
 msgid "Holidays"
 msgstr "休日"
+
+msgid "Home"
+msgstr ""
 
 msgid "Home Phone"
 msgstr "自宅電話"
@@ -10309,6 +10366,9 @@ msgstr "リストパラメータ"
 msgid "List view"
 msgstr "リスト表示"
 
+msgid "List View"
+msgstr ""
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -10322,6 +10382,9 @@ msgstr "ライブリロード中"
 
 msgid "Load"
 msgstr "負荷"
+
+msgid "Load more"
+msgstr ""
 
 msgid "Load newer"
 msgstr "新しいものを読み込む"
@@ -10519,6 +10582,9 @@ msgstr "MACRS資産クラス"
 msgid "Magic link"
 msgstr "マジックリンク"
 
+msgid "Main"
+msgstr ""
+
 msgid "Main build (after its last step)"
 msgstr "メインビルド(最後のステップ後)"
 
@@ -10596,6 +10662,10 @@ msgstr "受注生産"
 
 msgid "Make tracked entities available again"
 msgstr "追跡対象エンティティを再度利用可能にする"
+
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr ""
 
 msgid "Makes this document active again."
 msgstr "この文書を再度有効にします。"
@@ -11687,6 +11757,9 @@ msgstr "{0}の同期操作はありません。"
 msgid "No {0} yet"
 msgstr "まだ{0}がありません"
 
+msgid "No {title} yet"
+msgstr ""
+
 msgid "No abilities added"
 msgstr "スキルが追加されていません"
 
@@ -12365,6 +12438,9 @@ msgstr "この場所には他に引き出す在庫がありません。"
 msgid "Nothing here matches your search and filters."
 msgstr "検索と絞り込み条件に一致するものがありません"
 
+msgid "Nothing here yet"
+msgstr ""
+
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
@@ -12685,9 +12761,6 @@ msgstr "オープン製造指図"
 
 msgid "Open menu"
 msgstr "メニューを開く"
-
-msgid "Open navigation"
-msgstr "ナビゲーションを開く"
 
 msgid "Open payables by supplier and age"
 msgstr "仕入先・日数別オープン買掛金"
@@ -13049,6 +13122,9 @@ msgstr "有効期限を {label} で上書きします。"
 msgid "Overtime"
 msgstr "残業"
 
+msgid "Overview"
+msgstr ""
+
 msgid "Overwrite Existing"
 msgstr "既存を上書き"
 
@@ -13211,6 +13287,9 @@ msgstr "IDプロバイダーがメタデータURLを公開していない場合�
 
 msgid "Path"
 msgstr "パス"
+
+msgid "Pause"
+msgstr ""
 
 msgid "Pay"
 msgstr "支払う"
@@ -13707,6 +13786,9 @@ msgstr "今週"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "任意のページで？キーを押すと、このリストが表示されます。フィールドに入力中はショートカットが無視されます。"
 
+msgid "Press '/' for commands"
+msgstr ""
+
 msgid "Prev"
 msgstr "前へ"
 
@@ -14090,6 +14172,9 @@ msgstr "在庫から引当"
 msgid "Pull, map, and load your data"
 msgstr "データをプル、マップ、ロードする"
 
+msgid "Purchase"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRPから購入・製造"
 
@@ -14384,6 +14469,9 @@ msgstr "四半期ごと"
 msgid "Question"
 msgstr "質問"
 
+msgid "Questions"
+msgstr ""
+
 msgid "Queued"
 msgstr "キュー待ち"
 
@@ -14509,6 +14597,9 @@ msgstr "原材料"
 
 msgid "Raw Materials (default)"
 msgstr "原材料（デフォルト）"
+
+msgid "Re-convert Model"
+msgstr ""
 
 msgid "Re-date to first open day"
 msgstr "最初の営業日に再日付け"
@@ -15316,6 +15407,9 @@ msgstr "結果"
 msgid "Results per page"
 msgstr "ページあたりの結果数"
 
+msgid "Resume"
+msgstr ""
+
 msgid "Resume Receiving"
 msgstr "受信を再開"
 
@@ -15427,11 +15521,17 @@ msgstr "リバースチャージ売上税"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "リバースチャージ売上税（デフォルト）"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
 msgid "Reversed"
 msgstr "反対仕訳済"
+
+msgid "Reversing Entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "リバート"
@@ -15882,6 +15982,9 @@ msgstr "担当者を保存"
 msgid "Save dimension settings"
 msgstr "ディメンション設定を保存"
 
+msgid "Save Draft"
+msgstr ""
+
 msgid "Save Method"
 msgstr "メソッドを保存"
 
@@ -15902,6 +16005,9 @@ msgstr "保存済み"
 
 msgid "Saved view"
 msgstr "保存済みの表示"
+
+msgid "Saved views"
+msgstr ""
 
 msgid "Saved Views"
 msgstr "保存済みビュー"
@@ -16050,6 +16156,9 @@ msgstr "検索"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} を検索..."
 
+msgid "Search {title}"
+msgstr ""
+
 msgid "Search accounts"
 msgstr "アカウントを検索"
 
@@ -16153,9 +16262,6 @@ msgid "Secret copied to clipboard"
 msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
-msgstr "セクション"
-
-msgid "Sections"
 msgstr "セクション"
 
 msgid "Secure your account with 2FA"
@@ -16363,6 +16469,9 @@ msgstr "数量を選択"
 msgid "Select Reason"
 msgstr "理由を選択してください"
 
+msgid "Select row"
+msgstr ""
+
 msgid "Select Row"
 msgstr "行を選択"
 
@@ -16420,6 +16529,9 @@ msgstr "セルフサービス"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "セルフサービスリファレンス（docs.carbon.ms）"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Send"
 msgstr "送信"
@@ -16861,6 +16973,9 @@ msgstr "{0}を表示"
 msgid "Show {0} more"
 msgstr "あと{0}個表示"
 
+msgid "Show {count} results"
+msgstr ""
+
 msgid "Show {label}"
 msgstr "{label}を表示"
 
@@ -16928,6 +17043,9 @@ msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{totalFiltered}中{0}を表示中 — 検索を絞り込む"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"
@@ -17068,17 +17186,11 @@ msgstr "ソリューションズエンジニア"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDFから抽出された一部の明細は在庫品目に自動的にマップできませんでした。以下の各明細を確認してマップしてください。"
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "いくつかのレコードは戻りません。続行するには<0>{CONFIRM_WORD}</0>と入力してください。"
 
 msgid "Some Shifts"
 msgstr "一部のシフト"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
@@ -17427,6 +17539,9 @@ msgstr "この日付以降、旧部品の新規購買提案が行われなくな
 msgid "Storage client not available"
 msgstr "ストレージクライアントは利用できません。"
 
+msgid "Storage Rule"
+msgstr ""
+
 msgid "Storage Rules"
 msgstr "保管ルール"
 
@@ -17551,9 +17666,6 @@ msgstr "検査を提出"
 
 msgid "Submitted By"
 msgstr "提出者"
-
-msgid "Submodules"
-msgstr "サブモジュール"
 
 msgid "substance"
 msgstr "物質"
@@ -17843,6 +17955,9 @@ msgstr "切り替え"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "モジュールをオフにするとすべての場所から削除されます：要求事項、データ、教育訓練、スコープ。"
+
+msgid "Switch company"
+msgstr ""
 
 msgid "Switch to pan mode"
 msgstr "パンモードに切り替え"
@@ -19616,6 +19731,9 @@ msgstr "追跡される材料は、ピッキングリストがない場合でも
 msgid "Tracking"
 msgstr "追跡"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "追跡方法"
 
@@ -19705,6 +19823,9 @@ msgstr "トランジット・機関番号"
 
 msgid "Trash"
 msgstr "ゴミ箱"
+
+msgid "Tree View"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "試算表"
@@ -20002,9 +20123,6 @@ msgstr "無題の行"
 
 msgid "Untitled step"
 msgstr "無題のステップ"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用のピッキング済み材料が作業区から倉庫に戻されました。"
@@ -20405,6 +20523,12 @@ msgstr "メールアドレスを確認"
 
 msgid "Version"
 msgstr "バージョン"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -21285,6 +21409,9 @@ msgstr "設定とデータに関するワーキングセッション"
 
 msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "評価減勘定"

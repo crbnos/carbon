@@ -283,7 +283,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

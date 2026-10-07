@@ -208,7 +208,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

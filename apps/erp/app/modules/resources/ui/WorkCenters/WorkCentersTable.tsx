@@ -135,6 +135,7 @@ const WorkCentersTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuLocateFixed />
           }
         },
@@ -156,6 +157,7 @@ const WorkCentersTable = memo(
             />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuRedoDot />,
             filter: {
               type: "static",

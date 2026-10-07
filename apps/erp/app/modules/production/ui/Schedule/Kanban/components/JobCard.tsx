@@ -44,6 +44,7 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Link, useSubmit } from "react-router";
 import { Assignee, DateTime, EmployeeAvatarGroup } from "~/components";
+import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { useCustomers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -108,9 +109,13 @@ export function JobCard({
 }: JobCardProps) {
   const { t } = useLingui();
   const submit = useSubmit();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { displaySettings, selectedGroup, setSelectedGroup, tags, columnIds } =
-    useKanban();
+  const {
+    displaySettings,
+    selectedGroup,
+    setSelectedGroup,
+    columnIds,
+    moveTo
+  } = useKanban();
   const {
     setNodeRef,
     attributes,
@@ -309,6 +314,12 @@ export function JobCard({
                   />
                   {isHighlighted ? "Remove Highlight" : "Highlight Job"}
                 </DropdownMenuItem>
+                {moveTo && (
+                  <MoveToSubmenu
+                    getTargets={() => moveTo.targetsFor(item.id)}
+                    onMove={(columnId) => moveTo.onMove(item.id, columnId)}
+                  />
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>

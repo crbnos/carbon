@@ -15,8 +15,14 @@ import type {
 import { forwardRef } from "react";
 
 import { LuX } from "react-icons/lu";
+import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
-import { DialogRoot, useDialogDismissable } from "./Modal";
+import { useCompact } from "./Compact";
+import {
+  compactFooterClassName,
+  DialogRoot,
+  useDialogDismissable
+} from "./Modal";
 import { cn } from "./utils/cn";
 
 const Drawer = DialogRoot;
@@ -25,17 +31,20 @@ const DrawerTrigger = DialogPrimitive.Trigger;
 
 const DrawerCloseButton = DialogPrimitive.Close;
 
-const portalVariants = cva("fixed inset-0 z-50 flex p-3", {
-  variants: {
-    position: {
-      top: "items-start",
-      bottom: "items-end",
-      left: "justify-start",
-      right: "justify-end"
-    }
-  },
-  defaultVariants: { position: "right" }
-});
+const portalVariants = cva(
+  "fixed inset-0 z-50 flex p-3 compact:p-0 compact:items-end",
+  {
+    variants: {
+      position: {
+        top: "items-start",
+        bottom: "items-end",
+        left: "justify-start",
+        right: "justify-end"
+      }
+    },
+    defaultVariants: { position: "right" }
+  }
+);
 
 interface DrawerPortalProps
   extends DialogPrimitive.DialogPortalProps,
@@ -54,7 +63,7 @@ const DrawerOverlay = forwardRef<
 >(({ className, children, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/20 compact:bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -70,6 +79,8 @@ const DrawerBody = ({
   <div
     className={cn(
       "flex flex-col flex-1 items-start justify-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full p-6 bg-card dark:bg-muted/40 rounded-xl border border-border",
+      // A caller that wants the body flush on phones passes `compact:p-0`.
+      "compact:min-h-0 compact:rounded-none compact:border-x-0 compact:p-4",
       className
     )}
     {...props}
@@ -78,7 +89,7 @@ const DrawerBody = ({
 DrawerBody.displayName = "DrawerBody";
 
 const sheetVariants = cva(
-  "flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl",
+  "flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl compact:max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] compact:w-full compact:max-w-none compact:overflow-hidden compact:rounded-t-[14px] compact:rounded-b-none compact:border-0 compact:bg-card compact:h-auto compact:[&>form]:min-h-0",
   {
     variants: {
       position: {
@@ -95,7 +106,9 @@ const sheetVariants = cva(
         md: "",
         lg: "",
         xl: "",
-        full: ""
+        // Phones: sheets fit their content (the form shrinks under the max
+        // height so its body scrolls); `full` keeps the whole height.
+        full: "compact:h-[calc(100dvh-env(safe-area-inset-top)-12px)]"
       }
     },
     compoundVariants: [
@@ -191,6 +204,7 @@ const DrawerContent = forwardRef<
     ref
   ) => {
     const dismissable = useDialogDismissable();
+    const isCompact = useCompact();
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -200,12 +214,24 @@ const DrawerContent = forwardRef<
               ref={ref}
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
+              onOpenAutoFocus={(event) => {
+                // Phones: focusing the first field pops the keyboard (or a
+                // picker that opens on focus) over the form; keep focus on
+                // the sheet itself.
+                if (isCompact) event.preventDefault();
+                props.onOpenAutoFocus?.(event);
+              }}
             >
-              {children}
+              {isCompact && (
+                <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />
+              )}
+              <ActionPresentationBoundary>
+                {children}
+              </ActionPresentationBoundary>
               {dismissable && (
                 <DialogPrimitive.Close
                   type="button"
-                  className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
+                  className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary compact:right-1 compact:top-[15px] compact:flex compact:size-11 compact:items-center compact:justify-center compact:p-0"
                 >
                   <LuX className="h-5 w-5" />
                   <span className="sr-only">Close</span>
@@ -227,6 +253,7 @@ const DrawerHeader = ({
   <div
     className={cn(
       "flex flex-col flex-0 gap-1 text-left px-6 py-4 text-muted-foreground",
+      "compact:min-h-[52px] compact:justify-center compact:px-4 compact:py-2 compact:pr-14",
       className
     )}
     {...props}
@@ -241,6 +268,9 @@ const DrawerFooter = ({
   <div
     className={cn(
       "flex flex-0 sm:flex-row flex-col-reverse px-6 py-4 sm:justify-end sm:space-x-2",
+      compactFooterClassName,
+      // Phones: above the safe area.
+      "compact:gap-2 compact:space-x-0 compact:pt-3 compact:pb-safe-4",
       className
     )}
     {...props}

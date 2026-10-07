@@ -2,7 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useCompact
+} from "@carbon/react";
 import { formatTimeOfDay } from "@carbon/utils";
 import {
   parseTime,
@@ -40,6 +46,7 @@ type ShiftsTableProps = {
 const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
+  const isCompact = useCompact();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -110,6 +117,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCalendarRange />
         }
       },
@@ -117,8 +125,18 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         accessorKey: "startTime",
         header: t`Start Time`,
         cell: ({ row }) =>
-          renderShiftTime(row.original.startTime, row.original.locationId),
+          // Phones: line 2 shows the whole span, start – end.
+          isCompact && row.original.endTime ? (
+            <>
+              {renderShiftTime(row.original.startTime, row.original.locationId)}
+              {" – "}
+              {renderShiftTime(row.original.endTime, row.original.locationId)}
+            </>
+          ) : (
+            renderShiftTime(row.original.startTime, row.original.locationId)
+          ),
         meta: {
+          mobile: "P3",
           icon: <LuClock />
         }
       },
@@ -173,7 +191,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [locations, renderDays, renderShiftTime, customColumns, t]);
+  }, [locations, renderDays, renderShiftTime, customColumns, isCompact, t]);
 
   const renderContextMenu = useCallback(
     (row: Shift) => {

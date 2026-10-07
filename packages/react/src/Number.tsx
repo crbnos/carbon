@@ -79,8 +79,11 @@ const NumberInputStepper = ({
 }: React.HTMLAttributes<HTMLElement>) => {
   return (
     <div
+      data-number-stepper
       className={cn(
         "absolute right-0 top-0 z-10 m-px flex h-[calc(100%-2px)] w-6 flex-col",
+        // Phones: − and + side by side, each a 44pt target.
+        "compact:w-[88px] compact:flex-row-reverse",
         className
       )}
       {...props}
@@ -95,7 +98,10 @@ const NumberInput = forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         isReadOnly={isDisabled || isReadOnly}
         isDisabled={isDisabled}
-        className={cn("pr-6", className)}
+        className={cn(
+          "pr-6 compact:[&:has(~[data-number-stepper])]:pr-[92px]",
+          className
+        )}
         onFocus={(e) => {
           (e.target as HTMLInputElement).select();
           onFocus?.(e);
@@ -117,7 +123,7 @@ const NumberIncrementStepper = ({
       slot="increment"
       className={cn(
         [
-          "flex flex-1 select-none items-center justify-center rounded-tr-md border-l border-border leading-none text-foreground transition-colors duration-100",
+          "flex flex-1 select-none items-center justify-center rounded-tr-md border-l border-border leading-none text-foreground transition-colors duration-100 compact:rounded-none compact:rounded-r-md compact:hit-area",
           // Pressed
           "pressed:bg-slate-100 dark:pressed:bg-slate-700",
           // Disabled
@@ -139,7 +145,7 @@ const NumberDecrementStepper = ({
       slot="decrement"
       className={cn(
         [
-          "flex flex-1 select-none items-center justify-center rounded-br-md border-l border-t border-border leading-none text-foreground transition-colors duration-100",
+          "flex flex-1 select-none items-center justify-center rounded-br-md border-l border-t border-border leading-none text-foreground transition-colors duration-100 compact:rounded-none compact:border-t-0 compact:hit-area",
           // Pressed
           "pressed:bg-slate-100 dark:pressed:bg-slate-700",
           // Disabled

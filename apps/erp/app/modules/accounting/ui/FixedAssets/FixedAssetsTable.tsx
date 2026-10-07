@@ -67,6 +67,7 @@ const FixedAssetsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -74,6 +75,7 @@ const FixedAssetsTable = memo(
           accessorKey: "name",
           header: t`Name`,
           meta: {
+            mobile: "P3",
             icon: <LuBuilding2 />
           }
         },
@@ -95,6 +97,7 @@ const FixedAssetsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: fixedAssetStatuses.map((v) => ({
@@ -166,6 +169,7 @@ const FixedAssetsTable = memo(
             return currencyFormatter.format(nbv);
           },
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         }

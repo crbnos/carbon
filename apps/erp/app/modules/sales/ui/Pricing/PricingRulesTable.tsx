@@ -100,6 +100,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -126,6 +127,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: pricingRuleTypes.map((type) => ({
@@ -270,6 +272,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           return <div className="flex flex-col items-start gap-1">{parts}</div>;
         },
         meta: {
+          mobile: "P3",
           icon: <LuSquareUser />,
           exportValue: (row) => {
             const labels: string[] = [];
@@ -393,6 +396,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [

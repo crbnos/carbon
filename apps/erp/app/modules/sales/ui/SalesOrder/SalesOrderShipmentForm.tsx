@@ -173,7 +173,7 @@ const SalesOrderShipmentForm = forwardRef<
             />
 
             <Input name="trackingNumber" label={t`Tracking Number`} />
-            <div className="col-span-3">
+            <div className="col-span-3 compact:col-span-full">
               <Boolean
                 name="dropShipment"
                 label={t`Drop Shipment`}

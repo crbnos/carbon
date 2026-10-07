@@ -224,6 +224,7 @@ msgid "{0} scrapped"
 msgstr "{0} брак"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} выбрано"
 
@@ -1448,6 +1449,9 @@ msgstr "Добавьте примечания о вашем решении..."
 msgid "Add Approval Requirement"
 msgstr "Добавить требование утверждения"
 
+msgid "Add Asset Class"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Добавить приложение-аутентификатор"
 
@@ -1504,6 +1508,9 @@ msgstr "Добавить заголовок"
 
 msgid "Add Item"
 msgstr "Добавить элемент"
+
+msgid "Add Journal Entry"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Добавить строку"
@@ -1620,6 +1627,9 @@ msgstr "Добавить запасную часть"
 msgid "Add station"
 msgstr "Добавить рабочее место"
 
+msgid "Add step"
+msgstr ""
+
 msgid "Add Step"
 msgstr "Добавить шаг"
 
@@ -1708,6 +1718,9 @@ msgstr "Дополнительно"
 
 msgid "Affected item not found."
 msgstr "Затронутый элемент не найден."
+
+msgid "Affected Items"
+msgstr ""
 
 msgid "After"
 msgstr "После"
@@ -2743,6 +2756,9 @@ msgstr "Сборки"
 msgid "Assembly"
 msgstr "Сборка"
 
+msgid "assembly instruction"
+msgstr ""
+
 msgid "Assembly instruction"
 msgstr "Инструкция сборки"
 
@@ -2832,6 +2848,9 @@ msgstr "Назначает данную единицу хранения рабо
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Назначает данную единицу рабочему центру для прилинейного запаса материала, чтобы операторы видели его в представлении производства; наследуется от родительской единицы, если установлено там."
+
+msgid "Associations"
+msgstr ""
 
 msgid "Assumptions"
 msgstr "Предположения"
@@ -3233,6 +3252,9 @@ msgstr "Заблокировано {0}"
 msgid "Blocking sync"
 msgstr "Блокировка синхронизации"
 
+msgid "Blocks"
+msgstr ""
+
 msgid "Blocks Machine"
 msgstr "Блокирует станок"
 
@@ -3388,6 +3410,9 @@ msgstr "По местоположению"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
+
+msgid "By you · edited <0/>"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "3D модель"
@@ -3829,6 +3854,9 @@ msgstr "Выберите серийный номер"
 msgid "choose a supplier for {0} on the job"
 msgstr "выберите поставщика для {0} в производственном заказе"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
 
@@ -3867,6 +3895,9 @@ msgstr "Очистить"
 
 msgid "Clear due date"
 msgstr "Очистить срок выполнения"
+
+msgid "Clear filters"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
@@ -4505,6 +4536,9 @@ msgstr "Ссылка скопирована в буфер обмена"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Приглашение наладки скопировано в буфер обмена"
 
+msgid "Copied to clipboard"
+msgstr ""
+
 msgid "Copied!"
 msgstr "Скопировано!"
 
@@ -4892,8 +4926,7 @@ msgstr "Покрытие"
 msgid "Create"
 msgstr "Создать"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Создать {0}"
 
@@ -5902,11 +5935,17 @@ msgstr "Удалить праздник"
 msgid "Delete Inspection Plan"
 msgstr "Удалить план контроля"
 
+msgid "Delete Instruction"
+msgstr ""
+
 msgid "Delete Issue"
 msgstr "Удалить проблему"
 
 msgid "Delete Item Group"
 msgstr "Удалить группу позиций"
+
+msgid "Delete Job"
+msgstr ""
 
 msgid "Delete Journal Entry"
 msgstr "Удалить проводку"
@@ -6220,6 +6259,9 @@ msgstr "Дата начала амортизации"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Рассчитать срок хранения этой номенклатуры на основе кратчайшего срока хранения её компонентов, игнорируя поле «Дни» выше."
+
+msgid "Descending"
+msgstr ""
 
 msgid "Description"
 msgstr "Описание"
@@ -7090,6 +7132,9 @@ msgstr "Изменить вебхук"
 msgid "Edit Work Center"
 msgstr "Изменить рабочий центр"
 
+msgid "edited <0/>"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Исключено"
 
@@ -7719,9 +7764,6 @@ msgstr "Срок годности начинается при запуске в�
 msgid "Expiry trace"
 msgstr "Трассировка срока годности"
 
-msgid "Explorer"
-msgstr "Обозреватель"
-
 msgid "Export"
 msgstr "Экспортировать"
 
@@ -8243,8 +8285,17 @@ msgstr "заполняет цикл"
 msgid "Filter"
 msgstr "Фильтровать"
 
+msgid "Filter & sort"
+msgstr ""
+
+msgid "Filter and sort"
+msgstr ""
+
 msgid "Filter by…"
 msgstr "Фильтровать по…"
+
+msgid "Filters"
+msgstr ""
 
 msgid "Finalize"
 msgstr "Завершить"
@@ -8820,6 +8871,9 @@ msgstr "Имеет операции, которые не могут быть с�
 msgid "Headers"
 msgstr "Заголовки"
 
+msgid "Heading {level}"
+msgstr ""
+
 msgid "healthy"
 msgstr "здоровый"
 
@@ -8885,6 +8939,9 @@ msgstr "Название праздника"
 
 msgid "Holidays"
 msgstr "Праздники"
+
+msgid "Home"
+msgstr ""
 
 msgid "Home Phone"
 msgstr "Домашний телефон"
@@ -10309,6 +10366,9 @@ msgstr "Параметры списка"
 msgid "List view"
 msgstr "Вид списка"
 
+msgid "List View"
+msgstr ""
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -10322,6 +10382,9 @@ msgstr "Живая перезагрузка"
 
 msgid "Load"
 msgstr "Нагрузка"
+
+msgid "Load more"
+msgstr ""
 
 msgid "Load newer"
 msgstr "Загрузить новые"
@@ -10519,6 +10582,9 @@ msgstr "Класс имущества MACRS"
 msgid "Magic link"
 msgstr "Волшебная ссылка"
 
+msgid "Main"
+msgstr ""
+
 msgid "Main build (after its last step)"
 msgstr "Основная сборка (после последнего шага)"
 
@@ -10596,6 +10662,10 @@ msgstr "Производство под заказ"
 
 msgid "Make tracked entities available again"
 msgstr "Сделать отслеживаемые объекты доступными снова"
+
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr ""
 
 msgid "Makes this document active again."
 msgstr "Делает этот документ активным снова."
@@ -11687,6 +11757,9 @@ msgstr "Нет операций синхронизации {0}"
 msgid "No {0} yet"
 msgstr "Пока нет {0}"
 
+msgid "No {title} yet"
+msgstr ""
+
 msgid "No abilities added"
 msgstr "Нет добавленных навыков"
 
@@ -12365,6 +12438,9 @@ msgstr "На этом месте больше нечего извлекать и
 msgid "Nothing here matches your search and filters."
 msgstr "Здесь нет ничего, соответствующего вашему поиску и фильтрам."
 
+msgid "Nothing here yet"
+msgstr ""
+
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
@@ -12685,9 +12761,6 @@ msgstr "Открытые производственные заказы"
 
 msgid "Open menu"
 msgstr "Открыть меню"
-
-msgid "Open navigation"
-msgstr "Открыть навигацию"
 
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
@@ -13049,6 +13122,9 @@ msgstr "Переопределить срок действия для {label}."
 msgid "Overtime"
 msgstr "Переработки"
 
+msgid "Overview"
+msgstr ""
+
 msgid "Overwrite Existing"
 msgstr "Перезаписать существующие"
 
@@ -13211,6 +13287,9 @@ msgstr "Вставьте XML метаданных, если ваш постав�
 
 msgid "Path"
 msgstr "Путь"
+
+msgid "Pause"
+msgstr ""
 
 msgid "Pay"
 msgstr "Оплатить"
@@ -13707,6 +13786,9 @@ msgstr "Текущая неделя"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Сочетания клавиш игнорируются при вводе текста в поле."
 
+msgid "Press '/' for commands"
+msgstr ""
+
 msgid "Prev"
 msgstr "Пред"
 
@@ -14090,6 +14172,9 @@ msgstr "Со склада"
 msgid "Pull, map, and load your data"
 msgstr "Извлеките, сопоставьте и загрузите ваши данные"
 
+msgid "Purchase"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "Закупка и производство из MRP"
 
@@ -14384,6 +14469,9 @@ msgstr "Ежеквартально"
 msgid "Question"
 msgstr "Вопрос"
 
+msgid "Questions"
+msgstr ""
+
 msgid "Queued"
 msgstr "В очереди"
 
@@ -14509,6 +14597,9 @@ msgstr "Сырьё и материалы"
 
 msgid "Raw Materials (default)"
 msgstr "Сырьё и материалы (по умолчанию)"
+
+msgid "Re-convert Model"
+msgstr ""
 
 msgid "Re-date to first open day"
 msgstr "Перенести дату на первый открытый день"
@@ -15316,6 +15407,9 @@ msgstr "Результаты"
 msgid "Results per page"
 msgstr "Результатов на странице"
 
+msgid "Resume"
+msgstr ""
+
 msgid "Resume Receiving"
 msgstr "Возобновить получение"
 
@@ -15427,11 +15521,17 @@ msgstr "Налог на продажи с обратным взиманием"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Налог на продажи с обратным взиманием (по умолчанию)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "Отменить связанные записи операций"
 
 msgid "Reversed"
 msgstr "Сторнировано"
+
+msgid "Reversing Entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "Восстановить"
@@ -15882,6 +15982,9 @@ msgstr "Сохранить контактные лица"
 msgid "Save dimension settings"
 msgstr "Сохранить настройки измерений"
 
+msgid "Save Draft"
+msgstr ""
+
 msgid "Save Method"
 msgstr "Сохранить метод"
 
@@ -15902,6 +16005,9 @@ msgstr "Сохранено"
 
 msgid "Saved view"
 msgstr "Сохраненное представление"
+
+msgid "Saved views"
+msgstr ""
 
 msgid "Saved Views"
 msgstr "Сохраненные представления"
@@ -16050,6 +16156,9 @@ msgstr "Поиск"
 msgid "Search {gaugeTypeName}..."
 msgstr "Поиск {gaugeTypeName}..."
 
+msgid "Search {title}"
+msgstr ""
+
 msgid "Search accounts"
 msgstr "Поиск счетов"
 
@@ -16154,9 +16263,6 @@ msgstr "Секрет скопирован в буфер обмена"
 
 msgid "Section"
 msgstr "Раздел"
-
-msgid "Sections"
-msgstr "Разделы"
 
 msgid "Secure your account with 2FA"
 msgstr "Защитите свою учетную запись с помощью 2FA"
@@ -16363,6 +16469,9 @@ msgstr "Выберите количества"
 msgid "Select Reason"
 msgstr "Выбрать причину"
 
+msgid "Select row"
+msgstr ""
+
 msgid "Select Row"
 msgstr "Выбрать строку"
 
@@ -16420,6 +16529,9 @@ msgstr "Самообслуживание"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Справочная информация для самостоятельного использования на docs.carbon.ms"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Send"
 msgstr "Отправить"
@@ -16861,6 +16973,9 @@ msgstr "Показать {0}"
 msgid "Show {0} more"
 msgstr "Показать еще {0}"
 
+msgid "Show {count} results"
+msgstr ""
+
 msgid "Show {label}"
 msgstr "Показать {label}"
 
@@ -16928,6 +17043,9 @@ msgstr "Показано {0} из {totalCount} — уточните поиск"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Показано {0} из {totalFiltered} — уточните поиск"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "Отображение в {parentCurrency}"
@@ -17068,17 +17186,11 @@ msgstr "Инженер решений"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с вашими номенклатурными позициями. Проверьте и сопоставьте каждую строку ниже."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Некоторые записи не вернутся. Введите <0>{CONFIRM_WORD}</0> для продолжения."
 
 msgid "Some Shifts"
 msgstr "Некоторые смены"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
@@ -17427,6 +17539,9 @@ msgstr "Останавливает новые предложения по зак
 msgid "Storage client not available"
 msgstr "Клиент хранилища недоступен"
 
+msgid "Storage Rule"
+msgstr ""
+
 msgid "Storage Rules"
 msgstr "Правила хранения"
 
@@ -17551,9 +17666,6 @@ msgstr "Отправить контроль"
 
 msgid "Submitted By"
 msgstr "Отправлено"
-
-msgid "Submodules"
-msgstr "Подмодули"
 
 msgid "substance"
 msgstr "Вещество"
@@ -17843,6 +17955,9 @@ msgstr "Переключить"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "Отключите модуль, чтобы удалить его везде: Требования, Данные, Обучение, Область охвата."
+
+msgid "Switch company"
+msgstr ""
 
 msgid "Switch to pan mode"
 msgstr "Переключиться в режим панорамы"
@@ -19616,6 +19731,9 @@ msgstr "Отслеживаемый материал предварительно
 msgid "Tracking"
 msgstr "Отслеживание"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Метод отслеживания"
 
@@ -19705,6 +19823,9 @@ msgstr "Транзит и учреждение"
 
 msgid "Trash"
 msgstr "Корзина"
+
+msgid "Tree View"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "Сальдовая ведомость"
@@ -20002,9 +20123,6 @@ msgstr "Безымянная строка"
 
 msgid "Untitled step"
 msgstr "Шаг без названия"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."
@@ -20405,6 +20523,12 @@ msgstr "Подтвердите вашу электронную почту"
 
 msgid "Version"
 msgstr "Версия"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -21285,6 +21409,9 @@ msgstr "Рабочие сессии по конфигурации и данны�
 
 msgid "Worst Performing Machines"
 msgstr "Худшие станки"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Счет уценки"

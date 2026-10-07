@@ -159,7 +159,7 @@ const PriceListTable = memo(
               </VStack>
             </HStack>
           ),
-          meta: { icon: <LuBookMarked /> }
+          meta: { icon: <LuBookMarked />, mobile: "P1" }
         },
         {
           accessorKey: "itemPostingGroupId",
@@ -178,7 +178,8 @@ const PriceListTable = memo(
                 label: <Enumerable value={group.label} />
               }))
             },
-            icon: <LuGroup />
+            icon: <LuGroup />,
+            mobile: "P3"
           }
         },
         {
@@ -189,7 +190,10 @@ const PriceListTable = memo(
               {currencyFormatter.format(row.original.basePrice)}
             </span>
           ),
-          meta: { icon: <LuCircleDollarSign /> }
+          meta: {
+            icon: <LuCircleDollarSign />,
+            mobile: hasScope ? undefined : "P2"
+          }
         }
       ];
 
@@ -217,7 +221,7 @@ const PriceListTable = memo(
                 />
               </HStack>
             ),
-            meta: { icon: <LuCircleDollarSign /> }
+            meta: { icon: <LuCircleDollarSign />, mobile: "P2" }
           },
           {
             accessorKey: "source",

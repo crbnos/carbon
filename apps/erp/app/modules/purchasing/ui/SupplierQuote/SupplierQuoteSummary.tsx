@@ -120,12 +120,12 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={itemReadableId!}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg compact:size-14"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4 compact:size-14 compact:p-3">
+                  <LuImage className="w-16 h-16 text-muted-foreground compact:size-8" />
                 </div>
               )}
 

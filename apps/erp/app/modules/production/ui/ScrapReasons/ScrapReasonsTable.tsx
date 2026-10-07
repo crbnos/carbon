@@ -38,6 +38,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTrash />
         }
       }

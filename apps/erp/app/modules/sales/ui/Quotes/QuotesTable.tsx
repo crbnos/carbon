@@ -91,6 +91,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -101,6 +102,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <CustomerAvatar customerId={row.original.customerId} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -121,6 +123,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           const completedLines = row.original.completedLines ?? 0;
           return status === "Draft" ? (
             <BarProgress
+              className="compact:w-24"
               gradient
               progress={lines === 0 ? 0 : (completedLines / lines) * 100}
             />
@@ -129,6 +132,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: quoteStatusType.map((status) => ({

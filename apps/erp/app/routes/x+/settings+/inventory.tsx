@@ -22,10 +22,8 @@ import {
   CardHeader,
   CardTitle,
   ChoiceSelect,
-  Heading,
   ScrollArea,
-  toast,
-  VStack
+  toast
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -42,6 +40,7 @@ import {
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompanySettings,
@@ -220,13 +219,10 @@ export default function InventorySettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Inventory</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Kanban</Trans>
@@ -413,7 +409,7 @@ export default function InventorySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

@@ -698,6 +698,7 @@ export default function AssemblyInstructionRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Steps`}
               explorer={
                 <AssemblyInstructionExplorer
                   steps={steps}

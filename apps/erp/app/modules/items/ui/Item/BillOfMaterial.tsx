@@ -1268,8 +1268,9 @@ function makeItem(
             <Link
               to={getLinkToItemDetails(material.itemType, material.itemId)}
               onClick={(e) => e.stopPropagation()}
+              className="compact:hit-area"
             >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
+              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 compact:opacity-100" />
             </Link>
           )}
         </div>
@@ -1287,7 +1288,7 @@ function makeItem(
           material.item?.itemTrackingType ?? ""
         ) && (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger className="compact:hit-area">
               <Badge variant="secondary">
                 <TrackingTypeIcon
                   type={material.item?.itemTrackingType ?? ""}
@@ -1309,7 +1310,7 @@ function makeItem(
         )}
 
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger className="compact:hit-area">
             <Badge variant="secondary">
               <MethodIcon type={material.methodType} isKit={material.kit} />
             </Badge>
@@ -1327,7 +1328,7 @@ function makeItem(
 
         {replenishmentSystem === "Buy and Make" && (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger className="compact:hit-area">
               <Badge variant="secondary">
                 <SourcingTypeIcon type={material.sourcingType} />
               </Badge>
@@ -1339,7 +1340,7 @@ function makeItem(
         <Badge variant="secondary">{material.quantity}</Badge>
 
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger className="compact:hit-area">
             <Badge variant="secondary">
               <MethodItemTypeIcon type={material.itemType} />
             </Badge>

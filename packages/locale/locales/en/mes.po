@@ -215,6 +215,9 @@ msgstr "available"
 msgid "Available"
 msgstr "Available"
 
+msgid "Back"
+msgstr "Back"
+
 msgid "Back to batch"
 msgstr "Back to batch"
 
@@ -294,6 +297,9 @@ msgstr "Check your email"
 
 msgid "Choose a job"
 msgstr "Choose a job"
+
+msgid "Choose an option"
+msgstr "Choose an option"
 
 msgid "Clear"
 msgstr "Clear"
@@ -406,8 +412,7 @@ msgstr "Copy to clipboard"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Cost of unplanned maintenance, last {0} days"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Create {0}"
 
@@ -695,6 +700,9 @@ msgstr "Go back to operation"
 
 msgid "Go to onboarding"
 msgstr "Go to onboarding"
+
+msgid "Heading {level}"
+msgstr "Heading {level}"
 
 msgid "Hide description"
 msgstr "Hide description"
@@ -1179,6 +1187,9 @@ msgstr "Operator Performed"
 msgid "Optional"
 msgstr "Optional"
 
+msgid "Options"
+msgstr "Options"
+
 msgid "or"
 msgstr "or"
 
@@ -1272,6 +1283,9 @@ msgstr "PM schedule lapsed"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+
+msgid "Press '/' for commands"
+msgstr "Press '/' for commands"
 
 msgid "Prev"
 msgstr "Prev"
@@ -1916,6 +1930,9 @@ msgstr "Work Center Displays"
 
 msgid "Work instructions"
 msgstr "Work instructions"
+
+msgid "Write a note…"
+msgstr "Write a note…"
 
 msgid "Yes"
 msgstr "Yes"

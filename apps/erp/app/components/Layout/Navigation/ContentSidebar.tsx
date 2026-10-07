@@ -6,6 +6,11 @@ import { Button, cn, PrefetchLink, VStack } from "@carbon/react";
 import { useUrlParams } from "~/hooks";
 import type { Route } from "~/types";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+import {
+  SheetNavGroup,
+  SheetNavRow,
+  useSidebarPresentation
+} from "./SidebarPresentation";
 
 const ContentSidebar = ({ links }: { links: Route[] }) => {
   const location = useSidebarLocation((pathname) =>
@@ -13,6 +18,32 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
   );
   const [params] = useUrlParams();
   const filter = params.get("q") ?? undefined;
+  const presentation = useSidebarPresentation();
+
+  if (presentation === "title") {
+    const active = links.find(
+      (route) => location.pathname.includes(route.to) && route.q === filter
+    );
+    return active ? <>{active.name}</> : null;
+  }
+
+  if (presentation === "sheet") {
+    return (
+      <SheetNavGroup>
+        {links.map((route) => (
+          <SheetNavRow
+            key={route.name}
+            to={route.to + (route.q ? `?q=${route.q}` : "")}
+            icon={route.icon}
+            label={route.name}
+            isActive={
+              location.pathname.includes(route.to) && route.q === filter
+            }
+          />
+        ))}
+      </SheetNavGroup>
+    );
+  }
 
   return (
     <SidebarLinks>

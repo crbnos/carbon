@@ -104,6 +104,7 @@ const ChangeNoticesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -114,6 +115,7 @@ const ChangeNoticesTable = memo(
             <ChangeNoticeStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCircleGauge />,
             filter: {
               type: "static",
@@ -205,6 +207,7 @@ const ChangeNoticesTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             filter: {
               type: "static",

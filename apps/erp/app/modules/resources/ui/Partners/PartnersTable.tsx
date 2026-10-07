@@ -55,6 +55,7 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           filter: {
             type: "static",
             options: suppliers.map((supplier) => ({
@@ -66,7 +67,8 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
       },
       {
         header: t`Location`,
-        cell: ({ row }) => `${row.original.city}, ${row.original.state}`
+        cell: ({ row }) => `${row.original.city}, ${row.original.state}`,
+        meta: { mobile: "P3" }
       },
       // {
       //   accessorKey: "abilityName",
@@ -85,7 +87,8 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
       {
         accessorKey: "hoursPerWeek",
         header: t`Hours per Week`,
-        cell: (item) => item.getValue()
+        cell: (item) => item.getValue(),
+        meta: { mobile: "P2" }
       }
     ];
 

@@ -89,6 +89,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -116,6 +117,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuDatabase />,
           filter: {
             type: "static",
@@ -133,6 +135,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuPercent />
         }
       },

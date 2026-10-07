@@ -54,6 +54,10 @@ import {
   Select,
   ShippingMethod
 } from "~/components/Form";
+import {
+  RecordAction,
+  RecordHeroTarget
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
@@ -143,8 +147,50 @@ const ShipmentForm = ({
     );
   };
 
+  const statusBadge = (
+    <ShipmentStatus status={status} invoiced={routeData?.shipment?.invoiced} />
+  );
+
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      {(isPosted || isVoided) && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={isVoided || !permissions.is("employee")}
+            destructive
+            onClick={voidModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuTicketX />} />
+            <Trans>Void</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          !permissions.can("delete", "inventory") || !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteDisclosure.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Shipment</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+
+  // Phones lead with Invoice once a Sales Order shipment is posted.
+  const isInvoicePrimary =
+    isPosted &&
+    !isVoided &&
+    routeData?.shipment?.sourceDocument === "Sales Order";
+
   return (
     <>
+      <RecordHeroTarget bleed />
       <Card>
         <ValidatedForm
           id={formId}
@@ -156,100 +202,79 @@ const ShipmentForm = ({
         >
           <DocumentHeader
             title={routeData?.shipment?.shipmentId ?? ""}
-            status={
-              <ShipmentStatus
-                status={status}
-                invoiced={routeData?.shipment?.invoiced}
-              />
-            }
-            menuItems={
-              <>
-                {auditLogTrigger}
-                {(isPosted || isVoided) && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={isVoided || !permissions.is("employee")}
-                      destructive
-                      onClick={voidModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTicketX />} />
-                      <Trans>Void</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    !permissions.can("delete", "inventory") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteDisclosure.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Shipment</Trans>
-                </DropdownMenuItem>
-              </>
-            }
+            status={statusBadge}
+            menuItems={menuItems}
             actions={
               <>
                 {hasTrackingLabels && (
-                  <PrintButton
-                    sourceDocument="Shipment"
-                    sourceDocumentId={shipmentId}
-                    locationId={locationId ?? undefined}
-                    context="shipping"
-                    fileRoutes={{
-                      pdf: path.to.file.shipmentLabelsPdf,
-                      zpl: path.to.file.shipmentLabelsZpl
-                    }}
-                  />
+                  <RecordAction slot="overflow">
+                    <PrintButton
+                      sourceDocument="Shipment"
+                      sourceDocumentId={shipmentId}
+                      locationId={locationId ?? undefined}
+                      context="shipping"
+                      fileRoutes={{
+                        pdf: path.to.file.shipmentLabelsPdf,
+                        zpl: path.to.file.shipmentLabelsZpl
+                      }}
+                    />
+                  </RecordAction>
                 )}
-                <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
-                  <a
-                    target="_blank"
-                    href={path.to.file.shipment(shipmentId)}
-                    rel="noreferrer"
-                  >
-                    <Trans>Packing Slip</Trans>
-                  </a>
-                </Button>
-                <SourceDocumentLink
-                  sourceDocument={
-                    routeData?.shipment?.sourceDocument ?? undefined
-                  }
-                  sourceDocumentId={
-                    routeData?.shipment?.sourceDocumentId ?? undefined
-                  }
-                  sourceDocumentReadableId={
-                    routeData?.shipment?.sourceDocumentReadableId ?? undefined
-                  }
-                />
-                {permissions.can("view", "invoicing") && (
-                  <InvoiceButtons
-                    shipment={routeData?.shipment}
-                    relatedItems={routeData?.relatedItems}
-                    shipmentId={shipmentId}
-                    isPosted={isPosted}
-                    isVoided={isVoided}
-                    onCreateInvoice={createInvoice}
-                  />
-                )}
-                <Button
-                  variant={!isPosted && !isVoided ? "primary" : "secondary"}
-                  onClick={postModal.onOpen}
-                  isDisabled={
-                    !canPost ||
-                    isPosted ||
-                    isVoided ||
-                    !permissions.is("employee")
-                  }
-                  leftIcon={<LuCheckCheck />}
+                <RecordAction
+                  slot={isPosted && !isInvoicePrimary ? "primary" : "secondary"}
                 >
-                  <Trans>Post</Trans>
-                </Button>
+                  <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
+                    <a
+                      target="_blank"
+                      href={path.to.file.shipment(shipmentId)}
+                      rel="noreferrer"
+                    >
+                      <Trans>Packing Slip</Trans>
+                    </a>
+                  </Button>
+                </RecordAction>
+                <RecordAction slot="overflow">
+                  <SourceDocumentLink
+                    sourceDocument={
+                      routeData?.shipment?.sourceDocument ?? undefined
+                    }
+                    sourceDocumentId={
+                      routeData?.shipment?.sourceDocumentId ?? undefined
+                    }
+                    sourceDocumentReadableId={
+                      routeData?.shipment?.sourceDocumentReadableId ?? undefined
+                    }
+                  />
+                </RecordAction>
+                {permissions.can("view", "invoicing") && (
+                  <RecordAction
+                    slot={isInvoicePrimary ? "primary" : "overflow"}
+                  >
+                    <InvoiceButtons
+                      shipment={routeData?.shipment}
+                      relatedItems={routeData?.relatedItems}
+                      shipmentId={shipmentId}
+                      isPosted={isPosted}
+                      isVoided={isVoided}
+                      onCreateInvoice={createInvoice}
+                    />
+                  </RecordAction>
+                )}
+                <RecordAction slot={isPosted ? "overflow" : "primary"}>
+                  <Button
+                    variant={!isPosted && !isVoided ? "primary" : "secondary"}
+                    onClick={postModal.onOpen}
+                    isDisabled={
+                      !canPost ||
+                      isPosted ||
+                      isVoided ||
+                      !permissions.is("employee")
+                    }
+                    leftIcon={<LuCheckCheck />}
+                  >
+                    <Trans>Post</Trans>
+                  </Button>
+                </RecordAction>
               </>
             }
           />

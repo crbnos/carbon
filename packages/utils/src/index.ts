@@ -66,3 +66,4 @@ export * from "./themes";
 export * from "./tiptap";
 export * from "./types";
 export * from "./url";
+export * from "./viewport";

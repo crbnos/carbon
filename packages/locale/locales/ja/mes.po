@@ -215,6 +215,9 @@ msgstr "利用可能"
 msgid "Available"
 msgstr "利用可能"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "バッチへ戻る"
 
@@ -294,6 +297,9 @@ msgstr "メールを確認してください"
 
 msgid "Choose a job"
 msgstr "製造指図を選択"
+
+msgid "Choose an option"
+msgstr ""
 
 msgid "Clear"
 msgstr "クリア"
@@ -406,8 +412,7 @@ msgstr "クリップボードにコピー"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0}を作成"
 
@@ -695,6 +700,9 @@ msgstr "操作に戻る"
 
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "説明を非表示"
@@ -1179,6 +1187,9 @@ msgstr "作業者が実施"
 msgid "Optional"
 msgstr "オプション"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "または"
 
@@ -1272,6 +1283,9 @@ msgstr "PM スケジュール失効"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "前へ"
@@ -1916,6 +1930,9 @@ msgstr "作業区ディスプレイ"
 
 msgid "Work instructions"
 msgstr "作業手順書"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "はい"

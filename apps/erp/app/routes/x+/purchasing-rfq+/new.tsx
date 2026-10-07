@@ -9,6 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
 import type { PurchasingRFQStatusType } from "~/modules/purchasing";
 import {
@@ -96,8 +97,8 @@ export default function PurchasingRFQNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <PurchasingRFQForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

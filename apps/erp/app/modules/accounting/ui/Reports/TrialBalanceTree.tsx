@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, ScrollArea } from "@carbon/react";
+import { cn, ScrollArea, useCompact } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
@@ -60,6 +60,7 @@ const TrialBalanceTree = memo(
     ledgerPath
   }: TrialBalanceTreeProps) => {
     const { t } = useLingui();
+    const isCompact = useCompact();
     useRealtime("journal");
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -103,9 +104,16 @@ const TrialBalanceTree = memo(
     });
 
     return (
-      <ScrollArea className="h-[calc(100dvh-var(--header-height)-61px)] w-full">
-        <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card">
-          <div className="flex-1 px-4">
+      <ScrollArea
+        className={cn(
+          "h-[calc(100dvh-var(--header-height)-61px)] w-full",
+          // Phones: the viewport also scrolls sideways, with an
+          // edge fade, behind a sticky 150pt account column.
+          "compact:[&>[data-radix-scroll-area-viewport]]:!overflow-x-auto compact:[&>[data-radix-scroll-area-viewport]]:scroll-fade-x"
+        )}
+      >
+        <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card compact:w-max compact:min-w-full">
+          <div className="flex-1 px-4 compact:sticky compact:left-0 compact:z-[2] compact:w-[150px] compact:flex-none compact:truncate compact:bg-card">
             <Trans>Account</Trans>
           </div>
           <span className="w-28 text-right px-2">
@@ -136,7 +144,12 @@ const TrialBalanceTree = memo(
           getNodeProps={getNodeProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
-          parentClassName="h-full"
+          parentClassName={cn(
+            "h-full",
+            // The viewport is the sideways scroller, so sticky cells pin to it.
+            "compact:overflow-visible",
+            showTranslated ? "compact:min-w-[806px]" : "compact:min-w-[694px]"
+          )}
           renderNode={({ node, state }) => {
             const account = node.data;
             const isGroup = account.isGroup;
@@ -158,24 +171,9 @@ const TrialBalanceTree = memo(
 
             const isDrillable = !isGroup && !!ledgerPath;
 
-            return (
-              <div
-                className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row",
-                  state.selected
-                    ? "bg-muted hover:bg-accent"
-                    : "bg-transparent hover:bg-accent",
-                  isGroup && "font-semibold"
-                )}
-                onClick={() => {
-                  selectNode(node.id, false);
-                  if (isGroup) {
-                    toggleExpandNode(node.id);
-                  } else if (isDrillable) {
-                    openLedger(account.id);
-                  }
-                }}
-              >
+            // Indentation + folder + number + name.
+            const accountCell = (
+              <>
                 {/* Indentation lines */}
                 <div className="flex h-9 items-center">
                   {Array.from({ length: node.level }).map((_, index) => (
@@ -205,7 +203,12 @@ const TrialBalanceTree = memo(
                 </div>
 
                 {/* Folder icon */}
-                <div className="w-5 h-5 flex items-center justify-center mr-2 shrink-0">
+                <div
+                  className={cn(
+                    "w-5 h-5 flex items-center justify-center mr-2 shrink-0",
+                    !isGroup && "compact:hidden"
+                  )}
+                >
                   {isGroup &&
                     (isExpanded ? (
                       <LuFolderOpen className="h-4 w-4 text-muted-foreground" />
@@ -223,6 +226,43 @@ const TrialBalanceTree = memo(
                   )}
                   <span className="truncate">{account.name}</span>
                 </div>
+              </>
+            );
+
+            return (
+              <div
+                className={cn(
+                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row compact:overflow-visible",
+                  state.selected
+                    ? "bg-muted hover:bg-accent"
+                    : "bg-transparent hover:bg-accent",
+                  isGroup && "font-semibold"
+                )}
+                onClick={() => {
+                  selectNode(node.id, false);
+                  if (isGroup) {
+                    toggleExpandNode(node.id);
+                  } else if (isDrillable) {
+                    openLedger(account.id);
+                  }
+                }}
+              >
+                {/* Compact: one sticky cell, so the name stays beside the
+                    amounts while they scroll sideways. */}
+                {isCompact ? (
+                  <div
+                    className={cn(
+                      "sticky left-0 z-[1] flex h-full w-[150px] shrink-0 items-center overflow-hidden",
+                      state.selected
+                        ? "bg-muted group-hover/row:bg-accent"
+                        : "bg-card group-hover/row:bg-accent"
+                    )}
+                  >
+                    {accountCell}
+                  </div>
+                ) : (
+                  accountCell
+                )}
 
                 {/* Beginning Balance */}
                 <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">

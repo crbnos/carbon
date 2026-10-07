@@ -32,6 +32,11 @@ import { ConfirmDelete } from "~/components/Modals";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+import {
+  SheetNavGroup,
+  SheetNavRow,
+  useSidebarPresentation
+} from "./SidebarPresentation";
 
 type GroupedRoute = RouteGroup["routes"][number];
 
@@ -89,6 +94,64 @@ const GroupedContentSidebar = ({
       [routeName]: !prev[routeName]
     }));
   };
+
+  const presentation = useSidebarPresentation();
+  if (presentation === "title") {
+    // Compact app bar title: the item the switcher sheet below ticks.
+    const search = `${location.pathname}${location.search}`;
+    for (const route of groups.flatMap((group) => group.routes)) {
+      if (!matchesRoute(route, location.pathname, exactMatch)) continue;
+      const view = route.views?.find((v) => search.includes(`view=${v.id}`));
+      if (view) return <>{view.name}</>;
+      if (Boolean(route.isActive) || exactMatch || !search.includes("view=")) {
+        return <>{route.name}</>;
+      }
+    }
+    return null;
+  }
+  if (presentation === "sheet") {
+    // Compact section switcher: the same groups, order and active rule as
+    // the panel below. Saved views open from here; reordering and deleting
+    // them stays on desktop.
+    const search = `${location.pathname}${location.search}`;
+    return (
+      <div className="flex flex-col">
+        {groups.map((group) => (
+          <SheetNavGroup key={group.name} title={group.name}>
+            {group.routes.map((route) => {
+              const isActive =
+                matchesRoute(route, location.pathname, exactMatch) &&
+                (Boolean(route.isActive) ||
+                  exactMatch ||
+                  !search.includes("view="));
+              const views = [...(route.views ?? [])].sort(
+                (a, b) => a.sortOrder - b.sortOrder
+              );
+              return (
+                <div key={route.name} className="flex flex-col">
+                  <SheetNavRow
+                    to={route.to + (route.q ? `?q=${route.q}` : "")}
+                    icon={route.icon}
+                    label={route.name}
+                    isActive={isActive}
+                  />
+                  {views.map((view) => (
+                    <SheetNavRow
+                      key={view.to}
+                      to={view.to}
+                      label={view.name}
+                      isActive={search.includes(`view=${view.id}`)}
+                      inset
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </SheetNavGroup>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -277,7 +340,7 @@ const ViewsReorderGroup = ({
                 icon={<LuGripVertical />}
                 variant="ghost"
                 size="sm"
-                className="flex-shrink-0 opacity-0 group-hover/view:opacity-100 absolute left-1"
+                className="flex-shrink-0 opacity-0 group-hover/view:opacity-100 absolute left-1 compact:opacity-100"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -286,7 +349,7 @@ const ViewsReorderGroup = ({
                     icon={<LuEllipsisVertical />}
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 flex-shrink-0 opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                    className="absolute right-1 flex-shrink-0 opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground compact:opacity-100"
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>

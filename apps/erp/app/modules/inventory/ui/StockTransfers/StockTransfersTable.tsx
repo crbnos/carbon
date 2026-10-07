@@ -28,6 +28,7 @@ import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { clearStockTransferWizard, usePeople } from "~/stores";
@@ -69,6 +70,7 @@ const StockTransfersTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -103,6 +105,7 @@ const StockTransfersTable = memo(
             return <StockTransferStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: stockTransferStatusType.map((type) => ({
@@ -121,6 +124,7 @@ const StockTransfersTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -274,15 +278,23 @@ const StockTransfersTable = memo(
                 }}
               />
               {permissions.can("create", "inventory") && (
-                <Button
+                <NewAction
+                  label={t`Add Stock Transfer`}
                   onClick={() => {
                     clearStockTransferWizard();
                     wizardDisclosure.onOpen();
                   }}
-                  leftIcon={<LuCirclePlus />}
                 >
-                  {t`Add Stock Transfer`}
-                </Button>
+                  <Button
+                    onClick={() => {
+                      clearStockTransferWizard();
+                      wizardDisclosure.onOpen();
+                    }}
+                    leftIcon={<LuCirclePlus />}
+                  >
+                    {t`Add Stock Transfer`}
+                  </Button>
+                </NewAction>
               )}
             </div>
           }

@@ -117,6 +117,7 @@ const TrainingAssignmentsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookOpen />
           }
         },
@@ -135,6 +136,7 @@ const TrainingAssignmentsTable = memo(
           header: t`Period`,
           cell: ({ row }) => row.original.currentPeriod ?? "-",
           meta: {
+            mobile: "P3",
             icon: <LuClock />
           }
         },
@@ -208,6 +210,7 @@ const TrainingAssignmentsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuChartColumnIncreasing />
           }
         }

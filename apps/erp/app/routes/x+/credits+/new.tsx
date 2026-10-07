@@ -10,6 +10,7 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
 import { getCompany, getNextSequence } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
@@ -120,11 +121,11 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewMemoRoute() {
   const { initialValues, type } = useLoaderData<typeof loader>();
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <MemoForm
         initialValues={initialValues}
         type={type === "supplierCredit" ? "supplierCredit" : "creditMemo"}
       />
-    </div>
+    </NewRecordPage>
   );
 }

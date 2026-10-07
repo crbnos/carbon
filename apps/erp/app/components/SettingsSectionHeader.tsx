@@ -20,7 +20,13 @@ type Props = {
  */
 export default function SettingsSectionHeader({ children, className }: Props) {
   return (
-    <Subheading variant="light" className={cn("mt-4", className)}>
+    <Subheading
+      variant="light"
+      className={cn(
+        "mt-4 compact:text-xs/[1.3] compact:font-medium compact:tracking-[0.04em]",
+        className
+      )}
+    >
       {children}
     </Subheading>
   );

@@ -5,16 +5,12 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
-  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure
@@ -27,10 +23,7 @@ import {
   LuCheckCheck,
   LuCircleCheck,
   LuCircleX,
-  LuEllipsisVertical,
   LuHandCoins,
-  LuPanelLeft,
-  LuPanelRight,
   LuShoppingCart,
   LuTicketX,
   LuTrash
@@ -38,6 +31,7 @@ import {
 import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
   usePermissions,
@@ -227,222 +221,217 @@ const PurchaseInvoiceHeader = () => {
     invoiceId,
     balance: purchaseInvoice.balance
   });
+  const isDraft = routeData?.purchaseInvoice?.status === "Draft";
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      {canMarkPaid && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={statusFetcher.state !== "idle"}
+            onClick={() =>
+              statusFetcher.submit(
+                { status: "Paid" },
+                {
+                  method: "post",
+                  action: path.to.purchaseInvoiceStatus(invoiceId)
+                }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCircleCheck />} />
+            <Trans>Mark as Paid</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      {canMarkUnpaid && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={statusFetcher.state !== "idle"}
+            onClick={() =>
+              statusFetcher.submit(
+                { status: "Open" },
+                {
+                  method: "post",
+                  action: path.to.purchaseInvoiceStatus(invoiceId)
+                }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCircleX />} />
+            <Trans>Mark as Unpaid</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      {isPosted && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={!canVoid || !permissions.can("update", "invoicing")}
+            destructive
+            onClick={voidModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuTicketX />} />
+            <Trans>Void</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          isPurchaseInvoiceLocked(routeData?.purchaseInvoice?.status) ||
+          !permissions.can("delete", "invoicing") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Purchase Invoice</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const statusBadges = (
+    <>
+      <PurchaseInvoicingStatus
+        // @ts-expect-error TS2322 - TODO: fix type
+        status={routeData?.purchaseInvoice?.status}
+      />
+      {supplierApprovalRequired && !isSupplierApproved && (
+        <Status color="red">
+          <Trans>Unapproved Supplier</Trans>
+        </Status>
+      )}
+      {rampMapping &&
+        (rampDeepLink ? (
+          <a href={rampDeepLink} target="_blank" rel="noreferrer">
+            <Status color="blue">
+              <Trans>Ramp</Trans>
+            </Status>
+          </a>
+        ) : (
+          <Status color="blue">
+            <Trans>Ramp</Trans>
+          </Status>
+        ))}
+    </>
+  );
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <IconButton
-              aria-label={t`Toggle Explorer`}
-              icon={<LuPanelLeft />}
-              onClick={toggleExplorer}
-              variant="ghost"
-            />
-            <Link to={path.to.purchaseInvoiceDetails(invoiceId)}>
-              <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.purchaseInvoice?.invoiceId}</span>
-              </Heading>
-            </Link>
-            <Copy text={routeData?.purchaseInvoice?.invoiceId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {auditLogTrigger}
-                {canMarkPaid && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={statusFetcher.state !== "idle"}
-                      onClick={() =>
-                        statusFetcher.submit(
-                          { status: "Paid" },
-                          {
-                            method: "post",
-                            action: path.to.purchaseInvoiceStatus(invoiceId)
-                          }
-                        )
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCircleCheck />} />
-                      <Trans>Mark as Paid</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {canMarkUnpaid && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={statusFetcher.state !== "idle"}
-                      onClick={() =>
-                        statusFetcher.submit(
-                          { status: "Open" },
-                          {
-                            method: "post",
-                            action: path.to.purchaseInvoiceStatus(invoiceId)
-                          }
-                        )
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCircleX />} />
-                      <Trans>Mark as Unpaid</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {isPosted && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={
-                        !canVoid || !permissions.can("update", "invoicing")
-                      }
-                      destructive
-                      onClick={voidModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTicketX />} />
-                      <Trans>Void</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    isPurchaseInvoiceLocked(
-                      routeData?.purchaseInvoice?.status
-                    ) ||
-                    !permissions.can("delete", "invoicing") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteModal.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Purchase Invoice</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <PurchaseInvoicingStatus
-              // @ts-expect-error TS2322 - TODO: fix type
-              status={routeData?.purchaseInvoice?.status}
-            />
-            {supplierApprovalRequired && !isSupplierApproved && (
-              <Status color="red">
-                <Trans>Unapproved Supplier</Trans>
-              </Status>
-            )}
-            {rampMapping &&
-              (rampDeepLink ? (
-                <a href={rampDeepLink} target="_blank" rel="noreferrer">
-                  <Status color="blue">
-                    <Trans>Ramp</Trans>
-                  </Status>
-                </a>
-              ) : (
-                <Status color="blue">
-                  <Trans>Ramp</Trans>
-                </Status>
-              ))}
-          </HStack>
-          <HStack>
+      <RecordHeader
+        title={routeData?.purchaseInvoice?.invoiceId}
+        titleTo={path.to.purchaseInvoiceDetails(invoiceId)}
+        copyValue={routeData?.purchaseInvoice?.invoiceId ?? ""}
+        menu={menuItems}
+        status={statusBadges}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
             {relatedDocs.purchaseOrders.length === 1 && (
-              <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
-                <Link
-                  to={path.to.purchaseOrderDetails(
-                    relatedDocs.purchaseOrders[0].id
-                  )}
+              <RecordAction slot="overflow">
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuShoppingCart />}
+                  asChild
                 >
-                  <Trans>Purchase Order</Trans>
-                </Link>
-              </Button>
+                  <Link
+                    to={path.to.purchaseOrderDetails(
+                      relatedDocs.purchaseOrders[0].id
+                    )}
+                  >
+                    <Trans>Purchase Order</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
             )}
 
             {relatedDocs.receipts.length === 1 && (
-              <Button variant="secondary" leftIcon={<LuHandCoins />} asChild>
-                <Link to={path.to.receipt(relatedDocs.receipts[0].id)}>
-                  <Trans>Receipt</Trans>
-                </Link>
-              </Button>
+              <RecordAction slot="overflow">
+                <Button variant="secondary" leftIcon={<LuHandCoins />} asChild>
+                  <Link to={path.to.receipt(relatedDocs.receipts[0].id)}>
+                    <Trans>Receipt</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
             )}
 
             {relatedDocs.purchaseOrders.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" leftIcon={<LuShoppingCart />}>
-                    <Trans>Purchase Orders</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {relatedDocs.purchaseOrders.map((po) => (
-                    <DropdownMenuItem key={po.id} asChild>
-                      <Link to={path.to.purchaseOrderDetails(po.id)}>
-                        {po.readableId}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" leftIcon={<LuShoppingCart />}>
+                      <Trans>Purchase Orders</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {relatedDocs.purchaseOrders.map((po) => (
+                      <DropdownMenuItem key={po.id} asChild>
+                        <Link to={path.to.purchaseOrderDetails(po.id)}>
+                          {po.readableId}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
             )}
 
             {relatedDocs.receipts.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" leftIcon={<LuHandCoins />}>
-                    <Trans>Receipts</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {relatedDocs.receipts.map((receipt) => (
-                    <DropdownMenuItem key={receipt.id} asChild>
-                      <Link to={path.to.receipt(receipt.id)}>
-                        {receipt.readableId}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" leftIcon={<LuHandCoins />}>
+                      <Trans>Receipts</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {relatedDocs.receipts.map((receipt) => (
+                      <DropdownMenuItem key={receipt.id} asChild>
+                        <Link to={path.to.receipt(receipt.id)}>
+                          {receipt.readableId}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
             )}
-            <Button
-              leftIcon={<LuCheckCheck />}
-              variant={
-                routeData?.purchaseInvoice?.status === "Draft"
-                  ? "primary"
-                  : "secondary"
-              }
-              onClick={showPostModal}
-              isDisabled={
-                isPosted ||
-                routeData?.purchaseInvoiceLines?.length === 0 ||
-                !permissions.can("update", "invoicing") ||
-                !isSupplierApproved
-              }
-            >
-              <Trans>Post</Trans>
-            </Button>
+            <RecordAction slot={isDraft ? "primary" : "secondary"}>
+              <Button
+                leftIcon={<LuCheckCheck />}
+                variant={
+                  routeData?.purchaseInvoice?.status === "Draft"
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={showPostModal}
+                isDisabled={
+                  isPosted ||
+                  routeData?.purchaseInvoiceLines?.length === 0 ||
+                  !permissions.can("update", "invoicing") ||
+                  !isSupplierApproved
+                }
+              >
+                <Trans>Post</Trans>
+              </Button>
+            </RecordAction>
 
             {canMakePayment && (
-              <Button variant="primary" leftIcon={<LuHandCoins />} asChild>
-                <Link to={makePaymentHref}>
-                  <Trans>Payment</Trans>
-                </Link>
-              </Button>
+              <RecordAction slot={isDraft ? "secondary" : "primary"}>
+                <Button variant="primary" leftIcon={<LuHandCoins />} asChild>
+                  <Link to={makePaymentHref}>
+                    <Trans>Payment</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
             )}
-
-            <IconButton
-              aria-label={t`Toggle Properties`}
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
-          </HStack>
-        </HStack>
-      </div>
+          </>
+        }
+      />
 
       {postingModal.isOpen && (
         <PurchaseInvoicePostModal

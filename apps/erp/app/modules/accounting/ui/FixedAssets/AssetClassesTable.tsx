@@ -90,6 +90,7 @@ const AssetClassesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -98,6 +99,7 @@ const AssetClassesTable = memo(
           header: t`Book Depreciation`,
           cell: ({ row }) => formatBookDepreciation(row.original),
           meta: {
+            mobile: "P3",
             icon: <LuCalendar />
           }
         }

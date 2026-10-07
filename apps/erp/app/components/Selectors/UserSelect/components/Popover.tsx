@@ -2,13 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCompact } from "@carbon/react";
 import type { PropsWithChildren } from "react";
 import { useEffect } from "react";
 import useUserSelectContext from "../provider";
 
 const Popover = ({ children }: PropsWithChildren) => {
+  const isCompact = useCompact();
   const {
     aria: { popoverProps },
+    dropdown,
     refs: { listBoxRef, popoverRef, focusableNodes }
   } = useUserSelectContext();
 
@@ -60,13 +63,28 @@ const Popover = ({ children }: PropsWithChildren) => {
   }, [children, focusableNodes, listBoxRef]);
 
   return (
-    <div
-      {...popoverProps}
-      ref={popoverRef}
-      className="absolute w-full mt-1 px-2 bg-popover text-popover-foreground shadow-sm border border-border rounded-md min-w-[240px] z-50"
-    >
-      {children}
-    </div>
+    <>
+      {/* Phones: the list is a bottom sheet over a dimmed screen. The scrim
+          sits inside the select's container, so the outside-click handler
+          never sees a tap on it; it closes the sheet itself. */}
+      {isCompact && (
+        <div
+          aria-hidden
+          className="fixed inset-0 z-40 bg-black/40"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            dropdown.onClose();
+          }}
+        />
+      )}
+      <div
+        {...popoverProps}
+        ref={popoverRef}
+        className="absolute w-full mt-1 px-2 bg-popover text-popover-foreground shadow-sm border border-border rounded-md min-w-[240px] z-50 compact:fixed compact:inset-x-0 compact:top-auto compact:bottom-0 compact:mt-0 compact:max-h-[88dvh] compact:min-w-0 compact:overflow-y-auto compact:rounded-none compact:rounded-t-[14px] compact:border-0 compact:px-2 compact:pt-2 compact:pb-safe-4"
+      >
+        {children}
+      </div>
+    </>
   );
 };
 

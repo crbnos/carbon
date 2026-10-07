@@ -7,6 +7,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  useCompact,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -67,6 +68,7 @@ const JournalEntriesTable = memo(
     const [selectedEntry, setSelectedEntry] =
       useState<JournalEntryListItem | null>(null);
     const deleteModal = useDisclosure();
+    const isCompact = useCompact();
 
     const columns = useMemo<ColumnDef<JournalEntryListItem>[]>(() => {
       const defaultColumns: ColumnDef<JournalEntryListItem>[] = [
@@ -81,6 +83,7 @@ const JournalEntriesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookmark />
           }
         },
@@ -97,26 +100,31 @@ const JournalEntriesTable = memo(
         {
           accessorKey: "description",
           header: t`Description`,
-          cell: ({ row }) => (
-            <HStack className="py-1" spacing={2}>
-              <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 p-1">
-                <JournalEntrySourceTypeIcon
-                  sourceType={row.original.sourceType ?? "Manual"}
-                  className="w-4 h-4 text-[#AAAAAA] dark:text-[#444]"
-                />
-              </div>
+          cell: ({ row }) =>
+            // Phones: plain text on the row's context line (P3).
+            isCompact ? (
+              row.original.description || "—"
+            ) : (
+              <HStack className="py-1" spacing={2}>
+                <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 p-1">
+                  <JournalEntrySourceTypeIcon
+                    sourceType={row.original.sourceType ?? "Manual"}
+                    className="w-4 h-4 text-[#AAAAAA] dark:text-[#444]"
+                  />
+                </div>
 
-              <div className="flex flex-col max-w-[300px] truncate">
-                <div className="text-sm line-clamp-1">
-                  {row.original.description || "—"}
+                <div className="flex flex-col max-w-[300px] truncate">
+                  <div className="text-sm line-clamp-1">
+                    {row.original.description || "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {row.original.sourceType || "—"}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {row.original.sourceType || "—"}
-                </div>
-              </div>
-            </HStack>
-          ),
+              </HStack>
+            ),
           meta: {
+            mobile: "P3",
             icon: <LuFileText />
           }
         },
@@ -146,6 +154,7 @@ const JournalEntriesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: journalEntryStatuses.map((v) => ({
@@ -162,6 +171,7 @@ const JournalEntriesTable = memo(
           cell: ({ row }) =>
             currencyFormatter.format(Number(row.original.totalDebits)),
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         },
@@ -230,7 +240,7 @@ const JournalEntriesTable = memo(
         }
       ];
       return defaultColumns;
-    }, [currencyFormatter, people, t]);
+    }, [currencyFormatter, isCompact, people, t]);
 
     const renderContextMenu = useCallback(
       (row: JournalEntryListItem) => {

@@ -47,6 +47,7 @@ const DepreciationRunTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuHash />
           }
         },
@@ -57,6 +58,7 @@ const DepreciationRunTable = memo(
             <DateTime value={row.original.periodEnd} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuCalendar />
           }
         },
@@ -67,6 +69,7 @@ const DepreciationRunTable = memo(
             <DepreciationRunStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuStar />
           }
         },

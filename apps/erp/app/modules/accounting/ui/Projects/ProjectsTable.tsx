@@ -40,6 +40,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuFolderKanban />
         }
       },
@@ -48,6 +49,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         header: t`Description`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuLetterText />
         }
       }

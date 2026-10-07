@@ -39,6 +39,7 @@ const UnitOfMeasuresTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -47,6 +48,7 @@ const UnitOfMeasuresTable = memo(
           header: t`Code`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P2",
             icon: <LuCode />
           }
         }

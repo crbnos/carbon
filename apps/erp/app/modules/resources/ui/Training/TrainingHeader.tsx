@@ -4,28 +4,16 @@
 
 import {
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-  LuEllipsisVertical,
-  LuPanelLeft,
-  LuPanelRight,
-  LuTrash
-} from "react-icons/lu";
+import { LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Training } from "~/modules/resources";
@@ -66,65 +54,51 @@ const TrainingHeader = () => {
     });
   };
 
+  const statusBadge = (
+    // @ts-expect-error TS2322
+    <TrainingStatus status={routeData?.training?.status} />
+  );
+  const menuItems = (
+    <DropdownMenuItem
+      shortcut={MENU_ITEM_SHORTCUTS.delete}
+      disabled={
+        !permissions.can("delete", "resources") || !permissions.is("employee")
+      }
+      destructive
+      onClick={deleteDisclosure.onOpen}
+    >
+      <DropdownMenuIcon icon={<LuTrash />} />
+      <Trans>Delete Training</Trans>
+    </DropdownMenuItem>
+  );
+
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-      <VStack spacing={0} className="flex-grow">
-        <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
-          <Heading size="h4" className="flex items-center gap-2">
-            <span>{displayName}</span>
-            {/* @ts-expect-error TS2322 */}
-            <TrainingStatus status={routeData?.training?.status} />
-          </Heading>
-          <Copy text={displayName} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.delete}
-                disabled={
-                  !permissions.can("delete", "resources") ||
-                  !permissions.is("employee")
-                }
-                destructive
-                onClick={deleteDisclosure.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete Training</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </HStack>
-      </VStack>
-      <div className="flex flex-shrink-0 gap-2 items-center justify-end">
-        {isDraft && (
-          <Button
-            isDisabled={!permissions.can("update", "people") || isPublishing}
-            isLoading={isPublishing}
-            onClick={onPublish}
-          >
-            <Trans>Publish</Trans>
-          </Button>
-        )}
-        <IconButton
-          aria-label={t`Toggle Properties`}
-          icon={<LuPanelRight />}
-          onClick={toggleProperties}
-          variant="ghost"
-        />
-      </div>
+    <>
+      <RecordHeader
+        title={displayName}
+        copyValue={displayName}
+        menu={menuItems}
+        status={statusBadge}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {isDraft && (
+              <RecordAction slot="primary">
+                <Button
+                  isDisabled={
+                    !permissions.can("update", "people") || isPublishing
+                  }
+                  isLoading={isPublishing}
+                  onClick={onPublish}
+                >
+                  <Trans>Publish</Trans>
+                </Button>
+              </RecordAction>
+            )}
+          </>
+        }
+      />
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
           action={path.to.deleteTraining(id)}
@@ -139,7 +113,7 @@ const TrainingHeader = () => {
           }}
         />
       )}
-    </div>
+    </>
   );
 };
 

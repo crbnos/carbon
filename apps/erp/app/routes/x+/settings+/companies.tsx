@@ -7,7 +7,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  Heading,
   HStack,
   Tabs,
   TabsContent,
@@ -20,7 +19,7 @@ import {
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type {
   LoaderFunctionArgs,
@@ -28,6 +27,7 @@ import type {
 } from "react-router";
 import { Outlet, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import { getSubsidiaries } from "~/modules/settings";
 import {
   CompaniesListView,
@@ -92,9 +92,11 @@ export default function SubsidiariesRoute() {
 
   return (
     <Tabs defaultValue="tree" className="w-full">
-      <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-        <Heading size="h3">Companies</Heading>
-        <HStack>
+      <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full compact:justify-start compact:p-0 compact:border-b-0">
+        <SettingsPageHeading>
+          <Trans>Companies</Trans>
+        </SettingsPageHeading>
+        <HStack className="compact:w-full">
           <TabsList>
             <TabsTrigger value="tree">Tree View</TabsTrigger>
             <TabsTrigger value="list">List View</TabsTrigger>

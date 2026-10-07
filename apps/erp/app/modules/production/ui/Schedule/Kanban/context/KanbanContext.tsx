@@ -6,12 +6,19 @@ import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
 import type { DisplaySettings } from "../types";
 
+/** Tap-to-move for a card (phones): its target columns and the drop's move. */
+export type KanbanMoveTo = {
+  targetsFor: (itemId: string) => { id: string; title: string }[];
+  onMove: (itemId: string, columnId: string) => void;
+};
+
 interface KanbanContextType {
   displaySettings: DisplaySettings;
   selectedGroup: string | null;
   setSelectedGroup: (jobId: string | null) => void;
   tags: { name: string }[];
   columnIds?: string[];
+  moveTo?: KanbanMoveTo;
 }
 
 const KanbanContext = createContext<KanbanContextType | null>(null);
@@ -23,6 +30,7 @@ interface KanbanProviderProps {
   setSelectedGroup: (jobId: string | null) => void;
   tags: { name: string }[];
   columnIds?: string[];
+  moveTo?: KanbanMoveTo;
 }
 
 export function KanbanProvider({
@@ -31,7 +39,8 @@ export function KanbanProvider({
   selectedGroup,
   setSelectedGroup,
   tags,
-  columnIds
+  columnIds,
+  moveTo
 }: KanbanProviderProps) {
   return (
     <KanbanContext.Provider
@@ -40,7 +49,8 @@ export function KanbanProvider({
         selectedGroup,
         setSelectedGroup,
         tags,
-        columnIds
+        columnIds,
+        moveTo
       }}
     >
       {children}

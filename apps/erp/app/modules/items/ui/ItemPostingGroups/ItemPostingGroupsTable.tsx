@@ -46,12 +46,14 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
             }
             className="cursor-pointer"
           />
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "description",
         header: t`Description`,
-        cell: (item) => item.getValue()
+        cell: (item) => item.getValue(),
+        meta: { mobile: "P3" }
       }
     ];
     return [...defaultColumns, ...customColumns];

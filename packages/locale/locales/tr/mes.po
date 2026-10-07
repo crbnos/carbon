@@ -215,6 +215,9 @@ msgstr "kullanılabilir"
 msgid "Available"
 msgstr "Kullanılabilir"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "Partiye geri dön"
 
@@ -294,6 +297,9 @@ msgstr "E-postanızı kontrol edin"
 
 msgid "Choose a job"
 msgstr "İş emri seç"
+
+msgid "Choose an option"
+msgstr ""
 
 msgid "Clear"
 msgstr "Temizle"
@@ -406,8 +412,7 @@ msgstr "Panoya kopyala"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} Oluştur"
 
@@ -695,6 +700,9 @@ msgstr "İşleme geri dön"
 
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
@@ -1179,6 +1187,9 @@ msgstr "Operatör Tarafından Yapıldı"
 msgid "Optional"
 msgstr "İsteğe bağlı"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "veya"
 
@@ -1272,6 +1283,9 @@ msgstr "PM zamanlaması süresi doldu"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Herhangi bir sayfada bu listeyi açmak için ? tuşuna basın. Bir alan içinde yazarken kısayollar yoksayılır."
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "Önceki"
@@ -1916,6 +1930,9 @@ msgstr "İş Merkezi Ekranları"
 
 msgid "Work instructions"
 msgstr "İş talimatları"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "Evet"

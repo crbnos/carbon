@@ -22,7 +22,7 @@ export function NavigationEditBar({
     <div
       className={cn(
         "flex gap-1 px-2",
-        "opacity-0 group-data-[state=expanded]:opacity-100",
+        "opacity-0 group-data-[state=expanded]:opacity-100 compact:opacity-100",
         "transition-opacity"
       )}
     >

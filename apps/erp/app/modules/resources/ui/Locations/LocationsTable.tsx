@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useCompact
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -33,6 +38,7 @@ type LocationsTableProps = {
 
 const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
   const { t } = useLingui();
+  const isCompact = useCompact();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -54,14 +60,26 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuMapPin />
         }
       },
       {
         accessorKey: "addressLine1",
         header: t`Address`,
-        cell: (item) => item.getValue(),
+        cell: (item) =>
+          // Phones: line 2 is the joined address (street, city, state).
+          isCompact
+            ? [
+                item.row.original.addressLine1,
+                item.row.original.city,
+                item.row.original.stateProvince
+              ]
+                .filter(Boolean)
+                .join(", ")
+            : item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuHouse />
         }
       },
@@ -130,7 +148,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [people, customColumns, t]);
+  }, [people, customColumns, isCompact, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

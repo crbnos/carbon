@@ -117,6 +117,7 @@ const SupplierAccountsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -150,6 +151,7 @@ const SupplierAccountsTable = memo(
           header: t`Supplier`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuContainer />,
             filter: {
               type: "static",
@@ -183,6 +185,7 @@ const SupplierAccountsTable = memo(
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            mobile: "P2",
             icon: <LuUserCheck />,
             filter: {
               type: "static",

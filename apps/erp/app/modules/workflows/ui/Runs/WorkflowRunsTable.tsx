@@ -56,7 +56,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
             </HStack>
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { mobile: "P1", icon: <LuHash /> }
       },
       {
         accessorKey: "workflowId",
@@ -68,6 +68,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuLink />,
           filterHeader: t`Workflow`,
           exportValue: (row: WorkflowRunListItem) =>
@@ -123,7 +124,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
           const ms = row.original.durationMs;
           return ms != null ? formatDurationMilliseconds(ms) : "—";
         },
-        meta: { icon: <LuClock /> }
+        meta: { mobile: "P2", icon: <LuClock /> }
       },
       {
         accessorKey: "ownerId",

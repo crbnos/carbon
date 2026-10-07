@@ -51,6 +51,7 @@ import { Link } from "react-router";
 import { z } from "zod";
 import { Assignee, CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 import { Tags } from "~/components/Form";
+import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
@@ -119,7 +120,7 @@ function OperationCard({
 }) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings, selectedGroup, setSelectedGroup, tags } =
+  const { displaySettings, selectedGroup, setSelectedGroup, tags, moveTo } =
     useKanban();
   const {
     setNodeRef,
@@ -258,6 +259,12 @@ function OperationCard({
                     Open in MES
                   </a>
                 </DropdownMenuItem>
+                {moveTo && (
+                  <MoveToSubmenu
+                    getTargets={() => moveTo.targetsFor(item.id)}
+                    onMove={(columnId) => moveTo.onMove(item.id, columnId)}
+                  />
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>

@@ -6,6 +6,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  useCompact,
   useDisclosure
 } from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
@@ -68,6 +69,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
   const [people] = usePeople();
 
   const { t } = useLingui();
+  const isCompact = useCompact();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
@@ -101,7 +103,8 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
               )}
             </div>
           </Hyperlink>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "type",
@@ -110,6 +113,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
           return <RiskType type={row.original.type} />;
         },
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -147,8 +151,17 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
       {
         accessorKey: "source",
         header: t`Source`,
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        // Phones: line 2 is muted context, not a second row of pills.
+        cell: (item) =>
+          isCompact ? (
+            <span className="text-muted-foreground">
+              {item.getValue<string>()}
+            </span>
+          ) : (
+            <Enumerable value={item.getValue<string>()} />
+          ),
         meta: {
+          mobile: "P3",
           icon: <LuDna />,
           filter: {
             type: "static",
@@ -164,6 +177,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <RiskStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuStar />,
           filter: {
             type: "static",
@@ -242,7 +256,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
       }
     ];
     return defaultColumns;
-  }, [people, items, workCenters.options.map, t]);
+  }, [people, items, workCenters.options.map, t, isCompact]);
 
   const renderContextMenu = useCallback<(row: Risk) => JSX.Element>(
     (row) => (

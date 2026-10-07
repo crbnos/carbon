@@ -17,6 +17,7 @@ import {
   MenuIcon,
   MenuItem,
   toast,
+  useCompact,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -154,6 +155,7 @@ const JobsTable = memo((props: JobsTableProps) => {
   const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
+  const isCompact = useCompact();
   const [params] = useUrlParams();
   const parts = useParts();
   const tools = useTools();
@@ -219,6 +221,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -236,6 +239,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: items?.map((item) => ({
@@ -291,6 +295,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: jobStatus.map((status) => ({
@@ -352,9 +357,21 @@ const JobsTable = memo((props: JobsTableProps) => {
               />
             );
           }
+          // Phones: no column header, so the number carries its unit.
+          if (isCompact && row.original.unitOfMeasureCode) {
+            return (
+              <>
+                {quantity}
+                <span className="ml-1 text-[13px] text-muted-foreground">
+                  {row.original.unitOfMeasureCode}
+                </span>
+              </>
+            );
+          }
           return quantity;
         },
         meta: {
+          mobile: "P2",
           icon: <LuHash />,
           renderTotal: true
         }
@@ -655,7 +672,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, trackedEntities, batchesByJobId]);
+  }, [params, customColumns, trackedEntities, batchesByJobId, isCompact]);
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {

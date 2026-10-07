@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { cn, useCompact } from "@carbon/react";
 import type {
   ReportColumnGranularity,
   ReportPeriodBucket
@@ -26,6 +26,8 @@ import { NET_INCOME_ACCOUNT_ID } from "../../types";
 import { accountsToFlatTree, filterAccounts } from "./reportTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
+/** Phones: the pinned first column is capped at 150pt. */
+const COMPACT_ACCOUNT_COLUMN_WIDTH = 150;
 const PERIOD_COLUMN_WIDTH = 128;
 
 type MultiPeriodStatementTreeProps = {
@@ -86,6 +88,10 @@ const MultiPeriodStatementTree = memo(
     ledgerPath
   }: MultiPeriodStatementTreeProps) => {
     const { t } = useLingui();
+    const isCompact = useCompact();
+    const accountColumnWidth = isCompact
+      ? COMPACT_ACCOUNT_COLUMN_WIDTH
+      : ACCOUNT_COLUMN_WIDTH;
     const { locale } = useLocale();
     useRealtime("journal");
     const navigate = useNavigate();
@@ -137,7 +143,7 @@ const MultiPeriodStatementTree = memo(
     });
 
     const rowWidth =
-      ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
+      accountColumnWidth + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
       <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col">
@@ -149,7 +155,7 @@ const MultiPeriodStatementTree = memo(
           >
             <div
               className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: ACCOUNT_COLUMN_WIDTH }}
+              style={{ width: accountColumnWidth }}
             >
               <Trans>Account</Trans>
             </div>
@@ -179,7 +185,7 @@ const MultiPeriodStatementTree = memo(
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
-          parentClassName="flex-1 overflow-x-auto"
+          parentClassName="flex-1 overflow-x-auto compact:scroll-fade-x"
           contentMinWidth={rowWidth}
           renderNode={({ node, state }) => {
             const account = node.data;
@@ -215,7 +221,7 @@ const MultiPeriodStatementTree = memo(
                       ? "bg-muted group-hover/row:bg-accent"
                       : "bg-card group-hover/row:bg-accent"
                   )}
-                  style={{ width: ACCOUNT_COLUMN_WIDTH }}
+                  style={{ width: accountColumnWidth }}
                 >
                   {/* Indentation lines */}
                   <div className="flex h-9 items-center">
@@ -246,7 +252,12 @@ const MultiPeriodStatementTree = memo(
                   </div>
 
                   {/* Folder icon */}
-                  <div className="w-5 h-5 flex items-center justify-center mr-2 shrink-0">
+                  <div
+                    className={cn(
+                      "w-5 h-5 flex items-center justify-center mr-2 shrink-0",
+                      !isGroup && "compact:hidden"
+                    )}
+                  >
                     {isGroup &&
                       (isExpanded ? (
                         <LuFolderOpen className="h-4 w-4 text-muted-foreground" />

@@ -10,6 +10,11 @@ import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Form, Link, useLoaderData, useNavigation } from "react-router";
+import {
+  RecordAction,
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import {
@@ -181,40 +186,51 @@ export default function ReimbursementDetailRoute() {
 
   return (
     <VStack spacing={4} className="w-full">
-      <HStack className="w-full justify-end">
+      {/* No hero; it still zeroes --header-height on phones. */}
+      <RecordHero />
+      <RecordPhoneChrome />
+      <HStack className="w-full justify-end compact:hidden">
         {canPay && (
-          <Button variant="primary" onClick={payModal.onOpen}>
-            <Trans>Pay expense</Trans>
-          </Button>
+          <RecordAction slot="primary">
+            <Button variant="primary" onClick={payModal.onOpen}>
+              <Trans>Pay expense</Trans>
+            </Button>
+          </RecordAction>
         )}
         {isDraft && canUpdate && (
-          <Button variant="secondary" asChild>
-            <Link to={path.to.reimbursementEdit(reimbursement.id)}>
-              <Trans>Edit</Trans>
-            </Link>
-          </Button>
+          <RecordAction slot="secondary">
+            <Button variant="secondary" asChild>
+              <Link to={path.to.reimbursementEdit(reimbursement.id)}>
+                <Trans>Edit</Trans>
+              </Link>
+            </Button>
+          </RecordAction>
         )}
         {canPost && (
-          <Form
-            method="post"
-            action={path.to.reimbursementPost(reimbursement.id)}
-          >
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={
-                navigation.formAction ===
-                path.to.reimbursementPost(reimbursement.id)
-              }
+          <RecordAction slot="primary">
+            <Form
+              method="post"
+              action={path.to.reimbursementPost(reimbursement.id)}
             >
-              <Trans>Post</Trans>
-            </Button>
-          </Form>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={
+                  navigation.formAction ===
+                  path.to.reimbursementPost(reimbursement.id)
+                }
+              >
+                <Trans>Post</Trans>
+              </Button>
+            </Form>
+          </RecordAction>
         )}
         {canVoid && (
-          <Button variant="destructive" onClick={voidModal.onOpen}>
-            <Trans>Void</Trans>
-          </Button>
+          <RecordAction slot="overflow">
+            <Button variant="destructive" onClick={voidModal.onOpen}>
+              <Trans>Void</Trans>
+            </Button>
+          </RecordAction>
         )}
       </HStack>
 

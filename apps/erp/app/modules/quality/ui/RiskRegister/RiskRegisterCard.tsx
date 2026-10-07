@@ -235,7 +235,7 @@ function RiskRegisterCardItem({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity compact:opacity-100">
           <IconButton
             aria-label={t`Edit`}
             icon={<LuSettings2 className="h-4 w-4" />}

@@ -82,7 +82,7 @@ export function AgentThreadList({
                 <button
                   type="button"
                   aria-label="Delete chat"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-destructive hover:bg-muted transition-opacity"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-destructive hover:bg-muted transition-opacity compact:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(t.id);

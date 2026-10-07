@@ -61,6 +61,7 @@ const IntercompanyTransactionTable = memo(
           header: t`Target`,
           cell: ({ row }) => row.original.targetCompany?.name ?? "—",
           meta: {
+            mobile: "P3",
             icon: <LuBuilding2 />
           }
         },
@@ -79,6 +80,7 @@ const IntercompanyTransactionTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         },
@@ -91,6 +93,7 @@ const IntercompanyTransactionTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuFileText />
           }
         },
@@ -106,6 +109,7 @@ const IntercompanyTransactionTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: intercompanyTransactionStatuses.map((v) => ({

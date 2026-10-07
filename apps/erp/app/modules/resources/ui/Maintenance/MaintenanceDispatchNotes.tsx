@@ -33,6 +33,7 @@ import {
   Thead,
   Tr,
   toast,
+  useCompact,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -187,6 +188,7 @@ function MaintenanceFilesContent({
   isReadOnly: boolean;
 }) {
   const { t } = useLingui();
+  const isCompact = useCompact();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const revalidator = useRevalidator();
@@ -370,7 +372,8 @@ function MaintenanceFilesContent({
           )}
         </Tbody>
       </Table>
-      {!isReadOnly && <FileDropzone onDrop={onDrop} />}
+      {/* Phones: the header Upload already opens the same picker. */}
+      {!isReadOnly && !isCompact && <FileDropzone onDrop={onDrop} />}
     </>
   );
 }

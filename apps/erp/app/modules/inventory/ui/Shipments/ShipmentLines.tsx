@@ -360,7 +360,12 @@ function ShipmentFixedAssetLineItem({
   };
 
   return (
-    <div className={cn("flex items-center gap-4 p-6", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-4 p-6 compact:flex-wrap compact:p-4",
+        className
+      )}
+    >
       <Checkbox
         isChecked={line.shipped}
         disabled={isReadOnly}
@@ -382,7 +387,7 @@ function ShipmentFixedAssetLineItem({
         placeholder="Serial Number"
         value={serialNumber}
         isDisabled={isReadOnly}
-        className="w-48"
+        className="w-48 compact:w-full"
         onChange={(e) => setSerialNumber(e.target.value)}
         onBlur={() => {
           if (serialNumber !== (line.serialNumber ?? "")) {
@@ -444,8 +449,13 @@ function ShipmentLineItem({
     (line.shippedQuantity || 0) > (line.fulfillment?.job?.quantity || 0);
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
-      <div className="absolute top-3 right-6">
+    <div
+      className={cn(
+        "flex flex-col border-b p-6 gap-6 relative compact:p-4 compact:gap-4",
+        className
+      )}
+    >
+      <div className="absolute top-3 right-6 compact:right-4">
         {line.fulfillment?.type === "Job" ? (
           <div className="flex flex-col items-end gap-0">
             <span>Job</span>
@@ -484,16 +494,19 @@ function ShipmentLineItem({
           </DropdownMenu>
         )}
       </div>
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4}>
+      <div className="flex flex-1 justify-between items-center w-full compact:flex-col compact:items-stretch compact:gap-4">
+        <HStack spacing={4} className="w-1/2 compact:w-full">
+          <HStack spacing={4} className="compact:w-full">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
 
-            <VStack spacing={0} className="max-w-[380px] w-full">
+            <VStack
+              spacing={0}
+              className="max-w-[380px] w-full compact:min-w-0 compact:flex-1 compact:pr-20"
+            >
               <div className="w-full overflow-hidden">
                 <span className="text-sm font-medium truncate block w-full">
                   {item?.readableIdWithRevision}
@@ -513,9 +526,12 @@ function ShipmentLineItem({
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4 w-1/2">
-          <HStack spacing={4}>
-            <VStack spacing={1}>
+        <div className="flex flex-grow items-center justify-between gap-2 pl-4 w-1/2 compact:w-full compact:flex-wrap compact:gap-4 compact:pl-0">
+          <HStack
+            spacing={4}
+            className="compact:w-full compact:flex-wrap compact:gap-4 compact:space-x-0"
+          >
+            <VStack spacing={1} className="compact:w-full">
               <div className="flex items-center justify-between gap-1 w-full">
                 <label className="text-xs text-muted-foreground">Shipped</label>
                 {isJobOverShipped && (
@@ -558,7 +574,7 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className={cn(
-                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px]",
+                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px] compact:w-full",
                     isJobOverShipped && "border-red-500 border-2"
                   )}
                   isDisabled={
@@ -893,7 +909,7 @@ function BatchForm({
   );
 
   return (
-    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg compact:gap-4 compact:p-4">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Tracking Number</Heading>
         {hasTrackingLabel && (
@@ -1205,7 +1221,7 @@ function SerialForm({
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg compact:gap-4 compact:p-4">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Tracking Numbers</Heading>
         {hasTrackingLabel && (

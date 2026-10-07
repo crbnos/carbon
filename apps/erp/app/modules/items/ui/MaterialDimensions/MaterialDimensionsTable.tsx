@@ -50,6 +50,7 @@ const MaterialDimensionsTable = memo(
           header: t`Shape`,
           cell: ({ row }) => <Enumerable value={row.original.formName} />,
           meta: {
+            mobile: "P2",
             icon: <LuShapes />,
             filter: {
               type: "static",
@@ -76,6 +77,7 @@ const MaterialDimensionsTable = memo(
               </Hyperlink>
             ),
           meta: {
+            mobile: "P1",
             icon: <LuDessert />
           }
         },

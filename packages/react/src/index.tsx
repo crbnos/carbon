@@ -19,6 +19,8 @@ import {
 } from "./Accordion";
 import ActionBar, { ActionBarButton } from "./ActionBar";
 import { ActionMenu } from "./ActionMenu";
+import type { ActionPresentation } from "./ActionPresentation";
+import { ActionPresentationProvider } from "./ActionPresentation";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
 import { AutodeskProvider, AutodeskViewer } from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
@@ -34,10 +36,12 @@ import { BarProgress } from "./BarProgress";
 import { useBotProtection } from "./BotProtection";
 import {
   BottomSheet,
+  BottomSheetBack,
   BottomSheetBody,
   BottomSheetClose,
   BottomSheetContent,
   BottomSheetDescription,
+  BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
   BottomSheetTrigger
@@ -87,6 +91,7 @@ import {
   CommandTrigger,
   multiSelectTriggerVariants
 } from "./Command";
+import { CompactProvider, useCompact } from "./Compact";
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -148,7 +153,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "./Dropdown";
-import { Enumerable } from "./Enumerable";
+import {
+  Enumerable,
+  EnumerableAsText,
+  useEnumerableAsText
+} from "./Enumerable";
 import { File } from "./File";
 import {
   FormControl,
@@ -381,12 +390,15 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  ActionPresentationProvider,
   BarProgress,
   BottomSheet,
+  BottomSheetBack,
   BottomSheetBody,
   BottomSheetClose,
   BottomSheetContent,
   BottomSheetDescription,
+  BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
   BottomSheetTrigger,
@@ -404,6 +416,8 @@ export {
   AvatarOverflowIndicator,
   Badge,
   Enumerable,
+  EnumerableAsText,
+  useEnumerableAsText,
   BadgeCloseButton,
   Button,
   Card,
@@ -426,6 +440,7 @@ export {
   CollapsibleContent,
   CollapsibleTrigger,
   Combobox,
+  CompactProvider,
   filterComboboxOptions,
   Command,
   CommandDialog,
@@ -685,12 +700,14 @@ export {
   shortcutKeyVariants,
   toast,
   useBotProtection,
+  useCompact,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,
   useSidebar
 };
 export type {
+  ActionPresentation,
   AvatarProps,
   BadgeProps,
   ButtonProps,

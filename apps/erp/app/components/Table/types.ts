@@ -42,6 +42,15 @@ declare module "@tanstack/react-table" {
     // field than its accessor (e.g. accessor `supplierTypeId`, sort by `type`).
     // Must name a real column on the view.
     sortBy?: string;
+    // Phone list priority: P1 = identity (line 1), P2 = trailing metric
+    // or status pill, P3 = context (line 2); P4 or unset = not in the row.
+    // See Table/components/Compact/resolveSlots.ts.
+    mobile?: "P1" | "P2" | "P3" | "P4";
+    /** Phones: show this P2 column as a status pill on line 3 (a status column without a static filter). */
+    mobilePill?: boolean;
+    /** Phones: lead this column's value with its (string) header, since a
+     *  list row shows no column headers. */
+    mobileLabel?: boolean;
   }
 }
 

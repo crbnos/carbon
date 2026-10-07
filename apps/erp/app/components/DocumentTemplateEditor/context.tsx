@@ -313,6 +313,20 @@ export function useEditorStore<T>(selector: (s: EditorState) => T): T {
   return useStore(useEditorContext().store, selector);
 }
 
+const PickBlockContext = createContext<((id: string) => void) | null>(null);
+
+/** Overrides what tapping a block row does (the compact editor's panes). */
+export const PickBlockProvider = PickBlockContext.Provider;
+
+/** Tapping a block row: toggles its selection unless a provider overrides it. */
+export function usePickBlock() {
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const select = useEditorStore((s) => s.select);
+  const onPick = useContext(PickBlockContext);
+  return (id: string) =>
+    onPick ? onPick(id) : select(selectedId === id ? null : id);
+}
+
 export function DocumentTemplateProvider({
   children,
   ...props

@@ -223,6 +223,7 @@ const InventoryCountLines = ({
           );
         },
         meta: {
+          mobile: "P1",
           icon: <LuPackage />,
           // Display column (no accessorKey) — without an exportValue it is
           // absent from the CSV entirely.
@@ -468,7 +469,7 @@ const InventoryCountLines = ({
           </span>
         );
       },
-      meta: { icon: <LuCalculator /> }
+      meta: { mobile: "P2", icon: <LuCalculator /> }
     });
 
     if (!hideSystem) {
@@ -676,6 +677,7 @@ const InventoryCountLines = ({
       )}
       <Table<InventoryCountLine>
         compact
+        mobileLayout="table"
         columns={columns}
         data={lines}
         count={count}

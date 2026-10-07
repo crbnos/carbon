@@ -74,9 +74,13 @@ const ApprovalRuleCard = memo(
           <Accordion type="multiple" className="w-full">
             <AccordionItem value={rule.id} className="border-none">
               <div className="relative">
-                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full">
+                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full compact:px-4 compact:py-4">
                   <HStack spacing={4} className="flex-1 justify-between pr-12">
-                    <Heading size="h4" as="h3">
+                    <Heading
+                      size="h4"
+                      as="h3"
+                      className="compact:text-left compact:min-w-0"
+                    >
                       {approvalDocumentTypeLabel[documentType]}
                       {approvalDocumentTypesWithAmounts.includes(
                         documentType
@@ -87,7 +91,7 @@ const ApprovalRuleCard = memo(
                     </Heading>
                     <Status
                       color={rule.enabled ? "green" : "gray"}
-                      className="text-xs font-medium"
+                      className="text-xs font-medium compact:shrink-0"
                     >
                       {rule.enabled ? (
                         <Trans>Enabled</Trans>

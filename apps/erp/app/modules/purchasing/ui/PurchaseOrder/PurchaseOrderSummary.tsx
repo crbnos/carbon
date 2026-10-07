@@ -124,12 +124,12 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={itemReadableId!}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg compact:size-14"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4 compact:size-14 compact:p-3">
+                  <LuImage className="w-16 h-16 text-muted-foreground compact:size-8" />
                 </div>
               )}
 
@@ -143,8 +143,11 @@ const LineItems = ({
                       children need w-full because VStack is items-start, which
                       sizes each child to its own content and leaves truncate
                       inert no matter how narrow the column gets. */}
-                  <div className="flex items-center justify-between w-full">
-                    <VStack spacing={0} className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between w-full compact:flex-wrap compact:gap-y-2">
+                    <VStack
+                      spacing={0}
+                      className="flex-1 min-w-0 compact:basis-full"
+                    >
                       <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">{itemReadableId}</Heading>
                         <Button
@@ -169,7 +172,7 @@ const LineItems = ({
                     </VStack>
                     <VStack
                       spacing={2}
-                      className="flex-shrink-0 items-end w-auto"
+                      className="flex-shrink-0 items-end w-auto compact:basis-full compact:items-start"
                     >
                       <HStack spacing={4}>
                         <VStack spacing={0}>

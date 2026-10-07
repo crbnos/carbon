@@ -264,7 +264,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isDisabled ||

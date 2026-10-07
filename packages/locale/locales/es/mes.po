@@ -215,6 +215,9 @@ msgstr "disponible"
 msgid "Available"
 msgstr "Disponible"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "Volver al lote de producción"
 
@@ -294,6 +297,9 @@ msgstr "Revise su correo electrónico"
 
 msgid "Choose a job"
 msgstr "Elegir una orden de trabajo"
+
+msgid "Choose an option"
+msgstr ""
 
 msgid "Clear"
 msgstr "Limpiar"
@@ -406,8 +412,7 @@ msgstr "Copiar al portapapeles"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Crear {0}"
 
@@ -695,6 +700,9 @@ msgstr "Volver a la operación"
 
 msgid "Go to onboarding"
 msgstr "Ir a la incorporación"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "Ocultar descripción"
@@ -1179,6 +1187,9 @@ msgstr "Realizado por operador"
 msgid "Optional"
 msgstr "Opcional"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "o"
 
@@ -1272,6 +1283,9 @@ msgstr "Cronograma de PM caducado"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Presione ? en cualquier página para abrir la lista. Los atajos se ignoran mientras escribe en un campo."
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "Anterior"
@@ -1916,6 +1930,9 @@ msgstr "Pantallas del Centro de Trabajo"
 
 msgid "Work instructions"
 msgstr "Instrucciones de trabajo"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "Sí"

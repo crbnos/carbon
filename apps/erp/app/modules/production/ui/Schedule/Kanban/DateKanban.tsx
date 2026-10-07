@@ -34,12 +34,13 @@ import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { JobCard } from "./components/JobCard";
-import { KanbanProvider } from "./context/KanbanContext";
+import { type KanbanMoveTo, KanbanProvider } from "./context/KanbanContext";
 import { getDateOnly, getPendingDueDate } from "./date-utils";
 import {
   comparePriorityThenId,
   createDragOrigin,
   type DragOrigin,
+  type DragPlacement,
   type DragPreview,
   getColumnPlacement,
   getItemPlacement,
@@ -310,6 +311,18 @@ const DateKanban = ({
     })
   );
 
+  function createDateDragOrigin(activeItem: JobItem): DateDragOrigin | null {
+    const placementOrigin = createDragOrigin(baseItems, activeItem);
+    if (!placementOrigin) return null;
+    return {
+      ...placementOrigin,
+      dueDate:
+        activeItem.dueDate === undefined
+          ? undefined
+          : getDateOnly(activeItem.dueDate)
+    };
+  }
+
   function clearDragState() {
     dragOriginRef.current = null;
     setDragState(null);
@@ -330,19 +343,12 @@ const DateKanban = ({
       return;
     }
 
-    const placementOrigin = createDragOrigin(baseItems, activeItem);
-    if (!placementOrigin) {
+    const origin = createDateDragOrigin(activeItem);
+    if (!origin) {
       clearDragState();
       return;
     }
 
-    const origin: DateDragOrigin = {
-      ...placementOrigin,
-      dueDate:
-        activeItem.dueDate === undefined
-          ? undefined
-          : getDateOnly(activeItem.dueDate)
-    };
     dragOriginRef.current = origin;
     setDragState({ origin, preview: null });
   }
@@ -392,33 +398,7 @@ const DateKanban = ({
           )
         : null;
 
-    if (
-      origin &&
-      origin.dueDate !== undefined &&
-      placement &&
-      !isSamePlacement(origin.placement, placement)
-    ) {
-      const isSameDisplayBucket =
-        placement.columnId === origin.placement.columnId;
-      submit(
-        {
-          id: origin.item.id,
-          locationId,
-          columnId: isSameDisplayBucket
-            ? (origin.dueDate ?? origin.placement.columnId)
-            : placement.columnId,
-          optimisticColumnId: placement.columnId,
-          priority: placement.priority
-        },
-        {
-          method: "post",
-          action: path.to.priorityDatesUpdate,
-          navigate: false,
-          flushSync: true,
-          fetcherKey: `job:${origin.item.id}`
-        }
-      );
-    }
+    if (origin && placement) submitPlacement(origin, placement);
 
     clearDragState();
   }
@@ -426,6 +406,57 @@ const DateKanban = ({
   function onDragCancel() {
     clearDragState();
   }
+
+  function submitPlacement(origin: DateDragOrigin, placement: DragPlacement) {
+    if (
+      origin.dueDate === undefined ||
+      isSamePlacement(origin.placement, placement)
+    ) {
+      return;
+    }
+    const isSameDisplayBucket =
+      placement.columnId === origin.placement.columnId;
+    submit(
+      {
+        id: origin.item.id,
+        locationId,
+        columnId: isSameDisplayBucket
+          ? (origin.dueDate ?? origin.placement.columnId)
+          : placement.columnId,
+        optimisticColumnId: placement.columnId,
+        priority: placement.priority
+      },
+      {
+        method: "post",
+        action: path.to.priorityDatesUpdate,
+        navigate: false,
+        flushSync: true,
+        fetcherKey: `job:${origin.item.id}`
+      }
+    );
+  }
+
+  // Phones: "Move to" on a card makes the same move as dropping it on that
+  // column's background.
+  const moveTo: KanbanMoveTo = {
+    targetsFor: (itemId) => {
+      const item = itemsById.get(itemId);
+      if (!item || item.dueDate === undefined) return [];
+      return columnOrder.flatMap((columnId) => {
+        const column = columnsMap.get(columnId);
+        return column && column.id !== item.columnId
+          ? [{ id: column.id, title: column.title }]
+          : [];
+      });
+    },
+    onMove: (itemId, columnId) => {
+      const activeItem = itemsById.get(itemId);
+      const origin = activeItem ? createDateDragOrigin(activeItem) : null;
+      if (!origin) return;
+      const placement = getColumnPlacement(origin, baseItems, columnId);
+      if (placement) submitPlacement(origin, placement);
+    }
+  };
 
   const isInitialMount = useRef(true);
 
@@ -443,6 +474,7 @@ const DateKanban = ({
       setSelectedGroup={setSelectedGroup}
       tags={tags}
       columnIds={columns.map((col) => col.id)}
+      moveTo={moveTo}
     >
       <DateDragPreviewContext.Provider value={dragState}>
         <DndContext

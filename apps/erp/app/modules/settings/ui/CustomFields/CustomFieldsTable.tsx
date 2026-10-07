@@ -49,6 +49,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuDatabase />
         }
       },
@@ -57,6 +58,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         header: t`Module`,
         cell: ({ row }) => <Enumerable value={row.original.module} />,
         meta: {
+          mobile: "P2",
           icon: <LuLayoutGrid />,
           filter: {
             type: "static",
@@ -69,6 +71,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
       },
       {
         header: t`Fields`,
+        meta: { mobile: "P2" },
         cell: ({ row }) => (
           <HStack className="text-xs text-muted-foreground">
             <LuList />

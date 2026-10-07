@@ -25,6 +25,7 @@ import {
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import {
   LuChevronDown,
   LuCircleX,
@@ -49,6 +50,10 @@ import {
 import { DateTime, DocumentHeader } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
+import {
+  RecordAction,
+  RecordHeroTarget
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -146,93 +151,100 @@ export default function FixedAssetDetailRoute() {
     asset.status === "Active" || asset.status === "Fully Depreciated";
   const canUpdate = permissions.can("update", "accounting");
 
+  const statusBadge = <FixedAssetStatus status={asset.status as any} />;
+
+  const menuItems = (
+    <>
+      <DropdownMenuItem onClick={auditDrawer.onOpen}>
+        <DropdownMenuIcon icon={<LuHistory />} />
+        <Trans>History</Trans>
+      </DropdownMenuItem>
+      {isDraft && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
+            disabled={!permissions.can("delete", "accounting")}
+            destructive
+            onClick={deleteModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuTrash />} />
+            <Trans>Delete</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+    </>
+  );
+
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto space-y-4">
         {/* Main Details */}
+        <RecordHeroTarget bleed />
         <Card>
           <DocumentHeader
             title={asset.fixedAssetId ?? ""}
-            status={<FixedAssetStatus status={asset.status as any} />}
-            menuItems={
-              <>
-                <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                  <DropdownMenuIcon icon={<LuHistory />} />
-                  History
-                </DropdownMenuItem>
-                {isDraft && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.delete}
-                      disabled={!permissions.can("delete", "accounting")}
-                      destructive
-                      onClick={deleteModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTrash />} />
-                      Delete
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </>
-            }
+            status={statusBadge}
+            menuItems={menuItems}
             actions={
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    rightIcon={<LuChevronDown />}
-                  >
-                    Actions
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.edit}
-                    disabled={!canUpdate}
-                    asChild
-                  >
-                    <Link to={path.to.fixedAssetDetails(fixedAssetId)}>
-                      <DropdownMenuIcon icon={<LuPencil />} />
-                      Edit
-                    </Link>
-                  </DropdownMenuItem>
-                  {isDraft && (
-                    <>
-                      <DropdownMenuItem disabled={!canUpdate} asChild>
-                        <Link to={path.to.fixedAssetRegister(fixedAssetId)}>
-                          <DropdownMenuIcon icon={<LuClipboardCheck />} />
-                          Register
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={path.to.fixedAssetPurchase(fixedAssetId)}>
-                          <DropdownMenuIcon icon={<LuShoppingCart />} />
-                          Purchase
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  {isActive && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link to={path.to.fixedAssetSell(fixedAssetId)}>
-                          <DropdownMenuIcon icon={<LuStore />} />
-                          Sell
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem disabled={!canUpdate} asChild>
-                        <Link to={path.to.fixedAssetDispose(fixedAssetId)}>
-                          <DropdownMenuIcon icon={<LuCircleX />} />
-                          Dispose
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <RecordAction slot="primary">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      rightIcon={<LuChevronDown />}
+                    >
+                      <Trans>Actions</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.edit}
+                      disabled={!canUpdate}
+                      asChild
+                    >
+                      <Link to={path.to.fixedAssetDetails(fixedAssetId)}>
+                        <DropdownMenuIcon icon={<LuPencil />} />
+                        <Trans>Edit</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                    {isDraft && (
+                      <>
+                        <DropdownMenuItem disabled={!canUpdate} asChild>
+                          <Link to={path.to.fixedAssetRegister(fixedAssetId)}>
+                            <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                            <Trans>Register</Trans>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to={path.to.fixedAssetPurchase(fixedAssetId)}>
+                            <DropdownMenuIcon icon={<LuShoppingCart />} />
+                            <Trans>Purchase</Trans>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {isActive && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to={path.to.fixedAssetSell(fixedAssetId)}>
+                            <DropdownMenuIcon icon={<LuStore />} />
+                            <Trans>Sell</Trans>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem disabled={!canUpdate} asChild>
+                          <Link to={path.to.fixedAssetDispose(fixedAssetId)}>
+                            <DropdownMenuIcon icon={<LuCircleX />} />
+                            <Trans>Dispose</Trans>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
             }
           />
           <CardContent className="space-y-0">

@@ -371,6 +371,7 @@ const ProductionPlanningTable = ({
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -418,6 +419,7 @@ const ProductionPlanningTable = ({
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: itemReorderingPolicies.map((policy) => ({
@@ -449,6 +451,8 @@ const ProductionPlanningTable = ({
           );
         },
         meta: {
+          mobile: "P2",
+          mobileLabel: true,
           icon: <LuCirclePlay />
         }
       },

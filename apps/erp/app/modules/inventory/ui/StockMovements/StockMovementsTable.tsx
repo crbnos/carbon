@@ -98,6 +98,7 @@ const StockMovementsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBlocks />
           }
         },
@@ -111,6 +112,7 @@ const StockMovementsTable = memo(
           header: t`Entry Type`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: itemLedgerTypes.map((type) => ({
@@ -126,6 +128,7 @@ const StockMovementsTable = memo(
           header: t`Document Type`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: itemLedgerDocumentTypes.map((type) => ({
@@ -165,6 +168,7 @@ const StockMovementsTable = memo(
           header: t`Quantity`,
           cell: ({ row }) => <QuantityDelta value={row.original.quantity} />,
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -239,6 +243,7 @@ const StockMovementsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuCalendar />
           }
         },

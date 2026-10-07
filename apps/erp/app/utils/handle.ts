@@ -20,6 +20,9 @@ export type Handle = {
   // full-screen detail views that provide their own left panel (e.g. the
   // change-order workspace) so the app doesn't stack two left sidebars.
   hideModuleSidebar?: boolean;
+  // Phones only: the section switcher for a route that is a module section
+  // but has no desktop sidebar (desktop is unchanged). Makes it a root screen.
+  compactSidebar?: ComponentType;
 };
 
 // A breadcrumb label may be plain text/markup or a Lingui MessageDescriptor

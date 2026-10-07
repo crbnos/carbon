@@ -154,8 +154,10 @@ const PurchasesControlBar = ({
   };
 
   return (
-    <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full">
-      <HStack className="flex-wrap gap-y-2">
+    <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full compact:gap-1 compact:px-0 compact:py-1.5">
+      {/* Phones: the scope controls form one sideways-scrolling chip
+          row; Download sits on the line below. */}
+      <HStack className="flex-wrap gap-y-2 compact:w-full compact:flex-nowrap compact:overflow-x-auto compact:scrollbar-hide compact:scroll-fade-x compact:whitespace-nowrap compact:px-4 compact:py-1.5 compact:[&>*]:shrink-0">
         <PeriodSelector variant="range" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -324,6 +326,7 @@ const PurchasesControlBar = ({
         variant="secondary"
         leftIcon={<LuDownload />}
         onClick={onDownload}
+        className="compact:ml-auto compact:mr-4"
       >
         {t`Download`}
       </Button>

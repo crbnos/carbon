@@ -10,6 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { materialValidator, upsertMaterial } from "~/modules/items";
 import { MaterialForm } from "~/modules/items/ui/Materials";
 import { getDatabaseClient } from "~/services/database.server";
@@ -87,8 +88,8 @@ export default function MaterialsNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <MaterialForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

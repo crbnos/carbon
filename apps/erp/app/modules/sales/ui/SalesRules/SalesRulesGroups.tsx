@@ -96,10 +96,13 @@ const SalesRulesGroups = memo(({ rules }: SalesRulesGroupsProps) => {
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] bg-card">
       <VStack
         spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4 compact:py-4"
       >
         <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3" className="tracking-tight text-balance">
+          <Heading
+            size="h3"
+            className="tracking-tight text-balance compact:sr-only"
+          >
             <Trans>Sales Rules</Trans>
           </Heading>
           <p className="max-w-[72ch] text-sm text-muted-foreground text-pretty">
@@ -179,23 +182,28 @@ const SalesRuleCard = memo(({ rule }: { rule: SalesRuleListItem }) => {
         <Accordion type="multiple" className="w-full">
           <AccordionItem value={rule.id} className="border-none">
             <div className="relative">
-              <AccordionTrigger className="px-6 py-6 hover:no-underline w-full">
-                <HStack spacing={4} className="flex-1 justify-between pr-12">
-                  <div className="flex items-center gap-3 min-w-0">
+              <AccordionTrigger className="px-6 py-6 hover:no-underline w-full compact:px-4 compact:py-4 compact:min-w-0">
+                <HStack
+                  spacing={4}
+                  className="flex-1 justify-between pr-12 compact:min-w-0 compact:flex-wrap compact:space-x-0 compact:gap-2 compact:pr-14"
+                >
+                  <div className="flex items-center gap-3 min-w-0 compact:basis-full">
                     <Heading size="h4" as="h3" className="truncate">
                       {rule.name}
                     </Heading>
                     {rule.severity === "error" ? (
-                      <Badge variant="red">
+                      <Badge variant="red" className="compact:shrink-0">
                         <Trans>Error</Trans>
                       </Badge>
                     ) : (
-                      <Badge variant="yellow">
+                      <Badge variant="yellow" className="compact:shrink-0">
                         <Trans>Warn</Trans>
                       </Badge>
                     )}
                     {broadcastLabel && (
-                      <Badge variant="outline">{broadcastLabel}</Badge>
+                      <Badge variant="outline" className="compact:shrink-0">
+                        {broadcastLabel}
+                      </Badge>
                     )}
                   </div>
                   <Status

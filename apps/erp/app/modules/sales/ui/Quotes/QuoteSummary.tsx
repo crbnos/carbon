@@ -178,12 +178,12 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg compact:size-14"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4 compact:size-14 compact:p-3">
+                  <LuImage className="w-16 h-16 text-muted-foreground compact:size-8" />
                 </div>
               )}
 
@@ -192,7 +192,7 @@ const LineItems = ({
                   className="flex flex-col cursor-pointer w-full"
                   onClick={() => toggleOpen(line.id!)}
                 >
-                  <div className="flex items-center gap-x-4 justify-between flex-grow">
+                  <div className="flex items-center gap-x-4 justify-between flex-grow compact:flex-wrap compact:gap-y-2">
                     <HStack spacing={2} className="min-w-0 flex-shrink">
                       <Heading className="truncate">
                         {line.itemReadableId}

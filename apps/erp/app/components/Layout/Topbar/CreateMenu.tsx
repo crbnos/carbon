@@ -31,7 +31,7 @@ import { usePermissions } from "~/hooks";
 import type { Route } from "~/types";
 import { path } from "~/utils/path";
 
-function useCreate(): Route[] {
+export function useCreate(): Route[] {
   const permissions = usePermissions();
   const { t } = useLingui();
 

@@ -7,17 +7,9 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   LabelWithHelp,
   MENU_ITEM_SHORTCUTS,
   Status,
@@ -28,7 +20,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import {
   LuCheckCheck,
-  LuEllipsisVertical,
   LuExternalLink,
   LuPlus,
   LuRotateCcw,
@@ -36,7 +27,12 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
+import { DocumentHeader } from "~/components";
 import { DatePicker, Hidden, Input, Select } from "~/components/Form";
+import {
+  RecordAction,
+  RecordHeroTarget
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -73,6 +69,8 @@ type JournalEntryFormProps = {
   lineDimensions: Record<string, JournalLineDimensionValue[]>;
   isDisabled?: boolean;
 };
+
+const formId = "journal-entry-form";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
@@ -176,110 +174,110 @@ const JournalEntryForm = ({
     }))
   );
 
+  const statusBadge = <JournalEntryStatus status={status as any} />;
+
+  const menuItems = (
+    <>
+      {isPosted && permissions.can("create", "accounting") && (
+        <DropdownMenuItem destructive onClick={reverseModal.onOpen}>
+          <DropdownMenuIcon icon={<LuRotateCcw />} />
+          <Trans>Reverse Entry</Trans>
+        </DropdownMenuItem>
+      )}
+      {isDraft && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
+            disabled={
+              !permissions.can("delete", "accounting") ||
+              !permissions.is("employee")
+            }
+            destructive
+            onClick={deleteModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuTrash />} />
+            <Trans>Delete Journal Entry</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+    </>
+  );
+
   return (
     <>
-      <Card>
+      <RecordHeroTarget bleed />
+      <Card className="compact:mt-4">
         <ValidatedForm
+          id={formId}
           method="post"
           validator={journalEntryValidator}
           defaultValues={initialValues}
           isReadOnly={isDisabled}
           style={{ width: "100%" }}
         >
-          <CardHeader className="flex-row items-center justify-between">
-            <HStack>
-              <Heading as="h1" size="h3" className="font-sans">
-                {displayId}
-              </Heading>
-              <Copy text={displayId} />
-
-              {(isDraft || isPosted) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <IconButton
-                      type="button"
-                      aria-label="More options"
-                      icon={<LuEllipsisVertical />}
+          <DocumentHeader
+            title={displayId}
+            status={statusBadge}
+            menuItems={isDraft || isPosted ? menuItems : undefined}
+            actions={
+              <>
+                {sourceDocument && (
+                  <RecordAction slot="overflow">
+                    <Button
                       variant="secondary"
-                      size="sm"
-                    />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {isPosted && permissions.can("create", "accounting") && (
-                      <DropdownMenuItem
-                        destructive
-                        onClick={reverseModal.onOpen}
+                      leftIcon={<LuExternalLink />}
+                      asChild
+                    >
+                      <Link to={sourceDocument.to}>
+                        {sourceDocument.readableId}
+                      </Link>
+                    </Button>
+                  </RecordAction>
+                )}
+                {isReversed && reversedById && (
+                  <RecordAction slot="overflow">
+                    <Button variant="secondary" asChild>
+                      <Link to={path.to.journalEntryDetails(reversedById)}>
+                        <Trans>Reversing Entry</Trans>
+                      </Link>
+                    </Button>
+                  </RecordAction>
+                )}
+                {isDraft && permissions.can("update", "accounting") && (
+                  <>
+                    {/* `form` keeps these submitting from the phone action
+                      bar, which renders outside the <form>. */}
+                    <RecordAction slot="secondary">
+                      <Button
+                        type="submit"
+                        form={formId}
+                        name="intent"
+                        value="save"
+                        leftIcon={<LuSave />}
+                        variant="secondary"
                       >
-                        <DropdownMenuIcon icon={<LuRotateCcw />} />
-                        Reverse Entry
-                      </DropdownMenuItem>
-                    )}
-                    {isDraft && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          shortcut={MENU_ITEM_SHORTCUTS.delete}
-                          disabled={
-                            !permissions.can("delete", "accounting") ||
-                            !permissions.is("employee")
-                          }
-                          destructive
-                          onClick={deleteModal.onOpen}
-                        >
-                          <DropdownMenuIcon icon={<LuTrash />} />
-                          Delete Journal Entry
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              <JournalEntryStatus status={status as any} />
-            </HStack>
-            <HStack>
-              {sourceDocument && (
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuExternalLink />}
-                  asChild
-                >
-                  <Link to={sourceDocument.to}>
-                    {sourceDocument.readableId}
-                  </Link>
-                </Button>
-              )}
-              {isReversed && reversedById && (
-                <Button variant="secondary" asChild>
-                  <Link to={path.to.journalEntryDetails(reversedById)}>
-                    Reversing Entry
-                  </Link>
-                </Button>
-              )}
-              {isDraft && permissions.can("update", "accounting") && (
-                <>
-                  <Button
-                    type="submit"
-                    name="intent"
-                    value="save"
-                    leftIcon={<LuSave />}
-                    variant="secondary"
-                  >
-                    Save Draft
-                  </Button>
-                  <Button
-                    type="submit"
-                    name="intent"
-                    value="post"
-                    leftIcon={<LuCheckCheck />}
-                    variant="primary"
-                    isDisabled={!isBalanced || totalDebits === 0}
-                  >
-                    Post
-                  </Button>
-                </>
-              )}
-            </HStack>
-          </CardHeader>
+                        <Trans>Save Draft</Trans>
+                      </Button>
+                    </RecordAction>
+                    <RecordAction slot="primary">
+                      <Button
+                        type="submit"
+                        form={formId}
+                        name="intent"
+                        value="post"
+                        leftIcon={<LuCheckCheck />}
+                        variant="primary"
+                        isDisabled={!isBalanced || totalDebits === 0}
+                      >
+                        <Trans>Post</Trans>
+                      </Button>
+                    </RecordAction>
+                  </>
+                )}
+              </>
+            }
+          />
 
           <CardContent>
             <Hidden name="id" />
@@ -287,7 +285,7 @@ const JournalEntryForm = ({
             <VStack spacing={4} className="w-full">
               {/* Entry Details */}
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
-                <div className="col-span-3">
+                <div className="col-span-3 compact:col-span-1">
                   <Input autoFocus name="description" label={t`Description`} />
                 </div>
                 <Input
@@ -315,12 +313,12 @@ const JournalEntryForm = ({
               {/* Journal Lines + Totals */}
               <div className="rounded-lg border border-border overflow-hidden w-full">
                 {/* Column Headers */}
-                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border">
+                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border compact:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
                   <div className="w-6" />
-                  <div className="pl-3">
+                  <div className="pl-3 compact:col-span-3">
                     <Trans>Account & Details</Trans>
                   </div>
-                  <div className="text-right pr-3">
+                  <div className="text-right pr-3 compact:col-start-2">
                     <LabelWithHelp
                       variant="inline"
                       termId="journal-line-debit"
@@ -374,9 +372,9 @@ const JournalEntryForm = ({
                 )}
 
                 {/* Totals */}
-                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-3 bg-muted/50 border-t border-border">
+                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-3 bg-muted/50 border-t border-border compact:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
                   <div className="w-6" />
-                  <div className="flex items-center gap-2 text-sm font-medium">
+                  <div className="flex items-center gap-2 text-sm font-medium compact:col-span-3 compact:flex-wrap">
                     Totals
                     {isBalanced && totalDebits > 0 ? (
                       <Status color="green">Balanced</Status>
@@ -396,7 +394,7 @@ const JournalEntryForm = ({
                       </Status>
                     )}
                   </div>
-                  <div className="text-right font-mono text-sm tabular-nums">
+                  <div className="text-right font-mono text-sm tabular-nums compact:col-start-2">
                     {currencyFormatter.format(totalDebits)}
                   </div>
                   <div className="text-right font-mono text-sm tabular-nums">

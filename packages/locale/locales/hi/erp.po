@@ -224,6 +224,7 @@ msgid "{0} scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} चुने गए"
 
@@ -1448,6 +1449,9 @@ msgstr "अपने निर्णय के बारे में कोई 
 msgid "Add Approval Requirement"
 msgstr "अनुमोदन आवश्यकता जोड़ें"
 
+msgid "Add Asset Class"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
@@ -1504,6 +1508,9 @@ msgstr "शीर्षक जोड़ें"
 
 msgid "Add Item"
 msgstr "आइटम जोड़ें"
+
+msgid "Add Journal Entry"
+msgstr ""
 
 msgid "Add Line"
 msgstr "लाइन जोड़ें"
@@ -1620,6 +1627,9 @@ msgstr "स्पेयर पार्ट जोड़ें"
 msgid "Add station"
 msgstr "स्टेशन जोड़ें"
 
+msgid "Add step"
+msgstr ""
+
 msgid "Add Step"
 msgstr "चरण जोड़ें"
 
@@ -1708,6 +1718,9 @@ msgstr "उन्नत"
 
 msgid "Affected item not found."
 msgstr "प्रभावित आइटम नहीं मिला।"
+
+msgid "Affected Items"
+msgstr ""
 
 msgid "After"
 msgstr "के बाद"
@@ -2743,6 +2756,9 @@ msgstr "असेंबलीज"
 msgid "Assembly"
 msgstr "असेंबली"
 
+msgid "assembly instruction"
+msgstr ""
+
 msgid "Assembly instruction"
 msgstr "असेंबली निर्देश"
 
@@ -2832,6 +2848,9 @@ msgstr "यह भंडारण इकाई को वर्क सेंट�
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "इकाई को लाइनसाइड सामग्री के लिए वर्क सेंटर में असाइन करता है, इसलिए ऑपरेटर इसे उत्पादन दृश्य में देखते हैं; मूल इकाई में सेट किए जाने पर मूल इकाई से विरासत में मिलता है।"
+
+msgid "Associations"
+msgstr ""
 
 msgid "Assumptions"
 msgstr "मान्यताएँ"
@@ -3233,6 +3252,9 @@ msgstr "{0} द्वारा अवरुद्ध"
 msgid "Blocking sync"
 msgstr "ब्लॉकिंग सिंक"
 
+msgid "Blocks"
+msgstr ""
+
 msgid "Blocks Machine"
 msgstr "मशीन को ब्लॉक करता है"
 
@@ -3388,6 +3410,9 @@ msgstr "स्थान के अनुसार"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
+
+msgid "By you · edited <0/>"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CAD मॉडल"
@@ -3829,6 +3854,9 @@ msgstr "एक सीरियल नंबर चुनें"
 msgid "choose a supplier for {0} on the job"
 msgstr "जॉब पर {0} के लिए एक आपूर्तिकर्ता चुनें"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
 
@@ -3867,6 +3895,9 @@ msgstr "साफ़ करें"
 
 msgid "Clear due date"
 msgstr "नियत तिथि साफ करें"
+
+msgid "Clear filters"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
@@ -4505,6 +4536,9 @@ msgstr "क्लिपबोर्ड में लिंक कॉपी क�
 msgid "Copied setup prompt to your clipboard"
 msgstr "सेटअप प्रॉम्प्ट आपके क्लिपबोर्ड में कॉपी किया गया"
 
+msgid "Copied to clipboard"
+msgstr ""
+
 msgid "Copied!"
 msgstr "कॉपी हो गया!"
 
@@ -4892,8 +4926,7 @@ msgstr "कवरेज"
 msgid "Create"
 msgstr "बनाएं"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} बनाएं"
 
@@ -5902,11 +5935,17 @@ msgstr "छुट्टी हटाएं"
 msgid "Delete Inspection Plan"
 msgstr "निरीक्षण योजना हटाएं"
 
+msgid "Delete Instruction"
+msgstr ""
+
 msgid "Delete Issue"
 msgstr "समस्या हटाएं"
 
 msgid "Delete Item Group"
 msgstr "आइटम समूह हटाएं"
+
+msgid "Delete Job"
+msgstr ""
 
 msgid "Delete Journal Entry"
 msgstr "जर्नल प्रविष्टि हटाएँ"
@@ -6220,6 +6259,9 @@ msgstr "मूल्यह्रास प्रारंभ तिथि"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "इस आइटम की शेल्फ लाइफ को इसके घटकों की सबसे कम शेल्फ लाइफ से निकालें, ऊपर दिए गए डेज़ फील्ड को अनदेखा करते हुए।"
+
+msgid "Descending"
+msgstr ""
 
 msgid "Description"
 msgstr "विवरण"
@@ -7090,6 +7132,9 @@ msgstr "वेबहुक संपादित करें"
 msgid "Edit Work Center"
 msgstr "वर्क सेंटर संपादित करें"
 
+msgid "edited <0/>"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
@@ -7719,9 +7764,6 @@ msgstr "समाप्ति तब शुरू होती है जब च
 msgid "Expiry trace"
 msgstr "समाप्ति ट्रेस"
 
-msgid "Explorer"
-msgstr "एक्सप्लोरर"
-
 msgid "Export"
 msgstr "निर्यात करें"
 
@@ -8243,8 +8285,17 @@ msgstr "एक रन को भरता है"
 msgid "Filter"
 msgstr "फ़िल्टर करें"
 
+msgid "Filter & sort"
+msgstr ""
+
+msgid "Filter and sort"
+msgstr ""
+
 msgid "Filter by…"
 msgstr "द्वारा फ़िल्टर करें…"
+
+msgid "Filters"
+msgstr ""
 
 msgid "Finalize"
 msgstr "अंतिम रूप दें"
@@ -8820,6 +8871,9 @@ msgstr "ऐसे ऑपरेशन हैं जिन्हें शेड�
 msgid "Headers"
 msgstr "हेडर"
 
+msgid "Heading {level}"
+msgstr ""
+
 msgid "healthy"
 msgstr "स्वस्थ"
 
@@ -8885,6 +8939,9 @@ msgstr "छुट्टी का नाम"
 
 msgid "Holidays"
 msgstr "छुट्टियाँ"
+
+msgid "Home"
+msgstr ""
 
 msgid "Home Phone"
 msgstr "होम फोन"
@@ -10309,6 +10366,9 @@ msgstr "सूची पैरामीटर"
 msgid "List view"
 msgstr "सूची दृश्य"
 
+msgid "List View"
+msgstr ""
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -10322,6 +10382,9 @@ msgstr "लाइव रीलोडिंग"
 
 msgid "Load"
 msgstr "भार"
+
+msgid "Load more"
+msgstr ""
 
 msgid "Load newer"
 msgstr "नया लोड करें"
@@ -10519,6 +10582,9 @@ msgstr "MACRS संपत्ति वर्ग"
 msgid "Magic link"
 msgstr "मैजिक लिंक"
 
+msgid "Main"
+msgstr ""
+
 msgid "Main build (after its last step)"
 msgstr "मुख्य निर्माण (इसके अंतिम चरण के बाद)"
 
@@ -10596,6 +10662,10 @@ msgstr "ऑर्डर पर निर्माण"
 
 msgid "Make tracked entities available again"
 msgstr "ट्रैक किए गए इकाइयों को फिर से उपलब्ध करें"
+
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr ""
 
 msgid "Makes this document active again."
 msgstr "यह दस्तावेज़ फिर से सक्रिय करता है।"
@@ -11687,6 +11757,9 @@ msgstr "कोई {0} सिंक ऑपरेशन नहीं"
 msgid "No {0} yet"
 msgstr "अभी कोई {0} नहीं"
 
+msgid "No {title} yet"
+msgstr ""
+
 msgid "No abilities added"
 msgstr "कोई कौशल जोड़ा नहीं गया"
 
@@ -12365,6 +12438,9 @@ msgstr "इस स्थान पर कोई अन्य स्टॉक न
 msgid "Nothing here matches your search and filters."
 msgstr "यहां कुछ भी आपकी खोज और फ़िल्टर से मेल नहीं खाता।"
 
+msgid "Nothing here yet"
+msgstr ""
+
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
@@ -12685,9 +12761,6 @@ msgstr "खुली जॉबें"
 
 msgid "Open menu"
 msgstr "मेनू खोलें"
-
-msgid "Open navigation"
-msgstr "नेविगेशन खोलें"
 
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु के अनुसार खुली देय राशि"
@@ -13049,6 +13122,9 @@ msgstr "{label} पर समाप्ति को ओवरराइड कर
 msgid "Overtime"
 msgstr "ओवरटाइम"
 
+msgid "Overview"
+msgstr ""
+
 msgid "Overwrite Existing"
 msgstr "मौजूदा को अधिलेखित करें"
 
@@ -13211,6 +13287,9 @@ msgstr "मेटाडेटा XML को पेस्ट करें यद�
 
 msgid "Path"
 msgstr "पथ"
+
+msgid "Pause"
+msgstr ""
 
 msgid "Pay"
 msgstr "भुगतान करें"
@@ -13707,6 +13786,9 @@ msgstr "वर्तमान सप्ताह"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएं इस सूची को खोलने के लिए। जब आप किसी फ़ील्ड में टाइप करते हैं तो शॉर्टकट अनदेखा किए जाते हैं।"
 
+msgid "Press '/' for commands"
+msgstr ""
+
 msgid "Prev"
 msgstr "पिछला"
 
@@ -14090,6 +14172,9 @@ msgstr "इन्वेंटरी से लें"
 msgid "Pull, map, and load your data"
 msgstr "अपना डेटा खींचें, मैप करें, और लोड करें"
 
+msgid "Purchase"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP से खरीद और निर्माण करें"
 
@@ -14384,6 +14469,9 @@ msgstr "त्रैमासिक"
 msgid "Question"
 msgstr "प्रश्न"
 
+msgid "Questions"
+msgstr ""
+
 msgid "Queued"
 msgstr "कतार में"
 
@@ -14509,6 +14597,9 @@ msgstr "कच्चा माल"
 
 msgid "Raw Materials (default)"
 msgstr "कच्चा माल (डिफ़ॉल्ट)"
+
+msgid "Re-convert Model"
+msgstr ""
 
 msgid "Re-date to first open day"
 msgstr "पहले खुले दिन को फिर से डेट करें"
@@ -15316,6 +15407,9 @@ msgstr "परिणाम"
 msgid "Results per page"
 msgstr "प्रति पृष्ठ परिणाम"
 
+msgid "Resume"
+msgstr ""
+
 msgid "Resume Receiving"
 msgstr "प्राप्ति को फिर से शुरू करें"
 
@@ -15427,11 +15521,17 @@ msgstr "रिवर्स चार्ज बिक्रय कर"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "रिवर्स चार्ज बिक्रय कर (डिफ़ॉल्ट)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
 
 msgid "Reversed"
 msgstr "प्रतिवर्तित"
+
+msgid "Reversing Entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "पूर्ववत् करें"
@@ -15882,6 +15982,9 @@ msgstr "संपर्क सहेजें"
 msgid "Save dimension settings"
 msgstr "आयाम सेटिंग्स सहेजें"
 
+msgid "Save Draft"
+msgstr ""
+
 msgid "Save Method"
 msgstr "विधि सहेजें"
 
@@ -15902,6 +16005,9 @@ msgstr "सहेजा गया"
 
 msgid "Saved view"
 msgstr "सहेजा गया दृश्य"
+
+msgid "Saved views"
+msgstr ""
 
 msgid "Saved Views"
 msgstr "सहेजे गए दृश्य"
@@ -16050,6 +16156,9 @@ msgstr "खोजें"
 msgid "Search {gaugeTypeName}..."
 msgstr "{gaugeTypeName} खोजें..."
 
+msgid "Search {title}"
+msgstr ""
+
 msgid "Search accounts"
 msgstr "खातों को खोजें"
 
@@ -16153,9 +16262,6 @@ msgid "Secret copied to clipboard"
 msgstr "गुप्त क्लिपबोर्ड में कॉपी किया गया"
 
 msgid "Section"
-msgstr "अनुभाग"
-
-msgid "Sections"
 msgstr "अनुभाग"
 
 msgid "Secure your account with 2FA"
@@ -16363,6 +16469,9 @@ msgstr "मात्रा चुनें"
 msgid "Select Reason"
 msgstr "कारण चुनें"
 
+msgid "Select row"
+msgstr ""
+
 msgid "Select Row"
 msgstr "पंक्ति चुनें"
 
@@ -16420,6 +16529,9 @@ msgstr "स्व-सेवा"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "docs.carbon.ms पर स्व-सेवा संदर्भ"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Send"
 msgstr "भेजें"
@@ -16861,6 +16973,9 @@ msgstr "{0} दिखाएँ"
 msgid "Show {0} more"
 msgstr "{0} और दिखाएं"
 
+msgid "Show {count} results"
+msgstr ""
+
 msgid "Show {label}"
 msgstr "{label} दिखाएँ"
 
@@ -16928,6 +17043,9 @@ msgstr "{0} of {totalCount} दिखा रहे हैं — अपनी �
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{0} of {totalFiltered} दिखा रहे हैं — अपनी खोज को परिष्कृत करें"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "में दिखाई दे रहा है {parentCurrency}"
@@ -17068,17 +17186,11 @@ msgstr "समाधान इंजीनियर"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "कुछ रिकॉर्ड वापस नहीं आएंगे। जारी रखने के लिए <0>{CONFIRM_WORD}</0> टाइप करें।"
 
 msgid "Some Shifts"
 msgstr "कुछ शिफ्ट"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -17427,6 +17539,9 @@ msgstr "इस तारीख के बाद पुराने पार्�
 msgid "Storage client not available"
 msgstr "स्टोरेज क्लाइंट उपलब्ध नहीं है"
 
+msgid "Storage Rule"
+msgstr ""
+
 msgid "Storage Rules"
 msgstr "भंडारण नियम"
 
@@ -17551,9 +17666,6 @@ msgstr "निरीक्षण सबमिट करें"
 
 msgid "Submitted By"
 msgstr "द्वारा प्रस्तुत"
-
-msgid "Submodules"
-msgstr "उप-मॉड्यूल"
 
 msgid "substance"
 msgstr "पदार्थ"
@@ -17843,6 +17955,9 @@ msgstr "स्विच करें"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "मॉड्यूल को बंद करने से यह हर जगह हटा दिया जाता है: आवश्यकताएँ, डेटा, प्रशिक्षण, दायरा।"
+
+msgid "Switch company"
+msgstr ""
 
 msgid "Switch to pan mode"
 msgstr "पैन मोड में स्विच करें"
@@ -19616,6 +19731,9 @@ msgstr "ट्रैक की गई सामग्री को पिकि�
 msgid "Tracking"
 msgstr "ट्रैकिंग"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "ट्रैकिंग विधि"
 
@@ -19705,6 +19823,9 @@ msgstr "ट्रांजिट और संस्था"
 
 msgid "Trash"
 msgstr "ट्रैश"
+
+msgid "Tree View"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "परीक्षण शेष"
@@ -20002,9 +20123,6 @@ msgstr "बिना शीर्षक की पंक्ति"
 
 msgid "Untitled step"
 msgstr "बिना शीर्षक वाला चरण"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "अप्रयुक्त सामग्री को वर्क सेंटर से गोदाम में वापस भेजा गया।"
@@ -20405,6 +20523,12 @@ msgstr "अपनी ईमेल सत्यापित करें"
 
 msgid "Version"
 msgstr "संस्करण"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -21285,6 +21409,9 @@ msgstr "कॉन्फ़िगरेशन और डेटा पर का�
 
 msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "अवमूल्यन खाता"

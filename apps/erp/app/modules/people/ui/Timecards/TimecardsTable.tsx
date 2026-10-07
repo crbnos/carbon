@@ -9,6 +9,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  useCompact,
   useInterval
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -68,6 +69,7 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
 const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
+  const isCompact = useCompact();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -104,6 +106,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuUser />
         }
       },
@@ -112,15 +115,31 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         header: t`Date`,
         cell: ({ row }) =>
           row.original.clockIn ? (
-            <DateTime
-              value={row.original.clockIn}
-              variant="date"
-              dateOptions={{ dateStyle: "medium" }}
-            />
+            <>
+              <DateTime
+                value={row.original.clockIn}
+                variant="date"
+                dateOptions={{ dateStyle: "medium" }}
+              />
+              {/* Phones: line 2 also carries the clock-in – clock-out span. */}
+              {isCompact ? (
+                <>
+                  {" · "}
+                  <DateTime value={row.original.clockIn} variant="time" />
+                  {" – "}
+                  <DateTime
+                    value={row.original.clockOut}
+                    variant="time"
+                    fallback="—"
+                  />
+                </>
+              ) : null}
+            </>
           ) : (
             "—"
           ),
         meta: {
+          mobile: "P3",
           icon: <LuCalendar />
         }
       },
@@ -152,6 +171,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         cell: ({ row }) =>
           durationLabel(row.original.clockIn, row.original.clockOut),
         meta: {
+          mobile: "P2",
           icon: <LuClock />,
           exportValue: (row) => durationLabel(row.clockIn, row.clockOut)
         }
@@ -167,6 +187,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuRadar />,
           filter: {
             type: "static" as const,
@@ -203,7 +224,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         }
       }
     ];
-  }, [locations, t, locale]);
+  }, [locations, t, locale, isCompact]);
 
   const renderContextMenu = useCallback(
     (row: TimeCardEntry) => {

@@ -366,7 +366,7 @@ function PickingListLineItem({
   return (
     <div
       className={cn(
-        "group flex items-center justify-between gap-6 p-4 border-b",
+        "group flex items-center justify-between gap-6 p-4 border-b compact:flex-col compact:items-stretch compact:gap-3",
         isLast && "border-none"
       )}
     >
@@ -410,7 +410,10 @@ function PickingListLineItem({
         </VStack>
       </HStack>
 
-      <HStack spacing={6} className="shrink-0">
+      <HStack
+        spacing={6}
+        className="shrink-0 compact:flex-wrap compact:gap-3 compact:space-x-0"
+      >
         {source ? (
           <div className="text-base font-medium whitespace-nowrap">
             {source}

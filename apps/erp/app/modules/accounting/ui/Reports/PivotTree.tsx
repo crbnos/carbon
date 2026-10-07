@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { cn, useCompact } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -29,6 +29,8 @@ import {
 } from "./pivotData";
 
 const ROW_COLUMN_WIDTH = 360;
+/** Phones: the pinned first column is capped at 150pt. */
+const COMPACT_ROW_COLUMN_WIDTH = 150;
 const VALUE_COLUMN_WIDTH = 128;
 
 /**
@@ -82,6 +84,10 @@ function formatMeasureValue(value: number, measure: PivotMeasure): string {
 const PivotTree = memo(
   ({ pivot, state, columnLabels, onCellClick }: PivotTreeProps) => {
     const { t } = useLingui();
+    const isCompact = useCompact();
+    const rowColumnWidth = isCompact
+      ? COMPACT_ROW_COLUMN_WIDTH
+      : ROW_COLUMN_WIDTH;
     const { locale } = useLocale();
     const [, setParams] = useUrlParams();
     useRealtime("journal");
@@ -192,7 +198,7 @@ const PivotTree = memo(
 
     const totalColumnsWidth = columnKeys.length * VALUE_COLUMN_WIDTH;
     const rowWidth =
-      ROW_COLUMN_WIDTH + totalColumnsWidth + VALUE_COLUMN_WIDTH + 16;
+      rowColumnWidth + totalColumnsWidth + VALUE_COLUMN_WIDTH + 16;
 
     // Horizontal virtualizer over the value columns — thousands of columns stay
     // cheap because only the visible window renders in every row + header +
@@ -265,7 +271,7 @@ const PivotTree = memo(
                 "group/header sticky left-0 z-[2] flex h-full shrink-0 items-center gap-1 bg-card px-4 text-muted-foreground hover:text-foreground",
                 state.sort?.key === LABEL_SORT_KEY && "text-foreground"
               )}
-              style={{ width: ROW_COLUMN_WIDTH }}
+              style={{ width: rowColumnWidth }}
               onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
             >
               {renderSortIndicator(LABEL_SORT_KEY)}
@@ -284,7 +290,7 @@ const PivotTree = memo(
                     state.sort?.key === columnKey && "text-foreground"
                   )}
                   style={{
-                    left: ROW_COLUMN_WIDTH + virtualColumn.start,
+                    left: rowColumnWidth + virtualColumn.start,
                     width: VALUE_COLUMN_WIDTH
                   }}
                   onClick={() => cycleSort(columnKey, "desc")}
@@ -306,7 +312,7 @@ const PivotTree = memo(
                 state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
               )}
               style={{
-                left: ROW_COLUMN_WIDTH + totalColumnsWidth,
+                left: rowColumnWidth + totalColumnsWidth,
                 width: VALUE_COLUMN_WIDTH
               }}
               onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
@@ -324,7 +330,7 @@ const PivotTree = memo(
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
-          parentClassName="flex-1 overflow-x-auto"
+          parentClassName="flex-1 overflow-x-auto compact:scroll-fade-x"
           contentMinWidth={rowWidth}
           renderNode={({ node, state: nodeState }) => {
             const row = node.data;
@@ -357,7 +363,7 @@ const PivotTree = memo(
                       ? "bg-muted group-hover/row:bg-accent"
                       : "bg-card group-hover/row:bg-accent"
                   )}
-                  style={{ width: ROW_COLUMN_WIDTH }}
+                  style={{ width: rowColumnWidth }}
                 >
                   {/* Indentation lines */}
                   <div className="flex h-9 items-center">
@@ -408,7 +414,7 @@ const PivotTree = memo(
                       key={columnKey}
                       className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
                       style={{
-                        left: ROW_COLUMN_WIDTH + virtualColumn.start,
+                        left: rowColumnWidth + virtualColumn.start,
                         width: VALUE_COLUMN_WIDTH
                       }}
                       onClick={(e) => {
@@ -427,7 +433,7 @@ const PivotTree = memo(
                 <span
                   className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
                   style={{
-                    left: ROW_COLUMN_WIDTH + totalColumnsWidth,
+                    left: rowColumnWidth + totalColumnsWidth,
                     width: VALUE_COLUMN_WIDTH
                   }}
                   onClick={(e) => {
@@ -449,7 +455,7 @@ const PivotTree = memo(
           >
             <div
               className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: ROW_COLUMN_WIDTH }}
+              style={{ width: rowColumnWidth }}
             >
               <Trans>Total</Trans>
             </div>
@@ -461,7 +467,7 @@ const PivotTree = memo(
                   key={columnKey}
                   className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
                   style={{
-                    left: ROW_COLUMN_WIDTH + virtualColumn.start,
+                    left: rowColumnWidth + virtualColumn.start,
                     width: VALUE_COLUMN_WIDTH
                   }}
                 >
@@ -487,7 +493,7 @@ const PivotTree = memo(
             <span
               className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
               style={{
-                left: ROW_COLUMN_WIDTH + totalColumnsWidth,
+                left: rowColumnWidth + totalColumnsWidth,
                 width: VALUE_COLUMN_WIDTH
               }}
             >

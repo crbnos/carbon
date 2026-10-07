@@ -215,6 +215,9 @@ msgstr "उपलब्ध"
 msgid "Available"
 msgstr "उपलब्ध"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "बैच पर वापस"
 
@@ -294,6 +297,9 @@ msgstr "अपना ईमेल जांचें"
 
 msgid "Choose a job"
 msgstr "एक जॉब चुनें"
+
+msgid "Choose an option"
+msgstr ""
 
 msgid "Clear"
 msgstr "साफ़ करें"
@@ -406,8 +412,7 @@ msgstr "क्लिपबोर्ड पर कॉपी करें"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} बनाएं"
 
@@ -695,6 +700,9 @@ msgstr "ऑपरेशन पर वापस जाएं"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
@@ -1179,6 +1187,9 @@ msgstr "ऑपरेटर द्वारा निष्पादित"
 msgid "Optional"
 msgstr "वैकल्पिक"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "या"
 
@@ -1272,6 +1283,9 @@ msgstr "PM शेड्यूल समाप्त"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "पिछला"
@@ -1916,6 +1930,9 @@ msgstr "वर्क सेंटर डिस्प्ले"
 
 msgid "Work instructions"
 msgstr "कार्य निर्देश"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "हां"

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { cn, useCompact } from "@carbon/react";
 import type {
   ReportColumnGranularity,
   ReportPeriodBucket
@@ -16,6 +16,8 @@ import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
 import { getPeriodColumnLabel } from "./MultiPeriodStatementTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
+/** Phones: the pinned first column is capped at 150pt. */
+const COMPACT_ACCOUNT_COLUMN_WIDTH = 150;
 const PERIOD_COLUMN_WIDTH = 128;
 
 type ExecutivePnlSummaryProps = {
@@ -44,6 +46,10 @@ const ExecutivePnlSummary = memo(
     parentCurrency
   }: ExecutivePnlSummaryProps) => {
     const { t } = useLingui();
+    const isCompact = useCompact();
+    const accountColumnWidth = isCompact
+      ? COMPACT_ACCOUNT_COLUMN_WIDTH
+      : ACCOUNT_COLUMN_WIDTH;
     const { locale } = useLocale();
     useRealtime("journal");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -94,7 +100,7 @@ const ExecutivePnlSummary = memo(
     );
 
     const rowWidth =
-      ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
+      accountColumnWidth + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
       <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col">
@@ -106,7 +112,7 @@ const ExecutivePnlSummary = memo(
           >
             <div
               className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: ACCOUNT_COLUMN_WIDTH }}
+              style={{ width: accountColumnWidth }}
             >
               <Trans>Executive P&amp;L</Trans>
             </div>
@@ -129,7 +135,10 @@ const ExecutivePnlSummary = memo(
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-auto">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-auto compact:scroll-fade-x"
+        >
           <div style={{ minWidth: rowWidth }}>
             {rows.map((row) => (
               <div
@@ -151,7 +160,7 @@ const ExecutivePnlSummary = memo(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center px-4",
                     row.isBottomLine ? "bg-muted/40" : "bg-card"
                   )}
-                  style={{ width: ACCOUNT_COLUMN_WIDTH }}
+                  style={{ width: accountColumnWidth }}
                 >
                   <span className="truncate">{labels[row.key]}</span>
                 </div>

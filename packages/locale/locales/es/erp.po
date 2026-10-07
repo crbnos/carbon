@@ -224,6 +224,7 @@ msgid "{0} scrapped"
 msgstr "{0} desechado"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} seleccionados"
 
@@ -1448,6 +1449,9 @@ msgstr "Agregue notas sobre su decisión..."
 msgid "Add Approval Requirement"
 msgstr "Agregar Requisito de Aprobación"
 
+msgid "Add Asset Class"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Agregar aplicación de autenticación"
 
@@ -1504,6 +1508,9 @@ msgstr "Agregar encabezado"
 
 msgid "Add Item"
 msgstr "Agregar Artículo"
+
+msgid "Add Journal Entry"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Agregar Línea"
@@ -1620,6 +1627,9 @@ msgstr "Agregar Pieza de Repuesto"
 msgid "Add station"
 msgstr "Agregar estación"
 
+msgid "Add step"
+msgstr ""
+
 msgid "Add Step"
 msgstr "Agregar paso"
 
@@ -1708,6 +1718,9 @@ msgstr "Avanzado"
 
 msgid "Affected item not found."
 msgstr "Elemento afectado no encontrado."
+
+msgid "Affected Items"
+msgstr ""
 
 msgid "After"
 msgstr "Después"
@@ -2743,6 +2756,9 @@ msgstr "Asambleas"
 msgid "Assembly"
 msgstr "Ensamblaje"
 
+msgid "assembly instruction"
+msgstr ""
+
 msgid "Assembly instruction"
 msgstr "Instrucción de ensamblaje"
 
@@ -2832,6 +2848,9 @@ msgstr "Asigna esta unidad de almacenamiento a un centro de trabajo (pie de lín
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Asigna esta unidad a un centro de trabajo para material de pie de línea, de modo que los operarios la vean en la vista de producción; se hereda de la unidad padre cuando se establece allí."
+
+msgid "Associations"
+msgstr ""
 
 msgid "Assumptions"
 msgstr "Supuestos"
@@ -3233,6 +3252,9 @@ msgstr "Bloqueado por {0}"
 msgid "Blocking sync"
 msgstr "Sincronización de bloqueo"
 
+msgid "Blocks"
+msgstr ""
+
 msgid "Blocks Machine"
 msgstr "Bloquea la máquina"
 
@@ -3388,6 +3410,9 @@ msgstr "Por Ubicación"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Al iniciar sesión, aceptas los <0>Términos de Servicio</0> y la <1>Política de Privacidad.</1>"
+
+msgid "By you · edited <0/>"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "Modelo CAD"
@@ -3829,6 +3854,9 @@ msgstr "Elige un número de serie"
 msgid "choose a supplier for {0} on the job"
 msgstr "elegir un proveedor para {0} en la orden de trabajo"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Elegir otro archivo"
 
@@ -3867,6 +3895,9 @@ msgstr "Limpiar"
 
 msgid "Clear due date"
 msgstr "Borrar fecha de vencimiento"
+
+msgid "Clear filters"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "Limpiar filtros"
@@ -4505,6 +4536,9 @@ msgstr "Enlace copiado al portapapeles"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Indicación de preparación copiada al portapapeles"
 
+msgid "Copied to clipboard"
+msgstr ""
+
 msgid "Copied!"
 msgstr "¡Copiado!"
 
@@ -4892,8 +4926,7 @@ msgstr "Cobertura"
 msgid "Create"
 msgstr "Crear"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Crear {0}"
 
@@ -5902,11 +5935,17 @@ msgstr "Eliminar Día Festivo"
 msgid "Delete Inspection Plan"
 msgstr "Eliminar Plan de Inspección"
 
+msgid "Delete Instruction"
+msgstr ""
+
 msgid "Delete Issue"
 msgstr "Eliminar Problema"
 
 msgid "Delete Item Group"
 msgstr "Eliminar grupo de artículos"
+
+msgid "Delete Job"
+msgstr ""
 
 msgid "Delete Journal Entry"
 msgstr "Eliminar apunte"
@@ -6220,6 +6259,9 @@ msgstr "Fecha de Inicio de Depreciación"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Deriva la vida de anaquel del artículo de la vida de anaquel más corta de sus componentes, ignorando el campo Días arriba."
+
+msgid "Descending"
+msgstr ""
 
 msgid "Description"
 msgstr "Descripción"
@@ -7090,6 +7132,9 @@ msgstr "Editar Webhook"
 msgid "Edit Work Center"
 msgstr "Editar Centro de Trabajo"
 
+msgid "edited <0/>"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Eliminado"
 
@@ -7719,9 +7764,6 @@ msgstr "La caducidad comienza cuando se inicia el proceso seleccionado."
 msgid "Expiry trace"
 msgstr "Trazabilidad de caducidad"
 
-msgid "Explorer"
-msgstr "Explorador"
-
 msgid "Export"
 msgstr "Exportar"
 
@@ -8243,8 +8285,17 @@ msgstr "completa una tandada"
 msgid "Filter"
 msgstr "Filtro"
 
+msgid "Filter & sort"
+msgstr ""
+
+msgid "Filter and sort"
+msgstr ""
+
 msgid "Filter by…"
 msgstr "Filtrar por…"
+
+msgid "Filters"
+msgstr ""
 
 msgid "Finalize"
 msgstr "Finalizar"
@@ -8820,6 +8871,9 @@ msgstr "Tiene operaciones que no pueden ser programadas"
 msgid "Headers"
 msgstr "Encabezados"
 
+msgid "Heading {level}"
+msgstr ""
+
 msgid "healthy"
 msgstr "saludable"
 
@@ -8885,6 +8939,9 @@ msgstr "Nombre del Día Festivo"
 
 msgid "Holidays"
 msgstr "Días festivos"
+
+msgid "Home"
+msgstr ""
 
 msgid "Home Phone"
 msgstr "Teléfono de Casa"
@@ -10309,6 +10366,9 @@ msgstr "Parámetros de Lista"
 msgid "List view"
 msgstr "Vista de lista"
 
+msgid "List View"
+msgstr ""
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -10322,6 +10382,9 @@ msgstr "Recarga en vivo"
 
 msgid "Load"
 msgstr "Carga"
+
+msgid "Load more"
+msgstr ""
 
 msgid "Load newer"
 msgstr "Cargar más recientes"
@@ -10519,6 +10582,9 @@ msgstr "Clase de Propiedad MACRS"
 msgid "Magic link"
 msgstr "Enlace mágico"
 
+msgid "Main"
+msgstr ""
+
 msgid "Main build (after its last step)"
 msgstr "Construcción principal (después de su último paso)"
 
@@ -10596,6 +10662,10 @@ msgstr "Fabricar bajo pedido"
 
 msgid "Make tracked entities available again"
 msgstr "Hacer que las entidades rastreadas estén disponibles nuevamente"
+
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr ""
 
 msgid "Makes this document active again."
 msgstr "Activa este documento nuevamente."
@@ -11687,6 +11757,9 @@ msgstr "Sin operaciones de sincronización de {0}"
 msgid "No {0} yet"
 msgstr "Sin {0} aún"
 
+msgid "No {title} yet"
+msgstr ""
+
 msgid "No abilities added"
 msgstr "Sin habilidades añadidas"
 
@@ -12365,6 +12438,9 @@ msgstr "Nada más en esta ubicación tiene stock para extraer."
 msgid "Nothing here matches your search and filters."
 msgstr "Nada aquí coincide con tu búsqueda y filtros."
 
+msgid "Nothing here yet"
+msgstr ""
+
 msgid "Nothing in the archive"
 msgstr "Nada en el archivo"
 
@@ -12685,9 +12761,6 @@ msgstr "Órdenes de trabajo abiertas"
 
 msgid "Open menu"
 msgstr "Abrir menú"
-
-msgid "Open navigation"
-msgstr "Abrir navegación"
 
 msgid "Open payables by supplier and age"
 msgstr "Cuentas por pagar abiertas por proveedor y antigüedad"
@@ -13049,6 +13122,9 @@ msgstr "Sobrescribir la caducidad en {label}."
 msgid "Overtime"
 msgstr "Horas extras"
 
+msgid "Overview"
+msgstr ""
+
 msgid "Overwrite Existing"
 msgstr "Sobrescribir Existente"
 
@@ -13211,6 +13287,9 @@ msgstr "Pegue el XML de metadatos si su proveedor de identidad no publica una UR
 
 msgid "Path"
 msgstr "Ruta"
+
+msgid "Pause"
+msgstr ""
 
 msgid "Pay"
 msgstr "Pagar"
@@ -13707,6 +13786,9 @@ msgstr "Semana actual"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Presiona ? en cualquier página para abrir esta lista. Los atajos se ignoran mientras escribes en un campo."
 
+msgid "Press '/' for commands"
+msgstr ""
+
 msgid "Prev"
 msgstr "Anterior"
 
@@ -14090,6 +14172,9 @@ msgstr "Tomar del inventario"
 msgid "Pull, map, and load your data"
 msgstr "Extraer, asignar y cargar sus datos"
 
+msgid "Purchase"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "Comprar y fabricar desde MRP"
 
@@ -14384,6 +14469,9 @@ msgstr "Trimestral"
 msgid "Question"
 msgstr "Pregunta"
 
+msgid "Questions"
+msgstr ""
+
 msgid "Queued"
 msgstr "En cola"
 
@@ -14509,6 +14597,9 @@ msgstr "Materias Primas"
 
 msgid "Raw Materials (default)"
 msgstr "Materias Primas (predeterminado)"
+
+msgid "Re-convert Model"
+msgstr ""
 
 msgid "Re-date to first open day"
 msgstr "Redatar al primer día abierto"
@@ -15316,6 +15407,9 @@ msgstr "Resultados"
 msgid "Results per page"
 msgstr "Resultados por página"
 
+msgid "Resume"
+msgstr ""
+
 msgid "Resume Receiving"
 msgstr "Reanudar recepción"
 
@@ -15427,11 +15521,17 @@ msgstr "Impuesto a las ventas de cargo inverso"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Impuesto a las ventas de cargo inverso (predeterminado)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "Revertir los asientos de diario relacionados"
 
 msgid "Reversed"
 msgstr "Revertido"
+
+msgid "Reversing Entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "Revertir"
@@ -15882,6 +15982,9 @@ msgstr "Guardar contactos"
 msgid "Save dimension settings"
 msgstr "Guardar configuración de dimensión"
 
+msgid "Save Draft"
+msgstr ""
+
 msgid "Save Method"
 msgstr "Guardar Método"
 
@@ -15902,6 +16005,9 @@ msgstr "Guardado"
 
 msgid "Saved view"
 msgstr "Vista guardada"
+
+msgid "Saved views"
+msgstr ""
 
 msgid "Saved Views"
 msgstr "Vistas Guardadas"
@@ -16050,6 +16156,9 @@ msgstr "Buscar"
 msgid "Search {gaugeTypeName}..."
 msgstr "Buscar {gaugeTypeName}..."
 
+msgid "Search {title}"
+msgstr ""
+
 msgid "Search accounts"
 msgstr "Buscar cuentas"
 
@@ -16154,9 +16263,6 @@ msgstr "Código secreto copiado al portapapeles"
 
 msgid "Section"
 msgstr "Sección"
-
-msgid "Sections"
-msgstr "Secciones"
 
 msgid "Secure your account with 2FA"
 msgstr "Asegura tu cuenta con 2FA"
@@ -16363,6 +16469,9 @@ msgstr "Seleccionar Cantidades"
 msgid "Select Reason"
 msgstr "Seleccionar Razón"
 
+msgid "Select row"
+msgstr ""
+
 msgid "Select Row"
 msgstr "Seleccionar fila"
 
@@ -16420,6 +16529,9 @@ msgstr "Autoservicio"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Referencia de autoservicio en docs.carbon.ms"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Send"
 msgstr "Enviar"
@@ -16861,6 +16973,9 @@ msgstr "Mostrar {0}"
 msgid "Show {0} more"
 msgstr "Mostrar {0} más"
 
+msgid "Show {count} results"
+msgstr ""
+
 msgid "Show {label}"
 msgstr "Mostrar {label}"
 
@@ -16928,6 +17043,9 @@ msgstr "Mostrando {0} de {totalCount} — refina tu búsqueda"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Mostrando {0} de {totalFiltered} — refina tu búsqueda"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "Mostrando en {parentCurrency}"
@@ -17068,17 +17186,11 @@ msgstr "Ingeniero de Soluciones"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Algunas líneas extraídas del PDF no se pudieron asignar automáticamente a sus artículos de inventario. Revise y asigne cada línea a continuación."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Algunos registros no volverán. Escriba <0>{CONFIRM_WORD}</0> para continuar."
 
 msgid "Some Shifts"
 msgstr "Algunos turnos"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo salió mal. Por favor, inténtalo de nuevo."
@@ -17427,6 +17539,9 @@ msgstr "Detiene las sugerencias de compra para la pieza anterior después de est
 msgid "Storage client not available"
 msgstr "Cliente de almacenamiento no disponible"
 
+msgid "Storage Rule"
+msgstr ""
+
 msgid "Storage Rules"
 msgstr "Reglas de Almacenamiento"
 
@@ -17551,9 +17666,6 @@ msgstr "Enviar Inspección"
 
 msgid "Submitted By"
 msgstr "Enviado por"
-
-msgid "Submodules"
-msgstr "Submódulos"
 
 msgid "substance"
 msgstr "Sustancia"
@@ -17843,6 +17955,9 @@ msgstr "Cambiar"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "Desactiva un módulo para eliminarlo en todas partes: Requisitos, Datos, Capacitación, Alcance."
+
+msgid "Switch company"
+msgstr ""
 
 msgid "Switch to pan mode"
 msgstr "Cambiar a modo panorámico"
@@ -19616,6 +19731,9 @@ msgstr "El material rastreado se preselecciona por orden de picking (FEFO), incl
 msgid "Tracking"
 msgstr "Seguimiento"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Método de seguimiento"
 
@@ -19705,6 +19823,9 @@ msgstr "Tránsito e institución"
 
 msgid "Trash"
 msgstr "Papelera"
+
+msgid "Tree View"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "Balance de prueba"
@@ -20002,9 +20123,6 @@ msgstr "Línea sin título"
 
 msgid "Untitled step"
 msgstr "Paso sin título"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Material recogido no utilizado devuelto desde el centro de trabajo al almacén."
@@ -20405,6 +20523,12 @@ msgstr "Verifica tu correo electrónico"
 
 msgid "Version"
 msgstr "Versión"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -21285,6 +21409,9 @@ msgstr "Sesiones de trabajo sobre configuración y datos"
 
 msgid "Worst Performing Machines"
 msgstr "Máquinas con Peor Desempeño"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Cuenta de Deterioro"

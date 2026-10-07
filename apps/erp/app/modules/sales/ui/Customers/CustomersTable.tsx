@@ -97,6 +97,7 @@ const CustomersTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -105,6 +106,7 @@ const CustomersTable = memo(
           header: t`Status`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: customerStatuses?.map((status) => ({
@@ -127,6 +129,7 @@ const CustomersTable = memo(
             return <Enumerable value={customerType ?? ""} />;
           },
           meta: {
+            mobile: "P2",
             icon: <LuShapes />,
             filter: {
               type: "static",

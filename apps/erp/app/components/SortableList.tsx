@@ -140,7 +140,7 @@ function SortableListItem<T>({
                     >
                       <HStack
                         className={cn(
-                          "w-full justify-between pr-8",
+                          "w-full justify-between pr-8 compact:flex-wrap compact:gap-y-1",
                           !isReadOnly && "cursor-grab"
                         )}
                       >
@@ -176,7 +176,7 @@ function SortableListItem<T>({
                         )}
 
                         {item.details && (
-                          <div className="flex flex-shrink-0">
+                          <div className="flex flex-shrink-0 compact:basis-full compact:flex-wrap compact:[&>*]:flex-wrap">
                             {item.details}
                           </div>
                         )}
@@ -236,7 +236,10 @@ export function SortableListItemToggle({
     <button
       type="button"
       onClick={onToggle}
-      className={cn("absolute right-3 top-3 z-10", className)}
+      className={cn(
+        "absolute right-3 top-3 z-10 compact:after:absolute compact:after:-inset-3",
+        className
+      )}
     >
       {isOpen ? (
         <LuX className="h-5 w-5 text-foreground" />

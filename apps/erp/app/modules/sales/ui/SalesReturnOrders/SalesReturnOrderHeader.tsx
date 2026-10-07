@@ -4,15 +4,8 @@
 
 import {
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
@@ -21,13 +14,10 @@ import {
   LuCheckCheck,
   LuCircleStop,
   LuCreditCard,
-  LuEllipsisVertical,
   LuFile,
   LuGitCompare,
   LuLoaderCircle,
   LuPackageCheck,
-  LuPanelLeft,
-  LuPanelRight,
   LuTrash,
   LuTruck
 } from "react-icons/lu";
@@ -39,6 +29,7 @@ import {
   useSubmit
 } from "react-router";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -104,191 +95,186 @@ const SalesReturnOrderHeader = () => {
 
   const canUpdate = permissions.can("update", "sales");
 
+  const menuItems = (
+    <>
+      <DropdownMenuItem
+        disabled={
+          !["To Receive", "Cancelled"].includes(status ?? "") ||
+          statusFetcher.state !== "idle" ||
+          !canUpdate
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            { status: "Draft" },
+            {
+              method: "post",
+              action: path.to.salesReturnOrderStatus(id)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        destructive
+        disabled={
+          !["Draft", "Cancelled"].includes(status ?? "") ||
+          !permissions.can("delete", "sales") ||
+          !permissions.is("employee")
+        }
+        onClick={deleteDisclosure.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete RMA</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const statusBadge = <SalesReturnOrderStatus status={status} />;
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <IconButton
-              aria-label={t`Toggle Explorer`}
-              icon={<LuPanelLeft />}
-              onClick={toggleExplorer}
-              variant="ghost"
-            />
-            <Link to={path.to.salesReturnOrderDetails(id)}>
-              <Heading size="h4" className="flex items-center gap-2">
-                <span>{salesReturnOrder.salesReturnOrderId}</span>
-              </Heading>
-            </Link>
-            <Copy text={salesReturnOrder.salesReturnOrderId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  disabled={
-                    !["To Receive", "Cancelled"].includes(status ?? "") ||
-                    statusFetcher.state !== "idle" ||
-                    !canUpdate
-                  }
-                  onClick={() => {
-                    statusFetcher.submit(
-                      { status: "Draft" },
-                      {
-                        method: "post",
-                        action: path.to.salesReturnOrderStatus(id)
-                      }
-                    );
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                  <Trans>Reopen</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={
-                    !["Draft", "Cancelled"].includes(status ?? "") ||
-                    !permissions.can("delete", "sales") ||
-                    !permissions.is("employee")
-                  }
-                  onClick={deleteDisclosure.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete RMA</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <SalesReturnOrderStatus status={status} />
-          </HStack>
-          <HStack>
+      <RecordHeader
+        title={salesReturnOrder.salesReturnOrderId}
+        titleTo={path.to.salesReturnOrderDetails(id)}
+        copyValue={salesReturnOrder.salesReturnOrderId ?? ""}
+        menu={menuItems}
+        status={statusBadge}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
             {status !== "Draft" && (
-              <Button leftIcon={<LuFile />} variant="secondary" asChild>
-                <a
-                  target="_blank"
-                  href={path.to.file.salesReturnOrder(id)}
-                  rel="noreferrer"
-                >
-                  <Trans>PDF</Trans>
-                </a>
-              </Button>
+              <RecordAction slot="overflow">
+                <Button leftIcon={<LuFile />} variant="secondary" asChild>
+                  <a
+                    target="_blank"
+                    href={path.to.file.salesReturnOrder(id)}
+                    rel="noreferrer"
+                  >
+                    <Trans>PDF</Trans>
+                  </a>
+                </Button>
+              </RecordAction>
             )}
 
             {status === "Draft" && (
-              <Button
-                leftIcon={<LuCheckCheck />}
-                variant="primary"
-                isDisabled={routeData.lines.length === 0 || !canUpdate}
-                onClick={confirmDisclosure.onOpen}
-              >
-                <Trans>Confirm</Trans>
-              </Button>
+              <RecordAction slot="primary">
+                <Button
+                  leftIcon={<LuCheckCheck />}
+                  variant="primary"
+                  isDisabled={routeData.lines.length === 0 || !canUpdate}
+                  onClick={confirmDisclosure.onOpen}
+                >
+                  <Trans>Confirm</Trans>
+                </Button>
+              </RecordAction>
             )}
 
             {["Draft", "To Receive"].includes(status ?? "") && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuCircleStop />}
-                isDisabled={!canUpdate}
-                onClick={cancelDisclosure.onOpen}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
+              <RecordAction slot="overflow">
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuCircleStop />}
+                  isDisabled={!canUpdate}
+                  onClick={cancelDisclosure.onOpen}
+                >
+                  <Trans>Cancel</Trans>
+                </Button>
+              </RecordAction>
             )}
 
             {status === "To Receive" && (
-              <Button
-                variant="primary"
-                leftIcon={<LuPackageCheck />}
-                isDisabled={
-                  isCreatingDocument || !permissions.can("create", "inventory")
-                }
-                onClick={receive}
-              >
-                <Trans>Receive</Trans>
-              </Button>
+              <RecordAction slot="primary">
+                <Button
+                  variant="primary"
+                  leftIcon={<LuPackageCheck />}
+                  isDisabled={
+                    isCreatingDocument ||
+                    !permissions.can("create", "inventory")
+                  }
+                  onClick={receive}
+                >
+                  <Trans>Receive</Trans>
+                </Button>
+              </RecordAction>
             )}
 
             {!["Draft", "Cancelled"].includes(status ?? "") &&
               hasReceivedQuantity &&
               hasReturnToCustomerLine && (
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuTruck />}
-                  isDisabled={
-                    isCreatingDocument ||
-                    !permissions.can("create", "inventory")
-                  }
-                  onClick={shipBack}
-                >
-                  <Trans>Ship</Trans>
-                </Button>
+                <RecordAction slot="overflow">
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuTruck />}
+                    isDisabled={
+                      isCreatingDocument ||
+                      !permissions.can("create", "inventory")
+                    }
+                    onClick={shipBack}
+                  >
+                    <Trans>Ship</Trans>
+                  </Button>
+                </RecordAction>
               )}
 
             {!["Draft", "Cancelled"].includes(status ?? "") && (
               <>
                 {hasReceivedQuantity && (
-                  <Button
-                    leftIcon={<LuCreditCard />}
-                    variant="secondary"
-                    isDisabled={!permissions.can("create", "invoicing")}
-                    onClick={creditDisclosure.onOpen}
-                  >
-                    <Trans>Issue Credit</Trans>
-                  </Button>
+                  <RecordAction slot="overflow">
+                    <Button
+                      leftIcon={<LuCreditCard />}
+                      variant="secondary"
+                      isDisabled={!permissions.can("create", "invoicing")}
+                      onClick={creditDisclosure.onOpen}
+                    >
+                      <Trans>Issue Credit</Trans>
+                    </Button>
+                  </RecordAction>
                 )}
 
                 {salesReturnOrder.replacementSalesOrderId ? (
-                  <Button
-                    leftIcon={<LuGitCompare />}
-                    variant="secondary"
-                    asChild
-                  >
-                    <Link
-                      to={path.to.salesOrder(
-                        salesReturnOrder.replacementSalesOrderId
-                      )}
+                  <RecordAction slot="overflow">
+                    <Button
+                      leftIcon={<LuGitCompare />}
+                      variant="secondary"
+                      asChild
                     >
-                      <Trans>Replacement Order</Trans>
-                    </Link>
-                  </Button>
+                      <Link
+                        to={path.to.salesOrder(
+                          salesReturnOrder.replacementSalesOrderId
+                        )}
+                      >
+                        <Trans>Replacement Order</Trans>
+                      </Link>
+                    </Button>
+                  </RecordAction>
                 ) : (
-                  <Button
-                    leftIcon={<LuGitCompare />}
-                    variant="secondary"
-                    isLoading={replacementFetcher.state !== "idle"}
-                    isDisabled={
-                      replacementFetcher.state !== "idle" ||
-                      !permissions.can("create", "sales")
-                    }
-                    onClick={() => {
-                      replacementFetcher.submit(null, {
-                        method: "post",
-                        action: path.to.salesReturnOrderReplacement(id)
-                      });
-                    }}
-                  >
-                    <Trans>Create Replacement</Trans>
-                  </Button>
+                  <RecordAction slot="overflow">
+                    <Button
+                      leftIcon={<LuGitCompare />}
+                      variant="secondary"
+                      isLoading={replacementFetcher.state !== "idle"}
+                      isDisabled={
+                        replacementFetcher.state !== "idle" ||
+                        !permissions.can("create", "sales")
+                      }
+                      onClick={() => {
+                        replacementFetcher.submit(null, {
+                          method: "post",
+                          action: path.to.salesReturnOrderReplacement(id)
+                        });
+                      }}
+                    >
+                      <Trans>Create Replacement</Trans>
+                    </Button>
+                  </RecordAction>
                 )}
               </>
             )}
-
-            <IconButton
-              aria-label={t`Toggle Properties`}
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
-          </HStack>
-        </HStack>
-      </div>
+          </>
+        }
+      />
 
       {confirmDisclosure.isOpen && (
         <Confirm

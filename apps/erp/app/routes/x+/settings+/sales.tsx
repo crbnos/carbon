@@ -22,7 +22,6 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -38,6 +37,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   accountsReceivableBillingAddressValidator,
@@ -375,13 +375,10 @@ export default function SalesSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Sales</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Documents</Trans>
@@ -806,7 +803,7 @@ export default function SalesSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

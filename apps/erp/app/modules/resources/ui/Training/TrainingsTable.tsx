@@ -61,6 +61,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookOpen />
         }
       },
@@ -69,6 +70,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <TrainingStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -96,6 +98,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -168,6 +171,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUser />
         }
       },
