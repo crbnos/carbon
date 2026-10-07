@@ -6,7 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { batchTrigger } from "@carbon/jobs";
-import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
+import type {
+  DraftedRentalCreditMemo,
+  DraftedRentalInvoice
+} from "@carbon/server-functions/create-rental-invoices";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
@@ -49,8 +52,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   let invoices: DraftedRentalInvoice[];
   let invoiceIds: string[];
+  let creditMemos: DraftedRentalCreditMemo[];
   try {
-    ({ invoices, invoiceIds } = await generateRentalInvoicesNow(
+    ({ invoices, invoiceIds, creditMemos } = await generateRentalInvoicesNow(
       getDatabaseClient(),
       {
         companyId,
@@ -72,10 +76,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (invoiceIds.length === 0) {
+  if (invoiceIds.length === 0 && creditMemos.length === 0) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(request, success("Nothing is due on this agreement yet"))
+    );
+  }
+
+  // An early return is credited on a Draft credit memo, posted by a person.
+  // With nothing else drafted, open it.
+  const creditNote =
+    creditMemos.length > 0
+      ? " Drafted a credit memo for the early return; post it to credit the customer."
+      : "";
+  if (invoiceIds.length === 0) {
+    throw redirect(
+      path.to.memo(creditMemos[0]!.memoId),
+      await flash(
+        request,
+        success(
+          "Drafted a credit memo for the early return; post it to credit the customer."
+        )
+      )
     );
   }
 
@@ -97,7 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         success(
-          `Generated ${invoiceIds.length} invoice(s); posting ${toAutomate.length} automatically`
+          `Generated ${invoiceIds.length} invoice(s); posting ${toAutomate.length} automatically.${creditNote}`
         )
       )
     );
@@ -108,9 +130,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await flash(
       request,
       success(
-        invoiceIds.length === 1
-          ? "Drafted 1 rental invoice"
-          : `Drafted ${invoiceIds.length} rental invoices`
+        (invoiceIds.length === 1
+          ? "Drafted 1 rental invoice."
+          : `Drafted ${invoiceIds.length} rental invoices.`) + creditNote
       )
     )
   );

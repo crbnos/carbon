@@ -100,7 +100,7 @@ const RentalBillingPeriods = ({
                   <Trans>Status</Trans>
                 </Th>
                 <Th>
-                  <Trans>Invoice</Trans>
+                  <Trans>Billed On</Trans>
                 </Th>
               </Tr>
             </Thead>
@@ -161,6 +161,18 @@ const RentalBillingPeriods = ({
                                 </TooltipContent>
                               </Tooltip>
                             )}
+                        </HStack>
+                      ) : period.memo ? (
+                        // An early return is credited on a credit memo.
+                        <HStack spacing={2}>
+                          <Hyperlink to={path.to.memo(period.memo.id)}>
+                            {period.memo.memoId}
+                          </Hyperlink>
+                          {period.memo.status === "Draft" && (
+                            <Badge variant="orange">
+                              <Trans>Needs Review</Trans>
+                            </Badge>
+                          )}
                         </HStack>
                       ) : (
                         "—"

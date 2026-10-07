@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import { LuUndo2 } from "react-icons/lu";
+import { LuKeyRound, LuUndo2 } from "react-icons/lu";
 import { Await, useParams } from "react-router";
 import { Empty } from "~/components";
 import {
@@ -78,10 +78,16 @@ function MemoDocumentList({
       ? related.purchaseReturnOrder
       : null;
 
+  const rentalAgreement =
+    related?.rentalAgreement && permissions.can("view", "sales")
+      ? related.rentalAgreement
+      : null;
+
   if (
     !party &&
     !salesReturn &&
     !purchaseReturn &&
+    !rentalAgreement &&
     settlementRows.length === 0
   ) {
     return <Empty className="py-12" />;
@@ -113,6 +119,14 @@ function MemoDocumentList({
           title={purchaseReturn.purchaseReturnOrderId}
           description={t`Purchase Return`}
           status={<PurchaseReturnOrderStatus status={purchaseReturn.status} />}
+        />
+      )}
+      {rentalAgreement && (
+        <RelatedDocument
+          to={path.to.rentalAgreementDetails(rentalAgreement.id)}
+          icon={<LuKeyRound />}
+          title={rentalAgreement.rentalAgreementId}
+          description={t`Rental Agreement`}
         />
       )}
       {settlementRows}

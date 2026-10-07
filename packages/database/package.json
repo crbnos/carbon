@@ -53,7 +53,8 @@
     "./accounting-currency": "./src/accounting-currency.ts",
     "./accounting-posting": "./src/accounting-posting.ts",
     "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
-    "./ledger": "./src/ledger.ts"
+    "./ledger": "./src/ledger.ts",
+    "./deposit-scope": "./src/deposit-scope.ts"
   },
   "private": true,
   "scripts": {

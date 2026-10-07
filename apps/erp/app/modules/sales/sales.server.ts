@@ -13,7 +13,10 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { ServerFnInput } from "@carbon/server-functions";
 import { serverFns } from "@carbon/server-functions";
 import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
-import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
+import type {
+  DraftedRentalCreditMemo,
+  DraftedRentalInvoice
+} from "@carbon/server-functions/create-rental-invoices";
 import type { Violation } from "@carbon/utils";
 import { round, suggestContractType } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -403,16 +406,21 @@ export async function generateRentalInvoicesNow(
     asOf: string;
     rentalAgreementId: string;
   }
-): Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }> {
+): Promise<{
+  invoices: DraftedRentalInvoice[];
+  invoiceIds: string[];
+  /** Draft credit memos for early returns, one per agreement. */
+  creditMemos: DraftedRentalCreditMemo[];
+}> {
   const { companyId, userId, asOf, rentalAgreementId } = args;
-  const { invoices, invoiceIds, failures } = await serverFns
+  const { invoices, invoiceIds, creditMemos, failures } = await serverFns
     .system({ db, companyId, userId })
     .invokeOrThrow("create-rental-invoices", { asOf, rentalAgreementId });
   // One agreement is billed here, so its failure is the action's failure.
   if (failures.length > 0) {
     throw new Error(failures.map((f) => f.error).join("; "));
   }
-  return { invoices, invoiceIds };
+  return { invoices, invoiceIds, creditMemos };
 }
 
 /**
@@ -557,6 +565,54 @@ export async function deleteSalesInvoiceReleasingRentals(
     await trx
       .deleteFrom("salesInvoice")
       .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/**
+ * Deletes a Draft rental early-return credit memo and returns the
+ * adjustment periods it credits to Pending, in one transaction, so the next
+ * invoice run credits them again. `rentalBillingPeriod.memoId` RESTRICTs a
+ * plain delete for exactly this reason. Throws on a missing or non-Draft
+ * memo, or one that credits no rental agreement.
+ */
+export async function deleteRentalCreditMemoReleasingPeriods(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; memoId: string; userId: string }
+): Promise<void> {
+  const { companyId, memoId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const memo = await trx
+      .selectFrom("memo")
+      .select(["id", "status", "rentalAgreementId"])
+      .where("id", "=", memoId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!memo) throw new Error("Memo not found");
+    if (!memo.rentalAgreementId) {
+      throw new Error("This memo does not credit a rental agreement");
+    }
+    if (memo.status !== "Draft") {
+      throw new Error(
+        `Cannot delete a ${memo.status} memo. Only Draft memos can be deleted.`
+      );
+    }
+    await trx
+      .updateTable("rentalBillingPeriod")
+      .set({
+        status: "Pending",
+        memoId: null,
+        updatedBy: userId,
+        updatedAt: sql`now()`
+      })
+      .where("companyId", "=", companyId)
+      .where("memoId", "=", memoId)
+      .execute();
+    await trx
+      .deleteFrom("memo")
+      .where("id", "=", memoId)
       .where("companyId", "=", companyId)
       .execute();
   });

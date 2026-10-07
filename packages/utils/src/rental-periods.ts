@@ -152,29 +152,39 @@ function assertWholeDays(days: number): void {
 export const wholeRateUnits = (days: number, unit: RateUnit): number =>
   round(days / DAYS_PER_UNIT[unit], 0, RoundingMode.Up);
 
-/** A unit's charge for `days`: whole units of its frequency × its rate,
- *  rounded because the amount is what gets persisted. */
+/** A unit's charge for `days`: whole units of its frequency × its rate.
+ *  The charge is what an invoice bills, so it is a settlement amount: rounded
+ *  to `decimals`, the agreement currency's `decimalPlaces`. A rate may carry
+ *  the storage scale; what the customer is billed never does. */
 export function rateCharge(
   days: number,
   unit: RateUnit,
-  rate: number
+  rate: number,
+  decimals: number
 ): RateCharge {
   assertWholeDays(days);
   if (!Number.isFinite(rate)) {
     throw new Error(`${unit} rate must be finite, got ${rate}`);
   }
   const units = wholeRateUnits(days, unit);
-  return { amount: round(units * rate), rateUnitApplied: unit, units };
+  return {
+    amount: round(units * rate, decimals),
+    rateUnitApplied: unit,
+    units
+  };
 }
 
 /** A month rate prorated by calendar days: `monthRate × days ÷ days in the
  *  month`, so a full month is exactly the rate. The period must sit inside
  *  one calendar month — a straddling span would be prorated against the
- *  wrong month's length. */
+ *  wrong month's length. Rounded to `decimals` (the currency's settlement
+ *  precision): a prorated month is billed, and nobody can pay a fraction of
+ *  a cent. */
 export function calendarMonthCharge(
   periodStart: string,
   periodEnd: string,
-  monthRate: number
+  monthRate: number,
+  decimals: number
 ): number {
   if (!Number.isFinite(monthRate)) {
     throw new Error(`Month rate must be finite, got ${monthRate}`);
@@ -187,7 +197,7 @@ export function calendarMonthCharge(
     );
   }
   const { year, month } = parseIsoDate(periodStart);
-  return round((monthRate * days) / daysInMonth(year, month));
+  return round((monthRate * days) / daysInMonth(year, month), decimals);
 }
 
 /** How far ahead billing periods are cut: today plus one billing cycle, so an
@@ -215,17 +225,24 @@ export function periodCharge(args: {
   rate: number;
   periodStart: string;
   periodEnd: string;
+  /** The agreement currency's `decimalPlaces`. */
+  decimals: number;
 }): Pick<PeriodSpec, "days" | "amount" | "rateUnitApplied"> {
-  const { cycle, rateUnit, rate, periodStart, periodEnd } = args;
+  const { cycle, rateUnit, rate, periodStart, periodEnd, decimals } = args;
   const days = daysBetweenInclusive(periodStart, periodEnd);
   if (cycle === "Calendar Month" && rateUnit === "Month") {
     return {
       days,
-      amount: calendarMonthCharge(periodStart, periodEnd, rate),
+      amount: calendarMonthCharge(periodStart, periodEnd, rate, decimals),
       rateUnitApplied: "Month"
     };
   }
-  const { amount, rateUnitApplied } = rateCharge(days, rateUnit, rate);
+  const { amount, rateUnitApplied } = rateCharge(
+    days,
+    rateUnit,
+    rate,
+    decimals
+  );
   return { days, amount, rateUnitApplied };
 }
 
@@ -259,6 +276,8 @@ export function generateRentalBillingPeriods(args: {
   returnedAt: string | null;
   through: string;
   existing: ExistingBillingPeriod[];
+  /** The agreement currency's `decimalPlaces`: every amount is billed. */
+  decimals: number;
 }): RentalBillingPlan {
   const {
     cycle,
@@ -269,7 +288,8 @@ export function generateRentalBillingPeriods(args: {
     endDate,
     returnedAt,
     through,
-    existing
+    existing,
+    decimals
   } = args;
 
   parseIsoDate(startDate);
@@ -279,7 +299,7 @@ export function generateRentalBillingPeriods(args: {
   if (returnedAt !== null) daysBetweenInclusive(startDate, returnedAt);
 
   const price = (periodStart: string, periodEnd: string) =>
-    periodCharge({ cycle, rateUnit, rate, periodStart, periodEnd });
+    periodCharge({ cycle, rateUnit, rate, periodStart, periodEnd, decimals });
 
   const naturalEnd = (from: string): string =>
     cycle === "Calendar Month"
@@ -358,7 +378,9 @@ export function generateRentalBillingPeriods(args: {
     ) {
       continue;
     }
-    const credit = round(row.amount - (now?.amount ?? 0));
+    // A period invoiced before amounts were billed at settlement precision
+    // may carry sub-unit digits; the credit is billed, so it never does.
+    const credit = round(row.amount - (now?.amount ?? 0), decimals);
     if (credit <= 0) continue;
     adjustments.push({
       periodStart: row.periodStart,

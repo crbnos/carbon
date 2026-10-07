@@ -152,6 +152,29 @@ async function lockAgreement(
   };
 }
 
+// Billing periods are invoiced, so they are priced at the agreement
+// currency's settlement precision — the group's `currency.decimalPlaces`,
+// never a literal.
+async function currencyDecimals(
+  trx: Trx,
+  companyId: string,
+  currencyCode: string
+): Promise<number> {
+  const currency = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select("currency.decimalPlaces")
+    .where("company.id", "=", companyId)
+    .where("currency.code", "=", currencyCode)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces === null) {
+    throw new InvalidInputError(
+      `Currency ${currencyCode} is not set up for this company`
+    );
+  }
+  return currency.decimalPlaces;
+}
+
 function billingPeriodRow(
   spec: PeriodSpec,
   rentalAgreementLineId: string,
@@ -416,6 +439,11 @@ async function activate(
         "Rental agreements in a foreign currency are not supported yet"
       );
     }
+    const decimals = await currencyDecimals(
+      trx,
+      companyId,
+      agreement.currencyCode
+    );
 
     // One read for the ledger switch and the classification thresholds.
     const settings = await trx
@@ -550,7 +578,8 @@ async function activate(
         rate,
         discountRate: agreement.discountRate,
         startDate: agreement.startDate,
-        endDate: agreement.endDate
+        endDate: agreement.endDate,
+        decimals
       });
       const lineTerms = {
         fairValue: line.fairValue === null ? null : Number(line.fairValue),
@@ -579,7 +608,8 @@ async function activate(
           rateUnit,
           startDate: agreement.startDate,
           endDate: agreement.endDate,
-          fairValue: lineTerms.fairValue
+          fairValue: lineTerms.fairValue,
+          today
         });
         if (requirement) {
           problems.push(requirement);
@@ -602,7 +632,8 @@ async function activate(
           today,
           endDate: agreement.endDate
         }),
-        existing: []
+        existing: [],
+        decimals
       });
       plans.push({
         lineId: line.id,
@@ -1121,7 +1152,8 @@ async function returnUnit(
         endDate: agreement.endDate,
         returnedAt,
         through: returnedAt,
-        existing
+        existing,
+        decimals: await currencyDecimals(trx, companyId, agreement.currencyCode)
       });
 
       // The generation stops at the return, so every unbilled period starting

@@ -47,6 +47,14 @@ export type DraftedRentalInvoice = {
   holdReason: string | null;
 };
 
+/** The credit memo an agreement's early-return adjustments were drafted on.
+ *  It stays Draft: a person posts it, as early-return credits were always
+ *  reviewed before they reached the customer. */
+export type DraftedRentalCreditMemo = {
+  memoId: string;
+  rentalAgreementId: string;
+};
+
 export type RentalInvoiceGenerationFailure = {
   rentalAgreementId: string;
   error: string;
@@ -56,6 +64,8 @@ export type RentalInvoiceGenerationResult = {
   invoices: DraftedRentalInvoice[];
   /** `invoices.map(i => i.invoiceId)`. */
   invoiceIds: string[];
+  /** Early-return credits, one Draft credit memo per agreement. */
+  creditMemos: DraftedRentalCreditMemo[];
   /** Agreements whose transaction rolled back; their rows stay unbilled. */
   failures: RentalInvoiceGenerationFailure[];
 };
@@ -143,9 +153,10 @@ async function createRentalInvoicesForDuePeriods(
   // committed is returned (so automation still runs over it) next to the
   // failures, rather than lost behind a throw.
   const invoices: DraftedRentalInvoice[] = [];
+  const creditMemos: DraftedRentalCreditMemo[] = [];
   const failures: RentalInvoiceGenerationFailure[] = [];
   if (agreements.length === 0) {
-    return { invoices, invoiceIds: [], failures };
+    return { invoices, invoiceIds: [], creditMemos, failures };
   }
 
   // The company default every agreement without its own automation follows;
@@ -168,7 +179,8 @@ async function createRentalInvoicesForDuePeriods(
             settings.invoiceAutomation
           )
         );
-      invoices.push(...drafted);
+      invoices.push(...drafted.invoices);
+      creditMemos.push(...drafted.creditMemos);
     } catch (error) {
       failures.push({
         rentalAgreementId: agreement.id,
@@ -176,7 +188,12 @@ async function createRentalInvoicesForDuePeriods(
       });
     }
   }
-  return { invoices, invoiceIds: invoices.map((i) => i.invoiceId), failures };
+  return {
+    invoices,
+    invoiceIds: invoices.map((i) => i.invoiceId),
+    creditMemos,
+    failures
+  };
 }
 
 type AgreementRow = Selectable<KyselyDatabase["rentalAgreement"]>;
@@ -203,8 +220,12 @@ async function draftAgreementInvoices(
   args: RentalInvoiceGenerationArgs,
   agreementId: string,
   companyInvoiceAutomation: InvoiceAutomation
-): Promise<DraftedRentalInvoice[]> {
+): Promise<{
+  invoices: DraftedRentalInvoice[];
+  creditMemos: DraftedRentalCreditMemo[];
+}> {
   const { companyId, asOf, userId } = args;
+  const nothing = { invoices: [], creditMemos: [] };
 
   const agreement = await trx
     .selectFrom("rentalAgreement")
@@ -214,7 +235,23 @@ async function draftAgreementInvoices(
     .where("status", "in", BILLABLE_STATUSES)
     .forUpdate()
     .executeTakeFirst();
-  if (!agreement) return [];
+  if (!agreement) return nothing;
+
+  // Periods and credits are billed in the agreement's currency, at its
+  // settlement precision.
+  const currency = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select("currency.decimalPlaces")
+    .where("company.id", "=", companyId)
+    .where("currency.code", "=", agreement.currencyCode)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces === null) {
+    throw new Error(
+      `Currency ${agreement.currencyCode} is not set up for this company`
+    );
+  }
+  const decimals = currency.decimalPlaces;
 
   const mode = effectiveInvoiceAutomation(
     agreement.invoiceAutomation,
@@ -230,7 +267,8 @@ async function draftAgreementInvoices(
       asOf,
       agreementId: agreement.id,
       cycle: agreement.billingCycle,
-      timing: agreement.billingTiming
+      timing: agreement.billingTiming,
+      decimals
     });
   }
 
@@ -294,13 +332,32 @@ async function draftAgreementInvoices(
     .forUpdate("c")
     .execute();
 
-  if (periods.length === 0 && charges.length === 0) return [];
+  if (periods.length === 0 && charges.length === 0) return nothing;
+
+  // An early-return adjustment is a credit, and a credit on an invoice can
+  // net it below zero — a document no payment can apply and no refund can
+  // pay out. Adjustments go on a credit memo instead; everything else is
+  // invoiced as before.
+  const adjustments = periods.filter((period) => period.isAdjustment);
+  const billable = periods.filter((period) => !period.isAdjustment);
+  const creditMemos: DraftedRentalCreditMemo[] =
+    adjustments.length > 0
+      ? [
+          {
+            memoId: await insertRentalCreditMemo(trx, args, agreement, {
+              adjustments,
+              decimals
+            }),
+            rentalAgreementId: agreement.id
+          }
+        ]
+      : [];
 
   // The readable ids of the voided invoices these rows were billed on, so a
   // re-bill's hold names them. One read; a deleted invoice keeps its raw id.
   const voidedIds = [
     ...new Set(
-      [...periods, ...charges]
+      [...billable, ...charges]
         .map((row) => row.voidedSalesInvoiceId)
         .filter((voidedId): voidedId is string => !!voidedId)
     )
@@ -330,7 +387,7 @@ async function draftAgreementInvoices(
     isAdjustment: boolean;
     voidedInvoiceReadableId: string | null;
   }[] = [
-    ...periods.map((period) => ({
+    ...billable.map((period) => ({
       values: {
         rentalAgreementLineId: period.rentalAgreementLineId,
         rentalBillingPeriodId: period.id,
@@ -391,7 +448,89 @@ async function draftAgreementInvoices(
       holdReason: invoice.holdReason
     });
   }
-  return drafted;
+  return { invoices: drafted, creditMemos };
+}
+
+/**
+ * Inserts one Draft credit memo for an agreement's due early-return
+ * adjustments and stamps them with it (`Invoiced`, `memoId`). The memo is the
+ * sum of the credits at the currency's settlement precision; post-memo books
+ * each period's share against its Deferral rows. Returns the memo id.
+ */
+async function insertRentalCreditMemo(
+  trx: KyselyTx,
+  args: RentalInvoiceGenerationArgs,
+  agreement: AgreementRow,
+  credit: {
+    adjustments: {
+      id: string;
+      amount: number | string;
+      days: number;
+      periodStart: string;
+      periodEnd: string;
+      rateUnitApplied: RateUnit | null;
+      isAdjustment: boolean | null;
+      assetName: string | null;
+      serialNumber: string | null;
+    }[];
+    decimals: number;
+  }
+): Promise<string> {
+  const { companyId, asOf, userId } = args;
+  const amount = round(
+    -credit.adjustments.reduce((sum, row) => sum + Number(row.amount), 0),
+    credit.decimals
+  );
+  if (!(amount > 0)) {
+    throw new Error("An early-return credit must be a positive amount");
+  }
+  // Allocated in this transaction, so a rollback leaves no gap.
+  const memoReadableId = await getNextSequence(trx, "creditMemo", companyId);
+  const memo = await trx
+    .insertInto("memo")
+    .values({
+      memoId: memoReadableId,
+      direction: "Credit",
+      status: "Draft",
+      customerId: agreement.customerId,
+      memoDate: asOf,
+      currencyCode: agreement.currencyCode,
+      exchangeRate: agreement.exchangeRate,
+      amount,
+      reference: agreement.rentalAgreementId,
+      notes: credit.adjustments
+        .map((row) =>
+          rentLineDescription({
+            ...row,
+            isAdjustment: true,
+            cycle: agreement.billingCycle
+          })
+        )
+        .join("\n"),
+      rentalAgreementId: agreement.id,
+      companyId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  await trx
+    .updateTable("rentalBillingPeriod")
+    .set({
+      status: "Invoiced",
+      memoId: memo.id,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      credit.adjustments.map((row) => row.id)
+    )
+    .execute();
+
+  return memo.id;
 }
 
 /**
@@ -536,6 +675,8 @@ async function rollBillingPeriodsForward(
     agreementId: string;
     cycle: Database["public"]["Enums"]["rentalBillingCycle"];
     timing: Database["public"]["Enums"]["rentalBillingTiming"];
+    /** The agreement currency's `decimalPlaces`. */
+    decimals: number;
   }
 ): Promise<void> {
   const { companyId, userId, asOf, agreementId, cycle, timing } = args;
@@ -606,7 +747,8 @@ async function rollBillingPeriodsForward(
           amount: Number(row.amount),
           status: row.status,
           isAdjustment: row.isAdjustment
-        }))
+        })),
+      decimals: args.decimals
     });
     return create.map((spec) => ({
       rentalAgreementLineId: line.id,

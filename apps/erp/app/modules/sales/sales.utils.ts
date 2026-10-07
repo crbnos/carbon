@@ -237,6 +237,8 @@ export function draftLeasePaymentTerms(args: {
   discountRate: number;
   startDate: string;
   endDate: string | null;
+  /** The agreement currency's `decimalPlaces`, as activation prices it. */
+  decimals: number;
 }): LeasePaymentTerms | null {
   if (!Number.isFinite(args.rate)) return null;
   try {
@@ -271,6 +273,8 @@ export function previewLeaseClassification(args: {
     unguaranteedResidualValue: number | null;
   };
   policy: LeasePolicy;
+  /** The agreement currency's `decimalPlaces`. */
+  decimals: number;
 }): LeaseClassificationRecord {
   const { agreement, line, policy } = args;
   const terms = draftLeasePaymentTerms({
@@ -279,7 +283,8 @@ export function previewLeaseClassification(args: {
     rate: line.rate,
     discountRate: agreement.discountRate ?? 0,
     startDate: agreement.startDate,
-    endDate: agreement.endDate
+    endDate: agreement.endDate,
+    decimals: args.decimals
   });
 
   if (terms) {

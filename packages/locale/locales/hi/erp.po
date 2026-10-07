@@ -3635,6 +3635,9 @@ msgstr "पूरे महीने, त्रैमासिक या वर�
 msgid "Billed Externally"
 msgstr "बाहरी रूप से चालान किया गया"
 
+msgid "Billed On"
+msgstr "चालान दिनांक"
+
 msgid "Billed through"
 msgstr "बिल किया गया"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "अनुबंध का प्रकार"
 
 msgid "Contract value"
-msgstr ""
+msgstr "अनुबंध मूल्य"
 
 msgid "Contract Value"
 msgstr "अनुबंध मूल्य"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "समय सीमा प्रकार"
 
 msgid "Deals"
-msgstr ""
+msgstr "सौदे"
 
 msgid "Debit"
 msgstr "नामे"
@@ -7018,8 +7021,14 @@ msgstr "एक बाहर रखी गई पंक्ति पर निर
 msgid "Deposit"
 msgstr "जमा"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "जमा राशि (इसके दस्तावेज़ के चालान केवल)"
+
 msgid "Deposit for"
 msgstr "के लिए जमा"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "{document} के लिए जमा राशि (इसके चालान केवल)"
 
 msgid "Deposit:"
 msgstr "जमा:"
@@ -7198,6 +7207,9 @@ msgstr "छूट प्रतिशत"
 
 msgid "Discount Rate (%)"
 msgstr "छूट दर (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "समझौते की दर पर छूट दी गई, भुगतान और बचे हुए मूल्य <0/> के बराबर हैं, जो इकाई के उचित मूल्य <1/> से अधिक है। एक पट्टा उसमें निहित दर पर मूल्यांकित किया जाता है, इसलिए यह पट्टा राजस्व को इकाई के मूल्य से अधिक बुक करेगा। छूट दर बढ़ाएं, या उचित मूल्य की जांच करें।"
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "आपूर्तिकर्ताओं को जल्दी भुगतान के लिए अर्जित छूट"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "अगला ब्याज"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "अगला चालान"
 
 msgid "Next Invoice"
 msgstr "अगला चालान"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "पुनरावृत्ति चालान"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "आवर्ती मासिक"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "आवर्ती त्रैमासिक"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "आवर्ती साप्ताहिक"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "आवर्ती वार्षिक"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "लाल कम स्टाफ है, हरा कवर किया गया है, एम्बर काम की तुलना में अधिक लोग हैं।"
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "संपत्ति अपनी सेवा-में कक्षा में चली जाती है और सेवा-में तारीख से मूल्यह्रास शुरू करती है।"
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "संपत्ति का कोई मूल्य नहीं होगा। आइटम पर इकाई लागत सेट करें, फिर इसे पूंजीकृत करें।"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape में प्राधिकरण को अस्वीकार कर दिया गया था। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
@@ -20777,6 +20789,9 @@ msgstr "इस स्थान पर सबसे हाल ही में �
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "इस लाइन पर प्रति यूनिट मूल्य; इनलाइन ट्रेस आइकन दिखाता है कि कौन सा मूल्य नियम या ओवरराइड इसे उत्पादित किया।"
 
+msgid "The net investment is more than the fair value"
+msgstr "शुद्ध निवेश उचित मूल्य से अधिक है"
+
 msgid "The new version number of the document"
 msgstr "दस्तावेज़ का नया संस्करण संख्या"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "इकाई उपलब्धता से हटा दी जाती है जब तक इसे सेवा में वापस नहीं किया जाता। मूल्यह्रास जारी रहता है और इसका लेखांकन अपरिवर्तित रहता है।"
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "इकाई स्टॉक से निकलती है और इन्वेंटरी में दर्ज लागत पर संपत्ति बन जाती है।"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "खरीद के समय आइटम की इकाई मूल्य"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "इस इकाई की इन्वेंटरी में कोई लागत नहीं है"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम अपडेट करता है"

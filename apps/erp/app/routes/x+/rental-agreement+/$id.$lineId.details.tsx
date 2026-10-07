@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { useRouteData } from "~/hooks";
+import { useCurrencyDecimals, useRouteData } from "~/hooks";
 import {
   getDefaultRentalRates,
   getRentalAgreement,
@@ -159,13 +159,15 @@ export default function RentalAgreementLineRoute() {
   const routeData = useRouteData<RentalAgreementRouteData>(
     path.to.rentalAgreement(line.rentalAgreementId)
   );
+  const decimals = useCurrencyDecimals(routeData?.rentalAgreement.currencyCode);
   if (!routeData) return null;
 
   const agreement = routeData.rentalAgreement;
   const lease = resolveLineLeaseClassification({
     agreement,
     line,
-    policy: routeData.leasePolicy
+    policy: routeData.leasePolicy,
+    decimals
   });
 
   return (

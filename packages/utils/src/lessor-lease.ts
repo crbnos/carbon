@@ -283,20 +283,26 @@ export function leasePaymentTerms(args: {
   discountRate: number;
   startDate: string;
   endDate: string | null;
+  /** The agreement currency's `decimalPlaces`. The payment is valued as it
+   *  is billed — at settlement precision — or the net investment drifts from
+   *  the rent invoices by the digits billing rounds away. */
+  decimals: number;
 }): LeasePaymentTerms {
-  const { cycle, rateUnit, rate, startDate, endDate } = args;
+  const { cycle, rateUnit, rate, startDate, endDate, decimals } = args;
   const termMonths =
     endDate === null ? null : wholeMonthsInTerm(startDate, endDate);
 
   if (cycle === "Calendar Month") {
     const payment =
       rateUnit === "Month"
-        ? rate
+        ? round(rate, decimals)
         : round(
             MONTH_LENGTHS.reduce(
-              (sum, days) => sum + rateCharge(days, rateUnit, rate).amount,
+              (sum, days) =>
+                sum + rateCharge(days, rateUnit, rate, decimals).amount,
               0
-            ) / MONTHS_PER_YEAR
+            ) / MONTHS_PER_YEAR,
+            decimals
           );
     return {
       termMonths,
@@ -306,7 +312,7 @@ export function leasePaymentTerms(args: {
     };
   }
 
-  const charge = rateCharge(DAYS_PER_28_DAY_PERIOD, rateUnit, rate);
+  const charge = rateCharge(DAYS_PER_28_DAY_PERIOD, rateUnit, rate, decimals);
   const wholePeriods =
     endDate === null
       ? 1
@@ -439,6 +445,13 @@ export function classifyRentalLine(args: {
  * trailing partial 28-day period, neither of which the valuation contains:
  * a Calendar Month term starts on the first of a month and ends on a month
  * end; a 28 Days term is a whole number of 28-day periods.
+ *
+ * A sales-type lease also commences no earlier than the month it is
+ * activated in. Activation books the commencement (lease revenue, cost of
+ * goods sold, the unit off the register) on `today`, while the schedule's
+ * interest is dated from the start date: a start in an earlier month would
+ * post interest on a net investment the books do not hold yet, in months
+ * whose depreciation already ran on the unit the lease sold.
  */
 export function salesTypeRequirementError(args: {
   name: string;
@@ -447,8 +460,16 @@ export function salesTypeRequirementError(args: {
   startDate: string;
   endDate: string | null;
   fairValue: number | null;
+  /** The company's today, `YYYY-MM-DD`: the day activation books it. */
+  today: string;
 }): string | null {
   const { name, startDate, endDate } = args;
+  parseIsoDate(args.today);
+  // `YYYY-MM-DD` compares chronologically as text.
+  const activationMonthStart = `${args.today.slice(0, 7)}-01`;
+  if (startDate < activationMonthStart) {
+    return `${name} is treated as a sale, which commences when the agreement is activated: start it in ${args.today.slice(0, 7)} or later (it starts ${startDate})`;
+  }
   if (endDate === null) {
     return `${name} is treated as a sale, which needs an agreement end date`;
   }
@@ -471,6 +492,23 @@ export function salesTypeRequirementError(args: {
     return `${name} is treated as a sale, which runs whole billing periods: the term must be a whole number of 28-day periods (it is ${days} days)`;
   }
   return null;
+}
+
+/** Whether a unit's net investment — its payments and residual discounted
+ *  at the agreement's rate — is worth more than the unit's fair value.
+ *  ASC 842 values a lessor's lease at the rate implicit in it, the rate at
+ *  which that present value equals the fair value; a lower entered rate books
+ *  lease revenue above what the unit is worth. A warning, not a refusal: the
+ *  fair value may be the figure that is wrong. Compared at `decimals`, the
+ *  currency's settlement precision. */
+export function netInvestmentExceedsFairValue(args: {
+  netInvestment: number;
+  fairValue: number | null;
+  decimals: number;
+}): boolean {
+  const { fairValue, decimals } = args;
+  if (fairValue === null || !(fairValue > 0)) return false;
+  return round(args.netInvestment, decimals) > round(fairValue, decimals);
 }
 
 /** Whether a schedule line's interest is posted by a recognition run (an

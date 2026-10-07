@@ -3635,6 +3635,9 @@ msgstr "Счета выставляются целыми месяцами, кв�
 msgid "Billed Externally"
 msgstr "Выставлено счет внешним образом"
 
+msgid "Billed On"
+msgstr "Дата выставления счета"
+
 msgid "Billed through"
 msgstr "Счеты выставлены до"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "Тип контракта"
 
 msgid "Contract value"
-msgstr ""
+msgstr "Стоимость контракта"
 
 msgid "Contract Value"
 msgstr "Стоимость контракта"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "Тип срока"
 
 msgid "Deals"
-msgstr ""
+msgstr "Сделки"
 
 msgid "Debit"
 msgstr "Дебет"
@@ -7018,8 +7021,14 @@ msgstr "зависит от исключенной строки"
 msgid "Deposit"
 msgstr "Залог"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "Авансовый платеж (только счета этого документа)"
+
 msgid "Deposit for"
 msgstr "Залог для"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "Авансовый платеж для {document} (только его счета)"
 
 msgid "Deposit:"
 msgstr "Депозит:"
@@ -7198,6 +7207,9 @@ msgstr "Процент скидки"
 
 msgid "Discount Rate (%)"
 msgstr "Процент скидки (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "Дисконтировано по ставке соглашения, платежи и остаток составляют <0/>, что превышает справедливую стоимость единицы <1/>. Аренда оценивается по подразумеваемой ставке, поэтому это приведет к признанию выручки от аренды выше стоимости единицы. Увеличьте ставку дисконтирования или проверьте справедливую стоимость."
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "Скидки, полученные за досрочную оплату поставщикам"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "Следующие проценты"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "Следующая счет-фактура"
 
 msgid "Next Invoice"
 msgstr "Следующая счет-фактура"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "Повторяющиеся счета-фактуры"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "Повторяется ежемесячно"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "Повторяется ежеквартально"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "Повторяется еженедельно"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "Повторяется ежегодно"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Красный означает недостаток персонала, зелёный означает адекватный персонал, жёлтый означает избыток персонала для объёма работы."
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "Актив переходит в свой класс в эксплуатации и начинает амортизироваться с даты ввода в эксплуатацию."
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "Актив будет иметь нулевую стоимость. Установите себестоимость номенклатуры, затем капитализируйте ее."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Авторизация была отклонена в Onshape. Сохраните настройки интеграции и попробуйте еще раз."
@@ -20777,6 +20789,9 @@ msgstr "Самая недавняя запланированная работа 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Согласованная цена за единицу на этой строке; значок встроенной трассировки показывает, какое правило ценообразования или переопределение его создало."
 
+msgid "The net investment is more than the fair value"
+msgstr "Чистые инвестиции превышают справедливую стоимость"
+
 msgid "The new version number of the document"
 msgstr "Новый номер версии документа"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "Единица удаляется из доступного до ее возврата в эксплуатацию. Амортизация продолжается, и ее учет остается неизменным."
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "Единица выводится из запасов и переводится в активы по их балансовой стоимости."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Цена за единицу товара на момент покупки"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "Этот инструмент активизируется при запуске извещения об изменении {activationLockId}."
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "У этой единицы нет стоимости в запасах"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"

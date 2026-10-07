@@ -236,7 +236,8 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement,
       line,
-      policy
+      policy,
+      decimals: 2
     });
     expect(record.classification).toBe("Sale");
     expect(record.periods).toBe(36);
@@ -254,7 +255,8 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
       line: { ...line, fairValue: 60000 },
-      policy
+      policy,
+      decimals: 2
     });
     expect(record.classification).toBe("Rental");
   });
@@ -263,7 +265,8 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement: { ...agreement, billingCycle: "28 Days" },
       line,
-      policy
+      policy,
+      decimals: 2
     });
     // 1,096 days → 39 whole periods; 28 days bill one month (1,000).
     expect(record.periods).toBe(39);
@@ -275,7 +278,8 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
       line: { ...line, rate: Number.NaN },
-      policy
+      policy,
+      decimals: 2
     });
     expect(record.pv).toBeNull();
     expect(record.classification).toBe("Rental");
@@ -285,7 +289,8 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement,
       line,
-      policy
+      policy,
+      decimals: 2
     });
     const { classification: _, ...stored } = record;
     expect(

@@ -3635,6 +3635,9 @@ msgstr "Fakturieren Sie ganze Monate, Quartale oder Jahre mit einer Teilperiode 
 msgid "Billed Externally"
 msgstr "Extern fakturiert"
 
+msgid "Billed On"
+msgstr "Abgerechnet am"
+
 msgid "Billed through"
 msgstr "Fakturiert bis"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "Vertragstyp"
 
 msgid "Contract value"
-msgstr ""
+msgstr "Vertragswert"
 
 msgid "Contract Value"
 msgstr "Vertragswert"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "Deadline-Typ"
 
 msgid "Deals"
-msgstr ""
+msgstr "Vereinbarungen"
 
 msgid "Debit"
 msgstr "Soll"
@@ -7018,8 +7021,14 @@ msgstr "hängt von einer ausgeschlossenen Zeile ab"
 msgid "Deposit"
 msgstr "Kaution"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "Anzahlung (nur die Rechnungen dieses Dokuments)"
+
 msgid "Deposit for"
 msgstr "Kaution für"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "Anzahlung für {document} (nur deren Rechnungen)"
 
 msgid "Deposit:"
 msgstr "Kaution:"
@@ -7198,6 +7207,9 @@ msgstr "Rabatt-Prozentsatz"
 
 msgid "Discount Rate (%)"
 msgstr "Rabattsatz (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "Mit dem impliziten Zinssatz der Vereinbarung ist der Wert der Zahlungen und des Restwerts <0/> höher als der beizulegende Zeitwert der Einheit von <1/>. Ein Leasingvertrag wird mit seinem impliziten Zinssatz bewertet, daher würde dies eine Buchung von Leasingumsatzerlösen über dem Wert der Einheit bedeuten. Erhöhen Sie den impliziten Zinssatz, oder überprüfen Sie den beizulegenden Zeitwert."
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "Rabatte, die für Frühzahlung an Lieferanten verdient werden"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "Nächste Zinsen"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "Nächste Rechnung"
 
 msgid "Next Invoice"
 msgstr "Nächste Rechnung"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "Wiederkehrende Rechnungen"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "Monatlich wiederkehrend"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "Vierteljährlich wiederkehrend"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "Wöchentlich wiederkehrend"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "Jährlich wiederkehrend"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Rot bedeutet Unterbesetzung, Grün bedeutet Abdeckung, Bernstein bedeutet mehr Personen als die Arbeit benötigt."
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "Der Vermögenswert wechselt in seine Betriebsklasse und wird ab dem Inbetriebnahmedatum abgeschrieben."
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "Das Anlagevermögen hätte keinen Wert. Legen Sie die Einheitskosten für den Artikel fest, und aktivieren Sie ihn."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Die Autorisierung wurde in Onshape verweigert. Speichern Sie die Integrationseinstellungen, um es erneut zu versuchen."
@@ -20777,6 +20789,9 @@ msgstr "Die zuletzt geplante Arbeit an diesem Standort war {0}."
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Der ausgehandelte Preis pro Einheit auf dieser Position; das Inline-Verfolgungssymbol zeigt, welche Preisregel oder Übersteuerung ihn hervorgebracht hat."
 
+msgid "The net investment is more than the fair value"
+msgstr "Die Nettoinvestition ist höher als der beizulegende Zeitwert"
+
 msgid "The new version number of the document"
 msgstr "Die neue Versionsnummer des Dokuments"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "Die Einheit wird aus der Verfügbarkeit entfernt, bis sie wieder in Betrieb genommen wird. Die Abschreibung läuft weiter und die Buchhaltung bleibt unverändert."
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "Die Einheit verlässt den Bestand und wird zu einem Anlagevermögen mit den Kosten, zu denen sie im Bestand erfasst ist."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Der Einzelpreis des Artikels zum Zeitpunkt des Kaufs"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "Dieses Werkzeug wird aktiviert, wenn die Änderungsmitteilung {activationLockId} freigegeben wird."
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "Diese Einheit hat keine Kosten im Bestand"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Dies aktualisiert das Design für alle Benutzer der Anwendung"

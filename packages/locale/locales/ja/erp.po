@@ -3635,6 +3635,9 @@ msgstr "完全な月、四半期、または年を請求し、最初に部分期
 msgid "Billed Externally"
 msgstr "請求済み（外部）"
 
+msgid "Billed On"
+msgstr "請求日"
+
 msgid "Billed through"
 msgstr "請求対象"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "契約タイプ"
 
 msgid "Contract value"
-msgstr ""
+msgstr "契約金額"
 
 msgid "Contract Value"
 msgstr "契約価値"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "期限タイプ"
 
 msgid "Deals"
-msgstr ""
+msgstr "案件"
 
 msgid "Debit"
 msgstr "借方"
@@ -7018,8 +7021,14 @@ msgstr "除外された行に依存しています"
 msgid "Deposit"
 msgstr "保証金"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "デポジット（その文書の請求書のみ）"
+
 msgid "Deposit for"
 msgstr "保証金："
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "{document}のデポジット（その請求書のみ）"
 
 msgid "Deposit:"
 msgstr "デポジット："
@@ -7198,6 +7207,9 @@ msgstr "値引パーセント"
 
 msgid "Discount Rate (%)"
 msgstr "値引率（%）"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "契約条件で定めたレートで割引した場合、支払いと残余価値の合計は<0/>となり、資産の公正価値<1/>を上回ります。リースは暗黙のレートで評価されるため、この方法ではリース売上高が資産の価値を超える形で計上されてしまいます。割引レートを上げるか、公正価値を確認してください。"
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "仕入先への早期支払で獲得した値引"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "次回利息"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "次の請求書"
 
 msgid "Next Invoice"
 msgstr "次の請求書"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "定期請求書"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "毎月繰り返し"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "四半期ごと繰り返し"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "毎週繰り返し"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "毎年繰り返し"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "赤は人手不足、緑は充足、琥珀色は必要人数以上の人員です。"
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "資産が使用中クラスに移動され、使用開始日から減価償却が開始されます。"
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "資産の価値がゼロになります。品目に単価を設定してから、資産化してください。"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshapeで認可が拒否されました。連携設定を保存して再度試してください。"
@@ -20777,6 +20789,9 @@ msgstr "この拠点での最後のスケジュール作業は{0}でした。"
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "この明細の協議済み単価。この明細に表示されるトレースアイコンは、どの価格設定ルールまたは上書きが生成したかを示します。"
 
+msgid "The net investment is more than the fair value"
+msgstr "正味投資額が公正価値を超えています"
+
 msgid "The new version number of the document"
 msgstr "文書の新しいバージョン番号"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "この品目は使用再開までの間、利用不可となります。減価償却は継続され、会計処理は変わりません。"
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "当該品目は在庫から出庫され、在庫で計上していた原価で固定資産化されます。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "購入時のアイテムの単価"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "この品目は在庫に原価がありません。"
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"

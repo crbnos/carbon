@@ -5,6 +5,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type InvoiceDocumentIds,
+  loadDepositScope,
+  loadSalesInvoiceDocumentIds
+} from "@carbon/database/deposit-scope";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import {
@@ -18,7 +23,9 @@ import {
   type FundingConsumptionRow,
   type FundingPaymentRow,
   type FundingRequest,
+  type FundingScope,
   type FundingSource,
+  fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   PAYABLE_POSTING_DESCRIPTIONS,
@@ -2081,6 +2088,8 @@ export async function getSettlementRelatedItems(
     appliedViaPaymentStaged?: boolean;
     salesReturnOrderId?: string | null;
     purchaseReturnOrderId?: string | null;
+    /** A rental early-return credit memo's agreement. */
+    rentalAgreementId?: string | null;
   }
 ) {
   const viaPayment = args.appliedViaPaymentId
@@ -2122,7 +2131,8 @@ export async function getSettlementRelatedItems(
     memos,
     reimbursements,
     salesReturnOrder,
-    purchaseReturnOrder
+    purchaseReturnOrder,
+    rentalAgreement
   ] = await Promise.all([
     args.journalId
       ? client
@@ -2179,6 +2189,14 @@ export async function getSettlementRelatedItems(
           .eq("id", args.purchaseReturnOrderId)
           .eq("companyId", companyId)
           .maybeSingle()
+      : null,
+    args.rentalAgreementId
+      ? client
+          .from("rentalAgreement")
+          .select("id, rentalAgreementId, status")
+          .eq("id", args.rentalAgreementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
       : null
   ]);
 
@@ -2189,7 +2207,8 @@ export async function getSettlementRelatedItems(
     memos,
     reimbursements,
     salesReturnOrder,
-    purchaseReturnOrder
+    purchaseReturnOrder,
+    rentalAgreement
   };
   for (const [read, result] of Object.entries(failures)) {
     if (result?.error) {
@@ -2211,7 +2230,8 @@ export async function getSettlementRelatedItems(
     credits: allMemos.filter((memo) => credits.has(memo.id)),
     reimbursements: reimbursements?.data ?? [],
     salesReturnOrder: salesReturnOrder?.data ?? null,
-    purchaseReturnOrder: purchaseReturnOrder?.data ?? null
+    purchaseReturnOrder: purchaseReturnOrder?.data ?? null,
+    rentalAgreement: rentalAgreement?.data ?? null
   };
 }
 
@@ -2282,6 +2302,10 @@ async function getOpenInvoicesForParty(
     Database["public"]["Tables"]["journalLine"]["Row"],
     "documentId" | "amount"
   >;
+  type DocumentLineRow = Pick<
+    Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
+    "invoiceId" | "rentalAgreementId" | "salesOrderId"
+  >;
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
       client,
@@ -2317,51 +2341,91 @@ async function getOpenInvoicesForParty(
   const ids = invoices.data.map((i) => i.id!);
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
+  const documentLines: DocumentLineRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
   for (const batch of chunkArray(ids, 100)) {
-    const [batchSettlements, batchControls] = await Promise.all([
-      fetchAllFromTable<SettlementRow>(
-        client,
-        "invoiceSettlement",
-        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
-        (query) =>
-          query
-            .eq("companyId", companyId)
-            .in(
-              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
-              batch
+    const [batchSettlements, batchControls, batchDocumentLines] =
+      await Promise.all([
+        fetchAllFromTable<SettlementRow>(
+          client,
+          "invoiceSettlement",
+          "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+          (query) =>
+            query
+              .eq("companyId", companyId)
+              .in(
+                isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+                batch
+              )
+              .order("id")
+        ),
+        fetchAllFromTable<ControlRow>(
+          client,
+          "journalLine",
+          "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+          (query) =>
+            query
+              .eq("companyId", companyId)
+              .eq("journal.companyId", companyId)
+              .eq("journal.status", "Posted")
+              .eq(
+                "journal.sourceType",
+                isAR ? "Sales Invoice" : "Purchase Invoice"
+              )
+              .eq("documentType", "Invoice")
+              .in(
+                "description",
+                isAR
+                  ? RECEIVABLE_POSTING_DESCRIPTIONS
+                  : PAYABLE_POSTING_DESCRIPTIONS
+              )
+              .in("documentId", batch)
+              .order("id")
+        ),
+        // The documents each invoice bills: a customer deposit funds only an
+        // invoice of its own rental agreement or sales order.
+        isAR
+          ? fetchAllFromTable<DocumentLineRow>(
+              client,
+              "salesInvoiceLine",
+              "invoiceId, rentalAgreementId, salesOrderId",
+              (query) =>
+                query
+                  .eq("companyId", companyId)
+                  .in("invoiceId", batch)
+                  .or("rentalAgreementId.not.is.null,salesOrderId.not.is.null")
+                  .order("id")
             )
-            .order("id")
-      ),
-      fetchAllFromTable<ControlRow>(
-        client,
-        "journalLine",
-        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
-        (query) =>
-          query
-            .eq("companyId", companyId)
-            .eq("journal.companyId", companyId)
-            .eq("journal.status", "Posted")
-            .eq(
-              "journal.sourceType",
-              isAR ? "Sales Invoice" : "Purchase Invoice"
-            )
-            .eq("documentType", "Invoice")
-            .in(
-              "description",
-              isAR
-                ? RECEIVABLE_POSTING_DESCRIPTIONS
-                : PAYABLE_POSTING_DESCRIPTIONS
-            )
-            .in("documentId", batch)
-            .order("id")
-      )
-    ]);
-    const error = batchSettlements.error ?? batchControls.error;
+          : { data: [] as DocumentLineRow[], error: null }
+      ]);
+    const error =
+      batchSettlements.error ?? batchControls.error ?? batchDocumentLines.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
+    documentLines.push(...(batchDocumentLines.data ?? []));
+  }
+  const documentsByInvoice = new Map<
+    string,
+    { rentalAgreementIds: string[]; salesOrderIds: string[] }
+  >();
+  for (const line of documentLines) {
+    const documents = documentsByInvoice.get(line.invoiceId) ?? {
+      rentalAgreementIds: [],
+      salesOrderIds: []
+    };
+    if (
+      line.rentalAgreementId &&
+      !documents.rentalAgreementIds.includes(line.rentalAgreementId)
+    )
+      documents.rentalAgreementIds.push(line.rentalAgreementId);
+    if (
+      line.salesOrderId &&
+      !documents.salesOrderIds.includes(line.salesOrderId)
+    )
+      documents.salesOrderIds.push(line.salesOrderId);
+    documentsByInvoice.set(line.invoiceId, documents);
   }
   try {
     const decimals = new Map(
@@ -2402,7 +2466,10 @@ async function getOpenInvoicesForParty(
             id: i.id,
             currencyCode: i.currencyCode,
             balance: remaining.remainingBase,
-            remainingDocument: remaining.remainingDocument
+            remainingDocument: remaining.remainingDocument,
+            rentalAgreementIds:
+              documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
+            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2662,11 +2729,19 @@ async function loadOnAccountSources(
   party: PaymentParty,
   currencyCode?: string
 ) {
+  type OnAccountPaymentRow = FundingPaymentRow & {
+    rentalAgreementId: string | null;
+    salesOrderId: string | null;
+    depositAgreement: { readableId: string } | null;
+    depositOrder: { readableId: string } | null;
+  };
   const [payments, company] = await Promise.all([
-    fetchAllFromTable<FundingPaymentRow>(
+    fetchAllFromTable<OnAccountPaymentRow>(
       client,
       "payment",
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode",
+      // A deposit's document comes along with its readable id so the composer
+      // can say which document the deposit is reserved for.
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -2722,15 +2797,33 @@ async function loadOnAccountSources(
   const effective = (apps.data ?? []).filter(
     (a) => a.payment?.status === "Posted"
   );
+  const isAR = party.paymentType === "Receipt";
   return {
     sources: remainingFundingSources(
-      payments.data ?? [],
+      (payments.data ?? []).map((payment) => {
+        const scope = isAR ? fundingScopeOf(payment) : null;
+        return {
+          ...payment,
+          scope: scope && {
+            ...scope,
+            readableId:
+              (scope.type === "rentalAgreement"
+                ? payment.depositAgreement?.readableId
+                : payment.depositOrder?.readableId) ?? null
+          }
+        };
+      }),
       effective,
       decimals,
-      party.paymentType === "Receipt"
+      isAR
     ),
     decimals
   };
+}
+
+/** On-account credit funds any invoice; a deposit only its own document's. */
+function onAccountOnly(sources: FundingSource[]): FundingSource[] {
+  return sources.filter((source) => !source.scope);
 }
 
 /** @mcp read */
@@ -2754,16 +2847,19 @@ export async function getAvailableOnAccountCreditSources(
       party,
       currencyCode
     );
+    // `sources` keeps deposits (each carries its `scope`) for the allocator;
+    // the totals are on-account credit only, which any invoice can draw on.
+    const credit = onAccountOnly(sources);
     return {
       data: {
         sources,
         availableDocumentAmount: toDocumentAmount(
-          sources.reduce((sum, p) => sum + p.remainingDocument, 0),
+          credit.reduce((sum, p) => sum + p.remainingDocument, 0),
           1,
           requireCurrencyDecimals(decimals, currencyCode)
         ),
         availableBaseAmount: round(
-          sources.reduce((sum, p) => sum + p.remainingBase, 0)
+          credit.reduce((sum, p) => sum + p.remainingBase, 0)
         )
       },
       error: null
@@ -2792,7 +2888,9 @@ export async function getAvailableOnAccountCredit(
 ): Promise<number> {
   try {
     const { sources } = await loadOnAccountSources(client, companyId, party);
-    return round(sources.reduce((sum, p) => sum + p.remainingBase, 0));
+    return round(
+      onAccountOnly(sources).reduce((sum, p) => sum + p.remainingBase, 0)
+    );
   } catch {
     return 0;
   }
@@ -3689,7 +3787,21 @@ export async function replaceInvoiceSettlements(
     priorQuery = isAR
       ? priorQuery.where("customerId", "=", partyId)
       : priorQuery.where("supplierId", "=", partyId);
-    const priorPayments = await priorQuery.orderBy("id").forUpdate().execute();
+    const priorPayments = (
+      await priorQuery.orderBy("id").forUpdate().execute()
+    ).map((p) => ({
+      ...p,
+      // A customer deposit funds only invoices of its own document.
+      scope: isAR ? fundingScopeOf(p) : null
+    }));
+    const currentScope: FundingScope | null = isAR
+      ? await loadDepositScope(trx, args.companyId, payment)
+      : null;
+    // Only read the invoices' documents when a deposit is in play.
+    const invoiceDocuments =
+      currentScope || priorPayments.some((p) => p.scope)
+        ? await loadSalesInvoiceDocumentIds(trx, args.companyId, ids)
+        : new Map<string, InvoiceDocumentIds>();
     const sourceIds = priorPayments.map((p) => p.id);
     const consumption = sourceIds.length
       ? await trx
@@ -3753,7 +3865,8 @@ export async function replaceInvoiceSettlements(
         remainingBase: invoice.remainingBase,
         requestedDocumentPrincipal: 0,
         discountAmount: 0,
-        writeOffAmount: 0
+        writeOffAmount: 0,
+        ...invoiceDocuments.get(id)
       };
       request.requestedDocumentPrincipal = toDocumentAmount(
         request.requestedDocumentPrincipal + sourceAmount,
@@ -3778,7 +3891,8 @@ export async function replaceInvoiceSettlements(
         remainingBase: toBaseAmount(
           Number(payment.totalAmount),
           Number(payment.exchangeRate)
-        )
+        ),
+        scope: currentScope
       },
       priorSources: remainingFundingSources(
         priorPayments,

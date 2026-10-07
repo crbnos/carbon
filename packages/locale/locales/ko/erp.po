@@ -3635,6 +3635,9 @@ msgstr "월, 분기, 연도 단위로 청구합니다(처음에 부분 기간 �
 msgid "Billed Externally"
 msgstr "외부 송장 발행"
 
+msgid "Billed On"
+msgstr "청구 날짜"
+
 msgid "Billed through"
 msgstr "청구 완료일"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "계약 유형"
 
 msgid "Contract value"
-msgstr ""
+msgstr "계약 금액"
 
 msgid "Contract Value"
 msgstr "계약 금액"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "마감 유형"
 
 msgid "Deals"
-msgstr ""
+msgstr "거래"
 
 msgid "Debit"
 msgstr "차변"
@@ -7018,8 +7021,14 @@ msgstr "제외된 행에 따라 달라집니다"
 msgid "Deposit"
 msgstr "보증금"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "선금액 (해당 문서의 송장만)"
+
 msgid "Deposit for"
 msgstr "...을(를) 위한 보증금"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "{document}의 선금액 (그 송장만)"
 
 msgid "Deposit:"
 msgstr "보증금:"
@@ -7198,6 +7207,9 @@ msgstr "할인율"
 
 msgid "Discount Rate (%)"
 msgstr "할인율 (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "계약의 암묵적 할인율로 할인했을 때, 지불액과 잔액의 가치는 <0/>이며, 이는 개의 공정 가치 <1/>보다 많습니다. 리스는 그에 내재된 할인율로 평가되므로, 이렇게 하면 개의 가치보다 많은 매출을 기록하게 됩니다. 할인율을 높이거나 공정 가치를 확인하세요."
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "공급업체에 대한 조기 지불 할인"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "다음 이자"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "다음 송장"
 
 msgid "Next Invoice"
 msgstr "다음 송장"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "정기 송장"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "매월 반복"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "분기별 반복"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "매주 반복"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "매년 반복"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "빨간색은 인력 부족, 녹색은 충분한 인원, 황색은 필요한 작업보다 더 많은 인원입니다."
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "자산이 사용 중인 분류로 이동하고 사용 개시 일자부터 감가상각을 시작합니다."
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "자산의 가치가 0이 될 것입니다. 품목에 단위 원가를 설정한 후 자산화하세요."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape에서 인증이 거부되었습니다. 연동 설정을 저장하여 다시 시도하세요."
@@ -20777,6 +20789,9 @@ msgstr "이 사업장에서 가장 최근에 일정이 잡힌 작업은 {0}이�
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "이 라인에서 협상된 단가입니다. 인라인 추적 아이콘을 통해 어떤 가격 규칙 또는 재정의로 이 값이 산출되었는지 확인할 수 있습니다."
 
+msgid "The net investment is more than the fair value"
+msgstr "순투자액이 공정 가치보다 많습니다."
+
 msgid "The new version number of the document"
 msgstr "문서의 새 버전 번호"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "개 수량은 서비스로 복귀할 때까지 사용 불가능으로 제거됩니다. 감가상각은 계속되고 회계 처리는 변경되지 않습니다."
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "개가 재고에서 떠나 재고에 기록된 원가로 자산이 됩니다."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "구매 시점의 품목 단가"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활성화됩니다."
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "이 개는 재고에 원가가 없습니다."
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"

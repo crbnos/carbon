@@ -141,6 +141,12 @@ export const recurringBillingFunction = inngest.createFunction(
                   ? `Drafted ${drafted.invoices.length} rental invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
                   : `Nothing due for ${company.name} as of ${asOf}`
               );
+              // Early-return credits are Draft credit memos a person posts.
+              if (drafted.creditMemos.length > 0) {
+                logger.info(
+                  `Drafted ${drafted.creditMemos.length} rental credit memo(s) for ${company.name} as of ${asOf}`
+                );
+              }
 
               return {
                 asOf,

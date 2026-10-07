@@ -4,6 +4,11 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  type InvoiceDocumentIds,
+  loadDepositScope,
+  loadSalesInvoiceDocumentIds
+} from "@carbon/database/deposit-scope";
+import {
   buildPaymentJournal,
   type PaymentJournalFeeInput
 } from "@carbon/database/posting";
@@ -15,6 +20,7 @@ import {
   CUSTOMER_DEPOSIT_DESCRIPTION,
   datetime,
   type FundingRequest,
+  fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   onAccountCreditDescription,
@@ -845,12 +851,29 @@ export function postPaymentTransaction(
             .execute()
         ).filter(isEffectiveSettlement)
       : [];
+    // A customer deposit funds only invoices of its own rental agreement or
+    // sales order, and a deposit payment applies to nothing else — re-derived
+    // here so a crafted Draft cannot spend one document's deposit on another.
     const priorSources = remainingFundingSources(
-      sources,
+      sources.map((source) => ({
+        ...source,
+        scope: isAR ? fundingScopeOf(source) : null
+      })),
       consumed,
       new Map([[payment.currencyCode, decimals]]),
       isAR
     );
+    const currentScope =
+      isAR && !isRefund && !isReimbursement
+        ? await loadDepositScope(trx, companyId, payment)
+        : null;
+    const invoiceDocuments =
+      isAR &&
+      !isRefund &&
+      !isReimbursement &&
+      (currentScope || priorSources.some((source) => source.scope))
+        ? await loadSalesInvoiceDocumentIds(trx, companyId, targetIds)
+        : new Map<string, InvoiceDocumentIds>();
     const requestByTarget = new Map<string, FundingRequest>();
     for (const draft of drafts.filter((row) => row.paymentId === paymentId)) {
       const targetId = draft[targetColumn]!;
@@ -879,7 +902,8 @@ export function postPaymentTransaction(
         remainingBase: target.remainingBase,
         requestedDocumentPrincipal: 0,
         discountAmount: 0,
-        writeOffAmount: 0
+        writeOffAmount: 0,
+        ...invoiceDocuments.get(targetId)
       };
       request.requestedDocumentPrincipal = toDocumentAmount(
         request.requestedDocumentPrincipal + requested,
@@ -903,7 +927,8 @@ export function postPaymentTransaction(
         remainingBase: toBaseAmount(
           Number(payment.totalAmount),
           Number(payment.exchangeRate)
-        )
+        ),
+        scope: currentScope
       },
       priorSources,
       requests: [...requestByTarget.values()].sort((a, b) =>

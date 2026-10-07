@@ -3635,6 +3635,9 @@ msgstr "按整月、整季度或整年开票，可先按部分期间"
 msgid "Billed Externally"
 msgstr "已外部计费"
 
+msgid "Billed On"
+msgstr "开票日期"
+
 msgid "Billed through"
 msgstr "已计费至"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "合约类型"
 
 msgid "Contract value"
-msgstr ""
+msgstr "合同价值"
 
 msgid "Contract Value"
 msgstr "合约价值"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "截止日期类型"
 
 msgid "Deals"
-msgstr ""
+msgstr "交易"
 
 msgid "Debit"
 msgstr "借方"
@@ -7018,8 +7021,14 @@ msgstr "依赖于已排除的行"
 msgid "Deposit"
 msgstr "保证金"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "定金（仅其文件的发票）"
+
 msgid "Deposit for"
 msgstr "保证金 用于"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "为{document}定金（仅其发票）"
 
 msgid "Deposit:"
 msgstr "押金:"
@@ -7198,6 +7207,9 @@ msgstr "折扣百分比"
 
 msgid "Discount Rate (%)"
 msgstr "折扣率(%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "按协议利率折现，付款和残值的现值为<0/>，超过了件的公允价值<1/>。租赁按其隐含的利率进行估值，因此这将记账租赁收入高于该件的价值。提高折现率或检查公允价值。"
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "供应商提前付款所获得的折扣"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "下一期利息"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "下一张发票"
 
 msgid "Next Invoice"
 msgstr "下一个发票"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "循环发票"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "每月循环"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "每季度循环"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "每周循环"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "每年循环"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "红色表示人手不足，绿色表示已覆盖，琥珀色表示人数超过工作需要。"
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "资产进入其在用资产类别，并从在用日期开始折旧。"
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "该资产价值为零。在该物料上设置件成本，然后将其资本化。"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "授权在 Onshape 中被拒绝。保存集成设置以重试。"
@@ -20777,6 +20789,9 @@ msgstr "该地点最近的排程工作是{0}。"
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "此行协商的单价；内联跟踪图标显示哪个定价规则或覆盖生成了它。"
 
+msgid "The net investment is more than the fair value"
+msgstr "净投资超过公允价值"
+
 msgid "The new version number of the document"
 msgstr "文件的新版本号"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "该件在返回服务前不可用。折旧继续，其会计处理保持不变。"
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "该件离开库存，并以库存的成本作为资产进行记账。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "购买时该商品的单价"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活。"
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "该件在库存中没有成本"
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"

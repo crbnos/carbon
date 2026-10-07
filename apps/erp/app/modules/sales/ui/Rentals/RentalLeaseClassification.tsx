@@ -4,6 +4,9 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   cn,
@@ -27,13 +30,17 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { formatPercent, salesTypeRequirementError } from "@carbon/utils";
+import {
+  formatPercent,
+  netInvestmentExceedsFairValue,
+  salesTypeRequirementError
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
-import { LuCircleCheck, LuCircleMinus } from "react-icons/lu";
+import { LuCircleCheck, LuCircleMinus, LuTriangleAlert } from "react-icons/lu";
 import { Select, Submit, TextArea } from "~/components/Form";
-import { useUser } from "~/hooks";
+import { useCompanyToday, useCurrencyDecimals, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   lessorClassificationOverrides,
@@ -151,8 +158,10 @@ export function resolveLineLeaseClassification(args: {
     | "unguaranteedResidualValue"
   >;
   policy: LeasePolicy;
+  /** The agreement currency's `decimalPlaces` (`useCurrencyDecimals`). */
+  decimals: number;
 }): LineLeaseClassification {
-  const { agreement, line, policy } = args;
+  const { agreement, line, policy, decimals } = args;
   const stored = asClassification(line.lessorClassification);
   const overridden = line.classificationOverride && stored !== null;
 
@@ -184,7 +193,8 @@ export function resolveLineLeaseClassification(args: {
             guaranteedResidualValue: line.guaranteedResidualValue,
             unguaranteedResidualValue: line.unguaranteedResidualValue
           },
-          policy
+          policy,
+          decimals
         })
       : null);
 
@@ -225,6 +235,8 @@ type LeaseClassificationPreviewProps = {
   lines?: RentalAgreementLine[];
   leaseInputs?: Record<string, RentalLeaseLineInputs>;
   policy: LeasePolicy;
+  /** The agreement's currency: payments are valued at its precision. */
+  currencyCode: string | null | undefined;
 };
 
 /** How the agreement would classify on activation, from the unsaved terms:
@@ -234,10 +246,12 @@ export function LeaseClassificationPreview({
   terms,
   lines = [],
   leaseInputs,
-  policy
+  policy,
+  currencyCode
 }: LeaseClassificationPreviewProps) {
   const { t } = useLingui();
   const { locale } = useLocale();
+  const decimals = useCurrencyDecimals(currencyCode);
   const standardTerm = useLeaseStandardTerm();
   const percent = (value: number) => formatPercent(value / 100, locale);
 
@@ -254,7 +268,8 @@ export function LeaseClassificationPreview({
             guaranteedResidualValue: line.guaranteedResidualValue,
             unguaranteedResidualValue: line.unguaranteedResidualValue
           },
-          policy
+          policy,
+          decimals
         });
         // A manual override wins, exactly as on activation.
         const classification: LeaseClassificationValue =
@@ -443,6 +458,48 @@ type LeaseClassificationPanelProps = LineLeaseClassification & {
 };
 
 /** The chip and the five ASC 842 tests behind it. */
+/** Shown when a unit's net investment — payments and residual discounted at
+ *  the agreement's rate — is worth more than its fair value: a lease is
+ *  valued at the rate implicit in it, so the entered rate is too low or the
+ *  fair value is wrong. A warning only; activation does not refuse it. */
+function NetInvestmentAboveFairValue({
+  netInvestment,
+  fairValue,
+  currencyCode
+}: {
+  netInvestment: number;
+  fairValue: number | null;
+  currencyCode: string;
+}) {
+  const decimals = useCurrencyDecimals(currencyCode);
+  if (
+    fairValue === null ||
+    !netInvestmentExceedsFairValue({ netInvestment, fairValue, decimals })
+  ) {
+    return null;
+  }
+  return (
+    <Alert variant="warning">
+      <LuTriangleAlert className="h-4 w-4" />
+      <AlertTitle>
+        <Trans>The net investment is more than the fair value</Trans>
+      </AlertTitle>
+      <AlertDescription>
+        <Trans>
+          Discounted at the agreement's rate, the payments and residual are
+          worth{" "}
+          <RentalMoney value={netInvestment} currencyCode={currencyCode} />,
+          more than the unit's fair value of{" "}
+          <RentalMoney value={fairValue} currencyCode={currencyCode} />. A lease
+          is valued at the rate implicit in it, so this would book lease revenue
+          above what the unit is worth. Raise the discount rate, or check the
+          fair value.
+        </Trans>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 export function LeaseClassificationPanel({
   classification,
   record,
@@ -572,6 +629,14 @@ export function LeaseClassificationPanel({
         </div>
       )}
 
+      {record?.pv && classification === "Sale" && (
+        <NetInvestmentAboveFairValue
+          netInvestment={record.pv.netInvestment}
+          fairValue={record.inputs.fairValue}
+          currencyCode={currencyCode}
+        />
+      )}
+
       {isOverridden && overrideReason && (
         <p className="text-xs text-muted-foreground">
           <Trans>Override reason: {overrideReason}</Trans>
@@ -679,6 +744,8 @@ export function RentalCommencementPreview({
   const { t } = useLingui();
   const { company } = useUser();
   const currencyCode = rentalAgreement.currencyCode ?? "";
+  const decimals = useCurrencyDecimals(currencyCode);
+  const today = useCompanyToday();
 
   const salesType = lines
     .map((line) => ({
@@ -687,7 +754,8 @@ export function RentalCommencementPreview({
       lease: resolveLineLeaseClassification({
         agreement: rentalAgreement,
         line,
-        policy: leasePolicy
+        policy: leasePolicy,
+        decimals
       })
     }))
     .filter(({ lease }) => lease.classification === "Sale");
@@ -738,7 +806,8 @@ export function RentalCommencementPreview({
               rateUnit: line.rateUnit,
               startDate: rentalAgreement.startDate,
               endDate: rentalAgreement.endDate ?? null,
-              fairValue: line.fairValue ?? null
+              fairValue: line.fairValue ?? null,
+              today
             })
           : null;
 
@@ -845,6 +914,11 @@ export function RentalCommencementPreview({
                 ))}
               </Tbody>
             </Table>
+            <NetInvestmentAboveFairValue
+              netInvestment={pv.netInvestment}
+              fairValue={line.fairValue ?? null}
+              currencyCode={currencyCode}
+            />
             {preview ? (
               <p className="text-xs text-muted-foreground">
                 <Trans>

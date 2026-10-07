@@ -25,13 +25,12 @@ const postMemo = defineServerFn({
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    // A contract cancellation credit released Planned deferral rows when it
-    // posted; reversing its journal would not bring them back, and the
-    // cancellation is irreversible once its memo has posted.
+    // A contract cancellation credit is irreversible once its memo has
+    // posted: reversing its journal would not restore the contract.
     if (type === "void") {
       const memo = await db
         .selectFrom("memo")
-        .select("customerContractId")
+        .select(["customerContractId", "rentalAgreementId"])
         .where("id", "=", memoId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
@@ -40,6 +39,31 @@ const postMemo = defineServerFn({
           "A contract cancellation credit cannot be voided",
           400
         );
+      }
+      // A rental early-return credit can be voided while its Deferral rows are
+      // all still Planned and unclaimed: the void deletes them and returns the
+      // periods to Pending. Once a run has recognized one, reversing the memo
+      // journal would leave that recognition standing.
+      if (memo?.rentalAgreementId) {
+        const recognized = await db
+          .selectFrom("revenueRecognitionSchedule")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("memoId", "=", memoId)
+          .where((eb) =>
+            eb.or([
+              eb("status", "=", "Posted"),
+              eb("runLineId", "is not", null)
+            ])
+          )
+          .limit(1)
+          .executeTakeFirst();
+        if (recognized) {
+          throw new ServerFnError(
+            "This rental credit is already part of a revenue recognition run; reverse or delete the run before voiding it",
+            400
+          );
+        }
       }
     }
 

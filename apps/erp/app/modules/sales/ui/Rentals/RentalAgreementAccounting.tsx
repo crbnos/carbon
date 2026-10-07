@@ -94,6 +94,7 @@ const RentalAgreementAccounting = ({
       >
         <div className="w-full">
           <LeaseClassificationPreview
+            currencyCode={rentalAgreement.currencyCode}
             terms={{
               startDate: rentalAgreement.startDate ?? "",
               endDate: rentalAgreement.endDate ?? null,

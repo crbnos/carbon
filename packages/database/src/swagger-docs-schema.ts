@@ -2113,6 +2113,9 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.contractAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.memoId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -2244,6 +2247,9 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.contractAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.memoId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -2327,6 +2333,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.contractAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.memoId"
           },
           {
             $ref: "#/parameters/body.revenueRecognitionSchedule"
@@ -18415,6 +18424,9 @@ export default {
             $ref: "#/parameters/rowFilter.memo.customerContractId"
           },
           {
+            $ref: "#/parameters/rowFilter.memo.rentalAgreementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -18558,6 +18570,9 @@ export default {
             $ref: "#/parameters/rowFilter.memo.customerContractId"
           },
           {
+            $ref: "#/parameters/rowFilter.memo.rentalAgreementId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -18653,6 +18668,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.memo.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.rentalAgreementId"
           },
           {
             $ref: "#/parameters/body.memo"
@@ -66193,6 +66211,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalBillingPeriod.voidedSalesInvoiceId"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalBillingPeriod.memoId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66303,6 +66324,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalBillingPeriod.voidedSalesInvoiceId"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalBillingPeriod.memoId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -66365,6 +66389,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalBillingPeriod.voidedSalesInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalBillingPeriod.memoId"
           },
           {
             $ref: "#/parameters/body.rentalBillingPeriod"
@@ -115555,6 +115582,12 @@ export default {
         contractAmount: {
           format: "numeric",
           type: "number"
+        },
+        memoId: {
+          description:
+            "Note:\nThis is a Foreign Key to `memo.id`.<fk table='memo' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -123022,6 +123055,10 @@ export default {
           type: "string"
         },
         customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        rentalAgreementId: {
           format: "text",
           type: "string"
         }
@@ -145552,6 +145589,12 @@ export default {
         voidedSalesInvoiceId: {
           format: "text",
           type: "string"
+        },
+        memoId: {
+          description:
+            "Note:\nThis is a Foreign Key to `memo.id`.<fk table='memo' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -163980,6 +164023,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.revenueRecognitionSchedule.memoId": {
+      name: "memoId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.documentLabels": {
       name: "documentLabels",
       description: "documentLabels",
@@ -172404,6 +172453,12 @@ export default {
     },
     "rowFilter.memo.customerContractId": {
       name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.memo.rentalAgreementId": {
+      name: "rentalAgreementId",
       required: false,
       in: "query",
       type: "string"
@@ -197521,6 +197576,12 @@ export default {
     },
     "rowFilter.rentalBillingPeriod.voidedSalesInvoiceId": {
       name: "voidedSalesInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalBillingPeriod.memoId": {
+      name: "memoId",
       required: false,
       in: "query",
       type: "string"

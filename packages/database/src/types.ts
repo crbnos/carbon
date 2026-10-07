@@ -33876,6 +33876,7 @@ export type Database = {
           purchaseReturnOrderId: string | null
           reasonAccount: string | null
           reference: string | null
+          rentalAgreementId: string | null
           salesReturnOrderId: string | null
           status: Database["public"]["Enums"]["memoStatus"]
           supplierId: string | null
@@ -33906,6 +33907,7 @@ export type Database = {
           purchaseReturnOrderId?: string | null
           reasonAccount?: string | null
           reference?: string | null
+          rentalAgreementId?: string | null
           salesReturnOrderId?: string | null
           status?: Database["public"]["Enums"]["memoStatus"]
           supplierId?: string | null
@@ -33936,6 +33938,7 @@ export type Database = {
           purchaseReturnOrderId?: string | null
           reasonAccount?: string | null
           reference?: string | null
+          rentalAgreementId?: string | null
           salesReturnOrderId?: string | null
           status?: Database["public"]["Enums"]["memoStatus"]
           supplierId?: string | null
@@ -34126,6 +34129,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memo_rentalAgreement_fkey"
+            columns: ["rentalAgreementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreement"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "memo_rentalAgreement_fkey"
+            columns: ["rentalAgreementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreements"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "memo_salesReturnOrderId_fkey"
@@ -54284,6 +54301,7 @@ export type Database = {
           dueOn: string
           id: string
           isAdjustment: boolean
+          memoId: string | null
           periodEnd: string
           periodStart: string
           rateUnitApplied: Database["public"]["Enums"]["rentalRateUnit"] | null
@@ -54303,6 +54321,7 @@ export type Database = {
           dueOn: string
           id?: string
           isAdjustment?: boolean
+          memoId?: string | null
           periodEnd: string
           periodStart: string
           rateUnitApplied?: Database["public"]["Enums"]["rentalRateUnit"] | null
@@ -54322,6 +54341,7 @@ export type Database = {
           dueOn?: string
           id?: string
           isAdjustment?: boolean
+          memoId?: string | null
           periodEnd?: string
           periodStart?: string
           rateUnitApplied?: Database["public"]["Enums"]["rentalRateUnit"] | null
@@ -54402,6 +54422,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rentalAgreementLine"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "rentalBillingPeriod_memo_fkey"
+            columns: ["memoId"]
+            isOneToOne: false
+            referencedRelation: "memo"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "rentalBillingPeriod_updatedBy_fkey"
@@ -55411,6 +55438,7 @@ export type Database = {
           debitAccountId: string
           id: string
           journalId: string | null
+          memoId: string | null
           periodEnd: string
           periodStart: string
           rentalAgreementLineId: string | null
@@ -55437,6 +55465,7 @@ export type Database = {
           debitAccountId: string
           id?: string
           journalId?: string | null
+          memoId?: string | null
           periodEnd: string
           periodStart: string
           rentalAgreementLineId?: string | null
@@ -55463,6 +55492,7 @@ export type Database = {
           debitAccountId?: string
           id?: string
           journalId?: string | null
+          memoId?: string | null
           periodEnd?: string
           periodStart?: string
           rentalAgreementLineId?: string | null
@@ -55600,6 +55630,13 @@ export type Database = {
             columns: ["journalId"]
             isOneToOne: false
             referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenueRecognitionSchedule_memo_fkey"
+            columns: ["memoId"]
+            isOneToOne: false
+            referencedRelation: "memo"
             referencedColumns: ["id"]
           },
           {

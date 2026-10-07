@@ -5,7 +5,8 @@
 import { round } from "@carbon/database/precision";
 import {
   buildLessorSchedule,
-  generateRentalBillingPeriods
+  generateRentalBillingPeriods,
+  netInvestmentExceedsFairValue
 } from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
@@ -25,6 +26,9 @@ import {
   settledClassification,
   wholeMonthsInTerm
 } from "./lessor";
+
+/** USD: rent is billed, and so valued, in cents. */
+const DECIMALS = 2;
 
 const THRESHOLDS = { majorPartPercent: 75, substantiallyAllPercent: 90 };
 const MONTHLY = { rateUnit: "Month", rate: 1000 } as const;
@@ -61,6 +65,7 @@ it("a term counts whole calendar months, both ends inclusive", () => {
 it("a Calendar Month line pays the month rate once per whole month at the agreement's rate", () => {
   expect(
     leasePaymentTerms({
+      decimals: DECIMALS,
       cycle: "Calendar Month",
       ...MONTHLY,
       discountRate: 6,
@@ -72,6 +77,7 @@ it("a Calendar Month line pays the month rate once per whole month at the agreem
 
 it("an open-ended or sub-month line is valued over one period", () => {
   const openEnded = leasePaymentTerms({
+    decimals: DECIMALS,
     cycle: "Calendar Month",
     ...MONTHLY,
     discountRate: 6,
@@ -82,6 +88,7 @@ it("an open-ended or sub-month line is valued over one period", () => {
   expect(openEnded.periods).toEqual(1);
 
   const short = leasePaymentTerms({
+    decimals: DECIMALS,
     cycle: "28 Days",
     ...MONTHLY,
     discountRate: 6,
@@ -94,6 +101,7 @@ it("an open-ended or sub-month line is valued over one period", () => {
 
 it("a 28 Days line pays the 28-day charge per whole 28 days, at the rate scaled to 28/365 a period", () => {
   const terms = leasePaymentTerms({
+    decimals: DECIMALS,
     cycle: "28 Days",
     ...MONTHLY,
     discountRate: 6,
@@ -115,6 +123,7 @@ it("a 28 Days line pays the 28-day charge per whole 28 days, at the rate scaled 
   // One day short of the thirteenth period: twelve whole periods.
   expect(
     leasePaymentTerms({
+      decimals: DECIMALS,
       cycle: "28 Days",
       ...MONTHLY,
       discountRate: 6,
@@ -127,6 +136,7 @@ it("a 28 Days line pays the 28-day charge per whole 28 days, at the rate scaled 
 it("a Weekly 28 Days line pays four weeks a period", () => {
   expect(
     leasePaymentTerms({
+      decimals: DECIMALS,
       cycle: "28 Days",
       rateUnit: "Week",
       rate: 300,
@@ -146,13 +156,47 @@ it("a Daily or Weekly unit on a Calendar Month agreement is valued at its averag
   };
   // 365 days a year at 50, over twelve months.
   expect(
-    leasePaymentTerms({ ...terms, rateUnit: "Day", rate: 50 }).payment
-  ).toEqual(1520.83333);
+    leasePaymentTerms({
+      decimals: DECIMALS,
+      ...terms,
+      rateUnit: "Day",
+      rate: 50
+    }).payment
+  ).toEqual(1520.83);
   // Whole weeks per month: five in every month but February's four — 59 a
   // year at 300, over twelve months.
   expect(
-    leasePaymentTerms({ ...terms, rateUnit: "Week", rate: 300 }).payment
+    leasePaymentTerms({
+      decimals: DECIMALS,
+      ...terms,
+      rateUnit: "Week",
+      rate: 300
+    }).payment
   ).toEqual(1475);
+});
+
+it("a rate carrying the storage scale is valued at the cents it bills", () => {
+  const terms = {
+    cycle: "Calendar Month" as const,
+    rateUnit: "Month" as const,
+    discountRate: 6,
+    startDate: "2027-01-01",
+    endDate: "2029-12-31"
+  };
+  expect(
+    leasePaymentTerms({ decimals: DECIMALS, ...terms, rate: 1000.12345 })
+      .payment
+  ).toEqual(1000.12);
+  expect(
+    leasePaymentTerms({
+      decimals: DECIMALS,
+      ...terms,
+      cycle: "28 Days",
+      endDate: "2027-12-30",
+      rateUnit: "Week",
+      rate: 300.00125
+    }).payment
+  ).toEqual(1200.01);
 });
 
 it("only a reasonably certain purchase option counts", () => {
@@ -264,7 +308,8 @@ it("a sales-type line needs an end date and a fair value", () => {
     rateUnit: "Month" as const,
     startDate: "2027-01-01",
     endDate: "2029-12-31",
-    fairValue: 38000
+    fairValue: 38000,
+    today: "2026-12-15"
   };
   expect(salesTypeRequirementError(base)).toEqual(null);
   expect(
@@ -280,6 +325,30 @@ it("a sales-type line needs an end date and a fair value", () => {
   ).toBeTruthy();
 });
 
+it("a sales-type lease cannot start before the month it is activated in", () => {
+  const base = {
+    name: "FA-1",
+    cycle: "Calendar Month" as const,
+    rateUnit: "Month" as const,
+    startDate: "2026-12-01",
+    endDate: "2027-11-30",
+    fairValue: 38000,
+    today: "2026-12-15"
+  };
+  // Earlier in the activation month is fine: the commencement and the first
+  // interest land in the same period.
+  expect(salesTypeRequirementError(base)).toEqual(null);
+  expect(
+    salesTypeRequirementError({ ...base, startDate: "2027-01-01" })
+  ).toEqual(null);
+  // A start in an earlier month would post interest before the commencement.
+  expect(
+    salesTypeRequirementError({ ...base, startDate: "2026-11-01" })
+  ).toEqual(
+    "FA-1 is treated as a sale, which commences when the agreement is activated: start it in 2026-12 or later (it starts 2026-11-01)"
+  );
+});
+
 it("a Calendar Month sales-type lease starts on the first and ends on a month end", () => {
   const base = {
     name: "FA-1",
@@ -287,7 +356,8 @@ it("a Calendar Month sales-type lease starts on the first and ends on a month en
     rateUnit: "Month" as const,
     startDate: "2027-01-01",
     endDate: "2029-12-31",
-    fairValue: 38000
+    fairValue: 38000,
+    today: "2026-12-15"
   };
   const message =
     "FA-1 is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end";
@@ -328,7 +398,8 @@ it("a 28 Days sales-type lease runs a whole number of 28-day periods", () => {
     startDate: "2027-01-01",
     // 364 days: thirteen periods
     endDate: "2027-12-30",
-    fairValue: 38000
+    fairValue: 38000,
+    today: "2026-12-15"
   };
   // Any frequency bills the same amount every 28 days.
   expect(salesTypeRequirementError(base)).toEqual(null);
@@ -385,6 +456,7 @@ it("activation cuts an operating line to the horizon and a sales-type line to it
 it("a sales-type line whose term ends inside the horizon bills nothing past its end date", () => {
   const generate = (classification: "Rental" | "Sale") =>
     generateRentalBillingPeriods({
+      decimals: DECIMALS,
       cycle: "28 Days",
       timing: "Arrears",
       ...MONTHLY,
@@ -445,11 +517,21 @@ it("a whole-period sales-type lease bills exactly payment × periods", () => {
   ];
   for (const lease of cases) {
     expect(
-      salesTypeRequirementError({ name: "FA-1", fairValue: 38000, ...lease })
+      salesTypeRequirementError({
+        name: "FA-1",
+        fairValue: 38000,
+        today: lease.startDate,
+        ...lease
+      })
     ).toEqual(null);
-    const terms = leasePaymentTerms({ ...lease, discountRate: 6 });
+    const terms = leasePaymentTerms({
+      decimals: DECIMALS,
+      ...lease,
+      discountRate: 6
+    });
     for (const timing of ["Advance", "Arrears"] as const) {
       const { create } = generateRentalBillingPeriods({
+        decimals: DECIMALS,
         ...lease,
         timing,
         returnedAt: null,
@@ -491,6 +573,7 @@ it("schedule periods are the first regular billing periods, in date order", () =
   // A mid-month start cuts 13 calendar periods for a 12-month term; the
   // schedule follows the first twelve.
   const { create } = generateRentalBillingPeriods({
+    decimals: DECIMALS,
     cycle: "Calendar Month",
     timing: "Arrears",
     ...MONTHLY,
@@ -674,6 +757,7 @@ it("commencement refuses depreciation beyond cost and non-finite amounts", () =>
 // periods, 1,000 in arrears at 6 %, closing on the 5,000 option.
 function workedExampleSchedule() {
   const { create } = generateRentalBillingPeriods({
+    decimals: DECIMALS,
     cycle: "Calendar Month",
     timing: "Arrears",
     ...MONTHLY,
@@ -863,4 +947,40 @@ it("an operating return ignores the destination entirely", () => {
       })
     ).toEqual(null);
   }
+});
+
+it("flags a net investment worth more than the unit's fair value", () => {
+  // 2 × 12,000 at 0.5 % a month plus a 2,000 residual is 25,801.34 — above a
+  // 24,000 fair value, so the entered rate is below the rate implicit in
+  // the lease.
+  expect(
+    netInvestmentExceedsFairValue({
+      netInvestment: 25801.34,
+      fairValue: 24000,
+      decimals: DECIMALS
+    })
+  ).toBe(true);
+  expect(
+    netInvestmentExceedsFairValue({
+      netInvestment: 23816.24,
+      fairValue: 24000,
+      decimals: DECIMALS
+    })
+  ).toBe(false);
+  // Equal at settlement precision is not above it.
+  expect(
+    netInvestmentExceedsFairValue({
+      netInvestment: 24000.00001,
+      fairValue: 24000,
+      decimals: DECIMALS
+    })
+  ).toBe(false);
+  // No fair value: nothing to compare (activation refuses it separately).
+  expect(
+    netInvestmentExceedsFairValue({
+      netInvestment: 1,
+      fairValue: null,
+      decimals: DECIMALS
+    })
+  ).toBe(false);
 });

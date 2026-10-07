@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { round } from "@carbon/database/precision";
 import { expect, it } from "vitest";
 import {
   calendarMonthCharge,
@@ -15,6 +14,9 @@ import {
   rateCharge,
   type ScopedRentalRate
 } from "./rental-periods.ts";
+
+/** The agreement currency's settlement precision (USD). */
+const DECIMALS = 2;
 
 /** Daily and Weekly units, for the tests that need a sub-month frequency. */
 const DAILY = { rateUnit: "Day", rate: 100 } as const;
@@ -35,6 +37,7 @@ const generate = (
     returnedAt: null,
     through: "2026-10-01",
     existing: [],
+    decimals: DECIMALS,
     ...overrides
   });
 
@@ -77,65 +80,73 @@ const pending = (
 });
 
 it("rateCharge bills whole units of the unit's frequency", () => {
-  expect(rateCharge(10, "Week", 500)).toEqual({
+  expect(rateCharge(10, "Week", 500, DECIMALS)).toEqual({
     amount: 1000,
     rateUnitApplied: "Week",
     units: 2
   });
-  expect(rateCharge(10, "Day", 100)).toEqual({
+  expect(rateCharge(10, "Day", 100, DECIMALS)).toEqual({
     amount: 1000,
     rateUnitApplied: "Day",
     units: 10
   });
-  expect(rateCharge(10, "Month", 1500)).toEqual({
+  expect(rateCharge(10, "Month", 1500, DECIMALS)).toEqual({
     amount: 1500,
     rateUnitApplied: "Month",
     units: 1
   });
-  expect(rateCharge(29, "Month", 1500)).toEqual({
+  expect(rateCharge(29, "Month", 1500, DECIMALS)).toEqual({
     amount: 3000,
     rateUnitApplied: "Month",
     units: 2
   });
 });
 
-it("rateCharge rounds at internal scale and refuses partial days and a non-finite rate", () => {
+it("rateCharge bills at settlement precision and refuses partial days and a non-finite rate", () => {
   // 3 × 0.1 is 0.30000000000000004 in floating point.
-  expect(rateCharge(3, "Day", 0.1).amount).toEqual(0.3);
+  expect(rateCharge(3, "Day", 0.1, DECIMALS).amount).toEqual(0.3);
+  // A rate may carry the storage scale; the charge never does.
+  expect(rateCharge(3, "Day", 33.33335, DECIMALS).amount).toEqual(100);
+  expect(rateCharge(3, "Day", 33.33335, 0).amount).toEqual(100);
   for (const days of [0, -1, 1.5]) {
-    expect(() => rateCharge(days, "Day", 100)).toThrow("whole number");
+    expect(() => rateCharge(days, "Day", 100, DECIMALS)).toThrow(
+      "whole number"
+    );
   }
-  expect(() => rateCharge(3, "Day", Number.NaN)).toThrow("finite");
+  expect(() => rateCharge(3, "Day", Number.NaN, DECIMALS)).toThrow("finite");
 });
 
 it("calendarMonthCharge prorates the month rate by the month's own length", () => {
-  // 17 of October's 31 days: 822.58 at settlement precision.
-  expect(calendarMonthCharge("2026-10-15", "2026-10-31", 1500)).toEqual(
-    822.58065
-  );
+  // 17 of October's 31 days is 822.580645…: billed at settlement precision,
+  // because nobody can pay a fraction of a cent.
   expect(
-    round(calendarMonthCharge("2026-10-15", "2026-10-31", 1500), 2)
+    calendarMonthCharge("2026-10-15", "2026-10-31", 1500, DECIMALS)
   ).toEqual(822.58);
   // 10 of January's 31 days.
-  expect(calendarMonthCharge("2027-01-01", "2027-01-10", 1500)).toEqual(
-    483.87097
-  );
   expect(
-    round(calendarMonthCharge("2027-01-01", "2027-01-10", 1500), 2)
+    calendarMonthCharge("2027-01-01", "2027-01-10", 1500, DECIMALS)
   ).toEqual(483.87);
+  // A zero-decimal currency bills whole units.
+  expect(calendarMonthCharge("2027-01-01", "2027-01-10", 1500, 0)).toEqual(484);
   // 10 of November's 30 days.
-  expect(calendarMonthCharge("2026-11-01", "2026-11-10", 1500)).toEqual(500);
+  expect(
+    calendarMonthCharge("2026-11-01", "2026-11-10", 1500, DECIMALS)
+  ).toEqual(500);
   // A whole month is exactly the rate, leap February included.
-  expect(calendarMonthCharge("2026-10-01", "2026-10-31", 1500)).toEqual(1500);
-  expect(calendarMonthCharge("2028-02-01", "2028-02-29", 1500)).toEqual(1500);
-  expect(() => calendarMonthCharge("2026-10-15", "2026-11-14", 1500)).toThrow(
-    "calendar month"
-  );
-  expect(() => calendarMonthCharge("2026-10-15", "2026-10-14", 1500)).toThrow(
-    "before"
-  );
+  expect(
+    calendarMonthCharge("2026-10-01", "2026-10-31", 1500, DECIMALS)
+  ).toEqual(1500);
+  expect(
+    calendarMonthCharge("2028-02-01", "2028-02-29", 1500, DECIMALS)
+  ).toEqual(1500);
   expect(() =>
-    calendarMonthCharge("2026-10-15", "2026-10-31", Number.NaN)
+    calendarMonthCharge("2026-10-15", "2026-11-14", 1500, DECIMALS)
+  ).toThrow("calendar month");
+  expect(() =>
+    calendarMonthCharge("2026-10-15", "2026-10-14", 1500, DECIMALS)
+  ).toThrow("before");
+  expect(() =>
+    calendarMonthCharge("2026-10-15", "2026-10-31", Number.NaN, DECIMALS)
   ).toThrow("finite");
 });
 
@@ -409,17 +420,16 @@ it("Calendar Month: a mid-month start is a partial first period, and an open-end
     through: "2026-10-20"
   });
   expect(plan.create).toEqual([
-    period("2026-10-15", "2026-10-31", 17, 822.58065, "Month", "2026-10-15"),
+    period("2026-10-15", "2026-10-31", 17, 822.58, "Month", "2026-10-15"),
     period("2026-11-01", "2026-11-30", 30, 1500, "Month", "2026-11-01")
   ]);
-  expect(round(plan.create[0]!.amount, 2)).toEqual(822.58);
   // As `through` advances, one more period appears each month.
   const later = generate({
     cycle: "Calendar Month",
     startDate: "2026-10-15",
     through: "2026-11-01",
     existing: [
-      pending("2026-10-15", "2026-10-31", 822.58065),
+      pending("2026-10-15", "2026-10-31", 822.58),
       pending("2026-11-01", "2026-11-30", 1500)
     ]
   });
@@ -443,12 +453,11 @@ it("Calendar Month: a return cuts the final period to the days used", () => {
       row.amount
     ])
   ).toEqual([
-    ["2026-10-15", "2026-10-31", 17, 822.58065],
+    ["2026-10-15", "2026-10-31", 17, 822.58],
     ["2026-11-01", "2026-11-30", 30, 1500],
     ["2026-12-01", "2026-12-31", 31, 1500],
-    ["2027-01-01", "2027-01-10", 10, 483.87097]
+    ["2027-01-01", "2027-01-10", 10, 483.87]
   ]);
-  expect(round(plan.create[3]!.amount, 2)).toEqual(483.87);
 });
 
 it("Calendar Month: a unit still out past the end date keeps billing (holdover)", () => {
@@ -500,12 +509,25 @@ it("Calendar Month: an advance-billed month is credited for the unused days", ()
       periodStart: "2026-10-01",
       periodEnd: "2026-10-31",
       days: 10,
-      amount: -1016.12903,
+      amount: -1016.13,
       rateUnitApplied: "Month",
       dueOn: "2026-10-10",
       isAdjustment: true
     }
   ]);
+});
+
+it("an early-return credit is billed at settlement precision, even against a legacy sub-cent period", () => {
+  // A period invoiced before billing rounded to the currency kept 5 digits.
+  const plan = generate({
+    cycle: "Calendar Month",
+    startDate: "2026-10-15",
+    returnedAt: "2026-10-20",
+    through: "2026-10-20",
+    existing: [invoiced("2026-10-15", "2026-10-31", 822.58065)]
+  });
+  // 822.58065 billed − 290.32 for 6 of October's 31 days.
+  expect(plan.adjustments.map((row) => row.amount)).toEqual([-532.26]);
 });
 
 it("Calendar Month: a Daily unit bills the days, a Weekly unit the whole weeks", () => {
@@ -536,9 +558,9 @@ it("a fixed term is generated in full up front, whatever `through` is", () => {
   expect(
     plan.create.map((row) => [row.periodStart, row.periodEnd, row.amount])
   ).toEqual([
-    ["2026-10-15", "2026-10-31", 822.58065],
+    ["2026-10-15", "2026-10-31", 822.58],
     ["2026-11-01", "2026-11-30", 1500],
-    ["2026-12-01", "2026-12-20", 967.74194]
+    ["2026-12-01", "2026-12-20", 967.74]
   ]);
   // Open-ended and not yet started: just the first period.
   const notStarted = generate({ through: "2026-09-22" });

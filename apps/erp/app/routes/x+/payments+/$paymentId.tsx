@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { FundingSource } from "@carbon/utils";
-import { redirect } from "@carbon/utils";
+import { fundingScopeOf, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -114,7 +114,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         totalAmount: reimbursement.totalAmount,
         balance: reimbursement.balance,
         remainingDocument: reimbursement.remainingDocument,
-        status: "Posted"
+        status: "Posted",
+        rentalAgreementIds: [],
+        salesOrderIds: []
       }));
     } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
@@ -147,7 +149,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           totalAmount: memo.amount,
           balance: memo.remaining,
           remainingDocument: memo.remainingDocument,
-          status: "Posted"
+          status: "Posted",
+          rentalAgreementIds: [],
+          salesOrderIds: []
         }));
       } else {
         const [invoices, credit, credits, staged] = await Promise.all([
@@ -331,6 +335,16 @@ export default function PaymentDetailRoute() {
   const isRefund =
     !isReimbursement &&
     (side === "sales") !== (payment.paymentType === "Receipt");
+  // A deposit receipt applies only to its own document's invoices; a deposit
+  // REFUND (a disbursement) targets memos and is not scoped.
+  const depositScope =
+    side === "sales" && !isRefund ? fundingScopeOf(payment) : null;
+  const paymentScope = depositScope && {
+    ...depositScope,
+    readableId:
+      depositDocuments.find((document) => document.id === depositScope.id)
+        ?.readableId ?? null
+  };
 
   const initialValues = {
     id: payment.id,
@@ -390,6 +404,7 @@ export default function PaymentDetailRoute() {
           baseCurrency={baseCurrencyCode}
           currencyDecimals={currencyDecimals}
           priorSources={funding.sources}
+          paymentScope={paymentScope}
           paymentTotal={Number(payment.totalAmount)}
           paymentExchangeRate={Number(payment.exchangeRate)}
           availableCredit={funding.availableDocumentAmount}
@@ -402,7 +417,9 @@ export default function PaymentDetailRoute() {
             totalAmount: Number(inv.totalAmount ?? 0),
             balance: Number(inv.balance ?? 0),
             remainingDocument: inv.remainingDocument,
-            status: inv.status
+            status: inv.status,
+            rentalAgreementIds: inv.rentalAgreementIds,
+            salesOrderIds: inv.salesOrderIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,

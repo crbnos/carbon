@@ -3635,6 +3635,9 @@ msgstr "Facturez des mois entiers, des trimestres ou des années, avec une péri
 msgid "Billed Externally"
 msgstr "Facturé en externe"
 
+msgid "Billed On"
+msgstr "Facturé le"
+
 msgid "Billed through"
 msgstr "Facturé jusqu'au"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "Type de contrat"
 
 msgid "Contract value"
-msgstr ""
+msgstr "Valeur du contrat"
 
 msgid "Contract Value"
 msgstr "Valeur du contrat"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "Type d'échéance"
 
 msgid "Deals"
-msgstr ""
+msgstr "Contrats"
 
 msgid "Debit"
 msgstr "Débit"
@@ -7018,8 +7021,14 @@ msgstr "dépend d'une ligne exclue"
 msgid "Deposit"
 msgstr "Dépôt"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "Acompte (factures du document uniquement)"
+
 msgid "Deposit for"
 msgstr "Dépôt pour"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "Acompte pour {document} (ses factures uniquement)"
 
 msgid "Deposit:"
 msgstr "Dépôt :"
@@ -7198,6 +7207,9 @@ msgstr "Pourcentage de remise"
 
 msgid "Discount Rate (%)"
 msgstr "Taux de remise (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "Au taux de l'accord, les paiements et la valeur résiduelle valent <0/>, plus que la juste valeur de l'unité qui est de <1/>. Un contrat de location est évalué au taux qui lui est implicite, donc cela enregistrerait les revenus de location au-dessus de ce que l'unité vaut. Augmentez le taux d'actualisation ou vérifiez la juste valeur."
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "Remises obtenues pour paiement anticipé aux fournisseurs"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "Intérêts suivants"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "Facture suivante"
 
 msgid "Next Invoice"
 msgstr "Prochaine facture"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "Factures récurrentes"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "Récurrent par mois"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "Récurrent par trimestre"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "Récurrent par semaine"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "Récurrent par an"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Le rouge indique un manque de personnel, le vert indique une couverture suffisante, l'ambre indique plus de personnel que le travail ne l'exige."
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "L'actif passe dans sa classe en service et commence à se déprécier à partir de la date de mise en service."
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "L'immobilisation n'aurait aucune valeur. Définissez un coût unitaire sur l'article, puis capitalisez-la."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "L'autorisation a été refusée dans Onshape. Enregistrez les paramètres d'intégration pour réessayer."
@@ -20777,6 +20789,9 @@ msgstr "Le travail planifié le plus récent sur ce site était {0}."
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Le prix négocié par unité sur cette ligne; l'icône de traçabilité indique quelle règle de tarification ou substitution l'a produit."
 
+msgid "The net investment is more than the fair value"
+msgstr "L'investissement net est supérieur à la juste valeur"
+
 msgid "The new version number of the document"
 msgstr "Le nouveau numéro de version du document"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "L'unité est retirée de la disponibilité jusqu'à ce qu'elle soit retournée en service. L'amortissement continue et sa comptabilité reste inchangée."
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "L'unité quitte le stock et devient une immobilisation au coût auquel le stock la porte."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Le prix unitaire de l'article au moment de l'achat"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "Cet outil est activé lorsque l'avis de modification {activationLockId} est libéré."
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "Cette unité n'a pas de coût en stock"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Ceci met à jour le thème pour tous les utilisateurs de l'application."

@@ -17,7 +17,7 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
-import type { Kysely, Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
 import {
@@ -26,6 +26,8 @@ import {
   signedCreditAmount
 } from "../lib/contract-ledger";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import type { RentalScheduleFact } from "../post-sales-invoice/rental-posting";
+import { planRentalCredit, type RentalCreditPlan } from "./rental-credit";
 
 export type PostMemoArgs = {
   type: "post" | "void";
@@ -224,6 +226,30 @@ export function postMemoTransaction(
             .execute();
         }
       }
+      // A rental early-return credit gives its periods back: its Planned
+      // Deferral rows go (index.ts refused the void if any had posted or a
+      // Draft run held one) and the adjustments return to Pending, so the
+      // next invoice run credits them on a new memo.
+      if (memo.rentalAgreementId) {
+        await trx
+          .deleteFrom("revenueRecognitionSchedule")
+          .where("companyId", "=", companyId)
+          .where("memoId", "=", memoId)
+          .where("status", "=", "Planned")
+          .where("runLineId", "is", null)
+          .execute();
+        await trx
+          .updateTable("rentalBillingPeriod")
+          .set({
+            status: "Pending",
+            memoId: null,
+            updatedBy: userId,
+            updatedAt: timestamp
+          })
+          .where("companyId", "=", companyId)
+          .where("memoId", "=", memoId)
+          .execute();
+      }
       await trx
         .updateTable("memo")
         .set({
@@ -324,6 +350,23 @@ export function postMemoTransaction(
               exchangeRate
             })
           : null;
+      // A rental early-return credit books what the negative Rent invoice line
+      // did: the unearned part off Deferred Revenue (shrinking the period's
+      // Planned rows), anything already recognized off Rental Income.
+      const rentalCredit =
+        memo.rentalAgreementId && isAR && memo.direction === "Credit"
+          ? await loadRentalCredit(trx, {
+              memoId,
+              companyId,
+              rentalAgreementId: memo.rentalAgreementId,
+              amount,
+              decimals: currency.decimalPlaces
+            })
+          : null;
+      const rentalAccountIds = {
+        deferredRevenue: defaults.deferredRevenueAccount,
+        rentalIncome: defaults.rentalIncomeAccount
+      };
       const contractAccountIds = contractCredit
         ? {
             deferredRevenue: defaults.deferredRevenueAccount,
@@ -333,28 +376,35 @@ export function postMemoTransaction(
             fxLoss: defaults.realizedExchangeLossAccount
           }
         : null;
-      reasonAccountId = contractCredit
-        ? defaults.deferredRevenueAccount
-        : memo.salesReturnOrderId
-          ? (defaults.salesReturnsAccount ?? defaults.salesAccount)
-          : memo.purchaseReturnOrderId
-            ? defaults.goodsReceivedNotInvoicedAccount
-            : isAR
-              ? defaults.salesDiscountAccount
-              : defaults.supplierPaymentDiscountAccount;
+      reasonAccountId =
+        contractCredit || rentalCredit
+          ? defaults.deferredRevenueAccount
+          : memo.salesReturnOrderId
+            ? (defaults.salesReturnsAccount ?? defaults.salesAccount)
+            : memo.purchaseReturnOrderId
+              ? defaults.goodsReceivedNotInvoicedAccount
+              : isAR
+                ? defaults.salesDiscountAccount
+                : defaults.supplierPaymentDiscountAccount;
       if (!controlAccountId || !reasonAccountId) {
         throw new Error(
           "Memo control and reason account defaults are required"
         );
       }
-      // Each contract leg's account, required only when the leg posts.
+      // The legs replacing the reason leg of a contract or rental credit,
+      // each account required only when its leg posts.
       const contractLegs = contractCredit
         ? contractCreditLegs(contractCredit, contractAccountIds!)
-        : [];
+        : rentalCredit
+          ? rentalCredit.legs.map((leg) => ({
+              ...leg,
+              accountId: rentalAccountIds[leg.account]
+            }))
+          : [];
       for (const leg of contractLegs) {
         if (!leg.accountId) {
           throw new Error(
-            `Contract credit memos need the ${leg.description} account mapped in the accounting defaults`
+            `${rentalCredit ? "Rental" : "Contract"} credit memos need the ${leg.description} account mapped in the accounting defaults`
           );
         }
       }
@@ -486,11 +536,11 @@ export function postMemoTransaction(
         varianceAccountId: defaults.purchaseVarianceAccount,
         reasonDescription: memo.purchaseReturnOrderId
           ? "Goods Received Not Invoiced"
-          : contractCredit
+          : contractCredit || rentalCredit
             ? "Deferred Revenue"
             : undefined
       });
-      if (contractCredit) {
+      if (contractCredit || rentalCredit) {
         // The builder books one reason leg (index 1, after the control leg).
         // Replace it with the contract legs; they add up to it exactly (the
         // FX leg is the remainder), so the entry still balances.
@@ -529,6 +579,27 @@ export function postMemoTransaction(
         .values(lines.map((line) => ({ ...line, journalId: journal.id })))
         .returning("id")
         .execute();
+      if (rentalCredit && rentalCredit.scheduleRows.length > 0) {
+        await trx
+          .insertInto("revenueRecognitionSchedule")
+          .values(
+            rentalCredit.scheduleRows.map((row) => ({
+              type: "Deferral" as const,
+              status: "Planned" as const,
+              memoId,
+              rentalAgreementLineId: row.rentalAgreementLineId,
+              periodStart: row.periodStart,
+              periodEnd: row.periodEnd,
+              scheduledDate: row.scheduledDate,
+              amount: row.amount,
+              debitAccountId: rentalAccountIds.deferredRevenue!,
+              creditAccountId: rentalAccountIds.rentalIncome!,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
       if (contractCredit && contractCredit.lines.length > 0) {
         await trx
           .insertInto("customerContractLedgerEntry")
@@ -739,4 +810,99 @@ function contractCreditLegs(
           credit: fx
         }
   ].filter((leg) => leg.credit !== 0);
+}
+
+/**
+ * Loads what a rental early-return credit memo credits — its adjustment
+ * periods (`rentalBillingPeriod.memoId`) and the Planned Deferral rows of
+ * their agreement lines — and plans the posting (`planRentalCredit`). The
+ * periods are locked: a concurrent void or delete of the same memo waits.
+ */
+async function loadRentalCredit(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    memoId: string;
+    companyId: string;
+    rentalAgreementId: string;
+    amount: number;
+    decimals: number;
+  }
+): Promise<RentalCreditPlan> {
+  const { memoId, companyId, rentalAgreementId } = args;
+  const periods = await trx
+    .selectFrom("rentalBillingPeriod as p")
+    .innerJoin("rentalAgreementLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "p.rentalAgreementLineId")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .select([
+      "p.id",
+      "p.rentalAgreementLineId",
+      sql<string>`p."periodStart"::text`.as("periodStart"),
+      sql<string>`p."periodEnd"::text`.as("periodEnd"),
+      "p.amount",
+      "l.lessorClassification",
+      "l.rentalAgreementId"
+    ])
+    .where("p.companyId", "=", companyId)
+    .where("p.memoId", "=", memoId)
+    .orderBy("p.periodStart")
+    .orderBy("p.id")
+    .forUpdate("p")
+    .execute();
+  if (
+    periods.some((period) => period.rentalAgreementId !== rentalAgreementId)
+  ) {
+    throw new Error(
+      "This credit memo credits periods of another rental agreement"
+    );
+  }
+  const lineIds = [...new Set(periods.map((p) => p.rentalAgreementLineId))];
+  const deferralRows =
+    lineIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("revenueRecognitionSchedule")
+          .select([
+            "id",
+            "rentalAgreementLineId",
+            sql<string>`"periodStart"::text`.as("periodStart"),
+            sql<string>`"periodEnd"::text`.as("periodEnd"),
+            sql<string>`"scheduledDate"::text`.as("scheduledDate"),
+            "amount"
+          ])
+          .where("companyId", "=", companyId)
+          .where("rentalAgreementLineId", "in", lineIds)
+          .where("type", "=", "Deferral")
+          .where("status", "=", "Planned")
+          .orderBy("id")
+          .execute();
+  const plannedDeferrals = new Map<string, RentalScheduleFact[]>();
+  for (const row of deferralRows) {
+    if (!row.rentalAgreementLineId) continue;
+    const facts = plannedDeferrals.get(row.rentalAgreementLineId) ?? [];
+    facts.push({
+      id: row.id,
+      periodStart: row.periodStart,
+      periodEnd: row.periodEnd,
+      scheduledDate: row.scheduledDate,
+      amount: Number(row.amount)
+    });
+    plannedDeferrals.set(row.rentalAgreementLineId, facts);
+  }
+  return planRentalCredit({
+    memoAmount: args.amount,
+    decimals: args.decimals,
+    periods: periods.map((period) => ({
+      id: period.id,
+      rentalAgreementLineId: period.rentalAgreementLineId,
+      periodStart: period.periodStart,
+      periodEnd: period.periodEnd,
+      amount: Number(period.amount),
+      classification: period.lessorClassification
+    })),
+    plannedDeferrals,
+    rentalAgreementId
+  });
 }

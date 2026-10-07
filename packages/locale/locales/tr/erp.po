@@ -3635,6 +3635,9 @@ msgstr "Bir kısmi dönem ilk olarak olmak üzere, tam ayları, çeyrekleri veya
 msgid "Billed Externally"
 msgstr "Harici Olarak Faturalandırıldı"
 
+msgid "Billed On"
+msgstr "Faturalandığı Tarih"
+
 msgid "Billed through"
 msgstr "Faturalandığı tarih"
 
@@ -5089,7 +5092,7 @@ msgid "Contract Type"
 msgstr "Sözleşme Türü"
 
 msgid "Contract value"
-msgstr ""
+msgstr "Sözleşme Değeri"
 
 msgid "Contract Value"
 msgstr "Sözleşme Değeri"
@@ -6356,7 +6359,7 @@ msgid "Deadline Type"
 msgstr "Son Teslim Tarihi Türü"
 
 msgid "Deals"
-msgstr ""
+msgstr "Anlaşmalar"
 
 msgid "Debit"
 msgstr "Borç"
@@ -7018,8 +7021,14 @@ msgstr "hariç tutulan bir satıra bağımlı"
 msgid "Deposit"
 msgstr "Depozito"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "Depozito (sadece belgesinin faturaları)"
+
 msgid "Deposit for"
 msgstr "Şunun için depozito"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "{document} için Depozito (sadece faturaları)"
 
 msgid "Deposit:"
 msgstr "Depozito:"
@@ -7198,6 +7207,9 @@ msgstr "İskonto Yüzdesi"
 
 msgid "Discount Rate (%)"
 msgstr "İskonto Oranı (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "Sözleşme oranında iskontolandığında, ödemeler ve kalıntı değer <0/>, birimin <1/> adil değerinden daha yüksektir. Kiralama, içinde gömülü olan oranda değerlendirilir; dolayısıyla bu, birimin değerinden daha yüksek kiralama hasılatı kaydedecektir. İskonto oranını artırın veya adil değeri kontrol edin."
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "Tedarikçilere erken ödeme için kazanılan iskontolar"
@@ -13040,7 +13052,7 @@ msgid "Next Interest"
 msgstr "Sonraki Faiz"
 
 msgid "Next invoice"
-msgstr ""
+msgstr "Sonraki Fatura"
 
 msgid "Next Invoice"
 msgstr "Sonraki Fatura"
@@ -16545,16 +16557,16 @@ msgid "Recurring Invoices"
 msgstr "Tekrarlanan Faturalar"
 
 msgid "Recurring per month"
-msgstr ""
+msgstr "Aylık Tekrarlayan"
 
 msgid "Recurring per quarter"
-msgstr ""
+msgstr "Üç Aylık Tekrarlayan"
 
 msgid "Recurring per week"
-msgstr ""
+msgstr "Haftalık Tekrarlayan"
 
 msgid "Recurring per year"
-msgstr ""
+msgstr "Yıllık Tekrarlayan"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Kırmızı yetersiz personeli gösterir, yeşil yeterli personeli gösterir, sarı işin ihtiyaç duyduğundan daha fazla personeli gösterir."
@@ -20311,7 +20323,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "Varlık, hizmet sınıfına geçer ve hizmet tarihinden itibaren amortismana tabi olmaya başlar."
 
 msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr ""
+msgstr "Varlık hiçbir değer taşımayacaktır. Stok kartında adet maliyeti belirleyin, ardından aktifleştirin."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Tekrar denemek için entegrasyon ayarlarını kaydedin."
@@ -20777,6 +20789,9 @@ msgstr "Bu lokasyon'daki en son zamanlanmış iş {0} idi."
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Bu satırda müzakere edilen birim fiyat; satır içi izleme simgesi, hangi fiyatlandırma kuralı veya geçersiz kılmanın onu ürettiğini gösterir."
 
+msgid "The net investment is more than the fair value"
+msgstr "Net yatırım, adil değerden daha fazladır"
+
 msgid "The new version number of the document"
 msgstr "Belgenin yeni sürüm numarası"
 
@@ -21165,7 +21180,7 @@ msgid "The unit is removed from availability until it is returned to service. De
 msgstr "Birim, hizmete döndürülünceye kadar kullanılabilirlikten kaldırılır. Amortisman devam eder ve muhasebesi değişmez."
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
-msgstr ""
+msgstr "Adet stoktan çıkar ve envanter tarafından taşınan maliyette bir varlık haline gelir."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Satın alma zamanındaki birim fiyat"
@@ -21550,7 +21565,7 @@ msgid "This tool is activated when change notice {activationLockId} is released.
 msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında etkinleştirilir."
 
 msgid "This unit has no cost in inventory"
-msgstr ""
+msgstr "Bu adet envanterde maliyet yok"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"

@@ -3635,6 +3635,9 @@ msgstr "Bill whole months, quarters or years, with a part period first."
 msgid "Billed Externally"
 msgstr "Billed Externally"
 
+msgid "Billed On"
+msgstr "Billed On"
+
 msgid "Billed through"
 msgstr "Billed through"
 
@@ -7018,8 +7021,14 @@ msgstr "depends on an excluded row"
 msgid "Deposit"
 msgstr "Deposit"
 
+msgid "Deposit (its document's invoices only)"
+msgstr "Deposit (its document's invoices only)"
+
 msgid "Deposit for"
 msgstr "Deposit for"
+
+msgid "Deposit for {document} (its invoices only)"
+msgstr "Deposit for {document} (its invoices only)"
 
 msgid "Deposit:"
 msgstr "Deposit:"
@@ -7198,6 +7207,9 @@ msgstr "Discount Percentage"
 
 msgid "Discount Rate (%)"
 msgstr "Discount Rate (%)"
+
+msgid "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
+msgstr "Discounted at the agreement's rate, the payments and residual are worth <0/>, more than the unit's fair value of <1/>. A lease is valued at the rate implicit in it, so this would book lease revenue above what the unit is worth. Raise the discount rate, or check the fair value."
 
 msgid "Discounts earned for early payment to suppliers"
 msgstr "Discounts earned for early payment to suppliers"
@@ -20776,6 +20788,9 @@ msgstr "The most recent scheduled work at this location was {0}."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
+
+msgid "The net investment is more than the fair value"
+msgstr "The net investment is more than the fair value"
 
 msgid "The new version number of the document"
 msgstr "The new version number of the document"

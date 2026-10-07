@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261006221901",
+  "schemaVersion": "20261007171726",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-07T01:57:00.455Z",
+  "exportedAt": "2026-10-07T18:06:45.508Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4321,29 +4321,6 @@
       ]
     },
     {
-      "name": "rentalBillingPeriod",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "rentalAgreementLineId",
-        "periodStart",
-        "periodEnd",
-        "days",
-        "rateUnitApplied",
-        "amount",
-        "isAdjustment",
-        "dueOn",
-        "status",
-        "salesInvoiceLineId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "voidedSalesInvoiceId"
-      ]
-    },
-    {
       "name": "rentalLeaseScheduleLine",
       "rows": 0,
       "columns": [
@@ -4627,76 +4604,6 @@
       ]
     },
     {
-      "name": "revenueRecognitionSchedule",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "type",
-        "status",
-        "salesInvoiceLineId",
-        "rentalAgreementLineId",
-        "rentalLeaseScheduleLineId",
-        "periodStart",
-        "periodEnd",
-        "scheduledDate",
-        "accountingPeriodId",
-        "amount",
-        "debitAccountId",
-        "creditAccountId",
-        "runLineId",
-        "journalId",
-        "billedBySalesInvoiceLineId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customerContractLineId",
-        "customerContractRevenueId",
-        "contractAmount"
-      ]
-    },
-    {
-      "name": "customerContractLedgerEntry",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "customerContractId",
-        "customerContractLineId",
-        "entryType",
-        "postingDate",
-        "salesInvoiceLineId",
-        "memoId",
-        "revenueRecognitionScheduleId",
-        "customerContractRevenueId",
-        "journalId",
-        "deferredAmount",
-        "deferredBase",
-        "assetAmount",
-        "assetBase",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
-      "name": "revenueRecognitionRunLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "runId",
-        "scheduleId",
-        "amount",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
       "name": "salesOrderPayment",
       "rows": 0,
       "columns": [
@@ -4855,6 +4762,31 @@
         "customerPartId",
         "customerPartRevision",
         "tags"
+      ]
+    },
+    {
+      "name": "customerContractLedgerEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "entryType",
+        "postingDate",
+        "salesInvoiceLineId",
+        "memoId",
+        "revenueRecognitionScheduleId",
+        "customerContractRevenueId",
+        "journalId",
+        "deferredAmount",
+        "deferredBase",
+        "assetAmount",
+        "assetBase",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6478,6 +6410,76 @@
       ]
     },
     {
+      "name": "rentalBillingPeriod",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementLineId",
+        "periodStart",
+        "periodEnd",
+        "days",
+        "rateUnitApplied",
+        "amount",
+        "isAdjustment",
+        "dueOn",
+        "status",
+        "salesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "voidedSalesInvoiceId",
+        "memoId"
+      ]
+    },
+    {
+      "name": "revenueRecognitionRunLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "runId",
+        "scheduleId",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "revenueRecognitionSchedule",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "status",
+        "salesInvoiceLineId",
+        "rentalAgreementLineId",
+        "rentalLeaseScheduleLineId",
+        "periodStart",
+        "periodEnd",
+        "scheduledDate",
+        "accountingPeriodId",
+        "amount",
+        "debitAccountId",
+        "creditAccountId",
+        "runLineId",
+        "journalId",
+        "billedBySalesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customerContractLineId",
+        "customerContractRevenueId",
+        "contractAmount",
+        "memoId"
+      ]
+    },
+    {
       "name": "salesInvoice",
       "rows": 0,
       "columns": [
@@ -7083,7 +7085,8 @@
         "customFields",
         "salesReturnOrderId",
         "purchaseReturnOrderId",
-        "customerContractId"
+        "customerContractId",
+        "rentalAgreementId"
       ]
     },
     {

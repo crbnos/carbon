@@ -9293,7 +9293,7 @@ export async function getRentalBillingPeriods(
   return client
     .from("rentalBillingPeriod")
     .select(
-      "*, rentalAgreementLine!inner(id, rentalAgreementId, fixedAsset(fixedAssetId, name))"
+      "*, rentalAgreementLine!inner(id, rentalAgreementId, fixedAsset(fixedAssetId, name)), memo(id, memoId, status)"
     )
     .eq("rentalAgreementLine.rentalAgreementId", rentalAgreementId)
     .eq("companyId", companyId)

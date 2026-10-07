@@ -77,7 +77,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           target.type === "reimbursement" ? target.id : null
       })),
       salesReturnOrderId: memo.data.salesReturnOrderId,
-      purchaseReturnOrderId: memo.data.purchaseReturnOrderId
+      purchaseReturnOrderId: memo.data.purchaseReturnOrderId,
+      rentalAgreementId: memo.data.rentalAgreementId
     })
   };
 }

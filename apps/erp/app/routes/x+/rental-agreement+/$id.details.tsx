@@ -90,6 +90,7 @@ export default function RentalAgreementDetailsRoute() {
           </CardHeader>
           <CardContent>
             <LeaseClassificationPreview
+              currencyCode={rentalAgreement.currencyCode}
               terms={{
                 startDate: rentalAgreement.startDate ?? "",
                 endDate: rentalAgreement.endDate ?? null,
