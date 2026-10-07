@@ -205,7 +205,7 @@ const DemandProjectionsTable = memo(
           count={count}
           defaultColumnPinning={defaultColumnPinning}
           title={t`Demand Forecasts`}
-          table="production-planning"
+          table="demand-projection"
           withSavedView
           withSelectableRows
           withSimpleSorting
