@@ -6,6 +6,7 @@ import { importCsvInput } from "@carbon/server-functions/import-csv";
 import { describe, expect, it } from "vitest";
 import {
   columnMappingsFromHeaders,
+  enumDefault,
   fieldMappings,
   importSchemas,
   parseCsvHeader
@@ -98,5 +99,39 @@ describe("CSV text import", () => {
       },
       unknownHeaders: ["Colour"]
     });
+  });
+});
+
+// The wizard sends an enum field's default for every blank or missing cell, so
+// a default the importer rejects fails every such row. The Default Method
+// defaults read "Make" after the method types were renamed to "Make to Order"
+// and its siblings, and every part imported without that column failed.
+describe("enum defaults", () => {
+  const tables = Object.keys(fieldMappings) as (keyof typeof fieldMappings)[];
+
+  it.each(tables)("%s offers only defaults among its options", (table) => {
+    const invalid = Object.entries(
+      fieldMappings[table] as Record<
+        string,
+        {
+          type: string;
+          enumData?: { options?: readonly string[]; default?: string };
+        }
+      >
+    ).filter(
+      ([, field]) =>
+        field.type === "enum" &&
+        // An empty default means "leave the cell blank".
+        Boolean(field.enumData?.default) &&
+        enumDefault(field.enumData) === undefined
+    );
+
+    expect(invalid.map(([key]) => key)).toEqual([]);
+  });
+
+  it("drops a default that is not one of the options", () => {
+    expect(enumDefault({ options: ["A", "B"], default: "C" })).toBeUndefined();
+    expect(enumDefault({ options: ["A", "B"], default: "B" })).toBe("B");
+    expect(enumDefault({ default: "EA" })).toBe("EA");
   });
 });

@@ -602,7 +602,7 @@ const partImportFields = {
       description:
         "How a part should be produced when it is required in production",
       options: methodType,
-      default: "Make"
+      default: "Pull from Inventory"
     }
   },
   itemTrackingType: {
@@ -1142,7 +1142,7 @@ export const fieldMappings = {
         description:
           "How a part should be produced when it is required in production",
         options: methodType,
-        default: "Make"
+        default: "Purchase to Order"
       }
     },
     itemTrackingType: {
@@ -1239,7 +1239,7 @@ export const fieldMappings = {
         description:
           "How a part should be produced when it is required in production",
         options: methodType,
-        default: "Make"
+        default: "Purchase to Order"
       }
     },
     itemTrackingType: {
@@ -1336,7 +1336,7 @@ export const fieldMappings = {
         description:
           "How a part should be produced when it is required in production",
         options: methodType,
-        default: "Make"
+        default: "Purchase to Order"
       }
     },
     itemTrackingType: {

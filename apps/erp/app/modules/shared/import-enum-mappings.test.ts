@@ -20,14 +20,16 @@ describe("enumMappingsForCsv", () => {
     expect(unmatched).toEqual({});
   });
 
-  it("leaves out a default that is not one of the field's options", () => {
+  it("gives a part the part form's default method", () => {
     const { enumMappings } = enumMappingsForCsv(
       "part",
       [{ id: "P-1", readableId: "P-1", name: "Washer" }],
       { id: "id", readableId: "readableId", name: "name" },
       {}
     );
-    expect(enumMappings.defaultMethodType).toEqual({});
+    expect(enumMappings.defaultMethodType).toEqual({
+      Default: "Pull from Inventory"
+    });
   });
 
   it("matches values by label in any case and reports the rest", () => {
