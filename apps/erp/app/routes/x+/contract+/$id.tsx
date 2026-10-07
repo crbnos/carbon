@@ -83,10 +83,10 @@ export async function loader({
 
   const [contract, lines, schedule, amendments, storedRevenue, timeZone] =
     await Promise.all([
-      getContract(client, id),
-      getContractLines(client, id),
-      getContractInvoiceSchedule(client, id),
-      getContractAmendments(client, id),
+      getContract(client, id, companyId),
+      getContractLines(client, id, companyId),
+      getContractInvoiceSchedule(client, id, companyId),
+      getContractAmendments(client, id, companyId),
       client
         .from("customerContractRevenue")
         .select(

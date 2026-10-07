@@ -9637,12 +9637,14 @@ export async function getContracts(
  */
 export async function getContract(
   client: SupabaseClient<Database>,
-  customerContractId: string
+  customerContractId: string,
+  companyId: string
 ) {
   return client
     .from("customerContracts")
     .select("*")
     .eq("id", customerContractId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -9652,12 +9654,14 @@ export async function getContract(
  */
 export async function getContractLines(
   client: SupabaseClient<Database>,
-  customerContractId: string
+  customerContractId: string,
+  companyId: string
 ) {
   return client
     .from("customerContractLine")
     .select("*, item(name, readableIdWithRevision, type)")
     .eq("customerContractId", customerContractId)
+    .eq("companyId", companyId)
     .order("sortOrder", { ascending: true, nullsFirst: false })
     .order("startDate", { ascending: true });
 }
@@ -9668,12 +9672,14 @@ export async function getContractLines(
  */
 export async function getContractLine(
   client: SupabaseClient<Database>,
-  customerContractLineId: string
+  customerContractLineId: string,
+  companyId: string
 ) {
   return client
     .from("customerContractLine")
     .select("*, item(name, readableIdWithRevision, type)")
     .eq("id", customerContractLineId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -9684,13 +9690,15 @@ export async function getContractLine(
  */
 export async function getContractInvoiceSchedule(
   client: SupabaseClient<Database>,
-  customerContractId: string
+  customerContractId: string,
+  companyId: string
 ) {
   const [invoices, credits] = await Promise.all([
     client
       .from("customerContractInvoice")
       .select("*, customerContractInvoiceLine(*)")
       .eq("customerContractId", customerContractId)
+      .eq("companyId", companyId)
       .order("invoiceDate", { ascending: true })
       .order("periodStart", {
         ascending: true,
@@ -9700,6 +9708,7 @@ export async function getContractInvoiceSchedule(
       .from("customerContractInvoiceLine")
       .select("*")
       .eq("customerContractId", customerContractId)
+      .eq("companyId", companyId)
       .is("customerContractInvoiceId", null)
       .order("periodStart", { ascending: true })
   ]);
@@ -9718,7 +9727,8 @@ export async function getContractInvoiceSchedule(
  */
 export async function getContractAmendments(
   client: SupabaseClient<Database>,
-  customerContractId: string
+  customerContractId: string,
+  companyId: string
 ) {
   return client
     .from("customerContractAmendment")
@@ -9726,6 +9736,7 @@ export async function getContractAmendments(
       "*, customerContractLine(id, revenueType, itemId, description, quantity, rate, rateUnit, startDate, endDate, amendsLineId)"
     )
     .eq("customerContractId", customerContractId)
+    .eq("companyId", companyId)
     .order("amendmentDate", { ascending: true })
     .order("createdAt", { ascending: true });
 }

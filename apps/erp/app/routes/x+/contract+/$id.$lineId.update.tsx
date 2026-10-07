@@ -68,7 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ error: "Invalid form data" }, { status: 400 });
   }
 
-  const current = await getContractLine(client, lineId);
+  const current = await getContractLine(client, lineId, companyId);
   if (
     current.error ||
     current.data.companyId !== companyId ||
@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (value === "One-time") {
       merged.rateUnit = null;
     } else if (!merged.rateUnit) {
-      const contract = await getContract(client, id);
+      const contract = await getContract(client, id, companyId);
       if (contract.error || contract.data?.companyId !== companyId) {
         return data({ error: "Contract not found" }, { status: 404 });
       }

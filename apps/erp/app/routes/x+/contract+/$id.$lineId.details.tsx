@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getContractLine(client, lineId);
+  const line = await getContractLine(client, lineId, companyId);
   if (
     line.error ||
     line.data.companyId !== companyId ||
@@ -54,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const contract = await getContract(client, id);
+  const contract = await getContract(client, id, companyId);
   if (contract.error || contract.data?.companyId !== companyId) {
     throw redirect(
       path.to.contracts,

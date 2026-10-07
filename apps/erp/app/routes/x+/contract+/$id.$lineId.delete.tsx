@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getContractLine(client, lineId);
+  const line = await getContractLine(client, lineId, companyId);
   if (
     line.error ||
     line.data.companyId !== companyId ||

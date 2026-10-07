@@ -44,7 +44,8 @@ export const CUSTOMER_DEPOSIT_DESCRIPTION = "Customer Deposit";
  *  released as "(credit applied)" rather than "(on-account credit)": the
  *  lookup keys on the booked description and must never read a release line
  *  as a booked credit. */
-export const CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION = "Customer Deposit (applied)";
+export const CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION =
+  "Customer Deposit (applied)";
 
 /** The description the employee-payable control line of a posted reimbursement
  *  journal is written with, and the exact string a later payout reads back to

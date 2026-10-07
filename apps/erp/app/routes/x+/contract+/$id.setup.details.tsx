@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const current = await getContract(client, id);
+  const current = await getContract(client, id, companyId);
   if (current.error || current.data?.companyId !== companyId) {
     throw redirect(
       path.to.contracts,

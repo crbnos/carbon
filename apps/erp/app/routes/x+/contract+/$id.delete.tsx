@@ -22,7 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const contract = await getContract(client, id);
+  const contract = await getContract(client, id, companyId);
   if (contract.error || contract.data?.companyId !== companyId) {
     return data(
       {},

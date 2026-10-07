@@ -119,7 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Draft Only, so choosing one needs the invoicing permission, as
     // confirming does. A Draft is checked when it is confirmed.
     if (invoiceAutomation !== "Draft Only") {
-      const current = await getContract(client, id);
+      const current = await getContract(client, id, companyId);
       if (current.error || current.data?.companyId !== companyId) {
         return { error: { message: "Contract not found" }, data: null };
       }
@@ -191,7 +191,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
-  const current = await getContract(client, id);
+  const current = await getContract(client, id, companyId);
   if (current.error || current.data?.companyId !== companyId) {
     logger.error("contract not found for update", {
       companyId,
