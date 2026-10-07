@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob, storage } from "@carbon/files";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -33,7 +34,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Link, useFetchers, useSubmit } from "react-router";
 import {
   DateTime,
   DocumentPreview,
@@ -230,7 +231,7 @@ const ItemDocuments = ({
                           <DocumentPreview
                             bucket="private"
                             pathToFile={getPath(file)}
-                            // @ts-ignore
+                            // @ts-expect-error
                             type={type}
                           >
                             {file.name}
@@ -407,8 +408,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
     async (file: FileObject) => {
       const url = path.to.file.previewFile(`private/${getPath(file)}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });

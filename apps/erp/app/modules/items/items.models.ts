@@ -641,7 +641,15 @@ export const itemPlanningValidator = z
     maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-    orderMultiple: zfd.numeric(z.number().min(1)).optional()
+    orderMultiple: zfd.numeric(z.number().min(1)).optional(),
+    // The planning horizon (time fence) in days from today: the planning grids
+    // surface only the actions and suggested orders that fall inside it. Empty
+    // = inherit the company default, else no fence; 0 = no fence for this item
+    // even when the company has a default.
+    planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
+    // the ownership ladder's leaf override (spec §P1.3): this item at this
+    // location; empty = inherit item group → location → company default
+    responsibleEmployee: zfd.text(z.string().optional())
     // critical: zfd.checkbox(),
   })
   .refine(
@@ -1319,8 +1327,9 @@ export type ChangeNoticeItemDiff = {
   // read-only diff viewer can render the BOP as a tree.
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Record<string, unknown>>[];
-  // Supplier parts on a Revision/New Part draft item. Drafts start with none
-  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  // Supplier parts on a draft item. A Revision draft starts with a copy of its
+  // source revision's, so its entries are a real diff against the source; a
+  // Replacement Part / New Part draft starts with none, so its are all `added`.
   supplierParts: MethodDiffEntry<Record<string, unknown>>[];
 };
 

@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { useRouteData } from "~/hooks";
 import type {
   getUnitOfMeasuresList,
@@ -80,18 +80,15 @@ UnitOfMeasure.displayName = "UnitOfMeasure";
 export default UnitOfMeasure;
 
 export const useUnitOfMeasure = () => {
-  const uomFetcher =
-    useFetcher<Awaited<ReturnType<typeof getUnitOfMeasuresList>>>();
-
   const sharedPartData = useRouteData<{
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
 
   const hasSharedPartData = sharedPartData?.unitOfMeasures?.length;
 
-  useMount(() => {
-    if (!hasSharedPartData) uomFetcher.load(path.to.api.unitOfMeasures);
-  });
+  const uomFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getUnitOfMeasuresList>>
+  >(!hasSharedPartData ? path.to.api.unitOfMeasures : null);
 
   const options = useMemo(() => {
     const dataSource =

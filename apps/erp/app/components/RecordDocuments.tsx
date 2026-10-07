@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, storage } from "@carbon/files";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -32,7 +33,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuExternalLink, LuUpload } from "react-icons/lu";
-import { useFetchers, useRevalidator, useSubmit } from "react-router";
+import { useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
@@ -153,7 +154,7 @@ const RecordDocuments = ({
                         <DocumentPreview
                           bucket="private"
                           pathToFile={getPath(file)}
-                          // @ts-ignore
+                          // @ts-expect-error
                           type={getDocumentType(file.name)}
                         >
                           {file.name}
@@ -321,16 +322,7 @@ export const useRecordDocuments = ({
     async (file: FileObject) => {
       const url = path.to.file.previewFile(`private/${getPath(file)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error });

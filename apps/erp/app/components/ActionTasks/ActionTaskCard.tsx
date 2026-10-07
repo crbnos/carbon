@@ -13,7 +13,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
 import type { ReactElement, ReactNode } from "react";
 import {
   LuChevronRight,

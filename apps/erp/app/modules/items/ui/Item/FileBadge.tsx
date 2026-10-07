@@ -32,7 +32,7 @@ export function FileBadge({
         <DocumentPreview
           bucket="private"
           pathToFile={getPath(file)}
-          // @ts-ignore
+          // @ts-expect-error
           type={type}
         >
           <Badge variant="secondary" className={cn("max-w-[240px]", className)}>

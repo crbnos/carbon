@@ -5,14 +5,10 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
 import { deleteSupplierLocation } from "~/modules/purchasing";
 import { path } from "~/utils/path";
-import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -36,10 +32,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     supplierLocationId
   );
   if (deleteSupplierLocationError) {
-    const errorMessage =
-      deleteSupplierLocationError.code === "23503"
-        ? "Supplier location is used elsewhere, cannot delete"
-        : "Failed to delete supplier location";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteSupplierLocationError,
+      "Failed to delete supplier location",
+      { referenced: "Supplier location is used elsewhere, cannot delete" }
+    );
     throw redirect(
       path.to.supplierLocations(supplierId),
       await flash(request, error(deleteSupplierLocationError, errorMessage))
@@ -50,18 +47,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.supplierLocations(supplierId),
     await flash(request, success("Successfully deleted supplier location"))
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { supplierId } = params;
-  if (supplierId) {
-    window.clientCache?.setQueryData(
-      supplierLocationsQuery(supplierId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }

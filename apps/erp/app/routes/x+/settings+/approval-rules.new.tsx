@@ -13,8 +13,9 @@ import {
 import { upsertApprovalRule } from "@carbon/ee/approvals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { ApprovalRuleForm } from "~/modules/settings";
 import { path } from "~/utils/path";
 

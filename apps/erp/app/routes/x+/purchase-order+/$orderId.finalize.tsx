@@ -22,11 +22,10 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
-import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
+import { PO_EMAIL_ATTACHMENT_LIMIT_MB, redirect } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
@@ -129,13 +128,42 @@ export async function action(args: ActionFunctionArgs) {
     }
   }
 
+  // A PO raised by the planning pages, untouched by hand since, skips the
+  // approval rule when the company allows it (Settings → Planning). Fail
+  // closed: a failed read of either is an ordinary approval check.
+  const [planningOrigin, planningSettings] = await Promise.all([
+    serviceRole
+      .from("purchaseOrder")
+      .select("createdFromPlanning")
+      .eq("id", orderId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    serviceRole
+      .from("companySettings")
+      .select("skipApprovalForPlanningPurchaseOrders")
+      .eq("id", companyId)
+      .maybeSingle()
+  ]);
+  if (planningOrigin.error || planningSettings.error) {
+    logger.error("Failed to read the planning approval bypass", {
+      companyId,
+      purchaseOrderId: orderId,
+      error: planningOrigin.error ?? planningSettings.error
+    });
+  }
+  const skipsApproval =
+    planningOrigin.data?.createdFromPlanning === true &&
+    planningSettings.data?.skipApprovalForPlanningPurchaseOrders === true;
+
   const orderAmount = purchaseOrder.data.orderTotal ?? 0;
-  const approvalRequired = await isApprovalRequired(
-    serviceRole,
-    "purchaseOrder",
-    companyId,
-    orderAmount
-  );
+  const approvalRequired = skipsApproval
+    ? false
+    : await isApprovalRequired(
+        serviceRole,
+        "purchaseOrder",
+        companyId,
+        orderAmount
+      );
 
   const finalize = await finalizePurchaseOrder(client, orderId, userId);
   if (finalize.error) {

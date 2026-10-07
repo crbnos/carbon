@@ -11,7 +11,7 @@ import {
   useIsMobile
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import {
   createContext,
@@ -27,6 +27,7 @@ import { useLocation, useMatches, useNavigation } from "react-router";
 import { useOptimisticLocation } from "~/hooks";
 import { useUIStore } from "~/stores/ui";
 import type { Handle } from "~/utils/handle";
+import { useSlidingHoverCard } from "./useSlidingHoverCard";
 
 interface CollapsibleSidebarContextValue {
   hasSidebar: boolean;
@@ -134,51 +135,17 @@ export function useSidebarLocation(isInside: (pathname: string) => boolean) {
  * background. A link opts in with `data-nav-item`.
  */
 export function SidebarLinks({ children }: PropsWithChildren) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const hoverCardRef = useRef<HTMLSpanElement>(null);
-
-  // Written straight to the element: a hover must not re-render the list.
-  const moveHoverCard = (item: HTMLElement | null) => {
-    const card = hoverCardRef.current;
-    const list = listRef.current;
-    if (!card || !list) return;
-    if (!item) {
-      card.style.opacity = "0";
-      return;
-    }
-    const itemRect = item.getBoundingClientRect();
-    const listRect = list.getBoundingClientRect();
-    const left = itemRect.left - listRect.left + list.scrollLeft;
-    const top = itemRect.top - listRect.top + list.scrollTop;
-    // Entering the list: appear on the link rather than slide in from
-    // wherever the card was last.
-    card.style.transitionProperty = card.style.opacity === "1" ? "" : "opacity";
-    card.style.transform = `translate(${left}px, ${top}px)`;
-    card.style.width = `${itemRect.width}px`;
-    card.style.height = `${itemRect.height}px`;
-    card.style.opacity = "1";
-  };
+  const { containerRef, cardRef, handlers } =
+    useSlidingHoverCard<HTMLDivElement>();
 
   return (
     <div
-      ref={listRef}
+      ref={containerRef}
       className="relative overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8"
-      // The gaps between links are not links: the card stays where it is
-      // while the pointer crosses one, and only leaves with the pointer.
-      onPointerOver={(event) => {
-        if (event.pointerType !== "mouse") return;
-        const item = (event.target as HTMLElement).closest<HTMLElement>(
-          "[data-nav-item]"
-        );
-        if (item) moveHoverCard(item);
-      }}
-      // A press navigates, expands a link's views or starts a reorder: the
-      // row under the card is about to change or move.
-      onPointerDown={() => moveHoverCard(null)}
-      onPointerLeave={() => moveHoverCard(null)}
+      {...handlers}
     >
       <span
-        ref={hoverCardRef}
+        ref={cardRef}
         aria-hidden
         className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       />

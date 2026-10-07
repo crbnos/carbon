@@ -6,12 +6,12 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useMount, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import { getJobOperationStepRecords } from "~/modules/production";
 import { JobOperationStepRecordsTable } from "~/modules/production/ui/Jobs";
-
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

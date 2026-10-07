@@ -10,9 +10,8 @@ import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   getNextIncompleteSerialEntity,
@@ -21,6 +20,7 @@ import {
   startProductionEvent
 } from "~/services/operations.service";
 import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
+import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "start-operation");
@@ -71,6 +71,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         request,
         error("You are not authorized to start this operation", "Unauthorized")
       )
+    );
+  }
+
+  // Subcontracted work runs at the supplier and is never startable here. Like
+  // the floor rule below, this must run BEFORE the timer re-open.
+  if (jobOperation.data.operationType === "Outside Processing") {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
     );
   }
 

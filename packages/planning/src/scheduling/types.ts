@@ -62,13 +62,6 @@ export type BaseOperation = {
    * set on job operations, so live scheduling is unchanged.
    */
   materialReadyAt?: number;
-  /**
-   * Manufacturing lead time (in business days) of the make method's item that
-   * this operation belongs to. Applied only at assembly boundaries so a
-   * subassembly is scheduled to finish this many days before its parent
-   * consumes it. Populated by the engine from itemReplenishment.leadTime.
-   */
-  assemblyLeadTime?: number;
   priority?: number;
   processId: string | null;
   setupTime?: number;
@@ -268,4 +261,5 @@ export type OperationWithJobInfo = {
   workCenterId: string | null;
   durationHours?: number | null;
   createdAt?: string | null;
+  projectedCompletionAt?: string | null;
 };

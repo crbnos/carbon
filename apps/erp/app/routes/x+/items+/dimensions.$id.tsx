@@ -6,15 +6,16 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getMaterialDimension,
   materialDimensionValidator,
   upsertMaterialDimension
 } from "~/modules/items";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
-
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -85,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditMaterialDimensionsRoute() {
   const { materialDimension } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: materialDimension?.id ?? undefined,
@@ -97,7 +98,7 @@ export default function EditMaterialDimensionsRoute() {
     <MaterialDimensionForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

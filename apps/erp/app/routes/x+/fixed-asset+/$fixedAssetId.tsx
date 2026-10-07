@@ -21,9 +21,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   MENU_ITEM_SHORTCUTS,
+  RecordOutlet,
   useDisclosure
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import {
   LuChevronDown,
@@ -35,18 +36,8 @@ import {
   LuStore,
   LuTrash
 } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import {
-  Link,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData, useNavigate, useParams } from "react-router";
 import { DateTime, DocumentHeader } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
@@ -73,11 +64,6 @@ export const handle: Handle = {
   ),
   module: "accounting"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["fixedAssetId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -504,7 +490,7 @@ export default function FixedAssetDetailRoute() {
           </Card>
         )}
 
-        <Outlet />
+        <RecordOutlet />
 
         <ConfirmDelete
           action={path.to.deleteFixedAsset(fixedAssetId)}

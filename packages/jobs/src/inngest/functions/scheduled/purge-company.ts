@@ -4,7 +4,7 @@
 
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { getCompanyPrivateBucket } from "@carbon/files";
+import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
 import { chunkArray } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { listBucketFilesRecursive } from "../../../backups/storage";
@@ -89,44 +89,108 @@ export async function purgeCompany(
 }
 
 /**
- * What a company owns outside its tables: integration secrets in Vault, its own
- * storage bucket, and pre-bucket-migration files under `<companyId>/` in the
- * shared private bucket. Returns the failures; each part is attempted
- * regardless.
- *
- * Run inside the purge transaction, after `purgeCompany`, and roll the purge back
- * when anything failed: the company row is then the retry target, so nothing is
- * left behind once the delete commits. The price is that a company whose cleanup
- * failed part-way may already have lost some files. It was warned and is still
- * due, so the next run finishes it.
+ * A company's integration secrets in Vault. Run inside the purge transaction,
+ * after `purgeCompany`: it is plain SQL, so it commits or rolls back with the rows.
  */
-export async function removeCompanyLeftovers(
+export async function removeCompanySecrets(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<void> {
+  // starts_with, not LIKE: ids may contain `_`, a LIKE wildcard.
+  await sql`DELETE FROM vault.secrets WHERE starts_with(name, ${`integration:${companyId}:`})`.execute(
+    trx
+  );
+}
+
+// Tables named after a company (`searchIndex_<id>`, `auditLog_<id>`), which the
+// table catalog cannot list.
+const COMPANY_TABLE_PREFIXES = ["searchIndex_", "auditLog_"] as const;
+
+/**
+ * A company's own tables. Run inside the purge transaction, so they go with
+ * the rows or not at all. Dropped over the direct connection because it owns
+ * them: the service role does not, and its `drop_company_search_index` call
+ * was refused for every purged company, leaving the table behind.
+ */
+export async function dropCompanyTables(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<void> {
+  for (const prefix of COMPANY_TABLE_PREFIXES) {
+    await sql`DROP TABLE IF EXISTS ${sql.id("public", prefix + companyId)} CASCADE`.execute(
+      trx
+    );
+  }
+}
+
+/**
+ * Drop company tables whose company no longer exists, and return their names.
+ * One statement per table, so each drop takes and releases its own locks.
+ */
+export async function dropOrphanCompanyTables(
   db: Kysely<KyselyDatabase>,
+  limit: number
+): Promise<string[]> {
+  // starts_with, not LIKE: `_` is a LIKE wildcard. The rest of the name must
+  // look like a company id (xid or base58), so a table that only shares the
+  // prefix is never dropped.
+  const { rows } = await sql<{ name: string }>`
+    SELECT c.relname AS name
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN unnest(${[...COMPANY_TABLE_PREFIXES]}::text[]) AS p(prefix)
+      ON starts_with(c.relname, p.prefix)
+    WHERE n.nspname = 'public'
+      AND c.relkind = 'r'
+      AND substr(c.relname, length(p.prefix) + 1) ~ '^[A-Za-z0-9]{20,}$'
+      AND NOT EXISTS (
+        SELECT 1 FROM "company" co WHERE p.prefix || co.id = c.relname
+      )
+    ORDER BY c.relname
+    LIMIT ${limit}`.execute(db);
+
+  for (const { name } of rows) {
+    await sql`DROP TABLE IF EXISTS ${sql.id("public", name)} CASCADE`.execute(
+      db
+    );
+  }
+  return rows.map((row) => row.name);
+}
+
+/**
+ * A company's files: its own storage bucket, and pre-bucket-migration files
+ * under `<companyId>/` in the shared private bucket. Returns the failures; each
+ * part is attempted regardless.
+ *
+ * Run BEFORE the purge transaction, never inside it. Storage deletes its object
+ * rows on its own connection, and `delete_orphaned_documents` then deletes the
+ * matching `document` rows; with those rows already deleted by an open purge
+ * transaction, storage waits on that transaction, which is waiting on storage,
+ * until storage times out (HTTP 544) and the purge rolls back.
+ *
+ * The company row is the retry target: when anything here fails the company is
+ * kept, and the next run carries on from what this one already removed. The
+ * price is that a kept company may already have lost some files.
+ */
+export async function removeCompanyFiles(
   serviceRole: ReturnType<typeof getCarbonServiceRole>,
   companyId: string
 ): Promise<{ part: string; error: unknown }[]> {
   const failures: { part: string; error: unknown }[] = [];
 
-  try {
-    // starts_with, not LIKE: ids may contain `_`, a LIKE wildcard.
-    await sql`DELETE FROM vault.secrets WHERE starts_with(name, ${`integration:${companyId}:`})`.execute(
-      db
-    );
-  } catch (error) {
-    failures.push({ part: "vault secrets", error });
+  // Drained by listing, not `emptyBucket`: that only queues the deletes, so the
+  // `deleteBucket` after it is refused as "not empty" for any bucket with files.
+  // A bucket already gone (an earlier attempt removed it, then failed) is done.
+  const bucket = getCompanyPrivateBucket(companyId);
+  let bucketError = await drainFolder(serviceRole, bucket, "");
+  if (!bucketError) {
+    bucketError = (await serviceRole.storage.deleteBucket(bucket)).error;
+  }
+  if (bucketError && !(await isBucketGone(bucketError))) {
+    failures.push({ part: "company bucket", error: bucketError });
   }
 
-  // A bucket already gone (removed by an earlier attempt that then rolled back)
-  // is done, not a failure, or that company would roll back every week.
-  const bucket = getCompanyPrivateBucket(companyId);
-  const emptied = await serviceRole.storage.emptyBucket(bucket);
-  const removed = emptied.error
-    ? emptied
-    : await serviceRole.storage.deleteBucket(bucket);
-  if (removed.error && !/not found/i.test(removed.error.message))
-    failures.push({ part: "company bucket", error: removed.error });
-
-  const legacyError = await drainLegacyFolder(serviceRole, companyId);
+  const legacyError = await drainFolder(serviceRole, STORAGE_BUCKET, companyId);
   if (legacyError) {
     failures.push({ part: "legacy private files", error: legacyError });
   }
@@ -134,44 +198,46 @@ export async function removeCompanyLeftovers(
   return failures;
 }
 
+const isBucketGone = async (error: unknown) =>
+  (await isStorageNotFound(error)) ||
+  /not found/i.test((error as { message?: string }).message ?? "");
+
 /** Deletion passes per run; each listing returns at most 1000 entries per folder. */
-const MAX_LEGACY_PASSES = 20;
+const MAX_DRAIN_PASSES = 20;
 
 /**
- * Empty `private/<companyId>/`. Returns the error that stopped it, including a
- * folder still not empty after `MAX_LEGACY_PASSES`: the purge then rolls back,
- * and the next run carries on from what this one already removed.
+ * Delete every file under `prefix` of `bucket`. Returns the error that stopped
+ * it, including a folder still not empty after `MAX_DRAIN_PASSES`: the company
+ * is then kept, and the next run carries on from what this one already removed.
  */
-async function drainLegacyFolder(
+async function drainFolder(
   serviceRole: ReturnType<typeof getCarbonServiceRole>,
-  companyId: string
+  bucket: string,
+  prefix: string
 ): Promise<unknown> {
   for (let pass = 0; ; pass++) {
     let files: { path: string }[];
     try {
-      files = await listBucketFilesRecursive(
-        serviceRole,
-        STORAGE_BUCKET,
-        companyId,
-        { strict: true }
-      );
+      files = await listBucketFilesRecursive(serviceRole, bucket, prefix, {
+        strict: true
+      });
     } catch (error) {
       return error;
     }
     if (files.length === 0) return null;
-    if (pass === MAX_LEGACY_PASSES) {
+    if (pass === MAX_DRAIN_PASSES) {
       return new Error(
-        `${files.length}+ legacy files remain after ${MAX_LEGACY_PASSES} passes`
+        `${files.length}+ files remain after ${MAX_DRAIN_PASSES} passes`
       );
     }
 
+    // Small requests: storage deletes the rows and the objects in one statement
+    // timeout, and each row fires `delete_orphaned_documents`.
     for (const paths of chunkArray(
       files.map((f) => f.path),
-      1000
+      200
     )) {
-      const { error } = await serviceRole.storage
-        .from(STORAGE_BUCKET)
-        .remove(paths);
+      const { error } = await serviceRole.storage.from(bucket).remove(paths);
       if (error) return error;
     }
   }

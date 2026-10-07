@@ -131,14 +131,16 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20260713235406_item-ledger-snapshot.sql` (snapshot + delta via
-`itemLedgerSnapshot`; `item_id` restricts to one item for detail-page loads). Returns ~52 cols:
+read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
+`20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
+`item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
+`GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
 item identity + material props, planning fields, and quantities `quantityOnHand`, `quantityOnHold`,
 `quantityRejected` (status-aware: excludes `Rejected`, surfaces `On Hold`), `quantityOnSalesOrder`,
 `quantityOnPurchaseOrder`, `quantityOnProductionOrder`, `quantityOnProductionDemand`, `demandForecast`,
 `usageLast30Days`, `usageLast90Days`, `daysRemaining`, plus `storageTypeIds`/`storageUnitIds` arrays.
 Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
-and `demandForecast`/`demandActual`.
+`demandForecast`/`demandActual`, and `demandProjection` net of `consumedQuantity`.
 
 Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 `20260807090400`), `trackedEntityStatus`
@@ -156,7 +158,7 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20260713235406`), not the
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261006130001`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —

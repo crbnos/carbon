@@ -9,6 +9,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -112,7 +113,14 @@ const DispositionModal = ({
   onSubmit
 }: DispositionModalProps) => {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onSubmit();
+        submitted.current = false;
+      }
+    }
+  });
   const targetsFetcher = useFetcher<{ operations: UpstreamOperation[] }>();
   const submitted = useRef(false);
   const loadedTargetsRef = useRef(false);
@@ -142,13 +150,6 @@ const DispositionModal = ({
     loadedTargetsRef.current = true;
     targetsFetcher.load(path.to.reworkTargets(operationId));
   }, [operationId, targetsFetcher.load]);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit();
-      submitted.current = false;
-    }
-  }, [fetcher.state, onSubmit]);
 
   const targets = targetsFetcher.data?.operations ?? [];
   const hasIssueTypes = issueTypes.length > 0;

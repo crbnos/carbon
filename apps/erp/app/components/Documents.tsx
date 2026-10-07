@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob, storage } from "@carbon/files";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -32,7 +33,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Link, useFetchers, useSubmit } from "react-router";
 import {
   DocumentPreview,
   FileDropzone,
@@ -174,8 +175,7 @@ const Documents = ({
     async (file: StorageItem) => {
       const url = path.to.file.previewFile(`private/${getReadPath(file)}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -370,7 +370,7 @@ const Documents = ({
                           <DocumentPreview
                             bucket="private"
                             pathToFile={getReadPath(file)}
-                            // @ts-ignore
+                            // @ts-expect-error
                             type={getDocumentType(file.name)}
                           >
                             {file.name}

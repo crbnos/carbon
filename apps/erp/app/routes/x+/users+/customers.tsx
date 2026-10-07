@@ -5,14 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { getCustomerTypes } from "~/modules/sales";
 import {
   CustomerAccountsTable,
@@ -27,11 +24,6 @@ export const handle: Handle = {
   breadcrumb: msg`Customers`,
   to: path.to.customerAccounts
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -79,7 +71,7 @@ export default function UsersCustomersRoute() {
         customerTypes={customerTypes}
         unrevokedInviteEmails={unrevokedInviteEmails}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

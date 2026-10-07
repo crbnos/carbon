@@ -8,10 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { createFirstArticleInspections } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   firstArticleInspectionCreateValidator,
   getFirstArticleCreateOptions

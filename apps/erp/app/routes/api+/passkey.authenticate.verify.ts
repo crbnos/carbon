@@ -14,9 +14,10 @@ import {
 } from "@carbon/auth/session.server";
 import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
+import { redirect } from "@carbon/utils";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { getEmployeeCompanies } from "~/modules/settings";
 import { path } from "~/utils/path";
 

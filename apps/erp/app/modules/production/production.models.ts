@@ -68,6 +68,43 @@ export const jobStatus = [
   "Due Today" // deprecated
 ] as const;
 
+export const planningActionType = [
+  "Order",
+  "Make",
+  "Expedite",
+  "Defer",
+  "Cancel",
+  "Increase",
+  "Decrease",
+  "Release"
+] as const;
+
+export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
+
+// Pure (no lingui / JSX) so the ERP vitest suite can import it directly — the
+// models barrel drags the glossary's lingui macros, which vitest does not
+// transform (see apps/erp/test/job-complete-logic.test.ts).
+export {
+  actionsOfTypes,
+  PLANNING_ACTIONS_COLUMN,
+  PLANNING_ASSIGNEE_COLUMN,
+  PLANNING_DRAWER_PARAM,
+  resolvePlanningActionScope
+} from "./ui/Planning/planning-action-scope";
+
+/**
+ * The job statuses planning may change: Apply on a planning action and the
+ * order drawer's inline edits. An allowlist on purpose — a job past Planned is
+ * on the floor, finished, closed or cancelled, and is reviewed on the job.
+ */
+export const PLANNING_EDITABLE_JOB_STATUSES = ["Draft", "Planned"] as const;
+
+export function isJobEditableFromPlanning(
+  status: Database["public"]["Enums"]["jobStatus"] | null | undefined
+): boolean {
+  return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
+}
+
 export const JOB_LOCKED_STATUSES = [
   "Completed",
   "Closed",
@@ -985,7 +1022,7 @@ export const productionOrderValidator = z.object({
   existingId: zfd.text(z.string().optional()),
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),
-  existingStatus: zfd.text(z.string().optional()),
+  existingStatus: zfd.text(z.enum(jobStatus).optional()),
   isASAP: z.boolean().optional()
 });
 
@@ -1012,6 +1049,23 @@ export const scheduleOperationUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
   columnId: z.string().min(1, { message: "Column is required" }),
   priority: schedulePriorityValidator
+});
+
+// A drop that renumbers several cards of one column, sent as one request.
+export const scheduleOperationReorderValidator = z.object({
+  columnId: z.string().min(1, { message: "Column is required" }),
+  updates: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        priority: z.number().refine(Number.isFinite, "Priority must be finite")
+      })
+    )
+    .min(1)
+    .max(1000)
+    .refine((rows) => new Set(rows.map((r) => r.id)).size === rows.length, {
+      message: "Each operation may appear once"
+    })
 });
 
 export const scheduleJobUpdateValidator = z.object({

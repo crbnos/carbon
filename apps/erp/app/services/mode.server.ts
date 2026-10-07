@@ -3,21 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
-import type { Mode } from "@carbon/utils";
+import type { ModePreference } from "@carbon/utils";
+import { getModeFromCookies, MODE_COOKIE } from "@carbon/utils";
 import * as cookie from "cookie";
 
-const cookieName = "mode";
-
-export function getMode(request: Request): Mode | null {
-  const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader
-    ? cookie.parse(cookieHeader)[cookieName]
-    : "light";
-  if (parsed === "light" || parsed === "dark") return parsed;
-  return null;
+/** `mode` is what to render; `modePreference` is what the user chose. */
+export function getMode(request: Request) {
+  return getModeFromCookies(request.headers.get("cookie"));
 }
 
-export function setMode(mode: Mode | "system") {
+export function setMode(mode: ModePreference) {
   const cookieDomain = getCookieDomain(DOMAIN);
   const cookieOptions: cookie.SerializeOptions = {
     path: "/",
@@ -28,7 +23,7 @@ export function setMode(mode: Mode | "system") {
   };
 
   return cookie.serialize(
-    cookieName,
+    MODE_COOKIE,
     mode === "system" ? "" : mode,
     cookieOptions
   );

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -51,12 +52,10 @@ import {
   type CalendarDate,
   getLocalTimeZone,
   parseDate,
-  toCalendarDate,
   today
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import type { DateRange } from "@react-types/datepicker";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -76,6 +75,9 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { DateSelect, Enumerable, ItemThumbnail, Table } from "~/components";
+import DateRangeFields, {
+  type DateRangeValue
+} from "~/components/DateRangeFields";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
@@ -344,17 +346,13 @@ export function BatchBuilder({
   const [search, setSearch] = useState("");
   const [facets, setFacets] = useState<Record<string, string[]>>({});
   // The due filter as the standard DateSelect holds it: "all", a preset day
-  // count, or "custom" with the calendar's range.
+  // count, or "custom" with a From / To range, either side open.
   const [dueSelect, setDueSelect] = useState("all");
-  const [dueRange, setDueRange] = useState<DateRange | null>(null);
+  const [dueRange, setDueRange] = useState<DateRangeValue | null>(null);
   const due = useMemo<DueFilter | null>(() => {
     if (dueSelect === "custom") {
-      return dueRange
-        ? {
-            kind: "range",
-            start: toCalendarDate(dueRange.start),
-            end: toCalendarDate(dueRange.end)
-          }
+      return dueRange && (dueRange.from || dueRange.to)
+        ? { kind: "range", start: dueRange.from, end: dueRange.to }
         : null;
     }
     const days = Number(dueSelect);
@@ -411,22 +409,20 @@ export function BatchBuilder({
     processes
   ]);
 
-  const candidatesFetcher = useFetcher<CandidatesResponse>();
   const submitFetcher = useFetcher<{
     success?: boolean;
     message?: string;
     batchId?: string | null;
   }>();
 
-  // Load candidates whenever the scope is complete. Only the scope drives the
-  // fetch — the fetcher's `.load` identity is unstable and must not be a dep.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — scope-only trigger
-  useEffect(() => {
-    if (!locationId || !processId) return;
-    candidatesFetcher.load(
-      path.to.api.batchableOperations(locationId, processId)
-    );
-  }, [locationId, processId]);
+  // Candidates for the scope, once it is complete. `staleTime: 0`: operations
+  // move on the shop floor, so each scope change asks again.
+  const candidatesFetcher = useLoaderQuery<CandidatesResponse>(
+    locationId && processId
+      ? path.to.api.batchableOperations(locationId, processId)
+      : null,
+    { staleTime: 0 }
+  );
 
   // A scope change invalidates the current selection and filters.
   const resetComposition = useCallback(() => {
@@ -827,7 +823,7 @@ export function BatchBuilder({
   const isSubmitting = submitFetcher.state !== "idle";
   // Output lots are planned here; a batch never reaches the floor without them.
   const lotPlanIncomplete = outputLotsProblem(selected, outputLots) !== null;
-  const isLoading = candidatesFetcher.state !== "idle";
+  const isLoading = candidatesFetcher.isFetching;
 
   const locationOptions = useMemo(
     () =>
@@ -1627,8 +1623,8 @@ function ComposePanel({
   dimensions: FacetDimension[];
   dueSelect: string;
   onDueSelectChange: (value: string) => void;
-  dueRange: DateRange | null;
-  onDueRangeChange: (range: DateRange | null) => void;
+  dueRange: DateRangeValue | null;
+  onDueRangeChange: (range: DateRangeValue | null) => void;
   isDueFiltered: boolean;
   dueDays: Set<string>;
   suggestions: Suggestion[];
@@ -1718,10 +1714,17 @@ function ComposePanel({
             value={dueSelect}
             onValueChange={onDueSelectChange}
             options={dueOptions}
-            dateRange={dueRange}
-            onDateRangeChange={onDueRangeChange}
-            isDateMarked={isDueDay}
           />
+          {dueSelect === "custom" && (
+            <DateRangeFields
+              layout="inline"
+              autoOpen
+              defaultValue={dueRange ?? undefined}
+              // From after To: keep filtering by the last valid range
+              onChange={(range) => range && onDueRangeChange(range)}
+              isDateMarked={isDueDay}
+            />
+          )}
         </HStack>
         {view === "table" && suggestions.length > 0 && (
           <SuggestionsBanner

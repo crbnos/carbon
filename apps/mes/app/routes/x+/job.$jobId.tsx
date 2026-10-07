@@ -13,10 +13,11 @@ import {
   Heading,
   SidebarTrigger
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuArrowLeft, LuClipboardCheck, LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
 import {
   getJobOperationDependencies,
@@ -24,7 +25,15 @@ import {
 } from "~/services/operations.service";
 import { getFirstArticlePlansMissingForJob } from "~/services/quality.server";
 import { getOpenFirstArticleInspectionsForJob } from "~/services/quality.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    { table: "job", column: "id", param: "jobId" },
+    { table: "jobOperation", column: "jobId", param: "jobId" }
+  ]
+};
 
 const logger = getLogger("mes", "job-dag");
 

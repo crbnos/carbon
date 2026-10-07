@@ -3,14 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { getGauges, getGaugeTypesList } from "~/modules/quality";
 import GaugesTable from "~/modules/quality/ui/Gauge/GaugesTable";
 import type { Handle } from "~/utils/handle";
@@ -21,11 +17,6 @@ export const handle: Handle = {
   breadcrumb: msg`Gauges`,
   to: path.to.gauges
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -63,7 +54,7 @@ export default function GaugesRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <GaugesTable data={gauges} count={count} types={gaugeTypes} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

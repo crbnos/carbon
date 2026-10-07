@@ -6,14 +6,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { getStorageTypes } from "~/modules/inventory";
 import StorageTypesTable from "~/modules/inventory/ui/StorageTypes/StorageTypesTable";
 import type { Handle } from "~/utils/handle";
@@ -26,11 +23,6 @@ export const handle: Handle = {
   breadcrumb: msg`Storage Types`,
   to: path.to.storageTypes
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -72,7 +64,7 @@ export default function StorageTypesRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <StorageTypesTable data={storageTypes} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

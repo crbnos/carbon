@@ -16,21 +16,16 @@ import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import {
   CreateCustomerModal,
   createCustomerAccountValidator
 } from "~/modules/users";
 import { createCustomerAccount } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 const logger = getLogger("erp", "customers-new");
 
@@ -122,11 +117,6 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.customerAccounts,
     await flash(request, success("Customer invited"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function () {

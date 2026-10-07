@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   Card,
@@ -1360,13 +1361,13 @@ function SplitShipmentLineModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
@@ -1487,29 +1488,17 @@ function resolveTrackedEntity(
 export default ShipmentLines;
 
 export function useSerialNumbers(itemId?: string, isReadOnly = false) {
-  const serialNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (itemId) {
-      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId, isReadOnly));
-    }
-  }, [itemId]);
+  const serialNumbersFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSerialNumbersForItem>>
+  >(itemId ? path.to.api.serialNumbers(itemId, isReadOnly) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 export function useBatchNumbers(itemId?: string) {
-  const batchNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (itemId) {
-      batchNumbersFetcher.load(path.to.api.batchNumbers(itemId));
-    }
-  }, [itemId]);
+  const batchNumbersFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getBatchNumbersForItem>>
+  >(itemId ? path.to.api.batchNumbers(itemId) : null);
 
   return { data: batchNumbersFetcher.data };
 }

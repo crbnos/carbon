@@ -6,8 +6,9 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
 import {
   fixedAssetRegisterValidator,
   getDefaultAccounts,
@@ -242,7 +243,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function RegisterFixedAssetRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
-  return <FixedAssetRegisterForm onClose={() => navigate(-1)} />;
+  return <FixedAssetRegisterForm onClose={() => closeRoute()} />;
 }

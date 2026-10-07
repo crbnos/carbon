@@ -12,10 +12,10 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -29,8 +29,8 @@ type GroupFormProps = {
 const GroupForm = ({ initialValues }: GroupFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const isEditing = !!initialValues.id;
 

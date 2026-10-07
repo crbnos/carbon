@@ -9,17 +9,14 @@ import { flash } from "@carbon/auth/session.server";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useParams, useSubmit } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
@@ -40,17 +37,16 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "sales-rfq");
 
 export const handle: Handle = {
+  realtime: [
+    { table: "salesRfq", column: "id", param: "rfqId" },
+    { table: "salesRfqLine", column: "salesRfqId", param: "rfqId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.salesRfqs },
     (data) => data?.rfqSummary?.rfqId
   ),
   module: "sales"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["rfqId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -201,7 +197,7 @@ export default function SalesRFQRoute() {
                 content={
                   <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                     <VStack spacing={4} className="p-4">
-                      <Outlet />
+                      <RecordOutlet />
                     </VStack>
                   </div>
                 }

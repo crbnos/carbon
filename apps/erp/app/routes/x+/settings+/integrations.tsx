@@ -10,21 +10,12 @@ import {
   getIntegrationIdsByRole,
   quickInstallConnectors
 } from "@carbon/ee";
-import { toast } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, toast } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useSearchParams
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData, useSearchParams } from "react-router";
 import { IntegrationsList } from "~/modules/settings";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { getIntegrationsWithHealth } from "~/modules/settings/settings.server";
@@ -33,9 +24,6 @@ import { path } from "~/utils/path";
 export const config = {
   runtime: "nodejs"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -137,7 +125,7 @@ export default function IntegrationsRoute() {
         availableIntegrations={availableIntegrations}
         quickInstallConnectors={quickInstallConnectors}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

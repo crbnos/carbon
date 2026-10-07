@@ -9,20 +9,10 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import {
-  data,
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import {
   getTrainingAssignment,
   getTrainingAssignmentStatus,
@@ -44,11 +34,6 @@ export const handle: Handle = {
   breadcrumb: msg`Edit Assignment`,
   to: path.to.trainingAssignments
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["assignmentId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

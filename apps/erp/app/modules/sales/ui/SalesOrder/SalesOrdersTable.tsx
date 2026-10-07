@@ -127,7 +127,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.salesOrderDetails(row.original.id!)}>
@@ -342,6 +342,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -380,6 +383,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

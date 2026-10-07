@@ -4,6 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { InputControlled, Select, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -28,7 +29,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink, LuTriangleAlert } from "react-icons/lu";
-import { Await, Link, useFetcher, useParams } from "react-router";
+import { Await, Link, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -159,13 +160,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   //     ? optimisticAssignment
   //     : routeData?.materialSummary?.assignee;
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   const confirmDisclosure = useDisclosure();
   const [materialPropertyUpdate, setMaterialPropertyUpdate] = useState<{
     field:
@@ -248,7 +249,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         ].includes(field)
       ) {
         setMaterialPropertyUpdate({
-          // @ts-ignore
+          // @ts-expect-error
           field,
           value
         });
@@ -867,7 +868,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
           }}
           onConfirm={() => {
             onUpdate(
-              // @ts-ignore
+              // @ts-expect-error
               materialPropertyUpdate?.field,
               materialPropertyUpdate?.value
             );

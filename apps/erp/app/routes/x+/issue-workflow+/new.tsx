@@ -6,9 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ScrollArea } from "@carbon/react";
+import { ScrollArea, useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
 import {
   getRequiredActionsList,
@@ -68,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewIssueWorkflowRoute() {
   const { requiredActions } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     content: "{}",
@@ -83,7 +84,7 @@ export default function NewIssueWorkflowRoute() {
       <IssueWorkflowForm
         initialValues={initialValues}
         requiredActions={requiredActions}
-        onClose={() => navigate(-1)}
+        onClose={() => closeRoute()}
       />
     </ScrollArea>
   );

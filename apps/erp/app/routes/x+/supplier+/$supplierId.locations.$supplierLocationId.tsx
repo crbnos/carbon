@@ -12,12 +12,9 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import {
   getSupplierLocation,
   supplierLocationValidator,
@@ -26,7 +23,6 @@ import {
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -98,20 +94,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.supplierLocations(supplierId),
     await flash(request, success("Supplier address updated"))
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { supplierId } = params;
-  if (supplierId) {
-    window.clientCache?.setQueryData(
-      supplierLocationsQuery(supplierId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function EditSupplierLocationRoute() {

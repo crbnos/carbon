@@ -47,6 +47,8 @@ A **Completed**, **Closed**, or **Cancelled** job is locked. Its method, quantit
 In the Jobs list, the **Ready** status is labelled **"Released"** — the underlying value is still `Ready`. Note also the spelling: a job is **Cancelled** (two L's), but a job *operation* is **Canceled** (one L). Different enums, different spelling.
 </Callout>
 
+To release several jobs at once, select them in the Jobs list and choose **"Release Jobs"** from the actions menu. Only **Draft** and **Planned** jobs in the selection are released. There is no dialog here: a job that needs fixing, or whose outside operations go to a supplier that already has a draft purchase order to choose from, is skipped and named in the summary. Release those from the job itself.
+
 ## Operations
 
 The job's <Term id="routing">routing</Term> is copied into job-specific **operations** on release, each a process on a <Term id="work-center">work center</Term>, carrying its own setup, labor, and machine time. The floor runs the job by running its operations, and each carries its own status. A job reads **"In Progress"** the moment any single operation does.

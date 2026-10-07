@@ -461,7 +461,9 @@ export function deriveFacetDimensions(
 // included) or a calendar range picked day to day, both ends inclusive.
 export type DueFilter =
   | { kind: "window"; days: number }
-  | { kind: "range"; start: CalendarDate; end: CalendarDate };
+  // Either bound may be open: no start is "due on or before", no end is
+  // "due on or after"
+  | { kind: "range"; start: CalendarDate | null; end: CalendarDate | null };
 
 // Every distinct day (YYYY-MM-DD) the candidates are due on — the calendar
 // marks these days so a planner can see where work falls before picking.
@@ -504,11 +506,11 @@ export function filterAndSortCandidates(
       );
       if (!anyLineMatches) return false;
     }
-    if (dueEnd) {
+    if (dueStart || dueEnd) {
       const due = dueDateOf(c);
       if (!due) return false;
       const dueDay = parseDate(due);
-      if (dueDay.compare(dueEnd) > 0) return false;
+      if (dueEnd && dueDay.compare(dueEnd) > 0) return false;
       if (dueStart && dueDay.compare(dueStart) < 0) return false;
     }
     if (term) {

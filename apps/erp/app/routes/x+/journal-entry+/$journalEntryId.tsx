@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import {
   getActiveDimensionsWithValues,
   getCompaniesInGroup,
@@ -62,11 +60,6 @@ const journalSourceDocumentMap: Record<
     to: (id) => path.to.receiptDetails(id)
   }
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["journalEntryId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -144,7 +137,7 @@ export default function JournalEntryRoute() {
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <Outlet />
+        <RecordOutlet />
       </div>
     </div>
   );

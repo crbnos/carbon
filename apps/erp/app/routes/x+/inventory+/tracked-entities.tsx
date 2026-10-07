@@ -6,9 +6,10 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getTrackedEntities } from "~/modules/inventory";
 import TrackedEntitiesTable from "~/modules/inventory/ui/Traceability/TrackedEntitiesTable";
 import { getCompanySettings } from "~/modules/settings";
@@ -17,6 +18,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["trackedEntity"],
   breadcrumb: msg`Tracked Entities`,
   to: path.to.trackedEntities
 };

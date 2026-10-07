@@ -26,7 +26,9 @@ the procedure, not a re-description — it does not repeat that detail.
 | Event-name type registry (`Events`) | `packages/lib/src/events.ts` (re-exported, NOT defined, by `packages/jobs/src/events.ts`) |
 | Zod schemas + subscription helpers | `packages/database/src/event.ts` |
 | `attach_event_trigger`, `dispatch_event_batch` and the other event-system functions | `packages/database/src/event-system/functions/<name>.sql` (edit the file, then `authz migration`; see `authz-manifest.md`) |
-| Handler-type CHECK, per-table `attach_event_trigger(...)` calls | `packages/database/supabase/migrations/` |
+| Handler-type CHECK | `packages/database/supabase/migrations/` |
+| Which functions run on which table (event triggers) | `packages/database/src/event-system/attachments.ts` |
+| Interceptor and statement-handler bodies | `packages/database/src/event-system/handlers/<name>.sql` |
 
 ## Use cases → handler type
 
@@ -45,7 +47,18 @@ the procedure, not a re-description — it does not repeat that detail.
 
 ### 1. Create a migration
 
-Triggers are wired by the SQL helper `attach_event_trigger`. Its current signature
+Triggers are declared in `packages/database/src/event-system/attachments.ts`, never in a
+migration (see `authz-manifest.md` → Event triggers). Add the table's entry there:
+
+```ts
+yourNewTable: { events: true },                                     // async only
+yourNewTable: { before: ["validate_before_insert"], events: true }, // BEFORE ROW interceptors
+yourNewTable: { after: ["sync_create_entries"], events: true },     // AFTER ROW interceptors
+```
+
+Then `pnpm db:migrate` and `pnpm --filter @carbon/database authz migration <name>`. The
+SQL below is what that renders through `set_event_triggers`; it is shown for the meaning
+of each list, not to be written by hand. `attach_event_trigger`'s signature
 takes **three** args (the 3rd added in `20260410030406_event-system-after-interceptors.sql`):
 
 ```sql
@@ -283,7 +296,7 @@ that path; it does not exist.
 
 ## Checklist
 
-- [ ] Trigger attached via `attach_event_trigger(table, sync[], after_sync[])` (3-arg)
+- [ ] Trigger declared in `event-system/attachments.ts` and shipped with `authz migration`
 - [ ] Subscription(s) created with correct `companyId` and uppercase `operations`
 - [ ] (new type) `HandlerTypeSchema` widened in `packages/database/src/event.ts`
 - [ ] (new type) `handlerType` CHECK widened in a new migration

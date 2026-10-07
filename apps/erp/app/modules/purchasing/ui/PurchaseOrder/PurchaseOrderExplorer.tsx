@@ -99,6 +99,11 @@ export default function PurchaseOrderExplorer() {
   const isDisabled = isLocked
     ? true
     : purchaseOrderData?.purchaseOrder?.status !== "Draft";
+  // A Planned PO is one planning created and nobody has sent yet, so a line
+  // can still come off it, the same as on a Draft.
+  const isDeleteDisabled = !["Draft", "Planned"].includes(
+    purchaseOrderData?.purchaseOrder?.status ?? ""
+  );
 
   const lines = useMemo(
     () => purchaseOrderData?.lines ?? [],
@@ -159,7 +164,7 @@ export default function PurchaseOrderExplorer() {
               lines.map((line) => (
                 <PurchaseOrderLineItem
                   key={line.id}
-                  isDisabled={isDisabled}
+                  isDeleteDisabled={isDeleteDisabled}
                   line={line}
                   onDelete={onDeleteLine}
                 />
@@ -281,13 +286,13 @@ function PurchaseOrderLineBody({
 
 type PurchaseOrderLineItemProps = {
   line: PurchaseOrderLine;
-  isDisabled: boolean;
+  isDeleteDisabled: boolean;
   onDelete: (line: PurchaseOrderLine) => void;
 };
 
 function PurchaseOrderLineItem({
   line,
-  isDisabled,
+  isDeleteDisabled,
   onDelete
 }: PurchaseOrderLineItemProps) {
   const { t } = useLingui();
@@ -386,7 +391,7 @@ function PurchaseOrderLineItem({
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
-                    isDisabled || !permissions.can("delete", "purchasing")
+                    isDeleteDisabled || !permissions.can("delete", "purchasing")
                   }
                   onClick={(e) => {
                     e.stopPropagation();

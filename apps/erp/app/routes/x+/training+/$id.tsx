@@ -7,24 +7,15 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, useDebounce } from "@carbon/react";
+import { generateHTML, RecordOutlet, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import {
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useParams
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import {
@@ -48,11 +39,6 @@ export const handle: Handle = {
   ),
   module: "resources"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -106,7 +92,7 @@ export default function TrainingRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <TrainingEditor />
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={<TrainingProperties key={`properties-${id}`} />}

@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
-import { HStack, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { HStack } from "@carbon/react";
 import { useMemo } from "react";
-import { useFetcher } from "react-router";
 import type { getProceduresList } from "~/modules/production/production.service";
 import ProcedureStatus from "~/modules/production/ui/Procedures/ProcedureStatus";
 import { path } from "~/utils/path";
@@ -45,14 +45,11 @@ export default Procedure;
 
 export const useProcedures = (args: { processId?: string }) => {
   const { processId } = args;
-  const procedureFetcher =
-    useFetcher<Awaited<ReturnType<typeof getProceduresList>>>();
+  const procedureFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getProceduresList>>
+  >(path.to.api.procedures);
 
-  useMount(() => {
-    procedureFetcher.load(path.to.api.procedures);
-  });
-
-  const loading = procedureFetcher.state !== "idle";
+  const loading = procedureFetcher.isFetching;
 
   const options = useMemo(
     () =>

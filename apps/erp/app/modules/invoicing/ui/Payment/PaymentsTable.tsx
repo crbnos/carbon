@@ -158,7 +158,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
         cell: (item) => (
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
-        meta: { icon: <LuCalendar /> }
+        meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
       },
       {
         accessorKey: "totalAmount",

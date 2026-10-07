@@ -6,15 +6,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIntegrationIdsByRole } from "@carbon/ee";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+
 import { GroupedContentSidebar } from "~/components/Layout";
 import {
   getAccountsList,
@@ -25,6 +21,8 @@ import AccountingBetaGate from "~/modules/accounting/ui/AccountingBetaGate";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Accounting" }];
@@ -41,9 +39,6 @@ export const handle: Handle = {
   module: "accounting",
   sidebar: AccountingSidebar
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -90,7 +85,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AccountingRoute() {
   return (
     <VStack spacing={0} className="relative h-full">
-      <Outlet />
+      <RecordOutlet />
       <AccountingBetaGate />
     </VStack>
   );

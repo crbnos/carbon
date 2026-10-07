@@ -29,7 +29,8 @@ crates/
 │                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
 ├── thumbnail/   # GLB → PNG preview, on the CPU: reads plain or EXT_meshopt_compression GLBs,
-│                # z-buffer rasteriser from the viewer's default isometric direction (Z up),
+│                # z-buffer rasteriser through the viewer's camera (45° perspective, Z up; home
+│                # direction unless the caller names one),
 │                # material base colours, transparent background, hand-written PNG encoder.
 │                # `cargo run --release -p thumbnail --example render -- in.glb out.png` to eyeball one.
 └── planner/     # assembly-by-disassembly motion planner: greedy/geom/fasteners/collide/steps.
@@ -100,6 +101,43 @@ unauth + http + skip TLS verify, local only), `PORT` (8000). Every other limit i
 a constant or derived in `config.rs` (max parts 5000, shutdown grace 600 s, job
 and result TTLs 24 h, pending TTL 5 min, long-poll cap 25 s) — deliberately not
 env-tunable.
+
+## Tracing
+
+`src/telemetry.rs` — OpenTelemetry traces over OTLP/HTTP, off unless
+`OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) is set.
+It reads the same variables as the Node apps (`packages/logger`):
+`OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_SERVICE_NAME`
+(default `assembler`), `OTEL_TRACES_SAMPLER[_ARG]`. Traces only — no metrics or
+logs; `eprintln!` stays the log.
+
+One trace per job: the caller's `traceparent` → the request span
+(`POST /v1/convert`, named by matched route; `/health` has none) → `job <action>`
+→ `download source` / `compute` / `upload artifact` / `callback`.
+
+- **A job is spawned with `telemetry::spawn_job`, never bare `tokio::spawn`.**
+  The job outlives its request, so the span context has to travel with the task;
+  a bare spawn starts a job whose spans belong to no trace.
+- **Across the Lambda self-invoke the parent rides in the run-job spec**
+  (`traceparent`, written by `telemetry::inject` in `lambda_dispatch`, restored
+  by `telemetry::attach` in `run::spawn_from_spec`). A spec built anywhere else
+  can carry the same key.
+- **Outbound requests go through `http::{download_hashed, upload, post_json}`**,
+  which record the host only. The URLs are signed, and error text that quotes
+  one is reduced to its origin before it is put on a span (`without_urls`).
+- **Export uses the reqwest already in the binary** (`ExportClient`), not the
+  exporter's bundled client: that one is reqwest 0.13 and brings a second TLS
+  stack (aws-lc) beside ours (ring).
+- **On Lambda every request flushes before it responds** — the process freezes
+  once the response is sent. That adds one export round trip to each response
+  there, capped at 3 s (`LAMBDA_FLUSH_WAIT`) so a slow collector cannot push a
+  25 s job poll past API Gateway's 30 s; ECS and local runs export on the batch
+  timer.
+- **Every exit path calls `telemetry::shutdown()`** — `process::exit` runs no
+  destructors, so a path that skips it drops the last batch.
+
+`apps/assembler/sst.config.ts` forwards the `OTEL_*` variables that are set at
+deploy time; `ci/src/assembler.ts` does not set any yet.
 
 ## Completion & lifecycle
 
@@ -202,9 +240,20 @@ Built to sit as a small always-on pod beside other workloads.
 
 ## Thumbnails
 
-`POST /v1/thumbnail` `{ source: { url }, output: { path?, size? } }` renders the
-GLB at `source.url` to a square PNG (300 px unless `size` says otherwise) and
-late-mint uploads it as the `thumbnail` output. The caller is `@carbon/jobs`
+`POST /v1/thumbnail` `{ source: { url }, output: { path?, size?, direction? } }`
+renders the GLB at `source.url` to a square PNG (300 px unless `size` says
+otherwise) and late-mint uploads it as the `thumbnail` output.
+
+The camera is the viewer's: a 45° perspective looking at the centre of the
+bounding box, standing back far enough to fit the bounding sphere (`FOV_DEGREES`
+/ `FIT_MARGIN` in `crates/thumbnail`, mirroring `AssemblyViewer`'s camera and
+`frameBox` in `packages/viewer/src/ModelCanvas.tsx` — change one and change the
+other). `direction` is `[x, y, z]` from the model towards the camera, Z up;
+absent or unusable, it is the viewer's home view `[1, -1, 1]`. The viewer's
+camera button (`ModelPreview` `onCaptureThumbnail`) sends the direction its
+camera stands at, through `api+/model.thumbnail.ts` and the
+`carbon/model-thumbnail` event. Only the direction travels: the image is always
+re-framed to fit the whole model, whatever the viewer's zoom or pan. The caller is `@carbon/jobs`
 `tasks/model-thumbnail.ts`, which hands it the model's optimised GLB (else the
 lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
 page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex

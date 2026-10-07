@@ -2,15 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import {
+  type Database,
+  getLocationTimeZone as readLocationTimeZone
+} from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import {
   getJobMethodTree,
+  getJobMethodTreeArrayToTree,
+  type JobMethod,
   type JobMethodTreeItem
 } from "@carbon/database/methods";
+import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, type Selectable, sql } from "kysely";
 import { type CalendarWindow, subtractIntervals } from "./calendar-utils.ts";
 import {
   businessDayFromMs,
@@ -25,6 +31,11 @@ import {
   resolveWorkCenterWindows,
   type WorkCenterAvailabilityInput
 } from "./machine-availability.ts";
+import {
+  type JobWrites,
+  mergeCrossJobOperations,
+  visibleReservations
+} from "./run-overlay.ts";
 import {
   type BaseOperation,
   capacityHoldingJobStatuses,
@@ -45,6 +56,7 @@ const peopleDateUpperBound = (instant: number, timeZone: string) =>
   parseDate(businessDayFromMs(instant, timeZone)).add({ days: 1 }).toString();
 
 export type JobMaterialWithMakeMethod = {
+  id: string | null;
   jobMaterialMakeMethodId: string | null;
   jobOperationId: string | null;
 };
@@ -83,6 +95,7 @@ export type CrossJobOperation = {
   jobPriority: number | null;
   workCenterId: string | null;
   createdAt: Date | string | null;
+  projectedCompletionAt: Date | string | null;
   setupTime: number | null;
   setupUnit: Database["public"]["Enums"]["factor"] | null;
   laborTime: number | null;
@@ -164,6 +177,8 @@ export interface MasterDataProvider {
   getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }>;
+  /** The location's timezone, falling back to the company's. */
+  getLocationTimeZone(locationId: string): Promise<string>;
   getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]>;
   getActiveWorkCenters(locationId: string): Promise<ActiveWorkCenter[]>;
   getCrossJobOperationsAtWorkCenters(
@@ -218,6 +233,60 @@ export interface MasterDataProvider {
   ): Promise<PeopleAbsenceRow[]>;
 }
 
+function toJob<
+  T extends {
+    dueDate: unknown;
+    timezone: string | null;
+    projectedCompletionAt: unknown;
+  }
+>(job: T) {
+  // pg returns DATE columns as JS Date objects; every consumer compares
+  // dueDate lexicographically as "YYYY-MM-DD" (a Date silently fails those
+  // comparisons — string > Date is always false)
+  return {
+    ...job,
+    dueDate: toIsoDate(job.dueDate),
+    timezone: job.timezone ?? "UTC",
+    projectedCompletionAt:
+      job.projectedCompletionAt == null
+        ? null
+        : toInstantIso(job.projectedCompletionAt as unknown as Date | string)
+  };
+}
+
+type Row<T extends keyof DB> = Selectable<DB[T]>;
+
+/**
+ * What the jobs of a location run have computed so far. Nothing is written
+ * until the run ends, so a later job reads the earlier jobs' results here.
+ */
+type RunOverlay = {
+  now: number;
+  /** Rows no job of the run rewrites: other jobs' and batch-tagged ones. */
+  fixedReservations: LiveReservation[];
+  /** Per job of the run: its stored rows, then its new ones once it has run. */
+  reservationsByJob: Map<string, LiveReservation[]>;
+  storedOperationsByWorkCenter: Map<string, CrossJobOperation[]>;
+  placedOperations: Map<string, CrossJobOperation>;
+};
+
+type JobPreload = {
+  jobIds: Set<string>;
+  jobs: Map<string, Job>;
+  operations: Record<string, Row<"jobOperation">[]>;
+  dependencies: Record<string, Row<"jobOperationDependency">[]>;
+  unlinked: Record<
+    string,
+    { id: string; jobMakeMethodId: string; methodType: string }[]
+  >;
+  materials: Row<"jobMaterialWithMakeMethodId">[];
+  jobIdByMakeMethodId: Map<string, string>;
+  rootByJobId: Map<string, { id: string; itemId: string | null }>;
+  treeByRootId: Record<string, JobMethod[]>;
+  operationIds: Set<string>;
+  operationsWithEvents: Set<string>;
+};
+
 /**
  * Live implementation backed by Kysely (and the Supabase client for the
  * job-method-tree RPC). Queries are moved verbatim from the engine,
@@ -232,12 +301,18 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
    * Batch mode: when several jobs are scheduled in one invocation, the
    * company's STATIC master data (processes, work centers, qualifications,
    * shift windows, dispatch policies) is identical for every job — cache it
-   * on first read instead of re-querying per job. Job-scoped reads
-   * (operations, dependencies) and live reservations are NEVER cached:
-   * reservations must stay DB-fresh so each job in the batch sees the
-   * previous jobs' just-persisted placements.
+   * on first read instead of re-querying per job. Job-scoped rows (operations,
+   * dependencies, method trees) are read once for the batch by `preloadJobs`.
+   * Live reservations and other jobs' operations change as the batch runs:
+   * `beginRun` reads them once and `recordJob` keeps them current.
    */
   private companyCache: Map<string, Promise<unknown>> | null = null;
+  private preload: JobPreload | null = null;
+  private run: RunOverlay | null = null;
+  private processRequirements = new Map<
+    string,
+    Promise<ProcessRequirementRow[]>
+  >();
 
   constructor(
     db: Kysely<DB>,
@@ -263,8 +338,86 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return hit as Promise<T>;
   }
 
-  async getJob(jobId: string): Promise<Job | undefined> {
-    const job = await this.db
+  /**
+   * Read every job-scoped row the engine needs for these jobs in one query per
+   * table, so a location run does not repeat ~15 reads per job. Call it after
+   * anything that writes those rows for the batch (the batch pre-pass). The
+   * engine writes nothing while the batch runs, so the rows stay the stored
+   * state for the whole run.
+   */
+  async preloadJobs(jobIds: string[]): Promise<void> {
+    if (jobIds.length === 0) return;
+    const [jobs, operations, dependencies, makeMethods, unlinked, materials] =
+      await Promise.all([
+        this.jobQuery().where("job.id", "in", jobIds).execute(),
+        this.db
+          .selectFrom("jobOperation")
+          .selectAll()
+          .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
+          .orderBy("order")
+          .execute(),
+        this.db
+          .selectFrom("jobOperationDependency")
+          .selectAll()
+          .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
+          .execute(),
+        this.db
+          .selectFrom("jobMakeMethod")
+          .select(["id", "itemId", "jobId", "parentMaterialId"])
+          .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
+          .execute(),
+        this.db
+          .selectFrom("jobMaterial")
+          .select(["id", "jobMakeMethodId", "jobId", "methodType"])
+          .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
+          .where("jobOperationId", "is", null)
+          .execute(),
+        this.db
+          .selectFrom("jobMaterialWithMakeMethodId")
+          .selectAll()
+          .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
+          .execute()
+      ]);
+
+    const roots = makeMethods.filter((m) => m.parentMaterialId === null);
+    const rootIds = roots.map((m) => m.id);
+    const operationIds = operations.map((o) => o.id);
+
+    const [trees, withEvents] = await Promise.all([
+      rootIds.length === 0
+        ? { rows: [] as (JobMethod & { rootMethodId: string })[] }
+        : sql<JobMethod & { rootMethodId: string }>`
+            SELECT r.id AS "rootMethodId", t.*
+            FROM unnest(${rootIds}::text[]) AS r(id),
+              LATERAL get_job_methods_by_method_id(r.id) WITH ORDINALITY AS t
+            ORDER BY r.id, t.ordinality
+          `.execute(this.db),
+      this.readOperationsWithEvents(operationIds)
+    ]);
+
+    const preload: JobPreload = {
+      jobs: new Map(jobs.map((j) => [j.id as string, toJob(j)])),
+      operations: groupBy(operations, (o) => o.jobId as string),
+      dependencies: groupBy(dependencies, (d) => d.jobId),
+      unlinked: groupBy(unlinked, (m) => m.jobId),
+      materials,
+      jobIdByMakeMethodId: new Map(makeMethods.map((m) => [m.id, m.jobId])),
+      rootByJobId: new Map(roots.map((m) => [m.jobId, m])),
+      treeByRootId: groupBy(trees.rows, (t) => t.rootMethodId),
+      operationIds: new Set(operationIds),
+      operationsWithEvents: withEvents,
+      jobIds: new Set(jobIds)
+    };
+    this.preload = preload;
+  }
+
+  private jobQuery() {
+    return this.db
       .selectFrom("job")
       .leftJoin("location", "location.id", "job.locationId")
       .select([
@@ -279,28 +432,29 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "job.projectedCompletionAt",
         "location.timezone"
       ])
+      .where("job.companyId", "=", this.companyId);
+  }
+
+  async getJob(jobId: string): Promise<Job | undefined> {
+    if (this.preload?.jobIds.has(jobId)) return this.preload.jobs.get(jobId);
+    const job = await this.jobQuery()
       .where("job.id", "=", jobId)
-      .where("job.companyId", "=", this.companyId)
       .executeTakeFirst();
-    if (!job) return undefined;
-    // pg returns DATE columns as JS Date objects; every consumer compares
-    // dueDate lexicographically as "YYYY-MM-DD" (a Date silently fails those
-    // comparisons — string > Date is always false)
-    return {
-      ...job,
-      dueDate: toIsoDate(job.dueDate),
-      timezone: job.timezone ?? "UTC",
-      projectedCompletionAt:
-        job.projectedCompletionAt == null
-          ? null
-          : toInstantIso(job.projectedCompletionAt as unknown as Date | string)
-    };
+    return job && toJob(job);
   }
 
   async getOperations(
     jobId: string,
     opts?: { includeDone?: boolean }
   ): Promise<BaseOperation[]> {
+    if (this.preload?.jobIds.has(jobId)) {
+      const all = this.preload.operations[jobId] ?? [];
+      return (
+        opts?.includeDone
+          ? all
+          : all.filter((o) => o.status !== "Done" && o.status !== "Canceled")
+      ).map((o) => ({ ...o })) as BaseOperation[];
+    }
     let query = this.db
       .selectFrom("jobOperation")
       .selectAll()
@@ -314,11 +468,13 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getDependencies(jobId: string): Promise<JobOperationDependency[]> {
-    const deps = await this.db
-      .selectFrom("jobOperationDependency")
-      .selectAll()
-      .where("jobId", "=", jobId)
-      .execute();
+    const deps = this.preload?.jobIds.has(jobId)
+      ? (this.preload.dependencies[jobId] ?? [])
+      : await this.db
+          .selectFrom("jobOperationDependency")
+          .selectAll()
+          .where("jobId", "=", jobId)
+          .execute();
 
     return deps.map((d) => ({
       operationId: d.operationId,
@@ -361,6 +517,13 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
+    if (this.arePreloaded(makeMethodIds)) {
+      const ids = new Set(makeMethodIds);
+      return this.preload!.materials.filter(
+        (m) => m.jobMakeMethodId && ids.has(m.jobMakeMethodId)
+      );
+    }
+
     return await this.db
       .selectFrom("jobMaterialWithMakeMethodId")
       .selectAll()
@@ -375,6 +538,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
+    if (this.arePreloaded(makeMethodIds)) {
+      const ids = new Set(makeMethodIds);
+      return Object.values(this.preload!.unlinked)
+        .flat()
+        .filter(
+          (m) => m.methodType === "Make to Order" && ids.has(m.jobMakeMethodId)
+        );
+    }
+
     return await this.db
       .selectFrom("jobMaterial")
       .select(["id", "jobMakeMethodId"])
@@ -384,7 +556,24 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .execute();
   }
 
+  /**
+   * True when these ids come from a preloaded job's method tree. The tree
+   * also carries the ids of its bought materials, which are no make method's
+   * id and match no row, so one known make method is enough to tell.
+   */
+  private arePreloaded(makeMethodIds: string[]): boolean {
+    const preload = this.preload;
+    if (!preload) return false;
+    return makeMethodIds.some((id) => preload.jobIdByMakeMethodId.has(id));
+  }
+
   async getUnlinkedMaterials(jobId: string): Promise<UnlinkedMaterial[]> {
+    if (this.preload?.jobIds.has(jobId)) {
+      return (this.preload.unlinked[jobId] ?? []).map((m) => ({
+        id: m.id,
+        jobMakeMethodId: m.jobMakeMethodId
+      }));
+    }
     return await this.db
       .selectFrom("jobMaterial")
       .select(["id", "jobMakeMethodId"])
@@ -394,6 +583,10 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getRootMakeMethod(jobId: string): Promise<RootMakeMethod | undefined> {
+    if (this.preload?.jobIds.has(jobId)) {
+      const root = this.preload.rootByJobId.get(jobId);
+      return root && { id: root.id, itemId: root.itemId };
+    }
     return await this.db
       .selectFrom("jobMakeMethod")
       .select(["id", "itemId"])
@@ -405,7 +598,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }> {
-    return await getJobMethodTree(this.client, methodId);
+    const rows = this.preload?.treeByRootId[methodId];
+    if (rows) return { data: getJobMethodTreeArrayToTree(rows), error: null };
+    return await getJobMethodTree(this.db, methodId);
+  }
+
+  getLocationTimeZone(locationId: string): Promise<string> {
+    return this.cached(`locationTimeZone:${locationId}`, () =>
+      readLocationTimeZone(this.db, locationId, this.companyId)
+    );
   }
 
   async getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {
@@ -447,6 +648,33 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
+    const run = this.run;
+    if (!run) return this.readCrossJobOperations(workCenterIds);
+
+    const missing = workCenterIds.filter(
+      (id) => !run.storedOperationsByWorkCenter.has(id)
+    );
+    if (missing.length > 0) {
+      const rows = groupBy(
+        await this.readCrossJobOperations(missing),
+        (op) => op.workCenterId as string
+      );
+      for (const id of missing) {
+        run.storedOperationsByWorkCenter.set(id, rows[id] ?? []);
+      }
+    }
+    return mergeCrossJobOperations(
+      workCenterIds.flatMap(
+        (id) => run.storedOperationsByWorkCenter.get(id) ?? []
+      ),
+      run.placedOperations,
+      workCenterIds
+    );
+  }
+
+  private async readCrossJobOperations(
+    workCenterIds: string[]
+  ): Promise<CrossJobOperation[]> {
     return await this.db
       .selectFrom("jobOperation as jo")
       .innerJoin("job as j", "j.id", "jo.jobId")
@@ -459,6 +687,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "j.priority as jobPriority",
         "jo.workCenterId",
         "jo.createdAt",
+        "jo.projectedCompletionAt",
         "jo.setupTime",
         "jo.setupUnit",
         "jo.laborTime",
@@ -478,6 +707,97 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getLiveReservations(
+    fromDate: number,
+    excludeJobIds: string[]
+  ): Promise<LiveReservation[]> {
+    const run = this.run;
+    if (!run || run.now !== fromDate) {
+      return this.readLiveReservations(fromDate, excludeJobIds);
+    }
+    const excluded = new Set(excludeJobIds);
+    const rows = [...run.fixedReservations];
+    for (const [jobId, reservations] of run.reservationsByJob) {
+      if (!excluded.has(jobId)) rows.push(...reservations);
+    }
+    return rows;
+  }
+
+  /**
+   * Start a location run over these jobs: read the live reservations once.
+   * Call it after the batch pre-pass, which rewrites the batch-tagged rows.
+   */
+  async beginRun(jobIds: string[], now: number): Promise<void> {
+    const batch = new Set(jobIds);
+    const fixedReservations: LiveReservation[] = [];
+    const reservationsByJob = new Map<string, LiveReservation[]>();
+    for (const row of await this.readLiveReservations(now, [])) {
+      // The same split as the read's excludeJobIds filter: a batch-tagged row
+      // is never excluded.
+      if (row.jobOperationBatchId !== null || !batch.has(row.jobId)) {
+        fixedReservations.push(row);
+        continue;
+      }
+      const rows = reservationsByJob.get(row.jobId);
+      if (rows) rows.push(row);
+      else reservationsByJob.set(row.jobId, [row]);
+    }
+    this.run = {
+      now,
+      fixedReservations,
+      reservationsByJob,
+      storedOperationsByWorkCenter: new Map(),
+      placedOperations: new Map()
+    };
+  }
+
+  /** Make a job's result visible to the jobs that run after it. */
+  recordJob(writes: JobWrites): void {
+    const run = this.run;
+    const job = this.preload?.jobs.get(writes.jobId);
+    if (!run || !job) return;
+
+    run.reservationsByJob.set(
+      writes.jobId,
+      visibleReservations(writes, job.readableJobId ?? "", run.now)
+    );
+
+    // Terminal jobs never compete in dispatch order (the stored read's filter).
+    if (["Cancelled", "Completed", "Closed"].includes(job.status ?? "")) return;
+    const stored = new Map(
+      (this.preload?.operations[writes.jobId] ?? []).map((o) => [o.id, o])
+    );
+    for (const { id, placement } of writes.placements) {
+      const op = stored.get(id);
+      if (!op) continue;
+      run.placedOperations.set(id, {
+        id,
+        dueDate:
+          placement.dueDate !== undefined
+            ? (placement.dueDate as string | null)
+            : (op.dueDate as string | null),
+        startDate: placement.startDate as string | null,
+        priority:
+          placement.priority !== undefined
+            ? (placement.priority as number)
+            : op.priority,
+        deadlineType: job.deadlineType ?? null,
+        jobPriority: job.priority ?? null,
+        workCenterId: placement.workCenterId as string | null,
+        createdAt: op.createdAt,
+        projectedCompletionAt: placement.projectedCompletionAt as string | null,
+        setupTime: op.setupTime,
+        setupUnit: op.setupUnit,
+        laborTime: op.laborTime,
+        laborUnit: op.laborUnit,
+        machineTime: op.machineTime,
+        machineUnit: op.machineUnit,
+        operationQuantity: op.operationQuantity,
+        operationLeadTime: op.operationLeadTime
+      });
+    }
+  }
+
+  private async readLiveReservations(
     fromDate: number,
     excludeJobIds: string[]
   ): Promise<LiveReservation[]> {
@@ -539,6 +859,18 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getOperationsWithEvents(operationIds: string[]): Promise<Set<string>> {
+    const preload = this.preload;
+    if (preload && operationIds.every((id) => preload.operationIds.has(id))) {
+      return new Set(
+        operationIds.filter((id) => preload.operationsWithEvents.has(id))
+      );
+    }
+    return this.readOperationsWithEvents(operationIds);
+  }
+
+  private async readOperationsWithEvents(
+    operationIds: string[]
+  ): Promise<Set<string>> {
     const result = new Set<string>();
     if (operationIds.length === 0) {
       return result;
@@ -595,10 +927,25 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]> {
-    return this.cached(
-      `processRequirements:${[...processIds].sort().join(",")}`,
-      () => this.loadProcessRequirements(processIds)
+    if (!this.companyCache) return this.loadProcessRequirements(processIds);
+
+    // Cached per process, so two jobs sharing a process share its read.
+    const missing = processIds.filter(
+      (id) => !this.processRequirements.has(id)
     );
+    if (missing.length > 0) {
+      const loaded = this.loadProcessRequirements(missing);
+      for (const id of missing) {
+        this.processRequirements.set(
+          id,
+          loaded.then((rows) => rows.filter((r) => r.processId === id))
+        );
+      }
+    }
+    const rows = await Promise.all(
+      processIds.map((id) => this.processRequirements.get(id)!)
+    );
+    return rows.flat();
   }
 
   private async loadProcessRequirements(
@@ -770,10 +1117,40 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     if (workCenterIds.length === 0) {
       return new Map();
     }
-    return this.cached(
-      `workCenterAvailability:${[...workCenterIds].sort().join(",")}:${rangeStart}:${rangeEnd}`,
-      () => this.loadWorkCenterAvailability(workCenterIds, rangeStart, rangeEnd)
-    );
+    const cache = this.companyCache;
+    if (!cache) {
+      return this.loadWorkCenterAvailability(
+        workCenterIds,
+        rangeStart,
+        rangeEnd
+      );
+    }
+    // Cached per work center: jobs in a batch ask for overlapping sets, and a
+    // work center's windows do not depend on which others were asked for.
+    const key = (id: string) =>
+      `workCenterAvailability:${id}:${rangeStart}:${rangeEnd}`;
+    const missing = workCenterIds.filter((id) => !cache.has(key(id)));
+    if (missing.length > 0) {
+      const loaded = this.loadWorkCenterAvailability(
+        missing,
+        rangeStart,
+        rangeEnd
+      );
+      for (const id of missing) {
+        cache.set(
+          key(id),
+          loaded.then((windows) => windows.get(id))
+        );
+      }
+    }
+    const result = new Map<string, CalendarWindow[]>();
+    for (const id of workCenterIds) {
+      const windows = (await cache.get(key(id))) as
+        | CalendarWindow[]
+        | undefined;
+      if (windows) result.set(id, windows);
+    }
+    return result;
   }
 
   private async loadWorkCenterAvailability(

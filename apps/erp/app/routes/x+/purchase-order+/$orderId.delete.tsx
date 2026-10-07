@@ -12,8 +12,8 @@ import {
   getLatestApprovalRequestForDocument
 } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 

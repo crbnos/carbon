@@ -290,7 +290,7 @@ uses it too. It cannot wrap `getCompanySettings` as written, because that lives 
 | `x+/priority+/people.tsx` | Reads a cookie for its default scope; its only child is an action route, so there is no child navigation to save. |
 | `share+/customer.$id.tsx` | Public portal layout; its loader is the access and plan gate, so it stays evaluated on every navigation. |
 | `api+` / webhook routes in the "layout" count | Resource routes, not navigations — false positives of the file-name heuristic. |
-| N+1 inside `getPartUsedIn` | Still ~15 queries per item; it now streams and no longer repeats per tab click, but batching it across items is its own change. |
+| N+1 inside `getPartUsedIn` | Fixed 2026-10-05: one `get_item_used_in` RPC per item. Was ~15 queries per item; it now streams and no longer repeats per tab click, but batching it across items is its own change. |
 
 ## Suggested order (as written before the fixes)
 

@@ -11,4 +11,5 @@ export { GlitchHeading } from "./GlitchHeading";
 export { MagneticLink } from "./MagneticLink";
 export { NoiseOverlay } from "./NoiseOverlay";
 export { RootErrorBoundary } from "./RootErrorBoundary";
+export { RouteErrorBoundary } from "./RouteErrorBoundary";
 export { StatusReadout } from "./StatusReadout";

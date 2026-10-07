@@ -13,8 +13,9 @@ import {
 } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { InspectionView } from "~/components/Inspection/InspectionView";

@@ -26,6 +26,7 @@ type CompanySettings = Partial<
     | "allowLowercaseItemIds"
     | "digitalQuoteEnabled"
     | "digitalQuoteIncludesPurchaseOrders"
+    | "mrpRunTime"
     | "showBomExplorerReadableId"
     | "showCurrencyTrailingZeros"
     | "showCustomerReadableId"

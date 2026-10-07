@@ -5,13 +5,15 @@ Single source of truth for all environment variable access. Validates at module 
 ## Always
 
 - Import env constants from `@carbon/env` (or `@carbon/auth` which re-exports it) — never read `process.env` directly.
-- Use `getEnv(name, { isRequired, isSecret })` for any new env var. `isSecret: true` returns `""` in browser context.
-- Add browser-safe vars to both the export AND `getBrowserEnv()` + the `Window.env` interface declaration.
-- Required vars crash at **module load** if missing — verify `.env` / `.env.local` has them before boot.
+- Declare a new variable once in `src/schema.ts` (group, description, `type`, `secret`, `browser`, `required`, `aliases`), then export it from `src/index.ts` with `getEnv("NAME")`. `secret: true` reads as `""` in the browser.
+- A `browser: true` variable must also be returned by `getBrowserEnv()` — the `satisfies` there fails typecheck until it is — AND added to each app's root-loader `env` object. The `Window.env` type is derived from the schema.
+- `validateEnv` runs once at **module load** on the server and reports every problem together (`formatReport`). `required: "error"` stops startup; `required: "warn"`, an invalid type and a half-configured feature are printed and become errors in the next release.
+- Rename a variable by adding the old name to the new one's `aliases`; keep the old export as a `@deprecated` constant.
+- Tests are not validated (`VITEST`); mock the module or stub `process.env`. `SKIP_ENV_VALIDATION=1` does the same for a script.
 
 ## Ask First
 
-- Adding new required env vars — this changes boot requirements for all environments (dev, CI, prod).
+- Adding a `required: "error"` variable, or flipping `"warn"` to `"error"` — this changes boot requirements for every deployment. `src/deployments.test.ts` must pass for each of them first.
 - Changing `getAppUrl()` / `getMESUrl()` resolution logic — affects cross-app links across all editions.
 
 ## Never
@@ -24,14 +26,17 @@ Single source of truth for all environment variable access. Validates at module 
 
 ```bash
 pnpm --filter @carbon/env typecheck
+pnpm --filter @carbon/env test
 ```
 
 ## Key Exports
 
-All from `src/index.ts` (single file):
+`src/schema.ts` declares the variables, `src/validate.ts` checks and reports them, `src/index.ts` exports the values:
 
-- **`getEnv(name, opts)`** — accessor with required/secret validation
-- **Supabase:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `SUPABASE_JWT_SECRET`
+- **`schema`, `validateEnv(source)`, `formatReport(report)`** — the declaration and the startup report
+- **`getEnv(name)`** — reads one schema variable (its own name, then its aliases)
+- **Deployment:** `APP_URL` (this app's origin; alias `VERCEL_URL`), `APP_ENV` (alias `VERCEL_ENV`, defaults to `NODE_ENV`)
+- **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`
 - **Redis/Jobs:** `REDIS_URL`, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)

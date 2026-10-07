@@ -6,12 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { isUniqueViolation, redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   getIssueTypeByName,
   issueTypeValidator,
@@ -20,7 +17,6 @@ import {
 import IssueTypeForm from "~/modules/quality/ui/IssueTypes/IssueTypeForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path, requestReferrer } from "~/utils/path";
-import { getCompanyId, issueTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -65,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (insertIssueType.error?.code === "23505") {
+  if (isUniqueViolation(insertIssueType.error)) {
     return validationError({
       fieldErrors: { name: "An issue type with this name already exists" }
     });
@@ -91,21 +87,13 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    issueTypesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
-}
-
 export default function NewCustomerStatusesRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: ""
   };
 
   return (
-    <IssueTypeForm initialValues={initialValues} onClose={() => navigate(-1)} />
+    <IssueTypeForm initialValues={initialValues} onClose={() => closeRoute()} />
   );
 }

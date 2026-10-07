@@ -5,10 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getPurchasingRFQs } from "~/modules/purchasing";
 import { PurchasingRFQsTable } from "~/modules/purchasing/ui/PurchasingRfq";
 import type { Handle } from "~/utils/handle";
@@ -16,6 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["purchasingRfq"],
   breadcrumb: msg`RFQs`,
   to: path.to.purchasingRfqs
 };
@@ -60,7 +62,7 @@ export default function PurchasingRFQsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <PurchasingRFQsTable data={rfqs} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

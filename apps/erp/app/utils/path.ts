@@ -8,7 +8,7 @@ import {
   getMESUrl,
   SUPABASE_URL
 } from "@carbon/auth";
-import { getRequestOrigin } from "@carbon/utils";
+import { requestReferrer } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -17,6 +17,9 @@ const file = "/file"; // from ~/routes/file+ folder
 const share = "/share"; // from ~/routes/shared+ folder
 const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
 const selectCompany = "/select-company"; // from ~/routes/select-company+ folder
+// Set per build in vite.config.ts (absent under vitest). On a URL whose response
+// the browser keeps for a day (`keptForADay`), it makes each deploy ask again.
+const build = `v=${import.meta.env?.VITE_BUILD_ID ?? "dev"}`;
 export const MES_URL = getMESUrl();
 export const ERP_URL = getAppUrl();
 
@@ -114,7 +117,7 @@ export const path = {
         ),
       chat: `${api}/ai/chat`,
       costCenters: `${api}/accounting/cost-centers`,
-      countries: `${api}/countries`,
+      countries: `${api}/countries?${build}`,
       createCsvLookup: `${api}/csv/create-lookup`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
@@ -130,7 +133,7 @@ export const path = {
         generatePath(`${api}/sales/digital-quote/${id}`),
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
-      docs: `${api}/docs`,
+      docs: `${api}/docs?${build}`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
@@ -247,6 +250,8 @@ export const path = {
         generatePath(`${api}/production/kpi/${key}`),
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
+      purchaseOrderFinalize: (id: string) =>
+        generatePath(`${api}/purchasing/purchase-order/${id}/finalize`),
       purchasesReportLines: `${api}/accounting/purchase-lines`,
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),
@@ -335,7 +340,7 @@ export const path = {
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,
-      timezones: `${api}/timezones`,
+      timezones: `${api}/timezones?${build}`,
       unitOfMeasures: `${api}/items/uoms`,
       userSelectGroupEmails: (groupId: string) =>
         generatePath(`${api}/users/select/groups/${groupId}/emails`),
@@ -356,7 +361,7 @@ export const path = {
           `${api}/users/select/search?q=${encodeURIComponent(q)}&type=${type ?? ""}`
         ),
       webhookStripe: `${api}/webhook/stripe`,
-      webhookTables: `${api}/webhook/tables`,
+      webhookTables: `${api}/webhook/tables?${build}`,
       workCenters: `${api}/resources/work-centers`,
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`)
@@ -440,6 +445,7 @@ export const path = {
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     billing: `${x}/settings/billing`,
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
+    bulkReleaseJob: `${x}/job/release`,
     bulkUpdateIssue: `${x}/issue/update`,
     bulkUpdateIssueWorkflow: `${x}/issue-workflow/update`,
     bulkUpdateItems: `${x}/items/update`,
@@ -1872,6 +1878,7 @@ export const path = {
     pickingListTracked: (pickingListId: string, lineId: string) =>
       generatePath(`${x}/picking-list/${pickingListId}/tracked/${lineId}`),
     pickingSchedule: `${x}/picking-list/schedule`,
+    planningSettings: `${x}/settings/planning`,
     postJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/post`),
     priceOverride: (id: string) => generatePath(`${x}/sales/price-list/${id}`),
@@ -1980,8 +1987,6 @@ export const path = {
     purchasingRfq: (id: string) => generatePath(`${x}/purchasing-rfq/${id}`),
     purchasingRfqCompare: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/compare`),
-    purchasingRfqConvert: (id: string) =>
-      generatePath(`${x}/purchasing-rfq/${id}/convert`),
     purchasingRfqDetails: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/details`),
     purchasingRfqFavorite: `${x}/purchasing/rfqs/favorite`,
@@ -2478,29 +2483,7 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
-/**
- * The Referer header, reduced to a SAME-ORIGIN relative path (or null). Many
- * actions redirect back here — returning the raw header would let a crafted
- * request bounce the user to an attacker origin (CWE-601 open redirect), so a
- * cross-origin or unparsable referer yields null and callers fall back to
- * their fixed route.
- *
- * Compared with the origin the client addressed (`getRequestOrigin`), not
- * `request.url`'s: behind the proxy that is the internal scheme and host, which
- * never matches a real Referer.
- */
-export const requestReferrer = (request: Request, withParams = true) => {
-  const referer = request.headers.get("referer");
-  if (!referer) return null;
-  try {
-    const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
-    const url = new URL(referer, origin);
-    if (url.origin !== origin) return null;
-    return url.pathname + url.search + url.hash;
-  } catch {
-    return null;
-  }
-};
+export { requestReferrer };
 
 export const getParams = (request: Request) => {
   const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");

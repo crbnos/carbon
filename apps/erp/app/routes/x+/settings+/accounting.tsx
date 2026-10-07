@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Card,
@@ -21,11 +22,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -170,33 +172,33 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AccountingSettingsRoute() {
   const { companySettings, accountDefaults } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const taxFetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSettled: (data) => {
+      if (data && "success" in data) {
+        if (data.success === true && data.message) {
+          toast.success(data.message);
+        }
+        if (data.success === false && data.message) {
+          toast.error(data.message);
+        }
+      }
+    }
+  });
+  const taxFetcher = useAction<typeof action>({
+    onSettled: (data) => {
+      if (data && "success" in data) {
+        if (data.success === true && data.message) {
+          toast.success(data.message);
+        }
+        if (data.success === false && data.message) {
+          toast.error(data.message);
+        }
+      }
+    }
+  });
   const { isInternal } = useFlags();
 
   const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
-
-  useEffect(() => {
-    if (fetcher.data && "success" in fetcher.data) {
-      if (fetcher.data.success === true && fetcher.data.message) {
-        toast.success(fetcher.data.message);
-      }
-      if (fetcher.data.success === false && fetcher.data.message) {
-        toast.error(fetcher.data.message);
-      }
-    }
-  }, [fetcher.data]);
-
-  useEffect(() => {
-    if (taxFetcher.data && "success" in taxFetcher.data) {
-      if (taxFetcher.data.success === true && taxFetcher.data.message) {
-        toast.success(taxFetcher.data.message);
-      }
-      if (taxFetcher.data.success === false && taxFetcher.data.message) {
-        toast.error(taxFetcher.data.message);
-      }
-    }
-  }, [taxFetcher.data]);
 
   const handleAccountingToggle = useCallback(
     (checked: boolean) => {

@@ -8,9 +8,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   convertSupplierQuoteToOrder,
   getSupplier,

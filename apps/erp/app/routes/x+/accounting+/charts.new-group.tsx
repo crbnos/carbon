@@ -6,14 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
-  redirect,
   useLoaderData,
   useNavigate,
   useSearchParams
@@ -26,7 +22,6 @@ import {
 } from "~/modules/accounting";
 import { GroupAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
-import { accountsQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyGroupId } = await requirePermissions(request, {
@@ -76,14 +71,6 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.chartOfAccounts,
     await flash(request, success("Group created"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    accountsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewGroupAccountRoute() {

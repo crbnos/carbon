@@ -5,9 +5,10 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteMaintenanceSchedule,
@@ -55,10 +56,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     scheduleId
   );
   if (deleteError) {
-    const errorMessage =
-      deleteError.code === "23503"
-        ? "Schedule has related dispatches, cannot delete"
-        : "Failed to delete maintenance schedule";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteError,
+      "Failed to delete maintenance schedule",
+      { referenced: "Schedule has related dispatches, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.maintenanceSchedules}?${getParams(request)}`,

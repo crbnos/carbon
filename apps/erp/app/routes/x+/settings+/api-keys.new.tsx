@@ -8,9 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertApiKey } from "@carbon/ee/api-keys.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
+import { data } from "react-router";
 import { useRouteData } from "~/hooks";
 import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
@@ -87,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewApiKeyRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
 
   const initialValues = {
@@ -96,7 +97,7 @@ export default function NewApiKeyRoute() {
 
   return (
     <ApiKeyForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
       companyId={routeData?.companyId}
     />

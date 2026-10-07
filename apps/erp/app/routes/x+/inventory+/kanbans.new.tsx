@@ -6,8 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate, useSearchParams } from "react-router";
+import { data, useSearchParams } from "react-router";
 import { useUser } from "~/hooks";
 import { KanbanForm, kanbanValidator, upsertKanban } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
@@ -57,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewKanbanRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const [searchParams] = useSearchParams();
   const { defaults } = useUser();
   const locationId =
@@ -78,7 +80,7 @@ export default function NewKanbanRoute() {
     <KanbanForm
       initialValues={initialValues}
       locationId={locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

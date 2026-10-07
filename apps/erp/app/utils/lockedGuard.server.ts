@@ -4,7 +4,7 @@
 
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "react-router";
+import { redirect } from "@carbon/utils";
 
 const DEFAULT_MESSAGE =
   "Cannot modify a locked document. Reopen it first." as const;

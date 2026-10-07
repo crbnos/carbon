@@ -2,61 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRealtimeChannel } from "@carbon/react";
-import { useRevalidator } from "react-router";
+import { useRealtimeTable } from "@carbon/query";
 
 // Live-sync the Implementation Hub both directions: any change by Carbon staff or
-// the customer's own users re-runs the hub loaders for every open client. Reuses
-// the shared realtime channel infra (auth + reconnect handled there).
+// the customer's own users re-runs the hub loaders for every open client.
 export function useImplementationRealtime(companyId: string) {
-  const revalidator = useRevalidator();
-
-  useRealtimeChannel({
-    topic: `implementation:${companyId}`,
-    dependencies: [companyId],
-    setup(channel) {
-      const onChange = () => revalidator.revalidate();
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "implementationHub",
-            filter: `id=eq.${companyId}`
-          },
-          onChange
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "implementationCheckState",
-            filter: `companyId=eq.${companyId}`
-          },
-          onChange
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "implementationFieldValue",
-            filter: `companyId=eq.${companyId}`
-          },
-          onChange
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "implementationRow",
-            filter: `companyId=eq.${companyId}`
-          },
-          onChange
-        );
-    }
-  });
+  useRealtimeTable({ companyId, table: "implementationHub" });
+  useRealtimeTable({ companyId, table: "implementationCheckState" });
+  useRealtimeTable({ companyId, table: "implementationFieldValue" });
+  useRealtimeTable({ companyId, table: "implementationRow" });
 }

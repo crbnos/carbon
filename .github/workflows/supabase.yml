@@ -2,7 +2,10 @@ name: Deploy Migrations
 on:
   push:
     branches: [main]
-    paths: ["packages/database/supabase/**"]
+    paths:
+      - "packages/database/supabase/**"
+      # The edge-runtime image is built by build-images.yml, not deployed here.
+      - "!packages/database/supabase/edge-runtime/**"
   workflow_dispatch:
 
 permissions:
@@ -67,7 +70,3 @@ jobs:
       - name: Run migrations
         run: pnpm --filter ci ci:migrations
 
-      # NOTE: onboarding backup templates are NOT published here. They change
-      # rarely and are large, so publishing is a deliberate, manual step run via
-      # the "Publish backup templates" workflow (.github/workflows/publish-templates.yml)
-      # or `pnpm --filter ci ci:upload-backup-templates` — never on every migration.

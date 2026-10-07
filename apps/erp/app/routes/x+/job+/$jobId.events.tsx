@@ -5,13 +5,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useMount, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { RecordOutlet, useMount, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import {
   getJobOperationsList,
@@ -21,11 +18,6 @@ import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["jobId"], search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -110,7 +102,7 @@ export default function ProductionEventsRoute() {
           workCenters={workCenters}
         />
       </VStack>
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

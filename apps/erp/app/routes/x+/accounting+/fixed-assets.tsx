@@ -3,15 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { LuCirclePlus } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { usePermissions } from "~/hooks";
 import { getFixedAssetClassesList, getFixedAssets } from "~/modules/accounting";
 import { FixedAssetsTable } from "~/modules/accounting/ui/FixedAssets";
@@ -23,11 +19,6 @@ export const handle: Handle = {
   breadcrumb: msg`Fixed Assets`,
   to: path.to.fixedAssets
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -89,7 +80,7 @@ export default function FixedAssetsRoute() {
           )
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

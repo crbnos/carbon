@@ -4,7 +4,7 @@
 
 import { Badge, Button, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { LuExternalLink, LuX } from "react-icons/lu";
 import type { ChangelogPanelEntry } from "~/modules/account";
 import { path } from "~/utils/path";

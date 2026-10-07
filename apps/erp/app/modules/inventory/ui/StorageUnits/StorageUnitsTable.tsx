@@ -21,6 +21,7 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
+import { async } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -142,20 +143,66 @@ const StorageUnitsTable = memo(
         `${locationId}::${data.map((r) => r.id).join(",")}::${initialExpanded.join(",")}`,
       [locationId, data, initialExpanded]
     );
-    const prevSignature = useRef(dataSignature);
-    useEffect(() => {
-      if (prevSignature.current === dataSignature) return;
-      prevSignature.current = dataSignature;
-      setChildrenCache(initialChildrenCache);
-      setExpandedIds(new Set(initialExpanded));
-      setLoadingIds(new Set());
-      setSelectedIds(new Set());
-    }, [dataSignature, initialChildrenCache, initialExpanded]);
-
     // Keep a ref to the cache so the recursive descendant walk always sees
     // the latest children without stale-closure issues.
     const childrenCacheRef = useRef(childrenCache);
     childrenCacheRef.current = childrenCache;
+    const expandedIdsRef = useRef(expandedIds);
+    expandedIdsRef.current = expandedIds;
+
+    const prevSignature = useRef(dataSignature);
+    const prevData = useRef(data);
+    useEffect(() => {
+      if (prevSignature.current !== dataSignature) {
+        prevSignature.current = dataSignature;
+        prevData.current = data;
+        setChildrenCache(initialChildrenCache);
+        setExpandedIds(new Set(initialExpanded));
+        setLoadingIds(new Set());
+        setSelectedIds(new Set());
+        return;
+      }
+      if (prevData.current === data) return;
+      prevData.current = data;
+
+      // The same rows, loaded again (a child was renamed, added or deleted):
+      // the tree stays as it is, and the children it shows are read again.
+      // Without this an expanded unit kept its old children until a reload.
+      setChildrenCache((prev) => ({ ...prev, ...initialChildrenCache }));
+      const fetched = [...expandedIdsRef.current].filter(
+        (id) => childrenCacheRef.current[id] && !initialChildrenCache[id]
+      );
+      let stale = false;
+      void async
+        .map(fetched, async (id) => {
+          const res = await fetch(path.to.api.storageUnitChildren(id));
+          const body = (await res.json()) as { data: StorageUnit[] };
+          return [id, body.data ?? []] as const;
+        })
+        .then((entries) => {
+          if (stale) return;
+          const fresh = Object.fromEntries(entries);
+          const cache = { ...childrenCacheRef.current, ...fresh };
+          setChildrenCache((prev) => ({ ...prev, ...fresh }));
+          // A selected child that is gone must not reach a bulk action.
+          const present = new Set([
+            ...data.map((row) => row.id),
+            ...Object.values(cache).flatMap((kids) => kids.map((k) => k.id))
+          ]);
+          setSelectedIds((prev) =>
+            [...prev].every((id) => present.has(id))
+              ? prev
+              : new Set([...prev].filter((id) => present.has(id)))
+          );
+        })
+        .catch(() => {
+          // A failed read leaves the children as shown; the next reload
+          // reads them again.
+        });
+      return () => {
+        stale = true;
+      };
+    }, [dataSignature, data, initialChildrenCache, initialExpanded]);
 
     const collectDescendantIds = useCallback((id: string): string[] => {
       const cache = childrenCacheRef.current;

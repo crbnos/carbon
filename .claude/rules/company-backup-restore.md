@@ -12,11 +12,8 @@ paths:
   - "apps/erp/app/routes/api+/settings.backup-summary.ts"
   - "apps/erp/app/routes/api+/settings.backup-restore-status.$restoreRunId.ts"
   - "apps/erp/app/services/onboarding.server.ts"
-  - "apps/erp/app/services/onboarding-draft.server.ts"
   - "packages/jobs/src/scripts/check-backups.ts"
   - "packages/jobs/manifests/**"
-  - "ci/src/upload-backup-templates.ts"
-  - "packages/database/supabase/backups/**"
 ---
 
 # Company Backup / Restore / Onboarding Seed
@@ -104,7 +101,14 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`
   is non-null) made a remapped restore crash — the FK-nulling dangling-ref policy
   in `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast`
-  is deliberately kept: it has a user-forecast write path and no such CHECK. The
+  is deliberately kept: it has a user-forecast write path and no such CHECK.
+  `planningAction` is kept too — `Dismissed` and `assigneeOverridden` are the
+  planner's own state, not regenerable — even though it has a comparable CHECK
+  (`planningAction_change_target_chk`, `20261006130000`: a change action keeps
+  its `jobId` or `purchaseOrderLineId`). Its target FKs are nullable with ON
+  DELETE CASCADE, so a consistent snapshot never carries a dangling target; a
+  remapped restore that did would null the FK and fail that CHECK. The dataset
+  wipe (`wipe.ts` `TRANSIENT_MRP_TABLES`) deletes it, which is a different path. The
   two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
   `assertBackupImportable` also skips — an OLDER backup that still carries an
   excluded table is not schema drift, its rows are just ignored on load),
@@ -322,7 +326,7 @@ A schema-shaped manifest with no rows is exactly as informative as a real custom
 backup, because compatibility is decided entirely by table and column names. That is
 what makes this checkable from a committed file rather than from a database.
 
-It runs from `.husky/pre-commit` when a staged file is under
+It runs from `scripts/git-hooks/pre-commit` when a staged file is under
 `packages/database/supabase/migrations/`, alongside `db:check:datasets`, and skips
 with `CARBON_SKIP_BACKUP_CHECK=1`. Read-only — one connection, `information_schema`
 queries, no writes.
@@ -667,15 +671,7 @@ picker rather than provisioning a clean company.
 
 **Dormant** (built, never wired, do not revive without revisiting
 `.ai/specs/implemented/2026-08-13-onboarding-company-templates.md`): the
-`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`,
-`templateIndustryId` on `carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
-`packages/database/supabase/backups/` (which now holds only a README saying so).
-
-## CI publish (dormant)
-
-`ci/src/upload-backup-templates.ts` is part of the dormant set above and publishes
-nothing today — onboarding templates never go through a storage bucket. It is described
-here only so the next reader knows what the script and the `Publish backup templates`
-workflow (`.github/workflows/publish-templates.yml`, `workflow_dispatch`) were for:
-a manual, idempotent upload of committed `.gz` archives and their sibling
-`<industryId>.assets/` folders into each workspace's `company-templates` bucket.
+`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`, and
+`templateIndustryId` on `carbon/company-import`. The CI publish script
+(`ci/src/upload-backup-templates.ts`), its `Publish backup templates` workflow and
+`packages/database/supabase/backups/` were deleted.

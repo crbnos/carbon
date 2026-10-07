@@ -5,15 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
@@ -31,20 +27,27 @@ import {
   getSupplierInteractionDocuments
 } from "~/modules/purchasing/purchasing.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "purchaseInvoice", column: "id", param: "invoiceId" },
+    { table: "purchaseInvoiceLine", column: "invoiceId", param: "invoiceId" },
+    // What is applied to this invoice, and the payments behind it: voiding a
+    // payment changes the payment row only.
+    {
+      table: "invoiceSettlement",
+      column: "targetPurchaseInvoiceId",
+      param: "invoiceId"
+    },
+    { table: "payment", column: "targetPurchaseInvoiceId", param: "invoiceId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Purchasing Invoices`, to: path.to.invoicingPurchasing },
     (data) => data?.purchaseInvoice?.invoiceId
   ),
   module: "invoicing"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["invoiceId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -121,9 +124,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  throw redirect(
-    request.headers.get("Referer") ?? new URL(request.url).pathname
-  );
+  throw redirect(requestReferrer(request) ?? new URL(request.url).pathname);
 }
 
 export default function PurchaseInvoiceRoute() {
@@ -142,7 +143,7 @@ export default function PurchaseInvoiceRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

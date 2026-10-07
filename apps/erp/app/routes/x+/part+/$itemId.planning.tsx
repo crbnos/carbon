@@ -7,8 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   getItemPlanning,
@@ -28,6 +29,7 @@ import {
 } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
+import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -231,6 +233,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // The column references the global user table, so the database would take
+  // a person from another company, or one since deactivated.
+  if (
+    validation.data.responsibleEmployee &&
+    !(await isActiveCompanyEmployee(
+      client,
+      companyId,
+      validation.data.responsibleEmployee
+    ))
+  ) {
+    return validationError({
+      fieldErrors: {
+        responsibleEmployee: "Choose an employee of this company"
+      },
+      formId: validation.formId
+    });
   }
 
   const updatePartPlanning = await upsertItemPlanning(client, {

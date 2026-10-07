@@ -34,16 +34,14 @@ const MethodMaterialsTable = memo(
             <HStack className="py-1">
               <Hyperlink
                 to={getPathToMakeMethod(
-                  // @ts-ignore
+                  // @ts-expect-error
                   row.original.makeMethod?.item?.type,
-                  // @ts-ignore
                   row.original.makeMethod?.item?.id,
-                  // @ts-ignore
+                  // @ts-expect-error
                   row.original.makeMethod?.id
                 )}
                 className="max-w-[260px] truncate"
               >
-                {/* @ts-ignore */}
                 {row.original.makeMethod?.item?.readableIdWithRevision}
               </Hyperlink>
             </HStack>

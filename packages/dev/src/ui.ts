@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { homedir } from "node:os";
+import { stripVTControlCharacters } from "node:util";
+import {
+  progress as clackProgress,
+  spinner as clackSpinner,
+  type Task
+} from "@clack/prompts";
 import Table from "cli-table3";
 import pc from "picocolors";
 import { type AppId, TLD } from "./constants.js";
@@ -12,6 +19,42 @@ import {
   projectName,
   SHARED_REDIS_PORT
 } from "./worktree.js";
+
+// ---------------------------------------------------------------------------
+// Spinners
+// ---------------------------------------------------------------------------
+
+// clack redraws a spinner every 80 ms, which a pipe (an agent, a log file)
+// records as thousands of frames. Its only static mode is keyed on CI=true,
+// read when the spinner is created — so set it for that instant only, never
+// for the process: the dev servers and pnpm crbn spawns must not inherit it.
+function calm<T>(make: () => T): T {
+  if (process.stdout.isTTY) return make();
+  const prev = process.env.CI;
+  process.env.CI = "true";
+  try {
+    return make();
+  } finally {
+    if (prev === undefined) delete process.env.CI;
+    else process.env.CI = prev;
+  }
+}
+
+export const spinner: typeof clackSpinner = (opts) =>
+  calm(() => clackSpinner(opts));
+
+export const progress: typeof clackProgress = (opts) =>
+  calm(() => clackProgress(opts));
+
+export async function tasks(list: Task[]) {
+  for (const t of list) {
+    if (t.enabled === false) continue;
+    const s = spinner();
+    s.start(t.title);
+    const result = await t.task(s.message);
+    s.stop(result || t.title);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Tables (status / list)
@@ -74,28 +117,44 @@ export function worktreesTable(
     current: boolean;
     slug: string | null;
     dockerState: string | null;
-  }[]
+  }[],
+  // Columns the table may use; clack's gutter takes four. A pipe has no width
+  // and is never narrowed.
+  width = process.stdout.columns ? process.stdout.columns - 4 : Infinity
 ): string {
   const t = new Table({
     head: [pc.bold("Worktree"), pc.bold("Branch"), pc.bold("Stack")],
     ...BASE_STYLE
   });
+  const home = homedir();
+  const stacked: string[] = [];
   for (const r of rows) {
+    const path = r.path.startsWith(`${home}/`)
+      ? `~${r.path.slice(home.length)}`
+      : r.path;
     const project = r.slug ? projectName(r.slug) : "—";
     const stack = !r.slug
       ? pc.gray("not initialized")
       : r.dockerState === "running"
         ? pc.green(`● up · ${project}`)
-        : r.dockerState
-          ? pc.yellow(`${r.dockerState} · ${project}`)
-          : pc.dim(`registered · ${project}`);
-    t.push([
-      r.current ? pc.bold(pc.cyan(r.path)) : r.path,
-      r.branch ? pc.cyan(r.branch) : pc.dim("(detached)"),
-      stack
-    ]);
+        : r.dockerState === "hibernated"
+          ? pc.blue(`◌ hibernated · ${project}`)
+          : r.dockerState
+            ? pc.yellow(`${r.dockerState} · ${project}`)
+            : pc.dim(`registered · ${project}`);
+    const branch = r.branch ? pc.cyan(r.branch) : pc.dim("(detached)");
+    t.push([r.current ? pc.bold(pc.cyan(path)) : path, branch, stack]);
+    stacked.push(
+      `${r.current ? pc.bold(branch) : branch}  ${stack}\n  ${pc.dim(path)}`
+    );
   }
-  return t.toString();
+  // A table wider than the terminal wraps mid-row and is unreadable; one
+  // worktree per two lines reads at any width.
+  const table = t.toString();
+  const widest = Math.max(
+    ...table.split("\n").map((line) => stripVTControlCharacters(line).length)
+  );
+  return widest <= width ? table : stacked.join("\n");
 }
 
 function colorState(state: string, health: string | null): string {
@@ -135,7 +194,9 @@ export function summaryLines(
   ports: PortMap,
   apps: readonly AppId[],
   /** When provided, show portless hostnames; otherwise show localhost URLs. */
-  branchPrefix?: string
+  branchPrefix?: string,
+  /** False when the boot left Studio out; the row then says how to start it. */
+  studioRunning = true
 ): string[] {
   const url = branchPrefix
     ? (sub: string, _port?: number) => `https://${sub}.${branchPrefix}.${TLD}`
@@ -153,12 +214,14 @@ export function summaryLines(
       url("api", ports.PORT_API),
       branchPrefix ? ports.PORT_API : undefined
     ),
-    row(
-      pc.green,
-      "Studio",
-      url("studio", ports.PORT_STUDIO),
-      branchPrefix ? ports.PORT_STUDIO : undefined
-    ),
+    studioRunning
+      ? row(
+          pc.green,
+          "Studio",
+          url("studio", ports.PORT_STUDIO),
+          branchPrefix ? ports.PORT_STUDIO : undefined
+        )
+      : `${pc.dim("Studio".padEnd(8))}  ${pc.dim("not started — crbn reload studio")}`,
     row(
       pc.yellow,
       "Mail",

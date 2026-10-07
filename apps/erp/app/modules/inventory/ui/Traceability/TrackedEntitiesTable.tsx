@@ -202,6 +202,9 @@ const TrackedEntitiesTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendarClock />
           }
         },
@@ -322,7 +325,7 @@ function SourceDocumentLink({
       const item = items.find((item) => item.id === data.sourceDocumentId);
       if (!item) return <Enumerable value={data.sourceDocument} />;
       return (
-        // @ts-ignore
+        // @ts-expect-error
         <Hyperlink to={getLinkToItemDetails(item.type, item.id)}>
           <Enumerable value={data.sourceDocument} />
         </Hyperlink>

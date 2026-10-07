@@ -24,13 +24,18 @@ import { cn } from "./utils/cn";
  * Provider whose `delay` defaults to 0 to keep the original snappy behavior.
  */
 
+const DEFAULT_DELAY = 50;
+
 type ProviderProps = TooltipPrimitive.Provider.Props & {
   /** Radix-compat alias for Base UI's `delay`. */
   delayDuration?: number;
 };
 
 const TooltipProvider = ({ delayDuration, delay, ...props }: ProviderProps) => (
-  <TooltipPrimitive.Provider delay={delay ?? delayDuration ?? 0} {...props} />
+  <TooltipPrimitive.Provider
+    delay={delay ?? delayDuration ?? DEFAULT_DELAY}
+    {...props}
+  />
 );
 TooltipProvider.displayName = "TooltipProvider";
 
@@ -39,11 +44,16 @@ type RootProps = TooltipPrimitive.Root.Props & {
   delayDuration?: number;
 };
 
-const Tooltip = ({ delayDuration = 50, ...props }: RootProps) => (
-  <TooltipPrimitive.Provider delay={delayDuration}>
+// Without its own delay a tooltip joins the surrounding provider, so once one is
+// open its neighbours open at once instead of each waiting out the delay again.
+const Tooltip = ({ delayDuration, ...props }: RootProps) =>
+  delayDuration === undefined ? (
     <TooltipPrimitive.Root {...props} />
-  </TooltipPrimitive.Provider>
-);
+  ) : (
+    <TooltipPrimitive.Provider delay={delayDuration}>
+      <TooltipPrimitive.Root {...props} />
+    </TooltipPrimitive.Provider>
+  );
 Tooltip.displayName = "Tooltip";
 
 type TriggerProps = TooltipPrimitive.Trigger.Props & {
@@ -71,10 +81,15 @@ const TooltipTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
 );
 TooltipTrigger.displayName = "TooltipTrigger";
 
+/**
+ * `anchor` positions the popup against a different element than the trigger.
+ * Use it when one tooltip serves many small hover targets inside its trigger
+ * (a strip of bars): the content follows the hovered target, not the strip.
+ */
 type ContentProps = TooltipPrimitive.Popup.Props &
   Pick<
     TooltipPrimitive.Positioner.Props,
-    "side" | "sideOffset" | "align" | "alignOffset"
+    "side" | "sideOffset" | "align" | "alignOffset" | "anchor"
   > & {
     /**
      * Portal to `document.body` and paint above other overlays. Opt in only for a
@@ -115,6 +130,7 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
       sideOffset = 4,
       align = "center",
       alignOffset = 0,
+      anchor,
       elevated = false,
       ...props
     },
@@ -130,6 +146,7 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
+        anchor={anchor}
         className={elevated ? "z-[9999]" : "z-50"}
       >
         <TooltipPrimitive.Popup

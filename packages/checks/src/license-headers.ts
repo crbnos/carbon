@@ -76,8 +76,7 @@ const basename = (path: string) => path.slice(path.lastIndexOf("/") + 1);
  * Not listed because they are outside the walk already: untracked/ignored
  * files (build output, node_modules, react-router typegen, fonts.data.ts,
  * docs/lib/*.generated.ts, tool-metadata.json), `.ai/`, `.claude/`,
- * `.github/`, `contrib/`, `patches/`, and `docker/` (its edge-runtime main is
- * derived from Supabase's self-hosting template).
+ * `.github/`, `contrib/` and `patches/`.
  */
 export const PATH_EXCLUSIONS: readonly PathExclusion[] = [
   {
@@ -107,8 +106,8 @@ export const PATH_EXCLUSIONS: readonly PathExclusion[] = [
       "generated: swagger-typescript-api output from Paperless Parts' OpenAPI spec, regenerated per its own header"
   },
   {
-    match: "apps/erp/public/pdf.worker.min.mjs",
-    reason: "third-party: Mozilla pdf.js worker build (Apache-2.0)"
+    match: "packages/database/supabase/edge-runtime/main/index.ts",
+    reason: "third-party: derived from Supabase's self-hosting template"
   }
 ];
 

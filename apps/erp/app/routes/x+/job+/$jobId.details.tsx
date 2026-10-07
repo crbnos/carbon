@@ -20,10 +20,11 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import { LuShoppingCart } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import {
   CadModel,
   DeferredFiles,
@@ -31,7 +32,7 @@ import {
   SupplierAvatar
 } from "~/components";
 import { usePanels } from "~/components/Layout";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
@@ -75,10 +76,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  // `client` is the service role (bypassRls) and every read keys on the URL id.
-  await requireCompanyRecord(client, "job", companyId, { id: jobId });
-
-  const job = await getJob(client, jobId);
+  // `client` is the service role (bypassRls) and every read keys on the URL id,
+  // so the job must be this company's. The check runs beside the reads it
+  // guards, not before them: it rejects the whole batch, and nothing read here
+  // is returned unless it passes.
+  const [, job, rootMethod, tags] = await Promise.all([
+    requireCompanyRecord(client, "job", companyId, { id: jobId }),
+    getJob(client, jobId),
+    getRootMakeMethod(client, jobId, companyId),
+    getTagsList(client, companyId, "operation")
+  ]);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -86,7 +93,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
@@ -106,10 +112,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodId = rootMethod.data.id;
 
-  const [materials, operations, tags, makeMethod] = await Promise.all([
+  const [materials, operations, makeMethod] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation"),
     getJobMakeMethodById(client, methodId, companyId)
   ]);
 
@@ -243,14 +248,9 @@ export default function JobDetailsRoute() {
     }
   });
 
-  const jobData = useRouteData<{
-    job: Job;
-    files: Promise<StorageItem[]> | StorageItem[];
-  }>(path.to.job(jobId));
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
-
-  useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
   const methodId = makeMethod?.id;
 
@@ -271,9 +271,8 @@ export default function JobDetailsRoute() {
             <JobBillOfProcess
               key={`bop:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
               locationId={jobData?.job?.locationId ?? ""}
               tags={tags}
@@ -284,9 +283,9 @@ export default function JobDetailsRoute() {
             <JobBillOfMaterial
               key={`bom:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
+              // @ts-expect-error
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
             />
           </>
@@ -311,9 +310,8 @@ export default function JobDetailsRoute() {
           <Await resolve={productionData}>
             {(resolvedProductionData) => (
               <JobEstimatesVsActuals
-                // @ts-ignore
                 materials={materials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={operations}
                 productionEvents={resolvedProductionData.events}
                 productionQuantities={resolvedProductionData.quantities}

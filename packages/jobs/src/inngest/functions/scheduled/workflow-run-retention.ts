@@ -13,11 +13,14 @@ import { inngest } from "../../client";
 // Three tiers: full step detail for a week, a summary for a month, run headers
 // for a quarter. Pass order: reap → purge-headers → compact → drop-detail.
 // Compact runs BEFORE deleting their steps so compactedAt is always set first.
-const STALE_RUN_HOURS = 24;
-const FULL_DETAIL_DAYS = 7;
-const COMPACT_DETAIL_DAYS = 30;
-const RUN_HEADER_DAYS = 90;
-const TERMINAL = ["Succeeded", "Failed", "Blocked", "Skipped"] as const;
+// These ages are repeated in `util.workflow_run_retention_has_work` (the
+// migration that defines it). Change both;
+// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+export const STALE_RUN_HOURS = 24;
+export const FULL_DETAIL_DAYS = 7;
+export const COMPACT_DETAIL_DAYS = 30;
+export const RUN_HEADER_DAYS = 90;
+export const TERMINAL = ["Succeeded", "Failed", "Blocked", "Skipped"] as const;
 const BATCH = 500;
 const COMPACT_BATCH = 200;
 const STALE_REASON =
@@ -166,8 +169,10 @@ async function writeCompactedSteps(
 }
 
 export const workflowRunRetentionFunction = inngest.createFunction(
-  { id: "workflow-run-retention", retries: 2 },
-  { cron: "0 4 * * *" },
+  // Woken by the database at 04:00, and only on a night when one of the four
+  // passes has a run to work on (`util.workflow_run_retention_has_work`).
+  { id: "workflow-run-retention", retries: 2, concurrency: { limit: 1 } },
+  { event: "carbon/workflow-run-retention.process" },
   async ({ step, logger }) => {
     const db = getJobDatabaseClient();
 

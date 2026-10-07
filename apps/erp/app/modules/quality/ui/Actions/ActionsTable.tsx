@@ -155,7 +155,7 @@ const ActionsTable = memo(
           header: t`Due Date`,
           cell: ({ row }) => {
             const isOverdue =
-              // @ts-ignore
+              // @ts-expect-error
               !["Completed", "Skipped"].includes(row.original.status) &&
               row.original.nonConformanceStatus !== "Closed" &&
               row.original.dueDate &&
@@ -167,6 +167,9 @@ const ActionsTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -206,6 +209,9 @@ const ActionsTable = memo(
             <DateTime value={row.original.completedDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

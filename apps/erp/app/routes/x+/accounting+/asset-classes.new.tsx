@@ -6,8 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   fixedAssetClassValidator,
   getDefaultAccounts,
@@ -79,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewAssetClassRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { defaults, taxDepreciationEnabled } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -101,7 +103,7 @@ export default function NewAssetClassRoute() {
 
   return (
     <AssetClassForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
       taxDepreciationEnabled={taxDepreciationEnabled}
     />

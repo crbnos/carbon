@@ -5,15 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { arrayToTree } from "performant-array-to-tree";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { data, Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import type { Group } from "~/modules/users";
 import { GroupsTable, getGroups } from "~/modules/users";
 import type { Handle } from "~/utils/handle";
@@ -24,11 +20,6 @@ export const handle: Handle = {
   breadcrumb: msg`Groups`,
   to: path.to.groups
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -71,9 +62,8 @@ export default function GroupsRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      {/* @ts-ignore */}
       <GroupsTable data={groups} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

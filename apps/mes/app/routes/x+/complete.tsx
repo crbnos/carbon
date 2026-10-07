@@ -11,8 +11,9 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {

@@ -75,6 +75,47 @@ const M = {
       dot(954, 308, 17, "#22262C"), dot(922, 308, 17, ACC_BG)].join("\n");
   },
 
+  /* MRP: projected stock steps down week by week, dips below zero, and an order lifts
+   * it back. Beside it, the worklist of actions that came out of the run. */
+  planning: (r) => {
+    const W = 54, X = 190, ZERO = 446, dip = pick(r, 4, 5);
+    const levels = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) =>
+      i < dip ? 156 - i * pick(r, 28, 34) : i === dip ? -30 : 150 - (i - dip - 1) * pick(r, 30, 38));
+    const y = (i) => ZERO - levels[i];
+    const steps = (from, to) => {
+      let d = `M${X + from * W} ${y(from)}`;
+      for (let i = from; i <= to; i++) d += `${i > from ? ` V${y(i)}` : ""} H${X + (i + 1) * W}`;
+      return `  <path d="${d}" stroke="${MID}" stroke-width="3" stroke-linejoin="round" fill="none"/>`;
+    };
+    const jump = X + (dip + 1) * W;
+    const icons = [
+      "M-7 0 H7 M0 -7 V7",
+      "M-6 6 L6 -6 M-2 -6 H6 V2",
+      "M-8 0 H7 M2 -5 L7 0 L2 5",
+      "M-5 -5 L5 5 M5 -5 L-5 5",
+    ];
+    const actions = icons.map((d, i) => {
+      const cy = 262 + i * 56, hot = i === 0;
+      return [dot(748, cy, 17, hot ? ACC_BG : "#22262C"),
+        `  <path transform="translate(748 ${cy})" d="${d}" stroke="${hot ? ACCENT : i === 3 ? RED : MID}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+        bar(780, cy - 12, pick(r, 96, 132), hot ? MID : DIM, 10, 5),
+        bar(780, cy + 6, pick(r, 54, 84), FAINT, 8, 4),
+        `  <rect x="946" y="${cy - 13}" width="62" height="26" rx="13" fill="${hot ? ACCENT : PANEL2}" stroke="${hot ? ACCENT : STROKE}" stroke-width="1.5"/>`,
+        i < 3 ? hr(724, cy + 28, 292, STROKE) : ""].join("\n");
+    });
+    return [panel(150, 146, 590, 400), chrome(150, 146, 590),
+      bar(X, 214, 96, MID, 10, 5), bar(X, 236, 150, DIM, 8, 4),
+      ...[0, 1, 2].map((i) => hr(X, 296 + i * 50, 9 * W)),
+      `  <rect x="${X + dip * W}" y="${ZERO}" width="${W}" height="30" fill="${RED}"/>`,
+      `  <path d="M${X} ${ZERO} H${X + 9 * W}" stroke="${MID}" stroke-width="1.5" stroke-dasharray="5 7"/>`,
+      steps(0, dip), steps(dip + 1, 8),
+      `  <path d="M${jump} ${y(dip)} V${y(dip + 1)}" stroke="${ACCENT}" stroke-width="3" stroke-linecap="round"/>`,
+      dot(jump, y(dip + 1), 6, ACCENT),
+      ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) =>
+        bar(X + 4 + i * W, 500, W - 8, i === dip ? RED : i === dip + 1 ? ACC_BG : DIM, 14, 4)),
+      panel(700, 214, 340, 250, 20, PANEL2, ACCENT), ...actions].join("\n");
+  },
+
   gantt: (r) => {
     const lanes = [0, 1, 2, 3, 4, 5].map((i) => {
       const hot = i === 2, x = pick(r, 40, 330), w = pick(r, 130, 250);
@@ -90,6 +131,24 @@ const M = {
       dot(574, 232, 5, ACCENT), hr(170, 522, 860)].join("\n");
   },
 
+  /* Response time falling: tall bars step down to one short accent bar, under the old level. */
+  speed: (r) => {
+    const heights = [224, 232, 216, 228, 150, 112, 84, 66, 54].map((h, i) => h + (i < 4 ? pick(r, -8, 8) : pick(r, -5, 5)));
+    const bars = heights.map((h, i) => {
+      const hot = i === heights.length - 1;
+      return `  <rect x="${218 + i * 58}" y="${510 - h}" width="34" height="${h}" rx="7" fill="${hot ? ACCENT : i < 4 ? "#20232A" : DIM}" stroke="${hot ? ACCENT : STROKE}" stroke-width="1.5"/>`;
+    });
+    return [panel(170, 146, 600, 400), chrome(170, 146, 600),
+      bar(206, 214, 96, MID, 10, 5), bar(206, 236, 150, DIM, 8, 4),
+      ...[0, 1, 2].map((i) => hr(206, 330 + i * 60, 528)),
+      `  <path d="M206 270 H734" stroke="${MID}" stroke-width="1.5" stroke-dasharray="5 7"/>`,
+      ...bars, hr(206, 510, 528, STROKE),
+      panel(700, 220, 330, 190, 20, PANEL2, ACCENT),
+      `  <path d="M776 262 L738 322 H764 L756 368 L796 304 H770 Z" fill="${ACCENT}" stroke="${ACCENT}" stroke-width="6" stroke-linejoin="round"/>`,
+      bar(836, 278, pick(r, 96, 124), MID, 14, 7),
+      bar(836, 312, 160, FAINT, 10, 5), bar(836, 312, pick(r, 44, 64), MID, 10, 5),
+      bar(836, 340, 110, DIM, 8, 4)].join("\n");
+  },
   merge: (r) => {
     const jobs = [0, 1, 2].map((i) => {
       const y = 206 + i * 100;
@@ -236,7 +295,9 @@ const M = {
  * match is the entry's real subject. "Ramp card transactions, batch materials, …"
  * is a ledger entry, not a batching one. Tags are a fallback only. */
 const MOTIFS = [
+  ["speed", /faster|speed|performance|latency/i],
   ["dashboard", /dashboard|time clock|timecard|report/i],
+  ["planning", /mrp|planning action/i],
   ["gantt", /schedul|capacity|gantt/i],
   ["merge", /batching|batch |merge|consolidat/i],
   ["flow", /workflow|automation|trigger/i],

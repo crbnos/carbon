@@ -7,14 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
 import { deleteInspectionDocument } from "~/modules/quality";
 import { path } from "~/utils/path";
-import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -47,9 +43,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.inspectionDocuments,
     await flash(request, success("Inspection plan deleted"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateInspectionDocuments();
-  return await serverAction();
 }

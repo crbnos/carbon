@@ -4,6 +4,7 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { useControlField, useField } from "@carbon/form";
+import { RefreshRate, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   CreatableCombobox,
@@ -27,14 +28,11 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure,
-  useMount
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
@@ -45,7 +43,6 @@ import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { latestRevisionByReadableId } from "~/stores/items";
 import { path } from "~/utils/path";
-import { getCompanyId, itemQuantitiesQuery } from "~/utils/react-query";
 import { MethodItemTypeIcon } from "../Icons";
 import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
 import type { EntityKey } from "./emptyStates";
@@ -120,27 +117,15 @@ const NO_QUANTITIES: Record<string, number> = {};
  * picker on the page.
  *
  * An OBSERVED query, not the imperative `cachedApiQuery` read-through: a stock
- * movement invalidates this key (`RealtimeDataProvider`), and only an observer
+ * movement invalidates this entry (`RealtimeDataProvider`), and only an observer
  * re-fetches and re-renders. Copying one result into state left an open picker
  * showing yesterday's numbers until it remounted.
  */
 function useItemQuantities(locationId?: string) {
-  const scope = locationId ?? "all";
-  const { queryKey, staleTime } = itemQuantitiesQuery(scope, getCompanyId());
-
-  const { data } = useQuery({
-    queryKey,
-    staleTime,
-    queryFn: async () => {
-      const response = await fetch(path.to.api.itemQuantities(scope));
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-      return (await response.json()) as {
-        data: Record<string, number> | null;
-      };
-    }
-  });
+  const { data } = useLoaderQuery<{ data: Record<string, number> | null }>(
+    path.to.api.itemQuantities(locationId ?? "all"),
+    { staleTime: RefreshRate.High }
+  );
 
   // A badge is decoration — a failed read leaves it off rather than breaking
   // the picker.
@@ -685,13 +670,9 @@ Item.displayName = "Item";
 export default Item;
 
 export const useConfigurableItems = () => {
-  const configurableItemsLoader = useFetcher<{
+  const configurableItemsLoader = useLoaderQuery<{
     data: { itemId: string }[] | null;
-  }>();
-
-  useMount(() => {
-    configurableItemsLoader.load(path.to.api.itemConfigurable);
-  });
+  }>(path.to.api.itemConfigurable);
 
   const configurableItemIds = useMemo(() => {
     return (configurableItemsLoader.data?.data ?? []).map((c) => c.itemId);

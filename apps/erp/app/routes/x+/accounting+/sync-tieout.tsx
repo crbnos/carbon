@@ -3,14 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import { getAccountingSyncTieOut } from "~/modules/accounting";
 import { SyncTieOutTable } from "~/modules/accounting/ui/SyncTieOut";
@@ -33,11 +29,6 @@ function filterValues(
   if (!match?.value) return null;
   return match.operator === "in" ? match.value.split(",") : [match.value];
 }
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -94,7 +85,7 @@ export default function SyncTieOutRoute() {
         integrations={integrations}
         accounts={accounts}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

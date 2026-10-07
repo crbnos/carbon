@@ -18,13 +18,13 @@ import {
   VStack
 } from "@carbon/react";
 import { getCheckoutUrl } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, redirect, redirectExternal } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
-import { Form, redirect, useFetcher, useLoaderData } from "react-router";
+import { Form, useFetcher, useLoaderData } from "react-router";
 import { getCompany, getPlans } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -137,7 +137,7 @@ export async function action({ request }: ActionFunctionArgs) {
     email: user.data?.email
   });
 
-  throw redirect(url);
+  throw redirectExternal(url);
 }
 
 export default function OnboardingPlan() {

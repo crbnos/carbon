@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BarProgress,
@@ -25,6 +26,7 @@ import {
   parseDate,
   today
 } from "@internationalized/date";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -32,6 +34,7 @@ import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuBookMarked,
   LuCalendar,
+  LuCirclePlay,
   LuClock,
   LuHash,
   LuLayers,
@@ -44,7 +47,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
   DateTime,
@@ -60,6 +63,7 @@ import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import type { action as releaseAction } from "~/routes/x+/job+/release";
 import type { action } from "~/routes/x+/job+/update";
 import { useCustomers, useParts, usePeople, useTools } from "~/stores";
 import { path } from "~/utils/path";
@@ -149,10 +153,20 @@ function useReadableTrackedEntities(data: Job[], companyId: string) {
   return trackedEntities;
 }
 
+// A function declaration on purpose: `plural()` nested in `t` inside a
+// `memo(…)` component compiles to the global i18n, which is never activated
+// (see .claude/rules/i18n-lingui-system.md).
+function useReleasedJobsMessage() {
+  const { t } = useLingui();
+  return (count: number) =>
+    t`${plural(count, { one: "Released # job", other: "Released # jobs" })}`;
+}
+
 const JobsTable = memo((props: JobsTableProps) => {
   const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
+  const releasedJobsMessage = useReleasedJobsMessage();
   const [params] = useUrlParams();
   const parts = useParts();
   const tools = useTools();
@@ -209,7 +223,7 @@ const JobsTable = memo((props: JobsTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.job(row.original.id!)}>
@@ -434,6 +448,9 @@ const JobsTable = memo((props: JobsTableProps) => {
           />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -448,6 +465,9 @@ const JobsTable = memo((props: JobsTableProps) => {
           />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -656,13 +676,13 @@ const JobsTable = memo((props: JobsTableProps) => {
     return [...defaultColumns, ...customColumns];
   }, [params, customColumns, trackedEntities, batchesByJobId]);
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
     (selectedRows: typeof data, field: "delete", value?: string) => {
@@ -681,8 +701,43 @@ const JobsTable = memo((props: JobsTableProps) => {
     []
   );
 
+  // Bulk release for the selected rows — Draft and Planned jobs only. Posts the
+  // ids to the release action, which holds each job to the job page's release
+  // checks and releases the ones that pass; we toast the summary.
+  const releaseFetcher = useAction<typeof releaseAction>({
+    onSuccess: (result) => {
+      if (!result.success) return;
+      if (result.released) {
+        toast.success(releasedJobsMessage(result.released));
+      }
+      if (result.warnings.length) {
+        toast.error(
+          t`Released with problems: ${result.warnings
+            .map((w) => `${w.readableId} (${w.message})`)
+            .join(", ")}`
+        );
+      }
+      if (result.failed.length) {
+        toast.error(
+          t`Could not release ${result.failed.length}: ${result.failed
+            .map((f) => `${f.readableId} (${f.message})`)
+            .join(", ")}`
+        );
+      }
+      if (!result.scheduled) {
+        toast.error(t`The schedule could not be updated after the release`);
+      }
+    },
+    onError: (result) => {
+      if (!result.success) toast.error(result.message);
+    }
+  });
+
   const renderActions = useCallback(
     (selectedRows: typeof data) => {
+      const releasable = selectedRows.filter(
+        (row) => row.status === "Draft" || row.status === "Planned"
+      );
       return (
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuLabel>
@@ -690,6 +745,26 @@ const JobsTable = memo((props: JobsTableProps) => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+            <DropdownMenuItem
+              disabled={
+                !permissions.can("update", "production") ||
+                releasable.length === 0 ||
+                releaseFetcher.isPending
+              }
+              onClick={() =>
+                releaseFetcher.submit(
+                  { jobIds: releasable.flatMap((row) => row.id ?? []) },
+                  {
+                    method: "post",
+                    action: path.to.bulkReleaseJob,
+                    encType: "application/json"
+                  }
+                )
+              }
+            >
+              <MenuIcon icon={<LuCirclePlay />} />
+              <Trans>Release Jobs</Trans>
+            </DropdownMenuItem>
             <DropdownMenuItem
               disabled={
                 !permissions.can("delete", "production") ||
@@ -714,7 +789,7 @@ const JobsTable = memo((props: JobsTableProps) => {
         </DropdownMenuContent>
       );
     },
-    [onBulkUpdate, permissions]
+    [onBulkUpdate, permissions, releaseFetcher]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

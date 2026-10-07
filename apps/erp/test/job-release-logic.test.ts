@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  jobReleaseProblems,
   makeMethodsMissingOperations,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier,
@@ -100,5 +101,50 @@ describe("resolveOperationSupplier", () => {
         byProcess
       )
     ).toEqual({ missing: "none" });
+  });
+});
+
+describe("jobReleaseProblems", () => {
+  const ready = {
+    manufacturingBlocked: false,
+    missingAssemblies: [],
+    outsideOperationsWithoutSupplier: []
+  };
+
+  it("finds nothing to fix on a job that is ready", () => {
+    expect(jobReleaseProblems(ready)).toEqual([]);
+  });
+
+  it("names every problem, assemblies together and operations one by one", () => {
+    expect(
+      jobReleaseProblems({
+        manufacturingBlocked: true,
+        missingAssemblies: [
+          { description: "Bracket" },
+          { description: "Housing" }
+        ],
+        outsideOperationsWithoutSupplier: [
+          { description: "Heat Treat", missing: "choose" },
+          { description: "Paint", missing: "none" }
+        ]
+      })
+    ).toEqual([
+      "manufacturing is blocked",
+      "no operations on Bracket, Housing",
+      "choose a supplier for Heat Treat on the job",
+      "Paint has no supplier"
+    ]);
+  });
+
+  it("names the parts that need a first article plan", () => {
+    expect(
+      jobReleaseProblems({
+        ...ready,
+        firstArticlesWithoutPlan: [
+          { description: "P-1001 Rev B" },
+          { description: "P-2002" }
+        ]
+      })
+    ).toEqual(["assign a first article plan for P-1001 Rev B, P-2002"]);
   });
 });

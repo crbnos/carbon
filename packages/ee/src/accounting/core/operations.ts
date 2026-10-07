@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import { isUniqueViolation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SYNC_OPERATION_ALLOWED_TRANSITIONS } from "./models";
 import type {
@@ -32,7 +33,6 @@ export const SYNC_OPERATION_STALE_IN_FLIGHT_MS = 10 * 60_000;
 
 const DEFAULT_CLAIM_LIMIT = 20;
 const DEFAULT_PAGE_SIZE = 25;
-const UNIQUE_VIOLATION = "23505";
 
 /**
  * Live operations hold the partial unique index on
@@ -246,7 +246,7 @@ export async function enqueueSyncOperation(
     .single();
 
   if (inserted.error) {
-    if (inserted.error.code === UNIQUE_VIOLATION) {
+    if (isUniqueViolation(inserted.error)) {
       // A concurrent enqueue won the race on one of the unique indexes —
       // absorb by returning whichever row now holds it
       const byKey = await getOperationByIdempotencyKey(client, op);
@@ -338,7 +338,7 @@ export async function insertTerminalSyncOperation(
     .single();
 
   if (inserted.error) {
-    if (inserted.error.code === UNIQUE_VIOLATION) {
+    if (isUniqueViolation(inserted.error)) {
       const byKey = await getOperationByIdempotencyKey(client, op);
       if (byKey.data) return byKey;
 

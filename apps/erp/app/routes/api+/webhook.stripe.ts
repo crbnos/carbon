@@ -9,8 +9,9 @@ import {
   processStripeEvent,
   syncStripeDataToKV
 } from "@carbon/stripe/stripe.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "webhook-stripe");

@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import {
   getPickingList,
   getPickingListAvailability,
@@ -23,17 +21,20 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "pickingList", column: "id", param: "pickingListId" },
+    {
+      table: "pickingListLine",
+      column: "pickingListId",
+      param: "pickingListId"
+    }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
     (data) => data?.pickingList?.pickingListId
   ),
   module: "inventory"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["pickingListId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -91,7 +92,7 @@ export default function PickingListDetailRoute() {
       <PickingListHeader />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
         <div className="h-full p-4 w-full max-w-5xl mx-auto flex flex-col gap-4 pb-16">
-          <Outlet />
+          <RecordOutlet />
         </div>
       </div>
     </div>

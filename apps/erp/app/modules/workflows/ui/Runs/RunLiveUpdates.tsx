@@ -4,8 +4,8 @@
 
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 
-export function RunsLiveUpdates({ companyId }: { companyId: string }) {
-  useDebouncedRealtime("workflowRun", `companyId=eq.${companyId}`);
+export function RunsLiveUpdates() {
+  useDebouncedRealtime("workflowRun");
   return null;
 }
 

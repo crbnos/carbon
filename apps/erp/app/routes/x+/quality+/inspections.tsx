@@ -5,10 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getInspections } from "~/modules/quality";
 import InspectionsTable from "~/modules/quality/ui/Inspections/InspectionsTable";
 import type { Handle } from "~/utils/handle";
@@ -16,6 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["inspection"],
   breadcrumb: msg`Inspections`,
   to: path.to.inspections
 };
@@ -66,7 +68,7 @@ export default function InspectionsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <InspectionsTable data={inspections} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

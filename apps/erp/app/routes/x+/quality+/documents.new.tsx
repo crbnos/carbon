@@ -6,8 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { data } from "react-router";
 import { qualityDocumentValidator } from "~/modules/quality/quality.models";
 import { upsertQualityDocument } from "~/modules/quality/quality.service";
 import QualityDocumentForm from "~/modules/quality/ui/Documents/QualityDocumentForm";
@@ -79,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewQualityDocumentRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     version: 0,
@@ -90,7 +92,7 @@ export default function NewQualityDocumentRoute() {
     <QualityDocumentForm
       initialValues={initialValues}
       type="new"
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

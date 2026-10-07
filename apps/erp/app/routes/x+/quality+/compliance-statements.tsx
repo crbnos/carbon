@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getComplianceStatements } from "~/modules/quality";
 import ComplianceStatementsTable from "~/modules/quality/ui/ComplianceStatements/ComplianceStatementsTable";
 import type { Handle } from "~/utils/handle";
@@ -45,7 +45,7 @@ export default function ComplianceStatementsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ComplianceStatementsTable data={data ?? []} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

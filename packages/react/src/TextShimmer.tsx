@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 "use client";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { JSX } from "react";
 import { memo, useMemo } from "react";
 import { cn } from "./utils/cn";

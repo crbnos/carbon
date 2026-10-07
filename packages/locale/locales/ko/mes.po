@@ -177,7 +177,7 @@ msgid "All scrap"
 msgstr "모든 스크랩"
 
 msgid "All steps"
-msgstr ""
+msgstr "모든 단계"
 
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
@@ -188,6 +188,9 @@ msgstr "단위 할당"
 msgid "allowable {allowableLabel} (bonus {bonusLabel})"
 msgstr "허용 {allowableLabel}(보너스 {bonusLabel})"
 
+msgid "Appearance"
+msgstr "모양"
+
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
 
@@ -197,11 +200,11 @@ msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 �
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "모든 생산 이벤트를 종료하시겠습니까? 이 작업은 완료 처리 없이 모든 진행 중인 공정작업을 종료합니다."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "이 공정작업을 완료하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "이 페이지를 나가시겠습니까?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "이 공정작업을 완료로 표시하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
 
 msgid "Assembly steps"
 msgstr "조립 단계"
@@ -322,8 +325,14 @@ msgstr "스테이션 기본값 초기화"
 msgid "Clock In"
 msgstr "작업 시작"
 
+msgid "Clock out"
+msgstr "작업 종료"
+
 msgid "Clock Out"
 msgstr "작업 종료"
+
+msgid "Clocked in"
+msgstr "작업 중"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
@@ -429,8 +438,8 @@ msgstr "현재 작업"
 msgid "Customer"
 msgstr "고객"
 
-msgid "Dark Mode"
-msgstr "다크 모드"
+msgid "Dark"
+msgstr "다크"
 
 msgid "Date"
 msgstr "날짜"
@@ -512,9 +521,9 @@ msgstr "{0} 드래그 취소됨."
 msgid "Due"
 msgstr "기한"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
 
@@ -532,7 +541,7 @@ msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "복제 또는 복사"
 
 msgid "Duplicate serial number"
 msgstr "중복된 시리얼 번호"
@@ -667,13 +676,6 @@ msgstr "위치별 필터"
 msgid "Finish"
 msgstr "마감"
 
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "{0} 완료"
-
-msgid "Finish Anyways"
-msgstr "그래도 완료"
-
 msgid "Finish setting up your account"
 msgstr "계정 설정을 완료하세요"
 
@@ -750,7 +752,7 @@ msgid "in {0}"
 msgstr "{0} 후"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "열린 메뉴에서"
 
 msgid "In Progress"
 msgstr "진행 중"
@@ -848,6 +850,9 @@ msgstr "이 페이지 나가기"
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
+msgid "Light"
+msgstr "라이트"
+
 msgid "lines"
 msgstr "라인"
 
@@ -928,6 +933,16 @@ msgstr "재고에 품목을 수동으로 추가"
 
 msgid "Manually remove items from inventory"
 msgstr "재고에서 품목을 수동으로 제거"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} 완료로 표시"
+
+msgid "Mark as Done"
+msgstr "완료로 표시"
+
+msgid "Mark as Done Anyways"
+msgstr "그래도 완료로 표시"
 
 msgid "Mark Short"
 msgstr "부족으로 표시"
@@ -1190,7 +1205,11 @@ msgstr "작업 지시 열기"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "하위 조립체 {0} 열기: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "공정 필요일: {0}"
 
 msgid "Operations"
 msgstr "공정작업"
@@ -1281,7 +1300,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "고정 또는 고정 해제"
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
@@ -1339,11 +1358,6 @@ msgstr "공정"
 
 msgid "Progress"
 msgstr "진행 상황"
-
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "예상. {0}"
 
 msgid "Quality Issue"
 msgstr "품질 이슈"
@@ -1414,7 +1428,7 @@ msgid "Remove part"
 msgstr "품목 제거"
 
 msgid "Rename"
-msgstr ""
+msgstr "이름 바꾸기"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
@@ -1605,8 +1619,8 @@ msgstr "세션 잠김"
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 
-msgid "Set clock-out time"
-msgstr "퇴근 시간 설정"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "작업을 중단한 시간을 설정하거나 계속 작업 중임을 확인하세요."
 
 msgid "Set up in Carbon"
 msgstr "Carbon에서 설정하기"
@@ -1704,19 +1718,19 @@ msgid "Storage Unit"
 msgstr "보관 단위"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "하위 조립체"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "하위 조립체 {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -1729,6 +1743,9 @@ msgstr "지원 필요"
 
 msgid "Switch Operator"
 msgstr "작업자 전환"
+
+msgid "System"
+msgstr "시스템"
 
 msgid "Tag"
 msgstr "태그"
@@ -1919,7 +1936,7 @@ msgstr "완료 시 자동으로 사용됨"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "사용 {0} · {1}"
 
 msgid "Value"
 msgstr "값"
@@ -1931,7 +1948,7 @@ msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"
 
 msgid "View or open"
-msgstr ""
+msgstr "보기 또는 열기"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
@@ -1956,9 +1973,6 @@ msgstr "작업 표준서"
 
 msgid "Yes"
 msgstr "예"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"

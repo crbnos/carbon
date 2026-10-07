@@ -9,20 +9,18 @@ import { flash } from "@carbon/auth/session.server";
 import {
   Heading,
   HStack,
+  RecordOutlet,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { isInternalEmail, isUnaffectedByNavigation } from "@carbon/utils";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { getSubsidiaries } from "~/modules/settings";
 import {
@@ -36,9 +34,6 @@ export const handle: Handle = {
   breadcrumb: msg`Companies`,
   to: path.to.companies
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyGroupId, email } = await requirePermissions(request, {
@@ -105,7 +100,7 @@ export default function SubsidiariesRoute() {
 
       <TabsContent value="tree">
         <CompaniesTreeView
-          // @ts-ignore
+          // @ts-expect-error
           companies={companies}
           onDelete={handleDelete}
           onAddChild={handleAddChild}
@@ -114,14 +109,14 @@ export default function SubsidiariesRoute() {
 
       <TabsContent value="list">
         <CompaniesListView
-          // @ts-ignore
+          // @ts-expect-error
           companies={companies}
           onDelete={handleDelete}
           onAddChild={handleAddChild}
         />
       </TabsContent>
 
-      <Outlet />
+      <RecordOutlet />
     </Tabs>
   );
 }

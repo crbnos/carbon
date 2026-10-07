@@ -8,12 +8,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { canApproveRequest } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { runMRP } from "~/modules/production";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  isPurchaseOrderReopenStatus,
   purchaseOrderStatusType,
   reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
@@ -23,6 +24,14 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "orderid-status");
+
+/** The PO statuses whose open lines MRP counts as supply
+ *  (`openPurchaseOrderLines`). */
+const MRP_SUPPLY_STATUSES = new Set<string>([
+  "Planned",
+  "To Receive",
+  "To Receive and Invoice"
+]);
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -56,11 +65,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const currentStatus = currentPo.data?.status;
   const isCurrentlyLocked = isPurchaseOrderLocked(currentStatus);
 
+  // A reopen moves the PO back to an editable status: Draft from the PO page,
+  // Planned from the planning pages (Draft is not MRP supply). Both are the
+  // same operation — permission, pending approvals and revision alike.
+  const isReopen = isPurchaseOrderReopenStatus(status);
+
   // Explicit request only — a plain Reopen never bumps.
   const createRevisionRequested =
-    status === "Draft" && formData.get("createRevision") === "true";
+    isReopen && formData.get("createRevision") === "true";
 
-  // Reject an ineligible revision BEFORE the Draft branch below cancels pending
+  // Reject an ineligible revision BEFORE the reopen branch below cancels pending
   // approvals: those side effects must not be applied for a request that is
   // about to fail. reopenPurchaseOrderAsRevision re-checks the same conditions
   // in SQL, so this is a pre-flight, not the authority.
@@ -82,11 +96,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Determine required permission:
-  // - Reopening (Draft) from a locked status requires delete permission
+  // - Reopening (Draft or Planned) from a locked status requires delete
+  //   permission
   // - Closing from any status requires delete permission
   // - Other status changes require update permission
   const requiresDeletePermission =
-    (status === "Draft" && isCurrentlyLocked) || status === "Closed";
+    (isReopen && isCurrentlyLocked) || status === "Closed";
 
   const { client, userId, companyId } = await requirePermissions(request, {
     ...(requiresDeletePermission
@@ -126,9 +141,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Cancel pending approval requests when reopening to Draft
+  // Cancel pending approval requests when reopening (to Draft or Planned)
   // This handles reopening from both "Needs Approval" and "Closed" statuses
-  if (status === "Draft") {
+  if (isReopen) {
     // Find all pending approval requests for this PO
     const pendingApprovals = await serviceRole
       .from("approvalRequest")
@@ -204,7 +219,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       rowsUpdated = await reopenPurchaseOrderAsRevision(getDatabaseClient(), {
         id,
         companyId,
-        updatedBy: userId
+        updatedBy: userId,
+        status: isReopen ? status : "Draft"
       });
     } catch (err) {
       logger.error("Failed to create purchase order revision", { error: err });
@@ -246,7 +262,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (status === "Planned") {
+  // Planned makes the PO's lines MRP supply. A PO that already was supply (a
+  // released one reopened from planning) changes nothing MRP reads, so the
+  // reopen does not wait on a company-wide run.
+  if (status === "Planned" && !MRP_SUPPLY_STATUSES.has(currentStatus ?? "")) {
     await runMRP(serviceRole, getDatabaseClient(), {
       type: "purchaseOrder",
       id,

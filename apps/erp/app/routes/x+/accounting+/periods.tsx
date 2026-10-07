@@ -5,16 +5,13 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Button, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuCalendarPlus } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { usePermissions } from "~/hooks";
 import { getAccountingPeriods } from "~/modules/accounting";
 import { PeriodsTable } from "~/modules/accounting/ui/Periods";
@@ -25,9 +22,6 @@ export const handle: Handle = {
   breadcrumb: msg`Accounting Periods`,
   to: path.to.accountingPeriods
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -71,7 +65,7 @@ export default function AccountingPeriodsRoute() {
           ) : undefined
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

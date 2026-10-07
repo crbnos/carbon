@@ -4,13 +4,11 @@
 
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { Ratelimit, redis } from "@carbon/kv";
+import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import { getClientIp } from "@carbon/utils";
-import {
-  type ClientLoaderFunctionArgs,
-  data,
-  type LoaderFunctionArgs
-} from "react-router";
-import { docsQuery } from "~/utils/react-query";
+import { data, type LoaderFunctionArgs } from "react-router";
+
+import { DAY_CACHE_HEADERS } from "~/modules/shared/shared.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
@@ -25,22 +23,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw data({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  return swaggerDocsSchema;
+  // Fixed until the next deploy, and the limit above is 20 an hour.
+  return data(swaggerDocsSchema, { headers: DAY_CACHE_HEADERS });
 }
 
-export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
-  const queryKey = docsQuery().queryKey;
-  const data =
-    window?.clientCache?.getQueryData<Awaited<ReturnType<typeof loader>>>(
-      queryKey
-    );
-
-  if (!data) {
-    const serverData = await serverLoader<typeof loader>();
-    window?.clientCache?.setQueryData(queryKey, serverData);
-    return serverData;
-  }
-
-  return data;
-}
-clientLoader.hydrate = true;
+export const clientLoader = cachedClientLoader<typeof loader>({
+  staleTime: RefreshRate.Never
+});

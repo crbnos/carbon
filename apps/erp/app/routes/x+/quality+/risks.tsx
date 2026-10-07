@@ -5,14 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { data, Outlet, redirect, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { getRisks } from "~/modules/quality/quality.service";
 import type { Risk } from "~/modules/quality/types";
 import RiskRegistersTable from "~/modules/quality/ui/RiskRegister/RiskRegistersTable";
@@ -24,11 +21,6 @@ export const handle: Handle = {
   breadcrumb: msg`Risks`,
   to: path.to.risks
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -69,7 +61,7 @@ export default function RisksRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <RiskRegistersTable data={risks} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

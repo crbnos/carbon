@@ -185,7 +185,7 @@ export default function Company() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* @ts-ignore */}
+            {/* @ts-expect-error */}
             <CompanyForm company={initialValues} />
           </CardContent>
         </Card>

@@ -33,8 +33,8 @@ once by `buildColumnMaps(columns, translateLabel)` in
   resolve an id to a name) instead of the raw accessor read. See "meta hooks".
 - `sortKeyToLabel: Record<string, string>` — server-sort key (`meta.sortBy ??
   accessorKey`) → translated label, used by the `Sort` picker. Only string-header
-  columns with an accessorKey are included, so JSX-header columns (e.g. MRP week
-  columns) never flood the picker.
+  columns with an accessorKey are included, so JSX-header columns (e.g. the
+  demand projection week columns) never flood the picker.
 
 `Download` also receives:
 
@@ -114,7 +114,7 @@ optional, export/sort-related fields:
   `Map<id, name>` per store; falls back to the raw value if not found.
 - Renders nothing (and does nothing on click) when `data` is empty.
 
-The stores are nanostore-backed hooks consumed as tuples,
+The stores are live-list hooks (`useLiveList`, `@carbon/query`) consumed as tuples,
 e.g. `const [items] = useItems();`; each element exposes at least `{ id, name }`.
 
 ## Opting in (example)

@@ -10,8 +10,8 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import {
   finishJobOperation,

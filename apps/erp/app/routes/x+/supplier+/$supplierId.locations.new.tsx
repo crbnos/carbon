@@ -6,11 +6,9 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { data, useNavigate, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import {
   insertSupplierLocation,
@@ -19,7 +17,6 @@ import {
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -92,18 +89,4 @@ export default function SupplierLocationsNewRoute() {
       onClose={() => navigate(path.to.supplierLocations(supplierId))}
     />
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { supplierId } = params;
-  if (supplierId) {
-    window.clientCache?.setQueryData(
-      supplierLocationsQuery(supplierId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }

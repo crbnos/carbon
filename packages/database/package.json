@@ -30,6 +30,7 @@
     "./mrp-engine": "./src/mrp-engine.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
     "./picked-consumption": "./src/picked-consumption.ts",
+    "./realtime-tables": "./src/realtime-tables.ts",
     "./posting": "./src/posting.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",

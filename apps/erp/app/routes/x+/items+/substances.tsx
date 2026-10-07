@@ -5,14 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { getMaterialSubstances } from "~/modules/items";
 import { MaterialSubstancesTable } from "~/modules/items/ui/MaterialSubstances";
 import type { Handle } from "~/utils/handle";
@@ -23,11 +20,6 @@ export const handle: Handle = {
   breadcrumb: msg`Substances`,
   to: path.to.materialSubstances
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -68,7 +60,7 @@ export default function MaterialSubstancesRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <MaterialSubstancesTable data={materialSubstances} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

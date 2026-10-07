@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { safePath } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
-import { getCurrentPath, makeRedirectToFromHere, safeRedirect } from "./http";
+import { getCurrentPath, makeRedirectToFromHere } from "./http";
 
 // The link a notification email carries (see buildNotificationLink).
 const emailLink =
@@ -46,27 +47,8 @@ describe("makeRedirectToFromHere", () => {
     );
     const login = new URL(`https://app.carbon.ms/login?${params}`);
 
-    expect(safeRedirect(login.searchParams.get("redirectTo"), "/x")).toBe(
+    expect(safePath(login.searchParams.get("redirectTo"), "/x")).toBe(
       emailLink
     );
-  });
-});
-
-describe("safeRedirect", () => {
-  it("keeps a same-origin path", () => {
-    expect(safeRedirect("/x/sales/orders?tab=open", "/x")).toBe(
-      "/x/sales/orders?tab=open"
-    );
-  });
-
-  it.each([
-    ["an absolute URL", "https://evil.com"],
-    ["a protocol-relative URL", "//evil.com"],
-    ["a backslash host", "/\\evil.com"],
-    ["a relative path", "x/sales"],
-    ["an empty value", ""],
-    ["no value", null]
-  ])("falls back for %s", (_label, to) => {
-    expect(safeRedirect(to, "/x")).toBe("/x");
   });
 });

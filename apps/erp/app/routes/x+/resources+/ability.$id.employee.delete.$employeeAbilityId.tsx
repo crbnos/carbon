@@ -5,9 +5,10 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import { notifyScheduleInputsChanged } from "~/modules/production";

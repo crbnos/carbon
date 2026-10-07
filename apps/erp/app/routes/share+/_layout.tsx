@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRevalidator } from "@carbon/query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,7 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { LuMoon, LuRefreshCw, LuSun } from "react-icons/lu";
-import { Outlet, useFetcher, useRevalidator } from "react-router";
+import { Outlet, useFetcher } from "react-router";
 import type { action } from "~/root";
 
 export default function ExternalLayout() {

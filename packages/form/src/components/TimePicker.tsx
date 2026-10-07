@@ -59,7 +59,7 @@ const TimePicker = ({ name, label, termId, onChange }: TimePickerProps) => {
       <input type="hidden" name={name} value={time?.toString()} />
       <TimePickerBase
         value={time ?? undefined}
-        //@ts-ignore
+        //@ts-expect-error
         onChange={handleChange}
         isDisabled={isDisabled}
       />

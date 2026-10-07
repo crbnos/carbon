@@ -8,14 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { FundingSource } from "@carbon/utils";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   AvailableCreditsTable,
   getAvailableCreditsForParty,
@@ -45,11 +41,6 @@ export const handle: Handle = {
   ),
   module: "invoicing"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["paymentId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -380,6 +371,9 @@ export default function PaymentDetailRoute() {
 
       {!locked && !isRefund && availableCredits.length > 0 && (
         <AvailableCreditsTable
+          // The rows are the user's draft over these credits: another party,
+          // currency or set of credits on the same payment starts a new one.
+          key={`${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${availableCredits.map((c) => `${c.id}=${c.remaining}`).join(",")}`}
           paymentId={payment.id}
           side={side}
           currency={baseCurrencyCode}

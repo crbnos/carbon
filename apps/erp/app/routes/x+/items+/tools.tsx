@@ -5,10 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getTools } from "~/modules/items";
 import { ToolsTable } from "~/modules/items/ui/Tools";
 import { getTagsList } from "~/modules/shared";
@@ -17,6 +18,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["item"],
   breadcrumb: msg`Tools`,
   to: path.to.tools
 };
@@ -67,7 +69,7 @@ export default function ToolsSearchRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ToolsTable data={tools} count={count} tags={tags} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

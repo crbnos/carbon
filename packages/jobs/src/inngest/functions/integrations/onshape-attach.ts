@@ -9,6 +9,7 @@ import {
   storage,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
+import { isUniqueViolation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
@@ -158,7 +159,7 @@ async function ensureImmutableModel(
   if (inserted.error) {
     // Do not turn a failed write into success unless another caller actually
     // committed THIS model in THIS company. Other insert errors remain errors.
-    if (inserted.error.code !== "23505" || !(await lookup())) {
+    if (!isUniqueViolation(inserted.error) || !(await lookup())) {
       throw new Error(
         `attachOnshapeAssetsToItem: modelUpload insert failed: ${inserted.error.message}`
       );

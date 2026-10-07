@@ -34,6 +34,10 @@ import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
 import type { NodeFormProps } from "./index";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+
 const newClause = (): Clause => ({
   left: {
     kind: "literal",
@@ -224,7 +228,7 @@ export function ConditionForm({
   const context = { nodeId: node.id, inLoop: false };
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 

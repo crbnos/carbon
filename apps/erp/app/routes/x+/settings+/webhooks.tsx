@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { getConfig, getWebhooks } from "~/modules/settings";
 import {
@@ -26,11 +24,6 @@ export const handle: Handle = {
   breadcrumb: msg`Webhooks`,
   to: path.to.webhooks
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -91,7 +84,7 @@ export default function WebhooksRoute() {
   return (
     <>
       <WebhooksTable count={count} data={webhooks} />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

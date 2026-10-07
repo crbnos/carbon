@@ -18,15 +18,15 @@ import { LuInfo } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
-import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 import { getItemLifecycleStatus } from "./ItemSupersessionForm";
+import type { ChartPlannedOrder } from "./planningSupplyDemand";
 
 type Props = {
-  order: PlannedOrder;
+  order: ChartPlannedOrder;
   conversionFactor: number;
   children: ReactNode;
 };
@@ -300,7 +300,7 @@ export function PlannedOrderDetailsPopover({
                       <Trans>Status</Trans>
                     </dt>
                     <dd>
-                      {/* @ts-expect-error - status is a string because we have a general type for purchase orders and purchaseOrderLines */}
+                      {/* @ts-expect-error - a ChartPlannedOrder carries a job OR a purchase order status as text */}
                       <PurchasingStatus status={order.existingStatus} />
                     </dd>
                   </>

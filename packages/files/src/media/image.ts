@@ -4,7 +4,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { isUnsafeStoragePath } from "../storage";
+import { imageTransformErrorMessage, isUnsafeStoragePath } from "../storage";
 import type { ImageShapeOptions, ProcessedImage } from "./image-pipeline";
 import {
   ImageTooLargeError,
@@ -81,7 +81,12 @@ export async function transformImageViaStorage(
       .from(bucket)
       .download(tempPath, { transform });
     if (download.error) {
-      throw new Error(`Failed to convert image: ${download.error.message}`);
+      throw new Error(
+        imageTransformErrorMessage(
+          download.error,
+          `Failed to convert image: ${download.error.message}`
+        )
+      );
     }
     return download.data;
   } finally {

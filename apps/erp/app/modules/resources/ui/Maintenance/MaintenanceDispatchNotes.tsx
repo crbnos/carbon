@@ -5,11 +5,12 @@
 import { useCarbon } from "@carbon/auth";
 import {
   convertKbToString,
-  downloadBlob,
+  downloadUrl,
   isPreviewableDocumentType,
   storage
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -41,7 +42,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { Suspense, useCallback, useState } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Await, useRevalidator } from "react-router";
+import { Await } from "react-router";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import {
@@ -217,8 +218,7 @@ function MaintenanceFilesContent({
       const filePath = getFilePath(file.name);
       const url = path.to.file.previewFile(`private/${filePath}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });

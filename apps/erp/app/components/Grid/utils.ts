@@ -18,9 +18,9 @@ export function updateNestedProperty(
   if (typeof path == "string")
     return updateNestedProperty(obj, path.split("_"), value);
   else if (path.length == 1 && value !== undefined)
-    // @ts-ignore
+    // @ts-expect-error
     return (obj[path[0]] = value);
   else if (path.length == 0) return obj;
-  // @ts-ignore
+  // @ts-expect-error
   else return updateNestedProperty(obj[path[0]], path.slice(1), value);
 }

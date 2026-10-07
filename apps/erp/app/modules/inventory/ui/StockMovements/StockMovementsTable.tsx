@@ -38,7 +38,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared";
 import { usePeople } from "~/stores";
@@ -58,7 +58,6 @@ type StockMovementsTableProps = {
 const StockMovementsTable = memo(
   ({ data, count }: StockMovementsTableProps) => {
     const { t } = useLingui();
-    const { company } = useUser();
     const permissions = usePermissions();
     const [correctionTarget, setCorrectionTarget] =
       useState<StockMovement | null>(null);
@@ -72,7 +71,7 @@ const StockMovementsTable = memo(
     // Company-wide realtime: a single posting can insert many itemLedger rows
     // at once, so coalesce the burst into one route revalidation (1.5s debounce
     // inside useDebouncedRealtime) rather than revalidating per event.
-    useDebouncedRealtime("itemLedger", `companyId=eq.${company.id}`);
+    useDebouncedRealtime("itemLedger");
 
     const columns = useMemo<ColumnDef<StockMovement>[]>(() => {
       return [
@@ -240,6 +239,9 @@ const StockMovementsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { downloadBlob } from "@carbon/files";
+import { downloadBlob, downloadUrl } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useCallback } from "react";
@@ -43,8 +43,7 @@ export function useFiles(job: Job) {
     async (file: StorageItem) => {
       const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error("Error downloading file");
         log.error("Error downloading file", { error });

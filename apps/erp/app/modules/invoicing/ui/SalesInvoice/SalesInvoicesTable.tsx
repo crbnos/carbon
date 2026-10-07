@@ -75,7 +75,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
             <ItemThumbnail
               size="sm"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType || "Part"}
             />
             <Hyperlink to={path.to.salesInvoiceDetails(row.original.id!)}>
@@ -193,6 +193,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -203,6 +206,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -213,6 +219,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -223,6 +232,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

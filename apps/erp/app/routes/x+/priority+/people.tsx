@@ -5,7 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -18,7 +18,7 @@ import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getEmployeeDepartments,
   getEmployeeShifts,

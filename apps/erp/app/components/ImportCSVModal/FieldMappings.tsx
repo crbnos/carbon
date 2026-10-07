@@ -7,6 +7,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { Combobox, CreatableCombobox, useFormContext } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   ModalBody,
@@ -31,7 +32,6 @@ import {
   useState
 } from "react";
 import { LuInfo, LuListPlus, LuMoveRight, LuPlus } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { Submit } from "~/components/Form";
 import {
   useCompanySettings,
@@ -93,7 +93,26 @@ export function FieldMapping({
   const initialized = useRef(false);
   const { validate } = useFormContext(formId);
   const { fileColumns, filePath, firstRows } = useCsvContext();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSettled: (data) => {
+      if (data && Object.keys(data).length > 0 && !initialized.current) {
+        initialized.current = true;
+        setColumnMappings((prevMappings) => {
+          if (!data || !fileColumns) return prevMappings;
+
+          return Object.entries(data).reduce(
+            (acc, [key, value]) => {
+              if (fileColumns.includes(value)) {
+                acc[key] = value;
+              }
+              return acc;
+            },
+            {} as Record<string, string>
+          );
+        });
+      }
+    }
+  });
   const mappableFields = fieldMappings[table];
   const [currentStep, setCurrentStep] = useState(0);
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>(
@@ -154,30 +173,6 @@ export function FieldMapping({
       }
     );
   }, [fileColumns, firstRows]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (
-      fetcher.data &&
-      Object.keys(fetcher.data).length > 0 &&
-      !initialized.current
-    ) {
-      initialized.current = true;
-      setColumnMappings((prevMappings) => {
-        if (!fetcher.data || !fileColumns) return prevMappings;
-
-        return Object.entries(fetcher.data).reduce(
-          (acc, [key, value]) => {
-            if (fileColumns.includes(value)) {
-              acc[key] = value;
-            }
-            return acc;
-          },
-          {} as Record<string, string>
-        );
-      });
-    }
-  }, [fetcher.data]);
 
   const enumFields: [
     string,

@@ -21,9 +21,11 @@ import type { JSONContent } from "@carbon/react";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
   async,
+  chunkArray,
   datetime,
   getErrorMessage,
   groupBy,
+  isUniqueViolation,
   nameSimilarity,
   scrapAllowance,
   tiptapToText,
@@ -70,6 +72,10 @@ import type {
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
 import { updateSortOrder } from "../shared/sort-order";
+import {
+  claimPlanningActions,
+  releasePlanningActionClaims
+} from "./planning-action-claims";
 import type {
   assemblyInstructionStatuses,
   assemblyStepStatuses,
@@ -104,6 +110,7 @@ import {
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
   motionSchema,
+  PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
   stepPlanWarningsSchema,
   WEEKDAYS_MONDAY_FIRST
@@ -460,16 +467,6 @@ export async function calculateJobPriority(
 ): Promise<number> {
   const { jobId, dueDate, deadlineType, companyId, locationId } = params;
 
-  // Define deadline type priority order (lower number = higher priority)
-  const deadlineTypePriority: Record<string, number> = {
-    ASAP: 0,
-    "Hard Deadline": 1,
-    "Soft Deadline": 2,
-    "No Deadline": 3
-  };
-
-  const currentJobPriority = deadlineTypePriority[deadlineType];
-
   // Query all jobs with the same dueDate (or null if dueDate is null)
   let query = client
     .from("job")
@@ -491,45 +488,65 @@ export async function calculateJobPriority(
 
   const { data: existingJobs } = await query;
 
-  if (!existingJobs || existingJobs.length === 0) {
-    // No existing jobs with this due date, start at priority 0
-    return 0;
-  }
+  return nextJobPriority(existingJobs ?? [], deadlineType);
+}
 
-  // Find the position where this job should be inserted based on deadlineType
-  let insertBeforeIndex = existingJobs.length; // Default to end of list
+type DeadlineType = Database["public"]["Enums"]["deadlineType"];
 
-  for (let i = 0; i < existingJobs.length; i++) {
-    const existingJobPriority =
-      deadlineTypePriority[existingJobs[i].deadlineType];
+const DEADLINE_TYPE_PRIORITY: Record<DeadlineType, number> = {
+  ASAP: 0,
+  "Hard Deadline": 1,
+  "Soft Deadline": 2,
+  "No Deadline": 3
+};
 
-    // If the current job has higher priority (lower number) than this existing job,
-    // we should insert before this job
-    if (currentJobPriority < existingJobPriority) {
+/**
+ * The priority of a job placed among `siblings` — the jobs that share its due
+ * date (or lack of one) at its location, in priority order. Fractional
+ * indexing: before the first job whose deadline type ranks lower than this
+ * one's, else at the end. Pure, so a batch can place several jobs on one date
+ * in turn by appending each result to the siblings it passes for the next.
+ */
+/**
+ * The deadline type a job carries once planning gives it a due date. The job
+ * form hides the due-date field for "No Deadline" (`deadlineRequiresDueDate`),
+ * so a date written under that type is one the planner can neither see nor
+ * edit on the job, and `nextJobPriority` would rank it with the undated
+ * weight. The Order path sets Soft Deadline the same way.
+ */
+export function deadlineTypeForPlanningDate(
+  deadlineType: DeadlineType
+): DeadlineType {
+  return deadlineType === "No Deadline" ? "Soft Deadline" : deadlineType;
+}
+
+export function nextJobPriority(
+  siblings: { priority: number | null; deadlineType: DeadlineType }[],
+  deadlineType: DeadlineType
+): number {
+  if (siblings.length === 0) return 0;
+
+  const currentJobPriority = DEADLINE_TYPE_PRIORITY[deadlineType];
+  let insertBeforeIndex = siblings.length;
+  for (let i = 0; i < siblings.length; i++) {
+    if (
+      currentJobPriority < DEADLINE_TYPE_PRIORITY[siblings[i]!.deadlineType]
+    ) {
       insertBeforeIndex = i;
       break;
     }
   }
 
-  // Calculate the priority value using fractional indexing
-  let newPriority: number;
-
   if (insertBeforeIndex === 0) {
-    // Insert at the beginning - use half of the first job's priority
-    const firstPriority = existingJobs[0].priority ?? 0;
-    newPriority = firstPriority > 0 ? firstPriority / 2 : -1;
-  } else if (insertBeforeIndex === existingJobs.length) {
-    // Insert at the end - add 1 to the last job's priority
-    const lastPriority = existingJobs[existingJobs.length - 1].priority ?? 0;
-    newPriority = lastPriority + 1;
-  } else {
-    // Insert between two jobs - average their priorities
-    const beforePriority = existingJobs[insertBeforeIndex - 1].priority ?? 0;
-    const afterPriority = existingJobs[insertBeforeIndex].priority ?? 0;
-    newPriority = (beforePriority + afterPriority) / 2;
+    const firstPriority = siblings[0]!.priority ?? 0;
+    return firstPriority > 0 ? firstPriority / 2 : -1;
   }
-
-  return newPriority;
+  if (insertBeforeIndex === siblings.length) {
+    return (siblings[siblings.length - 1]!.priority ?? 0) + 1;
+  }
+  const beforePriority = siblings[insertBeforeIndex - 1]!.priority ?? 0;
+  const afterPriority = siblings[insertBeforeIndex]!.priority ?? 0;
+  return (beforePriority + afterPriority) / 2;
 }
 
 /** @mcp delete */
@@ -1464,20 +1481,24 @@ export async function getJobMaterialShortfallByItem(
         .filter((id) => !onHandByItem.has(id))
     )
   );
-  for (const successorId of successorIds) {
-    const quantities = await client.rpc("get_inventory_quantities", {
-      location_id: locationId,
-      company_id: companyId,
-      item_id: successorId
-    });
-    const row = quantities.data?.[0];
+  const successorQuantities = await async.map(
+    successorIds,
+    async (successorId) =>
+      await client.rpc("get_inventory_quantities", {
+        location_id: locationId,
+        company_id: companyId,
+        item_id: successorId
+      })
+  );
+  successorIds.forEach((successorId, index) => {
+    const row = successorQuantities[index]?.data?.[0];
     onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
     incomingByItem.set(
       successorId,
       Number(row?.quantityOnPurchaseOrder ?? 0) +
         Number(row?.quantityOnProductionOrder ?? 0)
     );
-  }
+  });
 
   // Remaining demand for those items across every active job at this location.
   const { data } = await client
@@ -2288,14 +2309,31 @@ export async function getProductionPlanning(
   periods: string[],
   args: GenericQueryFilters & {
     search: string | null;
+    /** Today on the location's calendar (ISO date): the day each item's
+     *  planning horizon is counted from. */
+    asOf: string;
+    /** Keep only items with an OPEN planning action of one of these types
+     *  inside the item's planning horizon (the grid's Actions filter). */
+    actionTypes?: string[];
+    /** Keep only items with such an action assigned to this user ("Assigned
+     *  to me"). Combined with `actionTypes` on the SAME action. */
+    actionAssignees?: string[];
   }
 ) {
+  // The grid RPC wraps get_production_planning: same rows and projection, plus the
+  // item group, the planning horizon / time fence date, the first week the
+  // projection goes negative and the latest order date — and it evaluates the
+  // action filter in the database, so it is complete at any volume and paging
+  // stays correct.
   let query = client.rpc(
-    "get_production_planning",
+    "get_production_planning_grid",
     {
       location_id: locationId,
       company_id: companyId,
-      periods
+      periods,
+      as_of: args.asOf,
+      action_types: args.actionTypes,
+      action_assignees: args.actionAssignees
     },
     {
       count: LIST_COUNT
@@ -2308,8 +2346,12 @@ export async function getProductionPlanning(
     );
   }
 
+  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
+  // from MRP's open new-supply actions), then the part number so a page is
+  // stable when many rows have nothing to order.
   query = setGenericQueryFilters(query, args, [
-    { column: "quantityToOrder", ascending: false }
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
   ]);
 
   return query;
@@ -2904,6 +2946,29 @@ export async function updateJobBatchNumber(
     .select("id, readableId");
 }
 
+// An `in` filter rides in the request URL and a response stops at PostgREST's
+// row cap, so a read keyed by an id list walks the ids in groups and pages each
+// group. A read cut short either way would say "nothing there" for the rest.
+const IN_FILTER_BATCH_SIZE = 100;
+
+async function fetchAllByIds<T extends object>(
+  ids: string[],
+  buildQuery: (batch: string[]) => {
+    range(
+      from: number,
+      to: number
+    ): PromiseLike<{ data: T[] | null; error: PostgrestError | null }>;
+  }
+): Promise<{ data: T[] | null; error: PostgrestError | null }> {
+  const rows: T[] = [];
+  for (const batch of chunkArray(ids, IN_FILTER_BATCH_SIZE)) {
+    const result = await fetchAllRecords(() => buildQuery(batch));
+    if (result.error) return { data: null, error: result.error };
+    rows.push(...result.data);
+  }
+  return { data: rows, error: null };
+}
+
 export type JobReleaseReadiness = {
   jobs: {
     id: string;
@@ -2921,6 +2986,8 @@ export type JobReleaseReadiness = {
       description: string;
       missing: "none" | "choose";
     }[];
+    // The suppliers this job's outside operations go on a purchase order for.
+    supplierIds: string[];
   }[];
   // Suppliers whose outside operations release will put on a purchase order,
   // with the Draft POs the planner may add them to instead of a new one.
@@ -3215,33 +3282,45 @@ export async function getJobReleaseReadiness(
     return { data: { jobs: [], suppliers: [] }, error: null };
 
   const [jobs, roots, materials, operations] = await Promise.all([
-    client
-      .from("job")
-      .select(
-        "id, jobId, status, customerId, item(itemReplenishment(manufacturingBlocked))"
-      )
-      .in("id", jobIds)
-      .eq("companyId", companyId),
-    client
-      .from("jobMakeMethod")
-      .select("id, jobId")
-      .in("jobId", jobIds)
-      .eq("companyId", companyId)
-      .is("parentMaterialId", null),
-    client
-      .from("jobMaterialWithMakeMethodId")
-      .select(
-        "jobId, jobMaterialMakeMethodId, methodType, kit, description, itemReadableId"
-      )
-      .in("jobId", jobIds)
-      .eq("companyId", companyId),
-    client
-      .from("jobOperation")
-      .select(
-        "id, jobId, jobMakeMethodId, operationType, operationSupplierProcessId, processId, description"
-      )
-      .in("jobId", jobIds)
-      .eq("companyId", companyId)
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("job")
+        .select(
+          "id, jobId, status, customerId, item(itemReplenishment(manufacturingBlocked))"
+        )
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobMakeMethod")
+        .select("id, jobId")
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .is("parentMaterialId", null)
+        .order("id")
+    ),
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobMaterialWithMakeMethodId")
+        .select(
+          "jobId, jobMaterialMakeMethodId, methodType, kit, description, itemReadableId"
+        )
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobOperation")
+        .select(
+          "id, jobId, jobMakeMethodId, operationType, operationSupplierProcessId, processId, description"
+        )
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
@@ -3257,13 +3336,14 @@ export async function getJobReleaseReadiness(
   const outsideOperationIds = (operations.data ?? [])
     .filter((op) => op.operationType === "Outside Processing")
     .map((op) => op.id);
-  const purchaseOrderLines = outsideOperationIds.length
-    ? await client
-        .from("purchaseOrderLine")
-        .select("jobOperationId")
-        .in("jobOperationId", outsideOperationIds)
-        .eq("companyId", companyId)
-    : { data: [], error: null };
+  const purchaseOrderLines = await fetchAllByIds(outsideOperationIds, (batch) =>
+    client
+      .from("purchaseOrderLine")
+      .select("jobOperationId")
+      .in("jobOperationId", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   if (purchaseOrderLines.error)
     return { data: null, error: purchaseOrderLines.error };
 
@@ -3290,20 +3370,22 @@ export async function getJobReleaseReadiness(
     )
   ];
   const [ownSupplierProcesses, processSupplierProcesses] = await Promise.all([
-    ownSupplierProcessIds.length
-      ? client
-          .from("supplierProcess")
-          .select("id, supplierId, processId")
-          .in("id", ownSupplierProcessIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null },
-    processIds.length
-      ? client
-          .from("supplierProcess")
-          .select("id, supplierId, processId")
-          .in("processId", processIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null }
+    fetchAllByIds(ownSupplierProcessIds, (batch) =>
+      client
+        .from("supplierProcess")
+        .select("id, supplierId, processId")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(processIds, (batch) =>
+      client
+        .from("supplierProcess")
+        .select("id, supplierId, processId")
+        .in("processId", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
   const supplierProcessError =
     ownSupplierProcesses.error ?? processSupplierProcesses.error;
@@ -3341,14 +3423,16 @@ export async function getJobReleaseReadiness(
     resolved.filter(({ supplier }) => "missing" in supplier),
     ({ op }) => op.jobId
   );
-  const drafts = supplierIds.length
-    ? await client
-        .from("purchaseOrder")
-        .select("id, purchaseOrderId, supplierId")
-        .eq("status", "Draft")
-        .in("supplierId", supplierIds)
-        .eq("companyId", companyId)
-    : { data: [], error: null };
+  const resolvedByJob = groupBy(resolved, ({ op }) => op.jobId);
+  const drafts = await fetchAllByIds(supplierIds, (batch) =>
+    client
+      .from("purchaseOrder")
+      .select("id, purchaseOrderId, supplierId")
+      .eq("status", "Draft")
+      .in("supplierId", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   if (drafts.error) return { data: null, error: drafts.error };
 
   const materialsByJob = groupBy(materials.data ?? [], (m) => m.jobId ?? "");
@@ -3387,7 +3471,16 @@ export async function getJobReleaseReadiness(
           id: op.id,
           description: op.description ?? op.id,
           missing: "missing" in supplier ? supplier.missing : "none"
-        }))
+        })),
+        supplierIds: [
+          ...new Set(
+            (resolvedByJob[job.id] ?? []).flatMap(({ supplier }) =>
+              "supplierProcess" in supplier
+                ? [supplier.supplierProcess.supplierId]
+                : []
+            )
+          )
+        ]
       })),
       suppliers: supplierIds.map((supplierId) => ({
         supplierId,
@@ -3409,9 +3502,14 @@ export async function updateJobStatus(
     status: (typeof jobStatus)[number];
     assignee?: string | null;
     updatedBy: string;
+    // Flip only from one of these statuses. A release reads the status, then
+    // runs for a while (recalculate, MRP) before it writes; a job someone
+    // cancelled in between must not come back as Ready. `updated` is false
+    // when the row no longer matched.
+    fromStatuses?: (typeof jobStatus)[number][];
   }
 ) {
-  const { id, companyId, status, assignee, updatedBy } = params;
+  const { id, companyId, status, assignee, updatedBy, fromStatuses } = params;
 
   // Reopening a job (leaving a completed state) must clear completedDate so it
   // isn't left stale. Done in the same UPDATE as status so the job event
@@ -3428,7 +3526,7 @@ export async function updateJobStatus(
     .eq("companyId", companyId)
     .maybeSingle();
 
-  const result = await client
+  const update = client
     .from("job")
     .update({
       status,
@@ -3437,9 +3535,15 @@ export async function updateJobStatus(
       updatedAt: new Date().toISOString(),
       ...(clearsCompletion ? { completedDate: null } : {})
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("companyId", companyId);
+  const result = fromStatuses
+    ? await update.in("status", fromStatuses).select("id")
+    : await update;
+  const updated =
+    !result.error && (!fromStatuses || (result.data?.length ?? 0) > 0);
 
-  if (!result.error && prior.data && prior.data.status !== status) {
+  if (updated && prior.data && prior.data.status !== status) {
     if (status === "Ready") {
       await raiseMoment("production.jobReleased", {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
@@ -3463,7 +3567,7 @@ export async function updateJobStatus(
     }
   }
 
-  return result;
+  return { ...result, updated };
 }
 
 /** @mcp update */
@@ -4066,27 +4170,7 @@ export async function updateJob(
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, updatedBy, ...updates } = input;
 
-  let priority = updates.priority;
-  if (
-    (updates.dueDate !== undefined || updates.deadlineType !== undefined) &&
-    priority === undefined
-  ) {
-    const existing = await client
-      .from("job")
-      .select("dueDate, deadlineType, companyId, locationId")
-      .eq("id", id)
-      .single();
-
-    if (existing.data) {
-      priority = await calculateJobPriority(client, {
-        jobId: id,
-        dueDate: updates.dueDate ?? existing.data.dueDate,
-        deadlineType: updates.deadlineType ?? existing.data.deadlineType,
-        companyId: existing.data.companyId,
-        locationId: existing.data.locationId
-      });
-    }
-  }
+  const priority = await priorityForDateChange(client, id, updates);
 
   return client
     .from("job")
@@ -4101,6 +4185,154 @@ export async function updateJob(
     .eq("id", id)
     .select("id")
     .single();
+}
+
+/**
+ * The job's priority when its due date or deadline type changes, so a date
+ * change re-ranks the job; undefined when neither changes or the caller sets
+ * the priority itself.
+ */
+async function priorityForDateChange(
+  client: SupabaseClient<Database>,
+  id: string,
+  updates: {
+    dueDate?: string | null;
+    deadlineType?: (typeof deadlineTypes)[number];
+    priority?: number;
+  }
+): Promise<number | undefined> {
+  if (
+    (updates.dueDate === undefined && updates.deadlineType === undefined) ||
+    updates.priority !== undefined
+  ) {
+    return updates.priority;
+  }
+
+  const existing = await client
+    .from("job")
+    .select("dueDate, deadlineType, companyId, locationId")
+    .eq("id", id)
+    .single();
+  if (!existing.data) return undefined;
+
+  return calculateJobPriority(client, {
+    jobId: id,
+    dueDate: updates.dueDate ?? existing.data.dueDate,
+    deadlineType: updates.deadlineType ?? existing.data.deadlineType,
+    companyId: existing.data.companyId,
+    locationId: existing.data.locationId
+  });
+}
+
+/**
+ * The scrap allowance a job needs for a new quantity, from its item's scrap
+ * rate — the same derivation `insertJob` makes. `job.quantity` is the good
+ * units; `scrapQuantity` rides on top of it (`productionQuantity` is their
+ * generated sum), so a quantity change that leaves the old allowance in place
+ * builds the wrong number of units.
+ */
+async function scrapQuantityForPlanningQuantity(
+  client: SupabaseClient<Database>,
+  job: { id: string; companyId: string },
+  quantity: number
+): Promise<{ scrapQuantity: number; error: PostgrestError | null }> {
+  const existing = await client
+    .from("job")
+    .select("itemId")
+    .eq("id", job.id)
+    .eq("companyId", job.companyId)
+    .single();
+  if (existing.error) return { scrapQuantity: 0, error: existing.error };
+
+  const replenishment = await client
+    .from("itemReplenishment")
+    .select("scrapPercentage")
+    .eq("itemId", existing.data.itemId)
+    .eq("companyId", job.companyId)
+    .maybeSingle();
+  if (replenishment.error) {
+    return { scrapQuantity: 0, error: replenishment.error };
+  }
+  return {
+    scrapQuantity: scrapAllowance(
+      quantity,
+      replenishment.data?.scrapPercentage ?? 0
+    ),
+    error: null
+  };
+}
+
+/**
+ * Change a job's quantity or due date from planning (Apply, the order drawer).
+ * The Draft / Planned condition is part of the UPDATE, so a job released
+ * after the caller read it is left alone rather than edited: `updated` is
+ * false, and the caller sends the planner to the job instead.
+ *
+ * A quantity change restates `scrapQuantity` for the new quantity. The
+ * planning Decrease / Increase quantities are good units, so the job's own
+ * scrap allowance must follow them — left alone, a Decrease to 80 kept the
+ * allowance of the old quantity and the next run offered the Decrease again.
+ */
+export async function updatePlanningJob(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    quantity?: number;
+    dueDate?: string;
+  }
+): Promise<{ updated: boolean; error: PostgrestError | null }> {
+  const { id, companyId, updatedBy, ...changes } = input;
+  const updates: typeof changes & { deadlineType?: DeadlineType } = {
+    ...changes
+  };
+  if (updates.dueDate !== undefined) {
+    const existing = await client
+      .from("job")
+      .select("deadlineType")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error) return { updated: false, error: existing.error };
+    const deadlineType = deadlineTypeForPlanningDate(
+      existing.data.deadlineType
+    );
+    if (deadlineType !== existing.data.deadlineType) {
+      updates.deadlineType = deadlineType;
+    }
+  }
+  const priority = await priorityForDateChange(client, id, updates);
+
+  let scrap: { scrapQuantity: number } | undefined;
+  if (updates.quantity !== undefined) {
+    const derived = await scrapQuantityForPlanningQuantity(
+      client,
+      { id, companyId },
+      updates.quantity
+    );
+    if (derived.error) return { updated: false, error: derived.error };
+    scrap = { scrapQuantity: derived.scrapQuantity };
+  }
+
+  const result = await client
+    .from("job")
+    .update({
+      ...updates,
+      ...scrap,
+      ...(priority !== undefined && { priority }),
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .in("status", [...PLANNING_EDITABLE_JOB_STATUSES])
+    .select("id");
+
+  return {
+    updated: (result.data ?? []).length > 0,
+    error: result.error
+  };
 }
 
 /**
@@ -10757,6 +10989,571 @@ export async function completeOperation(
   }
 
   return backflush;
+}
+
+// ── Planning actions (spec §P1) ────────────────────────────────────────────
+// Persisted MRP action messages (Order/Make/Expedite/Defer/Cancel/Increase/
+// Decrease). Written diff-write by generatePlanningActions (@carbon/planning);
+// these are the app-side reads and worklist mutations.
+
+// Item ids per request. `.in()` writes every id into the URL, and the gateway
+// rejects a request line it cannot buffer (HTTP 431) — 100 ids is about 3 kB.
+const PLANNING_ACTION_ITEM_CHUNK = 100;
+
+/**
+ * The open and dismissed planning actions of the given items at a location —
+ * the rows behind a planning grid PAGE. The grid decides which items are on the
+ * page (its RPC owns the Actions filter); this loads their actions in full, so
+ * there is no cap to fall off the end of.
+ *
+ * The item, the purchase order behind a line and the job come back as embeds
+ * of the same read. Looking them up afterwards by `.in("id", …)` put one id per
+ * ACTION in the URL: a page of busy items (2,000+ actions) overran the gateway
+ * and the whole read failed, leaving the grid with no actions at all.
+ */
+/** Which planning page owns an action — purchasing ("Buy") or production ("Make"). */
+export type PlanningActionKind = "Buy" | "Make";
+
+export async function getPlanningActions(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    kind: PlanningActionKind;
+    itemIds: string[];
+  }
+) {
+  const { companyId, locationId, kind, itemIds: pageItemIds } = args;
+
+  if (pageItemIds.length === 0) {
+    return { data: [], count: 0, error: null };
+  }
+
+  const chunks = await Promise.all(
+    chunkArray(pageItemIds, PLANNING_ACTION_ITEM_CHUNK).map((itemIds) =>
+      // Paged: a page of busy items can hold more actions than PostgREST's
+      // max_rows, and a bare select would silently drop the tail.
+      fetchAllRecords(() => {
+        const query = client
+          .from("planningAction")
+          .select(
+            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, promisedDate, purchaseOrder(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job(jobId, status)"
+          )
+          .eq("companyId", companyId)
+          .eq("locationId", locationId)
+          .neq("status", "Actioned")
+          .in("itemId", itemIds);
+
+        // Buy worklist = new purchase suggestions + change actions on PO lines;
+        // Make worklist = new job suggestions + change actions on jobs.
+        return (
+          kind === "Buy"
+            ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
+            : query.or("type.eq.Make,jobId.not.is.null")
+        )
+          .order("suggestedDate", { ascending: true })
+          .order("id", { ascending: true });
+      })
+    )
+  );
+
+  // One failed chunk fails the read: a grid missing some parts' actions looks
+  // exactly like a grid where those parts need nothing.
+  const failed = chunks.find((chunk) => chunk.error);
+  if (failed?.error) {
+    return { data: null, count: 0, error: failed.error };
+  }
+
+  const enriched = chunks
+    .flatMap((chunk) => chunk.data ?? [])
+    .map(({ item, purchaseOrderLine, job, ...row }) => ({
+      ...row,
+      itemReadableId: item?.readableIdWithRevision ?? null,
+      itemName: item?.name ?? null,
+      // navigation target: the PARENT purchase order id — the stored value is
+      // the LINE id and would 404 in path.to.purchaseOrder
+      purchaseOrderId: purchaseOrderLine?.purchaseOrderId ?? null,
+      purchaseOrderReadableId:
+        purchaseOrderLine?.purchaseOrder?.purchaseOrderId ?? null,
+      // why the row offers Review instead of Apply: shown as an icon beside
+      // the document number, and read LIVE to choose Apply or Review — MRP's
+      // `requiresManualAction` is as of the run, so a PO reopened since would
+      // otherwise stay on Review until the next one
+      purchaseOrderStatus: purchaseOrderLine?.purchaseOrder?.status ?? null,
+      // a released PO can be reopened as a revision (see
+      // canCreatePurchaseOrderRevision)
+      purchaseOrderDate: purchaseOrderLine?.purchaseOrder?.orderDate ?? null,
+      // the supplier's promise, which Apply's required date cannot move
+      purchaseOrderLinePromisedDate:
+        purchaseOrderLine?.promisedDate ??
+        purchaseOrderLine?.purchaseOrder?.purchaseOrderDelivery
+          ?.receiptPromisedDate ??
+        null,
+      jobReadableId: job?.jobId ?? null,
+      jobStatus: job?.status ?? null
+    }))
+    // the chunks are each in order; the page as a whole is not
+    .sort(
+      (a, b) =>
+        a.suggestedDate.localeCompare(b.suggestedDate) ||
+        a.id.localeCompare(b.id)
+    );
+
+  return {
+    data: enriched,
+    count: enriched.length,
+    error: null
+  };
+}
+
+// The worklist writes below take an id LIST and go through Kysely, one
+// statement each. Over PostgREST every id goes into the URL: a bulk Apply on a
+// page of busy items sent hundreds, the gateway answered 431, and the whole
+// batch failed before anything was claimed. A read over PostgREST also stops
+// at max_rows (1000) and would report every id after that as "not found".
+// One statement is also what makes the claim below a lock: every row of the
+// batch flips in one transaction or none does.
+type PlanningActionIdListResult<Row> =
+  | { data: Row[]; error: null }
+  | { data: null; error: { message: string } };
+
+async function planningActionIdList<Row>(
+  ids: string[],
+  run: () => Promise<Row[]>
+): Promise<PlanningActionIdListResult<Row>> {
+  if (ids.length === 0) return { data: [], error: null };
+  try {
+    return { data: await run(), error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: err instanceof Error ? err.message : String(err) }
+    };
+  }
+}
+
+/**
+ * The worklist a page may write, the same split `getPlanningActions` reads:
+ * Buy = new purchase suggestions and changes on PO lines, Make = new job
+ * suggestions and changes on jobs. The writes below go through Kysely, past
+ * row-level security, so without it a user with purchasing rights could
+ * dismiss or reassign production's actions by posting their ids.
+ */
+function inPlanningWorklist(kind: PlanningActionKind) {
+  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
+    kind === "Buy"
+      ? eb.or([
+          eb("type", "=", "Order"),
+          eb("purchaseOrderLineId", "is not", null)
+        ])
+      : eb.or([eb("type", "=", "Make"), eb("jobId", "is not", null)]);
+}
+
+export async function dismissPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    ids: string[];
+    companyId: string;
+    userId: string;
+    kind: PlanningActionKind;
+  }
+) {
+  // Open-only: Actioned is terminal, and a stale worklist id must never flip
+  // an Actioned row to Dismissed (which would make it visible again and
+  // eligible for the generator's Dismissed-reopen branch).
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Dismissed",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Open")
+      .where(inPlanningWorklist(args.kind))
+      .returning("id")
+      .execute()
+  );
+}
+
+/**
+ * Conditional claim, not a blind update: only Open rows flip to Actioned, and
+ * the claimed ids are returned. Callers applying a mutation MUST claim first
+ * and treat an empty result as "someone else already applied this" — that
+ * affected-row check is the concurrency lock for the whole apply path.
+ */
+export async function markPlanningActionsActioned(
+  db: Kysely<KyselyDatabase>,
+  args: { ids: string[]; companyId: string; userId: string }
+) {
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Actioned",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Open")
+      // The suggestion as it is at the claim — see claimPlanningActions.
+      .returning(["id", "suggestedQuantity", "suggestedDate"])
+      .execute()
+  );
+}
+
+/**
+ * Settle the new-supply suggestions a planning Order just raised. The page's
+ * Order button creates PO lines (Buy) or jobs (Make) from the suggested
+ * orders, which carry no action id; each one is the week of an Order / Make
+ * action (both come from `computePlanningOrders`, and the natural key holds
+ * one such action per item, location and week). Without this, the action
+ * stayed Open beside the order that answered it until the next MRP run.
+ * Dismissed is settled too: the need it suppressed has now been ordered.
+ * Pairs are matched as pairs, so a bulk order never settles one item's week
+ * because another item was ordered in it.
+ */
+export async function settleNewSupplyPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    userId: string;
+    type: "Order" | "Make";
+    ordered: { itemId: string; periodId: string }[];
+  }
+) {
+  const byKey = new Map(
+    args.ordered.map((pair) => [`${pair.itemId}\u0000${pair.periodId}`, pair])
+  );
+  const ordered = [...byKey.values()];
+  return planningActionIdList([...byKey.keys()], () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Actioned",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId)
+      .where("type", "=", args.type)
+      .where("status", "in", ["Open", "Dismissed"])
+      .where((eb) =>
+        eb.or(
+          ordered.map((pair) =>
+            eb.and([
+              eb("itemId", "=", pair.itemId),
+              eb("periodId", "=", pair.periodId)
+            ])
+          )
+        )
+      )
+      .returning("id")
+      .execute()
+  );
+}
+
+/** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */
+export async function reopenPlanningActions(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; companyId: string; userId: string }
+) {
+  return client
+    .from("planningAction")
+    .update({ status: "Open" as const, updatedBy: args.userId })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .eq("status", "Actioned");
+}
+
+/**
+ * Give up an apply's claim on one action: back to Open, so the planner can try
+ * again. If an MRP run since the claim already wrote an Open row for the same
+ * need, the reopen hits the natural-key unique index (23505); that new row
+ * replaces this one, so the claimed row is deleted instead. Returns the error
+ * the caller must report — never ignore it, or the action stays Actioned with
+ * nothing applied.
+ */
+export async function releasePlanningActionClaim(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<{ error: string | null }> {
+  const reopened = await reopenPlanningActions(client, {
+    ids: [args.id],
+    companyId: args.companyId,
+    userId: args.userId
+  });
+  if (!reopened.error) return { error: null };
+  if (!isUniqueViolation(reopened.error)) {
+    return { error: reopened.error.message };
+  }
+
+  const removed = await client
+    .from("planningAction")
+    .delete()
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .eq("status", "Actioned");
+  return { error: removed.error?.message ?? null };
+}
+
+/**
+ * The worklist's "Reopen" on a Dismissed row. Dismissed-only: `reopenPlanningActions`
+ * above is the apply path's claim rollback (Actioned → Open) and must stay
+ * separate so a stale worklist id can never un-claim a row another apply holds.
+ */
+export async function reopenDismissedPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    ids: string[];
+    companyId: string;
+    userId: string;
+    kind: PlanningActionKind;
+  }
+) {
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        status: "Open",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Dismissed")
+      .where(inPlanningWorklist(args.kind))
+      .returning("id")
+      .execute()
+  );
+}
+
+/**
+ * Assigning through this function (not the generic api/assign route) both sets
+ * the assignee AND marks it human-overridden so the next MRP diff-write never
+ * re-resolves it from the responsibleEmployee ladder. An applied (Actioned)
+ * action is finished and keeps its owner. Like dismiss and reopen, it returns
+ * the ids it changed: the route reports those, not the ids it was sent.
+ */
+export async function assignPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    ids: string[];
+    companyId: string;
+    assignee: string | null;
+    userId: string;
+    kind: PlanningActionKind;
+  }
+) {
+  return planningActionIdList(args.ids, () =>
+    db
+      .updateTable("planningAction")
+      .set({
+        assignee: args.assignee || null,
+        assigneeOverridden: true,
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("status", "in", ["Open", "Dismissed"])
+      .where(inPlanningWorklist(args.kind))
+      .returning("id")
+      .execute()
+  );
+}
+
+export type ProductionPlanningDateAction = {
+  planningActionId: string;
+  jobId: string;
+  /** the new due date, ISO */
+  suggestedDate: string;
+};
+
+export type ProductionPlanningDateApplyResult = {
+  /** changed and marked Actioned */
+  applied: string[];
+  /** marked Actioned by another apply since the page loaded; nothing changed */
+  alreadyApplied: string[];
+  /** the job left Draft / Planned since it was read: the action stays Open */
+  refused: { id: string; jobId: string }[];
+};
+
+/**
+ * Apply a batch of Expedite / Defer actions to their jobs in ONE transaction,
+ * set-based: the claim, two reads (the jobs, and the jobs that share their
+ * new due dates) and one UPDATE for every date and priority. It used to be a
+ * job read, a sibling read, an update and a scheduler event per action.
+ *
+ * Priority follows `updateJob`'s rule (`nextJobPriority`): a moved job is
+ * ranked among the jobs already on its new date. Several jobs moved to one
+ * date in the same batch are placed one after the other, each seeing the ones
+ * placed before it, as the sequential writes did.
+ *
+ * The Draft / Planned condition is part of the UPDATE: a job released after
+ * it was read is left alone, its action goes back to Open, and the caller
+ * sends the planner to the job. The caller tells the scheduler ONCE after the
+ * batch — a "reorder" event re-stamps the whole company whatever its job id.
+ */
+export async function applyProductionPlanningDateActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    actions: ProductionPlanningDateAction[];
+  }
+): Promise<ProductionPlanningDateApplyResult> {
+  const { companyId, userId, actions } = args;
+  const result: ProductionPlanningDateApplyResult = {
+    applied: [],
+    alreadyApplied: [],
+    refused: []
+  };
+  if (actions.length === 0) return result;
+  const now = datetime.timestamp();
+
+  await db.transaction().execute(async (trx) => {
+    const claimed = await claimPlanningActions(trx, {
+      ids: actions.map((a) => a.planningActionId),
+      companyId,
+      userId,
+      now
+    });
+    // The date comes from the claim, not from the page's read (see
+    // claimPlanningActions); the page's value is only the fallback for a row
+    // that somehow carries none.
+    const held = actions.flatMap((a) => {
+      const claim = claimed.get(a.planningActionId);
+      if (!claim) return [];
+      return [{ ...a, suggestedDate: claim.suggestedDate ?? a.suggestedDate }];
+    });
+    for (const action of actions) {
+      if (!claimed.has(action.planningActionId)) {
+        result.alreadyApplied.push(action.planningActionId);
+      }
+    }
+    if (held.length === 0) return;
+
+    const jobIds = [...new Set(held.map((a) => a.jobId))];
+    const jobs = await trx
+      .selectFrom("job")
+      .select(["id", "locationId", "deadlineType"])
+      .where("id", "in", jobIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    const jobById = new Map(jobs.map((job) => [job.id, job]));
+
+    // The jobs already on each target date, per location — the siblings a
+    // moved job is ranked among. One read for every date in the batch.
+    const targetDates = [...new Set(held.map((a) => a.suggestedDate))];
+    const siblingRows = await trx
+      .selectFrom("job")
+      .select(["id", "locationId", "dueDate", "priority", "deadlineType"])
+      .where("companyId", "=", companyId)
+      .where("dueDate", "in", targetDates)
+      .where("id", "not in", jobIds)
+      .orderBy("priority", "asc")
+      .execute();
+    const siblingsByKey = new Map<
+      string,
+      { priority: number | null; deadlineType: DeadlineType }[]
+    >();
+    for (const row of siblingRows) {
+      const key = `${row.locationId}\u001f${row.dueDate}`;
+      const list = siblingsByKey.get(key) ?? [];
+      list.push({ priority: row.priority, deadlineType: row.deadlineType });
+      siblingsByKey.set(key, list);
+    }
+
+    const values: {
+      jobId: string;
+      dueDate: string;
+      deadlineType: DeadlineType;
+      priority: number;
+    }[] = [];
+    for (const action of held) {
+      const job = jobById.get(action.jobId);
+      if (!job) continue; // refused below: no row changed
+      const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
+      const key = `${job.locationId}\u001f${action.suggestedDate}`;
+      const siblings = siblingsByKey.get(key) ?? [];
+      const priority = nextJobPriority(siblings, deadlineType);
+      siblings.push({ priority, deadlineType });
+      siblings.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+      siblingsByKey.set(key, siblings);
+      values.push({
+        jobId: action.jobId,
+        dueDate: action.suggestedDate,
+        deadlineType,
+        priority
+      });
+    }
+
+    const changedJobs = new Set<string>();
+    if (values.length > 0) {
+      const rows = await sql<{ id: string }>`
+        UPDATE "job" AS j
+        SET "dueDate" = v."dueDate"::date,
+            "deadlineType" = v."deadlineType"::"deadlineType",
+            "priority" = v."priority"::numeric,
+            "updatedBy" = ${userId},
+            "updatedAt" = ${now}
+        FROM (VALUES ${sql.join(
+          values.map(
+            (v) =>
+              sql`(${v.jobId}, ${v.dueDate}, ${v.deadlineType}, ${v.priority})`
+          )
+        )}) AS v("id", "dueDate", "deadlineType", "priority")
+        WHERE j."id" = v."id"
+          AND j."companyId" = ${companyId}
+          AND j."status" IN (${sql.join(
+            PLANNING_EDITABLE_JOB_STATUSES.map((status) => sql`${status}`)
+          )})
+        RETURNING j."id"
+      `.execute(trx);
+      for (const row of rows.rows) changedJobs.add(row.id);
+    }
+
+    const refusedIds: string[] = [];
+    for (const action of held) {
+      if (changedJobs.has(action.jobId)) {
+        result.applied.push(action.planningActionId);
+      } else {
+        refusedIds.push(action.planningActionId);
+        result.refused.push({
+          id: action.planningActionId,
+          jobId: action.jobId
+        });
+      }
+    }
+    await releasePlanningActionClaims(trx, {
+      ids: refusedIds,
+      companyId,
+      userId,
+      now
+    });
+  });
+
+  return result;
+}
+
+/** The actions an Apply was sent, in one read (an Apply used to read each). */
+export async function getPlanningActionsByIds(
+  db: Kysely<KyselyDatabase>,
+  args: { ids: string[]; companyId: string }
+) {
+  return planningActionIdList(args.ids, () =>
+    db
+      .selectFrom("planningAction")
+      .selectAll()
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .execute()
+  );
 }
 
 /**

@@ -9,6 +9,7 @@ import {
   InputControlled,
   ValidatedForm
 } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -39,7 +40,7 @@ import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -1097,12 +1098,9 @@ function JobOperationSelect(initialValues: { jobId?: string }) {
     initialValues.jobId ?? null
   );
 
-  const jobsFetcher =
-    useFetcher<PostgrestResponse<{ id: string; jobId: string }>>();
-  useMount(() => {
-    jobsFetcher.load(path.to.api.jobs);
-  });
-
+  const jobsFetcher = useLoaderQuery<
+    PostgrestResponse<{ id: string; jobId: string }>
+  >(path.to.api.jobs);
   const jobOptions = useMemo(
     () =>
       jobsFetcher.data?.data
@@ -1114,15 +1112,9 @@ function JobOperationSelect(initialValues: { jobId?: string }) {
     [jobsFetcher.data]
   );
 
-  const jobOperationFetcher =
-    useFetcher<PostgrestResponse<{ id: string; description: string }>>();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (jobId) {
-      jobOperationFetcher.load(path.to.api.outsideOperations(jobId));
-    }
-  }, [jobId]);
-
+  const jobOperationFetcher = useLoaderQuery<
+    PostgrestResponse<{ id: string; description: string }>
+  >(jobId ? path.to.api.outsideOperations(jobId) : null);
   const jobOperationOptions = useMemo(() => {
     return (
       jobOperationFetcher.data?.data?.map((c) => ({

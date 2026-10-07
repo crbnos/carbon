@@ -6,11 +6,12 @@ import { error, notFound, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button, Heading } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import type {
   BalanceAnchor,
@@ -166,7 +167,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
+// The feed keeps the pages it has loaded in state, seeded from the loader. A
+// reload for another location or highlight is a new feed: without the key it
+// kept showing the first one, with the new one's paging cursors. An entry
+// posted while the feed is open is deliberately not a new feed: remounting
+// would drop the older pages already loaded and the scroll position.
 export default function ItemInventoryActivityRoute() {
+  const { itemId, locationId, highlightId } = useLoaderData<typeof loader>();
+  return (
+    <ItemInventoryActivity key={`${itemId}:${locationId}:${highlightId}`} />
+  );
+}
+
+function ItemInventoryActivity() {
   const {
     initialItemLedgers,
     itemId,

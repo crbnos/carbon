@@ -28,7 +28,6 @@
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-babel-macros": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -42,7 +43,7 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuClock,
@@ -56,7 +57,7 @@ import {
   RiProgress8Line
 } from "react-icons/ri";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, useFetcher, useLoaderData } from "react-router";
+import { Await, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   CustomerAvatar,
@@ -153,8 +154,52 @@ export default function SalesDashboard() {
     return merged;
   }, [openSalesOrders, openQuotes, openRFQs]);
 
-  const kpiFetcher = useFetcher<typeof kpiLoader>();
-  const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
+  const dateFormatter = useDateFormatter({
+    month: "short",
+    day: "numeric"
+  });
+
+  const currencyCompactFormatter = useCurrencyFormatter({ compact: true });
+  const currencyFormatter = useCurrencyFormatter();
+  const numberFormatter = useNumberFormatter({
+    maximumFractionDigits: 0,
+    notation: "compact",
+    compactDisplay: "short"
+  });
+
+  const [customerId, setCustomerId] = useState<string>("all");
+  const [customers] = useCustomers();
+  const customerOptions = useMemo(() => {
+    return [
+      {
+        label: t`All Customers`,
+        value: "all"
+      },
+      ...customers.map((customer) => ({
+        label: customer.name,
+        value: customer.id
+      }))
+    ];
+  }, [customers, t]);
+
+  const [interval, setInterval] = useState("month");
+  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
+  const [dateRange, setDateRange] = useState<DateRange | null>(() => {
+    const end = today("UTC");
+    const start = end.add({ months: -1 });
+    return { start, end };
+  });
+
+  const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
+
+  const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
+    `${path.to.api.salesKpi(
+      selectedKpiData.key
+    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+      customerId === "all" ? "" : `&customerId=${customerId}`
+    }`
+  );
+  const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
   const steps = useMemo(() => {
     const defaultSteps = [
@@ -205,44 +250,6 @@ export default function SalesDashboard() {
     ];
   }, [kpiFetcher.data?.data, t]);
 
-  const dateFormatter = useDateFormatter({
-    month: "short",
-    day: "numeric"
-  });
-
-  const currencyCompactFormatter = useCurrencyFormatter({ compact: true });
-  const currencyFormatter = useCurrencyFormatter();
-  const numberFormatter = useNumberFormatter({
-    maximumFractionDigits: 0,
-    notation: "compact",
-    compactDisplay: "short"
-  });
-
-  const [customerId, setCustomerId] = useState<string>("all");
-  const [customers] = useCustomers();
-  const customerOptions = useMemo(() => {
-    return [
-      {
-        label: t`All Customers`,
-        value: "all"
-      },
-      ...customers.map((customer) => ({
-        label: customer.name,
-        value: customer.id
-      }))
-    ];
-  }, [customers, t]);
-
-  const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
-  const [dateRange, setDateRange] = useState<DateRange | null>(() => {
-    const end = today("UTC");
-    const start = end.add({ months: -1 });
-    return { start, end };
-  });
-
-  const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
-
   const kpiLabels: Record<string, string> = useMemo(
     () => ({
       quoteCount: t`Quotes`,
@@ -253,17 +260,6 @@ export default function SalesDashboard() {
     }),
     [t]
   );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    kpiFetcher.load(
-      `${path.to.api.salesKpi(
-        selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-        customerId === "all" ? "" : `&customerId=${customerId}`
-      }`
-    );
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key, customerId]);
 
   const onIntervalChange = (value: string) => {
     const end = today("UTC");
@@ -359,7 +355,7 @@ export default function SalesDashboard() {
           ? item.date
           : "month" in item
             ? item.month
-            : // @ts-ignore
+            : // @ts-expect-error
               item.monthKey,
         item.value
       ])

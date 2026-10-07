@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { join } from "node:path";
-import { intro, log, outro, spinner } from "@clack/prompts";
+import { intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import pc from "picocolors";
 import { recreateServices } from "../services/compose.js";
+import { spinner } from "../ui.js";
 import { getWorktreeRoot, projectName, resolveSlug } from "../worktree.js";
 
 // `crbn reload <service...>` — recreate specific compose services so an edit to

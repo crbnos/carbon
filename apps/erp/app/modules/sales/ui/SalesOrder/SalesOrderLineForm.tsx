@@ -263,7 +263,7 @@ const SalesOrderLineForm = ({
   }, [pricingRuleId, carbon]);
 
   const onTypeChange = (t: SalesOrderLineType) => {
-    // @ts-ignore
+    // @ts-expect-error
     setLineType(t);
     // Clear itemData only when the new filter excludes the currently selected
     // item — otherwise a stale itemId of the old type would post with the new

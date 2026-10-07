@@ -2,11 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
-import { pdfjs } from "react-pdf";
-
-registerReactPdfWorker(pdfjs);
-
 import {
   CONTROLLED_ENVIRONMENT,
   POSTHOG_API_HOST,
@@ -41,7 +36,10 @@ ensureLoggingConfigured();
 // node React can't match, so the ENTIRE document fails hydration.
 if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
-    api_host: POSTHOG_API_HOST
+    api_host: POSTHOG_API_HOST,
+    // LCP, INP and CLS from real sessions: the only way to know which pages are
+    // slow for the people using them.
+    capture_performance: { web_vitals: true }
   });
 }
 

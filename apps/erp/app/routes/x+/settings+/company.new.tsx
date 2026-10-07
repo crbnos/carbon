@@ -11,8 +11,8 @@ import { enableAuditLog } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { insertEmployeeJob } from "~/modules/people";
 import { upsertLocation } from "~/modules/resources";
 import {

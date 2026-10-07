@@ -224,8 +224,30 @@ export type Rule<T extends Table = Table> =
 // biome-ignore lint/suspicious/noExplicitAny: a rule for some table, read generically
 export type AnyRule = Rule<any>;
 
-/** Every public table's rule. Each entry's type is bound to its own table. */
-export type Manifest = { [T in Table]?: Rule<T> };
+type CustomRule = Extract<AnyRule, { kind: "custom" }>;
+
+/**
+ * Tables outside `public` whose policies the manifest also owns, keyed
+ * `<schema>.<table>`. Supabase owns the table itself (and its RLS switch); only
+ * the policies are ours.
+ */
+export type ExternalTable = "realtime.messages";
+
+/**
+ * Every public table's rule, each entry's type bound to its own table, plus the
+ * external tables' policies.
+ */
+export type Manifest = { [T in Table]?: Rule<T> } & {
+  [T in ExternalTable]?: CustomRule;
+};
+
+/** The schema and table a manifest key names: `note` is public, `realtime.messages` is not. */
+export const locate = (key: string) => {
+  const dot = key.indexOf(".");
+  return dot === -1
+    ? { schema: "public", table: key }
+    : { schema: key.slice(0, dot), table: key.slice(dot + 1) };
+};
 
 /** Any shape: one predicate per command, or `all` for every command at once. */
 export const policies = <T extends Table>({
@@ -343,6 +365,12 @@ export const custom = <T extends Table>(
   reason: string,
   sql: (target: string) => string
 ): Rule<T> => ({ kind: "custom", reason, sql });
+
+/** Policies on a table outside `public` (see `ExternalTable`). */
+export const external = (
+  reason: string,
+  sql: (target: string) => string
+): CustomRule => ({ kind: "custom", reason, sql });
 
 // ─── Rendering ───────────────────────────────────────────────────────────────
 

@@ -3,12 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { unchecked } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate } from "~/modules/accounting";
 import {
   computeInvoiceDateDue,
-  isSalesInvoiceLocked
+  isSalesInvoiceLocked,
+  salesInvoiceCustomerChange
 } from "~/modules/invoicing";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
@@ -45,42 +46,48 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
-    case "invoiceCustomerId":
-      let currencyCode: string | undefined;
-      if (value && ids.length === 1) {
-        const customer = await client
-          ?.from("customer")
-          .select("currencyCode")
-          .eq("id", value)
-          .single();
-
-        if (customer.data?.currencyCode) {
-          currencyCode = customer.data.currencyCode;
-          const rate = await getExchangeRate(client, companyId, currencyCode);
-          if (rate.error) return rate;
-          return await client
-            .from("salesInvoice")
-            .update({
-              invoiceCustomerId: value ?? undefined,
-              invoiceCustomerContactId: null,
-              invoiceCustomerLocationId: null,
-              currencyCode: currencyCode ?? undefined,
-              exchangeRate: rate.data,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", ids as string[]);
-        }
+    case "invoiceCustomerId": {
+      if (!value) {
+        return {
+          error: { message: "Invoice customer is required" },
+          data: null
+        };
       }
 
+      const customer = await client
+        .from("customer")
+        .select("currencyCode")
+        .eq("id", value)
+        .eq("companyId", companyId)
+        .single();
+      if (customer.error) return customer;
+
+      let currency: { currencyCode: string; exchangeRate: number } | null =
+        null;
+      if (customer.data.currencyCode) {
+        const rate = await getExchangeRate(
+          client,
+          companyId,
+          customer.data.currencyCode
+        );
+        if (rate.error) return rate;
+        currency = {
+          currencyCode: customer.data.currencyCode,
+          exchangeRate: rate.data
+        };
+      }
+
+      // A customer with no currency keeps the invoice's own. The contact and
+      // location belonged to the previous invoice customer.
       return await client
         .from("salesInvoice")
         .update({
-          customerId: value ?? undefined,
+          ...salesInvoiceCustomerChange(value, currency),
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .in("id", ids as string[]);
+    }
     case "dateIssued":
       if (ids.length === 1) {
         const invoice = await client

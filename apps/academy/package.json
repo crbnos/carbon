@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/dev": "workspace:*",
     "@lingui/vite-plugin": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -49,7 +50,6 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-babel-macros": "catalog:",
     "wait-on": "catalog:"
   },
   "private": true,

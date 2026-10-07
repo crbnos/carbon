@@ -4,9 +4,9 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import {
   batchRuleInitialValues,
   type getProcessesList
@@ -99,11 +99,9 @@ Process.displayName = "Process";
 export default Process;
 
 export const useProcesses = () => {
-  const fetcher = useFetcher<Awaited<ReturnType<typeof getProcessesList>>>();
-
-  useMount(() => {
-    fetcher.load(path.to.api.processes);
-  });
+  const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getProcessesList>>>(
+    path.to.api.processes
+  );
 
   const options = useMemo(
     () =>

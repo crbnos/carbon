@@ -12,8 +12,8 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import type { Violation } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   calculatePricesForQuantities,
   convertSalesRfqToQuote,

@@ -7,9 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getCustomerPortal } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
@@ -63,10 +64,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId
   );
   if (deleteCustomerPortalError) {
-    const errorMessage =
-      deleteCustomerPortalError.code === "23503"
-        ? "Customer portal is used elsewhere, cannot delete"
-        : "Failed to delete customer portal";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteCustomerPortalError,
+      "Failed to delete customer portal",
+      { referenced: "Customer portal is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.customerPortals}?${getParams(request)}`,

@@ -4,9 +4,10 @@
 
 "use client";
 
+import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
-  Input,
   Modal,
   ModalBody,
   ModalContent,
@@ -17,11 +18,24 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import {
+  formatDateTimeInZone,
+  formatRelativeCalendarDays
+} from "@carbon/utils";
+import {
+  getLocalTimeZone,
+  now,
+  parseAbsolute,
+  toCalendarDate,
+  toCalendarDateTime,
+  today
+} from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
-import { useFetcher } from "react-router";
+import { setClockOutValidator } from "~/modules/people";
 import { path } from "~/utils/path";
-import { DateTime } from "./DateTime";
+import { DateTimePicker, Hidden, Submit } from "./Form";
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -36,9 +50,18 @@ type TimeCardWarningProps = {
 
 export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const [showClockWarning, setShowClockWarning] = useState(false);
-  const [editClockOut, setEditClockOut] = useState("");
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSettled: (data) => {
+      if (data) {
+        if ((data as { success?: boolean }).success) {
+          toast.success(t`Updated successfully`);
+          setShowClockWarning(false);
+        }
+      }
+    }
+  });
 
   useEffect(() => {
     if (!openClockEntry) {
@@ -67,15 +90,6 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
     return () => clearInterval(interval);
   }, [openClockEntry]);
 
-  useEffect(() => {
-    if (fetcher.data && fetcher.state === "idle") {
-      if ((fetcher.data as { success?: boolean }).success) {
-        toast.success(t`Updated successfully`);
-        setShowClockWarning(false);
-      }
-    }
-  }, [fetcher.data, fetcher.state, t]);
-
   const handleClockAcknowledge = () => {
     if (openClockEntry) {
       sessionStorage.setItem(CLOCK_STORAGE_KEY, openClockEntry.id);
@@ -83,28 +97,36 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
     setShowClockWarning(false);
   };
 
-  const handleEditClockOut = () => {
-    if (!editClockOut || !openClockEntry) return;
-    const formData = new FormData();
-    formData.append("intent", "clockOut");
-    formData.append("clockOut", new Date(editClockOut).toISOString());
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.api.timecard
-    });
-  };
-
   if (showClockWarning && openClockEntry) {
     const hoursElapsed = Math.floor(
       (Date.now() - new Date(openClockEntry.clockIn).getTime()) / 3600000
     );
+    const timeZone = getLocalTimeZone();
+    const clockedInAt = parseAbsolute(openClockEntry.clockIn, timeZone);
+    const clockedInLabel = formatDateTimeInZone(
+      openClockEntry.clockIn,
+      timeZone,
+      locale,
+      {
+        dateStyle: undefined,
+        timeStyle: undefined,
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      }
+    );
+    const clockedInDaysAgo = formatRelativeCalendarDays(
+      toCalendarDate(clockedInAt).toString(),
+      today(timeZone).toString(),
+      locale
+    );
 
     return (
       <Modal
+        // No onOpenChange: the prompt must be answered, so it has no close button.
         open
-        onOpenChange={() => {
-          /* intentionally non-dismissable */
-        }}
       >
         <ModalContent>
           <ModalHeader>
@@ -118,40 +140,47 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
               </Trans>
             </ModalDescription>
           </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  You clocked in at{" "}
-                  <DateTime value={openClockEntry.clockIn} variant="absolute" />
-                  . You can edit your clock-out time below or acknowledge that
-                  you're still working.
-                </Trans>
-              </p>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">
-                  <Trans>Set clock-out time</Trans>
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={editClockOut}
-                  onChange={(e) => setEditClockOut(e.target.value)}
+          <ValidatedForm
+            validator={setClockOutValidator}
+            method="post"
+            action={path.to.api.timecard}
+            fetcher={fetcher}
+          >
+            <ModalBody>
+              <VStack spacing={4}>
+                <div className="flex w-full flex-col gap-1 rounded-lg border bg-muted/40 px-4 py-3">
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Clocked in</Trans>
+                  </span>
+                  <span className="text-sm font-medium">{clockedInLabel}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {clockedInDaysAgo}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>
+                    Set the time you stopped working, or acknowledge that you're
+                    still working.
+                  </Trans>
+                </p>
+                <Hidden name="intent" value="clockOut" />
+                <DateTimePicker
+                  name="clockOut"
+                  label={t`Clock out`}
+                  minValue={toCalendarDateTime(clockedInAt)}
+                  maxValue={toCalendarDateTime(now(timeZone))}
                 />
-              </div>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={handleClockAcknowledge}>
-              <Trans>I'm Still Working</Trans>
-            </Button>
-            <Button
-              onClick={handleEditClockOut}
-              isDisabled={!editClockOut || fetcher.state !== "idle"}
-              isLoading={fetcher.state !== "idle"}
-            >
-              <Trans>Set Clock Out</Trans>
-            </Button>
-          </ModalFooter>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={handleClockAcknowledge}>
+                <Trans>I'm Still Working</Trans>
+              </Button>
+              <Submit>
+                <Trans>Set Clock Out</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
         </ModalContent>
       </Modal>
     );

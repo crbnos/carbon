@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob, storage } from "@carbon/files";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -33,7 +34,6 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
 import { LuDownload, LuEllipsisVertical, LuTrash } from "react-icons/lu";
-import { useRevalidator } from "react-router";
 import DocumentIcon from "~/components/DocumentIcon";
 import DocumentPreview from "~/components/DocumentPreview";
 import FileDropzone from "~/components/FileDropzone";
@@ -107,8 +107,7 @@ export default function DefaultAttachmentsPanel({
     async (name: string) => {
       const url = path.to.file.previewFile(`private/${fullPath(name)}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), name);
+        await downloadUrl(url, name);
       } catch (err) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: err });
@@ -199,7 +198,7 @@ export default function DefaultAttachmentsPanel({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={filePath}
-                              // @ts-ignore — type is a string union the preview accepts
+                              // @ts-expect-error — type is a string union the preview accepts
                               type={type}
                             >
                               {f.name}

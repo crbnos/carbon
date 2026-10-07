@@ -5,17 +5,18 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   financialReportParamsValidator,
   getCompaniesInGroup,
@@ -259,7 +260,7 @@ export default function IncomeStatementRoute() {
         search={search}
         ledgerPath={path.to.incomeStatementLedger}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

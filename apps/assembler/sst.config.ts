@@ -48,6 +48,18 @@ export default $config({
       // Job/result store — REQUIRED; the assembler refuses to boot without it.
       REDIS_URL: process.env.REDIS_URL,
       TZ: "UTC",
+      // Tracing (optional): forwarded only when set at deploy time. Without an
+      // endpoint the service exports nothing.
+      ...Object.fromEntries(
+        [
+          "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "OTEL_EXPORTER_OTLP_HEADERS",
+          "OTEL_RESOURCE_ATTRIBUTES",
+          "OTEL_SERVICE_NAME",
+          "OTEL_TRACES_SAMPLER",
+          "OTEL_TRACES_SAMPLER_ARG",
+        ].flatMap((name) => (process.env[name] ? [[name, process.env[name]]] : [])),
+      ),
       // Optimize time budget + dispatch mode are AUTO-DETECTED in-service from
       // AWS_LAMBDA_FUNCTION_NAME (720s ladder budget on Lambda; self-invoke
       // dispatch) — no env needed here.

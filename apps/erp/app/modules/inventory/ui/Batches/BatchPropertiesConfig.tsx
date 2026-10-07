@@ -10,6 +10,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   ClientOnly,
@@ -44,14 +45,14 @@ import {
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
   LuGripVertical
 } from "react-icons/lu";
-import { useFetcher, useFetchers, useSubmit } from "react-router";
+import { useFetchers, useSubmit } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { ConfirmDelete } from "~/components/Modals";
@@ -79,13 +80,13 @@ export default function BatchPropertiesConfig({
   const { t } = useLingui();
 
   const submit = useSubmit();
-  const fetcher = useFetcher<typeof batchPropertyAction>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(t`Failed to update batch property`);
+  const fetcher = useAction<typeof batchPropertyAction>({
+    onError: (data) => {
+      if (data?.success === false) {
+        toast.error(t`Failed to update batch property`);
+      }
     }
-  }, [fetcher.data, t]);
+  });
 
   const propertiesById = new Map<string, BatchProperty>(
     initialProperties.map((property) => [property.id, property])
@@ -309,7 +310,14 @@ function BatchPropertyComponent({
   const disclosure = useDisclosure();
   const deletePropertyDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof batchPropertyAction>();
+  const fetcher = useAction<typeof batchPropertyAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
+    }
+  });
 
   const {
     attributes,
@@ -326,13 +334,6 @@ function BatchPropertyComponent({
     transform: CSS.Transform.toString(transform),
     transition
   };
-
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
-    }
-  }, [disclosure, fetcher.state]);
 
   const isUpdated = property.updatedBy !== null;
   const person = isUpdated ? property.updatedBy : property.createdBy;

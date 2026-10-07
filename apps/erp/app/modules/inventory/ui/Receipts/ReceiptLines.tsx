@@ -5,6 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { isPreviewableDocumentType, storage } from "@carbon/files";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   Card,
@@ -61,7 +62,6 @@ import {
   useFetcher,
   useFetchers,
   useParams,
-  useRevalidator,
   useSubmit
 } from "react-router";
 import {
@@ -1247,13 +1247,13 @@ function SplitReceiptLineModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>

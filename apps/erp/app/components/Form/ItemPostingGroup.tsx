@@ -4,9 +4,9 @@
 
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import type { getItemPostingGroupsList } from "~/modules/items";
 import ItemPostingGroupForm from "~/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm";
 import { path } from "~/utils/path";
@@ -80,12 +80,9 @@ ItemPostingGroup.displayName = "ItemPostingGroup";
 export default ItemPostingGroup;
 
 export const useItemPostingGroups = () => {
-  const itemGroupFetcher =
-    useFetcher<Awaited<ReturnType<typeof getItemPostingGroupsList>>>();
-
-  useMount(() => {
-    itemGroupFetcher.load(path.to.api.itemPostingGroups);
-  });
+  const itemGroupFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getItemPostingGroupsList>>
+  >(path.to.api.itemPostingGroups);
 
   const options = useMemo(
     () =>

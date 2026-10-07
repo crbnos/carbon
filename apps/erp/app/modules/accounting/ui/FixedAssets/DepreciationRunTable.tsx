@@ -57,6 +57,9 @@ const DepreciationRunTable = memo(
             <DateTime value={row.original.periodEnd} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

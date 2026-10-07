@@ -85,6 +85,8 @@ const ItemThumbnail = ({
 
   return thumbnailPath && failedPath !== thumbnailPath ? (
     <img
+      loading="lazy"
+      decoding="async"
       alt="thumbnail"
       className={itemVariants({ size, withPadding: false })}
       key={thumbnailPath}

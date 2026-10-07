@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -27,13 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-  toast,
-  useMount
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import type {
@@ -102,13 +101,9 @@ type MaterialOption = {
 
 function useMaterialsWithFilter(materialFormFilterId?: string | null) {
   const allMaterials = useMaterials();
-  const materialsFetcher = useFetcher<{ data: MaterialOption[] }>();
-
-  useMount(() => {
-    if (materialFormFilterId) {
-      materialsFetcher.load(path.to.api.materials(materialFormFilterId));
-    }
-  });
+  const materialsFetcher = useLoaderQuery<{ data: MaterialOption[] }>(
+    materialFormFilterId ? path.to.api.materials(materialFormFilterId) : null
+  );
 
   const materials = useMemo(() => {
     if (materialFormFilterId && materialsFetcher.data?.data) {

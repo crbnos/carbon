@@ -476,3 +476,9 @@ export const inspectionGaugeValidator = z.object({
   inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
   gaugeId: zfd.text(z.string().optional())
 });
+
+// The "Forgot to Clock Out?" prompt: the clock-out is the time being set.
+export const setClockOutValidator = z.object({
+  intent: z.literal("clockOut"),
+  clockOut: z.string().min(1, { message: "Clock out is required" })
+});

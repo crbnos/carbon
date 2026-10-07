@@ -5,14 +5,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { data, Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { getProjects } from "~/modules/accounting";
 import { ProjectsTable } from "~/modules/accounting/ui/Projects";
 import type { Handle } from "~/utils/handle";
@@ -23,11 +19,6 @@ export const handle: Handle = {
   breadcrumb: msg`Projects`,
   to: path.to.projects
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -65,7 +56,7 @@ export default function ProjectsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ProjectsTable data={data ?? []} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

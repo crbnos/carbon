@@ -14,10 +14,9 @@ import {
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { Violation } from "@carbon/utils";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   convertQuoteToOrder,
   getSalesOrder,

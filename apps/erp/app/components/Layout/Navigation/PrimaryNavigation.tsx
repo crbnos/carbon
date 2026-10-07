@@ -52,6 +52,10 @@ import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
 import { useNavigationEditMode } from "./useNavigationEditMode";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+
 // Search and Customize are actions, not destinations — they keep the neutral
 // accent hover instead of the active-tinted one module links use.
 const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
@@ -142,7 +146,7 @@ const PrimaryNavigation = () => {
   const isSearchModalOpen = useUIStore((s) => s.isSearchModalOpen);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 

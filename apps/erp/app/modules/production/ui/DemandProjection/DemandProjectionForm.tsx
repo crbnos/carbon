@@ -11,6 +11,7 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
+  DrawerTitle,
   HStack,
   Tabs,
   TabsContent,
@@ -20,6 +21,7 @@ import {
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
+import { formatDate } from "@carbon/utils";
 import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -35,7 +37,7 @@ import {
 } from "recharts";
 import type { z } from "zod";
 import { Hidden, Item, Location, Number, Submit } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import { demandProjectionValidator } from "../../production.models";
 
@@ -46,6 +48,7 @@ type LoaderData = {
 
 type DemandProjectionsFormProps = {
   initialValues?: z.infer<typeof demandProjectionValidator>;
+  consumedValues?: Record<number, number>;
   isEditing?: boolean;
   onClose: () => void;
 };
@@ -69,12 +72,14 @@ const toFinite = (value: unknown): number => {
 
 const DemandProjectionsForm = ({
   initialValues: propInitialValues,
+  consumedValues,
   isEditing = false,
   onClose
 }: DemandProjectionsFormProps) => {
   const permissions = usePermissions();
   const { t, i18n } = useLingui();
   const numberFormatter = useNumberFormatter();
+  const formatQuantity = useQuantityFormatter();
   const fetcher = useFetcher<{ id: string }>();
   const loaderData = useLoaderData<LoaderData>();
   const periods = loaderData?.periods ?? [];
@@ -94,11 +99,11 @@ const DemandProjectionsForm = ({
   const timeZone = getLocalTimeZone();
   const startDate = startOfWeek(today(timeZone), "en-US");
   const weekLabels = Array.from({ length: WEEK_COUNT }, (_, i) => {
-    const weekDate = startDate.add({ weeks: i }).toDate(timeZone);
-    const formattedDate = i18n.date(weekDate, {
-      month: "numeric",
-      day: "numeric"
-    });
+    const formattedDate = formatDate(
+      startDate.add({ weeks: i }).toString(),
+      { month: "numeric", day: "numeric" },
+      i18n.locale
+    );
     return t`Week ${i + 1} (${formattedDate})`;
   });
 
@@ -188,9 +193,11 @@ const DemandProjectionsForm = ({
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <CardTitle>
-              {isEditing ? t`Edit Demand Forecast` : t`New Demand Forecast`}
-            </CardTitle>
+            <DrawerTitle asChild>
+              <CardTitle>
+                {isEditing ? t`Edit Demand Forecast` : t`New Demand Forecast`}
+              </CardTitle>
+            </DrawerTitle>
             <CardDescription>
               {t`Set demand forecast values for each week`}
             </CardDescription>
@@ -260,16 +267,23 @@ const DemandProjectionsForm = ({
                         { length: quarter.end - quarter.start },
                         (_, offset) => {
                           const index = quarter.start + offset;
+                          const consumed = consumedValues?.[index];
                           return (
-                            <Number
-                              key={index}
-                              name={`week${index}`}
-                              label={weekLabels[index]}
-                              minValue={0}
-                              onChange={(value) =>
-                                handleWeekChange(index, value)
-                              }
-                            />
+                            <div key={index} className="flex flex-col gap-1">
+                              <Number
+                                name={`week${index}`}
+                                label={weekLabels[index]}
+                                minValue={0}
+                                onChange={(value) =>
+                                  handleWeekChange(index, value)
+                                }
+                              />
+                              {consumed !== undefined && (
+                                <span className="text-xs text-muted-foreground">
+                                  {t`${formatQuantity(consumed)} consumed`}
+                                </span>
+                              )}
+                            </div>
                           );
                         }
                       )}

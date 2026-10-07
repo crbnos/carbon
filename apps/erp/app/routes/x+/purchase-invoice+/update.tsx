@@ -3,12 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { unchecked } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate } from "~/modules/accounting";
 import {
   computeInvoiceDateDue,
-  isPurchaseInvoiceLocked
+  isPurchaseInvoiceLocked,
+  purchaseInvoiceSupplierChange
 } from "~/modules/invoicing";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
@@ -46,42 +47,48 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
-    case "invoiceSupplierId":
-      let currencyCode: string | undefined;
-      if (value && ids.length === 1) {
-        const supplier = await client
-          ?.from("supplier")
-          .select("currencyCode")
-          .eq("id", value)
-          .single();
-
-        if (supplier.data?.currencyCode) {
-          currencyCode = supplier.data.currencyCode;
-          const rate = await getExchangeRate(client, companyId, currencyCode);
-          if (rate.error) return rate;
-          return await client
-            .from("purchaseInvoice")
-            .update({
-              invoiceSupplierId: value ?? undefined,
-              invoiceSupplierContactId: null,
-              invoiceSupplierLocationId: null,
-              currencyCode: currencyCode ?? undefined,
-              exchangeRate: rate.data,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", ids as string[]);
-        }
+    case "invoiceSupplierId": {
+      if (!value) {
+        return {
+          error: { message: "Invoice supplier is required" },
+          data: null
+        };
       }
 
+      const supplier = await client
+        .from("supplier")
+        .select("currencyCode")
+        .eq("id", value)
+        .eq("companyId", companyId)
+        .single();
+      if (supplier.error) return supplier;
+
+      let currency: { currencyCode: string; exchangeRate: number } | null =
+        null;
+      if (supplier.data.currencyCode) {
+        const rate = await getExchangeRate(
+          client,
+          companyId,
+          supplier.data.currencyCode
+        );
+        if (rate.error) return rate;
+        currency = {
+          currencyCode: supplier.data.currencyCode,
+          exchangeRate: rate.data
+        };
+      }
+
+      // A supplier with no currency keeps the invoice's own. The contact and
+      // location belonged to the previous invoice supplier.
       return await client
         .from("purchaseInvoice")
         .update({
-          supplierId: value ?? undefined,
+          ...purchaseInvoiceSupplierChange(value, currency),
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .in("id", ids as string[]);
+    }
     case "dateIssued":
       if (ids.length === 1) {
         const invoice = await client
