@@ -162,6 +162,10 @@ msgstr "{0} के पास चालान करने के लिए <0/> 
 msgid "{0} has <0/> left to recognize."
 msgstr "{0} के पास स्वीकृति के लिए <0/> बचा है।"
 
+#. placeholder {0}: rentalUnitLabel(line)
+msgid "{0} has no rate."
+msgstr "{0} की कोई दर नहीं है।"
+
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
 msgstr "{0} के पास कोई आपूर्तिकर्ता नहीं है"
@@ -546,6 +550,9 @@ msgstr "{unbatchedBatchableOperations} बैचेबल ऑपरेशन ब
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
+
+msgid "{unitCount} units"
+msgstr "{unitCount} इकाई"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {पहले # शेष आवश्यक खाता मैप करें।} other {पहले # शेष आवश्यक खातों को मैप करें।}}"
@@ -1133,9 +1140,6 @@ msgstr "किसी रसीद के आपूर्तिकर्ता �
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "एक किराया समझौता सक्रिय होने के लिए कंपनी की मूल मुद्रा में होना चाहिए। पहले समझौते की मुद्रा बदलें।"
 
-msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
-msgstr "एक किराये की समझौता क्रमबद्ध फ्लीट इकाइयों को ग्राहक के पास रखता है और उन्हें एक आवर्ती चक्र पर बिल करता है जब तक कि वे वापस न आ जाएं।"
-
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "एक किराये की पंक्ति एक बिक्रय-प्रकार लीज है जब कोई भी ASC 842 परीक्षण पूरा हो जाता है। ये थ्रेशहोल्ड परीक्षण (c) और (d) सेट करते हैं; छूट दर नए किराये के समझौतों के लिए डिफ़ॉल्ट है।"
 
@@ -1464,9 +1468,6 @@ msgstr "लेखा अवधि"
 msgid "Accounting Periods"
 msgstr "लेखांकन अवधि"
 
-msgid "Accounting treatment"
-msgstr "लेखांकन व्यवहार"
-
 msgid "Accounting Treatment"
 msgstr "लेखांकन व्यवहार"
 
@@ -1587,6 +1588,9 @@ msgstr "वर्क सेंटर सक्रिय करें"
 msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 msgstr "सक्रिय करना प्रत्येक इकाई की उपलब्धता की जांच करता है, प्रत्येक इकाई के लेखांकन उपचार को वर्गीकृत करता है और प्रत्येक इकाई की दर पर पहली बिलिंग अवधि को काटता है। शर्तें और पंक्तियां बाद में निश्चित होती हैं।"
 
+msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
+msgstr "सक्रिय करने से शर्तें और इकाइयाँ तय हो जाती हैं, प्रत्येक इकाई का वर्गीकरण किया जाता है और पहली बिलिंग अवधि काटी जाती है। उसके बाद, चालान स्वचालित रूप से बनाए जाते हैं क्योंकि अवधि देय होती है।"
+
 msgid "Activation fee · we advise"
 msgstr "सक्रियण शुल्क · हम सलाह देते हैं"
 
@@ -1705,6 +1709,9 @@ msgstr "अनुमोदन आवश्यकता जोड़ें"
 
 msgid "Add at least one service."
 msgstr "कम से कम एक सेवा जोड़ें।"
+
+msgid "Add at least one unit."
+msgstr "कम से कम एक इकाई जोड़ें।"
 
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
@@ -1927,6 +1934,9 @@ msgid "Add tools"
 msgstr "उपकरण जोड़ें"
 
 msgid "Add Unit"
+msgstr "इकाई जोड़ें"
+
+msgid "Add Units"
 msgstr "इकाई जोड़ें"
 
 #. placeholder {0}: copy.noun
@@ -2367,6 +2377,9 @@ msgstr "एनोटेशन टेक्स्ट आवश्यक है"
 
 msgid "Annotation updated"
 msgstr "एनोटेशन अपडेट किया गया"
+
+msgid "Annual rate the rent is discounted at"
+msgstr "वार्षिक दर जिस पर किराया छूट दी जाती है"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "एक अन्य लागत केंद्र जिसमें यह रोल हो जाता है, आपको एक उप-लागत केंद्र को इसके मूल के अंतर्गत घोंसले के लिए सक्षम करता है जो पदानुक्रमित लागत रिपोर्टिंग के लिए।"
@@ -3010,6 +3023,10 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "क्या आप इस आइटम के लिए {0} को आपूर्तिकर्ता के रूप में निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
+#. placeholder {0}: rentalUnitLabel(deleting)
+msgid "Are you sure you want to remove {0} from this agreement?"
+msgstr "क्या आप सुनिश्चित हैं कि आप {0} को इस समझौते से निकालना चाहते हैं?"
+
 #. placeholder {0}: contractLineName(deleting)
 msgid "Are you sure you want to remove {0} from this contract?"
 msgstr "क्या आप निश्चित हैं कि आप {0} को इस अनुबंध से निकालना चाहते हैं?"
@@ -3557,6 +3574,9 @@ msgstr "वापस करने के लिए बैच"
 msgid "Batching"
 msgstr "बैचिंग"
 
+msgid "Before You Activate"
+msgstr "सक्रिय करने से पहले"
+
 msgid "Before You Confirm"
 msgstr "पुष्टि करने से पहले"
 
@@ -3648,6 +3668,9 @@ msgstr "बिलिंग आवृत्ति"
 msgid "Billing Periods"
 msgstr "बिलिंग अवधि"
 
+msgid "Billing periods are cut from this date"
+msgstr "बिलिंग अवधि इस तारीख से काटी जाती है"
+
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "बिलिंग अवधि तब काटी जाती है जब समझौता सक्रिय हो जाता है।"
 
@@ -3656,6 +3679,9 @@ msgstr "बिलिंग समय"
 
 msgid "Billing Timing"
 msgstr "बिलिंग समय"
+
+msgid "Bills each period until every unit is returned."
+msgstr "प्रत्येक अवधि का बिल तब तक दिया जाता है जब तक प्रत्येक इकाई वापस न आ जाए।"
 
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
@@ -4300,6 +4326,9 @@ msgstr "प्रभार"
 msgid "Charge Date"
 msgstr "शुल्क की तारीख"
 
+msgid "Charged on each rent invoice line"
+msgstr "प्रत्येक किराया चालान पंक्ति पर लगाया गया"
+
 msgid "Charges"
 msgstr "शुल्क"
 
@@ -4372,6 +4401,9 @@ msgstr "दूसरी फ़ाइल चुनें"
 
 msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
+
+msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
+msgstr "उन फ्लीट इकाइयों को चुनें जो यह समझौता किराए पर देता है। प्रत्येक आवृत्ति के लिए फ़ाइल पर अपनी दर से शुरू होता है; इसे ग्रिड में बदलें।"
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "उन सेवाओं को चुनें जिनका यह अनुबंध बिल करता है। प्रत्येक को एक आवर्ती पंक्ति के रूप में जोड़ा जाता है जिसे आप ग्रिड में मूल्य निर्धारित कर सकते हैं।"
@@ -5056,11 +5088,11 @@ msgstr "अनुबंध का प्रकार"
 msgid "Contract Type"
 msgstr "अनुबंध का प्रकार"
 
+msgid "Contract value"
+msgstr ""
+
 msgid "Contract Value"
 msgstr "अनुबंध मूल्य"
-
-msgid "Contract Value:"
-msgstr "अनुबंध मूल्य:"
 
 msgid "Contraction"
 msgstr "संकुचन"
@@ -6323,6 +6355,9 @@ msgstr "समय सीमा प्रकार"
 msgid "Deadline Type"
 msgstr "समय सीमा प्रकार"
 
+msgid "Deals"
+msgstr ""
+
 msgid "Debit"
 msgstr "नामे"
 
@@ -7282,6 +7317,9 @@ msgstr "डॉलर उपयोग"
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
+msgid "Don't see a serial number?"
+msgstr "सीरियल नंबर नहीं दिख रहा?"
+
 msgid "Don't show this again"
 msgstr "दोबारा न दिखाएं"
 
@@ -7582,11 +7620,23 @@ msgstr "प्रत्येक पंक्ति अपना आइटम ID
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "प्रत्येक ऑपरेशन की अप्रयुक्त सामग्री जैसे ही ऑपरेशन हो जाता है तुरंत वापस आती है।"
 
+msgid "Each period is 28 days from the start date."
+msgstr "प्रत्येक अवधि प्रारंभ तिथि से 28 दिन है।"
+
+msgid "Each period is a calendar month, with a part month first."
+msgstr "प्रत्येक अवधि एक कैलेंडर महीना है, पहले एक आंशिक महीना है।"
+
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "प्रत्येक अवधि का चालान उसके पहले दिन, सेवा दिए जाने से पहले बनाया जाता है।"
 
+msgid "Each period is invoiced on its first day, before the units are used."
+msgstr "प्रत्येक अवधि को इसके पहले दिन चालान दिया जाता है, इकाइयों के उपयोग से पहले।"
+
 msgid "Each period is invoiced on its last day, after the service is delivered."
 msgstr "प्रत्येक अवधि का चालान उसके अंतिम दिन, सेवा दिए जाने के बाद बनाया जाता है।"
+
+msgid "Each period is invoiced on its last day, after the units are used."
+msgstr "प्रत्येक अवधि को इसके अंतिम दिन चालान दिया जाता है, इकाइयों के उपयोग के बाद।"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
@@ -7596,6 +7646,9 @@ msgstr "प्रत्येक किराये की समझौते �
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "प्रत्येक आपूर्तिकर्ता की बाहरी ऑपरेशन हर जॉब से एक नया क्रय आदेश पर जाती है, या आप जो मौजूदा ड्राफ्ट चुनते हैं उस पर।"
+
+msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
+msgstr "प्रत्येक इकाई का उचित मूल्य और आर्थिक जीवन तय करता है कि क्या अवधि इसके अधिकांश को कवर करती है। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
 msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
@@ -8150,6 +8203,9 @@ msgstr "पिछली तिमाही का अंत"
 msgid "End of queue"
 msgstr "कतार का अंत"
 
+msgid "End of Term"
+msgstr "अवधि का अंत"
+
 msgid "End Time"
 msgstr "समाप्ति समय"
 
@@ -8370,9 +8426,6 @@ msgstr "अनुमानित"
 msgid "Estimated — no capacity reservation"
 msgstr "अनुमानित — कोई क्षमता आरक्षण नहीं"
 
-msgid "Estimated Cost"
-msgstr "अनुमानित लागत"
-
 msgid "Estimated Duration"
 msgstr "अनुमानित अवधि"
 
@@ -8444,6 +8497,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
+
+msgid "Every unit has a rate."
+msgstr "प्रत्येक इकाई की एक दर है।"
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "इस कंपनी को खोलने से पहले सभी को प्रमाणकर्ता ऐप सेट अप करना होगा।"
@@ -9338,6 +9394,9 @@ msgstr "निश्चित पुनः ऑर्डर"
 msgid "Fixed Shelf Life"
 msgstr "निर्धारित शेल्फ लाइफ"
 
+msgid "Fixed Term"
+msgstr "निश्चित अवधि"
+
 msgid "Fixture"
 msgstr "फिक्सचर"
 
@@ -9361,6 +9420,9 @@ msgstr "फ्लीट इकाई"
 
 msgid "Fleet Unit"
 msgstr "बेड़े की इकाई"
+
+msgid "Fleet Units"
+msgstr "फ्लीट इकाई"
 
 msgid "For <0/>"
 msgstr "के लिए <0/>"
@@ -9828,6 +9890,9 @@ msgstr "समूह का नाम"
 msgid "Groups"
 msgstr "समूह"
 
+msgid "Guaranteed Residual"
+msgstr "गारंटीकृत अवशेष"
+
 msgid "Guaranteed Residual Value"
 msgstr "गारंटीकृत अवशिष्ट मूल्य"
 
@@ -10007,6 +10072,9 @@ msgstr "कवरेज कैसे काम किया जाता है"
 
 msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
 msgstr "प्रत्येक पंक्ति अपने राजस्व को कैसे अर्जित करती है: दिन दर दिन या महीने में समान रूप से, शुरुआत से या इसकी प्रारंभ तिथि से।"
+
+msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
+msgstr "प्रत्येक इकाई का किराया अवधि में कैसे काटा जाता है, और अवधि में इसे कब चालान दिया जाता है।"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "अनुसूचित कार्य उपलब्ध घंटों से कितना अधिक है (+) या कितने घंटे अभी भी मुक्त हैं।"
@@ -10768,6 +10836,9 @@ msgstr "चालान हर दिन स्वचालित रूप स�
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "समझौता सक्रिय हो जाने पर चालान स्वचालित रूप से बनाए जाते हैं।"
+
+msgid "Invoices are created every day for whatever is due. This decides what happens to each one next."
+msgstr "चालान हर दिन बनाए जाते हैं जो भी देय है। यह तय करता है कि अगला क्या होता है।"
 
 msgid "Invoices are drafted and posted automatically."
 msgstr "चालान स्वचालित रूप से ड्राफ्ट और पोस्ट किए जाते हैं।"
@@ -12362,6 +12433,9 @@ msgstr "मासिक"
 msgid "Monthly Depreciation"
 msgstr "मासिक मूल्यह्रास"
 
+msgid "Monthly Rent"
+msgstr "मासिक किराया"
+
 msgid "Monthly Rent:"
 msgstr "मासिक किराया:"
 
@@ -12965,6 +13039,9 @@ msgstr "अगला देय:"
 msgid "Next Interest"
 msgstr "अगला ब्याज"
 
+msgid "Next invoice"
+msgstr ""
+
 msgid "Next Invoice"
 msgstr "अगला चालान"
 
@@ -12979,9 +13056,6 @@ msgstr "अगला चालान {date} को स्वचालित र�
 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "अगला चालान {date} स्वचालित रूप से बनाया जाता है, फिर पोस्ट किया जाता है।"
-
-msgid "Next Invoice:"
-msgstr "अगला चालान:"
 
 msgid "Next page"
 msgstr "अगला पृष्ठ"
@@ -13603,6 +13677,9 @@ msgstr "इस अवधि में कोई लेनदेन नहीं"
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "अभी कोई इकाई नहीं। समझौते को सक्रिय करने से पहले यूनिट सूची से एक फ्लीट इकाई जोड़ें।"
 
+msgid "No units yet. Add the fleet units this agreement rents."
+msgstr "अभी कोई इकाई नहीं। उन फ्लीट इकाइयों को जोड़ें जो यह समझौता किराए पर देता है।"
+
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
 
@@ -14020,6 +14097,9 @@ msgstr "एक बार में केवल एक खर्च एकीक
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
+
+msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
+msgstr "केवल सीरियल नंबर वाली इकाइयों को अचल संपत्ति के रूप में पूंजीकृत करके ही किराए पर दिया जा सकता है। एक जोड़ने के लिए, पार्ट के इन्वेंटरी टैब को खोलें, भंडारण इकाई के तहत सीरियल नंबर खोजें, और अचल संपत्ति के रूप में पूंजीकृत करें विकल्प चुनें।"
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया लेकिन इसे सहेजना विफल रहा। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
@@ -14594,6 +14674,9 @@ msgstr "भुगतान की गई राशि:"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
+
+msgid "Paid up front; record it as a payment once received"
+msgstr "अग्रिम भुगतान; इसे प्राप्त होने के बाद भुगतान के रूप में दर्ज करें"
 
 msgid "Parameters"
 msgstr "पैरामीटर"
@@ -16461,17 +16544,17 @@ msgstr "आवर्ती"
 msgid "Recurring Invoices"
 msgstr "पुनरावृत्ति चालान"
 
-msgid "Recurring per month:"
-msgstr "आवर्ती प्रति महीने:"
+msgid "Recurring per month"
+msgstr ""
 
-msgid "Recurring per quarter:"
-msgstr "आवर्ती प्रति त्रैमासिक:"
+msgid "Recurring per quarter"
+msgstr ""
 
-msgid "Recurring per week:"
-msgstr "आवर्ती प्रति सप्ताह:"
+msgid "Recurring per week"
+msgstr ""
 
-msgid "Recurring per year:"
-msgstr "आवर्ती प्रति वर्ष:"
+msgid "Recurring per year"
+msgstr ""
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "लाल कम स्टाफ है, हरा कवर किया गया है, एम्बर काम की तुलना में अधिक लोग हैं।"
@@ -16778,6 +16861,9 @@ msgstr "किराये का समझौता"
 
 msgid "Rental Agreement"
 msgstr "किराया समझौता"
+
+msgid "Rental agreement setup"
+msgstr "किराया समझौता सेटअप"
 
 msgid "Rental Agreements"
 msgstr "किराया समझौते"
@@ -17617,6 +17703,9 @@ msgstr "स्थान पर हर शिफ्ट के दौरान च
 
 msgid "Runs only during the shifts you select."
 msgstr "केवल आपके द्वारा चुनी गई शिफ्टों के दौरान चलता है।"
+
+msgid "Runs to an end date. A unit still out after it keeps billing."
+msgstr "एक अंतिम तारीख तक चलता है। एक इकाई अभी भी इसके बाद बिलिंग जारी रखती है।"
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "शिफ्ट कैलेंडर को अनदेखा करते हुए, 24 घंटे बिना निगरानी के चलता है।"
@@ -20151,6 +20240,9 @@ msgstr "अवधि एक इकाई के आर्थिक जीवन 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "अवधि आर्थिक जीवन के कम से कम {threshold} है ({actual})"
 
+msgid "Terms"
+msgstr "शर्तें"
+
 msgid "Terms and Privacy"
 msgstr "शर्तें और गोपनीयता"
 
@@ -20217,6 +20309,9 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "संपत्ति अपनी सेवा-में कक्षा में चली जाती है और सेवा-में तारीख से मूल्यह्रास शुरू करती है।"
+
+msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape में प्राधिकरण को अस्वीकार कर दिया गया था। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
@@ -20473,6 +20568,9 @@ msgstr "अचल संपत्ति का रिकॉर्ड जिस�
 
 msgid "The fixed-asset record this sale disposes; the line's shipment posts the asset's net-book-value disposal entry rather than COGS."
 msgstr "अचल संपत्ति रिकॉर्ड जिसे यह बिक्रय निपटान करती है; लाइन की शिपमेंट संपत्ति की शुद्ध पुस्तक मूल्य निपटान प्रविष्टि को COGS के बजाय पोस्ट करती है।"
+
+msgid "The fleet units this agreement rents, each at its own rate. Click a cell to change it."
+msgstr "वह फ्लीट इकाई जो यह समझौता किराए पर देता है, प्रत्येक अपनी दर पर। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
 msgid "The floor an asset depreciates down to; when net book value reaches it, the asset flips to Fully Depreciated."
 msgstr "वह न्यूनतम मूल्य जिसके लिए अचल संपत्ति का मूल्यह्रास होता है; जब शुद्ध बही मूल्य इस पर पहुँचता है, तो संपत्ति पूर्ण मूल्यह्रासित में परिवर्तित हो जाती है।"
@@ -21066,8 +21164,8 @@ msgstr "अवधि समाप्त होने के बाद इका�
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "इकाई उपलब्धता से हटा दी जाती है जब तक इसे सेवा में वापस नहीं किया जाता। मूल्यह्रास जारी रहता है और इसका लेखांकन अपरिवर्तित रहता है।"
 
-msgid "The unit leaves stock and becomes an asset at its carrying cost. The estimate above is the item's current unit cost."
-msgstr "इकाई स्टॉक छोड़ देती है और अपनी वहन लागत पर एक संपत्ति बन जाती है। ऊपर का अनुमान आइटम की वर्तमान इकाई लागत है।"
+msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "खरीद के समय आइटम की इकाई मूल्य"
@@ -21451,6 +21549,9 @@ msgstr "यह {employeeName} को इस दिन के लिए बोर
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 
+msgid "This unit has no cost in inventory"
+msgstr ""
+
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम अपडेट करता है"
 
@@ -21685,6 +21786,9 @@ msgstr "भंडारण इकाई के लिए"
 
 msgid "To supplier"
 msgstr "आपूर्तिकर्ता को"
+
+msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
+msgstr "यह परीक्षण करने के लिए कि क्या यह एक बिक्री है, <0>समझौते को एक निश्चित अवधि दें</0>।"
 
 msgid "To:"
 msgstr "को:"
@@ -22143,6 +22247,9 @@ msgstr "पूर्ववत करें"
 msgid "Ungroup"
 msgstr "समूह हटाएं"
 
+msgid "Unguaranteed Residual"
+msgstr "अनिश्चित अवशेष"
+
 msgid "Unguaranteed Residual Value"
 msgstr "अनग्रुप करें"
 
@@ -22166,6 +22273,9 @@ msgstr "इकाई क्रियाएं"
 
 msgid "Unit Cost"
 msgstr "इकाई लागत"
+
+msgid "Unit Inputs"
+msgstr "इकाई इनपुट"
 
 msgid "unit of measure"
 msgstr "माप की इकाई"
@@ -23182,11 +23292,17 @@ msgstr "कौन सा डेटा"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "किस चीज़ ने इन्वेंटरी को किसी भी आयाम द्वारा ऊपर या नीचे ले जाया"
 
+msgid "What happens to an invoice once it is created"
+msgstr "एक चालान बनाए जाने के बाद क्या होता है"
+
 msgid "What happens to an invoice once it is drafted"
 msgstr "एक बार चालान तैयार होने के बाद उसके साथ क्या होता है"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "किराया समझौतों और अनुबंधों से प्रतिदिन स्वचालित रूप से बनाए गए चालानों का क्या होता है। किराये के शुल्क, जमा, अमान्य चालान के पुनः-बिल या नियम उल्लंघन के साथ चालान हमेशा समीक्षा के लिए प्रतीक्षा करते हैं।"
+
+msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
+msgstr "जब अवधि समाप्त होती है तो इकाइयों का क्या होता है, और दर जिस पर किराया छूट दी जाती है।"
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "जब कोई जर्नल लॉक की गई अवधि में तारीख दी जाती है तो क्या होता है।"
@@ -23214,6 +23330,12 @@ msgstr "यह किस प्रकार का कोटेशन है —
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "यह आयाम अपने स्वीकृत मानों को किस स्रोत से खींचता है (कस्टम सूची या मौजूदा इकाई जैसे ग्राहक, स्थान, कर्मचारी)।"
+
+msgid "What the customer can buy each unit for at the end"
+msgstr "ग्राहक प्रत्येक इकाई को अंत में क्या खरीद सकता है"
+
+msgid "What the customer pays up front, the tax on rent, and when invoices are due."
+msgstr "ग्राहक अग्रिम में क्या भुगतान करता है, किराए पर कर, और चालान कब देय हैं।"
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "नियत तारीख की गिनती किससे शुरू होती है (चालान की तारीख, महीने का अंत, आदि)।"
@@ -23347,6 +23469,9 @@ msgstr "जब कानबान कार्ड को स्कैन कि�
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "प्राप्ति स्थान को स्टॉक के आने की उम्मीद कब है; गंतव्य पर MRP उपलब्धता को संचालित करता है।"
 
+msgid "When the rental starts, and whether it has an end."
+msgstr "जब किराया शुरू होता है, और क्या इसका कोई अंत है।"
+
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "जब आपूर्तिकर्ता डिलीवरी के लिए प्रतिबद्ध हुआ; योजना आवक-स्टॉक आगमन प्रक्षेपण के लिए इस तारीख का उपयोग करती है।"
 
@@ -23407,6 +23532,12 @@ msgstr "जहां प्रभावित आइटम पूरे सि�
 msgid "Where the service is delivered"
 msgstr "सेवा कहाँ दी जाती है"
 
+msgid "Where the units are delivered"
+msgstr "इकाइयों को कहाँ वितरित किया जाता है"
+
+msgid "Where the units ship from"
+msgstr "इकाइयों को कहाँ से भेजा जाता है"
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"
 
@@ -23434,8 +23565,8 @@ msgstr "क्या Carbon प्रत्येक इकाई (Serial), प�
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
 msgstr "चाहे प्रत्येक इकाई को किराये या बिक्री के रूप में माना जाए, यह तय किया जाता है जब समझौता सक्रिय किया जाता है, शर्तों और प्रत्येक इकाई के इनपुट से।"
 
-msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
-msgstr "चाहे प्रत्येक इकाई को किराये या बिक्री के रूप में माना जाए, यह तय किया जाता है जब समझौता सक्रिय किया जाता है।"
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from these terms and each unit's inputs."
+msgstr "क्या प्रत्येक इकाई को किराए या बिक्री के रूप में माना जाता है, यह तय किया जाता है जब समझौते को सक्रिय किया जाता है, इन शर्तों और प्रत्येक इकाई के इनपुट से।"
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "क्या घड़ी तब शुरू होती है जब चुनी गई प्रक्रिया शुरू होती है या जब वह पूरी होती है।"
@@ -23485,6 +23616,9 @@ msgstr "MRP योजना कार्यों का मालिक कौ�
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "कौन चालान प्राप्त करता है, कहाँ, और किन शर्तों पर।"
 
+msgid "Who rents the units, where they go, and who to call."
+msgstr "इकाइयों को किस को किराए पर दिया जाता है, वह कहाँ जाती हैं, और किसे कॉल करना है।"
+
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "रखरखाव कार्य के लिए सूचना कौन प्राप्त करे?"
 
@@ -23520,6 +23654,9 @@ msgstr "जब कोई आपूर्तिकर्ता कोटेशन
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "इन्वेंटरी जॉब पूरा होने पर कौन सूचनाएं प्राप्त करना चाहिए?"
+
+msgid "Who sold it, the currency it bills in, and any notes."
+msgstr "इसे किसने बेचा, यह किस मुद्रा में बिल करता है, और कोई भी नोट।"
 
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "इसे किसने बेचा, यह किससे संबंधित है, और यह कब बंद हुआ।"

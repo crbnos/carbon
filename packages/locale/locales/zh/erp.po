@@ -162,6 +162,10 @@ msgstr "{0} 还有 <0/> 待开票"
 msgid "{0} has <0/> left to recognize."
 msgstr "{0} 还有 <0/> 待确认"
 
+#. placeholder {0}: rentalUnitLabel(line)
+msgid "{0} has no rate."
+msgstr "{0}无费率。"
+
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
 msgstr "{0}没有供应商"
@@ -546,6 +550,9 @@ msgstr "{unbatchedBatchableOperations} 个可分组的工序不在生产批次�
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
+
+msgid "{unitCount} units"
+msgstr "{unitCount}件"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {先映射剩余的 # 个必需账户。} other {先映射剩余的 # 个必需账户。}}"
@@ -1133,9 +1140,6 @@ msgstr "收据的供应商已更改"
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "租赁协议必须使用公司的基础货币才能启用。请先更改协议的货币。"
 
-msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
-msgstr "租赁协议将序列号物料件配置给客户，并按照循环周期进行计费，直到它们返回。"
-
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "当满足任何ASC 842测试时，租赁行是销售型租赁。这些阈值设置了测试(c)和(d)；折扣率是新租赁协议的默认值。"
 
@@ -1464,9 +1468,6 @@ msgstr "会计期间"
 msgid "Accounting Periods"
 msgstr "会计期间"
 
-msgid "Accounting treatment"
-msgstr "会计处理"
-
 msgid "Accounting Treatment"
 msgstr "会计处理"
 
@@ -1587,6 +1588,9 @@ msgstr "激活工作中心"
 msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 msgstr "启用时检查每个单元是否可用，对每个单元的会计处理进行分类，并按每个单元的费率生成第一个计费周期。之后条款和行将被固定。"
 
+msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
+msgstr "激活将确定条款和单位、对每件进行分类并切割第一个计费周期。之后，当周期到期时会自动生成发票。"
+
 msgid "Activation fee · we advise"
 msgstr "激活费 · 我们建议"
 
@@ -1705,6 +1709,9 @@ msgstr "添加审批要求"
 
 msgid "Add at least one service."
 msgstr "至少添加一项服务。"
+
+msgid "Add at least one unit."
+msgstr "至少添加一件。"
 
 msgid "Add Authenticator App"
 msgstr "添加身份验证器应用"
@@ -1928,6 +1935,9 @@ msgstr "添加工具"
 
 msgid "Add Unit"
 msgstr "添加 件"
+
+msgid "Add Units"
+msgstr "添加设备"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2367,6 +2377,9 @@ msgstr "注释文本是必需的"
 
 msgid "Annotation updated"
 msgstr "注释已更新"
+
+msgid "Annual rate the rent is discounted at"
+msgstr "租赁折扣的年费率"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
@@ -3010,6 +3023,10 @@ msgstr "确定要下达此工单吗？它将对车间可用，并驱动采购和
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "您确定要将 {0} 从此项目的供应商中移除吗？此操作无法撤销。"
 
+#. placeholder {0}: rentalUnitLabel(deleting)
+msgid "Are you sure you want to remove {0} from this agreement?"
+msgstr "确定要从本协议中移除{0}吗?"
+
 #. placeholder {0}: contractLineName(deleting)
 msgid "Are you sure you want to remove {0} from this contract?"
 msgstr "您确定要从此合同中移除 {0} 吗？"
@@ -3557,6 +3574,9 @@ msgstr "待退货的生产批次"
 msgid "Batching"
 msgstr "分批"
 
+msgid "Before You Activate"
+msgstr "激活前"
+
 msgid "Before You Confirm"
 msgstr "确认前"
 
@@ -3648,6 +3668,9 @@ msgstr "计费频率"
 msgid "Billing Periods"
 msgstr "计费 期间"
 
+msgid "Billing periods are cut from this date"
+msgstr "从此日期开始计费周期"
+
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "激活协议时，计费期间将被创建。"
 
@@ -3656,6 +3679,9 @@ msgstr "计费时机"
 
 msgid "Billing Timing"
 msgstr "计费 时间"
+
+msgid "Bills each period until every unit is returned."
+msgstr "每个周期计费，直到所有设备都归还。"
 
 msgid "Bills of material"
 msgstr "物料清单"
@@ -4300,6 +4326,9 @@ msgstr "费用"
 msgid "Charge Date"
 msgstr "费用 日期"
 
+msgid "Charged on each rent invoice line"
+msgstr "在每个租赁发票行计费"
+
 msgid "Charges"
 msgstr "卡消费"
 
@@ -4372,6 +4401,9 @@ msgstr "选择另一个文件"
 
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
+
+msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
+msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；在网格中更改。"
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "选择此合同开票的服务。每个作为循环行添加，您可以在网格中定价"
@@ -5056,11 +5088,11 @@ msgstr "合约类型"
 msgid "Contract Type"
 msgstr "合约类型"
 
+msgid "Contract value"
+msgstr ""
+
 msgid "Contract Value"
 msgstr "合约价值"
-
-msgid "Contract Value:"
-msgstr "合约价值："
 
 msgid "Contraction"
 msgstr "缩减"
@@ -6323,6 +6355,9 @@ msgstr "截止日期类型"
 msgid "Deadline Type"
 msgstr "截止日期类型"
 
+msgid "Deals"
+msgstr ""
+
 msgid "Debit"
 msgstr "借方"
 
@@ -7282,6 +7317,9 @@ msgstr "美元利用率"
 msgid "Don't Cancel"
 msgstr "不要取消"
 
+msgid "Don't see a serial number?"
+msgstr "看不到序列号？"
+
 msgid "Don't show this again"
 msgstr "不再显示"
 
@@ -7582,11 +7620,23 @@ msgstr "每行显示其物料 ID 和修订版。"
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "每个工序的未使用原材料在工序完成后立即退回。"
 
+msgid "Each period is 28 days from the start date."
+msgstr "每个周期从开始日期起28天。"
+
+msgid "Each period is a calendar month, with a part month first."
+msgstr "每个周期是一个日历月，首先是部分月。"
+
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "每个期间在第一天开具发票，即在提供服务之前。"
 
+msgid "Each period is invoiced on its first day, before the units are used."
+msgstr "每个周期在其第一天开具发票，在单位使用之前。"
+
 msgid "Each period is invoiced on its last day, after the service is delivered."
 msgstr "每个期间在最后一天开具发票，即在提供服务之后。"
+
+msgid "Each period is invoiced on its last day, after the units are used."
+msgstr "每个周期在其最后一天开具发票，在单位使用之后。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
@@ -7596,6 +7646,9 @@ msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "每个供应商的外协工序从每个工单转至一份新采购订单，或转至您选择的现有草稿。"
+
+msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
+msgstr "每件的公允价值和经济生命周期决定该条款是否涵盖大部分。点击单元格进行更改。"
 
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
@@ -8150,6 +8203,9 @@ msgstr "上一季度末"
 msgid "End of queue"
 msgstr "队列末尾"
 
+msgid "End of Term"
+msgstr "期限结束"
+
 msgid "End Time"
 msgstr "结束时间"
 
@@ -8370,9 +8426,6 @@ msgstr "估计的"
 msgid "Estimated — no capacity reservation"
 msgstr "估计 — 无产能预留"
 
-msgid "Estimated Cost"
-msgstr "预计成本"
-
 msgid "Estimated Duration"
 msgstr "预计时长"
 
@@ -8444,6 +8497,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
+
+msgid "Every unit has a rate."
+msgstr "每件都有费率。"
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
@@ -9338,6 +9394,9 @@ msgstr "固定重新订购"
 msgid "Fixed Shelf Life"
 msgstr "固定保质期"
 
+msgid "Fixed Term"
+msgstr "固定期限"
+
 msgid "Fixture"
 msgstr "工装夹具"
 
@@ -9361,6 +9420,9 @@ msgstr "车队单位"
 
 msgid "Fleet Unit"
 msgstr "租赁单位"
+
+msgid "Fleet Units"
+msgstr "租赁设备"
 
 msgid "For <0/>"
 msgstr "对于 <0/>"
@@ -9828,6 +9890,9 @@ msgstr "组名"
 msgid "Groups"
 msgstr "组"
 
+msgid "Guaranteed Residual"
+msgstr "保证残值"
+
 msgid "Guaranteed Residual Value"
 msgstr "保证残值"
 
@@ -10007,6 +10072,9 @@ msgstr "如何计算覆盖范围"
 
 msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
 msgstr "每行如何确认收入：按天分配或每月均匀分配，从上线或其开始日期开始"
+
+msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
+msgstr "如何将每件的租赁分成周期，以及在周期内何时开具发票。"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "计划工作超过可用小时数的程度 (+)，或还有多少小时空闲。"
@@ -10768,6 +10836,9 @@ msgstr "每天自动为到期的项目创建发票。使用此功能立即对应
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "一旦协议启用，就会自动创建发票。"
+
+msgid "Invoices are created every day for whatever is due. This decides what happens to each one next."
+msgstr "每天为到期金额创建发票。这决定了接下来会发生什么。"
 
 msgid "Invoices are drafted and posted automatically."
 msgstr "发票自动起草并已过账。"
@@ -12362,6 +12433,9 @@ msgstr "每月"
 msgid "Monthly Depreciation"
 msgstr "每月折旧"
 
+msgid "Monthly Rent"
+msgstr "每月租赁"
+
 msgid "Monthly Rent:"
 msgstr "每月租金："
 
@@ -12965,6 +13039,9 @@ msgstr "下次到期："
 msgid "Next Interest"
 msgstr "下一期利息"
 
+msgid "Next invoice"
+msgstr ""
+
 msgid "Next Invoice"
 msgstr "下一个发票"
 
@@ -12979,9 +13056,6 @@ msgstr "下一张发票在 {date} 时自动创建，然后过账并通过 Stripe
 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "下一份发票 {date} 将自动创建，然后过账。"
-
-msgid "Next Invoice:"
-msgstr "下一个发票："
 
 msgid "Next page"
 msgstr "下一页"
@@ -13603,6 +13677,9 @@ msgstr "此期间无交易"
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "还没有单位。在启用协议前，从单位列表中添加一个车队单位。"
 
+msgid "No units yet. Add the fleet units this agreement rents."
+msgstr "还没有设备。添加本协议租赁的设备。"
+
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
 
@@ -14020,6 +14097,9 @@ msgstr "一次只能激活一个支出集成。请先卸载当前的集成，然
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "只有合格的员工才能被安排和运行此流程"
+
+msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
+msgstr "仅具有序列号且已作为固定资产资本化的件才能出租。要添加一个，请打开该零件的库存管理选项卡，在存储单元下查找序列号，然后选择作为固定资产资本化。"
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape 授权了连接但保存失败。保存集成设置以重试。"
@@ -14594,6 +14674,9 @@ msgstr "已支付金额："
 
 msgid "Paid Date"
 msgstr "支付日期"
+
+msgid "Paid up front; record it as a payment once received"
+msgstr "预付款；收到后将其记录为付款"
 
 msgid "Parameters"
 msgstr "参数"
@@ -16461,17 +16544,17 @@ msgstr "循环"
 msgid "Recurring Invoices"
 msgstr "循环发票"
 
-msgid "Recurring per month:"
-msgstr "按月循环:"
+msgid "Recurring per month"
+msgstr ""
 
-msgid "Recurring per quarter:"
-msgstr "按季度循环:"
+msgid "Recurring per quarter"
+msgstr ""
 
-msgid "Recurring per week:"
-msgstr "按周循环:"
+msgid "Recurring per week"
+msgstr ""
 
-msgid "Recurring per year:"
-msgstr "按年循环:"
+msgid "Recurring per year"
+msgstr ""
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "红色表示人手不足，绿色表示已覆盖，琥珀色表示人数超过工作需要。"
@@ -16778,6 +16861,9 @@ msgstr "租赁协议"
 
 msgid "Rental Agreement"
 msgstr "租赁协议"
+
+msgid "Rental agreement setup"
+msgstr "租赁协议设置"
 
 msgid "Rental Agreements"
 msgstr "租赁协议"
@@ -17617,6 +17703,9 @@ msgstr "在该位置的每个班次期间运行。"
 
 msgid "Runs only during the shifts you select."
 msgstr "仅在您选择的班次期间运行。"
+
+msgid "Runs to an end date. A unit still out after it keeps billing."
+msgstr "运行至结束日期。期后仍未归还的设备继续计费。"
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "无人值守全天候运行，忽略班次日历。"
@@ -20151,6 +20240,9 @@ msgstr "期限至少为该单位经济寿命的 {threshold}"
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "租赁期至少为经济寿命的{threshold}({actual})"
 
+msgid "Terms"
+msgstr "条款"
+
 msgid "Terms and Privacy"
 msgstr "条款和隐私"
 
@@ -20217,6 +20309,9 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "资产进入其在用资产类别，并从在用日期开始折旧。"
+
+msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "授权在 Onshape 中被拒绝。保存集成设置以重试。"
@@ -20473,6 +20568,9 @@ msgstr "此采购资本化对应的固定资产记录；该行的收货创建资
 
 msgid "The fixed-asset record this sale disposes; the line's shipment posts the asset's net-book-value disposal entry rather than COGS."
 msgstr "此销售处置的固定资产记录；行的发货将资产的净账面价值处置条目而不是销售成本过账。"
+
+msgid "The fleet units this agreement rents, each at its own rate. Click a cell to change it."
+msgstr "本协议租赁的设备，各有自己的费率。点击单元格进行更改。"
 
 msgid "The floor an asset depreciates down to; when net book value reaches it, the asset flips to Fully Depreciated."
 msgstr "资产折旧至的底线；当账面净值达到它时，资产转为已提足折旧。"
@@ -21066,8 +21164,8 @@ msgstr "期限结束后，该单位对您没有其他用途。"
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "该件在返回服务前不可用。折旧继续，其会计处理保持不变。"
 
-msgid "The unit leaves stock and becomes an asset at its carrying cost. The estimate above is the item's current unit cost."
-msgstr "该件离开库存并按其账面成本成为资产。上述估计为该物料的当前单位成本。"
+msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "购买时该商品的单价"
@@ -21451,6 +21549,9 @@ msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确�
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活。"
 
+msgid "This unit has no cost in inventory"
+msgstr ""
+
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
 
@@ -21685,6 +21786,9 @@ msgstr "至存储单元"
 
 msgid "To supplier"
 msgstr "给供应商"
+
+msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
+msgstr "要测试它是否是销售，<0>为协议设定固定期限</0>。"
 
 msgid "To:"
 msgstr "至："
@@ -22143,6 +22247,9 @@ msgstr "撤销"
 msgid "Ungroup"
 msgstr "取消分组"
 
+msgid "Unguaranteed Residual"
+msgstr "非保证残值"
+
 msgid "Unguaranteed Residual Value"
 msgstr "无保证残值"
 
@@ -22166,6 +22273,9 @@ msgstr "件操作"
 
 msgid "Unit Cost"
 msgstr "单位成本"
+
+msgid "Unit Inputs"
+msgstr "单位信息"
 
 msgid "unit of measure"
 msgstr "计量单位"
@@ -23182,11 +23292,17 @@ msgstr "什么数据"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "什么驱动库存管理增加或减少，按任何维度"
 
+msgid "What happens to an invoice once it is created"
+msgstr "发票创建后会发生什么"
+
 msgid "What happens to an invoice once it is drafted"
 msgstr "发票草稿后会发生什么"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "每天从租赁协议和合同自动创建的发票会如何处理。具有租赁费用、贷项、已作废发票的重新计费或规则违规的发票始终等待评审。"
+
+msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
+msgstr "当期限结束时设备会发生什么，以及租赁折扣的费率。"
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "当凭证的日期在已锁定的期间时会发生什么。"
@@ -23214,6 +23330,12 @@ msgstr "这是什么类型的报价单 — 标准供应商报价、框架协议�
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "该维度从哪个来源获取其允许的值(自定义列表或现有实体,如客户、位置、员工)。"
+
+msgid "What the customer can buy each unit for at the end"
+msgstr "客户在最后可以购买每件的价格"
+
+msgid "What the customer pays up front, the tax on rent, and when invoices are due."
+msgstr "客户预付的款项、租赁税和发票到期时间。"
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "到期日期倒计时从何开始(发票日期、月末等)。"
@@ -23347,6 +23469,9 @@ msgstr "当扫描看板卡时，工单自动从草稿移出并已下达到工厂
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "当收货地点期望库存到达时；驱动目的地的 MRP 可用性。"
 
+msgid "When the rental starts, and whether it has an end."
+msgstr "租赁何时开始，以及是否有结束日期。"
+
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "供应商何时承诺交货;计划使用该日期进行入库库存到达预测。"
 
@@ -23407,6 +23532,12 @@ msgstr "受影响的物料在整个系统中的使用位置。仅供参考——
 msgid "Where the service is delivered"
 msgstr "服务交付的位置"
 
+msgid "Where the units are delivered"
+msgstr "设备的交付地点"
+
+msgid "Where the units ship from"
+msgstr "设备的发货地点"
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "此条目的来源(手动输入、来自销售/采购的过账、重复模板等)。"
 
@@ -23434,8 +23565,8 @@ msgstr "Carbon 是否跟踪每个件(序列号)、每个生产批次(批次)、�
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
 msgstr "协议激活时，根据条款和单位的输入，决定每个单位是按租赁还是销售处理。"
 
-msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
-msgstr "协议激活时，决定每个单位是按租赁还是销售处理。"
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from these terms and each unit's inputs."
+msgstr "当激活协议时，根据这些条款和每件的信息，决定每件是作为租赁还是销售处理。"
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "计时是在所选工序开始时启动，还是在其完成时启动。"
@@ -23485,6 +23616,9 @@ msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "谁接收发票、在哪里以及按什么条款。"
 
+msgid "Who rents the units, where they go, and who to call."
+msgstr "谁租赁这些设备、它们去哪里以及联系谁。"
+
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "谁应该接收与维护相关的维护工单的通知？"
 
@@ -23520,6 +23654,9 @@ msgstr "供应商报价提交时，谁应该收到通知？"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "当库存管理工单已完成时,谁应该接收通知?"
+
+msgid "Who sold it, the currency it bills in, and any notes."
+msgstr "谁出售的、以什么货币计费以及任何备注。"
 
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "谁出售、所有权及何时已关闭。"

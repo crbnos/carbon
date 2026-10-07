@@ -162,6 +162,10 @@ msgstr "{0} остаток счета-фактуры: <0/>."
 msgid "{0} has <0/> left to recognize."
 msgstr "{0} остаток для признания выручки: <0/>."
 
+#. placeholder {0}: rentalUnitLabel(line)
+msgid "{0} has no rate."
+msgstr "{0} не имеет ставки."
+
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
 msgstr "{0} не имеет поставщика"
@@ -546,6 +550,9 @@ msgstr "{unbatchedBatchableOperations} группируемые операции
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
+
+msgid "{unitCount} units"
+msgstr "{unitCount} единиц"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Сначала сопоставьте # оставшийся требуемый счет.} other {Сначала сопоставьте # оставшиеся требуемые счета.}}"
@@ -1133,9 +1140,6 @@ msgstr "Поставщик квитанции меняется"
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Договор аренды должен быть в базовой валюте организации для активации. Сначала измените валюту договора."
 
-msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
-msgstr "Договор аренды размещает сериализованные единицы флота у покупателя и выставляет счета в повторяющемся цикле, пока они не вернутся."
-
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "Строка аренды является арендой типа продажи, когда выполнен любой тест ASC 842. Эти пороги устанавливают тесты (c) и (d); ставка скидки - это значение по умолчанию для новых договоров аренды."
 
@@ -1464,9 +1468,6 @@ msgstr "Учетный период"
 msgid "Accounting Periods"
 msgstr "Учетные периоды"
 
-msgid "Accounting treatment"
-msgstr "Способ учета"
-
 msgid "Accounting Treatment"
 msgstr "Способ учета"
 
@@ -1587,6 +1588,9 @@ msgstr "Активировать рабочий центр"
 msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 msgstr "Активация проверяет, доступна ли каждая единица, классифицирует бухгалтерский учет каждой единицы и устанавливает первые периоды выставления счетов по тарифу каждой единицы. Условия и строки фиксируются после этого."
 
+msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
+msgstr "Активация фиксирует условия и единицы, классифицирует каждую единицу и создает первые периоды выставления счетов. После этого счета-фактуры создаются автоматически по наступлении периодов."
+
 msgid "Activation fee · we advise"
 msgstr "Плата за активацию · мы консультируем"
 
@@ -1705,6 +1709,9 @@ msgstr "Добавить требование утверждения"
 
 msgid "Add at least one service."
 msgstr "Добавьте хотя бы одну услугу."
+
+msgid "Add at least one unit."
+msgstr "Добавьте хотя бы одну единицу."
 
 msgid "Add Authenticator App"
 msgstr "Добавить приложение-аутентификатор"
@@ -1928,6 +1935,9 @@ msgstr "Добавить инструменты"
 
 msgid "Add Unit"
 msgstr "Добавить единицу"
+
+msgid "Add Units"
+msgstr "Добавить единицы"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2367,6 +2377,9 @@ msgstr "Текст аннотации обязателен"
 
 msgid "Annotation updated"
 msgstr "Аннотация обновлена"
+
+msgid "Annual rate the rent is discounted at"
+msgstr "Годовая ставка, по которой аренда дисконтируется"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Еще один центр затрат, в который входит этот, позволяя вложить подразделение под его родительский центр затрат для иерархической отчетности по затратам."
@@ -3010,6 +3023,10 @@ msgstr "Вы уверены, что хотите запустить в рабо�
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {0} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
 
+#. placeholder {0}: rentalUnitLabel(deleting)
+msgid "Are you sure you want to remove {0} from this agreement?"
+msgstr "Вы уверены, что хотите убрать {0} из этого соглашения?"
+
 #. placeholder {0}: contractLineName(deleting)
 msgid "Are you sure you want to remove {0} from this contract?"
 msgstr "Вы уверены, что хотите убрать {0} из этого контракта?"
@@ -3557,6 +3574,9 @@ msgstr "Серии для возврата"
 msgid "Batching"
 msgstr "Объединение в серии"
 
+msgid "Before You Activate"
+msgstr "Перед активацией"
+
 msgid "Before You Confirm"
 msgstr "Перед подтверждением"
 
@@ -3648,6 +3668,9 @@ msgstr "Частота выставления счетов"
 msgid "Billing Periods"
 msgstr "Периоды выставления счетов"
 
+msgid "Billing periods are cut from this date"
+msgstr "Периоды выставления счетов создаются с этой даты"
+
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Периоды выставления счетов создаются при активации договора."
 
@@ -3656,6 +3679,9 @@ msgstr "График выставления счета"
 
 msgid "Billing Timing"
 msgstr "График выставления счетов"
+
+msgid "Bills each period until every unit is returned."
+msgstr "Выставляет счета в каждом периоде до возврата всех единиц."
 
 msgid "Bills of material"
 msgstr "Спецификации материалов"
@@ -4300,6 +4326,9 @@ msgstr "Начисление"
 msgid "Charge Date"
 msgstr "Дата платежа"
 
+msgid "Charged on each rent invoice line"
+msgstr "Начисляется на каждую строку счета-фактуры аренды"
+
 msgid "Charges"
 msgstr "Списания"
 
@@ -4372,6 +4401,9 @@ msgstr "Выбрать другой файл"
 
 msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
+
+msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
+msgstr "Выберите единицы флота, которые арендует это соглашение. Каждая начинается со своей ставки по файлу для частоты; измените ее в сетке."
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Выберите услуги, которые этот контракт выставляет. Каждая добавляется как повторяющаяся строка, цену которой вы можете устанавливать в таблице."
@@ -5056,11 +5088,11 @@ msgstr "Тип контракта"
 msgid "Contract Type"
 msgstr "Тип контракта"
 
+msgid "Contract value"
+msgstr ""
+
 msgid "Contract Value"
 msgstr "Стоимость контракта"
-
-msgid "Contract Value:"
-msgstr "Стоимость контракта:"
 
 msgid "Contraction"
 msgstr "Сокращение"
@@ -6323,6 +6355,9 @@ msgstr "Тип срока"
 msgid "Deadline Type"
 msgstr "Тип срока"
 
+msgid "Deals"
+msgstr ""
+
 msgid "Debit"
 msgstr "Дебет"
 
@@ -7282,6 +7317,9 @@ msgstr "Использование в долларах"
 msgid "Don't Cancel"
 msgstr "Не отменять"
 
+msgid "Don't see a serial number?"
+msgstr "Не видите серийный номер?"
+
 msgid "Don't show this again"
 msgstr "Не показывать снова"
 
@@ -7582,11 +7620,23 @@ msgstr "Каждая строка показывает код номенклат
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Неиспользованный материал каждой операции возвращается, как только операция завершена."
 
+msgid "Each period is 28 days from the start date."
+msgstr "Каждый период составляет 28 дней от даты начала."
+
+msgid "Each period is a calendar month, with a part month first."
+msgstr "Каждый период — это календарный месяц с частичным месяцем вначале."
+
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Каждый период выставляется в счёт в первый день, до оказания услуги."
 
+msgid "Each period is invoiced on its first day, before the units are used."
+msgstr "На каждый период выставляется счет в его первый день, прежде чем единицы используются."
+
 msgid "Each period is invoiced on its last day, after the service is delivered."
 msgstr "Каждый период выставляется в счёт в последний день, после оказания услуги."
+
+msgid "Each period is invoiced on its last day, after the units are used."
+msgstr "На каждый период выставляется счет в его последний день, после того как единицы используются."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
@@ -7596,6 +7646,9 @@ msgstr "Менеджер по продажам каждого договора �
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Внешние операции каждого поставщика из каждого производственного заказа размещаются на одном новом заказе поставщику или на существующем черновике на ваш выбор."
+
+msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
+msgstr "Справедливая стоимость и экономический срок службы каждой единицы определяют, покрывает ли срок большую часть ее. Нажмите на ячейку, чтобы изменить ее."
 
 msgid "Each, lb, ft…"
 msgstr "Каждый, фунт, фут…"
@@ -8150,6 +8203,9 @@ msgstr "Конец последнего квартала"
 msgid "End of queue"
 msgstr "Конец очереди"
 
+msgid "End of Term"
+msgstr "Конец срока"
+
 msgid "End Time"
 msgstr "Время окончания"
 
@@ -8370,9 +8426,6 @@ msgstr "Расчетный"
 msgid "Estimated — no capacity reservation"
 msgstr "Приблизительно — нет резервирования мощности"
 
-msgid "Estimated Cost"
-msgstr "Ориентировочная себестоимость"
-
 msgid "Estimated Duration"
 msgstr "Предполагаемая продолжительность"
 
@@ -8444,6 +8497,9 @@ msgstr "Каждая требуемая задача должна быть Го�
 
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
+
+msgid "Every unit has a rate."
+msgstr "Каждая единица имеет ставку."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Все должны установить приложение-аутентификатор перед открытием этой организации."
@@ -9338,6 +9394,9 @@ msgstr "Фиксированный заказ"
 msgid "Fixed Shelf Life"
 msgstr "Фиксированный срок хранения"
 
+msgid "Fixed Term"
+msgstr "Фиксированный срок"
+
 msgid "Fixture"
 msgstr "Приспособление"
 
@@ -9361,6 +9420,9 @@ msgstr "Единица флота"
 
 msgid "Fleet Unit"
 msgstr "Единица парка"
+
+msgid "Fleet Units"
+msgstr "Единицы флота"
 
 msgid "For <0/>"
 msgstr "На <0/>"
@@ -9828,6 +9890,9 @@ msgstr "Название группы"
 msgid "Groups"
 msgstr "Группы"
 
+msgid "Guaranteed Residual"
+msgstr "Гарантированная остаточная стоимость"
+
 msgid "Guaranteed Residual Value"
 msgstr "Гарантированная ликвидационная стоимость"
 
@@ -10007,6 +10072,9 @@ msgstr "Как рассчитывается покрытие"
 
 msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
 msgstr "Как каждая строка признает выручку: распределение по дням или равномерно каждый месяц, со дня запуска или от даты начала."
+
+msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
+msgstr "Как аренда каждой единицы делится на периоды и когда в периоде выставляется счет."
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "насколько запланированная работа превышает доступные часы (+) или сколько часов все еще свободно."
@@ -10768,6 +10836,9 @@ msgstr "Счет-фактуры создаются автоматически к
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Счет-фактуры создаются автоматически после активации соглашения."
+
+msgid "Invoices are created every day for whatever is due. This decides what happens to each one next."
+msgstr "Счета-фактуры создаются каждый день для всего, что подлежит оплате. Это решает, что происходит с каждым дальше."
 
 msgid "Invoices are drafted and posted automatically."
 msgstr "Счета-фактуры составляются и проводятся автоматически."
@@ -12362,6 +12433,9 @@ msgstr "Ежемесячно"
 msgid "Monthly Depreciation"
 msgstr "Ежемесячная амортизация"
 
+msgid "Monthly Rent"
+msgstr "Ежемесячная аренда"
+
 msgid "Monthly Rent:"
 msgstr "Ежемесячная аренда:"
 
@@ -12965,6 +13039,9 @@ msgstr "Следующий срок:"
 msgid "Next Interest"
 msgstr "Следующие проценты"
 
+msgid "Next invoice"
+msgstr ""
+
 msgid "Next Invoice"
 msgstr "Следующая счет-фактура"
 
@@ -12979,9 +13056,6 @@ msgstr "Следующая счет-фактура на {date} создаетс�
 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Следующий счет-фактура {date} создается автоматически, затем проводится."
-
-msgid "Next Invoice:"
-msgstr "Следующая счет-фактура:"
 
 msgid "Next page"
 msgstr "Следующая страница"
@@ -13603,6 +13677,9 @@ msgstr "Нет транзакций в этом периоде"
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Нет единиц. Добавьте единицу парка из списка Единицы перед активацией соглашения."
 
+msgid "No units yet. Add the fleet units this agreement rents."
+msgstr "Еще нет единиц. Добавьте единицы флота, которые арендует это соглашение."
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
 
@@ -14020,6 +14097,9 @@ msgstr "Одновременно может быть активна только
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Только квалифицированные сотрудники могут быть запланированы и выполнить этот процесс"
+
+msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
+msgstr "Только сериализованные единицы, оформленные как основные средства, можно сдавать в аренду. Чтобы добавить один, откройте вкладку «Запасы» детали, найдите серийный номер в Единицах хранения и выберите «Оформить как основное средство»."
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape авторизовал подключение, но его сохранение не удалось. Сохраните настройки интеграции и попробуйте еще раз."
@@ -14594,6 +14674,9 @@ msgstr "Оплаченная сумма:"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
+
+msgid "Paid up front; record it as a payment once received"
+msgstr "Оплачено авансом; запишите это как платеж после получения"
 
 msgid "Parameters"
 msgstr "Параметры"
@@ -16461,17 +16544,17 @@ msgstr "Повторяющийся"
 msgid "Recurring Invoices"
 msgstr "Повторяющиеся счета-фактуры"
 
-msgid "Recurring per month:"
-msgstr "Повторяющийся ежемесячно:"
+msgid "Recurring per month"
+msgstr ""
 
-msgid "Recurring per quarter:"
-msgstr "Повторяющийся ежеквартально:"
+msgid "Recurring per quarter"
+msgstr ""
 
-msgid "Recurring per week:"
-msgstr "Повторяющийся еженедельно:"
+msgid "Recurring per week"
+msgstr ""
 
-msgid "Recurring per year:"
-msgstr "Повторяющийся ежегодно:"
+msgid "Recurring per year"
+msgstr ""
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Красный означает недостаток персонала, зелёный означает адекватный персонал, жёлтый означает избыток персонала для объёма работы."
@@ -16778,6 +16861,9 @@ msgstr "Договор аренды"
 
 msgid "Rental Agreement"
 msgstr "Соглашение об аренде"
+
+msgid "Rental agreement setup"
+msgstr "Настройка соглашения об аренде"
 
 msgid "Rental Agreements"
 msgstr "Соглашения об аренде"
@@ -17617,6 +17703,9 @@ msgstr "Работает во время каждой смены на месте
 
 msgid "Runs only during the shifts you select."
 msgstr "Работает только во время выбранных смен."
+
+msgid "Runs to an end date. A unit still out after it keeps billing."
+msgstr "Работает до даты окончания. Единица, все еще находящаяся в пользовании после этого, продолжает выставлять счета."
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "Работает без присмотра круглосуточно, игнорируя календари смен."
@@ -20151,6 +20240,9 @@ msgstr "Срок должен быть не менее {threshold} эконом�
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Срок аренды составляет как минимум {threshold} от экономического срока полезного использования ({actual})"
 
+msgid "Terms"
+msgstr "Условия"
+
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"
 
@@ -20217,6 +20309,9 @@ msgstr "Журнал доступного только для добавлени
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Актив переходит в свой класс в эксплуатации и начинает амортизироваться с даты ввода в эксплуатацию."
+
+msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Авторизация была отклонена в Onshape. Сохраните настройки интеграции и попробуйте еще раз."
@@ -20473,6 +20568,9 @@ msgstr "Запись основного средства, на которую э
 
 msgid "The fixed-asset record this sale disposes; the line's shipment posts the asset's net-book-value disposal entry rather than COGS."
 msgstr "Запись основного средства, которое продается в этой транзакции; отгрузка строки проводит запись выбытия по остаточной стоимости активов вместо COGS."
+
+msgid "The fleet units this agreement rents, each at its own rate. Click a cell to change it."
+msgstr "Единицы флота, которые арендует это соглашение, каждая со своей ставкой. Нажмите на ячейку, чтобы изменить ее."
 
 msgid "The floor an asset depreciates down to; when net book value reaches it, the asset flips to Fully Depreciated."
 msgstr "Нижний предел, до которого амортизируется актив; когда остаточная стоимость его достигает, актив переходит в статус « Полностью амортизировано »."
@@ -21066,8 +21164,8 @@ msgstr "Единица больше не имеет для вас другого
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "Единица удаляется из доступного до ее возврата в эксплуатацию. Амортизация продолжается, и ее учет остается неизменным."
 
-msgid "The unit leaves stock and becomes an asset at its carrying cost. The estimate above is the item's current unit cost."
-msgstr "Единица покидает запас и становится активом по его балансовой стоимости. Приведенная выше оценка — это текущая стоимость единицы номенклатуры."
+msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Цена за единицу товара на момент покупки"
@@ -21451,6 +21549,9 @@ msgstr "Это удаляет {employeeName} с доски на день. Сох
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Этот инструмент активизируется при запуске извещения об изменении {activationLockId}."
 
+msgid "This unit has no cost in inventory"
+msgstr ""
+
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
 
@@ -21685,6 +21786,9 @@ msgstr "В единицу хранения"
 
 msgid "To supplier"
 msgstr "Поставщику"
+
+msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
+msgstr "Чтобы проверить, является ли это продажей, <0>установите соглашению фиксированный срок</0>."
 
 msgid "To:"
 msgstr "По:"
@@ -22143,6 +22247,9 @@ msgstr "Отменить"
 msgid "Ungroup"
 msgstr "Разгруппировать"
 
+msgid "Unguaranteed Residual"
+msgstr "Негарантированная остаточная стоимость"
+
 msgid "Unguaranteed Residual Value"
 msgstr "Негарантированная ликвидационная стоимость"
 
@@ -22166,6 +22273,9 @@ msgstr "Действия с единицей"
 
 msgid "Unit Cost"
 msgstr "Себестоимость за единицу"
+
+msgid "Unit Inputs"
+msgstr "Входные данные единицы"
 
 msgid "unit of measure"
 msgstr "единица измерения"
@@ -23182,11 +23292,17 @@ msgstr "Какие данные"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Что повлияло на инвентаризацию вверх или вниз, по любому измерению"
 
+msgid "What happens to an invoice once it is created"
+msgstr "Что происходит со счетом-фактурой после его создания"
+
 msgid "What happens to an invoice once it is drafted"
 msgstr "Что происходит со счетом-фактурой после его составления"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Что происходит со счетами-фактурами, созданными автоматически каждый день из договоров аренды и контрактов. Счета-фактуры с платежами за аренду, кредитами, переправками аннулированных счетов-фактур и нарушениями правил всегда ожидают рассмотрения."
+
+msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
+msgstr "Что происходит с единицами, когда срок заканчивается, и ставка, по которой аренда дисконтируется."
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Что происходит, когда операция датирована в заблокированный период."
@@ -23214,6 +23330,12 @@ msgstr "Какой это тип предложения — стандартно
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "Источник, из которого это Измерение получает допустимые значения (пользовательский список или существующая сущность, такая как Покупатель, Площадка, Сотрудник)."
+
+msgid "What the customer can buy each unit for at the end"
+msgstr "По какой цене покупатель может купить каждую единицу в конце"
+
+msgid "What the customer pays up front, the tax on rent, and when invoices are due."
+msgstr "Что покупатель платит авансом, налог на аренду и когда счета-фактуры подлежат оплате."
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "На что начинается обратный отсчет срока (дата счета-фактуры, конец месяца и т. д.)."
@@ -23347,6 +23469,9 @@ msgstr "Когда карточка канбана сканируется, за�
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Когда Площадка приемки ожидает прибытия Запаса; определяет доступность MRP в пункте назначения."
 
+msgid "When the rental starts, and whether it has an end."
+msgstr "Когда начинается аренда и есть ли у нее конец."
+
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "Когда поставщик обязался доставить; планирование использует эту дату для прогноза прибытия входящего запаса."
 
@@ -23407,6 +23532,12 @@ msgstr "Где затронутые элементы используются п
 msgid "Where the service is delivered"
 msgstr "Где предоставляется услуга"
 
+msgid "Where the units are delivered"
+msgstr "Где доставляются единицы"
+
+msgid "Where the units ship from"
+msgstr "Откуда отправляются единицы"
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Откуда произошла эта запись (ручной ввод, проведение из продаж/закупок, повторяющийся шаблон и т. д.)."
 
@@ -23434,8 +23565,8 @@ msgstr "Отслеживает ли Carbon каждую единицу (Сери
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
 msgstr "Определяется ли каждая единица как аренда или продажа, решается при активации соглашения на основе условий и входных данных каждой единицы."
 
-msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
-msgstr "Определяется ли каждая единица как аренда или продажа, решается при активации соглашения."
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from these terms and each unit's inputs."
+msgstr "Решение о том, рассматривается ли каждая единица как аренда или продажа, принимается при активации соглашения, на основе этих условий и входных данных каждой единицы."
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "Запускается ли отсчёт времени в начале выбранного процесса или при его завершении."
@@ -23485,6 +23616,9 @@ msgstr "Кто владеет действиями планирования MRP.
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Кто получает счета-фактуры, где и на каких условиях."
 
+msgid "Who rents the units, where they go, and who to call."
+msgstr "Кто арендует единицы, где они идят и кому позвонить."
+
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "Кто должен получать уведомления о заявках на техобслуживание?"
 
@@ -23520,6 +23654,9 @@ msgstr "Кто должен получать уведомления при от�
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Кто должен получать уведомления при завершении работы инвентаризации?"
+
+msgid "Who sold it, the currency it bills in, and any notes."
+msgstr "Кто его продал, валюта, в которой он выставляется счетом, и любые примечания."
 
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Кто это продал, кому принадлежит и когда закрыто."

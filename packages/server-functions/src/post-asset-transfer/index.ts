@@ -41,7 +41,8 @@ export { postAssetTransferInput } from "./validators";
 // posting one `fixedAssetTransfer` document in ONE transaction:
 //
 //   capitalize     stock → asset at the unit's carrying cost (the serial is
-//                  consumed INTO the asset; Dr class asset / Cr inventory)
+//                  consumed INTO the asset; Dr class asset / Cr inventory);
+//                  refused when that cost is zero
 //   return         asset → stock at net book value (Dr inventory N / Dr
 //                  accumulated depreciation / Cr class asset at cost)
 //   attachJob      point a job at a Construction in Progress asset and sweep
@@ -655,10 +656,17 @@ async function capitalize(
     });
     const cost = round(booked.cost);
 
-    // A unit with no carrying value has nothing to post (bookAdjustment's own
-    // zero-value rule); the asset is still created at cost 0.
+    // A unit with no carrying value would become an asset worth nothing, with
+    // no journal to say so. The transfer moves the value inventory already
+    // holds and cannot invent one, so the unit needs a cost first.
+    if (cost <= 0) {
+      throw new InvalidInputError(
+        `${serial} has no cost in inventory, so the asset would be worth nothing. Set a unit cost on ${item.readableId}, then capitalize it.`
+      );
+    }
+
     let journalId: string | null = null;
-    if (accounting && cost > 0) {
+    if (accounting) {
       const inventoryAccount = resolveInventoryAccount(
         item.replenishmentSystem,
         accounting.accountDefaults
@@ -693,7 +701,7 @@ async function capitalize(
 
     // A CIP-class asset is later capitalized for Σ fixedAssetCipCost, so the
     // value that arrived from stock has to be on that ledger too.
-    if (assetClass.isConstructionInProgress && cost > 0) {
+    if (assetClass.isConstructionInProgress) {
       await trx
         .insertInto("fixedAssetCipCost")
         .values({

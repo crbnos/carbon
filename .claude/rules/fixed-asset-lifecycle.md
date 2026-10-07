@@ -392,14 +392,23 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   for a CIP class); relieves the unit through the shared adjustment path
   (`itemLedger` −1, `entryType 'Negative Adjmt.'`, cost-layer consumption at
   carrying cost, no variance journal); posts Dr class asset / Cr the
-  replenishment inventory account for that cost (a unit with no carrying value
-  posts nothing and the asset is created at 0); writes a `'Manual'` CIP row for
+  replenishment inventory account for that cost (a unit whose carrying cost
+  rounds to 0 is REFUSED — "<serial> has no cost in inventory…" — and the
+  transaction rolls back, rather than creating a worthless asset with no
+  journal; the cost is never typed by the user, since the transfer can only
+  move the value inventory holds); writes a `'Manual'` CIP row for
   a CIP class; sets the entity `Consumed` with `attributes['Fixed Asset']` and a
   `'Capitalize'` activity. Transfer: `type 'Capitalization'`, `sourceType
   'Inventory'`. Entry points: the inventory storage-unit row action and
   `x+/fixed-asset+/capitalize.tsx` (defaults the class to the one named
-  `Rental Fleet`, hides CIP classes, shows the item's current unit cost as the
-  estimate).
+  `Rental Fleet`, hides CIP classes, shows the exact cost the transfer will
+  book and disables Capitalize when it is 0). That cost comes from the
+  `preview-asset-capitalization` server function (`{ trackedEntityId }`,
+  `view: accounting`; ERP wrapper `getCapitalizationCost`): the same
+  `calculateCOGS` relief in a transaction that always rolls back, so it
+  matches the posted amount for every costing method — the unit's own layer,
+  a layer at net book value, the average, or the item's unit cost when FIFO
+  finds no layer. The item's unit cost alone was wrong whenever those differ.
 - `return` (`fixedAssetId`, `locationId`, `storageUnitId?`, `transferDate`):
   asset must be `Active` or `Fully Depreciated` (`RETURNABLE_ASSET_STATUSES`)
   and its entity `Consumed`; the route additionally requires `itemId` and no

@@ -8606,6 +8606,20 @@ export async function invokeAssetTransfer(
     );
 }
 
+/** The cost a serialized unit would be capitalized at — the
+ *  `preview-asset-capitalization` server function, which runs the same
+ *  relief as `post-asset-transfer` `capitalize` and rolls it back. */
+export async function getCapitalizationCost(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; trackedEntityId: string }
+) {
+  const { companyId, userId, trackedEntityId } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("preview-asset-capitalization", { trackedEntityId });
+}
+
 // /********************************************************\
 // *        Posting-sync completeness (spec v3, I1)         *
 // \********************************************************/

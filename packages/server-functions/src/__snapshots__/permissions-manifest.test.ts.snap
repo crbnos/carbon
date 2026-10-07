@@ -324,6 +324,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "inventory",
   },
   "post-stock-transfer": {},
+  "preview-asset-capitalization": {
+    "view": "accounting",
+  },
   "preview-revenue-recognition-run": {
     "view": "accounting",
   },

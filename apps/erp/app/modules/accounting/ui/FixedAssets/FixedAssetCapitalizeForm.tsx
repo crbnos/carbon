@@ -4,6 +4,9 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   HStack,
   ModalDrawer,
@@ -16,6 +19,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Combobox, DatePicker, Hidden, Input, Submit } from "~/components/Form";
@@ -28,9 +32,9 @@ type FixedAssetCapitalizeFormProps = {
   assetClasses: { id: string; name: string }[];
   item: { readableId: string | null; name: string };
   serialNumber: string | null;
-  // The item's current unit cost — a preview. The posted acquisition cost is
-  // the unit's carrying cost from its cost layers, resolved by the function.
-  unitCost: number;
+  // The unit's carrying cost — what the transfer will book. null when it
+  // could not be read; the server function still decides on submit.
+  cost: number | null;
   onClose: () => void;
 };
 
@@ -39,7 +43,7 @@ const FixedAssetCapitalizeForm = ({
   assetClasses,
   item,
   serialNumber,
-  unitCost,
+  cost,
   onClose
 }: FixedAssetCapitalizeFormProps) => {
   const { t } = useLingui();
@@ -49,6 +53,7 @@ const FixedAssetCapitalizeForm = ({
   const currencyFormatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode
   });
+  const hasNoCost = cost !== null && cost <= 0;
 
   return (
     <ModalDrawerProvider type="modal">
@@ -84,18 +89,33 @@ const FixedAssetCapitalizeForm = ({
                   <DetailRow label={t`Serial Number`}>
                     {serialNumber ?? "—"}
                   </DetailRow>
-                  <DetailRow label={t`Estimated Cost`}>
+                  <DetailRow label={t`Cost`}>
                     <span className="tabular-nums">
-                      {currencyFormatter.format(unitCost)}
+                      {cost === null ? "—" : currencyFormatter.format(cost)}
                     </span>
                   </DetailRow>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>
-                    The unit leaves stock and becomes an asset at its carrying
-                    cost. The estimate above is the item's current unit cost.
-                  </Trans>
-                </p>
+                {hasNoCost ? (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      <Trans>This unit has no cost in inventory</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        The asset would be worth nothing. Set a unit cost on the
+                        item, then capitalize it.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      The unit leaves stock and becomes an asset at the cost
+                      inventory carries it at.
+                    </Trans>
+                  </p>
+                )}
                 <Combobox
                   name="fixedAssetClassId"
                   label={t`Asset Class`}
@@ -111,7 +131,11 @@ const FixedAssetCapitalizeForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("create", "accounting")}>
+                <Submit
+                  isDisabled={
+                    hasNoCost || !permissions.can("create", "accounting")
+                  }
+                >
                   <Trans>Capitalize</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>

@@ -162,6 +162,10 @@ msgstr "{0} tem <0/> para faturar."
 msgid "{0} has <0/> left to recognize."
 msgstr "{0} tem <0/> para reconhecer."
 
+#. placeholder {0}: rentalUnitLabel(line)
+msgid "{0} has no rate."
+msgstr "{0} não tem taxa."
+
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
 msgstr "{0} não tem fornecedor"
@@ -546,6 +550,9 @@ msgstr "{unbatchedBatchableOperations} operações agrupáveis não estão em um
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# linha não contada} other {# linhas não contadas}}"
+
+msgid "{unitCount} units"
+msgstr "{unitCount} unidades"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Mapeie primeiro a # conta obrigatória restante.} other {Mapeie primeiro as # contas obrigatórias restantes.}}"
@@ -1133,9 +1140,6 @@ msgstr "O fornecedor de um recebimento muda"
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Um contrato de aluguel deve estar na moeda base da empresa para ser ativado. Altere primeiro a moeda do contrato."
 
-msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
-msgstr "Um contrato de aluguel coloca unidades de frota serializadas com um cliente e as fatura em um ciclo recorrente até que voltem."
-
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "Uma linha de aluguel é um aluguel do tipo de venda quando qualquer teste ASC 842 é atendido. Estes limites definem testes (c) e (d); a taxa de Desconto é o padrão para novos contratos de aluguel."
 
@@ -1464,9 +1468,6 @@ msgstr "Período contábil"
 msgid "Accounting Periods"
 msgstr "Períodos Contábeis"
 
-msgid "Accounting treatment"
-msgstr "Tratamento contábil"
-
 msgid "Accounting Treatment"
 msgstr "Tratamento Contábil"
 
@@ -1587,6 +1588,9 @@ msgstr "Ativar Centro de Trabalho"
 msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 msgstr "A ativação verifica se cada unidade está disponível, classifica o tratamento contábil de cada unidade e corta os primeiros períodos de cobrança à taxa de cada unidade. Os termos e linhas são fixos depois."
 
+msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
+msgstr "Ativar fixa os termos e unidades, classifica cada unidade e cria os primeiros períodos de faturamento. Depois disso, faturas são criadas automaticamente conforme os períodos vencem."
+
 msgid "Activation fee · we advise"
 msgstr "Taxa de ativação · aconselhamos"
 
@@ -1705,6 +1709,9 @@ msgstr "Adicionar Requisito de Aprovação"
 
 msgid "Add at least one service."
 msgstr "Adicione pelo menos um serviço."
+
+msgid "Add at least one unit."
+msgstr "Adicionar pelo menos uma unidade."
 
 msgid "Add Authenticator App"
 msgstr "Adicionar Aplicação Autenticadora"
@@ -1928,6 +1935,9 @@ msgstr "Adicionar ferramentas"
 
 msgid "Add Unit"
 msgstr "Adicionar Unidade"
+
+msgid "Add Units"
+msgstr "Adicionar Unidades"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2367,6 +2377,9 @@ msgstr "O texto da anotação é obrigatório"
 
 msgid "Annotation updated"
 msgstr "Anotação atualizada"
+
+msgid "Annual rate the rent is discounted at"
+msgstr "Taxa anual com a qual o aluguel é descontado"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Outro centro de custo ao qual este agrega, permitindo aninhar um subcentro de custo sob seu pai para relatórios de custo hierárquicos."
@@ -3010,6 +3023,10 @@ msgstr "Tem a certeza de que deseja liberar este trabalho? Ele ficará disponív
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "Tem a certeza de que deseja remover {0} como fornecedor para este item? Isto não pode ser desfeito."
 
+#. placeholder {0}: rentalUnitLabel(deleting)
+msgid "Are you sure you want to remove {0} from this agreement?"
+msgstr "Tem certeza de que deseja remover {0} deste contrato?"
+
 #. placeholder {0}: contractLineName(deleting)
 msgid "Are you sure you want to remove {0} from this contract?"
 msgstr "Tem certeza de que deseja remover {0} deste contrato?"
@@ -3557,6 +3574,9 @@ msgstr "Lotes de produção a devolver"
 msgid "Batching"
 msgstr "Lotes de Produção"
 
+msgid "Before You Activate"
+msgstr "Antes de Ativar"
+
 msgid "Before You Confirm"
 msgstr "Antes de Confirmar"
 
@@ -3648,6 +3668,9 @@ msgstr "Frequência de Faturamento"
 msgid "Billing Periods"
 msgstr "Períodos de Faturamento"
 
+msgid "Billing periods are cut from this date"
+msgstr "Os períodos de faturamento são criados a partir desta data"
+
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Os períodos de faturamento são criados quando o contrato é ativado."
 
@@ -3656,6 +3679,9 @@ msgstr "Cronograma de faturamento"
 
 msgid "Billing Timing"
 msgstr "Momento de Faturamento"
+
+msgid "Bills each period until every unit is returned."
+msgstr "Fatura cada período até que cada unidade seja devolvida."
 
 msgid "Bills of material"
 msgstr "Listas de materiais"
@@ -4300,6 +4326,9 @@ msgstr "Cobrança"
 msgid "Charge Date"
 msgstr "Data da Cobrança"
 
+msgid "Charged on each rent invoice line"
+msgstr "Cobrado em cada linha de fatura de aluguel"
+
 msgid "Charges"
 msgstr "Cobranças"
 
@@ -4372,6 +4401,9 @@ msgstr "Escolher outro arquivo"
 
 msgid "Choose how to add lines to this return."
 msgstr "Escolha como adicionar linhas a esta devolução."
+
+msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
+msgstr "Escolha as unidades da frota que este contrato aluga. Cada uma começa em sua taxa registrada para a frequência; altere-a na grade."
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Escolha os serviços que este contrato fatura. Cada um é adicionado como uma linha recorrente que você pode precificar na grade."
@@ -5056,11 +5088,11 @@ msgstr "Tipo de contrato"
 msgid "Contract Type"
 msgstr "Tipo de Contrato"
 
+msgid "Contract value"
+msgstr ""
+
 msgid "Contract Value"
 msgstr "Valor do Contrato"
-
-msgid "Contract Value:"
-msgstr "Valor do Contrato:"
 
 msgid "Contraction"
 msgstr "Redução"
@@ -6323,6 +6355,9 @@ msgstr "Tipo de prazo"
 msgid "Deadline Type"
 msgstr "Tipo de Prazo"
 
+msgid "Deals"
+msgstr ""
+
 msgid "Debit"
 msgstr "Débito"
 
@@ -7282,6 +7317,9 @@ msgstr "Utilização em dólares"
 msgid "Don't Cancel"
 msgstr "Não Cancelar"
 
+msgid "Don't see a serial number?"
+msgstr "Não vê um número de série?"
+
 msgid "Don't show this again"
 msgstr "Não mostrar novamente"
 
@@ -7582,11 +7620,23 @@ msgstr "Cada linha mostra sua ID do item e revisão."
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "O material não utilizado de cada operação retorna assim que a operação é concluída."
 
+msgid "Each period is 28 days from the start date."
+msgstr "Cada período tem 28 dias a partir da data de início."
+
+msgid "Each period is a calendar month, with a part month first."
+msgstr "Cada período é um mês do calendário, com um mês parcial primeiro."
+
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Cada período é faturado no primeiro dia, antes da prestação do serviço."
 
+msgid "Each period is invoiced on its first day, before the units are used."
+msgstr "Cada período é faturado em seu primeiro dia, antes das unidades serem usadas."
+
 msgid "Each period is invoiced on its last day, after the service is delivered."
 msgstr "Cada período é faturado no último dia, após a prestação do serviço."
+
+msgid "Each period is invoiced on its last day, after the units are used."
+msgstr "Cada período é faturado em seu último dia, após as unidades serem usadas."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidade física obtém sua própria entidade rastreada e número único — uma entidade, uma unidade."
@@ -7596,6 +7646,9 @@ msgstr "O vendedor (ou criador) de cada contrato de aluguel ou contrato recebe u
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "As operações terceirizadas de cada fornecedor de todas as ordens de produção vão em um novo pedido de compra ou em um rascunho existente que você escolhe."
+
+msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
+msgstr "O valor justo de cada unidade e sua vida econômica decidem se o termo cobre a maior parte dela. Clique em uma célula para alterá-la."
 
 msgid "Each, lb, ft…"
 msgstr "Cada, lb, ft…"
@@ -8150,6 +8203,9 @@ msgstr "Fim do Trimestre Anterior"
 msgid "End of queue"
 msgstr "Fim da fila"
 
+msgid "End of Term"
+msgstr "Fim do Termo"
+
 msgid "End Time"
 msgstr "Hora de Término"
 
@@ -8370,9 +8426,6 @@ msgstr "Estimado"
 msgid "Estimated — no capacity reservation"
 msgstr "Estimado — sem reserva de capacidade"
 
-msgid "Estimated Cost"
-msgstr "Custo Estimado"
-
 msgid "Estimated Duration"
 msgstr "Duração Estimada"
 
@@ -8444,6 +8497,9 @@ msgstr "Cada tarefa necessária deve estar Feita ou Ignorada antes que o períod
 
 msgid "Every row was imported successfully."
 msgstr "Cada linha foi importada com sucesso."
+
+msgid "Every unit has a rate."
+msgstr "Cada unidade tem uma taxa."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Todos devem configurar um aplicativo autenticador antes de abrir esta empresa."
@@ -9338,6 +9394,9 @@ msgstr "Reabastecimento Fixo"
 msgid "Fixed Shelf Life"
 msgstr "Vida de prateleira fixa"
 
+msgid "Fixed Term"
+msgstr "Termo Fixo"
+
 msgid "Fixture"
 msgstr "Dispositivo de fixação"
 
@@ -9361,6 +9420,9 @@ msgstr "Unidade da frota"
 
 msgid "Fleet Unit"
 msgstr "Unidade de frota"
+
+msgid "Fleet Units"
+msgstr "Unidades da Frota"
 
 msgid "For <0/>"
 msgstr "Para <0/>"
@@ -9828,6 +9890,9 @@ msgstr "Nome do Grupo"
 msgid "Groups"
 msgstr "Grupos"
 
+msgid "Guaranteed Residual"
+msgstr "Residual Garantido"
+
 msgid "Guaranteed Residual Value"
 msgstr "Valor residual garantido"
 
@@ -10007,6 +10072,9 @@ msgstr "Como a cobertura é calculada"
 
 msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
 msgstr "Como cada linha ganha sua receita: espalhada por dia ou uniformemente por mês, a partir da data de ativação ou de sua data de início."
+
+msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
+msgstr "Como o aluguel de cada unidade é dividido em períodos e quando em um período é faturado."
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "o quanto o trabalho agendado ultrapassa as horas disponíveis (+) ou quantas horas ainda estão livres."
@@ -10768,6 +10836,9 @@ msgstr "As faturas são criadas automaticamente todos os dias para o que está v
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "As faturas são criadas automaticamente assim que o contrato está ativo."
+
+msgid "Invoices are created every day for whatever is due. This decides what happens to each one next."
+msgstr "As faturas são criadas todos os dias para o que é devido. Isso decide o que acontece com cada uma em seguida."
 
 msgid "Invoices are drafted and posted automatically."
 msgstr "Faturas são rascunhadas e contabilizadas automaticamente."
@@ -12362,6 +12433,9 @@ msgstr "Mensal"
 msgid "Monthly Depreciation"
 msgstr "Depreciação Mensal"
 
+msgid "Monthly Rent"
+msgstr "Aluguel Mensal"
+
 msgid "Monthly Rent:"
 msgstr "Aluguel mensal:"
 
@@ -12965,6 +13039,9 @@ msgstr "Próximo vencimento:"
 msgid "Next Interest"
 msgstr "Próximos Juros"
 
+msgid "Next invoice"
+msgstr ""
+
 msgid "Next Invoice"
 msgstr "Próxima Fatura"
 
@@ -12979,9 +13056,6 @@ msgstr "A próxima fatura {date} é criada automaticamente, depois é contabiliz
 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "A próxima fatura {date} é criada automaticamente, depois contabilizada."
-
-msgid "Next Invoice:"
-msgstr "Próxima Fatura:"
 
 msgid "Next page"
 msgstr "Próxima página"
@@ -13603,6 +13677,9 @@ msgstr "Nenhuma transação neste período"
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Nenhuma unidade ainda. Adicione uma unidade de frota da lista de Unidades antes de ativar o contrato."
 
+msgid "No units yet. Add the fleet units this agreement rents."
+msgstr "Nenhuma unidade ainda. Adicione as unidades da frota que este contrato aluga."
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Nenhuma conta não mapeada corresponde a um código de provedor"
 
@@ -14020,6 +14097,9 @@ msgstr "Apenas uma integração de despesas pode estar ativa por vez. Desinstale
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Apenas funcionários qualificados podem ser agendados e executar este processo"
+
+msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
+msgstr "Apenas unidades serializadas capitalizadas como ativos fixos podem ser alugadas. Para adicionar uma, abra a aba Inventário da peça, encontre o número de série em Unidades de armazenamento e escolha Capitalizar como Ativo fixo."
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape autorizou a conexão, mas o salvamento falhou. Salve as configurações de integração para tentar novamente."
@@ -14594,6 +14674,9 @@ msgstr "Valor Pago:"
 
 msgid "Paid Date"
 msgstr "Data de Pagamento"
+
+msgid "Paid up front; record it as a payment once received"
+msgstr "Pagamento antecipado; registre-o como um pagamento quando recebido"
 
 msgid "Parameters"
 msgstr "Parâmetros"
@@ -16461,17 +16544,17 @@ msgstr "Recorrente"
 msgid "Recurring Invoices"
 msgstr "Faturas Recorrentes"
 
-msgid "Recurring per month:"
-msgstr "Recorrente por mês:"
+msgid "Recurring per month"
+msgstr ""
 
-msgid "Recurring per quarter:"
-msgstr "Recorrente por trimestre:"
+msgid "Recurring per quarter"
+msgstr ""
 
-msgid "Recurring per week:"
-msgstr "Recorrente por semana:"
+msgid "Recurring per week"
+msgstr ""
 
-msgid "Recurring per year:"
-msgstr "Recorrente por ano:"
+msgid "Recurring per year"
+msgstr ""
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Vermelho é insuficiente de pessoal, verde está coberto, âmbar é mais pessoas do que o trabalho necessita."
@@ -16778,6 +16861,9 @@ msgstr "Contrato de aluguel"
 
 msgid "Rental Agreement"
 msgstr "Contrato de Aluguel"
+
+msgid "Rental agreement setup"
+msgstr "Configuração do contrato de aluguel"
 
 msgid "Rental Agreements"
 msgstr "Contratos de Aluguel"
@@ -17617,6 +17703,9 @@ msgstr "Funciona durante cada turno no local."
 
 msgid "Runs only during the shifts you select."
 msgstr "Funciona apenas durante os turnos que você seleciona."
+
+msgid "Runs to an end date. A unit still out after it keeps billing."
+msgstr "Funciona até uma data final. Uma unidade ainda fora após isso continua faturando."
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "Funciona sem supervisão 24 horas por dia, ignorando calendários de turnos."
@@ -20151,6 +20240,9 @@ msgstr "O termo é pelo menos {threshold} da vida econômica de uma unidade"
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "O prazo é de pelo menos {threshold} da vida econômica ({actual})"
 
+msgid "Terms"
+msgstr "Termos"
+
 msgid "Terms and Privacy"
 msgstr "Termos e Privacidade"
 
@@ -20217,6 +20309,9 @@ msgstr "O registro de adição ao final de cada movimento de estoque; a quantida
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "O ativo entra em sua classe de serviço e começa a ser depreciado a partir da data de entrada em serviço."
+
+msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "A autorização foi recusada no Onshape. Salve as configurações de integração para tentar novamente."
@@ -20473,6 +20568,9 @@ msgstr "O registro de ativo fixo contra o qual essa compra é capitalizada; o re
 
 msgid "The fixed-asset record this sale disposes; the line's shipment posts the asset's net-book-value disposal entry rather than COGS."
 msgstr "O registro de ativo fixo que esta venda baixa; a remessa da linha contabiliza o lançamento de baixa do valor contábil líquido do ativo em vez do CPV."
+
+msgid "The fleet units this agreement rents, each at its own rate. Click a cell to change it."
+msgstr "As unidades da frota que este contrato aluga, cada uma em sua própria taxa. Clique em uma célula para alterá-la."
 
 msgid "The floor an asset depreciates down to; when net book value reaches it, the asset flips to Fully Depreciated."
 msgstr "O piso para o qual um ativo é depreciado; quando o valor contábil líquido o atinge, o ativo muda para Totalmente Depreciado."
@@ -21066,8 +21164,8 @@ msgstr "A unidade não tem outro uso para você após o término do prazo."
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "A unidade é removida da disponibilidade até ser retornada à operação. A depreciação continua e sua contabilidade permanece inalterada."
 
-msgid "The unit leaves stock and becomes an asset at its carrying cost. The estimate above is the item's current unit cost."
-msgstr "A unidade sai do estoque e se torna um ativo ao seu custo contábil. A estimativa acima é o custo unitário atual do item."
+msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "O preço unitário do item no momento da compra"
@@ -21451,6 +21549,9 @@ msgstr "Isso remove {employeeName} da lista pelo dia. Salve novamente para confi
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Esta ferramenta é ativada quando o aviso de alteração {activationLockId} é liberado."
 
+msgid "This unit has no cost in inventory"
+msgstr ""
+
 msgid "This updates the theme for all users of the application"
 msgstr "Isso atualiza o tema para todos os usuários da aplicação."
 
@@ -21685,6 +21786,9 @@ msgstr "Para Unidade de Armazenamento"
 
 msgid "To supplier"
 msgstr "Para fornecedor"
+
+msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
+msgstr "Para testar se é uma venda, <0>dê ao contrato um termo fixo</0>."
 
 msgid "To:"
 msgstr "Para:"
@@ -22143,6 +22247,9 @@ msgstr "Desfazer"
 msgid "Ungroup"
 msgstr "Desagrupar"
 
+msgid "Unguaranteed Residual"
+msgstr "Residual Não Garantido"
+
 msgid "Unguaranteed Residual Value"
 msgstr "Valor Residual Não Garantido"
 
@@ -22166,6 +22273,9 @@ msgstr "Ações da unidade"
 
 msgid "Unit Cost"
 msgstr "Custo Unitário"
+
+msgid "Unit Inputs"
+msgstr "Entradas de Unidade"
 
 msgid "unit of measure"
 msgstr "unidade de medida"
@@ -23182,11 +23292,17 @@ msgstr "Que dados"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "O que impulsionou o inventário para cima ou para baixo, por qualquer dimensão"
 
+msgid "What happens to an invoice once it is created"
+msgstr "O que acontece com uma fatura depois de criada"
+
 msgid "What happens to an invoice once it is drafted"
 msgstr "O que acontece com uma fatura quando é rascunhada"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "O que acontece com as faturas criadas automaticamente todos os dias a partir de contratos de aluguel e contratos. Faturas com cobranças de aluguel, créditos, refaturamento de faturas anuladas ou violações de regras sempre aguardam revisão."
+
+msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
+msgstr "O que acontece com as unidades quando o termo termina e a taxa com a qual o aluguel é descontado."
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "O que acontece quando um diário é datado em um período bloqueado."
@@ -23214,6 +23330,12 @@ msgstr "Que tipo de cotação é esta — cotação de fornecedor padrão, cota�
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "De qual fonte esta dimensão extrai seus valores permitidos (lista personalizada ou uma entidade existente como cliente, localização, funcionário)."
+
+msgid "What the customer can buy each unit for at the end"
+msgstr "O que o cliente pode comprar cada unidade no final"
+
+msgid "What the customer pays up front, the tax on rent, and when invoices are due."
+msgstr "O que o cliente paga antecipadamente, o imposto sobre aluguel e quando as faturas vencem."
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "De qual ponto começa a contagem regressiva da data de vencimento (data da fatura, final do mês, etc.)."
@@ -23347,6 +23469,9 @@ msgstr "Quando o cartão kanban é escaneado, o trabalho é automaticamente reti
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Quando o local de recebimento espera que o estoque chegue; determina a disponibilidade de MRP no destino."
 
+msgid "When the rental starts, and whether it has an end."
+msgstr "Quando o aluguel começa e se tem um fim."
+
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "Quando o fornecedor se comprometeu a entregar; o planejamento usa esta data para a projeção de chegada de estoque de entrada."
 
@@ -23407,6 +23532,12 @@ msgstr "Onde os itens afetados são usados em todo o sistema. Informativo — na
 msgid "Where the service is delivered"
 msgstr "Onde o serviço é entregue"
 
+msgid "Where the units are delivered"
+msgstr "Onde as unidades são entregues"
+
+msgid "Where the units ship from"
+msgstr "De onde as unidades são enviadas"
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "De onde esta entrada se originou (entrada manual, contabilização de vendas/compras, modelo recorrente, etc.)."
 
@@ -23434,8 +23565,8 @@ msgstr "Se Carbon segue cada unidade (Série), cada lote (Lote de produção), a
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
 msgstr "Se cada unidade é tratada como aluguel ou venda é decidido quando o contrato é ativado, a partir dos termos e inputs de cada unidade."
 
-msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
-msgstr "Se cada unidade é tratada como aluguel ou venda é decidido quando o contrato é ativado."
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from these terms and each unit's inputs."
+msgstr "Se cada unidade é tratada como um aluguel ou uma venda é decidido quando o contrato é ativado, a partir destes termos e entradas de cada unidade."
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "Se o cronômetro inicia quando o processo escolhido começa ou quando ele termina."
@@ -23485,6 +23616,9 @@ msgstr "Quem é o proprietário das ações de Planejamento de MRP. Locais herda
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Quem recebe as faturas, aonde e em que condições."
 
+msgid "Who rents the units, where they go, and who to call."
+msgstr "Quem aluga as unidades, para onde vão e quem ligar."
+
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "Quem deve receber notificações para ordens de manutenção?"
 
@@ -23520,6 +23654,9 @@ msgstr "Quem deve receber notificações quando uma cotação de fornecedor é e
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Quem deve receber notificações quando um trabalho de inventário é concluído?"
+
+msgid "Who sold it, the currency it bills in, and any notes."
+msgstr "Quem vendeu, a moeda em que fatura e qualquer observação."
 
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Quem vendeu, a quem pertence e quando foi fechado."
