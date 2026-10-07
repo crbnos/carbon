@@ -47,6 +47,8 @@ load_env() {
     set -a; . "$ENV_FILE"; set +a
     : "${CARBON_REPO:?CARBON_REPO must be set in .env}"
     : "${STACK_NAME:?STACK_NAME must be set in .env}"
+    # Defaulted here so a .env written before this image existed still works.
+    : "${CARBON_IMAGE_BOOTSTRAP:=carbon/bootstrap:latest}"
     [ -f "$CARBON_REPO/Dockerfile" ] || error "CARBON_REPO=$CARBON_REPO is not a Carbon checkout (no Dockerfile)"
 }
 
@@ -160,6 +162,8 @@ cmd_build() {
     docker build --build-arg APP=erp -t "$CARBON_IMAGE_ERP" "$CARBON_REPO"
     log "Building mes image ($CARBON_IMAGE_MES)"
     docker build --build-arg APP=mes -t "$CARBON_IMAGE_MES" "$CARBON_REPO"
+    log "Building bootstrap image ($CARBON_IMAGE_BOOTSTRAP)"
+    docker build --target bootstrap -t "$CARBON_IMAGE_BOOTSTRAP" "$CARBON_REPO"
 }
 
 # ── deploy ─────────────────────────────────────────────────────────────────────
@@ -210,7 +214,7 @@ cmd_migrate() {
     --restart-max-attempts 10 \
     --env PGSSLMODE=disable \
     --workdir /repo/packages/database \
-    "$CARBON_IMAGE_ERP" \
+    "$CARBON_IMAGE_BOOTSTRAP" \
     sh -c 'pnpm exec supabase migration up --include-all \
     --db-url "postgresql://supabase_admin:$(cat /run/secrets/postgres_password)@postgres:5432/postgres"' >/dev/null
 

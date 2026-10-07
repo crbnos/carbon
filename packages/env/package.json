@@ -12,14 +12,17 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules",
     "lint": "biome lint --fix",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@carbon/utils": "workspace:*",
-    "@types/node": "20.19.39"
+    "@types/node": "20.19.39",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

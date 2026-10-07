@@ -2556,6 +2556,9 @@ importers:
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
+      zod:
+        specifier: 'catalog:'
+        version: 4.5.4
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2563,6 +2566,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(vite@7.3.5(@types/node@20.19.39)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
 
   packages/files:
     dependencies:

@@ -33,7 +33,7 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
       - uses: actions/cache@v4
@@ -69,7 +69,7 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
       - uses: actions/cache@v4
@@ -112,7 +112,7 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
       - uses: actions/cache@v4
@@ -151,7 +151,7 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
       - uses: actions/cache@v4
@@ -189,7 +189,7 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
       - uses: actions/cache@v4
@@ -227,7 +227,7 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       # Turborepo's local cache, carried between runs: the postinstall
-      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
       - uses: actions/cache@v4

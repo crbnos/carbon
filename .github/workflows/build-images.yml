@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [erp, mes, ops, edge-functions, assembler]
+        image: [erp, mes, bootstrap, edge-functions, assembler]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -108,23 +108,6 @@ jobs:
           platforms: linux/amd64
           provenance: false
 
-      # The Dockerfiles' cache mounts (the pnpm store, Turborepo's cache)
-      # start empty on every runner; carry them between runs. Keyed by
-      # commit and restored from the newest, so each run saves what it adds.
-      - if: steps.plan.outputs.action == 'build'
-        uses: actions/cache@v6
-        with:
-          path: cache-mounts
-          key: cache-mounts-${{ matrix.image }}-${{ github.sha }}
-          restore-keys: cache-mounts-${{ matrix.image }}-
-
-      - if: steps.plan.outputs.action == 'build'
-        uses: reproducible-containers/buildkit-cache-dance@v3
-        with:
-          builder: ${{ steps.buildx.outputs.name }}
-          cache-dir: cache-mounts
-          dockerfile: ${{ steps.plan.outputs.file }}
-
       - if: steps.plan.outputs.action == 'build'
         uses: docker/build-push-action@v7
         with:
@@ -141,8 +124,6 @@ jobs:
           tags: ${{ steps.plan.outputs.image }}:${{ github.sha }}
           platforms: linux/amd64
           provenance: false
-          # In the registry beside the image, not GitHub's cache: that holds
-          # 10 GB a repository, which five images outgrow. The ECR options
-          # are what ECR needs to store a cache manifest.
-          cache-from: type=registry,ref=${{ steps.plan.outputs.image }}:buildcache
-          cache-to: type=registry,ref=${{ steps.plan.outputs.image }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
+          # No layer cache. An image is only built when its files changed,
+          # which invalidates every layer after the base; exporting one took
+          # about 95 seconds a build and one trivial layer was ever reused.
