@@ -15,7 +15,6 @@ import { cloneElement, forwardRef } from "react";
 import { LuCheck, LuChevronRight } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { BottomSheetTrigger } from "./BottomSheet";
-import { useCompact } from "./Compact";
 import {
   compactPart,
   MenuSheetCheckboxItem,
@@ -36,6 +35,7 @@ import { ShortcutKey } from "./ShortcutKey";
 import type { MenuItemShortcut } from "./shortcuts";
 import { cn } from "./utils/cn";
 import { withMenuShortcuts } from "./utils/menuShortcut";
+import { useViewport } from "./Viewport";
 
 const DesktopDropdownMenuSubTrigger = forwardRef<
   ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
@@ -111,7 +111,7 @@ export interface DropdownMenuIconProps extends ComponentPropsWithoutRef<"svg"> {
 const DropdownMenuIcon = forwardRef<ElementRef<"span">, DropdownMenuIconProps>(
   ({ className, icon, children, ...props }, ref) => {
     return cloneElement(icon, {
-      className: cn("mr-2 h-4 w-4 compact:mr-0 compact:size-5", className),
+      className: cn("mr-2 h-4 w-4 max-md:mr-0 max-md:size-5", className),
       ...props
     });
   }
@@ -264,7 +264,7 @@ DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
 const DropdownMenu = (
   props: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <MenuSheetRoot {...props} />
   ) : (
     <DropdownMenuPrimitive.Root {...props} />
@@ -282,7 +282,7 @@ const DropdownMenuGroup = compactPart(
 const DropdownMenuPortal = (
   props: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Portal>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <MenuSheetPortal {...props} />
   ) : (
     <DropdownMenuPrimitive.Portal {...props} />
@@ -290,7 +290,7 @@ const DropdownMenuPortal = (
 const DropdownMenuSub = (
   props: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Sub>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <MenuSheetSub {...props} />
   ) : (
     <DropdownMenuPrimitive.Sub {...props} />

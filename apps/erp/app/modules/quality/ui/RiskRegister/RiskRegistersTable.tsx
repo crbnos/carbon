@@ -6,8 +6,8 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useCompact,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -69,7 +69,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
   const [people] = usePeople();
 
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
@@ -153,7 +153,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Source`,
         // Phones: line 2 is muted context, not a second row of pills.
         cell: (item) =>
-          isCompact ? (
+          isPhone ? (
             <span className="text-muted-foreground">
               {item.getValue<string>()}
             </span>
@@ -256,7 +256,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
       }
     ];
     return defaultColumns;
-  }, [people, items, workCenters.options.map, t, isCompact]);
+  }, [people, items, workCenters.options.map, t, isPhone]);
 
   const renderContextMenu = useCallback<(row: Risk) => JSX.Element>(
     (row) => (

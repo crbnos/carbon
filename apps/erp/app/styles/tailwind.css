@@ -226,3 +226,19 @@ p.is-editor-empty:first-child:before {
 .animate-spinner {
   animation: spinner-fade 1.2s linear infinite;
 }
+
+/*
+ * ERP phone chrome (< 768px).
+ * - The app bar is 52px, so frames sized from --topbar-height still fit.
+ * - Toasts sit above the bottom chrome at every phone width; Sonner's own
+ *   mobileOffset only applies up to 600px.
+ */
+@media (width < 48rem) {
+  :root {
+    --topbar-height: calc(52px + env(safe-area-inset-top));
+  }
+
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(var(--content-inset, 0px) + 16px);
+  }
+}

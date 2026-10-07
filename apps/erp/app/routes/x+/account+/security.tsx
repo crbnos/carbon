@@ -294,7 +294,7 @@ export default function AccountSecurity() {
       {passkeysEnabled && (
         <Card>
           <CardHeader>
-            <HStack className="justify-between compact:flex-col compact:items-stretch compact:gap-3">
+            <HStack className="justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
               <div>
                 <CardTitle>
                   <Trans>Passkeys</Trans>
@@ -329,7 +329,7 @@ export default function AccountSecurity() {
                   <HStack
                     key={pk.id}
                     spacing={4}
-                    className="w-full justify-between p-3 rounded-lg border border-border cursor-pointer transition-colors hover:bg-muted/40 compact:border-0 compact:p-0 compact:rounded-none"
+                    className="w-full justify-between p-3 rounded-lg border border-border cursor-pointer transition-colors hover:bg-muted/40 max-md:border-0 max-md:p-0 max-md:rounded-none"
                     onClick={() => openPasskeyDrawer(pk)}
                   >
                     <HStack spacing={3} className="min-w-0">
@@ -381,7 +381,7 @@ export default function AccountSecurity() {
 
       <Card>
         <CardHeader>
-          <HStack className="justify-between compact:flex-col compact:items-stretch compact:gap-3">
+          <HStack className="justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
             <div>
               <CardTitle>
                 <Trans>Two-factor authentication</Trans>
@@ -422,7 +422,7 @@ export default function AccountSecurity() {
                 <HStack
                   key={factor.id}
                   spacing={4}
-                  className="w-full justify-between p-3 rounded-lg border border-border compact:border-0 compact:p-0 compact:rounded-none"
+                  className="w-full justify-between p-3 rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none"
                 >
                   <HStack spacing={3} className="min-w-0">
                     <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">

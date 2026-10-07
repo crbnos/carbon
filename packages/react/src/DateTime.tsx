@@ -193,7 +193,7 @@ const DateTime = ({
             className={cn(
               "cursor-pointer whitespace-nowrap underline decoration-muted-foreground/50 decoration-dotted underline-offset-[3px] transition-colors hover:decoration-foreground/70",
               // Phones: the hover tooltip is off, so nothing hints it is interactive.
-              "compact:no-underline compact:cursor-auto",
+              "max-md:no-underline max-md:cursor-auto",
               className
             )}
           >

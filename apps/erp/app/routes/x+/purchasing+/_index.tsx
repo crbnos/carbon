@@ -394,7 +394,7 @@ export default function PurchaseDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 compact:grid-cols-2 compact:gap-3 compact:[&>:last-child:nth-child(odd)]:col-span-2">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuPackageSearch />}
           title={<Trans>Active Supplier Quotes</Trans>}
@@ -427,9 +427,9 @@ export default function PurchaseDashboard() {
       </div>
 
       <Card>
-        <HStack className="justify-between items-center compact:flex-col compact:items-stretch">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2 compact:flex-wrap">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -460,11 +460,11 @@ export default function PurchaseDashboard() {
                 onChange={setSupplierId}
                 options={supplierOptions}
                 size="sm"
-                className="font-medium text-sm min-w-[160px] gap-4 compact:min-w-0"
+                className="font-medium text-sm min-w-[160px] gap-4 max-md:min-w-0"
               />
             </div>
           </CardHeader>
-          <CardAction className="flex-row items-center gap-2 compact:pt-0">
+          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
             <DateSelect
               value={interval}
               onValueChange={onIntervalChange}
@@ -516,11 +516,11 @@ export default function PurchaseDashboard() {
           </VStack>
           <Loading
             isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full compact:h-[150px]"
+            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
           >
             <ChartContainer
               config={chartConfig}
-              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full compact:h-[150px]"
+              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
             >
               <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                 <CartesianGrid vertical={false} />
@@ -799,7 +799,7 @@ function SupplierQuoteRow({ doc }: { doc: SupplierQuote }) {
     <Tr>
       <Td>
         <Hyperlink
-          className="compact:min-h-11"
+          className="max-md:min-h-11"
           to={path.to.supplierQuote(doc.id!)}
         >
           <HStack spacing={1}>
@@ -823,7 +823,7 @@ function PurchaseOrderDocumentRow({ doc }: { doc: PurchaseOrder }) {
     <Tr>
       <Td>
         <Hyperlink
-          className="compact:min-h-11"
+          className="max-md:min-h-11"
           to={path.to.purchaseOrder(doc.id!)}
         >
           <HStack spacing={1}>
@@ -846,7 +846,7 @@ function PurchaseInvoiceRow({ doc }: { doc: PurchaseInvoice }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink className="compact:min-h-11" to={path.to.salesRfq(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.salesRfq(doc.id!)}>
           <HStack spacing={1}>
             <LuCreditCard className="size-4" />
             <span>{doc.invoiceId}</span>
@@ -872,7 +872,7 @@ function SupplierApprovalRow({
   return (
     <Tr>
       <Td>
-        <Hyperlink className="compact:min-h-11" to={path.to.supplier(doc.id)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.supplier(doc.id)}>
           <SupplierAvatar supplierId={doc.id} />
         </Hyperlink>
       </Td>

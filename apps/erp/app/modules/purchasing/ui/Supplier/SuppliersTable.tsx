@@ -488,7 +488,7 @@ const SuppliersTable = memo(function SuppliersTable({
           permissions.can("create", "purchasing") && (
             <div className="flex items-center gap-2">
               <Button
-                className="compact:hidden"
+                className="max-md:hidden"
                 variant="secondary"
                 leftIcon={<LuShapes />}
                 asChild

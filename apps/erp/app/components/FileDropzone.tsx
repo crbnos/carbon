@@ -9,7 +9,7 @@ import {
   isHeic,
   MediaUploader
 } from "@carbon/files/media";
-import { Button, cn, toast, useCompact } from "@carbon/react";
+import { Button, cn, toast, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { useState } from "react";
@@ -35,7 +35,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   className = "mt-4"
 }) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const [isConverting, setIsConverting] = useState(false);
@@ -74,7 +74,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   });
 
   // Phones cannot drag files in: one Upload button opens the same picker.
-  if (isCompact) {
+  if (isPhone) {
     return (
       <div className={className}>
         <input {...getInputProps()} />

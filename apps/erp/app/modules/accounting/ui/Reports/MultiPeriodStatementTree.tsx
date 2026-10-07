@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useCompact } from "@carbon/react";
+import { cn, useViewport } from "@carbon/react";
 import type {
   ReportColumnGranularity,
   ReportPeriodBucket
@@ -88,8 +88,8 @@ const MultiPeriodStatementTree = memo(
     ledgerPath
   }: MultiPeriodStatementTreeProps) => {
     const { t } = useLingui();
-    const isCompact = useCompact();
-    const accountColumnWidth = isCompact
+    const { isPhone } = useViewport();
+    const accountColumnWidth = isPhone
       ? COMPACT_ACCOUNT_COLUMN_WIDTH
       : ACCOUNT_COLUMN_WIDTH;
     const { locale } = useLocale();
@@ -185,7 +185,7 @@ const MultiPeriodStatementTree = memo(
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
-          parentClassName="flex-1 overflow-x-auto compact:scroll-fade-x"
+          parentClassName="flex-1 overflow-x-auto max-md:scroll-fade-x"
           contentMinWidth={rowWidth}
           renderNode={({ node, state }) => {
             const account = node.data;
@@ -255,7 +255,7 @@ const MultiPeriodStatementTree = memo(
                   <div
                     className={cn(
                       "w-5 h-5 flex items-center justify-center mr-2 shrink-0",
-                      !isGroup && "compact:hidden"
+                      !isGroup && "max-md:hidden"
                     )}
                   >
                     {isGroup &&

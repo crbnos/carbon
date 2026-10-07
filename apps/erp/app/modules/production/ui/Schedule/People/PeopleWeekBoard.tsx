@@ -149,7 +149,7 @@ function WeekCard({
             <button
               type="button"
               aria-label="Remove"
-              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400 compact:hit-area"
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400 max-md:hit-area"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => onRemove(item)}
             >
@@ -235,7 +235,7 @@ function WeekColumn({
         sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]",
         // Phones: a pinned 300px column would leave no room for the rest, so
         // Unassigned scrolls with the board like any other column.
-        sticky && "compact:static compact:shadow-none"
+        sticky && "max-md:static max-md:shadow-none"
       )}
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row items-center sticky top-0 z-1 border-b bg-card">

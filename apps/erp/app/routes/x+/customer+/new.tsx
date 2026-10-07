@@ -84,7 +84,7 @@ export default function CustomersNewRoute() {
   };
 
   return (
-    <NewRecordPage className="compact:p-0">
+    <NewRecordPage className="max-md:p-0">
       <CustomerForm initialValues={initialValues} />
     </NewRecordPage>
   );

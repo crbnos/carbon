@@ -72,7 +72,7 @@ export function PeopleColumn({
         sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]",
         // Phones: a pinned 300px column would leave no room for the rest, so
         // Unassigned scrolls with the board like any other column.
-        sticky && "compact:static compact:shadow-none"
+        sticky && "max-md:static max-md:shadow-none"
       )}
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row items-center gap-2 sticky top-0 z-1 border-b bg-card">

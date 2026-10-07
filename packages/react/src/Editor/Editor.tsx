@@ -28,9 +28,9 @@ import { useLingui } from "@lingui/react/macro";
 import TextStyle from "@tiptap/extension-text-style";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useCompact } from "../Compact";
 import { Separator } from "../Separator";
 import { cn } from "../utils/cn";
+import { useViewport } from "../Viewport";
 import { ColorSelector } from "./components/ColorSelector";
 import { LinkSelector } from "./components/LinkSelector";
 import { Toolbar } from "./components/Toolbar";
@@ -121,7 +121,7 @@ const Editor = ({
   title
 }: EditorProp) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const titleMode = !!title;
   const titlePlaceholder = title?.placeholder ?? "Untitled";
   // The editor reads its extensions only once on mount, so the placeholder
@@ -133,7 +133,7 @@ const Editor = ({
       const level = node.attrs.level;
       return t`Heading ${level}`;
     }
-    return isCompact ? t`Write a note…` : t`Press '/' for commands`;
+    return isPhone ? t`Write a note…` : t`Press '/' for commands`;
   };
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
@@ -301,7 +301,7 @@ const Editor = ({
               "prose dark:prose-invert focus:outline-none max-w-full",
               // Flush toolbar: pad the content, not the toolbar, and leave a
               // gap below the sticky toolbar.
-              titleMode && "px-8 pt-6 pb-24 compact:px-4"
+              titleMode && "px-8 pt-6 pb-24 max-md:px-4"
             )
           }
         }}

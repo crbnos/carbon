@@ -225,7 +225,7 @@ function ProcedureEditor() {
           }}
         />
       ) : (
-        <div className="flex flex-col gap-6 w-full h-full p-8 compact:p-4">
+        <div className="flex flex-col gap-6 w-full h-full p-8 max-md:p-4">
           <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
             {procedureName}
           </h1>

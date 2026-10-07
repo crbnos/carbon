@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCompact } from "@carbon/react";
+import { useViewport } from "@carbon/react";
 import type { PropsWithChildren } from "react";
 import { useEffect } from "react";
 import useUserSelectContext from "../provider";
 
 const Popover = ({ children }: PropsWithChildren) => {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const {
     aria: { popoverProps },
     dropdown,
@@ -67,7 +67,7 @@ const Popover = ({ children }: PropsWithChildren) => {
       {/* Phones: the list is a bottom sheet over a dimmed screen. The scrim
           sits inside the select's container, so the outside-click handler
           never sees a tap on it; it closes the sheet itself. */}
-      {isCompact && (
+      {isPhone && (
         <div
           aria-hidden
           className="fixed inset-0 z-40 bg-black/40"
@@ -80,7 +80,7 @@ const Popover = ({ children }: PropsWithChildren) => {
       <div
         {...popoverProps}
         ref={popoverRef}
-        className="absolute w-full mt-1 px-2 bg-popover text-popover-foreground shadow-sm border border-border rounded-md min-w-[240px] z-50 compact:fixed compact:inset-x-0 compact:top-auto compact:bottom-0 compact:mt-0 compact:max-h-[88dvh] compact:min-w-0 compact:overflow-y-auto compact:rounded-none compact:rounded-t-[14px] compact:border-0 compact:px-2 compact:pt-2 compact:pb-safe-4"
+        className="absolute w-full mt-1 px-2 bg-popover text-popover-foreground shadow-sm border border-border rounded-md min-w-[240px] z-50 max-md:fixed max-md:inset-x-0 max-md:top-auto max-md:bottom-0 max-md:mt-0 max-md:max-h-[88dvh] max-md:min-w-0 max-md:overflow-y-auto max-md:rounded-none max-md:rounded-t-[14px] max-md:border-0 max-md:px-2 max-md:pt-2 max-md:pb-safe-4"
       >
         {children}
       </div>

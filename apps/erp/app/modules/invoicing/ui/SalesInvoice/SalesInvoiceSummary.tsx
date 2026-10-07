@@ -116,12 +116,12 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={itemReadableId ?? ""}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg compact:size-16"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg max-md:size-16"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4 compact:size-16">
-                  <LuImage className="w-16 h-16 text-muted-foreground compact:size-8" />
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4 max-md:size-16">
+                  <LuImage className="w-16 h-16 text-muted-foreground max-md:size-8" />
                 </div>
               )}
 
@@ -135,10 +135,10 @@ const LineItems = ({
                       children need w-full because VStack is items-start, which
                       sizes each child to its own content and leaves truncate
                       inert no matter how narrow the column gets. */}
-                  <div className="flex items-center justify-between w-full compact:flex-col compact:items-start compact:gap-2">
+                  <div className="flex items-center justify-between w-full max-md:flex-col max-md:items-start max-md:gap-2">
                     <VStack
                       spacing={0}
-                      className="flex-1 min-w-0 compact:w-full"
+                      className="flex-1 min-w-0 max-md:w-full"
                     >
                       <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">{itemReadableId}</Heading>
@@ -164,7 +164,7 @@ const LineItems = ({
                     </VStack>
                     <VStack
                       spacing={2}
-                      className="flex-shrink-0 items-end w-auto compact:items-start compact:w-full"
+                      className="flex-shrink-0 items-end w-auto max-md:items-start max-md:w-full"
                     >
                       <HStack spacing={4}>
                         <VStack spacing={0}>

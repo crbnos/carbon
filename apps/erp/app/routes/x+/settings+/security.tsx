@@ -281,7 +281,7 @@ function SsoDomainRow({
   const submitting = fetcher.formData?.get("intent");
 
   return (
-    <div className="w-full rounded-md border border-border p-4 compact:border-0 compact:p-0 compact:rounded-none">
+    <div className="w-full rounded-md border border-border p-4 max-md:border-0 max-md:p-0 max-md:rounded-none">
       <HStack className="w-full justify-between items-center">
         <HStack spacing={2}>
           <span className="text-sm font-medium font-mono">{domain.domain}</span>

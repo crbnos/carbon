@@ -7,8 +7,8 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useCompact,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -68,7 +68,7 @@ const JournalEntriesTable = memo(
     const [selectedEntry, setSelectedEntry] =
       useState<JournalEntryListItem | null>(null);
     const deleteModal = useDisclosure();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
 
     const columns = useMemo<ColumnDef<JournalEntryListItem>[]>(() => {
       const defaultColumns: ColumnDef<JournalEntryListItem>[] = [
@@ -102,7 +102,7 @@ const JournalEntriesTable = memo(
           header: t`Description`,
           cell: ({ row }) =>
             // Phones: plain text on the row's context line (P3).
-            isCompact ? (
+            isPhone ? (
               row.original.description || "—"
             ) : (
               <HStack className="py-1" spacing={2}>
@@ -240,7 +240,7 @@ const JournalEntriesTable = memo(
         }
       ];
       return defaultColumns;
-    }, [currencyFormatter, isCompact, people, t]);
+    }, [currencyFormatter, isPhone, people, t]);
 
     const renderContextMenu = useCallback(
       (row: JournalEntryListItem) => {

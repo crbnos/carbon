@@ -144,14 +144,14 @@ function WarehouseTransferLineListItem({
   const date = line.updatedAt ?? line.createdAt;
 
   return (
-    <div className={cn("border-b p-6 compact:p-4", className)}>
-      <div className="flex flex-1 justify-between items-center w-full compact:flex-col compact:items-stretch compact:gap-3">
-        <HStack spacing={4} className="w-1/2 compact:w-full">
+    <div className={cn("border-b p-6 max-md:p-4", className)}>
+      <div className="flex flex-1 justify-between items-center w-full max-md:flex-col max-md:items-stretch max-md:gap-3">
+        <HStack spacing={4} className="w-1/2 max-md:w-full">
           <HStack
             spacing={4}
-            className="flex-1 compact:min-w-0 compact:flex-col compact:items-start compact:gap-3 compact:space-x-0"
+            className="flex-1 max-md:min-w-0 max-md:flex-col max-md:items-start max-md:gap-3 max-md:space-x-0"
           >
-            <div className="flex items-center space-x-3 compact:min-w-0">
+            <div className="flex items-center space-x-3 max-md:min-w-0">
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={line.item?.thumbnailPath}
@@ -166,7 +166,7 @@ function WarehouseTransferLineListItem({
                 </span>
               </VStack>
             </div>
-            <div className="flex items-center gap-2 compact:flex-wrap">
+            <div className="flex items-center gap-2 max-md:flex-wrap">
               <Badge variant="secondary">
                 {Number(line.quantity).toLocaleString()}
               </Badge>
@@ -180,7 +180,7 @@ function WarehouseTransferLineListItem({
             </div>
           </HStack>
         </HStack>
-        <div className="flex items-center justify-end gap-2 compact:justify-between">
+        <div className="flex items-center justify-end gap-2 max-md:justify-between">
           <HStack spacing={2}>
             <span className="text-xs text-muted-foreground">
               {isUpdated ? t`Updated` : t`Created`}{" "}

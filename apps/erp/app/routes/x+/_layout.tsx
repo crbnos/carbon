@@ -35,9 +35,9 @@ import {
   ItarUserCertification,
   SidebarProvider,
   TooltipProvider,
-  useCompact,
   useKeyboardWedge,
-  useNProgress
+  useNProgress,
+  useViewport
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
@@ -370,7 +370,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AuthenticatedRoute() {
   const loaderData = useLoaderData<typeof loader>();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const {
     company,
     session,
@@ -537,7 +537,7 @@ export default function AuthenticatedRoute() {
                         bar below <main>, in flow. Mounted only on phones so
                         their hooks (notifications, sheets) never run on
                         desktop. */}
-                    {isCompact && <MobileAppBar />}
+                    {isPhone && <MobileAppBar />}
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <ModuleSidebarLayout>
@@ -547,7 +547,7 @@ export default function AuthenticatedRoute() {
                         <Outlet key={companyId} />
                       </ModuleSidebarLayout>
                     </main>
-                    {isCompact && (
+                    {isPhone && (
                       <MobileBottomChrome>
                         <MobileTabBar />
                       </MobileBottomChrome>

@@ -229,10 +229,10 @@ const PivotControlBar = ({
   };
 
   return (
-    <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full compact:gap-1 compact:px-0 compact:py-1.5">
+    <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full max-md:gap-1 max-md:px-0 max-md:py-1.5">
       {/* Phones: the scope controls form one sideways-scrolling
           chip row; Download and the views menu sit on the line below. */}
-      <HStack className="flex-wrap gap-y-2 compact:w-full compact:flex-nowrap compact:overflow-x-auto compact:scrollbar-hide compact:scroll-fade-x compact:whitespace-nowrap compact:px-4 compact:py-1.5 compact:[&>*]:shrink-0">
+      <HStack className="flex-wrap gap-y-2 max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
         <PeriodSelector variant="range" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -445,7 +445,7 @@ const PivotControlBar = ({
           </Button>
         )}
       </HStack>
-      <HStack className="gap-2 compact:ml-auto compact:px-4">
+      <HStack className="gap-2 max-md:ml-auto max-md:px-4">
         <Button
           variant="secondary"
           leftIcon={<LuDownload />}

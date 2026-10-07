@@ -17,7 +17,7 @@ export function SettingsPage({
       className={cn(
         "py-12 px-4 max-w-[60rem] h-full mx-auto",
         className,
-        "compact:py-3 compact:px-4 compact:gap-3 compact:space-y-0"
+        "max-md:py-3 max-md:px-4 max-md:gap-3 max-md:space-y-0"
       )}
     />
   );
@@ -29,6 +29,6 @@ export function SettingsPageHeading({
   ...props
 }: Omit<ComponentProps<typeof Heading>, "size">) {
   return (
-    <Heading size="h3" {...props} className={cn("compact:hidden", className)} />
+    <Heading size="h3" {...props} className={cn("max-md:hidden", className)} />
   );
 }

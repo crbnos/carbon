@@ -34,7 +34,7 @@ export const Toolbar = ({ className }: { className?: string }) => {
       className={cn(
         "sticky top-0 z-10 flex w-full flex-wrap items-center gap-1 border-b border-border bg-card p-2",
         // Phones: one scrolling row instead of wrapping onto several.
-        "compact:flex-nowrap compact:overflow-x-auto compact:scrollbar-hide compact:scroll-fade-x compact:[&>*]:shrink-0",
+        "max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:[&>*]:shrink-0",
         className
       )}
     >

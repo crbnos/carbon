@@ -12,8 +12,8 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
-  useCompact,
   useUrlParams,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
@@ -57,7 +57,7 @@ const DemandProjectionsTable = memo(
     });
     const [params] = useUrlParams();
     const { t } = useLingui();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     const permissions = usePermissions();
     const locations = useLocations();
     const [selectedItem, setSelectedItem] = useState<DemandProjection | null>(
@@ -117,7 +117,7 @@ const DemandProjectionsTable = memo(
             <Hyperlink
               to={path.to.demandProjection(row.original.id!, locationId)}
             >
-              <HStack className="py-1 cursor-pointer compact:min-w-0">
+              <HStack className="py-1 cursor-pointer max-md:min-w-0">
                 <ItemThumbnail
                   size="sm"
                   thumbnailPath={row.original.thumbnailPath}
@@ -125,8 +125,8 @@ const DemandProjectionsTable = memo(
                   type={row.original.type}
                 />
 
-                <VStack spacing={0} className="font-medium compact:min-w-0">
-                  <span className="compact:block compact:w-full compact:truncate">
+                <VStack spacing={0} className="font-medium max-md:min-w-0">
+                  <span className="max-md:block max-md:w-full max-md:truncate">
                     {row.original.readableIdWithRevision}
                   </span>
                   <div className="w-full truncate text-muted-foreground text-xs">
@@ -207,7 +207,7 @@ const DemandProjectionsTable = memo(
           title={t`Demand Forecasts`}
           table="production-planning"
           withSavedView
-          withSelectableRows={!isCompact}
+          withSelectableRows={!isPhone}
           withSimpleSorting
           primaryAction={
             <div className="flex items-center gap-2">

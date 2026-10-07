@@ -126,7 +126,7 @@ const RecordDocuments = ({
       </HStack>
       <CardContent>
         <Table>
-          <Thead className={cn(filesToRender.length === 0 && "compact:hidden")}>
+          <Thead className={cn(filesToRender.length === 0 && "max-md:hidden")}>
             <Tr>
               <Th>
                 <Trans>Name</Trans>

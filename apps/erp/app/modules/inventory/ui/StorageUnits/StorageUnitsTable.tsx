@@ -20,8 +20,8 @@ import {
   ModalTitle,
   Spinner,
   toast,
-  useCompact,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -80,7 +80,7 @@ const StorageUnitsTable = memo(
   }: StorageUnitsTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -321,10 +321,10 @@ const StorageUnitsTable = memo(
                   <div
                     key={i}
                     aria-hidden
-                    className="w-5 shrink-0 border-l border-border -my-2 compact:border-l-0"
+                    className="w-5 shrink-0 border-l border-border -my-2 max-md:border-l-0"
                   />
                 ))}
-                <div className="w-5 shrink-0 flex items-center justify-center self-center compact:self-start compact:h-[1lh]">
+                <div className="w-5 shrink-0 flex items-center justify-center self-center max-md:self-start max-md:h-[1lh]">
                   {hasChildren ? (
                     isLoading ? (
                       <Spinner className="size-3" />
@@ -334,7 +334,7 @@ const StorageUnitsTable = memo(
                         aria-label={
                           isExpanded ? t`Collapse subtree` : t`Expand subtree`
                         }
-                        className="text-muted-foreground hover:text-foreground shrink-0 compact:hit-area"
+                        className="text-muted-foreground hover:text-foreground shrink-0 max-md:hit-area"
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
@@ -350,7 +350,7 @@ const StorageUnitsTable = memo(
                     )
                   ) : null}
                 </div>
-                <div className="flex items-center py-1 compact:flex-col compact:items-start compact:gap-1 compact:py-0">
+                <div className="flex items-center py-1 max-md:flex-col max-md:items-start max-md:gap-1 max-md:py-0">
                   <Hyperlink
                     to={`${path.to.storageUnit(row.original.id)}?${params}`}
                   >
@@ -364,7 +364,7 @@ const StorageUnitsTable = memo(
                   </Hyperlink>
                   {/* Phones: the context line sits under the name, so it
                       shares the tree indent instead of starting at the gutter. */}
-                  {isCompact &&
+                  {isPhone &&
                   table.getColumn("storageTypeIds")?.getIsVisible() &&
                   row.original.storageTypeIds?.length ? (
                     <div className="text-[13px] font-normal text-muted-foreground">
@@ -437,7 +437,7 @@ const StorageUnitsTable = memo(
         }
       ];
     }, [
-      isCompact,
+      isPhone,
       locations,
       params,
       storageTypes,

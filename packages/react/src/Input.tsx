@@ -19,9 +19,9 @@ const inputGroupVariants = cva(
     variants: {
       size: {
         lg: "h-12 rounded-lg",
-        md: "h-10 rounded-md compact:h-11",
-        sm: "h-8 rounded-md compact:h-11",
-        xs: "h-6 rounded compact:h-11"
+        md: "h-10 rounded-md max-md:h-11",
+        sm: "h-8 rounded-md max-md:h-11",
+        xs: "h-6 rounded max-md:h-11"
       },
       isDisabled: {
         true: "opacity-50 disabled:cursor-not-allowed",
@@ -115,9 +115,9 @@ export const inputVariants = cva(
     variants: {
       size: {
         lg: "h-12 rounded-lg px-4 text-base",
-        md: "h-10 rounded-md px-4 text-sm compact:h-11 compact:text-base",
-        sm: "h-8 rounded-md px-3 text-sm compact:h-11 compact:text-base",
-        xs: "h-6 rounded px-2 text-sm compact:h-11 compact:text-base"
+        md: "h-10 rounded-md px-4 text-sm max-md:h-11 max-md:text-base",
+        sm: "h-8 rounded-md px-3 text-sm max-md:h-11 max-md:text-base",
+        xs: "h-6 rounded px-2 text-sm max-md:h-11 max-md:text-base"
       },
       isInputGroup: {
         true: "h-auto outline-none focus-within:outline-none",
@@ -244,9 +244,9 @@ const inputAddonVariants = cva(
       },
       size: {
         lg: "h-12 px-3",
-        md: "h-10 px-3 compact:h-11",
-        sm: "h-8 px-2 compact:h-11",
-        xs: "h-6 px-1 compact:h-11"
+        md: "h-10 px-3 max-md:h-11",
+        sm: "h-8 px-2 max-md:h-11",
+        xs: "h-6 px-1 max-md:h-11"
       },
       isDisabled: {
         true: "opacity-50 cursor-not-allowed bg-muted text-muted-foreground",
@@ -354,9 +354,9 @@ const inputElementVariants = cva(
     variants: {
       size: {
         lg: "h-12",
-        md: "h-10 compact:h-11",
-        sm: "h-8 compact:h-11",
-        xs: "h-6 compact:h-11"
+        md: "h-10 max-md:h-11",
+        sm: "h-8 max-md:h-11",
+        xs: "h-6 max-md:h-11"
       },
       placement: {
         left: "pl-2",

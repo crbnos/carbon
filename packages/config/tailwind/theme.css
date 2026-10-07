@@ -7,9 +7,8 @@
 
 @custom-variant dark (&:is(.dark *));
 @custom-variant tall (@media (min-height: 769px));
-/* Hover applies where a pointer can hover, at >=768px (byte-identical to the
-   old plain `&:hover` on desktop), and in apps without the phone layout (MES,
-   starter), so only the ERP's phone layout drops sticky tap highlights. */
+/* Hover applies where a pointer can hover and at >=768px (byte-identical to
+   the old plain `&:hover` on desktop), so phones drop sticky tap highlights. */
 @custom-variant hover {
   @media (hover: hover) {
     &:hover {
@@ -21,24 +20,10 @@
       @slot;
     }
   }
-  :where(html:not([data-compact-ui])) &:hover {
-    @slot;
-  }
-}
-
-/* Phone layout: below 768px AND inside an app that opted in with
-   `data-compact-ui` on <html> (the ERP). MES and starter never match, so
-   shared primitives stay unchanged there. `rg "compact:"` lists the mobile surface. */
-@custom-variant compact {
-  @media (width < 48rem) {
-    :where([data-compact-ui]) & {
-      @slot;
-    }
-  }
 }
 
 /* A 44x44 tap target around a smaller control, drawn by ::after (use as
-   `compact:hit-area`). Sets position: relative, so not for absolutely
+   `max-md:hit-area`). Sets position: relative, so not for absolutely
    positioned elements, and needs the element's ::after to be free. */
 @utility hit-area {
   position: relative;
@@ -435,29 +420,18 @@
 }
 
 /*
- * Compact (phone) presentation, ERP only (html[data-compact-ui], < 768px).
+ * Phone presentation (< 768px), every app.
  * - Muted text gets a darker token in light mode to pass 4.5:1 on grey.
- * - The app bar is 52px, so frames sized from --topbar-height still fit.
  * - `.truncate` always ends in an ellipsis, whatever text-wrap utility is set.
- * - Toasts sit above the bottom chrome at every compact width; Sonner's own
- *   mobileOffset only applies up to 600px.
  */
 @media (width < 48rem) {
-  html[data-compact-ui] {
-    --topbar-height: calc(52px + env(safe-area-inset-top));
-  }
-
-  html[data-compact-ui]:not(.dark) {
+  html:not(.dark) {
     --muted-foreground: 220 3.8% 42% !important;
   }
 
   /* `text-pretty` / `text-balance` (CardTitle, Heading) reset the wrap mode
      that `truncate` sets, so a truncated title wrapped instead of ending in "…". */
-  html[data-compact-ui] .truncate {
+  .truncate {
     white-space: nowrap;
-  }
-
-  html[data-compact-ui] [data-sonner-toaster][data-y-position="bottom"] {
-    bottom: calc(var(--content-inset, 0px) + 16px);
   }
 }

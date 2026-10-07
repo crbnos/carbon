@@ -28,7 +28,7 @@ export function NewRecordPage({ className, ...props }: ComponentProps<"div">) {
     <div
       {...props}
       className={cn(
-        "max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8 compact:px-4 compact:pt-3",
+        "max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8 max-md:px-4 max-md:pt-3",
         className
       )}
     />

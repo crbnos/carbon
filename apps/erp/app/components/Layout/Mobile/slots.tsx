@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCompact } from "@carbon/react";
+import { useViewport } from "@carbon/react";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -43,17 +43,17 @@ export function createPortalSlot() {
   }
 
   function Fill({ children }: { children: ReactNode }) {
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     // After hydration only: the server renders no portals.
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
     const add = useCount((s) => s.add);
     useEffect(() => {
-      if (!isCompact) return;
+      if (!isPhone) return;
       add(1);
       return () => add(-1);
-    }, [isCompact, add]);
-    return isCompact && mounted ? createPortal(children, getElement()) : null;
+    }, [isPhone, add]);
+    return isPhone && mounted ? createPortal(children, getElement()) : null;
   }
 
   const useFilled = () => useCount((s) => s.count > 0);

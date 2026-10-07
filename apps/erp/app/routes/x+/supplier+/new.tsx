@@ -86,7 +86,7 @@ export default function SuppliersNewRoute() {
     website: ""
   };
   return (
-    <NewRecordPage className="compact:p-0">
+    <NewRecordPage className="max-md:p-0">
       <SupplierForm initialValues={initialValues} />
     </NewRecordPage>
   );

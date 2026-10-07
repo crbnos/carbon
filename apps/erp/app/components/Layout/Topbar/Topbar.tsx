@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { HStack, IconButton, useCompact } from "@carbon/react";
+import { HStack, IconButton, useViewport } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { LuSquarePen } from "react-icons/lu";
 import { useUser } from "~/hooks";
@@ -19,8 +19,8 @@ const Topbar = () => {
   const notificationsKey = `${user.id}:${user.company.id}`;
   // Phones get the MobileAppBar and MobileTabBar instead; returning early
   // also keeps the notifications subscription and menus from mounting there.
-  const isCompact = useCompact();
-  if (isCompact) return null;
+  const { isPhone } = useViewport();
+  if (isPhone) return null;
 
   return (
     <div className="h-[var(--topbar-height)] grid grid-cols-[1fr_auto] bg-card border-b border-border text-foreground px-4 top-0 sticky z-10 items-center">

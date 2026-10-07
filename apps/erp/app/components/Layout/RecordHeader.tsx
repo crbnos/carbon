@@ -21,7 +21,7 @@ import {
   HStack,
   IconButton,
   toast,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -79,8 +79,8 @@ export function RecordAction({
   slot: "primary" | "secondary" | "overflow";
   children: ReactNode;
 }) {
-  const isCompact = useCompact();
-  if (!isCompact) return <>{children}</>;
+  const { isPhone } = useViewport();
+  if (!isPhone) return <>{children}</>;
   const { Fill } = slots[slot];
   return (
     <Fill>
@@ -109,11 +109,11 @@ export function RecordHero({
   /** The page pads its content by 16pt: pull the hero out to the edges. */
   bleed?: boolean;
 }) {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [element, setElement] = useState<HTMLElement | null>(null);
   useCompactCssVar("--header-height", element);
   useCompactCssVar("--hero-height", element);
-  if (!isCompact) return null;
+  if (!isPhone) return null;
 
   const hasHero = Boolean(title || subtitle || status);
   return (
@@ -146,8 +146,8 @@ export function RecordHero({
 
 /** Where a card form's hero shows on phones (see DocumentHeader). */
 export function RecordHeroTarget({ bleed = false }: { bleed?: boolean }) {
-  const isCompact = useCompact();
-  if (!isCompact) return null;
+  const { isPhone } = useViewport();
+  if (!isPhone) return null;
   return (
     <recordHeroSlot.Target
       className={cn("flex flex-col self-stretch", bleed && "-mx-4 -mt-4")}
@@ -171,12 +171,12 @@ export function RecordPhoneChrome({
   copyValue?: string;
 }) {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const hasPrimary = primarySlot.useFilled();
   const hasSecondary = secondarySlot.useFilled();
   const hasOverflow = overflowSlot.useFilled();
   const { open, setOpen } = useOverflowSheet();
-  if (!isCompact) return null;
+  if (!isPhone) return null;
 
   const onCopy = async () => {
     if (copyValue && (await copyToClipboard(copyValue))) {
@@ -291,7 +291,7 @@ export function RecordHeader({
   actions
 }: RecordHeaderProps) {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   // An editable title is a control (a name input), not a heading.
   const heading = titleInHero ? (
     title
@@ -304,14 +304,14 @@ export function RecordHeader({
   return (
     <>
       <RecordHero
-        title={isCompact && titleInHero ? title : undefined}
+        title={isPhone && titleInHero ? title : undefined}
         subtitle={subtitle}
         status={status}
       />
       <RecordPhoneChrome menu={menu} copyValue={copyValue} />
       <div
         className={cn(
-          "flex flex-shrink-0 items-center justify-between gap-x-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide compact:hidden",
+          "flex flex-shrink-0 items-center justify-between gap-x-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide max-md:hidden",
           onToggleExplorer ? "pl-2" : "pl-4",
           onToggleProperties ? "pr-2" : "pr-4"
         )}
@@ -325,7 +325,7 @@ export function RecordHeader({
               variant="ghost"
             />
           ) : null}
-          {isCompact && titleInHero ? null : titleTo ? (
+          {isPhone && titleInHero ? null : titleTo ? (
             <Link to={titleTo}>{heading}</Link>
           ) : (
             heading

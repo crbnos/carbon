@@ -17,8 +17,8 @@ import {
   MenuIcon,
   MenuItem,
   toast,
-  useCompact,
   useDisclosure,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
@@ -155,7 +155,7 @@ const JobsTable = memo((props: JobsTableProps) => {
   const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [params] = useUrlParams();
   const parts = useParts();
   const tools = useTools();
@@ -358,7 +358,7 @@ const JobsTable = memo((props: JobsTableProps) => {
             );
           }
           // Phones: no column header, so the number carries its unit.
-          if (isCompact && row.original.unitOfMeasureCode) {
+          if (isPhone && row.original.unitOfMeasureCode) {
             return (
               <>
                 {quantity}
@@ -672,7 +672,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, trackedEntities, batchesByJobId, isCompact]);
+  }, [params, customColumns, trackedEntities, batchesByJobId, isPhone]);
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {

@@ -8,7 +8,7 @@ import {
   Heading,
   Input,
   SidebarTrigger,
-  useIsMobile
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -46,7 +46,7 @@ export default function ActiveRoute() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const panelRef = useRef<ImperativePanelHandle>(null);
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
   const { operationId } = useParams();
 
   useEffect(() => {

@@ -15,8 +15,6 @@ import {
   LuChevronsUpDown,
   LuChevronUp
 } from "react-icons/lu";
-
-import { useCompact } from "./Compact";
 import { compactPart } from "./MenuSheet";
 import {
   SelectSheetContent,
@@ -29,6 +27,7 @@ import {
   SelectSheetValue
 } from "./SelectSheet";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /*
  * Phones render each part from SelectSheet (a bottom sheet) instead of Radix's
@@ -37,7 +36,7 @@ import { cn } from "./utils/cn";
 const Select = (
   props: ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <SelectSheetRoot {...props} />
   ) : (
     <SelectPrimitive.Root {...props} />
@@ -61,8 +60,8 @@ const selectTriggerVariants = cva(
     variants: {
       size: {
         lg: "h-12 px-4 py-3 rounded-lg text-base space-x-4",
-        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3 compact:h-11 compact:text-base",
-        sm: "h-8  px-3 py-2 rounded text-xs space-x-2 compact:h-11 compact:text-base"
+        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3 max-md:h-11 max-md:text-base",
+        sm: "h-8  px-3 py-2 rounded text-xs space-x-2 max-md:h-11 max-md:text-base"
       }
     },
     defaultVariants: {
@@ -82,8 +81,8 @@ const SelectTrigger = forwardRef<
   ElementRef<typeof SelectPrimitive.Trigger>,
   SelectTriggerProps
 >(({ size, className, children, hideIcon, inline, ...props }, ref) => {
-  const isCompact = useCompact();
-  const Trigger = isCompact ? SelectSheetTrigger : SelectPrimitive.Trigger;
+  const { isPhone } = useViewport();
+  const Trigger = isPhone ? SelectSheetTrigger : SelectPrimitive.Trigger;
   const icon = (
     <LuChevronsUpDown className="h-4 w-4 flex-shrink-0 opacity-50" />
   );
@@ -95,7 +94,7 @@ const SelectTrigger = forwardRef<
     >
       {children}
       {!hideIcon && !inline ? (
-        isCompact ? (
+        isPhone ? (
           icon
         ) : (
           <SelectPrimitive.Icon asChild>{icon}</SelectPrimitive.Icon>

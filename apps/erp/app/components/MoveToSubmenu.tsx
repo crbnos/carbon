@@ -13,7 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   IconButton,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuEllipsisVertical, LuMoveRight } from "react-icons/lu";
@@ -34,8 +34,8 @@ type MoveToProps = {
  * the drop's move reachable by tap. Renders nothing on desktop.
  */
 export function MoveToSubmenu({ getTargets, onMove }: MoveToProps) {
-  const isCompact = useCompact();
-  if (!isCompact) return null;
+  const { isPhone } = useViewport();
+  if (!isPhone) return null;
   const targets = getTargets();
   if (targets.length === 0) return null;
 
@@ -62,8 +62,8 @@ export function MoveToSubmenu({ getTargets, onMove }: MoveToProps) {
  */
 export function MoveToMenu({ getTargets, onMove }: MoveToProps) {
   const { t } = useLingui();
-  const isCompact = useCompact();
-  if (!isCompact) return null;
+  const { isPhone } = useViewport();
+  if (!isPhone) return null;
   const targets = getTargets();
   if (targets.length === 0) return null;
 

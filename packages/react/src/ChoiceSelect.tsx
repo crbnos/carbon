@@ -210,7 +210,7 @@ function ChoiceSelectMulti<V extends string>({
             "hover:bg-accent/40",
             "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            "compact:h-11 compact:text-base",
+            "max-md:h-11 max-md:text-base",
             selected.length === 0 && "text-muted-foreground",
             className
           )}

@@ -978,7 +978,7 @@ function AttributesForm({
 
             <VStack
               spacing={2}
-              className="w-full col-span-2 compact:col-span-full"
+              className="w-full col-span-2 max-md:col-span-full"
             >
               <Label>Description</Label>
               <Editor
@@ -1227,7 +1227,7 @@ function AttributesListItem({
 
             <VStack
               spacing={2}
-              className="w-full col-span-2 compact:col-span-full"
+              className="w-full col-span-2 max-md:col-span-full"
             >
               <Label>Description</Label>
               <Editor
@@ -2021,7 +2021,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2 compact:col-span-full"
+          className="col-span-2 max-md:col-span-full"
         />
 
         <Select

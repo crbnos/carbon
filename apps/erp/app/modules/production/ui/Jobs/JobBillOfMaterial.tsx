@@ -170,9 +170,9 @@ function makeItem(
             <Link
               to={getLinkToItemDetails(material.itemType, material.itemId)}
               onClick={(e) => e.stopPropagation()}
-              className="compact:hit-area"
+              className="max-md:hit-area"
             >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 compact:opacity-100" />
+              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 max-md:opacity-100" />
             </Link>
           )}
         </div>
@@ -188,7 +188,7 @@ function makeItem(
       <HStack spacing={2}>
         {material.requiresBatchTracking ? (
           <Tooltip>
-            <TooltipTrigger className="compact:hit-area">
+            <TooltipTrigger className="max-md:hit-area">
               <Badge variant="secondary">
                 <TrackingTypeIcon type="Batch" />
               </Badge>
@@ -199,7 +199,7 @@ function makeItem(
           </Tooltip>
         ) : material.requiresSerialTracking ? (
           <Tooltip>
-            <TooltipTrigger className="compact:hit-area">
+            <TooltipTrigger className="max-md:hit-area">
               <Badge variant="secondary">
                 <TrackingTypeIcon type="Serial" />
               </Badge>
@@ -211,7 +211,7 @@ function makeItem(
         ) : null}
 
         <Tooltip>
-          <TooltipTrigger className="compact:hit-area">
+          <TooltipTrigger className="max-md:hit-area">
             <Badge variant="secondary">
               <MethodIcon type={material.methodType} isKit={material.kit} />
             </Badge>
@@ -229,7 +229,7 @@ function makeItem(
         <Badge variant="secondary">{material.quantity}</Badge>
 
         <Tooltip>
-          <TooltipTrigger className="compact:hit-area">
+          <TooltipTrigger className="max-md:hit-area">
             <Badge variant="secondary">
               <MethodItemTypeIcon type={material.itemType} />
             </Badge>
@@ -838,7 +838,7 @@ function MaterialForm({
           onChange={(newValue) => {
             setItemData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2 compact:col-span-full"
+          className="col-span-2 max-md:col-span-full"
         />
         {itemData.methodType !== "Make to Order" && (
           <NumberControlled

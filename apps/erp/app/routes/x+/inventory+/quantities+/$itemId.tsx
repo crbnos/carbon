@@ -9,7 +9,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ScrollArea,
-  useCompact,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
@@ -96,7 +96,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ItemInventoryRoute() {
   const { item } = useLoaderData<typeof loader>();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [params] = useUrlParams();
   const itemReadableId = item.readableIdWithRevision ?? item.readableId;
   const backTo = `${path.to.inventory}?${params.toString()}`;
@@ -105,14 +105,14 @@ export default function ItemInventoryRoute() {
   // title and Back returns to the list (the panel's ✕ and ID are hidden).
   const appBarOverride = useMemo(
     () =>
-      isCompact
+      isPhone
         ? {
             kind: "pushed" as const,
             title: itemReadableId,
             backTo
           }
         : null,
-    [isCompact, itemReadableId, backTo]
+    [isPhone, itemReadableId, backTo]
   );
   useSetAppBarOverride(appBarOverride);
 
@@ -132,7 +132,7 @@ export default function ItemInventoryRoute() {
             // @ts-expect-error
             itemType={item.type}
           />
-          <VStack className="p-2 compact:p-4">
+          <VStack className="p-2 max-md:p-4">
             <Outlet />
           </VStack>
         </ScrollArea>

@@ -816,11 +816,11 @@ const BillOfProcess = ({
   return (
     <Card>
       <HStack className="justify-between">
-        <CardHeader className="compact:min-w-0">
-          <CardTitle className="flex flex-row items-center gap-2 compact:flex compact:flex-wrap compact:gap-y-1">
+        <CardHeader className="max-md:min-w-0">
+          <CardTitle className="flex flex-row items-center gap-2 max-md:flex max-md:flex-wrap max-md:gap-y-1">
             <Trans>Bill of Process</Trans>
             {itemName && (
-              <span className="text-xs text-muted-foreground font-normal compact:order-last compact:min-w-0 compact:basis-full compact:truncate">
+              <span className="text-xs text-muted-foreground font-normal max-md:order-last max-md:min-w-0 max-md:basis-full max-md:truncate">
                 {itemName}
               </span>
             )}
@@ -1256,7 +1256,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2 compact:col-span-full"
+          className="col-span-2 max-md:col-span-full"
           isConfigured={rulesByField.has(key("description"))}
           onConfigure={
             configurable && !temporaryItems[item.id]
@@ -2251,7 +2251,7 @@ function AttributesForm({
 
               <VStack
                 spacing={2}
-                className="w-full col-span-2 compact:col-span-full"
+                className="w-full col-span-2 max-md:col-span-full"
               >
                 <Label>Description</Label>
                 <Editor
@@ -2612,7 +2612,7 @@ function AttributesListItem({
 
             <VStack
               spacing={2}
-              className="w-full col-span-2 compact:col-span-full"
+              className="w-full col-span-2 max-md:col-span-full"
             >
               <Label>Description</Label>
               <Editor

@@ -346,7 +346,7 @@ const Grid = <T extends object>({
     <VStack spacing={0} className="h-full w-full">
       <div
         className={cn(
-          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent compact:scroll-fade-x",
+          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",
           contained ? "" : "relative"
         )}
         ref={tableContainerRef}

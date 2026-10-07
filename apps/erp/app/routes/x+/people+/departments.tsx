@@ -20,7 +20,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -80,7 +80,7 @@ export default function Route() {
   const { departments } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -131,17 +131,17 @@ export default function Route() {
   // Phones: List/Tree is a display-mode toggle, so it stays a segmented
   // control instead of the compact underline tab row.
   const segmentedTrigger =
-    "compact:hit-area compact:min-h-9 compact:rounded-md compact:border-b-0 compact:px-3 compact:data-[state=active]:bg-card compact:data-[state=active]:shadow-button-base";
+    "max-md:hit-area max-md:min-h-9 max-md:rounded-md max-md:border-b-0 max-md:px-3 max-md:data-[state=active]:bg-card max-md:data-[state=active]:shadow-button-base";
 
   return (
     <Tabs defaultValue="tree" className="w-full">
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
         {/* The app bar already names the section on phones. */}
-        <Heading size="h3" className="compact:hidden">
+        <Heading size="h3" className="max-md:hidden">
           <Trans>Departments</Trans>
         </Heading>
         <HStack>
-          <TabsList className="compact:w-auto compact:gap-0 compact:rounded-lg compact:border compact:bg-muted compact:p-1">
+          <TabsList className="max-md:w-auto max-md:gap-0 max-md:rounded-lg max-md:border max-md:bg-muted max-md:p-1">
             <TabsTrigger value="tree" className={segmentedTrigger}>
               <Trans>Tree View</Trans>
             </TabsTrigger>
@@ -154,7 +154,7 @@ export default function Route() {
             to={path.to.newDepartment}
             variant="primary"
           />
-          {isCompact ? (
+          {isPhone ? (
             // Phones: the content ⋮ moves to the app bar ⋯.
             <AppBarActions>
               <DropdownMenu>

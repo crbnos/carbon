@@ -201,7 +201,7 @@ export function SlidesEditor({
   return (
     <VStack
       spacing={2}
-      className="w-full col-span-2 compact:col-span-full border-t pt-4"
+      className="w-full col-span-2 max-md:col-span-full border-t pt-4"
     >
       <div className="flex w-full items-center justify-between">
         <Label className="text-xs text-muted-foreground">Slides</Label>

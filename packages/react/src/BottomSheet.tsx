@@ -16,16 +16,15 @@ import { LuChevronLeft, LuX } from "react-icons/lu";
 
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
-import { useCompact } from "./Compact";
 import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /**
  * A sheet that slides up from the bottom. Every compact (phone) sheet shares
  * this anatomy: grabber, header with optional Back and a close ×, a scrolling
- * body and a sticky footer above the safe area. The compact
- * parts only apply inside an app that opted into the `compact:` variant, so
- * other callers (MES) render as before.
+ * body and a sticky footer above the safe area. The compact parts apply below
+ * `md` (`max-md:`); wider viewports render the desktop dialog.
  */
 const BottomSheet = DialogRoot;
 
@@ -60,7 +59,7 @@ const BottomSheetContent = forwardRef<
   BottomSheetContentProps
 >(({ className, children, size = "auto", ...props }, ref) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const dismissable = useDialogDismissable();
   return (
     <ClientOnly fallback={null}>
@@ -72,9 +71,9 @@ const BottomSheetContent = forwardRef<
             className={cn(
               "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg duration-300",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-              "compact:max-h-[88dvh] compact:rounded-t-[14px] compact:bg-popover compact:pb-safe",
+              "max-md:max-h-[88dvh] max-md:rounded-t-[14px] max-md:bg-popover max-md:pb-safe",
               size === "full" &&
-                "compact:h-[calc(100dvh-env(safe-area-inset-top)-12px)] compact:max-h-none",
+                "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none",
               className
             )}
             {...props}
@@ -82,11 +81,11 @@ const BottomSheetContent = forwardRef<
             <div
               className={cn(
                 "mx-auto mt-3 mb-2 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20",
-                "compact:mt-2 compact:mb-1 compact:h-[5px] compact:w-9"
+                "max-md:mt-2 max-md:mb-1 max-md:h-[5px] max-md:w-9"
               )}
             />
             <ActionPresentationBoundary>{children}</ActionPresentationBoundary>
-            {isCompact && dismissable && (
+            {isPhone && dismissable && (
               <DialogPrimitive.Close
                 aria-label={t`Close`}
                 className="absolute top-3 right-1 flex size-11 items-center justify-center rounded-full text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -109,7 +108,7 @@ const BottomSheetHeader = ({
   <div
     className={cn(
       "px-6 pb-2 text-center",
-      "compact:relative compact:flex compact:min-h-11 compact:shrink-0 compact:items-center compact:justify-center compact:px-14 compact:pb-2",
+      "max-md:relative max-md:flex max-md:min-h-11 max-md:shrink-0 max-md:items-center max-md:justify-center max-md:px-14 max-md:pb-2",
       className
     )}
     {...props}
@@ -149,7 +148,7 @@ const BottomSheetBody = ({
   <div
     className={cn(
       "px-6 pb-6",
-      "compact:min-h-0 compact:flex-1 compact:overflow-y-auto compact:px-4 compact:pb-4",
+      "max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:px-4 max-md:pb-4",
       className
     )}
     {...props}
@@ -180,7 +179,7 @@ const BottomSheetTitle = forwardRef<
     ref={ref}
     className={cn(
       "text-sm font-medium text-muted-foreground",
-      "compact:truncate compact:text-[17px] compact:font-semibold compact:text-foreground",
+      "max-md:truncate max-md:text-[17px] max-md:font-semibold max-md:text-foreground",
       className
     )}
     {...props}

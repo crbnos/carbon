@@ -9,8 +9,8 @@ import { LuGripVertical } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import * as ResizablePrimitive from "react-resizable-panels";
 import { ClientOnly } from "./ClientOnly";
-import { useCompact } from "./Compact";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /** True inside a group that `stackOnCompact` turned into plain blocks. */
 const StackedContext = createContext(false);
@@ -27,9 +27,9 @@ const ResizablePanelGroup = ({
    */
   stackOnCompact?: boolean;
 }) => {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
-  if (stackOnCompact && isCompact) {
+  if (stackOnCompact && isPhone) {
     return (
       <StackedContext.Provider value={true}>
         <div

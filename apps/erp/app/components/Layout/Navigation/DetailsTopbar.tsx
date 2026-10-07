@@ -12,8 +12,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useCompact,
-  useShortcutKeyMap
+  useShortcutKeyMap,
+  useViewport
 } from "@carbon/react";
 import { useMemo } from "react";
 import type { IconType } from "react-icons";
@@ -69,7 +69,7 @@ const DetailTopbar = ({
 
   // Phones: inside a record frame the links join its one tab row; elsewhere
   // they render here as a scrolling underline row.
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const paramString = params.toString();
   // `links` is a new array on every render: keyed on what the tabs show.
   const itemsKey = links
@@ -94,10 +94,10 @@ const DetailTopbar = ({
       })),
     [itemsKey, preserveParams, paramString]
   );
-  recordTabsSlot.useProvide(isCompact ? items : null);
+  recordTabsSlot.useProvide(isPhone ? items : null);
   const inRecordFrame = recordFrameSlot.useValue() !== null;
 
-  if (isCompact) {
+  if (isPhone) {
     return inRecordFrame ? null : (
       <CompactTabRow className="w-full min-w-0 shrink" items={items} />
     );

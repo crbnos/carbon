@@ -20,8 +20,8 @@ import {
   PopoverContent,
   PopoverTrigger,
   PrefetchLink,
-  useCompact,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { filterEmpty } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -67,7 +67,7 @@ type DocumentsTableProps = {
 const DocumentsTable = memo(
   ({ data, count, labels, extensions }: DocumentsTableProps) => {
     const { t } = useLingui();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     const permissions = usePermissions();
     const revalidator = useRevalidator();
     const [params] = useUrlParams();
@@ -228,7 +228,7 @@ const DocumentsTable = memo(
                 className="group flex items-center gap-1"
               >
                 <Enumerable value={row.original.sourceDocument} />{" "}
-                <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground compact:opacity-100">
+                <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground max-md:opacity-100">
                   <LuExternalLink />
                 </span>
               </PrefetchLink>
@@ -513,7 +513,7 @@ const DocumentsTable = memo(
           primaryAction={
             permissions.can("create", "documents") &&
             // Phones: uploading neither pins a file nor fills the trash.
-            !(isCompact && (filter === "starred" || filter === "trash")) && (
+            !(isPhone && (filter === "starred" || filter === "trash")) && (
               <DocumentCreateForm />
             )
           }

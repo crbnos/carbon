@@ -364,7 +364,7 @@ function ReceiptFixedAssetLineItem({
   return (
     <div
       className={cn(
-        "flex items-center gap-4 p-6 compact:flex-wrap compact:p-4",
+        "flex items-center gap-4 p-6 max-md:flex-wrap max-md:p-4",
         className
       )}
     >
@@ -389,7 +389,7 @@ function ReceiptFixedAssetLineItem({
         placeholder="Serial Number"
         value={serialNumber}
         isDisabled={isReadOnly}
-        className="w-48 compact:w-full"
+        className="w-48 max-md:w-full"
         onChange={(e) => setSerialNumber(e.target.value)}
         onBlur={() => {
           if (serialNumber !== (line.serialNumber ?? "")) {
@@ -466,11 +466,11 @@ function ReceiptLineItem({
   return (
     <div
       className={cn(
-        "flex flex-col border-b p-6 gap-6 relative compact:p-4 compact:gap-4",
+        "flex flex-col border-b p-6 gap-6 relative max-md:p-4 max-md:gap-4",
         className
       )}
     >
-      <div className="absolute top-3 right-6 compact:right-4">
+      <div className="absolute top-3 right-6 max-md:right-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
@@ -500,11 +500,11 @@ function ReceiptLineItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex flex-1 justify-between items-center w-full compact:flex-col compact:items-stretch compact:gap-4">
-        <HStack spacing={4} className="w-1/2 compact:w-full">
+      <div className="flex flex-1 justify-between items-center w-full max-md:flex-col max-md:items-stretch max-md:gap-4">
+        <HStack spacing={4} className="w-1/2 max-md:w-full">
           <HStack
             spacing={4}
-            className="flex-1 compact:flex-wrap compact:gap-4 compact:space-x-0"
+            className="flex-1 max-md:flex-wrap max-md:gap-4 max-md:space-x-0"
           >
             <ItemThumbnail
               size="md"
@@ -513,7 +513,7 @@ function ReceiptLineItem({
             />
             <VStack
               spacing={0}
-              className="compact:min-w-0 compact:flex-1 compact:pr-12"
+              className="max-md:min-w-0 max-md:flex-1 max-md:pr-12"
             >
               <span className="text-sm font-medium">{item?.name}</span>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -528,7 +528,7 @@ function ReceiptLineItem({
                 />
               </div>
             </VStack>
-            <VStack spacing={1} className="compact:w-full">
+            <VStack spacing={1} className="max-md:w-full">
               <label className="text-xs text-muted-foreground">Received</label>
 
               <NumberField
@@ -559,7 +559,7 @@ function ReceiptLineItem({
                 }}
               >
                 <NumberInput
-                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px] compact:w-full"
+                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px] max-md:w-full"
                   isDisabled={isReadOnly}
                   size="sm"
                   min={0}
@@ -568,7 +568,7 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4 compact:flex-wrap compact:gap-4 compact:pl-0">
+        <div className="flex flex-grow items-center justify-between gap-2 pl-4 max-md:flex-wrap max-md:gap-4 max-md:pl-0">
           <HStack spacing={4}>
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">Ordered</label>
@@ -600,7 +600,7 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
 
-          <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm compact:w-full">
+          <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
               Storage Unit
             </label>
@@ -885,7 +885,7 @@ function BatchForm({
   const propertiesDisclosure = useDisclosure();
 
   return (
-    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg compact:gap-4 compact:p-4">
+    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Batch Properties</Heading>
         <div className="flex items-center gap-2">
@@ -1124,7 +1124,7 @@ function SerialForm({
   const propertiesDisclosure = useDisclosure();
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg compact:gap-4 compact:p-4">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-6">
         <Heading size="h4">Serial Numbers</Heading>
         <div className="flex items-center gap-2">
@@ -1150,7 +1150,7 @@ function SerialForm({
       </div>
 
       {showExpiryField && (
-        <div className="flex flex-col gap-2 max-w-xs compact:max-w-none">
+        <div className="flex flex-col gap-2 max-w-xs max-md:max-w-none">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuCalendar />{" "}
             <Trans>Expiration Date (applies to all serials on this line)</Trans>

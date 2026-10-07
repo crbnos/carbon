@@ -246,7 +246,7 @@ export default function PrintingSettingsRoute() {
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
-        <div className="flex items-center justify-between w-full compact:justify-end">
+        <div className="flex items-center justify-between w-full max-md:justify-end">
           <SettingsPageHeading>
             <Trans>Printing</Trans>
           </SettingsPageHeading>

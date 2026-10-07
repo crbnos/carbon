@@ -15,8 +15,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useCompact,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
@@ -148,7 +148,7 @@ function WorkflowTitle({
       }}
     >
       <Heading className={headingClassName}>{name}</Heading>
-      <LuPencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/title:opacity-100 compact:size-4 compact:opacity-100" />
+      <LuPencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/title:opacity-100 max-md:size-4 max-md:opacity-100" />
     </button>
   );
 }
@@ -167,7 +167,7 @@ export function BuilderHeader({
   const isVersionLocked = useBuilderStore((state) => state.isVersionLocked);
   const canEdit = useBuilderStore((state) => state.canEdit);
   const isReadOnly = isVersionLocked || !canEdit;
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   const publishFetcher = useFetcher<{
     ok?: boolean;
@@ -231,9 +231,9 @@ export function BuilderHeader({
         }
       />
       <RecordPhoneChrome />
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4 compact:hidden">
+      <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4 max-md:hidden">
         {/* One title on phones: its rename input lives in the hero there. */}
-        {!isCompact && <WorkflowTitle workflow={workflow} />}
+        {!isPhone && <WorkflowTitle workflow={workflow} />}
 
         {isReadOnly && lockIndicator}
 

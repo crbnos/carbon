@@ -183,7 +183,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
     return (
       // Phones: Radix's hidden native <select> follows the trigger, so a
       // space-x margin would end the trigger 4px short; use a gap instead.
-      <HStack spacing={1} className="compact:space-x-0 compact:gap-1">
+      <HStack spacing={1} className="max-md:space-x-0 max-md:gap-1">
         {isInlinePreview && value && (
           <span className="flex flex-grow line-clamp-1 items-center">
             {inline(value, options)}
@@ -202,7 +202,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
             className={cn(
               !isInlinePreview && "min-w-[160px] relative",
               isInlinePreview &&
-                "compact:relative compact:after:absolute compact:after:-inset-2.5"
+                "max-md:relative max-md:after:absolute max-md:after:-inset-2.5"
             )}
             inline={isInlinePreview}
             disabled={isNonInteractive}

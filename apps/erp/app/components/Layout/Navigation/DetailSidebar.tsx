@@ -12,8 +12,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useCompact,
   useShortcutKeyMap,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { ReactNode } from "react";
@@ -50,8 +50,8 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
 
   // Phones: the same links as a sticky, horizontally scrolling underline
   // tab row, as DetailsTopbar renders outside a record.
-  const isCompact = useCompact();
-  if (isCompact) {
+  const { isPhone } = useViewport();
+  if (isPhone) {
     return (
       <CompactTabRow
         className="sticky top-0 z-10 mb-3 w-full px-0"

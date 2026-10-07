@@ -81,14 +81,14 @@ export default function LogosRoute() {
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage>
-        <div className="flex w-full justify-between items-center gap-1 compact:justify-end">
+        <div className="flex w-full justify-between items-center gap-1 max-md:justify-end">
           <SettingsPageHeading>
             <Trans>Logos</Trans>
           </SettingsPageHeading>
           <Badge variant="outline">{maxSizeMB}MB limit</Badge>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 w-full compact:grid-cols-1">
+        <div className="grid grid-cols-2 gap-4 w-full max-md:grid-cols-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

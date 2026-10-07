@@ -572,7 +572,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
               <Button
                 variant="secondary"
                 leftIcon={<LuGroup />}
-                className="compact:hidden"
+                className="max-md:hidden"
                 asChild
               >
                 <Link to={path.to.itemPostingGroups}>

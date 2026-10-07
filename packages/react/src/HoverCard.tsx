@@ -10,9 +10,9 @@ import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { BottomSheet, BottomSheetTrigger } from "./BottomSheet";
-import { useCompact } from "./Compact";
 import { PopupSheetContent } from "./PopupSheet";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /*
  * Phones cannot hover: there a hover card is a real bottom sheet (a Radix
@@ -25,8 +25,8 @@ const HoverCard = ({
   children,
   ...props
 }: ComponentPropsWithoutRef<typeof HoverCardPrimitive.Root>) => {
-  const isCompact = useCompact();
-  return isCompact ? (
+  const { isPhone } = useViewport();
+  return isPhone ? (
     <BottomSheet
       open={open}
       defaultOpen={defaultOpen}
@@ -50,8 +50,8 @@ const HoverCardTrigger = forwardRef<
   ElementRef<typeof HoverCardPrimitive.Trigger>,
   ComponentPropsWithoutRef<typeof HoverCardPrimitive.Trigger>
 >(({ asChild, ...props }, ref) => {
-  const isCompact = useCompact();
-  if (!isCompact) {
+  const { isPhone } = useViewport();
+  if (!isPhone) {
     return (
       <HoverCardPrimitive.Trigger ref={ref} asChild={asChild} {...props} />
     );
@@ -81,8 +81,8 @@ const HoverCardContent = forwardRef<
     { className, align = "center", sideOffset = 4, children, ...props },
     ref
   ) => {
-    const isCompact = useCompact();
-    if (isCompact) {
+    const { isPhone } = useViewport();
+    if (isPhone) {
       return (
         <PopupSheetContent
           ref={ref}

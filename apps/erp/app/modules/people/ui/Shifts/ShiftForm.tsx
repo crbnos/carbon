@@ -82,7 +82,7 @@ const ShiftForm = ({ initialValues }: ShiftFormProps) => {
                   <Trans>Days</Trans>
                 </FormLabel>
                 {/* Phones: the day names read as row labels, not helper text. */}
-                <VStack className="compact:[&_p]:text-sm compact:[&_p]:text-foreground">
+                <VStack className="max-md:[&_p]:text-sm max-md:[&_p]:text-foreground">
                   <Boolean name="monday" description={t`Monday`} bordered />
                   <Boolean name="tuesday" description={t`Tuesday`} bordered />
                   <Boolean

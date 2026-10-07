@@ -690,7 +690,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
               <Button
                 variant="secondary"
                 leftIcon={<LuGroup />}
-                className="compact:hidden"
+                className="max-md:hidden"
                 asChild
               >
                 <Link to={path.to.itemPostingGroups}>

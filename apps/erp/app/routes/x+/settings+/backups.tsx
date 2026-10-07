@@ -601,7 +601,7 @@ export default function BackupsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4 compact:py-3">
+      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4 max-md:py-3">
         <SettingsPageHeading>
           <Trans>Backups</Trans>
         </SettingsPageHeading>
@@ -866,7 +866,7 @@ export default function BackupsRoute() {
                   <button
                     type="button"
                     onClick={openExportProgress}
-                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 compact:border-0 compact:p-0 compact:rounded-none"
+                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
                   >
                     <VStack spacing={0}>
                       <span className="text-sm font-medium">
@@ -921,7 +921,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
 
   return (
     <HStack
-      className={`w-full justify-between border rounded-lg p-3 compact:border-0 compact:p-0 compact:rounded-none ${
+      className={`w-full justify-between border rounded-lg p-3 max-md:border-0 max-md:p-0 max-md:rounded-none ${
         file.status === "pending" || isDeleting ? "opacity-70" : ""
       }`}
     >

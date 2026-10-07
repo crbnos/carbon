@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   MENU_ITEM_SHORTCUTS,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -33,13 +33,13 @@ function DepartmentNodeComponent({
 }: NodeProps & { data: DepartmentNodeData }) {
   const { department, onEdit, onDelete, onAddChild } = data;
   // Phones lay the tree out left-to-right, so edges attach at the sides.
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   return (
     <div className="group relative">
       <Handle
         type="target"
-        position={isCompact ? Position.Left : Position.Top}
+        position={isPhone ? Position.Left : Position.Top}
         className="!bg-transparent !border-0 !w-px !h-px !min-w-0 !min-h-0"
       />
 
@@ -60,7 +60,7 @@ function DepartmentNodeComponent({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="ml-auto shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100 compact:opacity-100 compact:hit-area"
+              className="ml-auto shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100 max-md:opacity-100 max-md:hit-area"
               aria-label="Actions"
             >
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />
@@ -92,7 +92,7 @@ function DepartmentNodeComponent({
 
       <Handle
         type="source"
-        position={isCompact ? Position.Right : Position.Bottom}
+        position={isPhone ? Position.Right : Position.Bottom}
         className="!bg-transparent !border-0 !w-px !h-px !min-w-0 !min-h-0"
       />
     </div>

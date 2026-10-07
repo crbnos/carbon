@@ -13,7 +13,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheckCheck, LuPlus, LuSearch, LuWallet, LuX } from "react-icons/lu";
@@ -48,14 +48,14 @@ const ChartOfAccountsTableFilters = ({
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const permissions = usePermissions();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const newGroupTo = `new-group?${params.toString()}`;
   const newAccountTo = `new?${params.toString()}`;
 
   return (
-    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full compact:flex-wrap compact:gap-y-1 compact:space-x-0 compact:px-0 compact:py-1.5">
-      <HStack className="compact:w-full compact:flex-nowrap compact:overflow-x-auto compact:scrollbar-hide compact:scroll-fade-x compact:whitespace-nowrap compact:px-4 compact:py-1.5 compact:[&>*]:shrink-0">
-        <InputGroup size="sm" className="w-64 compact:w-48">
+    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:flex-wrap max-md:gap-y-1 max-md:space-x-0 max-md:px-0 max-md:py-1.5">
+      <HStack className="max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
+        <InputGroup size="sm" className="w-64 max-md:w-48">
           <InputLeftElement>
             <LuSearch className="h-4 w-4 text-muted-foreground" />
           </InputLeftElement>
@@ -81,7 +81,7 @@ const ChartOfAccountsTableFilters = ({
           </Button>
         )}
       </HStack>
-      <HStack className="compact:ml-auto compact:mr-4">
+      <HStack className="max-md:ml-auto max-md:mr-4">
         {openingBalanceMode ? (
           // Entering opening balances: Add Group / Add Account are hidden; only
           // Cancel + Post remain.
@@ -101,7 +101,7 @@ const ChartOfAccountsTableFilters = ({
         ) : (
           <>
             {permissions.can("create", "accounting") &&
-              (isCompact ? (
+              (isPhone ? (
                 // Phones: one app bar "+" opens both Add actions, instead of
                 // two identical "+" icons.
                 <AppBarActions>

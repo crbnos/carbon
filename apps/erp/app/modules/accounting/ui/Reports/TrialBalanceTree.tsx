@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, ScrollArea, useCompact } from "@carbon/react";
+import { cn, ScrollArea, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
@@ -60,7 +60,7 @@ const TrialBalanceTree = memo(
     ledgerPath
   }: TrialBalanceTreeProps) => {
     const { t } = useLingui();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     useRealtime("journal");
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -109,11 +109,11 @@ const TrialBalanceTree = memo(
           "h-[calc(100dvh-var(--header-height)-61px)] w-full",
           // Phones: the viewport also scrolls sideways, with an
           // edge fade, behind a sticky 150pt account column.
-          "compact:[&>[data-radix-scroll-area-viewport]]:!overflow-x-auto compact:[&>[data-radix-scroll-area-viewport]]:scroll-fade-x"
+          "max-md:[&>[data-radix-scroll-area-viewport]]:!overflow-x-auto max-md:[&>[data-radix-scroll-area-viewport]]:scroll-fade-x"
         )}
       >
-        <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card compact:w-max compact:min-w-full">
-          <div className="flex-1 px-4 compact:sticky compact:left-0 compact:z-[2] compact:w-[150px] compact:flex-none compact:truncate compact:bg-card">
+        <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card max-md:w-max max-md:min-w-full">
+          <div className="flex-1 px-4 max-md:sticky max-md:left-0 max-md:z-[2] max-md:w-[150px] max-md:flex-none max-md:truncate max-md:bg-card">
             <Trans>Account</Trans>
           </div>
           <span className="w-28 text-right px-2">
@@ -147,8 +147,8 @@ const TrialBalanceTree = memo(
           parentClassName={cn(
             "h-full",
             // The viewport is the sideways scroller, so sticky cells pin to it.
-            "compact:overflow-visible",
-            showTranslated ? "compact:min-w-[806px]" : "compact:min-w-[694px]"
+            "max-md:overflow-visible",
+            showTranslated ? "max-md:min-w-[806px]" : "max-md:min-w-[694px]"
           )}
           renderNode={({ node, state }) => {
             const account = node.data;
@@ -206,7 +206,7 @@ const TrialBalanceTree = memo(
                 <div
                   className={cn(
                     "w-5 h-5 flex items-center justify-center mr-2 shrink-0",
-                    !isGroup && "compact:hidden"
+                    !isGroup && "max-md:hidden"
                   )}
                 >
                   {isGroup &&
@@ -232,7 +232,7 @@ const TrialBalanceTree = memo(
             return (
               <div
                 className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row compact:overflow-visible",
+                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:overflow-visible",
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
@@ -249,7 +249,7 @@ const TrialBalanceTree = memo(
               >
                 {/* Compact: one sticky cell, so the name stays beside the
                     amounts while they scroll sideways. */}
-                {isCompact ? (
+                {isPhone ? (
                   <div
                     className={cn(
                       "sticky left-0 z-[1] flex h-full w-[150px] shrink-0 items-center overflow-hidden",

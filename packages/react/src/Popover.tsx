@@ -14,9 +14,9 @@ import {
   BottomSheetClose,
   BottomSheetTrigger
 } from "./BottomSheet";
-import { useCompact } from "./Compact";
 import { PopupSheetContent } from "./PopupSheet";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /*
  * Phones show a popover as a real bottom sheet (a Radix Dialog): each part
@@ -29,8 +29,8 @@ const Popover = ({
   modal,
   children
 }: ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>) => {
-  const isCompact = useCompact();
-  return isCompact ? (
+  const { isPhone } = useViewport();
+  return isPhone ? (
     <BottomSheet
       open={open}
       defaultOpen={defaultOpen}
@@ -54,8 +54,8 @@ const PopoverTrigger = forwardRef<
   ElementRef<typeof PopoverPrimitive.Trigger>,
   ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
 >((props, ref) => {
-  const isCompact = useCompact();
-  return isCompact ? (
+  const { isPhone } = useViewport();
+  return isPhone ? (
     <BottomSheetTrigger ref={ref} {...props} />
   ) : (
     <PopoverPrimitive.Trigger ref={ref} {...props} />
@@ -68,8 +68,8 @@ const PopoverAnchor = forwardRef<
   ElementRef<typeof PopoverPrimitive.Anchor>,
   ComponentPropsWithoutRef<typeof PopoverPrimitive.Anchor>
 >(({ asChild, ...props }, ref) => {
-  const isCompact = useCompact();
-  if (!isCompact) {
+  const { isPhone } = useViewport();
+  if (!isPhone) {
     return <PopoverPrimitive.Anchor ref={ref} asChild={asChild} {...props} />;
   }
   const Comp = asChild ? Slot : "div";
@@ -85,8 +85,8 @@ const PopoverContent = forwardRef<
     { className, align = "center", sideOffset = 4, children, ...props },
     ref
   ) => {
-    const isCompact = useCompact();
-    if (isCompact) {
+    const { isPhone } = useViewport();
+    if (isPhone) {
       return (
         <PopupSheetContent
           ref={ref}
@@ -152,8 +152,8 @@ const PopoverClose = forwardRef<
   ElementRef<typeof PopoverPrimitive.Close>,
   ComponentPropsWithoutRef<typeof PopoverPrimitive.Close>
 >((props, ref) => {
-  const isCompact = useCompact();
-  return isCompact ? (
+  const { isPhone } = useViewport();
+  return isPhone ? (
     <BottomSheetClose ref={ref} {...props} />
   ) : (
     <PopoverPrimitive.Close ref={ref} {...props} />

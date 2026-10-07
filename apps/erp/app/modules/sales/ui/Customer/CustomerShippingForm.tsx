@@ -106,7 +106,7 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
             <CustomFormFields table="customerShipping" />
           </div>
         </CardContent>
-        <CardFooter className="compact:[&>*]:flex-1 compact:[&>div>*]:flex-1 compact:[&_button]:h-11">
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

@@ -113,7 +113,7 @@ const InventoryCountDetails = ({
   // Actions live in the table header (the `primaryAction` slot) instead of a
   // dedicated detail header. Notes are surfaced via an info icon → modal.
   const actions = (
-    <HStack spacing={2} className="items-center compact:hidden">
+    <HStack spacing={2} className="items-center max-md:hidden">
       {inventoryCount.notes && (
         <RecordAction slot="overflow">
           <IconButton

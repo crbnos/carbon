@@ -21,10 +21,10 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
-  useCompact,
   useInterval,
   useLocalStorage,
   useMount,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
@@ -589,10 +589,10 @@ function KanbanSchedule() {
   const [items, setItems] = useState<Item[]>(initialItems);
   // Phones keep their own settings and start without the product image, so
   // more than one card fits on a screen; the Thumbnail toggle still applies.
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    isCompact ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
-    isCompact
+    isPhone ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
+    isPhone
       ? { ...defaultDisplaySettings, showThumbnail: false }
       : defaultDisplaySettings
   );
@@ -734,11 +734,11 @@ function KanbanSchedule() {
 
   return (
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">
-      <HStack className="px-4 py-2 justify-between bg-card border-b border-border compact:flex-wrap compact:gap-y-2 compact:[&_button]:h-11 compact:[&_button]:min-w-11">
+      <HStack className="px-4 py-2 justify-between bg-card border-b border-border max-md:flex-wrap max-md:gap-y-2 max-md:[&_button]:h-11 max-md:[&_button]:min-w-11">
         {/* Phones: search takes its own full-width row under the controls. */}
-        <HStack className="compact:min-w-0 compact:flex-1 compact:flex-wrap compact:gap-y-2">
+        <HStack className="max-md:min-w-0 max-md:flex-1 max-md:flex-wrap max-md:gap-y-2">
           <ScheduleNavigation />
-          <div className="contents compact:order-last compact:block compact:min-w-0 compact:basis-full compact:!mx-0">
+          <div className="contents max-md:order-last max-md:block max-md:min-w-0 max-md:basis-full max-md:!mx-0">
             <SearchFilter param="search" size="sm" placeholder="Search" />
           </div>
           <Filter filters={filters} />
@@ -755,7 +755,7 @@ function KanbanSchedule() {
           </Tooltip>
         </HStack>
 
-        <div className="flex items-center gap-2 compact:self-start">
+        <div className="flex items-center gap-2 max-md:self-start">
           <Popover>
             <PopoverTrigger asChild>
               <IconButton

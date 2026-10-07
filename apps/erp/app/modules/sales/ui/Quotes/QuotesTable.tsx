@@ -123,7 +123,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           const completedLines = row.original.completedLines ?? 0;
           return status === "Draft" ? (
             <BarProgress
-              className="compact:w-24"
+              className="max-md:w-24"
               gradient
               progress={lines === 0 ? 0 : (completedLines / lines) * 100}
             />

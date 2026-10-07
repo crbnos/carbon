@@ -91,7 +91,6 @@ import {
   CommandTrigger,
   multiSelectTriggerVariants
 } from "./Command";
-import { CompactProvider, useCompact } from "./Compact";
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -381,6 +380,7 @@ import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { isEditableTarget } from "./utils/keyboard";
 import { getValidChildren, reactNodeToString } from "./utils/react";
+import { useViewport, ViewportProvider } from "./Viewport";
 import { VStack } from "./VStack";
 
 export * from "./Acknowledge";
@@ -440,7 +440,7 @@ export {
   CollapsibleContent,
   CollapsibleTrigger,
   Combobox,
-  CompactProvider,
+  ViewportProvider,
   filterComboboxOptions,
   Command,
   CommandDialog,
@@ -700,7 +700,7 @@ export {
   shortcutKeyVariants,
   toast,
   useBotProtection,
-  useCompact,
+  useViewport,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

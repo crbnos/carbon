@@ -87,12 +87,12 @@ const ReportFilters = ({
   };
 
   return (
-    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full compact:flex-wrap compact:gap-y-1 compact:space-x-0 compact:px-0 compact:py-1.5">
+    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:flex-wrap max-md:gap-y-1 max-md:space-x-0 max-md:px-0 max-md:py-1.5">
       {/* Phones: search, company, period and columns form one
           sideways-scrolling chip row; Download sits on the line below. */}
-      <HStack className="compact:w-full compact:flex-nowrap compact:overflow-x-auto compact:scrollbar-hide compact:scroll-fade-x compact:whitespace-nowrap compact:px-4 compact:py-1.5 compact:[&>*]:shrink-0">
+      <HStack className="max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
         {showSearch && (
-          <InputGroup size="sm" className="w-64 compact:w-48">
+          <InputGroup size="sm" className="w-64 max-md:w-48">
             <InputLeftElement>
               <LuSearch className="h-4 w-4 text-muted-foreground" />
             </InputLeftElement>
@@ -178,7 +178,7 @@ const ReportFilters = ({
           variant="secondary"
           leftIcon={<LuDownload />}
           onClick={onDownload}
-          className="compact:ml-auto compact:mr-4"
+          className="max-md:ml-auto max-md:mr-4"
         >
           {t`Download`}
         </Button>

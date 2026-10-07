@@ -207,7 +207,7 @@ const JournalEntryForm = ({
   return (
     <>
       <RecordHeroTarget bleed />
-      <Card className="compact:mt-4">
+      <Card className="max-md:mt-4">
         <ValidatedForm
           id={formId}
           method="post"
@@ -285,7 +285,7 @@ const JournalEntryForm = ({
             <VStack spacing={4} className="w-full">
               {/* Entry Details */}
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
-                <div className="col-span-3 compact:col-span-1">
+                <div className="col-span-3 max-md:col-span-1">
                   <Input autoFocus name="description" label={t`Description`} />
                 </div>
                 <Input
@@ -313,12 +313,12 @@ const JournalEntryForm = ({
               {/* Journal Lines + Totals */}
               <div className="rounded-lg border border-border overflow-hidden w-full">
                 {/* Column Headers */}
-                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border compact:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
+                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border max-md:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
                   <div className="w-6" />
-                  <div className="pl-3 compact:col-span-3">
+                  <div className="pl-3 max-md:col-span-3">
                     <Trans>Account & Details</Trans>
                   </div>
-                  <div className="text-right pr-3 compact:col-start-2">
+                  <div className="text-right pr-3 max-md:col-start-2">
                     <LabelWithHelp
                       variant="inline"
                       termId="journal-line-debit"
@@ -372,9 +372,9 @@ const JournalEntryForm = ({
                 )}
 
                 {/* Totals */}
-                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-3 bg-muted/50 border-t border-border compact:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
+                <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-3 bg-muted/50 border-t border-border max-md:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
                   <div className="w-6" />
-                  <div className="flex items-center gap-2 text-sm font-medium compact:col-span-3 compact:flex-wrap">
+                  <div className="flex items-center gap-2 text-sm font-medium max-md:col-span-3 max-md:flex-wrap">
                     Totals
                     {isBalanced && totalDebits > 0 ? (
                       <Status color="green">Balanced</Status>
@@ -394,7 +394,7 @@ const JournalEntryForm = ({
                       </Status>
                     )}
                   </div>
-                  <div className="text-right font-mono text-sm tabular-nums compact:col-start-2">
+                  <div className="text-right font-mono text-sm tabular-nums max-md:col-start-2">
                     {currencyFormatter.format(totalDebits)}
                   </div>
                   <div className="text-right font-mono text-sm tabular-nums">

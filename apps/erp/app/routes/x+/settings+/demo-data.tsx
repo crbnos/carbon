@@ -301,7 +301,7 @@ export default function DemoDataRoute() {
   );
 
   return (
-    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto compact:p-4">
+    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto max-md:p-4">
       <VStack spacing={1}>
         <SettingsPageHeading>
           <Trans>Demo Data</Trans>

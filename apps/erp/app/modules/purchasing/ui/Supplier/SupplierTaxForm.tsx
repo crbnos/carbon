@@ -101,7 +101,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
               <div />
             )}
 
-            <div className="col-span-3 compact:col-span-full">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"
                 label={t`Tax Exempt`}
@@ -159,7 +159,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
             </div>
           )}
         </CardContent>
-        <CardFooter className="compact:[&>*]:flex-1 compact:[&>div>*]:flex-1 compact:[&_button]:h-11">
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

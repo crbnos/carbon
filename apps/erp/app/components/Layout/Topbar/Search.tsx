@@ -236,7 +236,7 @@ export const SearchModal = () => {
       }}
     >
       <ModalContent
-        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button compact:h-[calc(100dvh-env(safe-area-inset-top)-12px)] compact:max-h-none compact:max-w-none compact:pt-4"
+        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:max-w-none max-md:pt-4"
         withCloseButton={false}
         // Sheets keep focus off their fields on phones; search is the
         // exception, since typing is the only thing it is opened for.
@@ -250,7 +250,7 @@ export const SearchModal = () => {
 
           {/* Phones: the sheet has no Esc key, so the input row carries a
               close button. */}
-          <div className="contents compact:flex compact:items-center compact:border-b compact:border-border compact:pr-1 compact:[&>[cmdk-input-wrapper]]:flex-1 compact:[&>[cmdk-input-wrapper]]:border-b-0">
+          <div className="contents max-md:flex max-md:items-center max-md:border-b max-md:border-border max-md:pr-1 max-md:[&>[cmdk-input-wrapper]]:flex-1 max-md:[&>[cmdk-input-wrapper]]:border-b-0">
             <CommandInput
               ref={inputRef}
               placeholder={t`Search across your workspace...`}
@@ -260,7 +260,7 @@ export const SearchModal = () => {
             />
             <ModalClose
               aria-label={t`Close`}
-              className="hidden compact:flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className="hidden max-md:flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <LuX className="size-5" />
             </ModalClose>
@@ -340,7 +340,7 @@ export const SearchModal = () => {
                         <button
                           type="button"
                           onClick={(e) => removeRecentSearch(result.to, e)}
-                          className="flex-shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity compact:opacity-100"
+                          className="flex-shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100"
                         >
                           <LuX className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -394,7 +394,7 @@ export const SearchModal = () => {
                           {item.name}
                         </span>
                       </span>
-                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity compact:opacity-100" />
+                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -447,7 +447,7 @@ export const SearchModal = () => {
                         </span>
                       )}
                     </VStack>
-                    <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity compact:opacity-100" />
+                    <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100" />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -460,7 +460,7 @@ export const SearchModal = () => {
           </CommandList>
 
           {/* Footer */}
-          <div className="border-t border-border px-4 py-2 flex items-center justify-between text-xs text-muted-foreground compact:hidden">
+          <div className="border-t border-border px-4 py-2 flex items-center justify-between text-xs text-muted-foreground max-md:hidden">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">

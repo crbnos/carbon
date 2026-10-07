@@ -22,10 +22,10 @@ import {
   Th,
   Thead,
   Tr,
-  useCompact,
   useEscape,
   useMount,
   useOutsideClick,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
@@ -1092,7 +1092,7 @@ const Table = <T extends object>({
     params.getAll("sort").filter(Boolean).length === 0 &&
     !params.get("search")?.trim();
 
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   // Phones export from the toolbar's ⋯ (list and grid alike); desktop keeps
   // the toolbar's Download button.
   const csvExport = withCsvExport
@@ -1106,7 +1106,7 @@ const Table = <T extends object>({
       }
     : undefined;
 
-  if (isCompact && mobileLayout === "list") {
+  if (isPhone && mobileLayout === "list") {
     return (
       <CompactList
         titleBadge={titleBadge}
@@ -1169,10 +1169,10 @@ const Table = <T extends object>({
         "h-full bg-card",
         !compact && "flex flex-col w-full px-0 md:px-4 lg:px-6",
         // Phones (grid mode): the toolbar spans the full width.
-        "compact:items-stretch"
+        "max-md:items-stretch"
       )}
     >
-      {isCompact ? (
+      {isPhone ? (
         <CompactToolbar
           title={currentView?.name ?? title}
           tableName={tableName}
@@ -1238,7 +1238,7 @@ const Table = <T extends object>({
           // Phones, grids kept as grids: sideways scroll with an
           // edge fade, 16pt inset, and a sticky first column of at most 150pt.
           mobileLayout === "table" &&
-            "compact:scroll-fade-x compact:px-4 compact:[&_tr>*:first-child]:sticky compact:[&_tr>*:first-child]:left-0 compact:[&_tr>*:first-child]:z-10 compact:[&_tr>*:first-child]:max-w-[150px] compact:[&_tr>*:first-child]:bg-card"
+            "max-md:scroll-fade-x max-md:px-4 max-md:[&_tr>*:first-child]:sticky max-md:[&_tr>*:first-child]:left-0 max-md:[&_tr>*:first-child]:z-10 max-md:[&_tr>*:first-child]:max-w-[150px] max-md:[&_tr>*:first-child]:bg-card"
         )}
         style={{ contain: "strict" }}
         ref={tableContainerRef}
@@ -1391,7 +1391,7 @@ const Table = <T extends object>({
                                       ) : (
                                         <LuArrowUpDown
                                           aria-hidden="true"
-                                          className="text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 compact:opacity-100"
+                                          className="text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-100"
                                         />
                                       )}
                                     </span>

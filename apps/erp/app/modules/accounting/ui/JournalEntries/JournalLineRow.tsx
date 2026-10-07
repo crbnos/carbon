@@ -70,14 +70,14 @@ const JournalLineRow = ({
 
   return (
     <div className="group">
-      <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-start gap-3 py-4 px-4 transition-colors hover:bg-muted/30 compact:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
+      <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-start gap-3 py-4 px-4 transition-colors hover:bg-muted/30 max-md:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
         {/* Row number */}
         <div className="flex h-9 w-6 items-center justify-center text-xs font-medium text-muted-foreground tabular-nums">
           {index + 1}
         </div>
 
         {/* Account and Description */}
-        <div className="space-y-2 compact:col-span-3 compact:min-w-0">
+        <div className="space-y-2 max-md:col-span-3 max-md:min-w-0">
           <AccountControlled
             value={line.accountId}
             onChange={handleAccountChange}
@@ -106,7 +106,7 @@ const JournalLineRow = ({
 
         {/* Debit */}
         <NumberField
-          className="compact:col-start-2"
+          className="max-md:col-start-2"
           value={line.debit ?? 0}
           onChange={handleDebitChange}
           formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
@@ -115,7 +115,7 @@ const JournalLineRow = ({
           isReadOnly={isDisabled}
         >
           <NumberInput
-            className="text-right font-mono tabular-nums compact:px-3"
+            className="text-right font-mono tabular-nums max-md:px-3"
             isReadOnly={isDisabled}
           />
         </NumberField>
@@ -130,7 +130,7 @@ const JournalLineRow = ({
           isReadOnly={isDisabled}
         >
           <NumberInput
-            className="text-right font-mono tabular-nums compact:px-3"
+            className="text-right font-mono tabular-nums max-md:px-3"
             isReadOnly={isDisabled}
           />
         </NumberField>
@@ -144,7 +144,7 @@ const JournalLineRow = ({
               variant="ghost"
               onClick={onDelete}
               isDisabled={!canDelete}
-              className="size-8 p-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:opacity-0 compact:opacity-100"
+              className="size-8 p-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:opacity-0 max-md:opacity-100"
             />
           )}
         </div>

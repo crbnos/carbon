@@ -51,9 +51,9 @@ export default function DocumentTemplatesIndexRoute() {
     <ScrollArea className="h-full w-full">
       <VStack
         spacing={4}
-        className="mx-auto h-full max-w-[60rem] gap-6 px-4 py-12 compact:py-3"
+        className="mx-auto h-full max-w-[60rem] gap-6 px-4 py-12 max-md:py-3"
       >
-        <div className="flex w-full items-start justify-between gap-4 compact:flex-col compact:gap-3">
+        <div className="flex w-full items-start justify-between gap-4 max-md:flex-col max-md:gap-3">
           <div className="flex flex-col gap-1">
             <SettingsPageHeading>
               <Trans>Document Templates</Trans>

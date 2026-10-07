@@ -43,7 +43,7 @@ const Switch = forwardRef<
       className={cn(
         "group flex items-center transition-colors focus-visible:outline-none",
         // Phones: a 44x44 hit area around the visual switch.
-        "compact:hit-area",
+        "max-md:hit-area",
         container,
         className
       )}

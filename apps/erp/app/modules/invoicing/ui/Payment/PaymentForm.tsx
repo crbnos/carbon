@@ -170,7 +170,7 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
         className="w-full"
       >
         {isEditing && <RecordHeroTarget bleed />}
-        <Card className={isEditing ? "compact:mt-4" : undefined}>
+        <Card className={isEditing ? "max-md:mt-4" : undefined}>
           {isEditing ? (
             <DocumentHeader
               title={initialValues.paymentId ?? ""}

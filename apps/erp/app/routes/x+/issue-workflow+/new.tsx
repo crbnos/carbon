@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ScrollArea, useCloseRoute, useCompact } from "@carbon/react";
+import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
@@ -73,21 +73,21 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewIssueWorkflowRoute() {
   const { requiredActions } = useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const { t } = useLingui();
 
   // Phones show this create screen as a pushed screen: Back returns to the
   // workflow list (the route has no breadcrumb of its own).
   const appBarOverride = useMemo(
     () =>
-      isCompact
+      isPhone
         ? {
             kind: "pushed" as const,
             title: t`Issue Workflows`,
             backTo: path.to.issueWorkflows
           }
         : null,
-    [isCompact, t]
+    [isPhone, t]
   );
   useSetAppBarOverride(appBarOverride);
 

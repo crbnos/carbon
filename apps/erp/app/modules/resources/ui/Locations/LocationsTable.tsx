@@ -6,7 +6,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -38,7 +38,7 @@ type LocationsTableProps = {
 
 const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -69,7 +69,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         header: t`Address`,
         cell: (item) =>
           // Phones: line 2 is the joined address (street, city, state).
-          isCompact
+          isPhone
             ? [
                 item.row.original.addressLine1,
                 item.row.original.city,
@@ -148,7 +148,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [people, customColumns, isCompact, t]);
+  }, [people, customColumns, isPhone, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

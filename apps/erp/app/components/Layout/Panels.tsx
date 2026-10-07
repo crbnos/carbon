@@ -7,7 +7,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -63,7 +63,7 @@ interface PanelProviderProps {
 }
 
 export function PanelProvider({ children }: PanelProviderProps) {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   // Seed both to `false` so the first client render matches the server (which
   // has no `window`); collapsing based on viewport happens post-mount in the
@@ -82,13 +82,13 @@ export function PanelProvider({ children }: PanelProviderProps) {
   };
 
   useEffect(() => {
-    if (isCompact) {
+    if (isPhone) {
       setIsExplorerCollapsed(true);
       setIsPropertiesCollapsed(true);
     } else if (window.innerWidth < 1024) {
       setIsPropertiesCollapsed(true);
     }
-  }, [isCompact]);
+  }, [isPhone]);
 
   return (
     <PanelContext.Provider value={value}>{children}</PanelContext.Provider>
@@ -204,7 +204,7 @@ export function ResizablePanels({
   const { isExplorerCollapsed, isPropertiesCollapsed, setIsExplorerCollapsed } =
     usePanels();
   const panelRef = useRef<ImperativePanelHandle>(null);
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   useEffect(() => {
     if (isExplorerCollapsed) {
@@ -214,7 +214,7 @@ export function ResizablePanels({
     }
   }, [isExplorerCollapsed]);
 
-  if (isCompact) {
+  if (isPhone) {
     return (
       <CompactRecordTabs
         explorer={explorer}

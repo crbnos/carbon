@@ -9,8 +9,8 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useCompact,
-  useInterval
+  useInterval,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -69,7 +69,7 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
 const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -122,7 +122,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
                 dateOptions={{ dateStyle: "medium" }}
               />
               {/* Phones: line 2 also carries the clock-in – clock-out span. */}
-              {isCompact ? (
+              {isPhone ? (
                 <>
                   {" · "}
                   <DateTime value={row.original.clockIn} variant="time" />
@@ -224,7 +224,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         }
       }
     ];
-  }, [locations, t, locale, isCompact]);
+  }, [locations, t, locale, isPhone]);
 
   const renderContextMenu = useCallback(
     (row: TimeCardEntry) => {

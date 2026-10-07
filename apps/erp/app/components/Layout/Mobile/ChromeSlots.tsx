@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCompact } from "@carbon/react";
+import { useViewport } from "@carbon/react";
 import type { ReactNode } from "react";
 import { Children, useEffect, useState } from "react";
 import { createPortalSlot } from "./slots";
@@ -46,9 +46,9 @@ export function useCompactCssVar(
   name: "--header-height" | "--hero-height" | "--content-inset",
   element: HTMLElement | null
 ) {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   useEffect(() => {
-    if (!isCompact || !element) return;
+    if (!isPhone || !element) return;
     const root = document.documentElement;
     const write = () =>
       root.style.setProperty(
@@ -62,7 +62,7 @@ export function useCompactCssVar(
       observer.disconnect();
       root.style.removeProperty(name);
     };
-  }, [isCompact, element, name]);
+  }, [isPhone, element, name]);
 }
 
 /**

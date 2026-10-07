@@ -86,7 +86,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
             hideIcon
             className={cn(
               "md:hidden w-auto h-8 text-xs",
-              "compact:relative compact:h-8 compact:rounded-full compact:space-x-1 compact:text-sm compact:after:absolute compact:after:-inset-[max(0px,calc((44px-100%)/2))]"
+              "max-md:relative max-md:h-8 max-md:rounded-full max-md:space-x-1 max-md:text-sm max-md:after:absolute max-md:after:-inset-[max(0px,calc((44px-100%)/2))]"
             )}
           >
             <SelectValue />

@@ -4,35 +4,48 @@
 
 import * as cookie from "cookie";
 
+/** The three layout sizes, split at Tailwind `md` (48rem) and `lg` (64rem). */
+export type Viewport = "phone" | "tablet" | "desktop";
+
+const VIEWPORTS: readonly Viewport[] = ["phone", "tablet", "desktop"];
+
 /**
- * Whether the browser's viewport was compact (below the `md` breakpoint) when
- * it last reported. Written by `CompactProvider` so the server renders the
- * phone layout on the first paint instead of swapping after hydration.
+ * The browser's viewport size when it last reported. Written by
+ * `ViewportProvider` so the server renders the right layout on the first paint
+ * instead of swapping after hydration.
  */
-export const COMPACT_HINT_COOKIE = "compact";
+export const VIEWPORT_HINT_COOKIE = "viewport";
 
-/** Compact means below Tailwind `md` (48rem), the same query theme.css uses. */
-export const COMPACT_QUERY = "(width < 48rem)";
+/** Phone: below Tailwind `md`, the same query as `max-md:`. */
+export const PHONE_QUERY = "(width < 48rem)";
 
-const COMPACT_HINT_MAX_AGE = 31536000;
+/** Tablet: from Tailwind `md` up to `lg`, the same query as `md:max-lg:`. */
+export const TABLET_QUERY = "(48rem <= width < 64rem)";
 
-/** Server: the compact hint from the cookie, else the UA "Mobi" token. */
-export function getCompactHint(request: Request): boolean {
+const VIEWPORT_HINT_MAX_AGE = 31536000;
+
+function isViewport(value: string | undefined): value is Viewport {
+  return VIEWPORTS.includes(value as Viewport);
+}
+
+/** Server: the viewport from the cookie, else the UA "Mobi" token, else desktop. */
+export function getViewportHint(request: Request): Viewport {
   const cookieHeader = request.headers.get("cookie");
   const cookies = cookieHeader ? cookie.parse(cookieHeader) : {};
-  const hint = cookies[COMPACT_HINT_COOKIE];
-  if (hint === "1") return true;
-  if (hint === "0") return false;
-  return /Mobi/i.test(request.headers.get("user-agent") ?? "");
+  const hint = cookies[VIEWPORT_HINT_COOKIE];
+  if (isViewport(hint)) return hint;
+  return /Mobi/i.test(request.headers.get("user-agent") ?? "")
+    ? "phone"
+    : "desktop";
 }
 
 /**
- * Client: the `document.cookie` string that records whether the viewport is
- * compact, read by `getCompactHint` on the next request.
+ * Client: the `document.cookie` string that records the viewport, read by
+ * `getViewportHint` on the next request.
  */
-export function compactHintCookie(isCompact: boolean): string {
-  return cookie.serialize(COMPACT_HINT_COOKIE, isCompact ? "1" : "0", {
-    maxAge: COMPACT_HINT_MAX_AGE,
+export function viewportHintCookie(viewport: Viewport): string {
+  return cookie.serialize(VIEWPORT_HINT_COOKIE, viewport, {
+    maxAge: VIEWPORT_HINT_MAX_AGE,
     sameSite: "lax",
     path: "/"
   });

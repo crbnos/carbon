@@ -76,7 +76,7 @@ export const ShortcutKey = ({
       className={cn(
         shortcutKeyVariants[variant],
         // Phones have no keyboard shortcuts to hint at.
-        "compact:hidden",
+        "max-md:hidden",
         className
       )}
     >

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ButtonProps } from "@carbon/react";
-import { Button, IconButton, useCompact } from "@carbon/react";
+import { Button, IconButton, useViewport } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
@@ -58,9 +58,9 @@ export function NewAction({
   onClick,
   children
 }: NewActionProps) {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const placement = useContext(NewPlacementContext);
-  if (!isCompact || placement !== "appBar") return <>{children}</>;
+  if (!isPhone || placement !== "appBar") return <>{children}</>;
 
   const icon = <LuPlus className="size-6" />;
   return (

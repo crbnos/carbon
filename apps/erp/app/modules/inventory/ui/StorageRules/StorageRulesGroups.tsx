@@ -170,12 +170,12 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] bg-card">
       <VStack
         spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4 compact:py-4"
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4 max-md:py-4"
       >
         <div className="flex flex-col gap-1 w-full">
           <Heading
             size="h3"
-            className="tracking-tight text-balance compact:hidden"
+            className="tracking-tight text-balance max-md:hidden"
           >
             Storage Rules
           </Heading>
@@ -222,16 +222,16 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
         <Accordion type="multiple" className="w-full">
           <AccordionItem value={rule.id} className="border-none">
             <div className="relative">
-              <AccordionTrigger className="px-6 py-6 hover:no-underline w-full compact:px-4 compact:py-3 compact:text-left">
+              <AccordionTrigger className="px-6 py-6 hover:no-underline w-full max-md:px-4 max-md:py-3 max-md:text-left">
                 <HStack
                   spacing={4}
-                  className="flex-1 justify-between pr-12 compact:flex-wrap compact:items-start compact:gap-y-2 compact:pr-0"
+                  className="flex-1 justify-between pr-12 max-md:flex-wrap max-md:items-start max-md:gap-y-2 max-md:pr-0"
                 >
-                  <div className="flex items-center gap-3 min-w-0 compact:flex-wrap compact:gap-y-1">
+                  <div className="flex items-center gap-3 min-w-0 max-md:flex-wrap max-md:gap-y-1">
                     <Heading
                       size="h4"
                       as="h3"
-                      className="truncate compact:basis-full compact:pr-12"
+                      className="truncate max-md:basis-full max-md:pr-12"
                     >
                       {rule.name}
                     </Heading>
@@ -255,7 +255,7 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                   </Status>
                 </HStack>
               </AccordionTrigger>
-              <div className="absolute right-12 top-1/2 -translate-y-1/2 z-10 compact:top-3 compact:translate-y-0">
+              <div className="absolute right-12 top-1/2 -translate-y-1/2 z-10 max-md:top-3 max-md:translate-y-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton

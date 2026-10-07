@@ -6,7 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import { File, toast, useCompact } from "@carbon/react";
+import { File, toast, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -19,7 +19,7 @@ const logger = getLogger("erp", "documentcreateform");
 
 const DocumentCreateForm = () => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const submit = useSubmit();
   const { carbon } = useCarbon();
   const {
@@ -94,7 +94,7 @@ const DocumentCreateForm = () => {
       leftIcon={<LuUpload />}
       onChange={uploadFile}
       // Phones: Upload is the list's one primary action.
-      variant={isCompact ? "primary" : undefined}
+      variant={isPhone ? "primary" : undefined}
     >
       <Trans>Upload</Trans>
     </File>

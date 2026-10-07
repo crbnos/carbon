@@ -12,7 +12,7 @@ import {
   Th,
   Thead,
   Tr,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { UsePermissionMatrixReturn } from "~/hooks/usePermissionMatrix";
@@ -35,7 +35,7 @@ const PermissionMatrix = ({
   isDisabled
 }: PermissionMatrixProps) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const resolvedLabel = label ?? t`Permissions`;
   const {
     modules,
@@ -59,11 +59,11 @@ const PermissionMatrix = ({
         </label>
       )}
       {/* Compact: this div scrolls sideways and the module column stays pinned. */}
-      <div className="rounded-md border overflow-hidden compact:overflow-x-auto compact:scroll-fade-x">
-        <Table full={isCompact}>
+      <div className="rounded-md border overflow-hidden max-md:overflow-x-auto max-md:scroll-fade-x">
+        <Table full={isPhone}>
           <Thead>
             <Tr>
-              <Th className="w-[140px] compact:sticky compact:left-0 compact:z-10 compact:bg-card">
+              <Th className="w-[140px] max-md:sticky max-md:left-0 max-md:z-10 max-md:bg-card">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     isChecked={allChecked}
@@ -88,7 +88,7 @@ const PermissionMatrix = ({
           <Tbody>
             {modules.map(([mod]) => (
               <Tr key={mod}>
-                <Td className="compact:sticky compact:left-0 compact:z-10 compact:bg-card">
+                <Td className="max-md:sticky max-md:left-0 max-md:z-10 max-md:bg-card">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       isChecked={isRowAllChecked(mod)}

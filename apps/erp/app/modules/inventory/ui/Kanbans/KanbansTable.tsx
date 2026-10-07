@@ -24,7 +24,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
-  useCompact,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -95,7 +95,7 @@ const KanbansTable = memo(
     const [items] = useItems();
     const [suppliers] = useSuppliers();
     const locations = useLocations();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
 
     const columns = useMemo<ColumnDef<Kanban>[]>(
       () => [
@@ -579,7 +579,7 @@ const KanbansTable = memo(
               </MenuItem>
             )}
             {/* Phone rows drop the label links column; keep them reachable here */}
-            {isCompact && kanbanOutput === "label" && (
+            {isPhone && kanbanOutput === "label" && (
               <>
                 <MenuItem asChild>
                   <a
@@ -659,7 +659,7 @@ const KanbansTable = memo(
           </>
         );
       },
-      [params, permissions, items.find, isCompact, kanbanOutput]
+      [params, permissions, items.find, isPhone, kanbanOutput]
     );
 
     const renderActions = useCallback((selectedRows: typeof data) => {

@@ -65,7 +65,7 @@ export function LabelWithHelp({
             // the hover ring overhangs harmlessly and the icon stays in line.
             isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5",
             // Tap target on phones: an invisible 44px hit area around the icon.
-            "compact:hit-area"
+            "max-md:hit-area"
           )}
         >
           <LuInfo

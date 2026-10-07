@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   Subheading,
-  useCompact,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { useReactFlow } from "@xyflow/react";
@@ -101,7 +101,7 @@ function ViewModeChip({
       className={cn(
         "absolute top-3 left-3 z-30 p-1",
         PANEL,
-        "compact:[&_button]:relative compact:[&_button]:after:absolute compact:[&_button]:after:inset-x-0 compact:[&_button]:after:-inset-y-2.5"
+        "max-md:[&_button]:relative max-md:[&_button]:after:absolute max-md:[&_button]:after:inset-x-0 max-md:[&_button]:after:-inset-y-2.5"
       )}
     >
       <SegmentButton
@@ -152,7 +152,7 @@ function GraphControlsChip({
   showGraphOnly: boolean;
 }) {
   const { fitView } = useReactFlow();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   return (
     <HStack
@@ -163,7 +163,7 @@ function GraphControlsChip({
         // Phones: drops under the view chip and scrolls sideways.
         // A hit area overflowing the buttons would make it scroll vertically
         // too, so the buttons themselves are 44pt tall.
-        "compact:top-14 compact:left-3 compact:right-auto compact:max-w-[calc(100%-24px)] compact:overflow-x-auto compact:overflow-y-hidden compact:scroll-fade-x compact:[&>*]:shrink-0 compact:[&_button]:h-11"
+        "max-md:top-14 max-md:left-3 max-md:right-auto max-md:max-w-[calc(100%-24px)] max-md:overflow-x-auto max-md:overflow-y-hidden max-md:scroll-fade-x max-md:[&>*]:shrink-0 max-md:[&_button]:h-11"
       )}
     >
       {onOpenSearch && (
@@ -181,7 +181,7 @@ function GraphControlsChip({
                 aria-label="Search nodes"
               >
                 <LuSearch className="w-3.5 h-3.5" />
-                <kbd className="text-[10px] text-muted-foreground bg-muted/50 px-1 rounded compact:hidden">
+                <kbd className="text-[10px] text-muted-foreground bg-muted/50 px-1 rounded max-md:hidden">
                   /
                 </kbd>
               </button>
@@ -339,7 +339,7 @@ function GraphControlsChip({
                 onClick={() =>
                   fitView({
                     duration: 300,
-                    padding: isCompact ? COMPACT_FIT_PADDING : 0.2
+                    padding: isPhone ? COMPACT_FIT_PADDING : 0.2
                   })
                 }
                 className={cn(

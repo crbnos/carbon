@@ -592,7 +592,7 @@ const AccountDefaultsForm = ({
     >
       <Hidden name="intent" value="all" />
       <div className="rounded-lg border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-6 compact:flex-col compact:items-start compact:gap-3 compact:p-4">
+        <div className="flex items-center justify-between border-b border-border p-6 max-md:flex-col max-md:items-start max-md:gap-3 max-md:p-4">
           <div>
             <Heading as="h1" size="h3">
               <Trans>Default Accounts</Trans>
@@ -621,13 +621,13 @@ const AccountDefaultsForm = ({
             </Button>
           </HStack>
         </div>
-        <div className="flex flex-col gap-8 p-6 compact:gap-6 compact:p-4">
+        <div className="flex flex-col gap-8 p-6 max-md:gap-6 max-md:p-4">
           {categoryGroups.map((group) => (
             <div
               key={group.id}
-              className="border border-border rounded-lg compact:border-0"
+              className="border border-border rounded-lg max-md:border-0"
             >
-              <div className="py-6 px-4 border-b border-border compact:px-0 compact:pt-0 compact:pb-3">
+              <div className="py-6 px-4 border-b border-border max-md:px-0 max-md:pt-0 max-md:pb-3">
                 <h2 className="text-base font-semibold text-foreground">
                   {group.title}
                 </h2>
@@ -635,13 +635,13 @@ const AccountDefaultsForm = ({
                   {group.description}
                 </p>
               </div>
-              <div className="flex flex-col gap-3 p-4 compact:gap-5 compact:px-0">
+              <div className="flex flex-col gap-3 p-4 max-md:gap-5 max-md:px-0">
                 {group.fields.map((field) => (
                   <div
                     key={field.name}
-                    className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30 compact:border-0 compact:p-0"
+                    className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30 max-md:border-0 max-md:p-0"
                   >
-                    <div className="flex items-start justify-between gap-4 compact:flex-col compact:items-stretch compact:gap-2">
+                    <div className="flex items-start justify-between gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-sm font-medium text-foreground">
@@ -664,7 +664,7 @@ const AccountDefaultsForm = ({
                           {field.description}
                         </p>
                       </div>
-                      <div className="flex-shrink-0 w-64 compact:w-full">
+                      <div className="flex-shrink-0 w-64 max-md:w-full">
                         <Combobox
                           name={field.name}
                           options={

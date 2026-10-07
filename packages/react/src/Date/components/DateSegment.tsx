@@ -11,8 +11,8 @@ import clsx from "clsx";
 import { useId, useRef } from "react";
 
 const segmentSizeVariants = {
-  sm: "text-sm compact:text-base",
-  md: "text-sm compact:text-base",
+  sm: "text-sm max-md:text-base",
+  md: "text-sm max-md:text-base",
   lg: "text-base"
 } as const;
 

@@ -30,9 +30,9 @@ import {
   BottomSheetHeader,
   BottomSheetTitle
 } from "./BottomSheet";
-import { useCompact } from "./Compact";
 import type { PopperPositionProps } from "./PopupSheet";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /*
  * Phones: a dropdown or context menu shown as a real bottom sheet (a Radix
@@ -444,7 +444,7 @@ export function compactPart<T extends ElementType>(
 ) {
   const Part = forwardRef<ElementRef<T>, ComponentPropsWithoutRef<T>>(
     (props, ref) => {
-      const Comp: ElementType = useCompact() ? Phone : Desktop;
+      const Comp: ElementType = useViewport().isPhone ? Phone : Desktop;
       return <Comp ref={ref} {...props} />;
     }
   );

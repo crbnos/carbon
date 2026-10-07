@@ -282,7 +282,7 @@ function TransferGrid({ locationId }: { locationId: string }) {
 
   return (
     <>
-      <DrawerBody className="w-full p-0 compact:p-0 min-h-0 overflow-y-hidden">
+      <DrawerBody className="w-full p-0 max-md:p-0 min-h-0 overflow-y-hidden">
         <ResizablePanelGroup
           direction="horizontal"
           className="h-full w-full min-h-0"

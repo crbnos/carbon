@@ -57,7 +57,7 @@ export function PickingListsHeader({
   const locations = useLocations();
 
   return (
-    <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full compact:[&_:is(button,a)]:h-11 compact:[&_:is(button,a)]:min-w-11">
+    <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full max-md:[&_:is(button,a)]:h-11 max-md:[&_:is(button,a)]:min-w-11">
       <HStack>
         <Button variant="secondary" leftIcon={<LuClipboardList />} asChild>
           <Link to={path.to.pickingListsTable}>

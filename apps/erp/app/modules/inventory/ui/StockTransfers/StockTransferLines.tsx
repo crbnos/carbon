@@ -99,14 +99,14 @@ function StockTransferLineComponent({
   return (
     <div
       className={cn(
-        "flex flex-col border-b p-6 gap-6 compact:p-4 compact:gap-4",
+        "flex flex-col border-b p-6 gap-6 max-md:p-4 max-md:gap-4",
         index === totalLines - 1 && "border-none",
         isPicked && "opacity-50 hover:opacity-100"
       )}
     >
-      <div className="flex justify-between items-center w-full compact:flex-col compact:items-stretch compact:gap-4">
-        <HStack spacing={4} className="w-1/2 justify-between compact:w-full">
-          <HStack spacing={4} className="compact:min-w-0">
+      <div className="flex justify-between items-center w-full max-md:flex-col max-md:items-stretch max-md:gap-4">
+        <HStack spacing={4} className="w-1/2 justify-between max-md:w-full">
+          <HStack spacing={4} className="max-md:min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
@@ -144,24 +144,21 @@ function StockTransferLineComponent({
             )}
           />
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-4 pl-4 w-1/2 compact:w-full compact:flex-wrap compact:gap-3 compact:pl-0">
-          <HStack
-            spacing={4}
-            className="text-left items-center compact:min-w-0"
-          >
+        <div className="flex flex-grow items-center justify-between gap-4 pl-4 w-1/2 max-md:w-full max-md:flex-wrap max-md:gap-3 max-md:pl-0">
+          <HStack spacing={4} className="text-left items-center max-md:min-w-0">
             {"fromStorageUnitId" in line && (
-              <span className="text-base font-medium  whitespace-nowrap compact:min-w-0 compact:truncate">
+              <span className="text-base font-medium  whitespace-nowrap max-md:min-w-0 max-md:truncate">
                 {line.fromStorageUnitName ?? ""}
               </span>
             )}
             <LuArrowRight className="size-4" />
             {"toStorageUnitId" in line && (
-              <span className="text-base font-medium  whitespace-nowrap compact:min-w-0 compact:truncate">
+              <span className="text-base font-medium  whitespace-nowrap max-md:min-w-0 max-md:truncate">
                 {line.toStorageUnitName ?? ""}
               </span>
             )}
           </HStack>
-          <HStack spacing={1} className="compact:ml-auto">
+          <HStack spacing={1} className="max-md:ml-auto">
             {line.trackedEntityId && (
               <PrintButton
                 sourceDocument="Entity"

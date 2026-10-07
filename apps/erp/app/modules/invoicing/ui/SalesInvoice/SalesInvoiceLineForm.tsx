@@ -429,7 +429,7 @@ const SalesInvoiceLineForm = ({
             >
               <HStack
                 className={cn(
-                  "w-full justify-between items-start compact:flex-col compact:items-stretch compact:space-x-0",
+                  "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                   type === "modal" && "pr-16"
                 )}
               >
@@ -491,7 +491,7 @@ const SalesInvoiceLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                <div className="flex-shrink-0 compact:min-w-0 compact:overflow-x-auto compact:scroll-fade-x compact:px-4 compact:pb-2 compact:empty:hidden">
+                <div className="flex-shrink-0 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                   {!isEditing && (
                     <TabsList>
                       <TabsTrigger value="item">
@@ -551,7 +551,7 @@ const SalesInvoiceLineForm = ({
                         onTypeChange={onTypeChange}
                       />
 
-                      <FormControl className="col-span-2 compact:col-span-full">
+                      <FormControl className="col-span-2 max-md:col-span-full">
                         <FormLabel isOptional>
                           <Trans>Description</Trans>
                         </FormLabel>

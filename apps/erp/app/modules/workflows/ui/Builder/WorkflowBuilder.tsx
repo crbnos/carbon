@@ -13,7 +13,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { IsValidConnection } from "@xyflow/react";
@@ -59,7 +59,7 @@ export function WorkflowBuilder({
   canPersistCanvasState
 }: Props) {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const store = useBuilderStoreApi();
   const { screenToFlowPosition } = useReactFlow();
@@ -182,7 +182,7 @@ export function WorkflowBuilder({
   // Phones: the canvas fills the page. The palette opens from the app bar +,
   // and a test run's result opens as a full-screen sheet; closing it discards
   // the result, as the desktop panel's close does.
-  if (isCompact) {
+  if (isPhone) {
     return (
       <div className="flex-1 overflow-hidden">
         {canvas}

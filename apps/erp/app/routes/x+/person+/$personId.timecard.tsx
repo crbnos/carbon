@@ -504,7 +504,7 @@ export default function PersonTimecardRoute() {
           </Button>
         </HStack>
 
-        <TableBase className="table-fixed w-full compact:table-auto compact:min-w-[36rem]">
+        <TableBase className="table-fixed w-full max-md:table-auto max-md:min-w-[36rem]">
           <colgroup>
             <col className="w-[16%]" />
             <col className="w-[28%]" />
@@ -517,13 +517,13 @@ export default function PersonTimecardRoute() {
               <Th className="whitespace-nowrap">
                 <Trans>Date</Trans>
               </Th>
-              <Th className="compact:whitespace-nowrap">
+              <Th className="max-md:whitespace-nowrap">
                 <Trans>Clock In</Trans>
               </Th>
-              <Th className="compact:whitespace-nowrap">
+              <Th className="max-md:whitespace-nowrap">
                 <Trans>Clock Out</Trans>
               </Th>
-              <Th className="text-center compact:whitespace-nowrap">
+              <Th className="text-center max-md:whitespace-nowrap">
                 <Trans>Duration</Trans>
               </Th>
               <Th />
@@ -619,7 +619,7 @@ export default function PersonTimecardRoute() {
               <Tr>
                 <Td
                   colSpan={5}
-                  className="text-center text-muted-foreground py-8 compact:text-left"
+                  className="text-center text-muted-foreground py-8 max-md:text-left"
                 >
                   <Trans>No time entries for this week</Trans>
                 </Td>

@@ -111,7 +111,7 @@ const CardAttribute = forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-row md:flex-col items-start justify-start gap-2 compact:min-h-12 compact:items-center compact:justify-between",
+      "flex flex-row md:flex-col items-start justify-start gap-2 max-md:min-h-12 max-md:items-center max-md:justify-between",
       className
     )}
     {...props}
@@ -125,7 +125,7 @@ const CardAttributes = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col md:flex-row gap-8 compact:gap-0", className)}
+    className={cn("flex flex-col md:flex-row gap-8 max-md:gap-0", className)}
     {...props}
   />
 ));
@@ -168,7 +168,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
       <div
         ref={ref}
         className={cn(
-          "flex flex-col gap-1 px-6 py-4 text-muted-foreground compact:px-4 compact:py-3",
+          "flex flex-col gap-1 px-6 py-4 text-muted-foreground max-md:px-4 max-md:py-3",
           context?.isCollapsed && "cursor-pointer",
           className
         )}
@@ -219,7 +219,7 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
       <div
         ref={ref}
         className={cn(
-          "flex flex-col flex-1 p-6 rounded-xl border border-border bg-card dark:bg-muted/40 compact:p-4 compact:rounded-t-none compact:border-x-0 compact:border-b-0 compact:[&:is([class~='compact:hidden']+*)]:rounded-t-xl compact:[&:is([class~='compact:hidden']+*)]:border-t-0",
+          "flex flex-col flex-1 p-6 rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:border-x-0 max-md:border-b-0 max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl max-md:[&:is([class~='max-md:hidden']+*)]:border-t-0",
           className
         )}
         {...props}
@@ -244,11 +244,11 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
       <div
         ref={ref}
         className={cn(
-          "flex items-center py-4 px-6 gap-2 compact:px-4",
+          "flex items-center py-4 px-6 gap-2 max-md:px-4",
           // Phones: the same full-width 44pt actions as a sheet footer.
           sticky && compactFooterClassName,
           sticky &&
-            "compact:z-10 compact:border-t compact:border-border compact:bg-card compact:pb-safe-4",
+            "max-md:z-10 max-md:border-t max-md:border-border max-md:bg-card max-md:pb-safe-4",
           className
         )}
         {...props}

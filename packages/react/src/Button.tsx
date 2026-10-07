@@ -8,7 +8,6 @@ import { cva } from "class-variance-authority";
 import type { ButtonHTMLAttributes, MouseEvent, ReactElement } from "react";
 import { cloneElement, forwardRef, useCallback, useRef } from "react";
 import { useActionPresentation } from "./ActionPresentation";
-import { HitArea } from "./Compact";
 import type { ShortcutInput } from "./hooks/useShortcutKeys";
 import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { ShortcutKey } from "./ShortcutKey";
@@ -16,6 +15,7 @@ import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { mergeRefs } from "./utils/react";
+import { HitArea } from "./Viewport";
 
 export const buttonVariants = cva(
   [

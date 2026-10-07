@@ -16,10 +16,10 @@ import {
   CommandInput,
   CommandItem
 } from "./Command";
-import { useCompact } from "./Compact";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
+import { useViewport } from "./Viewport";
 
 export type PickerListOption = {
   label: string | JSX.Element;
@@ -97,8 +97,8 @@ const preventAutoFocus = (event: Event) => event.preventDefault();
 export function usePickerOpenAutoFocus(
   optionCount: number
 ): ((event: Event) => void) | undefined {
-  const isCompact = useCompact();
-  return isCompact && optionCount <= SEARCH_AUTOFOCUS_MIN_OPTIONS
+  const { isPhone } = useViewport();
+  return isPhone && optionCount <= SEARCH_AUTOFOCUS_MIN_OPTIONS
     ? preventAutoFocus
     : undefined;
 }
@@ -131,8 +131,8 @@ function PickerList({
   showCreateOptionOnEmpty = false
 }: PickerListProps) {
   const { t } = useLingui();
-  const isCompact = useCompact();
-  const itemHeight = isCompact ? COMPACT_ITEM_HEIGHT : itemHeightProp;
+  const { isPhone } = useViewport();
+  const itemHeight = isPhone ? COMPACT_ITEM_HEIGHT : itemHeightProp;
   const [ownSearch, setOwnSearch] = useState("");
   const search = searchProp ?? ownSearch;
   const setSearch = onSearchChange ?? setOwnSearch;
@@ -175,13 +175,11 @@ function PickerList({
     isCreatableSingle
       ? "overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
       : "overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1",
-    "compact:max-h-[calc(88dvh-120px)]"
+    "max-md:max-h-[calc(88dvh-120px)]"
   );
   const scrollerStyle = {
     height: `${
-      (
-        isCompact ? filteredOptions.length : Math.min(filteredOptions.length, 6)
-      ) *
+      (isPhone ? filteredOptions.length : Math.min(filteredOptions.length, 6)) *
         itemHeight +
       4
     }px`
@@ -203,7 +201,7 @@ function PickerList({
       .join(" - ");
     const checked =
       isChecked(item, itemValue) ||
-      (isCompact &&
+      (isPhone &&
         selectionMode === "single" &&
         value !== undefined &&
         item.value === value);
@@ -245,7 +243,7 @@ function PickerList({
                 <TruncatedTooltipText
                   className="block w-full truncate"
                   tooltip={itemHoverText}
-                  enabled={!isCompact}
+                  enabled={!isPhone}
                 >
                   {item.label}
                 </TruncatedTooltipText>
@@ -253,7 +251,7 @@ function PickerList({
                   <TruncatedTooltipText
                     className="truncate flex-1"
                     tooltip={itemHoverText}
-                    enabled={!isCompact}
+                    enabled={!isPhone}
                   >
                     {item.helper}
                   </TruncatedTooltipText>
@@ -266,7 +264,7 @@ function PickerList({
               <TruncatedTooltipText
                 className="truncate flex-1"
                 tooltip={itemHoverText}
-                enabled={!isCompact}
+                enabled={!isPhone}
               >
                 {item.label}
               </TruncatedTooltipText>
@@ -300,14 +298,14 @@ function PickerList({
                     <TruncatedTooltipText
                       className="block w-full truncate"
                       tooltip={itemHoverText}
-                      enabled={!isCompact}
+                      enabled={!isPhone}
                     >
                       {item.label}
                     </TruncatedTooltipText>
                     <TruncatedTooltipText
                       className="text-xs text-muted-foreground truncate"
                       tooltip={itemHoverText}
-                      enabled={!isCompact}
+                      enabled={!isPhone}
                     >
                       {item.helper}
                     </TruncatedTooltipText>
@@ -316,7 +314,7 @@ function PickerList({
                   <TruncatedTooltipText
                     className="truncate flex-1"
                     tooltip={itemHoverText}
-                    enabled={!isCompact}
+                    enabled={!isPhone}
                   >
                     {item.label}
                   </TruncatedTooltipText>
@@ -357,7 +355,7 @@ function PickerList({
         value={search}
         onValueChange={setSearch}
         placeholder={t`Search...`}
-        className="h-9 compact:h-11 compact:text-base"
+        className="h-9 max-md:h-11 max-md:text-base"
       />
       {isCreatableSingle ? (
         <CommandGroup>

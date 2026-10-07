@@ -158,7 +158,7 @@ export default function AppIndexRoute() {
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div className="relative z-10 w-full h-full overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8 compact:p-4">
+        <div className="max-w-7xl mx-auto p-8 max-md:p-4">
           <div className="mb-8">
             {!CONTROLLED_ENVIRONMENT && (
               <OnboardAgentWidget dismissed={agentDismissed} />
@@ -166,12 +166,12 @@ export default function AppIndexRoute() {
             <Greeting
               hour={greeting.hour}
               pick={greeting.pick}
-              className="mt-6 mx-auto max-w-[30ch] text-center font-medium compact:mt-0"
+              className="mt-6 mx-auto max-w-[30ch] text-center font-medium max-md:mt-0"
             />
             <div className="mt-8 flex items-center gap-3">
               <SearchBar />
               {/* Phones create from the Create tab. */}
-              <div className="contents compact:hidden">
+              <div className="contents max-md:hidden">
                 <CreateMenu
                   trigger={
                     <Button
@@ -238,7 +238,7 @@ export default function AppIndexRoute() {
               <SectionLabel>
                 <Trans>Modules</Trans>
               </SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 compact:grid-cols-3 compact:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-md:grid-cols-3 max-md:gap-3">
                 {modules
                   .filter((mod) => mod.key !== "settings")
                   .map((module) => (
@@ -272,7 +272,7 @@ function SearchBar() {
     >
       <RxMagnifyingGlass className="w-4 h-4 shrink-0" />
       <span className="text-base truncate">{t`Search`}</span>
-      <div className="ml-auto flex items-center gap-1 compact:hidden">
+      <div className="ml-auto flex items-center gap-1 max-md:hidden">
         <KeyCap>{modifierKey}</KeyCap>
         <KeyCap>K</KeyCap>
       </div>
@@ -342,13 +342,13 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
     // No gap: the pill stays perfectly centered because the ✕ slot collapses to
     // zero width when idle. On hover (or keyboard focus) the slot animates open,
     // sliding the pill left to make room — the movement IS the reveal.
-    <div className="group flex items-center justify-center compact:mb-6">
+    <div className="group flex items-center justify-center max-md:mb-6">
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-3 h-9 compact:h-11 pl-4 pr-4 max-w-full rounded-full border border-border bg-muted/30 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:scale-[0.98]"
+            className="flex items-center gap-3 h-9 max-md:h-11 pl-4 pr-4 max-w-full rounded-full border border-border bg-muted/30 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:scale-[0.98]"
           >
             {/* min-w-0 + overflow-hidden lets the label clip instead of
                 wrapping to a second line on narrow screens — the icons keep
@@ -367,7 +367,7 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
           <Trans>Copies a setup prompt for your AI coding tool</Trans>
         </TooltipContent>
       </Tooltip>
-      <div className="w-0 overflow-hidden transition-[width] duration-200 ease-out group-hover:w-8 group-focus-within:w-8 compact:w-8">
+      <div className="w-0 overflow-hidden transition-[width] duration-200 ease-out group-hover:w-8 group-focus-within:w-8 max-md:w-8">
         <Tooltip>
           <TooltipTrigger asChild>
             <IconButton
@@ -377,7 +377,7 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
               size="sm"
               isRound
               onClick={dismiss}
-              className="ml-2 text-muted-foreground rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 compact:opacity-100"
+              className="ml-2 text-muted-foreground rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100"
             />
           </TooltipTrigger>
           <TooltipContent>
@@ -495,7 +495,7 @@ const RecentDocumentRow = ({
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity compact:opacity-100"
+        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100"
       />
     </div>
   );

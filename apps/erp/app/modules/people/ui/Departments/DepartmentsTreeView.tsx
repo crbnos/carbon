@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCompact } from "@carbon/react";
+import { useViewport } from "@carbon/react";
 import {
   Background,
   BackgroundVariant,
@@ -38,7 +38,7 @@ export function DepartmentsTreeView({
   onDelete,
   onAddChild
 }: DepartmentsTreeViewProps) {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const { initialNodes, initialEdges } = useMemo(() => {
     const nodes: Node[] = departments.map((department) => ({
       id: department.id!,
@@ -68,11 +68,11 @@ export function DepartmentsTreeView({
       edges,
       // Phones: sibling departments stack vertically and children branch
       // sideways, so every root fits the narrow canvas.
-      isCompact ? "LR" : "TB"
+      isPhone ? "LR" : "TB"
     );
 
     return { initialNodes: layoutedNodes, initialEdges: layoutedEdges };
-  }, [departments, onEdit, onDelete, onAddChild, isCompact]);
+  }, [departments, onEdit, onDelete, onAddChild, isPhone]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -83,7 +83,7 @@ export function DepartmentsTreeView({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   return (
-    <div className="h-[calc(100dvh-(var(--header-height))-61px)] w-full overflow-hidden compact:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px)-61px)] bg-card">
+    <div className="h-[calc(100dvh-(var(--header-height))-61px)] w-full overflow-hidden max-md:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px)-61px)] bg-card">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -96,7 +96,7 @@ export function DepartmentsTreeView({
           padding: 0.3,
           maxZoom: 1.2,
           // Phones: never fit below a readable size; the user pans instead.
-          minZoom: isCompact ? 0.75 : 0.3
+          minZoom: isPhone ? 0.75 : 0.3
         }}
         nodesDraggable={false}
         nodesConnectable={false}
@@ -109,7 +109,7 @@ export function DepartmentsTreeView({
       >
         <Controls
           showInteractive={false}
-          className="!bg-card !border-border !shadow-sm compact:!left-auto compact:!right-0 compact:[&>button]:!size-11 [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-accent"
+          className="!bg-card !border-border !shadow-sm max-md:!left-auto max-md:!right-0 max-md:[&>button]:!size-11 [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-accent"
         />
         <Background
           variant={BackgroundVariant.Dots}

@@ -646,7 +646,7 @@ const InspectionMeasurementGrid = ({
         header: t`Characteristic`,
         cell: ({ row }) => (
           <span
-            className="line-clamp-2 max-w-[180px] text-xs compact:whitespace-normal"
+            className="line-clamp-2 max-w-[180px] text-xs max-md:whitespace-normal"
             title={row.original.description ?? undefined}
           >
             {row.original.description ?? "—"}

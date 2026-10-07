@@ -118,7 +118,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
             <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
-        <HStack className="compact:-ml-1">
+        <HStack className="max-md:-ml-1">
           <Switch
             variant={variant}
             {...getInputProps()}

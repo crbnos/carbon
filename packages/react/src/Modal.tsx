@@ -18,8 +18,8 @@ import { createContext, forwardRef, useContext } from "react";
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
-import { useCompact } from "./Compact";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 // A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
 // or a click outside, so it does not offer the X. Leave `onOpenChange` off to
@@ -59,7 +59,7 @@ const ModalOverlay = forwardRef<
       "bg-alternative/90",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       // Phones: a bottom sheet over a dimmed screen.
-      "compact:place-items-end compact:overflow-hidden compact:bg-black/40",
+      "max-md:place-items-end max-md:overflow-hidden max-md:bg-black/40",
 
       className
     )}
@@ -116,7 +116,7 @@ const ModalContentVariants = cva(
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
     "sm:rounded-2xl md:w-full",
     "bg-card focus-visible:outline-none focus-visible:ring-0",
-    "compact:max-h-[88dvh] compact:max-w-none compact:rounded-t-[14px] compact:rounded-b-none compact:border-0 compact:pt-5 compact:pb-safe compact:data-[state=open]:slide-in-from-bottom-4",
+    "max-md:max-h-[88dvh] max-md:max-w-none max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:pt-5 max-md:pb-safe max-md:data-[state=open]:slide-in-from-bottom-4",
     "dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]"
   ),
   {
@@ -156,7 +156,7 @@ const ModalContent = forwardRef<
     ref
   ) => {
     const dismissable = useDialogDismissable();
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -168,14 +168,14 @@ const ModalContent = forwardRef<
                 onOpenAutoFocus={(event) => {
                   // Phones: focusing the first field pops the keyboard over
                   // the sheet before the user has done anything.
-                  if (isCompact) event.preventDefault();
+                  if (isPhone) event.preventDefault();
                   onOpenAutoFocus?.(event);
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}
               >
                 {/* Phones: the same grabber as a drawer sheet. */}
-                {isCompact && (
+                {isPhone && (
                   <div
                     aria-hidden
                     className="absolute left-1/2 top-1.5 h-[5px] w-9 -translate-x-1/2 rounded-full bg-muted-foreground/20"
@@ -187,7 +187,7 @@ const ModalContent = forwardRef<
                 {withCloseButton && dismissable && (
                   <DialogPrimitive.Close
                     type="button"
-                    className="absolute right-4 top-4 rounded-full opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-3 hover:bg-accent/80 compact:right-1 compact:top-1 compact:flex compact:size-11 compact:items-center compact:justify-center compact:p-0"
+                    className="absolute right-4 top-4 rounded-full opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-3 hover:bg-accent/80 max-md:right-1 max-md:top-1 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center max-md:p-0"
                   >
                     <LuX className="h-4 w-4" />
                     <span className="sr-only">Close</span>
@@ -210,7 +210,7 @@ const ModalHeader = ({
   <div
     className={cn(
       "flex flex-col shrink-0 space-y-1.5 text-center sm:text-left mb-4 px-6",
-      "compact:mb-3 compact:px-4 compact:pr-14 compact:text-left",
+      "max-md:mb-3 max-md:px-4 max-md:pr-14 max-md:text-left",
       className
     )}
     {...props}
@@ -224,7 +224,7 @@ const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
       // py-1 keeps the 3px focus ring of the first/last field inside the
       // scroll clip; -mt-1/mb-3 cancel it so the layout is unchanged.
       "relative w-full min-h-0 overflow-y-auto -mt-1 py-1 px-6 mb-3",
-      "compact:px-4",
+      "max-md:px-4",
       "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
       className
     )}
@@ -241,7 +241,7 @@ ModalBody.displayName = "ModalBody";
  * Shared by ModalFooter and DrawerFooter.
  */
 export const compactFooterClassName =
-  "compact:sticky compact:bottom-0 compact:flex-row compact:px-4 compact:[&>*]:flex-1 compact:[&>div]:flex compact:[&>div]:w-full compact:[&>div]:gap-2 compact:[&>div>*]:flex-1 compact:[&>div>*]:mx-0 compact:[&_button]:h-11 compact:[&_[type=submit]]:order-last";
+  "max-md:sticky max-md:bottom-0 max-md:flex-row max-md:px-4 max-md:[&>*]:flex-1 max-md:[&>div]:flex max-md:[&>div]:w-full max-md:[&>div]:gap-2 max-md:[&>div>*]:flex-1 max-md:[&>div>*]:mx-0 max-md:[&_button]:h-11 max-md:[&_[type=submit]]:order-last";
 
 const ModalFooter = ({
   className,
@@ -257,7 +257,7 @@ const ModalFooter = ({
     className={cn(
       "flex flex-col-reverse shrink-0 sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-2xl",
       compactFooterClassName,
-      "compact:rounded-none compact:bg-card compact:pb-3",
+      "max-md:rounded-none max-md:bg-card max-md:pb-3",
       className
     )}
     {...props}

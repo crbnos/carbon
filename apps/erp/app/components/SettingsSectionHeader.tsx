@@ -23,7 +23,7 @@ export default function SettingsSectionHeader({ children, className }: Props) {
     <Subheading
       variant="light"
       className={cn(
-        "mt-4 compact:text-xs/[1.3] compact:font-medium compact:tracking-[0.04em]",
+        "mt-4 max-md:text-xs/[1.3] max-md:font-medium max-md:tracking-[0.04em]",
         className
       )}
     >

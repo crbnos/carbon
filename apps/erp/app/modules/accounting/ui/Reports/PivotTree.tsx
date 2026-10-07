@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useCompact } from "@carbon/react";
+import { cn, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -84,8 +84,8 @@ function formatMeasureValue(value: number, measure: PivotMeasure): string {
 const PivotTree = memo(
   ({ pivot, state, columnLabels, onCellClick }: PivotTreeProps) => {
     const { t } = useLingui();
-    const isCompact = useCompact();
-    const rowColumnWidth = isCompact
+    const { isPhone } = useViewport();
+    const rowColumnWidth = isPhone
       ? COMPACT_ROW_COLUMN_WIDTH
       : ROW_COLUMN_WIDTH;
     const { locale } = useLocale();
@@ -330,7 +330,7 @@ const PivotTree = memo(
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
-          parentClassName="flex-1 overflow-x-auto compact:scroll-fade-x"
+          parentClassName="flex-1 overflow-x-auto max-md:scroll-fade-x"
           contentMinWidth={rowWidth}
           renderNode={({ node, state: nodeState }) => {
             const row = node.data;

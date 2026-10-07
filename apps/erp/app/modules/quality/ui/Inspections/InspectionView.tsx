@@ -506,7 +506,7 @@ const InspectionView = ({
       <RecordHero subtitle={metaLine} status={statusBadge} />
       <RecordPhoneChrome />
       {/* Header bar — mirrors InspectionDocumentEditor's header */}
-      <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide compact:hidden">
+      <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide max-md:hidden">
         <div className="min-w-0 flex-1 pr-2">
           <HStack spacing={2} className="items-center">
             <h1 className="truncate text-base font-semibold">
@@ -604,7 +604,7 @@ const InspectionView = ({
             <div
               className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
                 gridExpanded
-                  ? "shrink-0 compact:!h-[40dvh]"
+                  ? "shrink-0 max-md:!h-[40dvh]"
                   : "min-h-[220px] flex-1"
               }`}
               style={{
@@ -644,7 +644,7 @@ const InspectionView = ({
                 aria-orientation="horizontal"
                 aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
-                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 compact:hidden ${
+                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 max-md:hidden ${
                   isResizingSplit ? "bg-muted" : ""
                 }`}
                 onMouseDown={onSplitResizeMouseDown}
@@ -657,7 +657,7 @@ const InspectionView = ({
             <div
               className={
                 gridExpanded
-                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card compact:mt-2 compact:!min-h-0"
+                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card max-md:mt-2 max-md:!min-h-0"
                   : "flex max-h-[14rem] min-w-0 shrink-0 flex-col overflow-hidden rounded-lg bg-card"
               }
               style={
@@ -719,7 +719,7 @@ const InspectionView = ({
         // No drawing: the grid takes the full body. Feature-driven lots still
         // render their features; lots without a document collapse to the
         // single "Overall result" row inside the same grid.
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 compact:px-0">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:px-0">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card">
             <div className="min-h-0 flex-1 overflow-auto">
               <InspectionMeasurementGrid

@@ -31,7 +31,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useCompact,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
@@ -142,7 +142,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function ProductionDashboard() {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const { activeJobs, assignedJobs, unbatchedOperations, events, workCenters } =
     useLoaderData<typeof loader>();
 
@@ -323,7 +323,7 @@ export default function ProductionDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6 compact:grid-cols-2 compact:gap-3">
+      <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6 max-md:grid-cols-2 max-md:gap-3">
         <MetricCard
           className="col-span-1 lg:col-span-2"
           icon={<LuCirclePlay />}
@@ -343,7 +343,7 @@ export default function ProductionDashboard() {
         />
 
         <MetricCard
-          className="col-span-1 lg:col-span-2 compact:col-span-2"
+          className="col-span-1 lg:col-span-2 max-md:col-span-2"
           icon={<LuLayers />}
           title={<Trans>Unbatched Operations</Trans>}
           value={unbatchedOperations}
@@ -351,7 +351,7 @@ export default function ProductionDashboard() {
           linkLabel={t`Create Batch`}
         />
 
-        <Card className="col-span-1 lg:col-span-6 compact:col-span-2">
+        <Card className="col-span-1 lg:col-span-6 max-md:col-span-2">
           <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center">
             <CardHeader>
               <div className="flex w-full justify-start items-center gap-2">
@@ -458,7 +458,7 @@ export default function ProductionDashboard() {
                     layout="vertical"
                     margin={{
                       // Phones: room for the top bar's value label.
-                      right: isCompact ? 48 : 30
+                      right: isPhone ? 48 : 30
                     }}
                   >
                     <YAxis
@@ -784,7 +784,7 @@ function WorkCenterCards({
   });
 
   return (
-    <div className="w-full grid grid-cols-6 gap-4 compact:gap-3">
+    <div className="w-full grid grid-cols-6 gap-4 max-md:gap-3">
       {workCenters.map((workCenter) => {
         const {
           hasEvents,
@@ -812,7 +812,7 @@ function WorkCenterCards({
         return (
           <Card
             key={workCenter.id}
-            className="p-0 h-[300px] col-span-6 compact:col-span-full lg:col-span-3 xl:col-span-2"
+            className="p-0 h-[300px] col-span-6 max-md:col-span-full lg:col-span-3 xl:col-span-2"
           >
             <HStack
               className={cn(

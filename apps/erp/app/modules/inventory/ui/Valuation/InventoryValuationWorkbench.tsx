@@ -243,7 +243,7 @@ export function InventoryValuationWorkbench({
                     <button
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground compact:hit-area"
+                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(r.id);
@@ -277,7 +277,7 @@ export function InventoryValuationWorkbench({
                     </Hyperlink>
                   </HStack>
                 ) : (
-                  <span className="font-semibold compact:min-w-0 compact:truncate">
+                  <span className="font-semibold max-md:min-w-0 max-md:truncate">
                     {r.label}
                   </span>
                 )}

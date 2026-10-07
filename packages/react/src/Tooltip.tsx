@@ -15,9 +15,8 @@ import {
   useId,
   useState
 } from "react";
-
-import { useCompact } from "./Compact";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /**
  * Base UI Tooltip wrapped to preserve the Radix-compatible API the codebase
@@ -100,8 +99,8 @@ const TapToggleRoot = ({
 };
 
 const TooltipRoot = (props: TooltipPrimitive.Root.Props) => {
-  const isCompact = useCompact();
-  return isCompact && props.open === undefined ? (
+  const { isPhone } = useViewport();
+  return isPhone && props.open === undefined ? (
     <TapToggleRoot {...props} />
   ) : (
     <TooltipPrimitive.Root {...props} />
@@ -214,9 +213,9 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
   ) => {
     // Phones have no hover: a tooltip shows only when tapped open (see
     // TapToggleRoot); controlled tooltips stay hidden.
-    const isCompact = useCompact();
+    const { isPhone } = useViewport();
     const tap = useContext(TapToggleContext);
-    if (isCompact && !tap) return null;
+    if (isPhone && !tap) return null;
     return (
       <TooltipPrimitive.Portal
         container={
@@ -240,7 +239,7 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
               "origin-[var(--transform-origin)] transition-[transform,opacity] duration-150",
               "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
               "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-              "compact:max-w-[calc(100vw-32px)] compact:text-[15px]",
+              "max-md:max-w-[calc(100vw-32px)] max-md:text-[15px]",
               className
             )}
             {...props}

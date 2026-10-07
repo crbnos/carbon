@@ -764,7 +764,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
               <Button
                 variant="secondary"
                 leftIcon={<LuGroup />}
-                className="compact:hidden"
+                className="max-md:hidden"
                 asChild
               >
                 <Link to={path.to.itemPostingGroups}>

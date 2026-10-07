@@ -189,7 +189,7 @@ export default function ReimbursementDetailRoute() {
       {/* No hero; it still zeroes --header-height on phones. */}
       <RecordHero />
       <RecordPhoneChrome />
-      <HStack className="w-full justify-end compact:hidden">
+      <HStack className="w-full justify-end max-md:hidden">
         {canPay && (
           <RecordAction slot="primary">
             <Button variant="primary" onClick={payModal.onOpen}>

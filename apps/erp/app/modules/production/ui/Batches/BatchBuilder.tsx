@@ -35,8 +35,8 @@ import {
   ResizablePanelGroup,
   Spinner,
   toast,
-  useCompact,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
@@ -1147,8 +1147,8 @@ function DrawerBodyGrid({
   left: React.ReactNode;
   right: React.ReactNode;
 }) {
-  const isCompact = useCompact();
-  if (isCompact) {
+  const { isPhone } = useViewport();
+  if (isPhone) {
     return (
       <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
         <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
@@ -1266,7 +1266,7 @@ function ScopeBar({
             <Trans>Scope</Trans>
           </span>
         </HStack>
-        <div className="w-[220px] compact:w-full compact:!mx-0">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={locationId}
@@ -1275,7 +1275,7 @@ function ScopeBar({
             placeholder={t`Location`}
           />
         </div>
-        <div className="w-[220px] compact:w-full compact:!mx-0">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={processId ?? ""}

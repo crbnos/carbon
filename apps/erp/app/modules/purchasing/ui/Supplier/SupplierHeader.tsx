@@ -179,7 +179,7 @@ const SupplierHeader = () => {
       <RecordPhoneChrome menu={menuItems} copyValue={supplierId} />
       <VStack>
         <Card>
-          <HStack className="justify-between items-start compact:hidden">
+          <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span>{routeData?.supplier?.name}</span>

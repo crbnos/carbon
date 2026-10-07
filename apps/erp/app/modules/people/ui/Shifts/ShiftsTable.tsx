@@ -7,7 +7,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { formatTimeOfDay } from "@carbon/utils";
 import {
@@ -46,7 +46,7 @@ type ShiftsTableProps = {
 const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -126,7 +126,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         header: t`Start Time`,
         cell: ({ row }) =>
           // Phones: line 2 shows the whole span, start – end.
-          isCompact && row.original.endTime ? (
+          isPhone && row.original.endTime ? (
             <>
               {renderShiftTime(row.original.startTime, row.original.locationId)}
               {" – "}
@@ -191,7 +191,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [locations, renderDays, renderShiftTime, customColumns, isCompact, t]);
+  }, [locations, renderDays, renderShiftTime, customColumns, isPhone, t]);
 
   const renderContextMenu = useCallback(
     (row: Shift) => {

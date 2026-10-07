@@ -14,7 +14,6 @@ import { forwardRef } from "react";
 import { LuChevronRight, LuCircle } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { ActionPresentationBoundary } from "./ActionPresentation";
-import { useCompact } from "./Compact";
 import {
   compactPart,
   MenuSheetCheckboxItem,
@@ -36,6 +35,7 @@ import { ShortcutKey } from "./ShortcutKey";
 import type { MenuItemShortcut } from "./shortcuts";
 import { cn } from "./utils/cn";
 import { withMenuShortcuts } from "./utils/menuShortcut";
+import { useViewport } from "./Viewport";
 
 const DesktopContextMenuSubTrigger = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
@@ -249,7 +249,7 @@ ContextMenuShortcut.displayName = "ContextMenuShortcut";
 const ContextMenu = (
   props: ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Root>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <MenuSheetRoot {...props} />
   ) : (
     <ContextMenuPrimitive.Root {...props} />
@@ -267,7 +267,7 @@ const ContextMenuGroup = compactPart(
 const ContextMenuPortal = (
   props: ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Portal>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <MenuSheetPortal {...props} />
   ) : (
     <ContextMenuPrimitive.Portal {...props} />
@@ -275,7 +275,7 @@ const ContextMenuPortal = (
 const ContextMenuSub = (
   props: ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Sub>
 ) =>
-  useCompact() ? (
+  useViewport().isPhone ? (
     <MenuSheetSub {...props} />
   ) : (
     <ContextMenuPrimitive.Sub {...props} />

@@ -278,14 +278,14 @@ export function ARAPWorkbench({
             return (
               <div
                 data-key-cell=""
-                className="flex items-center compact:w-[calc(45dvw-32px)] compact:pl-3"
+                className="flex items-center max-md:w-[calc(45dvw-32px)] max-md:pl-3"
               >
                 <div className="w-5 shrink-0 flex items-center justify-center self-center">
                   {kids.length > 0 ? (
                     <button
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground compact:hit-area"
+                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(r.partyId);
@@ -302,12 +302,12 @@ export function ARAPWorkbench({
                 {r.customerId ? (
                   <CustomerAvatar
                     customerId={r.customerId}
-                    className="compact:min-w-0 compact:truncate"
+                    className="max-md:min-w-0 max-md:truncate"
                   />
                 ) : r.supplierId ? (
                   <SupplierAvatar
                     supplierId={r.supplierId}
-                    className="compact:min-w-0 compact:truncate"
+                    className="max-md:min-w-0 max-md:truncate"
                   />
                 ) : null}
               </div>
@@ -322,7 +322,7 @@ export function ARAPWorkbench({
           return (
             <div
               data-key-cell=""
-              className="flex items-center compact:w-[calc(45dvw-32px)]"
+              className="flex items-center max-md:w-[calc(45dvw-32px)]"
             >
               <div
                 aria-hidden

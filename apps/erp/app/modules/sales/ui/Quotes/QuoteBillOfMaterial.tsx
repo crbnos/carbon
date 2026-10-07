@@ -154,7 +154,7 @@ function makeItem(
               to={getLinkToItemDetails(material.itemType, material.itemId)}
               onClick={(e) => e.stopPropagation()}
             >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 compact:opacity-100" />
+              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 max-md:opacity-100" />
             </Link>
           )}
         </div>
@@ -841,7 +841,7 @@ function MaterialForm({
           onChange={(newValue) => {
             setItemData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2 compact:col-span-full"
+          className="col-span-2 max-md:col-span-full"
         />
         {itemData.methodType !== "Make to Order" && (
           <NumberControlled

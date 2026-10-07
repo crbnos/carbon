@@ -57,7 +57,7 @@ const DocumentHeader = ({
       <RecordPhoneChrome menu={menuItems} copyValue={copyValue} />
       <CardHeader
         className={cn(
-          "flex-row items-center justify-between compact:hidden",
+          "flex-row items-center justify-between max-md:hidden",
           className
         )}
       >

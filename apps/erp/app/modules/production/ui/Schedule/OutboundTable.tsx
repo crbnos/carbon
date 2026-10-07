@@ -267,7 +267,7 @@ const OutboundTable = memo(
           // No attachments here, so the portal-only customerId is never read.
           // Phones: the strip scrolls sideways so segment labels stay whole.
           cell: ({ row }) => (
-            <div className="contents compact:block compact:max-w-full compact:overflow-x-auto compact:scroll-fade-x compact:[&>div>*]:shrink-0">
+            <div className="contents max-md:block max-md:max-w-full max-md:overflow-x-auto max-md:scroll-fade-x max-md:[&>div>*]:shrink-0">
               <JobOperationProgress
                 customerId=""
                 jobOperations={row.original.operations}

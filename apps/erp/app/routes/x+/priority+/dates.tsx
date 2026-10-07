@@ -23,8 +23,8 @@ import {
   Separator,
   Spinner,
   Switch,
-  useCompact,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
@@ -580,10 +580,10 @@ function DateKanbanSchedule() {
   const [items, setItems] = useState<JobItem[]>(initialItems);
   // Phones keep their own settings and start without the product image, so
   // more than one card fits on a screen; the Thumbnail toggle still applies.
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    isCompact ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
-    isCompact
+    isPhone ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
+    isPhone
       ? { ...defaultDisplaySettings, showThumbnail: false }
       : defaultDisplaySettings
   );
@@ -758,17 +758,17 @@ function DateKanbanSchedule() {
 
   return (
     <div className="flex flex-col h-full max-h-full overflow-auto relative">
-      <HStack className="px-4 py-2 flex justify-between bg-card border-b border-border compact:flex-wrap compact:gap-y-2 compact:[&_button]:h-11 compact:[&_button]:min-w-11">
-        <HStack className="compact:w-full">
+      <HStack className="px-4 py-2 flex justify-between bg-card border-b border-border max-md:flex-wrap max-md:gap-y-2 max-md:[&_button]:h-11 max-md:[&_button]:min-w-11">
+        <HStack className="max-md:w-full">
           <ScheduleNavigation />
-          <div className="contents compact:block compact:min-w-0 compact:flex-1">
+          <div className="contents max-md:block max-md:min-w-0 max-md:flex-1">
             <SearchFilter param="search" size="sm" placeholder="Search" />
           </div>
           <Filter filters={filters} />
         </HStack>
 
-        <HStack className="compact:w-full">
-          <HStack className="compact:min-w-0 compact:flex-1">
+        <HStack className="max-md:w-full">
+          <HStack className="max-md:min-w-0 max-md:flex-1">
             <Button variant="secondary" onClick={goToToday}>
               <Trans>Today</Trans>
             </Button>
@@ -782,7 +782,7 @@ function DateKanbanSchedule() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="min-w-[140px] compact:min-w-0 compact:flex-1"
+                  className="min-w-[140px] max-md:min-w-0 max-md:flex-1"
                 >
                   {currentDateSpanLabel}
                 </Button>

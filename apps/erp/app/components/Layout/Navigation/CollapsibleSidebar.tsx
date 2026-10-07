@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, IconButton, useCompact } from "@carbon/react";
+import { cn, IconButton, useViewport } from "@carbon/react";
 import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import {
@@ -42,7 +42,7 @@ function CollapsibleSidebarProvider({
   hasSidebar,
   children
 }: PropsWithChildren<{ hasSidebar: boolean }>) {
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
@@ -51,10 +51,10 @@ function CollapsibleSidebarProvider({
   // user's collapse.
   const wasCompact = useRef(false);
   useEffect(() => {
-    if (isCompact) setSidebarOpen(false);
+    if (isPhone) setSidebarOpen(false);
     else if (wasCompact.current) setSidebarOpen(true);
-    wasCompact.current = isCompact;
-  }, [isCompact, setSidebarOpen]);
+    wasCompact.current = isPhone;
+  }, [isPhone, setSidebarOpen]);
 
   return (
     <CollapsibleSidebarContext.Provider
@@ -228,7 +228,7 @@ const CollapsibleSidebar = ({
 }: PropsWithChildren<{ width?: number }>) => {
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   const variants = useMemo(() => {
     return {
@@ -245,7 +245,7 @@ const CollapsibleSidebar = ({
 
   // Compact: the app bar title opens the section switcher sheet instead.
   // Keep the zero-width occupant of the layout grid's first track.
-  if (isCompact) return <div aria-hidden className="w-0" />;
+  if (isPhone) return <div aria-hidden className="w-0" />;
 
   return (
     <motion.div

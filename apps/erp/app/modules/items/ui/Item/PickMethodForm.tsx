@@ -141,7 +141,7 @@ const PickMethodForm = ({
         validator={pickMethodWithShelfLifeValidator}
         defaultValues={initialValues}
       >
-        <HStack className="w-full justify-between items-start compact:flex-wrap compact:gap-y-0 compact:items-center">
+        <HStack className="w-full justify-between items-start max-md:flex-wrap max-md:gap-y-0 max-md:items-center">
           <CardHeader>
             <CardTitle>
               <Trans>Inventory</Trans>

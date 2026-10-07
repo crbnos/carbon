@@ -90,7 +90,7 @@ function getNotificationBody(
 
 function EmptyState({ description }: { description: string }) {
   return (
-    <div className="h-[460px] compact:h-auto compact:py-16 flex items-center justify-center flex-col gap-y-4">
+    <div className="h-[460px] max-md:h-auto max-md:py-16 flex items-center justify-center flex-col gap-y-4">
       <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
         <LuInbox size={18} />
       </div>
@@ -735,7 +735,7 @@ export function NotificationsPanel({
         )}
 
         {unreadNotifications.length > 0 && (
-          <ScrollArea className="pb-12 h-[485px] compact:h-auto">
+          <ScrollArea className="pb-12 h-[485px] max-md:h-auto">
             <div className="divide-y">
               {unreadNotifications.map((notification) => {
                 const event = notification.payload.event as NotificationEvent;
@@ -793,7 +793,7 @@ export function NotificationsPanel({
 
       <TabsContent value="trainings" className="mt-0">
         {isLoadingTrainings && (
-          <div className="h-[460px] compact:h-auto compact:py-16 flex items-center justify-center">
+          <div className="h-[460px] max-md:h-auto max-md:py-16 flex items-center justify-center">
             <Spinner />
           </div>
         )}
@@ -803,7 +803,7 @@ export function NotificationsPanel({
         )}
 
         {!isLoadingTrainings && outstandingTrainings.length > 0 && (
-          <ScrollArea className="h-[490px] compact:h-auto">
+          <ScrollArea className="h-[490px] max-md:h-auto">
             <div className="divide-y">
               {outstandingTrainings.map((training) => (
                 <TrainingItem
@@ -823,7 +823,7 @@ export function NotificationsPanel({
         )}
 
         {archivedNotifications.length > 0 && (
-          <ScrollArea className="h-[490px] compact:h-auto">
+          <ScrollArea className="h-[490px] max-md:h-auto">
             <div className="divide-y">
               {archivedNotifications.map((notification) => {
                 const event = notification.payload.event as NotificationEvent;

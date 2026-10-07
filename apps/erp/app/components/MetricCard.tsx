@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -36,13 +36,13 @@ const MetricCard = ({
   className
 }: MetricCardProps) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   // Compact: the whole tile is the link, so no View button.
   // The link is then the grid item, so it takes the caller's layout classes.
-  const isLinkTile = isCompact && !!to;
+  const isLinkTile = isPhone && !!to;
 
   const card = (
-    <Card className={cn(!isLinkTile && className, "compact:h-full")}>
+    <Card className={cn(!isLinkTile && className, "max-md:h-full")}>
       <CardHeader className="flex-row items-center gap-2">
         {icon && (
           <span className="flex-shrink-0 text-muted-foreground">{icon}</span>
@@ -52,7 +52,7 @@ const MetricCard = ({
             "flex-1 min-w-0 line-clamp-none",
             // Phones: two lines, so similar labels stay distinguishable; always two
             // lines tall, so values line up across a row of tiles.
-            isCompact ? "line-clamp-2 min-h-[2lh] text-[13px]" : "truncate"
+            isPhone ? "line-clamp-2 min-h-[2lh] text-[13px]" : "truncate"
           )}
         >
           {title}
@@ -75,7 +75,7 @@ const MetricCard = ({
         )}
       </CardHeader>
       <CardContent>
-        <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate compact:text-[26px] compact:font-semibold compact:tracking-tight">
+        <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate max-md:text-[26px] max-md:font-semibold max-md:tracking-tight">
           {value}
         </h3>
         {description && (

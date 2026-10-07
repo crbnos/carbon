@@ -18,18 +18,18 @@ import { requestMiddleware } from "@carbon/logger/middleware.server";
 import { timedMiddleware } from "@carbon/logger/tracing.server";
 import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
-  CompactProvider,
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  useMode
+  useMode,
+  ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
-  getCompactHint,
   getPreferenceHeaders,
+  getViewportHint,
   isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
@@ -170,7 +170,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         XERO_CLIENT_ID
       },
       ...getMode(request),
-      compact: getCompactHint(request),
+      viewport: getViewportHint(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
       theme: getTheme(request)
@@ -255,9 +255,6 @@ export function Document({
       lang={lang}
       className={`${mode} h-full overflow-x-hidden`}
       style={themeStyle}
-      // Opts the ERP into the `compact:` (phone) variant; MES does not set it.
-      // CompactProvider below is the JS half of the same opt-in.
-      data-compact-ui=""
     >
       <head>
         <meta charSet="utf-8" />
@@ -336,7 +333,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <CompactProvider initialCompact={loaderData?.compact ?? false}>
+        <ViewportProvider initialViewport={loaderData?.viewport ?? "desktop"}>
           <LocaleProvider locale={appLanguage} catalog={catalog}>
             <I18nProvider locale={prefs.locale}>
               <TooltipProvider>
@@ -355,7 +352,7 @@ export default function App() {
               </TooltipProvider>
             </I18nProvider>
           </LocaleProvider>
-        </CompactProvider>
+        </ViewportProvider>
       </OperatingSystemContextProvider>
     </QueryClientProvider>
   );

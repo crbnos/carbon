@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useCompact } from "@carbon/react";
+import { cn, useViewport } from "@carbon/react";
 import type {
   ReportColumnGranularity,
   ReportPeriodBucket
@@ -46,8 +46,8 @@ const ExecutivePnlSummary = memo(
     parentCurrency
   }: ExecutivePnlSummaryProps) => {
     const { t } = useLingui();
-    const isCompact = useCompact();
-    const accountColumnWidth = isCompact
+    const { isPhone } = useViewport();
+    const accountColumnWidth = isPhone
       ? COMPACT_ACCOUNT_COLUMN_WIDTH
       : ACCOUNT_COLUMN_WIDTH;
     const { locale } = useLocale();
@@ -137,7 +137,7 @@ const ExecutivePnlSummary = memo(
 
         <div
           ref={scrollRef}
-          className="flex-1 overflow-auto compact:scroll-fade-x"
+          className="flex-1 overflow-auto max-md:scroll-fade-x"
         >
           <div style={{ minWidth: rowWidth }}>
             {rows.map((row) => (

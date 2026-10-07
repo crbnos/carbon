@@ -27,7 +27,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
   return (
     <InputGroup size={size}>
       <InputLeftElement>
-        <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px] compact:size-4 compact:mt-0" />
+        <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px] max-md:size-4 max-md:mt-0" />
       </InputLeftElement>
       <Input
         value={query}
@@ -35,7 +35,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
           setQuery(e.target.value);
           debounceQuery(e.target.value);
         }}
-        className="w-[100px] sm:w-[200px] text-sm compact:w-full compact:text-base"
+        className="w-[100px] sm:w-[200px] text-sm max-md:w-full max-md:text-base"
         {...props}
       />
     </InputGroup>

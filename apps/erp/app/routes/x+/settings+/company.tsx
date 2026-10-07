@@ -142,7 +142,7 @@ export default function Company() {
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
-        <HStack spacing={1} className="items-center compact:hidden">
+        <HStack spacing={1} className="items-center max-md:hidden">
           <Heading size="h3">
             <Trans>Company</Trans>
           </Heading>

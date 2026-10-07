@@ -195,7 +195,7 @@ export default function PeopleSettingsRoute() {
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2 compact:flex-wrap">
+                <HStack className="items-center gap-2 max-md:flex-wrap">
                   <span className="font-medium">
                     {(companySettings as any).consoleEnabled ? (
                       <Trans>Console mode is enabled</Trans>
@@ -203,7 +203,7 @@ export default function PeopleSettingsRoute() {
                       <Trans>Console mode is disabled</Trans>
                     )}
                   </span>
-                  <Badge variant="yellow" className="compact:shrink-0">
+                  <Badge variant="yellow" className="max-md:shrink-0">
                     <Trans>Beta</Trans>
                   </Badge>
                 </HStack>
@@ -246,7 +246,7 @@ export default function PeopleSettingsRoute() {
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2 compact:flex-wrap">
+                <HStack className="items-center gap-2 max-md:flex-wrap">
                   <span className="font-medium">
                     {companySettings.timeCardEnabled ? (
                       <Trans>Timecards are enabled</Trans>
@@ -254,7 +254,7 @@ export default function PeopleSettingsRoute() {
                       <Trans>Timecards are disabled</Trans>
                     )}
                   </span>
-                  <Badge variant="yellow" className="compact:shrink-0">
+                  <Badge variant="yellow" className="max-md:shrink-0">
                     <Trans>Beta</Trans>
                   </Badge>
                 </HStack>

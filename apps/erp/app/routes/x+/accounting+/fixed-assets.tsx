@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, useCompact, VStack } from "@carbon/react";
+import { Button, useViewport, VStack } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -73,7 +73,7 @@ export default function FixedAssetsRoute() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -84,7 +84,7 @@ export default function FixedAssetsRoute() {
         primaryAction={
           permissions.can("create", "accounting") &&
           // Phones: Add becomes the app bar "+" like the other lists.
-          (isCompact ? (
+          (isPhone ? (
             <New label={t`Fixed Asset`} to={path.to.newFixedAsset} />
           ) : (
             <Button

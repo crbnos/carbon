@@ -84,7 +84,7 @@ const AttributeCategoriesTable = memo(
               <Button
                 variant="secondary"
                 size="sm"
-                className="compact:hidden"
+                className="max-md:hidden"
                 onClick={() => {
                   navigate(
                     `${path.to.attributeCategoryList(

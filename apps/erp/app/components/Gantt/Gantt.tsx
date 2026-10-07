@@ -25,9 +25,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useCompact,
   useDebounce,
-  useShortcutKeys
+  useShortcutKeys,
+  useViewport
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -172,7 +172,7 @@ const Gantt = ({
   axisTickMs
 }: GanttProps) => {
   const { t } = useLingui();
-  const isCompact = useCompact();
+  const { isPhone } = useViewport();
   const [filterText, setFilterText] = useState("");
   const [wipOnly, setWipOnly] = useState(false);
   const [showDurations, setShowDurations] = useState(false);
@@ -304,8 +304,8 @@ const Gantt = ({
                 </div>
               </div>
 
-              <div className="flex w-full items-center justify-between gap-2 pl-1 compact:min-w-0">
-                <div className="flex items-center gap-2 overflow-x-hidden compact:min-w-0">
+              <div className="flex w-full items-center justify-between gap-2 pl-1 max-md:min-w-0">
+                <div className="flex items-center gap-2 overflow-x-hidden max-md:min-w-0">
                   <GanttIcon
                     name={node.data.style?.icon}
                     className="size-4 min-h-4 min-w-4"
@@ -319,7 +319,7 @@ const Gantt = ({
                 </div>
                 <div className="flex items-center gap-1">
                   {renderNodeAside?.(node)}
-                  <span className="contents compact:hidden">
+                  <span className="contents max-md:hidden">
                     <NodeStatusIcon node={node} />
                   </span>
                 </div>
@@ -363,10 +363,10 @@ const Gantt = ({
   );
 
   return (
-    <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden compact:grid-cols-[minmax(0,1fr)]">
-      <div className="flex items-center justify-between gap-2 border-b border-border compact:overflow-x-auto compact:scroll-fade-x">
+    <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden max-md:grid-cols-[minmax(0,1fr)]">
+      <div className="flex items-center justify-between gap-2 border-b border-border max-md:overflow-x-auto max-md:scroll-fade-x">
         <SearchField onChange={setFilterText} />
-        <div className="flex items-center gap-3 pr-2 compact:shrink-0">
+        <div className="flex items-center gap-3 pr-2 max-md:shrink-0">
           {toolbarAccessory}
           <Switch
             variant="small"
@@ -375,7 +375,7 @@ const Gantt = ({
             onCheckedChange={(e) => setWipOnly(e.valueOf())}
           />
           {/* Phones have no hover, so their bars always show durations. */}
-          {!isCompact && (
+          {!isPhone && (
             <Switch
               variant="small"
               label={t`Show Durations`}
@@ -388,7 +388,7 @@ const Gantt = ({
       <div ref={panelGroupRef} className="h-full w-full min-h-0">
         {/* Phones: a fixed tree column beside the timeline, which keeps its
             own sideways scroll. */}
-        {isCompact && (
+        {isPhone && (
           <div className="flex h-full w-full">
             <div className="h-full w-[118px] shrink-0 overflow-hidden border-r border-border pl-3">
               {treePanel}
@@ -396,7 +396,7 @@ const Gantt = ({
             <div className="h-full min-w-0 flex-1">{timelinePanel}</div>
           </div>
         )}
-        {!isCompact && treeDefaultSize !== undefined && (
+        {!isPhone && treeDefaultSize !== undefined && (
           <ResizablePanelGroup
             direction="horizontal"
             onLayout={(layout) => {
@@ -435,7 +435,7 @@ const Gantt = ({
               setShowDurations={setShowDurations}
             />
           </div>
-          <div className="@[42rem]:hidden compact:hidden">
+          <div className="@[42rem]:hidden max-md:hidden">
             <Popover>
               <PopoverTrigger className="text-sm">
                 <Trans>Shortcuts</Trans>
@@ -670,9 +670,9 @@ const GanttTimeline = ({
                           // Phones drop the edge labels: ticks are too close
                           // for them not to collide with their neighbours.
                           tickMs <= 0
-                            ? "ml-1 compact:hidden"
+                            ? "ml-1 max-md:hidden"
                             : tickMs >= duration * 0.98
-                              ? "-ml-1 -translate-x-full compact:hidden"
+                              ? "-ml-1 -translate-x-full max-md:hidden"
                               : "-translate-x-1/2"
                         )}
                       >
@@ -698,9 +698,9 @@ const GanttTimeline = ({
                               className={cn(
                                 "whitespace-nowrap",
                                 index === 0
-                                  ? "ml-1 compact:hidden"
+                                  ? "ml-1 max-md:hidden"
                                   : index === TICK_COUNT - 1
-                                    ? "-ml-1 -translate-x-full compact:hidden"
+                                    ? "-ml-1 -translate-x-full max-md:hidden"
                                     : "-translate-x-1/2"
                               )}
                             >
@@ -952,7 +952,7 @@ const GanttTimeline = ({
 };
 
 function NodeText({ node }: { node: GanttEvent }) {
-  const className = "line-clamp-1 compact:min-w-0";
+  const className = "line-clamp-1 max-md:min-w-0";
   return (
     <Paragraph variant="small" className={cn(className)}>
       <SpanTitle {...node.data} size="small" />
@@ -1202,7 +1202,7 @@ function SpanWithDuration({
               <div
                 className={cn(
                   "sticky left-0 z-10 transition group-hover:opacity-100",
-                  !showDuration && "opacity-0 compact:opacity-100"
+                  !showDuration && "opacity-0 max-md:opacity-100"
                 )}
               >
                 <div className="rounded-sm bg-black/40 px-1 py-0.5 text-xxs font-medium text-white tabular-nums">
@@ -1387,7 +1387,7 @@ function SearchField({ onChange }: { onChange: (value: string) => void }) {
   return (
     <InputGroup
       insetRing
-      className="border-transparent rounded-none ring-0 compact:min-w-[140px] compact:w-[160px] compact:shrink-0"
+      className="border-transparent rounded-none ring-0 max-md:min-w-[140px] max-md:w-[160px] max-md:shrink-0"
     >
       <InputLeftElement>
         <LuSearch className="h-4 w-4 text-muted-foreground" />

@@ -83,7 +83,7 @@ const NumberInputStepper = ({
       className={cn(
         "absolute right-0 top-0 z-10 m-px flex h-[calc(100%-2px)] w-6 flex-col",
         // Phones: − and + side by side, each a 44pt target.
-        "compact:w-[88px] compact:flex-row-reverse",
+        "max-md:w-[88px] max-md:flex-row-reverse",
         className
       )}
       {...props}
@@ -99,7 +99,7 @@ const NumberInput = forwardRef<HTMLInputElement, InputProps>(
         isReadOnly={isDisabled || isReadOnly}
         isDisabled={isDisabled}
         className={cn(
-          "pr-6 compact:[&:has(~[data-number-stepper])]:pr-[92px]",
+          "pr-6 max-md:[&:has(~[data-number-stepper])]:pr-[92px]",
           className
         )}
         onFocus={(e) => {
@@ -123,7 +123,7 @@ const NumberIncrementStepper = ({
       slot="increment"
       className={cn(
         [
-          "flex flex-1 select-none items-center justify-center rounded-tr-md border-l border-border leading-none text-foreground transition-colors duration-100 compact:rounded-none compact:rounded-r-md compact:hit-area",
+          "flex flex-1 select-none items-center justify-center rounded-tr-md border-l border-border leading-none text-foreground transition-colors duration-100 max-md:rounded-none max-md:rounded-r-md max-md:hit-area",
           // Pressed
           "pressed:bg-slate-100 dark:pressed:bg-slate-700",
           // Disabled
@@ -145,7 +145,7 @@ const NumberDecrementStepper = ({
       slot="decrement"
       className={cn(
         [
-          "flex flex-1 select-none items-center justify-center rounded-br-md border-l border-t border-border leading-none text-foreground transition-colors duration-100 compact:rounded-none compact:border-t-0 compact:hit-area",
+          "flex flex-1 select-none items-center justify-center rounded-br-md border-l border-t border-border leading-none text-foreground transition-colors duration-100 max-md:rounded-none max-md:border-t-0 max-md:hit-area",
           // Pressed
           "pressed:bg-slate-100 dark:pressed:bg-slate-700",
           // Disabled

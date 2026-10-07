@@ -51,12 +51,12 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
           {url ? (
             <Link
               to={url}
-              className="compact:relative compact:after:absolute compact:after:-inset-y-3 compact:after:inset-x-0"
+              className="max-md:relative max-md:after:absolute max-md:after:-inset-y-3 max-md:after:inset-x-0"
             >
-              <p className="text-sm font-bold compact:font-semibold">{name}</p>
+              <p className="text-sm font-bold max-md:font-semibold">{name}</p>
             </Link>
           ) : (
-            <p className="text-sm font-bold compact:font-semibold">{name}</p>
+            <p className="text-sm font-bold max-md:font-semibold">{name}</p>
           )}
 
           {userStatus === UserStatus.Active && (

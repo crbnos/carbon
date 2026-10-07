@@ -2,74 +2,85 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { COMPACT_QUERY, compactHintCookie } from "@carbon/utils";
+import type { Viewport } from "@carbon/utils";
+import { PHONE_QUERY, TABLET_QUERY, viewportHintCookie } from "@carbon/utils";
 import type { ReactNode } from "react";
 import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useSyncExternalStore
 } from "react";
 
-type CompactProviderProps = {
-  /** Server hint (cookie or user agent), used until the media query is read. */
-  initialCompact: boolean;
+type ViewportProviderProps = {
+  /** Server hint (cookie or user agent), used until the media queries are read. */
+  initialViewport: Viewport;
   children: ReactNode;
 };
 
-/**
- * Opts the app into the compact (phone) layout. The CSS half of the opt-in is
- * `data-compact-ui` on <html>; set both.
- */
-const Context = createContext<{ initialCompact: boolean } | null>(null);
+const Context = createContext<{ initialViewport: Viewport } | null>(null);
 
-export const CompactProvider = ({
-  initialCompact,
-  children
-}: CompactProviderProps) => {
-  // Record the viewport (and every breakpoint crossing) in the hint cookie, so
-  // the next request renders the right layout on the server.
-  useEffect(() => {
-    const mql = window.matchMedia(COMPACT_QUERY);
-    const write = () => {
-      document.cookie = compactHintCookie(mql.matches);
-    };
-    write();
-    mql.addEventListener("change", write);
-    return () => mql.removeEventListener("change", write);
-  }, []);
-
-  return (
-    <Context.Provider value={{ initialCompact }}>{children}</Context.Provider>
-  );
+const readViewport = (): Viewport => {
+  if (window.matchMedia(PHONE_QUERY).matches) return "phone";
+  if (window.matchMedia(TABLET_QUERY).matches) return "tablet";
+  return "desktop";
 };
 
 const subscribe = (onChange: () => void) => {
-  const mql = window.matchMedia(COMPACT_QUERY);
-  mql.addEventListener("change", onChange);
-  return () => mql.removeEventListener("change", onChange);
+  const queries = [PHONE_QUERY, TABLET_QUERY].map((q) => window.matchMedia(q));
+  for (const mql of queries) mql.addEventListener("change", onChange);
+  return () => {
+    for (const mql of queries) mql.removeEventListener("change", onChange);
+  };
 };
 
-const getSnapshot = () => window.matchMedia(COMPACT_QUERY).matches;
+/**
+ * Seeds `useViewport` with the server's hint so the first render matches the
+ * device, and records every size change in the hint cookie for the next request.
+ */
+export const ViewportProvider = ({
+  initialViewport,
+  children
+}: ViewportProviderProps) => {
+  useEffect(() => {
+    const write = () => {
+      document.cookie = viewportHintCookie(readViewport());
+    };
+    write();
+    return subscribe(write);
+  }, []);
 
-/** Viewport below md, regardless of the compact opt-in. */
-export function useIsMobile(): boolean {
-  const context = useContext(Context);
-  return useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    () => context?.initialCompact ?? false
+  return (
+    <Context.Provider value={{ initialViewport }}>{children}</Context.Provider>
   );
-}
+};
 
 /**
- * True when the app opted into the compact layout and the viewport is below
- * md. Use it only where the component tree must change; style-only changes
- * use the `compact:` variant. False without a provider.
+ * The viewport size as three booleans, exactly one of them true. Use it only
+ * where the component tree must change; style-only changes use `max-md:`
+ * (phone) or `md:max-lg:` (tablet). Without a provider the server render is
+ * desktop.
  */
-export function useCompact(): boolean {
-  const isMobile = useIsMobile();
-  return useContext(Context) !== null && isMobile;
+export function useViewport(): {
+  isPhone: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+} {
+  const context = useContext(Context);
+  const viewport = useSyncExternalStore(
+    subscribe,
+    readViewport,
+    () => context?.initialViewport ?? "desktop"
+  );
+  return useMemo(
+    () => ({
+      isPhone: viewport === "phone",
+      isTablet: viewport === "tablet",
+      isDesktop: viewport === "desktop"
+    }),
+    [viewport]
+  );
 }
 
 /**
@@ -80,6 +91,6 @@ export function useCompact(): boolean {
 export const HitArea = () => (
   <span
     aria-hidden
-    className="hidden compact:absolute compact:m-0 compact:block compact:-inset-[max(0px,calc((44px-100%)/2))]"
+    className="hidden max-md:absolute max-md:m-0 max-md:block max-md:-inset-[max(0px,calc((44px-100%)/2))]"
   />
 );

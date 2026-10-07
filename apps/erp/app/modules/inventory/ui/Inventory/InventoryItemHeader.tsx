@@ -35,7 +35,7 @@ const InventoryItemHeader = ({
           <Button
             isIcon
             variant="ghost"
-            className="compact:hidden"
+            className="max-md:hidden"
             onClick={() =>
               navigate(`${path.to.inventory}?${params.toString()}`)
             }
@@ -43,10 +43,10 @@ const InventoryItemHeader = ({
             <LuX className="w-4 h-4" />
           </Button>
           <span className="flex items-center font-semibold text-center">
-            <span className="compact:hidden">{itemReadableId}</span>{" "}
+            <span className="max-md:hidden">{itemReadableId}</span>{" "}
             <Link
               to={getLinkToItemDetails(itemType, itemId)}
-              className="ml-2 compact:-mx-1.5 compact:-my-3.5 compact:p-3.5"
+              className="ml-2 max-md:-mx-1.5 max-md:-my-3.5 max-md:p-3.5"
             >
               <LuExternalLink />
             </Link>

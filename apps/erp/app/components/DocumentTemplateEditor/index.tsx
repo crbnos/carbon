@@ -29,7 +29,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  useCompact
+  useViewport
 } from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -99,7 +99,7 @@ export function DocumentTemplateEditor({
       hasWatermark={hasWatermark}
       initialLabelSizeId={initialLabelSizeId}
     >
-      <div className="flex h-full w-full min-w-0 flex-col bg-background compact:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px))]">
+      <div className="flex h-full w-full min-w-0 flex-col bg-background max-md:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px))]">
         <EditorToolbar
           title={getDocumentLabel(documentType)}
           canEdit={canEdit}
@@ -116,8 +116,8 @@ export function DocumentTemplateEditor({
  * behind an underline tab row (the record-tabs pattern).
  */
 function EditorPanes({ actionPath }: { actionPath: string }) {
-  const isCompact = useCompact();
-  if (isCompact) return <CompactEditorPanes actionPath={actionPath} />;
+  const { isPhone } = useViewport();
+  if (isPhone) return <CompactEditorPanes actionPath={actionPath} />;
 
   return (
     <ResizablePanelGroup
@@ -385,12 +385,12 @@ function EditorToolbar({
   const refreshPreview = useEditorStore((s) => s.refreshPreview);
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b bg-card px-4 py-3 compact:flex-wrap compact:gap-2">
+    <div className="flex items-center justify-between gap-3 border-b bg-card px-4 py-3 max-md:flex-wrap max-md:gap-2">
       <div className="flex items-center gap-3">
         <Link
           to={path.to.documentTemplates}
           aria-label="Back to documents"
-          className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground compact:hidden"
+          className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground max-md:hidden"
         >
           <LuArrowLeft className="size-4" />
         </Link>
@@ -400,7 +400,7 @@ function EditorToolbar({
         </div>
       </div>
       {previewEntities.length > 0 && (
-        <div className="flex min-w-0 max-w-[280px] flex-1 flex-col items-center gap-0.5 self-end compact:order-last compact:basis-full compact:max-w-none compact:items-stretch compact:self-auto">
+        <div className="flex min-w-0 max-w-[280px] flex-1 flex-col items-center gap-0.5 self-end max-md:order-last max-md:basis-full max-md:max-w-none max-md:items-stretch max-md:self-auto">
           <Subheading variant="heavy">Preview data</Subheading>
           <Select
             value={previewId ?? SAMPLE_DATA_VALUE}
@@ -422,7 +422,7 @@ function EditorToolbar({
           </Select>
         </div>
       )}
-      <div className="flex items-end gap-2 compact:ml-auto">
+      <div className="flex items-end gap-2 max-md:ml-auto">
         <LabelSizePicker />
         {canEdit && (
           <>
