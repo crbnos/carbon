@@ -297,6 +297,10 @@ export const LOG_LEVEL = getEnv("LOG_LEVEL");
 
 export const RATE_LIMIT = parseInt(getEnv("RATE_LIMIT") || "5", 10);
 
+// Vercel's own VERCEL_URL is a bare host; an APP_URL set by hand is an origin.
+const previewUrl = () =>
+  APP_URL?.startsWith("http") ? APP_URL : `https://${APP_URL}`;
+
 export function getAppUrl() {
   if (VERCEL_ENV === "production" || NODE_ENV === "production") {
     return ERP_URL
@@ -307,7 +311,7 @@ export function getAppUrl() {
   }
 
   if (VERCEL_ENV === "preview") {
-    return `https://${APP_URL}`;
+    return previewUrl();
   }
 
   // Dev: `crbn up` writes ERP_URL=https://<prefix>.erp.dev into .env.local.
@@ -326,7 +330,7 @@ export function getMESUrl() {
   }
 
   if (VERCEL_ENV === "preview") {
-    return `https://${APP_URL}`;
+    return previewUrl();
   }
 
   // Dev: `crbn up` writes MES_URL=https://<prefix>.mes.dev into .env.local.

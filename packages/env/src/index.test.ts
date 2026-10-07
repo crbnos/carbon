@@ -34,4 +34,16 @@ describe("module load", () => {
     expect(env.SESSION_SECRET).toBe("");
     expect(env.SUPABASE_URL).toBeUndefined();
   });
+
+  it.each([
+    ["carbon-git-x.vercel.app", "https://carbon-git-x.vercel.app"],
+    ["https://preview.example.com", "https://preview.example.com"]
+  ])("a preview URL from %s has one scheme", async (url, expected) => {
+    vi.stubEnv("APP_ENV", "preview");
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("APP_URL", url);
+    const env = await import("./index");
+    expect(env.getAppUrl()).toBe(expected);
+    expect(env.getMESUrl()).toBe(expected);
+  });
 });
