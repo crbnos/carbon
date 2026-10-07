@@ -7368,9 +7368,6 @@ msgstr "Отключить"
 msgid "Detach from Onshape?"
 msgstr "Отключить от Onshape?"
 
-msgid "Detach to edit them in Carbon."
-msgstr "Отключите, чтобы изменить их в Carbon."
-
 msgid "Detail"
 msgstr "Подробности"
 
@@ -7947,6 +7944,9 @@ msgstr "Каждая физическая единица получает сво
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Менеджер по продажам каждого договора аренды или контракта (или его создатель) получает ежедневное резюме своих счетов-фактур."
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Внешние операции каждого поставщика из каждого производственного заказа размещаются на одном новом заказе поставщику или на существующем черновике на ваш выбор."
@@ -16588,6 +16588,13 @@ msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr ""
 
 msgid "Putting your data back"
@@ -19658,12 +19665,6 @@ msgstr "короткий"
 
 msgid "Short"
 msgstr "Недостача"
-
-msgid "Short and long descriptions are managed in Onshape."
-msgstr "Краткое и подробное описания управляются в Onshape."
-
-msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "Краткое и подробное описания станут редактируемыми в Carbon и перестанут синхронизироваться с Onshape. Если отправить эту деталь из Onshape еще раз, она будет связана обратно."
 
 msgid "Short Description"
 msgstr "Краткое описание"

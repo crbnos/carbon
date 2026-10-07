@@ -7,17 +7,22 @@ import type { Json } from "@carbon/database";
 import type {
   ItemEdit,
   ItemFieldSnapshot,
+  MappedRowPlan,
   OnshapeBomNode,
+  OwnedFieldChange,
+  PlanCustomField,
   ProposedItem,
   ReleasePlanItem
 } from "@carbon/ee";
 import {
   bomLineItemType,
   changeNoticeDescriptionJson,
+  createdItemExtras,
   isModelReleaseItem,
+  mappedFieldValues,
   mergeChangeNoticeEdit,
+  mergeCustomFieldValues,
   mergeEditsForCreates,
-  mergeExistingItemEdits,
   pickLatestRow,
   proposeItem
 } from "@carbon/ee";
@@ -49,7 +54,8 @@ import {
   upsertPart
 } from "~/modules/items";
 import {
-  applyItemManufacturingEdits,
+  applyExistingItemFields,
+  applyItemFieldWrites,
   insertOwnedMethodLines,
   type OwnedMethodLine,
   stageChangeNoticeItem,
@@ -118,7 +124,13 @@ type CreatedEntry = {
   baseItemId: string | null;
 };
 
-function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
+function partInsert(
+  proposed: ProposedItem,
+  companyId: string,
+  userId: string,
+  customFields: PlanCustomField[] | undefined
+) {
+  const values = mappedFieldValues(customFields ?? [], true).values;
   return {
     id: proposed.readableId,
     name: proposed.name,
@@ -128,6 +140,7 @@ function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
     defaultMethodType: proposed.defaultMethodType,
     itemTrackingType: proposed.itemTrackingType,
     unitOfMeasureCode: proposed.unitOfMeasureCode,
+    ...(Object.keys(values).length > 0 ? { customFields: values as Json } : {}),
     companyId,
     createdBy: userId
   } as any;
@@ -239,34 +252,111 @@ export async function action({ request }: ActionFunctionArgs) {
     errors: []
   };
 
-  // Writes only fields that differ from the plan's snapshot. A part number that is
-  // both a release item and a BOM child uses the release item's snapshot.
-  const currentByPartNumber = new Map<string, ItemFieldSnapshot>();
+  // What the plan says about each item it does not create: its current
+  // fields, and for a release item the "everyPush" values and descriptions.
+  // A part number that is both a release item and a BOM child uses the
+  // release item's plan.
+  type PlannedRow = MappedRowPlan & {
+    current?: ItemFieldSnapshot | null;
+    changes?: OwnedFieldChange[];
+  };
+  const plannedByPartNumber = new Map<string, PlannedRow>();
   for (const child of plan.children) {
-    if (child.current) currentByPartNumber.set(child.partNumber, child.current);
+    if (child.current) plannedByPartNumber.set(child.partNumber, child);
   }
   for (const item of plan.items) {
-    if (item.current) currentByPartNumber.set(item.partNumber, item.current);
+    if (item.current) plannedByPartNumber.set(item.partNumber, item);
+  }
+  // A create writes these at the insert; a revision copies its base and is
+  // not a creation for a custom field.
+  const createdFieldsByPartNumber = new Map<string, PlanCustomField[]>();
+  for (const row of [...plan.children, ...plan.items]) {
+    if (row.action === "create" && row.customFields) {
+      createdFieldsByPartNumber.set(row.partNumber, row.customFields);
+    }
   }
   const fieldEditsApplied = new Set<string>();
-  const applyItemFieldEdit = async (partNumber: string, itemId: string) => {
+  /**
+   * The descriptions, mapped values and reviewer edits for an item the push
+   * does not create. The row's method and unit are updated in place, because
+   * a BOM line written later copies them.
+   */
+  const applyItemFieldEdit = async (partNumber: string, row: ItemRow) => {
     if (fieldEditsApplied.has(partNumber)) return;
-    const current = currentByPartNumber.get(partNumber);
-    if (!current) return;
+    const planned = plannedByPartNumber.get(partNumber);
+    if (!planned?.current) return;
     fieldEditsApplied.add(partNumber);
-    const mfg = mergeExistingItemEdits(current, edits[partNumber]);
-    if (!mfg.ok) {
-      summary.errors.push(`${partNumber}: ${mfg.errors.join("; ")}`);
+    const applied = await applyExistingItemFields(client, db, {
+      itemId: row.id,
+      companyId,
+      userId,
+      current: planned.current,
+      target: planned.target,
+      edit: edits[partNumber],
+      descriptions: planned.changes
+    });
+    if (applied.error) {
+      summary.errors.push(`${partNumber}: ${applied.error}`);
       return;
     }
-    if (Object.keys(mfg.changed).length === 0) return;
-    const error = await applyItemManufacturingEdits(client, db, {
+    if (applied.values) {
+      row.defaultMethodType = applied.values.defaultMethodType;
+      row.unitOfMeasureCode =
+        applied.values.unitOfMeasureCode ?? row.unitOfMeasureCode;
+    }
+    const values = mappedFieldValues(planned.customFields ?? [], false);
+    if (values.fieldIds.size === 0) return;
+    // `part` is keyed by readableId and shared by every revision.
+    const held = await client
+      .from("part")
+      .select("customFields")
+      .eq("id", partNumber)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (held.error) {
+      summary.errors.push(
+        `${partNumber}: failed to read custom fields (${held.error.message})`
+      );
+      return;
+    }
+    const updated = await client
+      .from("part")
+      .update({
+        customFields: mergeCustomFieldValues(
+          held.data?.customFields,
+          values.values,
+          values.fieldIds
+        ) as Json,
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", partNumber)
+      .eq("companyId", companyId);
+    if (updated.error) {
+      summary.errors.push(
+        `${partNumber}: failed to write custom fields (${updated.error.message})`
+      );
+    }
+  };
+  /** The values `upsertPart` does not take: MPN, and Sourcing. */
+  const writeCreatedExtras = async (
+    label: string,
+    itemId: string,
+    proposed: ProposedItem
+  ) => {
+    const extras = createdItemExtras(proposed);
+    if (Object.keys(extras).length === 0) return;
+    const error = await applyItemFieldWrites(client, db, {
       itemId,
       companyId,
       userId,
-      changed: mfg.changed
+      changed: extras
     });
-    if (error) summary.errors.push(`${partNumber}: ${error}`);
+    if (error) {
+      summary.errors.push(
+        `${label}: created, but its mapped fields were not written (${error})`
+      );
+    }
   };
 
   // Re-read every part number (all revisions): the plan may be minutes old.
@@ -522,7 +612,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (decision.kind === "reuse") {
       summary.reused += 1;
       revisionItemByPartNumber.set(item.partNumber, decision.row);
-      await applyItemFieldEdit(item.partNumber, decision.row.id);
+      await applyItemFieldEdit(item.partNumber, decision.row);
       continue;
     }
 
@@ -573,7 +663,12 @@ export async function action({ request }: ActionFunctionArgs) {
       const { proposed } = decision;
       const insertedItem = await upsertPart(
         client,
-        partInsert(proposed, companyId, userId)
+        partInsert(
+          proposed,
+          companyId,
+          userId,
+          createdFieldsByPartNumber.get(item.partNumber)
+        )
       );
       if (insertedItem.error || !insertedItem.data) {
         summary.errors.push(
@@ -592,6 +687,7 @@ export async function action({ request }: ActionFunctionArgs) {
         defaultMethodType: proposed.defaultMethodType,
         unitOfMeasureCode: proposed.unitOfMeasureCode
       };
+      await writeCreatedExtras(item.partNumber, row.id, proposed);
       created.push({
         partNumber: item.partNumber,
         revision: item.revision,
@@ -608,7 +704,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     revisionItemByPartNumber.set(item.partNumber, row);
     rememberRow(row);
-    await applyItemFieldEdit(item.partNumber, row.id);
+    await applyItemFieldEdit(item.partNumber, row);
   }
 
   summary.alreadyPushed = created.length === 0;
@@ -725,7 +821,7 @@ export async function action({ request }: ActionFunctionArgs) {
         pickLatestRow(byReadable.get(child.partNumber) ?? []);
       if (existingChild) {
         childItemByPartNumber.set(child.partNumber, existingChild);
-        await applyItemFieldEdit(child.partNumber, existingChild.id);
+        await applyItemFieldEdit(child.partNumber, existingChild);
         continue;
       }
       const proposed =
@@ -736,13 +832,19 @@ export async function action({ request }: ActionFunctionArgs) {
             name: child.name,
             description: child.description,
             revision: child.revision,
-            purchased: child.purchased
+            hasChildren: child.children.length > 0,
+            standardContent: child.standardContent === true
           },
           plan.options
         );
       const createdChild = await upsertPart(
         client,
-        partInsert(proposed, companyId, userId)
+        partInsert(
+          proposed,
+          companyId,
+          userId,
+          createdFieldsByPartNumber.get(child.partNumber)
+        )
       );
       if (createdChild.error || !createdChild.data) {
         summary.errors.push(
@@ -762,6 +864,7 @@ export async function action({ request }: ActionFunctionArgs) {
         defaultMethodType: proposed.defaultMethodType,
         unitOfMeasureCode: proposed.unitOfMeasureCode
       };
+      await writeCreatedExtras(child.partNumber, childRow.id, proposed);
       childItemByPartNumber.set(child.partNumber, childRow);
       rememberRow(childRow);
       summary.itemsCreated += 1;
@@ -946,7 +1049,9 @@ export async function action({ request }: ActionFunctionArgs) {
           materialMakeMethodId: childMethod?.id ?? null,
           methodType:
             (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
-            (child.purchased ? "Pull from Inventory" : "Make to Order"),
+            (child.children.length > 0
+              ? "Make to Order"
+              : "Pull from Inventory"),
           order: lines.length,
           itemType,
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA"

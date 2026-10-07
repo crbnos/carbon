@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { PlanItemRow } from "@carbon/ee";
+import type { PlanItemRow, PlanMappingContext } from "@carbon/ee";
 import {
   buildAssemblyPlan,
   externalIdForAssembly,
@@ -14,9 +14,7 @@ import {
   normalizeConfiguration,
   parseBomTree,
   parseProperties,
-  parsePropertyMap,
-  resolveMappedFields,
-  withoutNoOpClears
+  withoutProperties
 } from "@carbon/ee";
 import type { OnshapeDocument, StoredAssemblyPlan } from "@carbon/ee/onshape";
 import {
@@ -24,7 +22,7 @@ import {
   getOnshapeClient,
   loadActiveMakeMethods,
   loadMethodLineOwnership,
-  loadPartCustomFieldDefinitions,
+  loadPlanMapping,
   loadPlanOptions,
   loadReusableDrafts,
   ONSHAPE_V2_INTEGRATION_ID,
@@ -180,7 +178,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode, sourcingType, mpn"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -304,6 +302,32 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Planning without the map would silently skip "everyPush" values. BOM
+  // rows carry their own cells; the root's properties are the element
+  // metadata read above, so the map costs no extra Onshape call.
+  let mapping: PlanMappingContext;
+  try {
+    mapping = await loadPlanMapping(
+      client,
+      companyId,
+      items.map((item) => item.readableId)
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the Onshape property map"
+      },
+      { status: 500 }
+    );
+  }
+  if (mapping.map.length > 0 && elementMetadata === null && metadataError) {
+    const failure = onshapeFailure(metadataError);
+    return data(failure.body, { status: failure.status });
+  }
+
   const plan = buildAssemblyPlan({
     documentId,
     wv,
@@ -325,85 +349,18 @@ export async function action({ request }: ActionFunctionArgs) {
     linkedItemIdByExternalId,
     linkedItemIds,
     configuration,
-    reusableDraftByItemId
+    reusableDraftByItemId,
+    mapping,
+    rootProperties:
+      elementMetadata !== null ? parseProperties(elementMetadata) : null
   });
 
-  // Root custom fields only (children get theirs from their own part push),
-  // from the metadata read above, so the map costs no extra Onshape call.
-  if (elementMetadata !== null || metadataError !== null) {
-    const integration = await client
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    // A failed read must not plan a push that silently skips owned fields.
-    if (integration.error) {
-      return data(
-        { error: "Failed to read the Onshape property map" },
-        { status: 500 }
-      );
-    }
-    const propertyMap = parsePropertyMap(integration.data?.metadata);
-    if (propertyMap.length > 0 && elementMetadata === null) {
-      const failure = onshapeFailure(metadataError);
-      return data(failure.body, { status: failure.status });
-    }
-    if (propertyMap.length > 0) {
-      let definitions: Awaited<
-        ReturnType<typeof loadPartCustomFieldDefinitions>
-      >;
-      try {
-        definitions = await loadPartCustomFieldDefinitions(client, companyId);
-      } catch (error) {
-        // Never fall back to []: it would read as every mapped field deleted.
-        return data(
-          {
-            error:
-              error instanceof Error
-                ? error.message
-                : "Failed to read the custom field definitions"
-          },
-          { status: 500 }
-        );
-      }
-      const resolved = resolveMappedFields({
-        properties: parseProperties(elementMetadata),
-        map: propertyMap,
-        definitions
-      });
-      let fields = resolved.fields;
-      // A reused root drops clears of fields Carbon doesn't hold.
-      // `part` is keyed by readableId.
-      if (plan.root.action === "reuse" && fields.length > 0) {
-        const held = await client
-          .from("part")
-          .select("customFields")
-          .eq("id", plan.root.partNumber)
-          .eq("companyId", companyId)
-          .maybeSingle();
-        if (held.error) {
-          return data(
-            { error: "Failed to read Carbon parts" },
-            { status: 500 }
-          );
-        }
-        fields = withoutNoOpClears(held.data?.customFields, fields);
-      }
-      if (fields.length > 0) {
-        plan.root.customFields = fields;
-      }
-      if (resolved.unmapped.length > 0) {
-        plan.root.unmappedProperties = resolved.unmapped;
-      }
-      if (resolved.problems.length > 0) {
-        plan.root.customFieldProblems = resolved.problems;
-      }
-    }
-  }
-
   // The parsed BOM is stored for the apply; the panel never needs it.
-  const stored: StoredAssemblyPlan = { ...plan, nodes: lines };
+  // Without the cells: the apply needs the structure only.
+  const stored: StoredAssemblyPlan = {
+    ...plan,
+    nodes: withoutProperties(lines)
+  };
   const created = await createPanelPlan({ companyId, userId, plan: stored });
   if (!created) {
     return data(

@@ -7,13 +7,14 @@ import type {
   AssemblyPlanMethod,
   ChangeNoticeEdit,
   ItemEdit,
+  ItemFieldChange,
+  KeptDifference,
   PartPlan,
   PartPlanRow,
   ProposedItem,
   ReleasePlan
 } from "./plan";
-import type { PlanCustomField } from "./properties";
-import { BOOLEAN_TRUE, CUSTOM_FIELD_DATA_TYPES } from "./properties";
+import type { PlanItemField } from "./properties";
 import type { PanelPartStatus } from "./status";
 
 /**
@@ -156,10 +157,10 @@ export function editedItem(
 }
 
 /**
- * Items whose Buy or Make in Carbon, after the review's edits, disagrees with
- * Onshape's BOM: a Buy item the push writes a BOM into, and a Make item
- * Onshape lists as one unit, which gets no BOM. Carbon decides Buy or Make
- * for an item it already has, so the push leaves it and the review says so.
+ * Items whose Buy or Make, after the push's mapped values and the review's
+ * edits, disagrees with Onshape's BOM: a Buy item the push writes a BOM into,
+ * and a Make item Onshape lists as one unit, which gets no BOM. The push
+ * writes both as they are, and the review says so.
  */
 export function replenishmentMismatches(
   plan: AssemblyPlan,
@@ -170,6 +171,7 @@ export function replenishmentMismatches(
     string,
     {
       current?: { replenishmentSystem: string } | null;
+      target?: { replenishmentSystem: string };
       proposed: ProposedItem | null;
     }
   >([
@@ -180,6 +182,7 @@ export function replenishmentMismatches(
     const row = rows.get(partNumber);
     return (
       edits[partNumber]?.replenishmentSystem ??
+      row?.target?.replenishmentSystem ??
       row?.current?.replenishmentSystem ??
       row?.proposed?.replenishmentSystem
     );
@@ -210,20 +213,33 @@ export function replenishmentMismatches(
   return lines;
 }
 
-/**
- * A mapped value as review text; "—" when nothing will be written. A Yes/No
- * field stores BOOLEAN_TRUE or no key, so the raw "on" never reaches the
- * review text.
- */
-export function customFieldDisplayValue(
-  field: Pick<PlanCustomField, "value" | "dataTypeId">
-): string {
-  if (field.dataTypeId === CUSTOM_FIELD_DATA_TYPES.boolean) {
-    return field.value === BOOLEAN_TRUE || field.value === true ? "Yes" : "—";
-  }
-  if (field.value === null) return "—";
-  if (typeof field.value === "boolean") return field.value ? "Yes" : "No";
-  return String(field.value);
+/** Under the item choices: what a choice in the review does and does not do. */
+export const CARBON_ONLY_NOTE =
+  "Changes here apply to Carbon only. Onshape keeps its values.";
+
+/** A mapped item field value with its source: `Buy · from Onshape "Make or buy"`. */
+export function mappedValueText(field: PlanItemField): string {
+  return `${field.label}: ${field.value ?? "—"} · from Onshape "${field.onshapeName}"`;
+}
+
+/** An Onshape value the push does not write to an existing item. */
+export function keptDifferenceText(kept: KeptDifference): string {
+  return `${kept.label}: Onshape has ${kept.onshape}. Carbon keeps ${
+    kept.carbon ?? "no value"
+  } (set at creation only).`;
+}
+
+/** A value an "everyPush" mapping writes over Carbon's. */
+export function itemFieldChangeText(change: ItemFieldChange): string {
+  const verb =
+    change.from === null
+      ? `Sets ${change.to ?? "no value"}`
+      : `Replaces ${change.from} with ${change.to ?? "no value"}`;
+  return `${change.label}: ${verb} (${
+    change.onshapeName === null
+      ? "goes with the change above"
+      : "updated on every push"
+  }).`;
 }
 
 // ---------------------------------------------------------------------------

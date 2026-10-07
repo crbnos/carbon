@@ -12,10 +12,11 @@ import type {
   ProposedItem
 } from "@carbon/ee";
 import {
+  createdItemExtras,
   externalIdForPart,
+  mappedFieldValues,
   mergeCustomFieldValues,
   mergeEditsForCreates,
-  mergeExistingItemEdits,
   pickAdoptTarget,
   proposeItem
 } from "@carbon/ee";
@@ -32,7 +33,8 @@ import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import {
-  applyItemManufacturingEdits,
+  applyExistingItemFields,
+  applyItemFieldWrites,
   swapItemMapping
 } from "~/modules/settings/onshape-push.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -202,7 +204,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ownedReadableIds = [
     ...new Set(
       selectedRows.flatMap((row) => {
-        if (ownedCustomFieldValues(row) === null) return [];
+        if (existingCustomFieldValues(row) === null) return [];
         const ids: string[] = [];
         if (row.partNumber) ids.push(row.partNumber);
         const target = row.itemId ? itemById.get(row.itemId) : undefined;
@@ -248,28 +250,19 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (row.action === "unchanged") {
-      // The CAD is unchanged, but a reviewer edit to a manufacturing field is
-      // still a real update. No mapping re-stamp and no export.
-      const mfg = row.current
-        ? mergeExistingItemEdits(row.current, edits[partId])
-        : null;
-      if (mfg && !mfg.ok) {
-        results.push({
-          partId,
-          action: "error",
-          message: mfg.errors.join("; ")
-        });
-        continue;
-      }
-      if (mfg?.ok && Object.keys(mfg.changed).length > 0 && row.itemId) {
-        const error = await applyItemManufacturingEdits(client, db, {
+      // The CAD and every mapped value are unchanged, but a reviewer edit to
+      // a manufacturing field is still a real update. No mapping re-stamp and
+      // no export.
+      if (row.itemId && edits[partId]) {
+        const applied = await applyExistingItemFields(client, db, {
           itemId: row.itemId,
           companyId,
           userId,
-          changed: mfg.changed
+          current: row.current,
+          edit: edits[partId]
         });
-        if (error) {
-          results.push({ partId, action: "error", message: error });
+        if (applied.error) {
+          results.push({ partId, action: "error", message: applied.error });
           continue;
         }
         results.push({
@@ -327,6 +320,26 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       itemId = created.data.id as string;
       readableId = item.readableId;
+      // upsertPart takes neither MPN nor Sourcing.
+      const extras = createdItemExtras(item);
+      if (Object.keys(extras).length > 0) {
+        const error = await applyItemFieldWrites(client, db, {
+          itemId,
+          companyId,
+          userId,
+          changed: extras
+        });
+        if (error) {
+          results.push({
+            partId,
+            action: "error",
+            itemId,
+            readableId,
+            message: `Item created, but its mapped fields were not written (${error})`
+          });
+          continue;
+        }
+      }
       // A later row with the same number adopts this item, not a second create.
       rowsByReadableId.set(readableId, [
         ...(rowsByReadableId.get(readableId) ?? []),
@@ -344,43 +357,22 @@ export async function action({ request }: ActionFunctionArgs) {
     } else {
       itemId = (target as PlanItemRow).id;
       readableId = (target as PlanItemRow).readableId;
-      const mfg = row.current
-        ? mergeExistingItemEdits(row.current, edits[partId])
-        : null;
-      if (mfg && !mfg.ok) {
-        results.push({
-          partId,
-          action: "error",
-          message: mfg.errors.join("; ")
-        });
+      // Descriptions and item fields in "everyPush" mode, with the
+      // reviewer's edits on top.
+      const applied = await applyExistingItemFields(client, db, {
+        itemId,
+        companyId,
+        userId,
+        current: row.current,
+        target: row.target,
+        edit: edits[partId],
+        descriptions: row.changes
+      });
+      if (applied.error) {
+        results.push({ partId, action: "error", message: applied.error });
         continue;
       }
-      const updated = await client
-        .from("item")
-        .update({ ...ownedFields(row), updatedBy: userId })
-        .eq("id", itemId)
-        .eq("companyId", companyId);
-      if (updated.error) {
-        results.push({
-          partId,
-          action: "error",
-          message: updated.error.message
-        });
-        continue;
-      }
-      if (mfg?.ok && Object.keys(mfg.changed).length > 0) {
-        const error = await applyItemManufacturingEdits(client, db, {
-          itemId,
-          companyId,
-          userId,
-          changed: mfg.changed
-        });
-        if (error) {
-          results.push({ partId, action: "error", message: error });
-          continue;
-        }
-      }
-      const owned = ownedCustomFieldValues(row);
+      const owned = existingCustomFieldValues(row);
       if (owned) {
         const mergedFields = mergeCustomFieldValues(
           partCustomFieldsByReadableId.get(readableId),
@@ -531,40 +523,23 @@ function proposedFor(row: PartPlanRow, plan: PartPlan): ProposedItem {
   );
 }
 
-/** Onshape owns name and description; adopt/update takes the plan's values. */
-function ownedFields(row: PartPlanRow): {
-  name: string;
-  description: string | null;
-} {
-  if (row.action === "create") {
-    return { name: row.name, description: row.proposed?.description ?? null };
-  }
-  return { name: row.name, description: row.description };
-}
-
 /** Every mapped value a create writes, keyed by field id (nulls dropped). */
 function planCustomFieldValues(
   row: PartPlanRow
 ): Record<string, string | number | boolean | null> {
-  const values: Record<string, string | number | boolean | null> = {};
-  for (const field of row.customFields ?? []) {
-    if (field.value !== null) values[field.fieldId] = field.value;
-  }
-  return values;
+  return mappedFieldValues(row.customFields ?? [], true).values;
 }
 
-/** Owned-mode values for an adopt/update, or null when the row has none. */
-function ownedCustomFieldValues(row: PartPlanRow): {
+/**
+ * The "everyPush" values an adopt/update writes, or null when the row has
+ * none. A null deletes the key, so a value emptied in Onshape empties in
+ * Carbon.
+ */
+function existingCustomFieldValues(row: PartPlanRow): {
   values: Record<string, string | number | boolean | null>;
   fieldIds: Set<string>;
 } | null {
-  const values: Record<string, string | number | boolean | null> = {};
-  const fieldIds = new Set<string>();
-  for (const field of row.customFields ?? []) {
-    if (field.mode !== "owned") continue;
-    // A null deletes the key, so a value emptied in Onshape empties in Carbon.
-    values[field.fieldId] = field.value;
-    fieldIds.add(field.fieldId);
-  }
-  return fieldIds.size > 0 ? { values, fieldIds } : null;
+  if (row.action === "create") return null;
+  const mapped = mappedFieldValues(row.customFields ?? [], false);
+  return mapped.fieldIds.size > 0 ? mapped : null;
 }

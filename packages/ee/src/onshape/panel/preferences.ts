@@ -31,11 +31,11 @@ export type OnshapePushDefaults = {
    * resolved against the live list at plan time.
    */
   unitOfMeasureCode: string | null;
-  /** Replenishment for a part the company designs (a Part Studio part). */
+  /** Replenishment when no mapping and no BOM rule decides it. */
   replenishmentSystem: ItemReplenishmentSystem;
-  /** Default method for a designed part. */
+  /** Default method for an item created as Make, or with the default above. */
   methodTypeForMake: ItemMethodType;
-  /** Default method for a purchased BOM row. Purchased rows are always Buy. */
+  /** Default method for an item a mapping or Standard content makes Buy. */
   methodTypeForBuy: ItemMethodType;
   itemTrackingType: ItemTrackingType;
 };

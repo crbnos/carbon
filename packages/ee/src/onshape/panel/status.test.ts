@@ -122,7 +122,6 @@ const line = (
   partNumber,
   name: partNumber,
   quantity: 1,
-  purchased: false,
   itemSource
 });
 
@@ -275,7 +274,6 @@ describe("configurations in identity", () => {
           partNumber: "DOOR-L",
           name: "Door",
           quantity: 1,
-          purchased: false,
           itemSource: {
             documentId: "d",
             elementId: "e",
@@ -289,7 +287,6 @@ describe("configurations in identity", () => {
           partNumber: "DOOR-D",
           name: "Door",
           quantity: 1,
-          purchased: false,
           itemSource: {
             documentId: "d",
             elementId: "e",

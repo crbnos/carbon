@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import type { StandardFieldId } from "@carbon/ee";
+import { everyPushTargets } from "@carbon/ee";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
@@ -41,6 +43,10 @@ type ExternalSourceMapping = {
  *
  * Only the panel's `onshape-v2` link counts. A sync connection's `onshape`
  * row is BOM-import bookkeeping and never meant Onshape owns the item.
+ *
+ * The card names the fields a push replaces: the ones the panel's Fields page
+ * sets to "Update on every push". Every other field is Carbon's, so an edit
+ * here stays.
  */
 export function ExternalSourceCard({
   itemId,
@@ -57,6 +63,17 @@ export function ExternalSourceCard({
   // Bumped after a detach so the link is read again: the card goes only when
   // the link is gone, and stays (with Confirm's error toast) when it is not.
   const [reload, setReload] = useState(0);
+  // Null until read, and when the integration's settings are not readable by
+  // this user (they need settings view).
+  const [replaced, setReplaced] = useState<string[] | null>(null);
+  const itemFieldLabel: Record<StandardFieldId, string> = {
+    mpn: t`Manufacturer Part Number`,
+    replenishmentSystem: t`Replenishment`,
+    defaultMethodType: t`Default Method Type`,
+    sourcingType: t`Sourcing`,
+    itemTrackingType: t`Tracking Type`,
+    unitOfMeasureCode: t`Unit of Measure`
+  };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reload re-reads the link
   useEffect(() => {
@@ -77,6 +94,49 @@ export function ExternalSourceCard({
       cancelled = true;
     };
   }, [carbon, itemId, reload]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the labels follow the locale, not the read
+  useEffect(() => {
+    if (!carbon || !mapping) return;
+    let cancelled = false;
+    void (async () => {
+      const integration = await carbon
+        .from("companyIntegration")
+        .select("metadata")
+        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!integration.data) {
+        setReplaced(null);
+        return;
+      }
+      const targets = everyPushTargets(integration.data.metadata);
+      const fieldNames = new Map<string, string>();
+      if (targets.customFieldIds.length > 0) {
+        const fields = await carbon
+          .from("customField")
+          .select("id, name")
+          .in("id", targets.customFieldIds);
+        for (const field of fields.data ?? []) {
+          fieldNames.set(field.id, field.name);
+        }
+      }
+      if (cancelled) return;
+      setReplaced([
+        ...targets.descriptions.map((field) =>
+          field === "name" ? t`Short Description` : t`Long Description`
+        ),
+        ...targets.itemFields.map((field) => itemFieldLabel[field]),
+        ...targets.customFieldIds.flatMap((id) => {
+          const name = fieldNames.get(id);
+          return name ? [name] : [];
+        })
+      ]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, mapping]);
 
   if (!mapping) return null;
 
@@ -104,17 +164,24 @@ export function ExternalSourceCard({
       <CardContent>
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            <Trans>Short and long descriptions are managed in Onshape.</Trans>
+            {replaced === null ? (
+              <Trans>
+                Pushes replace only the fields that Onshape's Fields page sets
+                to Update on every push.
+              </Trans>
+            ) : replaced.length === 0 ? (
+              <Trans>
+                Pushes don't change this item's fields, so edits made here stay.
+              </Trans>
+            ) : (
+              <Trans>
+                Each push replaces: {replaced.join(", ")}. Other edits stay.
+              </Trans>
+            )}
             {lastPushed ? (
               <>
                 {" "}
                 <Trans>Last pushed {lastPushed}.</Trans>
-              </>
-            ) : null}
-            {canDetach ? (
-              <>
-                {" "}
-                <Trans>Detach to edit them in Carbon.</Trans>
               </>
             ) : null}
           </p>
@@ -142,7 +209,7 @@ export function ExternalSourceCard({
         <Confirm
           action={path.to.api.onShapeDetach}
           title={t`Detach from Onshape?`}
-          text={t`Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back.`}
+          text={t`Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back.`}
           confirmText={t`Detach`}
           onCancel={() => setConfirmingDetach(false)}
           onSubmit={() => {

@@ -7368,9 +7368,6 @@ msgstr "リンク解除"
 msgid "Detach from Onshape?"
 msgstr "Onshapeからリンク解除しますか？"
 
-msgid "Detach to edit them in Carbon."
-msgstr "Carbonで編集するにはリンクを解除してください。"
-
 msgid "Detail"
 msgstr "詳細"
 
@@ -7947,6 +7944,9 @@ msgstr "各物理的な個が独自の追跡対象と一意番号を取得しま
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "各仕入先の全製造指図からの外注工程は、1つの新規発注書、または選択した既存の下書きに計上されます。"
@@ -16588,6 +16588,13 @@ msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr ""
 
 msgid "Putting your data back"
@@ -19658,12 +19665,6 @@ msgstr "短い"
 
 msgid "Short"
 msgstr "不足"
-
-msgid "Short and long descriptions are managed in Onshape."
-msgstr "短い説明と長い説明はOnshapeで管理されています。"
-
-msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "短い説明と長い説明はCarbonで編集可能になり、Onshapeに追従しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復活します。"
 
 msgid "Short Description"
 msgstr "短い説明"

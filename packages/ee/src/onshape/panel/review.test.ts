@@ -13,18 +13,20 @@ import type {
 } from "./plan";
 import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
 import type { PlanCustomField } from "./properties";
-import { BOOLEAN_TRUE } from "./properties";
+import { BOOLEAN_TRUE, customFieldDisplayValue } from "./properties";
 import type { AssemblyReview, PartReview, ReleaseReview } from "./review";
 import {
   applyCount,
   applyRequestBody,
   clearFieldErrors,
   createReview,
-  customFieldDisplayValue,
   defaultSelectedPartIds,
   describeMethod,
   editedItem,
   indexFieldErrors,
+  itemFieldChangeText,
+  keptDifferenceText,
+  mappedValueText,
   normalizeWarnings,
   patchPartStatuses,
   replenishmentMismatches
@@ -87,7 +89,7 @@ const partReview = (rows: PartPlanRow[]): PartReview =>
 const customField = (over: Partial<PlanCustomField> = {}): PlanCustomField => ({
   fieldId: "cf-finish",
   name: "Finish",
-  mode: "default",
+  mode: "create",
   dataTypeId: 5,
   listOptions: null,
   value: "Anodized",
@@ -106,15 +108,13 @@ const method = (
       index: "1",
       partNumber: "PAD-005",
       name: "Foot pad",
-      quantity: 4,
-      purchased: false
+      quantity: 4
     },
     {
       index: "2",
       partNumber: "HDW-010",
       name: "Screw",
-      quantity: 8,
-      purchased: true
+      quantity: 8
     }
   ],
   replaces: [],
@@ -147,8 +147,7 @@ const assemblyPlan = (over: Partial<AssemblyPlan> = {}): AssemblyPlan => ({
       action: "create",
       itemId: null,
       proposed: proposed(),
-      isAssembly: false,
-      purchased: false
+      isAssembly: false
     },
     {
       partNumber: "HDW-010",
@@ -157,8 +156,7 @@ const assemblyPlan = (over: Partial<AssemblyPlan> = {}): AssemblyPlan => ({
       action: "reuse",
       itemId: "item-hdw",
       proposed: null,
-      isAssembly: false,
-      purchased: true
+      isAssembly: false
     }
   ],
   methods: [method()],
@@ -227,7 +225,6 @@ const releasePlan = (over: Partial<ReleasePlan> = {}): ReleasePlan => ({
       partNumber: "HDW-010",
       name: "Screw",
       revision: null,
-      purchased: true,
       action: "reuse",
       itemId: "item-hdw",
       proposed: null
@@ -236,7 +233,6 @@ const releasePlan = (over: Partial<ReleasePlan> = {}): ReleasePlan => ({
       partNumber: "PAD-005",
       name: "Foot pad",
       revision: null,
-      purchased: false,
       action: "create",
       itemId: null,
       proposed: proposed()
@@ -775,6 +771,14 @@ describe("replenishmentMismatches", () => {
     ).toEqual([]);
   });
 
+  it("reads the Replenishment an every-push mapping writes", () => {
+    const plan = reusedRoot("Make");
+    plan.root.target = current("Buy");
+    expect(replenishmentMismatches(plan, {}, new Set())).toEqual([
+      "ASM-001 is Buy in Carbon, so the BOM written to it isn't used until it's set to Make"
+    ]);
+  });
+
   it("flags a Make item Onshape shows as one unit, but not a new one proposed as Buy", () => {
     const plan = assemblyPlan({
       items: [
@@ -787,7 +791,6 @@ describe("replenishmentMismatches", () => {
           proposed: null,
           current: current("Make"),
           isAssembly: false,
-          purchased: true,
           shownAsUnit: true
         },
         {
@@ -802,7 +805,6 @@ describe("replenishmentMismatches", () => {
             defaultMethodType: "Pull from Inventory"
           }),
           isAssembly: false,
-          purchased: true,
           shownAsUnit: true
         }
       ]
@@ -811,5 +813,54 @@ describe("replenishmentMismatches", () => {
       "ASM-009 is one unit in Onshape (Show Assembly only), so no BOM is written for it, but Carbon makes it"
     ]);
     expect(replenishmentMismatches(plan, {}, new Set(["ASM-009"]))).toEqual([]);
+  });
+});
+
+describe("mapped value review text", () => {
+  it("names the value and the Onshape property it came from", () => {
+    expect(
+      mappedValueText({
+        field: "replenishmentSystem",
+        label: "Replenishment",
+        value: "Buy",
+        mode: "create",
+        onshapeName: "Make or buy"
+      })
+    ).toBe('Replenishment: Buy · from Onshape "Make or buy"');
+  });
+
+  it("says Carbon keeps its value for a Set at creation mapping", () => {
+    expect(
+      keptDifferenceText({
+        label: "Replenishment",
+        onshape: "Buy",
+        carbon: "Make"
+      })
+    ).toBe(
+      "Replenishment: Onshape has Buy. Carbon keeps Make (set at creation only)."
+    );
+  });
+
+  it("says an every-push mapping replaces Carbon's value", () => {
+    expect(
+      itemFieldChangeText({
+        field: "replenishmentSystem",
+        label: "Replenishment",
+        from: "Make",
+        to: "Buy",
+        onshapeName: "Make or buy"
+      })
+    ).toBe("Replenishment: Replaces Make with Buy (updated on every push).");
+    expect(
+      itemFieldChangeText({
+        field: "defaultMethodType",
+        label: "Default Method Type",
+        from: "Make to Order",
+        to: "Purchase to Order",
+        onshapeName: null
+      })
+    ).toBe(
+      "Default Method Type: Replaces Make to Order with Purchase to Order (goes with the change above)."
+    );
   });
 });

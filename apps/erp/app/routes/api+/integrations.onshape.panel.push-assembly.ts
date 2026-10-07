@@ -7,12 +7,14 @@ import type { Database, Json } from "@carbon/database";
 import type {
   ItemEdit,
   ItemFieldSnapshot,
+  MappedRowPlan,
   OnshapeBomNode,
   OwnedFieldChange,
   ProposedItem
 } from "@carbon/ee";
 import {
   bomLineItemType,
+  createdItemExtras,
   defaultUnitOfMeasureCode,
   externalIdForAssembly,
   externalIdForBomLine,
@@ -20,9 +22,7 @@ import {
   mappedFieldValues,
   mergeCustomFieldValues,
   mergeEditsForCreates,
-  mergeExistingItemEdits,
   normalizeConfiguration,
-  ownedCustomFieldsDiffer,
   pickReuseRow,
   proposeItem
 } from "@carbon/ee";
@@ -47,7 +47,8 @@ import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import { ensureDraftMakeMethod } from "~/modules/settings/onshape-draft-method.server";
 import {
-  applyItemManufacturingEdits,
+  applyExistingItemFields,
+  applyItemFieldWrites,
   claimManualMethodLine,
   insertOwnedMethodLines,
   type OwnedMethodLine,
@@ -167,8 +168,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
   const merged = mergeEditsForCreates(creates, edits, options);
-  const rootFields = root.customFields ?? [];
-  const rootFieldValues = mappedFieldValues(rootFields);
   if (merged.errors.length > 0) {
     return data(
       { error: "Some edits are not valid", fieldErrors: merged.errors },
@@ -241,92 +240,116 @@ export async function action({ request }: ActionFunctionArgs) {
   const itemByReadableId = new Map<string, ItemRow>();
   const fallbackUnit = defaultUnitOfMeasureCode(options);
 
-  const currentByPartNumber = new Map<string, ItemFieldSnapshot>();
-  if (root.current) currentByPartNumber.set(root.partNumber, root.current);
-  for (const item of plan.items) {
-    if (item.current) currentByPartNumber.set(item.partNumber, item.current);
-  }
-  const textByPartNumber = new Map<
-    string,
-    { itemId: string | null; text: { name?: string; description?: string } }
-  >();
-  const plannedText = (changes: OwnedFieldChange[] | undefined) => {
-    const text: { name?: string; description?: string } = {};
-    for (const change of changes ?? []) {
-      if (change.to !== null) text[change.field] = change.to;
-    }
-    return text;
+  const serviceRole = getCarbonServiceRole();
+  const db = getDatabaseClient();
+
+  /** What the plan says about one item row, for the writes below. */
+  type PlannedItem = MappedRowPlan & {
+    itemId: string | null;
+    current?: ItemFieldSnapshot | null;
+    changes?: OwnedFieldChange[];
   };
-  if (root.changes?.length) {
-    textByPartNumber.set(root.partNumber, {
-      itemId: root.itemId,
-      text: plannedText(root.changes)
-    });
+
+  // `part` is keyed by readableId and shared by every revision. Read once for
+  // every reused item with "everyPush" custom field values.
+  const customFieldReadIds = [root, ...includedItems]
+    .filter(
+      (row) =>
+        row.action === "reuse" &&
+        mappedFieldValues(row.customFields ?? [], false).fieldIds.size > 0
+    )
+    .map((row) => row.partNumber);
+  const heldParts = await selectInBatches(customFieldReadIds, (batch) =>
+    client
+      .from("part")
+      .select("id, customFields")
+      .eq("companyId", companyId)
+      .in("id", batch)
+  );
+  if (heldParts.error) {
+    return data({ error: "Failed to read Carbon parts" }, { status: 500 });
   }
-  for (const item of plan.items) {
-    if (item.changes?.length) {
-      textByPartNumber.set(item.partNumber, {
-        itemId: item.itemId,
-        text: plannedText(item.changes)
-      });
-    }
-  }
+  const heldCustomFields = new Map<string, unknown>(
+    (heldParts.data ?? []).map((part) => [part.id, part.customFields])
+  );
 
   const ensureItem = async (
     partNumber: string,
-    plannedItemId: string | null,
-    propose: () => ProposedItem,
-    customFields?: Record<string, unknown>
+    planned: PlannedItem,
+    propose: () => ProposedItem
   ): Promise<ItemRow | null> => {
     const rows = rowsByReadableId.get(partNumber) ?? [];
     const found =
-      rows.find((row) => row.id === plannedItemId) ??
+      rows.find((row) => row.id === planned.itemId) ??
       pickReuseRow(rows) ??
       null;
     if (found) {
-      itemByReadableId.set(partNumber, found);
       summary.itemsReused += 1;
-      if (plannedItemId === null) {
+      if (planned.itemId === null) {
         summary.skipped.push(
           `${partNumber}: added to Carbon since the review; reused as is`
         );
       }
-      // A reused item still takes the reviewer's manufacturing edits and the
-      // reviewed descriptions, but only on the row the review was about.
-      const baseline = currentByPartNumber.get(partNumber);
-      const mfg = baseline
-        ? mergeExistingItemEdits(baseline, edits[partNumber])
-        : null;
-      if (mfg && !mfg.ok) {
-        summary.errors.push(`${partNumber}: ${mfg.errors.join("; ")}`);
+      // Only the row the review was about takes its descriptions, mapped
+      // values and the reviewer's edits.
+      if (planned.itemId !== found.id) {
+        itemByReadableId.set(partNumber, found);
+        return found;
       }
-      const planned = textByPartNumber.get(partNumber);
-      const text = planned && planned.itemId === found.id ? planned.text : {};
-      if (Object.keys(text).length > 0) {
-        const updated = await client
-          .from("item")
-          .update({ ...text, updatedBy: userId })
-          .eq("id", found.id)
+      const applied = await applyExistingItemFields(client, db, {
+        itemId: found.id,
+        companyId,
+        userId,
+        current: planned.current,
+        target: planned.target,
+        edit: edits[partNumber],
+        descriptions: planned.changes
+      });
+      if (applied.error) {
+        summary.errors.push(`${partNumber}: ${applied.error}`);
+      } else if (planned.changes?.length) {
+        summary.descriptionsUpdated += 1;
+      }
+      const values = mappedFieldValues(planned.customFields ?? [], false);
+      if (values.fieldIds.size > 0) {
+        const updatedPart = await client
+          .from("part")
+          .update({
+            customFields: mergeCustomFieldValues(
+              heldCustomFields.get(partNumber),
+              values.values,
+              values.fieldIds
+            ) as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", partNumber)
           .eq("companyId", companyId);
-        if (updated.error) {
-          summary.errors.push(`${partNumber}: ${updated.error.message}`);
-        } else {
-          summary.descriptionsUpdated += 1;
+        if (updatedPart.error) {
+          summary.errors.push(
+            `${partNumber}: failed to write custom fields (${updatedPart.error.message})`
+          );
         }
       }
-      if (mfg?.ok && Object.keys(mfg.changed).length > 0) {
-        const error = await applyItemManufacturingEdits(client, db, {
-          itemId: found.id,
-          companyId,
-          userId,
-          changed: mfg.changed
-        });
-        if (error) summary.errors.push(`${partNumber}: ${error}`);
-      }
-      return found;
+      // A BOM line written below copies its method and unit from the item,
+      // so it reads them after this push's writes, not before.
+      const row: ItemRow = applied.values
+        ? {
+            ...found,
+            defaultMethodType: applied.values.defaultMethodType,
+            unitOfMeasureCode:
+              applied.values.unitOfMeasureCode ?? found.unitOfMeasureCode
+          }
+        : found;
+      itemByReadableId.set(partNumber, row);
+      return row;
     }
 
     const item = merged.items.get(partNumber) ?? propose();
+    const customFields = mappedFieldValues(
+      planned.customFields ?? [],
+      true
+    ).values;
     const created = await upsertPart(client, {
       id: item.readableId,
       name: item.name,
@@ -336,7 +359,7 @@ export async function action({ request }: ActionFunctionArgs) {
       defaultMethodType: item.defaultMethodType,
       itemTrackingType: item.itemTrackingType,
       unitOfMeasureCode: item.unitOfMeasureCode,
-      ...(customFields && Object.keys(customFields).length > 0
+      ...(Object.keys(customFields).length > 0
         ? { customFields: customFields as Json }
         : {}),
       companyId,
@@ -357,46 +380,36 @@ export async function action({ request }: ActionFunctionArgs) {
       defaultMethodType: item.defaultMethodType,
       unitOfMeasureCode: item.unitOfMeasureCode
     };
+    // upsertPart takes neither MPN nor Sourcing.
+    const extras = createdItemExtras(item);
+    if (Object.keys(extras).length > 0) {
+      const error = await applyItemFieldWrites(client, db, {
+        itemId: row.id,
+        companyId,
+        userId,
+        changed: extras
+      });
+      if (error) {
+        summary.errors.push(
+          `${partNumber}: created, but its mapped fields were not written (${error})`
+        );
+      }
+    }
     itemByReadableId.set(partNumber, row);
     summary.itemsCreated += 1;
     return row;
   };
 
-  // ---- Root custom fields (children get theirs from their own part push) ----
-  // Mirrors ensureItem's row pick so the values are known before any write.
-  const serviceRole = getCarbonServiceRole();
-  const db = getDatabaseClient();
-  const rootRows = rowsByReadableId.get(root.partNumber) ?? [];
-  const rootWillReuse = Boolean(
-    rootRows.find((row) => row.id === root.itemId) ?? pickReuseRow(rootRows)
-  );
-  const rootOwnedFieldIds = new Set(
-    rootFields
-      .filter((field) => field.mode === "owned")
-      .map((field) => field.fieldId)
-  );
-  const rootAllFieldIds = new Set(rootFields.map((field) => field.fieldId));
-  const rootValuesToWrite = mergeCustomFieldValues(
-    {},
-    rootFieldValues,
-    rootWillReuse ? rootOwnedFieldIds : rootAllFieldIds
-  );
-
-  const rootItem = await ensureItem(
-    root.partNumber,
-    root.itemId,
-    () =>
-      proposeItem(
-        {
-          partNumber: root.partNumber,
-          name: root.name,
-          description: root.description,
-          revision: root.revision,
-          purchased: false
-        },
-        options
-      ),
-    rootValuesToWrite
+  const rootItem = await ensureItem(root.partNumber, root, () =>
+    proposeItem(
+      {
+        partNumber: root.partNumber,
+        name: root.name,
+        description: root.description,
+        revision: root.revision
+      },
+      options
+    )
   );
   if (!rootItem) {
     return data(
@@ -406,54 +419,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   summary.assemblyItemId = rootItem.id;
 
-  // `part` is keyed by readableId. Owned fields with no Onshape value still
-  // run, because the merge clears them.
-  if (rootWillReuse && rootOwnedFieldIds.size > 0) {
-    const currentPart = await client
-      .from("part")
-      .select("customFields")
-      .eq("id", root.partNumber)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (currentPart.error) {
-      summary.errors.push(
-        `${root.partNumber}: failed to read custom fields (${currentPart.error.message})`
-      );
-    } else if (
-      ownedCustomFieldsDiffer(currentPart.data?.customFields, rootFields)
-    ) {
-      const mergedRootFields = mergeCustomFieldValues(
-        currentPart.data?.customFields,
-        rootFieldValues,
-        rootOwnedFieldIds
-      );
-      const updatedPart = await client
-        .from("part")
-        .update({
-          customFields: mergedRootFields as Json,
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", root.partNumber)
-        .eq("companyId", companyId);
-      if (updatedPart.error) {
-        summary.errors.push(
-          `${root.partNumber}: failed to write custom fields (${updatedPart.error.message})`
-        );
-      }
-    }
-  }
-
   for (const item of includedItems) {
-    await ensureItem(item.partNumber, item.itemId, () =>
+    await ensureItem(item.partNumber, item, () =>
       proposeItem(
         {
           partNumber: item.partNumber,
           name: item.name,
           description: nodeByPartNumber.get(item.partNumber)?.description,
           revision: item.revision,
-          // Sub-assemblies are made even when the BOM row says purchased, as in the plan.
-          purchased: item.purchased && !item.isAssembly
+          hasChildren: item.isAssembly
         },
         options
       )
@@ -745,7 +719,7 @@ export async function action({ request }: ActionFunctionArgs) {
           materialMakeMethodId: childMethod?.id ?? null,
           methodType:
             (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
-            (write.purchased ? "Pull from Inventory" : "Make to Order"),
+            (childMade ? "Make to Order" : "Pull from Inventory"),
           order,
           itemType,
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? fallbackUnit

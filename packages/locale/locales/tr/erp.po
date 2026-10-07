@@ -7368,9 +7368,6 @@ msgstr "Ayır"
 msgid "Detach from Onshape?"
 msgstr "Onshape'tan Ayır?"
 
-msgid "Detach to edit them in Carbon."
-msgstr "Bunları Carbon'da düzenlemek için ayırın."
-
 msgid "Detail"
 msgstr "Detay"
 
@@ -7947,6 +7944,9 @@ msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın alma siparişine veya seçtiğiniz mevcut bir taslağa yazılır."
@@ -16588,6 +16588,13 @@ msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr ""
 
 msgid "Putting your data back"
@@ -19658,12 +19665,6 @@ msgstr "Kısa"
 
 msgid "Short"
 msgstr "Azalt"
-
-msgid "Short and long descriptions are managed in Onshape."
-msgstr "Kısa açıklama ve uzun açıklama Onshape'da yönetilir."
-
-msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "Kısa açıklama ve uzun açıklama Carbon'da düzenlenebilir hale gelir ve Onshape ile senkronize olmaktan çıkar. Bu parçayı Onshape'tan tekrar gönderdiğinizde yeniden bağlanır."
 
 msgid "Short Description"
 msgstr "Kısa Açıklama"

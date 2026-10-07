@@ -2,19 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { OnshapeBomNode, PlanItemRow } from "@carbon/ee";
+import type {
+  OnshapeBomNode,
+  OnshapePropertyValue,
+  PlanItemRow,
+  PlanMappingContext
+} from "@carbon/ee";
 import {
   buildReleasePlan,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
   missingBomColumnsMessage,
-  parseBomTree
+  parseBomTree,
+  parseProperties,
+  withoutProperties
 } from "@carbon/ee";
 import type { StoredReleasePlan } from "@carbon/ee/onshape";
 import {
   createPanelPlan,
   getOnshapeClient,
   loadActiveMakeMethods,
+  loadPlanMapping,
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
@@ -22,6 +30,7 @@ import {
   selectInBatches
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { readPartProperties } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -105,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, name, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode, sourcingType, mpn"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -207,7 +216,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Look up BOM children so purchased parts already in Carbon are reused.
+  // Look up BOM children so bought parts already in Carbon are reused.
   const childPartNumbers = [
     ...new Set(
       Object.values(bomLinesByElementId)
@@ -222,7 +231,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, name, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode, sourcingType, mpn"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -233,17 +242,109 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   items.push(...childRows.data.map(toPlanRow));
 
+  // Planning without the map would silently skip "everyPush" values.
+  let mapping: PlanMappingContext;
+  try {
+    mapping = await loadPlanMapping(
+      client,
+      companyId,
+      items.map((item) => item.readableId)
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the Onshape property map"
+      },
+      { status: 500 }
+    );
+  }
+
+  // Each released item's properties at its released version: one read per
+  // released element, sequential like the BOMs. BOM children carry theirs on
+  // the BOM row. Read only when the map or a description mode needs them.
+  const propertiesByPartNumber = new Map<string, OnshapePropertyValue[]>();
+  const needsProperties =
+    mapping.map.length > 0 ||
+    mapping.descriptionModes.name === "everyPush" ||
+    mapping.descriptionModes.description === "everyPush";
+  if (needsProperties) {
+    const studios = new Map<string, typeof modelItems>();
+    for (const item of modelItems) {
+      if (item.elementType === 1) {
+        try {
+          const metadata = await onshape.client.getElementMetadata(
+            {
+              documentId,
+              wvm: OnshapeWVMType.VERSION,
+              wvmId: item.versionId
+            },
+            item.elementId,
+            item.configuration ?? null
+          );
+          propertiesByPartNumber.set(
+            item.partNumber,
+            parseProperties(metadata)
+          );
+        } catch (error) {
+          warnings.push(
+            `${item.partNumber} Rev ${item.revision}: its Onshape properties couldn't be read, so no mapped value is written (${onshapeFailure(error).body.error})`
+          );
+        }
+        continue;
+      }
+      if (!item.partId) continue;
+      const key = `${item.elementId}:${item.versionId}:${item.configuration ?? ""}`;
+      studios.set(key, [...(studios.get(key) ?? []), item]);
+    }
+    for (const studioItems of studios.values()) {
+      const [first] = studioItems;
+      if (!first) continue;
+      try {
+        const byPartId = await readPartProperties(
+          onshape.client,
+          { documentId, wvm: OnshapeWVMType.VERSION, wvmId: first.versionId },
+          first.elementId,
+          studioItems.flatMap((item) => (item.partId ? [item.partId] : [])),
+          first.configuration ?? null
+        );
+        for (const item of studioItems) {
+          const properties = item.partId ? byPartId.get(item.partId) : null;
+          if (properties)
+            propertiesByPartNumber.set(item.partNumber, properties);
+        }
+      } catch (error) {
+        warnings.push(
+          `${studioItems.map((item) => item.partNumber).join(", ")}: their Onshape properties couldn't be read, so no mapped value is written (${onshapeFailure(error).body.error})`
+        );
+      }
+    }
+  }
+
   const plan = buildReleasePlan({
     documentId,
     release,
     items,
     bomLinesByElementId,
     methodByItemId,
-    options
+    options,
+    mapping,
+    propertiesByPartNumber
   });
 
-  // Only the stored copy carries the BOM lines the apply walks.
-  const stored: StoredReleasePlan = { ...plan, bomLinesByElementId };
+  // Only the stored copy carries the BOM lines the apply walks, without
+  // their cells.
+  const stored: StoredReleasePlan = {
+    ...plan,
+    bomLinesByElementId: Object.fromEntries(
+      Object.entries(bomLinesByElementId).map(([elementId, lines]) => [
+        elementId,
+        lines ? withoutProperties(lines) : null
+      ])
+    )
+  };
   const saved = await createPanelPlan({ companyId, userId, plan: stored });
   if (!saved) {
     return data(

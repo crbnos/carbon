@@ -4,6 +4,13 @@
 
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type {
+  ItemEdit,
+  ItemFieldSnapshot,
+  OwnedFieldChange,
+  StandardFieldWriter
+} from "@carbon/ee";
+import { mergeExistingItemEdits, standardField } from "@carbon/ee";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -323,68 +330,211 @@ export async function stageChangeNoticeItem(
 
 type ItemEnums = Database["public"]["Enums"];
 
+/** Item field values a push writes; an absent key is not written. */
+export type ItemFieldWrite = {
+  replenishmentSystem?: ItemEnums["itemReplenishmentSystem"];
+  defaultMethodType?: ItemEnums["methodType"];
+  sourcingType?: ItemEnums["sourcingType"];
+  itemTrackingType?: ItemEnums["itemTrackingType"];
+  unitOfMeasureCode?: string;
+  mpn?: string | null;
+};
+
+type WriterContext = {
+  client: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  itemId: string;
+  companyId: string;
+  userId: string;
+};
+
 /**
- * Write a reviewer's manufacturing-field edits to an existing item the way the
- * items update route does, so what depends on those fields follows:
- * replenishment and method type through `updateItemMethodAndSourcing`, which
- * mirrors the method type onto Draft method materials, and tracking type
- * through `cascadeItemTrackingType`. Returns an error message, or null.
+ * Write the plain item columns the Properties panel writes directly (MPN and
+ * unit of measure), as that panel does. It adds no rule of its own.
  */
-export async function applyItemManufacturingEdits(
+export async function updateItemColumns(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    values: Pick<ItemFieldWrite, "mpn" | "unitOfMeasureCode">;
+  }
+) {
+  return client
+    .from("item")
+    .update({
+      ...(args.values.mpn !== undefined ? { mpn: args.values.mpn } : {}),
+      ...(args.values.unitOfMeasureCode !== undefined
+        ? { unitOfMeasureCode: args.values.unitOfMeasureCode }
+        : {}),
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.itemId)
+    .eq("companyId", args.companyId);
+}
+
+/**
+ * One function per writer key of the target list (`standard-fields.ts`). A
+ * new key fails the typecheck until it has a function here. Each writes the
+ * way the item page does, so what depends on the field follows:
+ * `updateItemMethodAndSourcing` mirrors method and sourcing onto Draft method
+ * materials, and `cascadeItemTrackingType` updates open jobs and draft lines.
+ * Returns an error message, or null.
+ */
+const STANDARD_FIELD_WRITERS: Record<
+  StandardFieldWriter,
+  (ctx: WriterContext, write: ItemFieldWrite) => Promise<string | null>
+> = {
+  itemMethod: async (ctx, write) => {
+    const { replenishmentSystem, defaultMethodType, sourcingType } = write;
+    await updateItemMethodAndSourcing(ctx.db, {
+      itemIds: [ctx.itemId],
+      companyId: ctx.companyId,
+      userId: ctx.userId,
+      itemUpdate: { replenishmentSystem, defaultMethodType, sourcingType },
+      cascade: {
+        ...(defaultMethodType !== undefined
+          ? { methodType: defaultMethodType }
+          : {}),
+        ...(sourcingType !== undefined ? { sourcingType } : {})
+      }
+    });
+    return null;
+  },
+  itemTracking: async (ctx, write) => {
+    if (write.itemTrackingType === undefined) return null;
+    const updated = await ctx.client
+      .from("item")
+      .update({
+        itemTrackingType: write.itemTrackingType,
+        updatedBy: ctx.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", ctx.itemId)
+      .eq("companyId", ctx.companyId);
+    if (updated.error) return updated.error.message;
+    await cascadeItemTrackingType(ctx.db, {
+      itemIds: [ctx.itemId],
+      companyId: ctx.companyId,
+      newType: write.itemTrackingType,
+      userId: ctx.userId
+    });
+    return null;
+  },
+  itemColumn: async (ctx, write) => {
+    const updated = await updateItemColumns(ctx.client, {
+      itemId: ctx.itemId,
+      companyId: ctx.companyId,
+      userId: ctx.userId,
+      values: write
+    });
+    return updated.error ? updated.error.message : null;
+  }
+};
+
+/**
+ * The order the writers run in: replenishment, method and sourcing first, as
+ * one interlocked write; then tracking; then the plain columns.
+ */
+const WRITER_ORDER: StandardFieldWriter[] = [
+  "itemMethod",
+  "itemTracking",
+  "itemColumn"
+];
+
+/**
+ * Write item field values to an existing item through each field's writer.
+ * The values are final: the plan's interlock and the reviewer's edits are
+ * already applied. Returns an error message, or null.
+ */
+export async function applyItemFieldWrites(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: {
     itemId: string;
     companyId: string;
     userId: string;
-    changed: {
-      replenishmentSystem?: ItemEnums["itemReplenishmentSystem"];
-      defaultMethodType?: ItemEnums["methodType"];
-      itemTrackingType?: ItemEnums["itemTrackingType"];
-    };
+    changed: ItemFieldWrite;
   }
 ): Promise<string | null> {
   const { itemId, companyId, userId } = args;
-  const { replenishmentSystem, defaultMethodType, itemTrackingType } =
-    args.changed;
+  const ctx: WriterContext = { client, db, itemId, companyId, userId };
   try {
-    if (replenishmentSystem !== undefined || defaultMethodType !== undefined) {
-      await updateItemMethodAndSourcing(db, {
-        itemIds: [itemId],
-        companyId,
-        userId,
-        itemUpdate: { replenishmentSystem, defaultMethodType },
-        cascade:
-          defaultMethodType !== undefined
-            ? { methodType: defaultMethodType }
-            : {}
-      });
-    }
-    if (itemTrackingType !== undefined) {
-      const updated = await client
-        .from("item")
-        .update({
-          itemTrackingType,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", itemId)
-        .eq("companyId", companyId);
-      if (updated.error) return updated.error.message;
-      await cascadeItemTrackingType(db, {
-        itemIds: [itemId],
-        companyId,
-        newType: itemTrackingType,
-        userId
-      });
+    for (const writer of WRITER_ORDER) {
+      const write: ItemFieldWrite = {};
+      for (const [field, value] of Object.entries(args.changed)) {
+        if (value === undefined) continue;
+        if (standardField(field)?.writer !== writer) continue;
+        (write as Record<string, unknown>)[field] = value;
+      }
+      if (Object.keys(write).length === 0) continue;
+      const error = await STANDARD_FIELD_WRITERS[writer](ctx, write);
+      if (error) return error;
     }
     return null;
   } catch (error) {
-    logger.error("Failed to write manufacturing edits from Onshape", {
+    logger.error("Failed to write item fields from Onshape", {
       companyId,
       itemId,
       error
     });
     return error instanceof Error ? error.message : "Failed to update the item";
   }
+}
+
+/**
+ * What a push writes to an item it did not create: the descriptions in
+ * "everyPush" mode, then the item fields — the plan's mapped target with the
+ * reviewer's edits on top — through their writers. Returns the item's fields
+ * after the write (a BOM line written later copies its method from them),
+ * or the errors.
+ */
+export async function applyExistingItemFields(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    current: ItemFieldSnapshot | null | undefined;
+    target?: ItemFieldSnapshot;
+    edit?: ItemEdit;
+    descriptions?: OwnedFieldChange[];
+  }
+): Promise<{ values: ItemFieldSnapshot | null; error: string | null }> {
+  const { itemId, companyId, userId } = args;
+  const merged = args.current
+    ? mergeExistingItemEdits(args.current, args.edit, args.target)
+    : null;
+  if (merged && !merged.ok) {
+    return { values: null, error: merged.errors.join("; ") };
+  }
+
+  const text: { name?: string; description?: string } = {};
+  for (const change of args.descriptions ?? []) {
+    if (change.to !== null) text[change.field] = change.to;
+  }
+  if (Object.keys(text).length > 0) {
+    const updated = await client
+      .from("item")
+      .update({ ...text, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .eq("id", itemId)
+      .eq("companyId", companyId);
+    if (updated.error) {
+      return { values: null, error: updated.error.message };
+    }
+  }
+
+  if (merged?.ok && Object.keys(merged.changed).length > 0) {
+    const error = await applyItemFieldWrites(client, db, {
+      itemId,
+      companyId,
+      userId,
+      changed: merged.changed
+    });
+    if (error) return { values: null, error };
+  }
+  return { values: merged?.ok ? merged.values : null, error: null };
 }

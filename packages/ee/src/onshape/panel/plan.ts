@@ -4,11 +4,41 @@
 
 import type { OnshapeElementPart } from "../lib/client";
 import type { OnshapeBomNode } from "./bom";
+import type {
+  ItemMethodType,
+  ItemReplenishmentSystem,
+  ItemSourcingType,
+  ItemTrackingType
+} from "./item-values";
+import {
+  ITEM_METHOD_TYPES,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_SOURCING_TYPES,
+  ITEM_TRACKING_TYPES,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT
+} from "./item-values";
 import type { OnshapePushDefaults } from "./preferences";
-import type { PlanCustomField, UnmappedProperty } from "./properties";
+import type {
+  DescriptionModes,
+  OnshapePropertyValue,
+  PlanCustomField,
+  PlanCustomFieldDefinition,
+  PlanItemField,
+  PropertyMapEntry,
+  UnmappedProperty
+} from "./properties";
+import {
+  customFieldDisplayValue,
+  customFieldKeptDifferences,
+  customFieldWrites,
+  DEFAULT_DESCRIPTION_MODES,
+  resolveMappedFields
+} from "./properties";
 import type { PanelRelease, PanelReleaseItem } from "./releases";
 import { isModelReleaseItem } from "./releases";
 import { compareRevisions } from "./revision";
+import type { StandardFieldId } from "./standard-fields";
+import { standardField } from "./standard-fields";
 import {
   externalIdForAssembly,
   externalIdForBomLine,
@@ -25,50 +55,24 @@ import {
  * user's edits and deselections) without reading Onshape again. The builders
  * here are pure so the decision a user reviewed is the decision that runs.
  *
- * Onshape owns identity (part number, revision) and, once an item is linked,
- * its name and description — an update never takes edits for those, so the
- * owned-field lock on the item page stays true.
+ * Onshape owns identity (part number, revision). Every other value a push
+ * writes to an existing item comes from a mapping, or a description, in
+ * "everyPush" mode; Carbon locks no field.
  */
 
-// Enum literals from packages/database (item.replenishmentSystem,
-// item.defaultMethodType, item.itemTrackingType). Item type stays "Part":
-// other types are created through other services and tables.
-export const ITEM_REPLENISHMENT_SYSTEMS = [
-  "Buy",
-  "Make",
-  "Buy and Make"
-] as const;
-export const ITEM_METHOD_TYPES = [
-  "Make to Order",
-  "Pull from Inventory",
-  "Purchase to Order"
-] as const;
-export const ITEM_TRACKING_TYPES = [
-  "Inventory",
-  "Non-Inventory",
-  "Serial",
-  "Batch"
-] as const;
-
-export type ItemReplenishmentSystem =
-  (typeof ITEM_REPLENISHMENT_SYSTEMS)[number];
-export type ItemMethodType = (typeof ITEM_METHOD_TYPES)[number];
-export type ItemTrackingType = (typeof ITEM_TRACKING_TYPES)[number];
-
-/**
- * The ERP's interlock between replenishment and default method
- * (`validMethodTypesByReplenishment` in apps/erp shared.models — duplicated
- * here because @carbon/ee cannot import the app). A plan never proposes, and
- * apply never accepts, a pair the Part form itself would refuse.
- */
-export const VALID_METHOD_TYPES_BY_REPLENISHMENT: Record<
+export type {
+  ItemMethodType,
   ItemReplenishmentSystem,
-  readonly ItemMethodType[]
-> = {
-  Buy: ["Pull from Inventory", "Purchase to Order"],
-  Make: ["Pull from Inventory", "Make to Order"],
-  "Buy and Make": ["Pull from Inventory", "Purchase to Order"]
-};
+  ItemSourcingType,
+  ItemTrackingType
+} from "./item-values";
+export {
+  ITEM_METHOD_TYPES,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_SOURCING_TYPES,
+  ITEM_TRACKING_TYPES,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT
+} from "./item-values";
 
 export const ITEM_NAME_MAX_LENGTH = 255;
 export const ITEM_DESCRIPTION_MAX_LENGTH = 2000;
@@ -91,6 +95,10 @@ export type ProposedItem = {
   defaultMethodType: ItemMethodType;
   itemTrackingType: ItemTrackingType;
   unitOfMeasureCode: string;
+  /** From a mapping only; written right after the item is created. */
+  mpn?: string | null;
+  /** From a mapping only, on a Buy and Make item. */
+  sourcingType?: ItemSourcingType | null;
 };
 
 export const EDITABLE_ITEM_FIELDS = [
@@ -141,6 +149,8 @@ export type PlanItemRow = {
   defaultMethodType?: string | null;
   itemTrackingType?: string | null;
   unitOfMeasureCode?: string | null;
+  sourcingType?: string | null;
+  mpn?: string | null;
 };
 
 /** methodMaterial.itemType accepts only these (shared.models methodItemType). */
@@ -281,33 +291,94 @@ export function defaultUnitOfMeasureCode(options: PlanOptions): string {
   return codes[0] ?? "EA";
 }
 
+/** What a push knows about an item it would create. */
+export type ProposalInput = {
+  partNumber: string;
+  name: string | null;
+  description?: string | null;
+  revision?: string | null;
+  /** A BOM row with children: Make, unless a mapping says otherwise. */
+  hasChildren?: boolean;
+  /** A BOM row from Standard content: Buy, unless a mapping says otherwise. */
+  standardContent?: boolean;
+  /** Mapped item field values, which win over every rule below them. */
+  mapped?: MappedItemValues;
+};
+
 /** The item a push would create for an Onshape part, assembly or BOM row. */
 export function proposeItem(
-  input: {
-    partNumber: string;
-    name: string | null;
-    description?: string | null;
-    revision?: string | null;
-    purchased?: boolean;
-  },
+  input: ProposalInput,
   options: PlanOptions
 ): ProposedItem {
-  const purchased = input.purchased === true;
+  return proposeMappedItem(input, options).proposed;
+}
+
+/**
+ * The item a push would create, and the mapped values it cannot use.
+ *
+ * For each field the first rule that gives a value wins: the mapped value,
+ * then (Replenishment only) a BOM row with children is Make, then a Standard
+ * content row is Buy, then the push defaults. A mapped Replenishment with no
+ * mapped method takes the push default method for that Replenishment. The
+ * reviewer's choice in the review sits above all of these.
+ */
+export function proposeMappedItem(
+  input: ProposalInput,
+  options: PlanOptions
+): { proposed: ProposedItem; problems: string[] } {
   const name = (input.name ?? "").trim();
   const description = (input.description ?? "").trim();
   const defaults = options.defaults;
+  const defaultMethodFor = (
+    replenishment: ItemReplenishmentSystem
+  ): ItemMethodType =>
+    replenishment === "Make"
+      ? VALID_METHOD_TYPES_BY_REPLENISHMENT.Make.includes(
+          defaults.methodTypeForMake
+        )
+        ? defaults.methodTypeForMake
+        : "Make to Order"
+      : reconcileMethodForReplenishment(
+          replenishment,
+          defaults.methodTypeForBuy
+        );
+  const start: ItemFieldSnapshot = input.hasChildren
+    ? { ...pushDefaultFields(options), replenishmentSystem: "Make" }
+    : input.standardContent
+      ? { ...pushDefaultFields(options), replenishmentSystem: "Buy" }
+      : pushDefaultFields(options);
+  if (input.hasChildren || input.standardContent) {
+    start.defaultMethodType = defaultMethodFor(start.replenishmentSystem);
+  }
+  const { values, problems } = interlockItemFields(
+    start,
+    input.mapped ?? {},
+    defaultMethodFor
+  );
   return {
-    readableId: input.partNumber,
-    revision: (input.revision ?? "").trim() || "0",
-    name: name === "" ? input.partNumber : name,
-    description: description === "" ? null : description,
-    // A purchased BOM row is Buy whatever the company designs its own parts
-    // as — Onshape already told us it is bought, and that is not a preference.
-    replenishmentSystem: purchased ? "Buy" : defaults.replenishmentSystem,
-    defaultMethodType: purchased
-      ? defaults.methodTypeForBuy
-      : defaults.methodTypeForMake,
-    itemTrackingType: defaults.itemTrackingType,
+    proposed: {
+      readableId: input.partNumber,
+      revision: (input.revision ?? "").trim() || "0",
+      name: name === "" ? input.partNumber : name,
+      description: description === "" ? null : description,
+      replenishmentSystem: values.replenishmentSystem,
+      defaultMethodType: values.defaultMethodType,
+      itemTrackingType: values.itemTrackingType,
+      unitOfMeasureCode:
+        values.unitOfMeasureCode ?? defaultUnitOfMeasureCode(options),
+      ...(values.mpn ? { mpn: values.mpn } : {}),
+      ...(values.sourcingType ? { sourcingType: values.sourcingType } : {})
+    },
+    problems
+  };
+}
+
+/** The push defaults as item fields: the last rule of the precedence order. */
+function pushDefaultFields(options: PlanOptions): ItemFieldSnapshot {
+  return {
+    replenishmentSystem: options.defaults.replenishmentSystem,
+    defaultMethodType: options.defaults.methodTypeForMake,
+    itemTrackingType: options.defaults.itemTrackingType,
     unitOfMeasureCode: defaultUnitOfMeasureCode(options)
   };
 }
@@ -413,18 +484,84 @@ export function mergeItemEdits(
 }
 
 // ---------------------------------------------------------------------------
-// Existing-item field edits (replenishment / method / tracking)
+// Item fields: mapped values, the interlock, and reviewer edits
 // ---------------------------------------------------------------------------
 
 /**
- * The three manufacturing attributes the panel can set on an item. Onshape
- * does not own them — they are Carbon-side — so unlike name and description a
- * push may change them on an item that already exists, not only at create.
+ * An item's fields the panel can set. The review edits the first three; the
+ * rest change only through a mapping. A field the plan did not read is
+ * absent, and a push never writes an absent field.
  */
 export type ItemFieldSnapshot = {
   replenishmentSystem: ItemReplenishmentSystem;
   defaultMethodType: ItemMethodType;
   itemTrackingType: ItemTrackingType;
+  sourcingType?: ItemSourcingType;
+  unitOfMeasureCode?: string;
+  mpn?: string | null;
+};
+
+const SNAPSHOT_FIELDS = [
+  "replenishmentSystem",
+  "defaultMethodType",
+  "sourcingType",
+  "itemTrackingType",
+  "unitOfMeasureCode",
+  "mpn"
+] as const satisfies readonly StandardFieldId[];
+
+/** A value a push writes to an existing item's field, for the review. */
+export type ItemFieldChange = {
+  field: StandardFieldId;
+  label: string;
+  from: string | null;
+  to: string | null;
+  /**
+   * The Onshape property behind the change. Null when Carbon derived it: the
+   * method that goes with a new Replenishment or Sourcing.
+   */
+  onshapeName: string | null;
+};
+
+/** An Onshape value the push does not write to an existing item. */
+export type KeptDifference = {
+  label: string;
+  onshape: string;
+  carbon: string | null;
+};
+
+/**
+ * What the property map does to one plan row. On a create: the custom field
+ * values and item field values it writes. On an existing item: the values
+ * "everyPush" mappings write, and the "create" values it keeps out.
+ */
+export type MappedRowPlan = {
+  /** Custom field values the push writes. */
+  customFields?: PlanCustomField[];
+  /** Mapped item field values, with the property each came from. */
+  itemFields?: PlanItemField[];
+  /** Existing items: the item fields the push changes. */
+  itemFieldChanges?: ItemFieldChange[];
+  /**
+   * Existing items: the fields after the push's mapped writes, before the
+   * reviewer's edits. Absent when no mapping changes a field.
+   */
+  target?: ItemFieldSnapshot;
+  /** Existing items: Onshape values the push does not write. */
+  keptDifferences?: KeptDifference[];
+  /** Mapped values the push cannot write; shown, never written. */
+  mappedFieldProblems?: string[];
+  /** Valued Onshape properties no map entry covers. */
+  unmappedProperties?: UnmappedProperty[];
+};
+
+/** What a plan builder needs to resolve the company's property map. */
+export type PlanMappingContext = {
+  map: PropertyMapEntry[];
+  definitions: PlanCustomFieldDefinition[];
+  descriptionModes: DescriptionModes;
+  /** `part.customFields` per part number, for the existing items. */
+  heldCustomFields: ReadonlyMap<string, unknown>;
 };
 
 function coerceEnum<T extends string>(
@@ -438,6 +575,13 @@ function coerceEnum<T extends string>(
     : fallback;
 }
 
+function isOneOf<T extends string>(
+  value: string,
+  allowed: readonly T[]
+): value is T {
+  return (allowed as readonly string[]).includes(value);
+}
+
 /** A method the replenishment system allows, keeping the given one when legal. */
 export function reconcileMethodForReplenishment(
   replenishment: ItemReplenishmentSystem,
@@ -448,15 +592,43 @@ export function reconcileMethodForReplenishment(
 }
 
 /**
- * An existing item's current three fields, coerced to the enums. A stored
- * value outside the enum (or a legacy replenishment/method pair that no longer
+ * The method Carbon sets with a new Replenishment, as the item page does
+ * (`deriveItemMethodUpdate`): Make pins Make to Order, Buy pins Purchase to
+ * Order, and Buy and Make leaves the method.
+ */
+export function methodForReplenishment(
+  replenishment: ItemReplenishmentSystem,
+  method: ItemMethodType
+): ItemMethodType {
+  if (replenishment === "Make") return "Make to Order";
+  if (replenishment === "Buy") return "Purchase to Order";
+  return method;
+}
+
+/** The method a Sourcing sets (`deriveItemMethodUpdate`); Specified leaves it. */
+function methodForSourcing(
+  sourcing: ItemSourcingType,
+  method: ItemMethodType
+): ItemMethodType {
+  if (sourcing === "Drop Ship") return "Purchase to Order";
+  if (sourcing === "Ship from Inventory") return "Pull from Inventory";
+  return method;
+}
+
+/**
+ * An existing item's current fields, coerced to the enums. A stored value
+ * outside the enum (or a legacy replenishment/method pair that no longer
  * interlocks) falls back to something legal, so the review always renders and
- * the seed the editor shows is always a valid starting point.
+ * the seed the editor shows is always a valid starting point. Sourcing, unit
+ * and MPN are carried only when the row has them.
  */
 export function currentItemFields(row: {
   replenishmentSystem?: string | null;
   defaultMethodType?: string | null;
   itemTrackingType?: string | null;
+  sourcingType?: string | null;
+  unitOfMeasureCode?: string | null;
+  mpn?: string | null;
 }): ItemFieldSnapshot {
   const replenishmentSystem = coerceEnum(
     row.replenishmentSystem,
@@ -477,26 +649,380 @@ export function currentItemFields(row: {
       row.itemTrackingType,
       ITEM_TRACKING_TYPES,
       "Inventory"
-    )
+    ),
+    ...(row.sourcingType !== undefined
+      ? {
+          sourcingType: coerceEnum(
+            row.sourcingType,
+            ITEM_SOURCING_TYPES,
+            "Specified"
+          )
+        }
+      : {}),
+    ...(typeof row.unitOfMeasureCode === "string"
+      ? { unitOfMeasureCode: row.unitOfMeasureCode }
+      : {}),
+    ...(row.mpn !== undefined ? { mpn: row.mpn } : {})
+  };
+}
+
+/** Mapped item field values, typed: the input to the interlock. */
+export type MappedItemValues = {
+  mpn?: string;
+  replenishmentSystem?: ItemReplenishmentSystem;
+  defaultMethodType?: ItemMethodType;
+  sourcingType?: ItemSourcingType;
+  itemTrackingType?: ItemTrackingType;
+  unitOfMeasureCode?: string;
+};
+
+/**
+ * The values of the given mapped item fields that a push can use. "No value"
+ * gives none. A unit the company no longer has is a problem: a translation
+ * row can outlive the unit it names.
+ */
+export function mappedItemValues(
+  itemFields: readonly PlanItemField[],
+  units: readonly PlanUnitOfMeasure[]
+): { values: MappedItemValues; problems: string[] } {
+  const values: MappedItemValues = {};
+  const problems: string[] = [];
+  for (const { field, value, label } of itemFields) {
+    if (value === null) continue;
+    switch (field) {
+      case "mpn":
+        values.mpn = value;
+        break;
+      case "replenishmentSystem":
+        if (isOneOf(value, ITEM_REPLENISHMENT_SYSTEMS)) {
+          values.replenishmentSystem = value;
+        }
+        break;
+      case "defaultMethodType":
+        if (isOneOf(value, ITEM_METHOD_TYPES)) values.defaultMethodType = value;
+        break;
+      case "sourcingType":
+        if (isOneOf(value, ITEM_SOURCING_TYPES)) values.sourcingType = value;
+        break;
+      case "itemTrackingType":
+        if (isOneOf(value, ITEM_TRACKING_TYPES))
+          values.itemTrackingType = value;
+        break;
+      case "unitOfMeasureCode":
+        if (units.some((unit) => unit.code === value)) {
+          values.unitOfMeasureCode = value;
+        } else {
+          problems.push(
+            `${label}: Carbon has no unit "${value}". ${label} not written.`
+          );
+        }
+        break;
+    }
+  }
+  return { values, problems };
+}
+
+/**
+ * Lay mapped values over an item's fields, in the order the item page's
+ * interlock needs:
+ *
+ * 1. Replenishment, with the method `methodFor` gives for it.
+ * 2. The default method, refused when the final Replenishment does not allow
+ *    it.
+ * 3. Sourcing, on a Buy and Make item only, with the method it sets.
+ * 4. Tracking type, unit and MPN.
+ */
+export function interlockItemFields(
+  start: ItemFieldSnapshot,
+  mapped: MappedItemValues,
+  methodFor: (
+    replenishment: ItemReplenishmentSystem,
+    method: ItemMethodType
+  ) => ItemMethodType
+): { values: ItemFieldSnapshot; problems: string[] } {
+  const values: ItemFieldSnapshot = { ...start };
+  const problems: string[] = [];
+  if (
+    mapped.replenishmentSystem &&
+    mapped.replenishmentSystem !== values.replenishmentSystem
+  ) {
+    values.replenishmentSystem = mapped.replenishmentSystem;
+    values.defaultMethodType = methodFor(
+      mapped.replenishmentSystem,
+      values.defaultMethodType
+    );
+  }
+  if (mapped.defaultMethodType) {
+    if (
+      VALID_METHOD_TYPES_BY_REPLENISHMENT[values.replenishmentSystem].includes(
+        mapped.defaultMethodType
+      )
+    ) {
+      values.defaultMethodType = mapped.defaultMethodType;
+    } else {
+      problems.push(
+        `Default Method Type: ${mapped.defaultMethodType} is not a method for ${values.replenishmentSystem} items. Not written.`
+      );
+    }
+  }
+  if (mapped.sourcingType) {
+    if (values.replenishmentSystem === "Buy and Make") {
+      values.sourcingType = mapped.sourcingType;
+      values.defaultMethodType = methodForSourcing(
+        mapped.sourcingType,
+        values.defaultMethodType
+      );
+    } else {
+      problems.push(
+        "Sourcing applies only to Buy and Make items. Not written."
+      );
+    }
+  }
+  if (mapped.itemTrackingType)
+    values.itemTrackingType = mapped.itemTrackingType;
+  if (mapped.unitOfMeasureCode) {
+    values.unitOfMeasureCode = mapped.unitOfMeasureCode;
+  }
+  if (mapped.mpn) values.mpn = mapped.mpn;
+  return { values, problems };
+}
+
+/** The label the item page uses for a snapshot field. */
+function fieldLabel(field: StandardFieldId): string {
+  return standardField(field)?.label ?? field;
+}
+
+/**
+ * The fields where `next` differs from `current`. A field `next` does not
+ * carry is not a change.
+ */
+export function changedItemFields(
+  current: ItemFieldSnapshot,
+  next: ItemFieldSnapshot
+): Partial<ItemFieldSnapshot> {
+  const changed: Partial<ItemFieldSnapshot> = {};
+  for (const field of SNAPSHOT_FIELDS) {
+    const value = next[field];
+    if (value === undefined) continue;
+    if ((current[field] ?? null) !== (value ?? null)) {
+      (changed as Record<string, unknown>)[field] = value;
+    }
+  }
+  return changed;
+}
+
+const DESCRIPTION_LABELS = {
+  name: "Short Description",
+  description: "Long Description"
+} as const;
+
+/**
+ * What a push does to an item it does not create but links, or that is
+ * linked to its source: the "everyPush" values it writes, and the "create"
+ * values it keeps out (shown as kept differences).
+ *
+ * - Descriptions: only a value Onshape gives is compared; an empty one never
+ *   blanks Carbon's text.
+ * - Item fields: the "everyPush" values go through the interlock, with the
+ *   method the item page would set (`methodForReplenishment`).
+ * - Custom fields: an "everyPush" value replaces Carbon's, and an empty one
+ *   clears it. The part row is shared by every revision, so a new revision is
+ *   not a creation here.
+ */
+export function planExistingItem({
+  current,
+  item,
+  onshape,
+  resolved,
+  heldCustomFields,
+  descriptionModes,
+  units
+}: {
+  current: ItemFieldSnapshot;
+  item: { name?: string | null; description?: string | null };
+  onshape: { name: string | null; description: string | null };
+  resolved: {
+    fields: PlanCustomField[];
+    itemFields: PlanItemField[];
+    problems: string[];
+  } | null;
+  heldCustomFields: unknown;
+  descriptionModes: DescriptionModes;
+  units: readonly PlanUnitOfMeasure[];
+}): MappedRowPlan & { changes: OwnedFieldChange[] } {
+  const changes: OwnedFieldChange[] = [];
+  const kept: KeptDifference[] = [];
+  for (const change of assemblyTextChanges(
+    { name: item.name ?? "", description: item.description ?? null },
+    onshape
+  )) {
+    if (descriptionModes[change.field] === "everyPush") {
+      changes.push(change);
+    } else if (change.to !== null) {
+      kept.push({
+        label: DESCRIPTION_LABELS[change.field],
+        onshape: change.to,
+        carbon: change.from
+      });
+    }
+  }
+
+  const out: MappedRowPlan & { changes: OwnedFieldChange[] } = { changes };
+  if (resolved) {
+    const everyPush = resolved.itemFields.filter(
+      (field) => field.mode === "everyPush"
+    );
+    const mapped = mappedItemValues(everyPush, units);
+    const interlocked = interlockItemFields(
+      current,
+      mapped.values,
+      methodForReplenishment
+    );
+    const sourceByField = new Map(
+      everyPush
+        .filter((field) => field.value !== null)
+        .map((field) => [field.field, field.onshapeName])
+    );
+    const itemFieldChanges: ItemFieldChange[] = Object.entries(
+      changedItemFields(current, interlocked.values)
+    ).map(([field, to]) => ({
+      field: field as StandardFieldId,
+      label: fieldLabel(field as StandardFieldId),
+      from:
+        (current[field as keyof ItemFieldSnapshot] as string | null) ?? null,
+      to: (to as string | null) ?? null,
+      onshapeName: sourceByField.get(field as StandardFieldId) ?? null
+    }));
+    if (itemFieldChanges.length > 0) {
+      out.itemFieldChanges = itemFieldChanges;
+      out.target = interlocked.values;
+    }
+
+    for (const field of resolved.itemFields) {
+      if (field.mode !== "create" || field.value === null) continue;
+      if (!(SNAPSHOT_FIELDS as readonly string[]).includes(field.field)) {
+        continue;
+      }
+      const carbon =
+        (interlocked.values[field.field as keyof ItemFieldSnapshot] as
+          | string
+          | null
+          | undefined) ?? null;
+      if (carbon !== field.value) {
+        kept.push({ label: field.label, onshape: field.value, carbon });
+      }
+    }
+
+    const definitions = new Map(
+      resolved.fields.map((field) => [field.fieldId, field])
+    );
+    const held = (
+      typeof heldCustomFields === "object" && heldCustomFields !== null
+        ? heldCustomFields
+        : {}
+    ) as Record<string, unknown>;
+    for (const field of customFieldKeptDifferences(
+      heldCustomFields,
+      resolved.fields
+    )) {
+      const definition = definitions.get(field.fieldId);
+      const heldValue = held[field.fieldId];
+      kept.push({
+        label: field.name,
+        onshape: customFieldDisplayValue(field),
+        carbon:
+          heldValue === undefined || heldValue === null || heldValue === ""
+            ? null
+            : customFieldDisplayValue({
+                value: heldValue as string | number | boolean,
+                dataTypeId: definition?.dataTypeId ?? field.dataTypeId
+              })
+      });
+    }
+    const customFields = customFieldWrites(heldCustomFields, resolved.fields);
+    if (customFields.length > 0) out.customFields = customFields;
+
+    const itemFields = resolved.itemFields.filter(
+      (field) => field.value !== null
+    );
+    if (itemFields.length > 0) out.itemFields = itemFields;
+    const problems = [
+      ...resolved.problems,
+      ...mapped.problems,
+      ...interlocked.problems
+    ];
+    if (problems.length > 0) out.mappedFieldProblems = problems;
+  }
+  if (kept.length > 0) out.keptDifferences = kept;
+  return out;
+}
+
+/**
+ * What the property map does to an item a push creates: the proposal with
+ * the mapped values in it, the custom field values the create writes, and
+ * the mapped values it cannot use.
+ */
+export function planCreatedItem(
+  input: Omit<ProposalInput, "mapped">,
+  resolved: {
+    fields: PlanCustomField[];
+    itemFields: PlanItemField[];
+    problems: string[];
+  } | null,
+  options: PlanOptions
+): MappedRowPlan & { proposed: ProposedItem } {
+  if (!resolved) return { proposed: proposeItem(input, options) };
+  const mapped = mappedItemValues(resolved.itemFields, options.unitsOfMeasure);
+  const { proposed, problems } = proposeMappedItem(
+    { ...input, mapped: mapped.values },
+    options
+  );
+  const out: MappedRowPlan & { proposed: ProposedItem } = { proposed };
+  const customFields = resolved.fields.filter((field) => field.value !== null);
+  if (customFields.length > 0) out.customFields = customFields;
+  const itemFields = resolved.itemFields.filter(
+    (field) => field.value !== null
+  );
+  if (itemFields.length > 0) out.itemFields = itemFields;
+  const allProblems = [...resolved.problems, ...mapped.problems, ...problems];
+  if (allProblems.length > 0) out.mappedFieldProblems = allProblems;
+  return out;
+}
+
+/**
+ * The item fields a create writes right after the insert, which `upsertPart`
+ * does not take: MPN, and Sourcing while the item is still Buy and Make after
+ * the reviewer's edits.
+ */
+export function createdItemExtras(
+  item: ProposedItem
+): Pick<ItemFieldSnapshot, "mpn" | "sourcingType"> {
+  return {
+    ...(item.mpn ? { mpn: item.mpn } : {}),
+    ...(item.sourcingType && item.replenishmentSystem === "Buy and Make"
+      ? { sourcingType: item.sourcingType }
+      : {})
   };
 }
 
 /**
- * Apply the panel's three manufacturing edits to an existing item's current
- * values, refusing an unknown enum or a method the replenishment system does
- * not allow (the same interlock `mergeItemEdits` enforces for creates). Name,
- * description, unit and custom fields on the edit are ignored. Returns the
- * merged values and the subset that actually CHANGED, so an untouched edit
+ * Apply the panel's three manufacturing edits on top of `base` — the item's
+ * fields after the push's mapped writes, or its current fields — refusing an
+ * unknown enum or a method the replenishment system does not allow (the same
+ * interlock `mergeItemEdits` enforces for creates). Name, description, unit
+ * and custom fields on the edit are ignored. Returns the merged values and
+ * the subset that differs from `current`, so a push that changes nothing
  * writes nothing and stamps no audit fields.
  */
 export function mergeExistingItemEdits(
   current: ItemFieldSnapshot,
-  edit: ItemEdit | null | undefined
+  edit: ItemEdit | null | undefined,
+  base: ItemFieldSnapshot = current
 ):
   | { ok: true; values: ItemFieldSnapshot; changed: Partial<ItemFieldSnapshot> }
   | { ok: false; errors: string[] } {
   const errors: string[] = [];
-  const values: ItemFieldSnapshot = { ...current };
+  const values: ItemFieldSnapshot = { ...base };
   if (edit?.replenishmentSystem !== undefined) {
     if (
       (ITEM_REPLENISHMENT_SYSTEMS as readonly string[]).includes(
@@ -537,18 +1063,7 @@ export function mergeExistingItemEdits(
     );
   }
   if (errors.length > 0) return { ok: false, errors };
-
-  const changed: Partial<ItemFieldSnapshot> = {};
-  if (values.replenishmentSystem !== current.replenishmentSystem) {
-    changed.replenishmentSystem = values.replenishmentSystem;
-  }
-  if (values.defaultMethodType !== current.defaultMethodType) {
-    changed.defaultMethodType = values.defaultMethodType;
-  }
-  if (values.itemTrackingType !== current.itemTrackingType) {
-    changed.itemTrackingType = values.itemTrackingType;
-  }
-  return { ok: true, values, changed };
+  return { ok: true, values, changed: changedItemFields(current, values) };
 }
 
 // ---------------------------------------------------------------------------
@@ -562,7 +1077,7 @@ export type PartPlanAction =
   | "unchanged"
   | "skip-no-part-number";
 
-export type PartPlanRow = {
+export type PartPlanRow = MappedRowPlan & {
   partId: string;
   partNumber: string | null;
   name: string;
@@ -581,19 +1096,14 @@ export type PartPlanRow = {
    * holds and only send the ones the user changes.
    */
   current?: ItemFieldSnapshot | null;
-  /** Onshape-owned fields the push will overwrite. */
+  /** Descriptions in "everyPush" mode that the push overwrites. */
   changes: OwnedFieldChange[];
-  /** Mapped custom fields apply would write (absent when nothing is mapped). */
-  customFields?: PlanCustomField[];
   /**
-   * An update only because mapped custom fields differ: the CAD is the one the
-   * last push exported, so apply writes the fields and skips the model export.
+   * An update only because mapped values or descriptions differ: the CAD is
+   * the one the last push exported, so apply writes the values and the link
+   * but skips the model export.
    */
   cadUnchanged?: true;
-  /** Valued Onshape properties no map entry covers — review shows "not mapped". */
-  unmappedProperties?: UnmappedProperty[];
-  /** Mapped properties whose value cannot coerce; shown, never written. */
-  customFieldProblems?: string[];
 };
 
 export type PartPlan = {
@@ -619,7 +1129,9 @@ export function buildPartPlan({
   requestedPartIds,
   mappings,
   items,
-  options
+  options,
+  mapping,
+  propertiesByPartId
 }: {
   documentId: string;
   elementId: string;
@@ -629,6 +1141,10 @@ export function buildPartPlan({
   mappings: PlanMappingRow[];
   items: PlanItemRow[];
   options: PlanOptions;
+  /** The company's property map; absent, only descriptions are planned. */
+  mapping?: PlanMappingContext;
+  /** Each part's Onshape properties, read when the map is not empty. */
+  propertiesByPartId?: ReadonlyMap<string, OnshapePropertyValue[]>;
 }): PartPlanRow[] {
   const mappingByExternalId = new Map(
     mappings.filter((m) => m.externalId).map((m) => [m.externalId as string, m])
@@ -640,6 +1156,33 @@ export function buildPartPlan({
     list.push(item);
     itemsByReadableId.set(item.readableId, list);
   }
+  const descriptionModes =
+    mapping?.descriptionModes ?? DEFAULT_DESCRIPTION_MODES;
+  const resolve = (partId: string) =>
+    mapping && mapping.map.length > 0
+      ? resolveMappedFields({
+          properties: propertiesByPartId?.get(partId) ?? [],
+          map: mapping.map,
+          definitions: mapping.definitions,
+          units: options.unitsOfMeasure
+        })
+      : null;
+  const existingPlan = (item: PlanItemRow, part: OnshapeElementPart) => {
+    const resolved = resolve(part.partId);
+    const planned = planExistingItem({
+      current: currentItemFields(item),
+      item,
+      onshape: { name: part.name, description: part.description ?? null },
+      resolved,
+      heldCustomFields: mapping?.heldCustomFields.get(item.readableId),
+      descriptionModes,
+      units: options.unitsOfMeasure
+    });
+    return {
+      ...planned,
+      ...nonEmpty("unmappedProperties", resolved?.unmapped ?? [])
+    };
+  };
 
   const rows: PartPlanRow[] = [];
   for (const partId of requestedPartIds) {
@@ -659,28 +1202,36 @@ export function buildPartPlan({
       changes: [] as PartPlanRow["changes"]
     };
 
-    const mapping = mappingByExternalId.get(
+    const mapped = mappingByExternalId.get(
       externalIdForPart(documentId, elementId, partId, configuration)
     );
     // A mapping whose item is gone is not a link (entityId has no FK).
-    const linked = mapping ? itemById.get(mapping.entityId) : undefined;
-    if (mapping && linked) {
-      const lastMicroversion = mapping.metadata?.microversionId;
+    const linked = mapped ? itemById.get(mapped.entityId) : undefined;
+    if (mapped && linked) {
+      const lastMicroversion = mapped.metadata?.microversionId;
       const unchanged =
         !!part.microversionId &&
         typeof lastMicroversion === "string" &&
         part.microversionId === lastMicroversion;
+      const planned = existingPlan(linked, part);
+      // The CAD is the one the last push exported, but a mapped value or a
+      // description in "everyPush" mode still has to reach Carbon.
+      const writes =
+        planned.changes.length > 0 ||
+        (planned.itemFieldChanges?.length ?? 0) > 0 ||
+        (planned.customFields?.length ?? 0) > 0;
       rows.push({
         ...base,
-        action: unchanged ? "unchanged" : "update",
+        ...planned,
+        action: unchanged && !writes ? "unchanged" : "update",
+        ...(unchanged && writes ? { cadUnchanged: true as const } : {}),
         itemId: linked.id,
         item: {
           readableId: linked.readableId,
           revision: linked.revision,
           name: linked.name
         },
-        current: currentItemFields(linked),
-        changes: unchanged ? [] : ownedFieldChanges(linked, part)
+        current: currentItemFields(linked)
       });
       continue;
     }
@@ -697,6 +1248,7 @@ export function buildPartPlan({
     if (matched) {
       rows.push({
         ...base,
+        ...existingPlan(matched, part),
         action: "adopt",
         itemId: matched.id,
         item: {
@@ -704,24 +1256,26 @@ export function buildPartPlan({
           revision: matched.revision,
           name: matched.name
         },
-        current: currentItemFields(matched),
-        changes: ownedFieldChanges(matched, part)
+        current: currentItemFields(matched)
       });
       continue;
     }
 
+    const resolved = resolve(partId);
     rows.push({
       ...base,
-      action: "create",
-      proposed: proposeItem(
+      ...planCreatedItem(
         {
           partNumber: part.partNumber,
           name: part.name,
           description: part.description ?? null,
           revision: part.revision ?? null
         },
+        resolved,
         options
-      )
+      ),
+      ...nonEmpty("unmappedProperties", resolved?.unmapped ?? []),
+      action: "create"
     });
   }
   return rows;
@@ -761,34 +1315,11 @@ export function assemblyTextChanges(
   return changes;
 }
 
-function ownedFieldChanges(
-  item: PlanItemRow,
-  part: Pick<OnshapeElementPart, "name" | "description">
-): PartPlanRow["changes"] {
-  const changes: PartPlanRow["changes"] = [];
-  const toName = part.name;
-  if ((item.name ?? null) !== toName) {
-    changes.push({ field: "name", from: item.name ?? null, to: toName });
-  }
-  const toDescription = part.description ?? null;
-  if (
-    item.description !== undefined &&
-    (item.description ?? null) !== toDescription
-  ) {
-    changes.push({
-      field: "description",
-      from: item.description ?? null,
-      to: toDescription
-    });
-  }
-  return changes;
-}
-
 // ---------------------------------------------------------------------------
 // Assembly plan
 // ---------------------------------------------------------------------------
 
-export type AssemblyPlanItem = {
+export type AssemblyPlanItem = MappedRowPlan & {
   partNumber: string;
   name: string | null;
   revision: string | null;
@@ -806,15 +1337,14 @@ export type AssemblyPlanItem = {
   current?: ItemFieldSnapshot | null;
   /**
    * Reuse only, when the item is or becomes linked to this BOM row's Onshape
-   * part: the descriptions the push overwrites with Onshape's.
+   * part: the descriptions in "everyPush" mode the push overwrites.
    */
   changes?: OwnedFieldChange[];
   /** Has children in the BOM: gets a make method and lines of its own. */
   isAssembly: boolean;
-  purchased: boolean;
   /**
-   * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so it
-   * is treated as bought and the push writes no BOM for it.
+   * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so the
+   * push writes no BOM for it. Its Buy or Make comes from the precedence order.
    */
   shownAsUnit?: true;
 };
@@ -844,7 +1374,6 @@ export type AssemblyPlanMethod = {
     partNumber: string;
     name: string | null;
     quantity: number;
-    purchased: boolean;
   }>;
   /** Existing Onshape-origin lines a previous push wrote. */
   replaces: PlanLine[];
@@ -858,7 +1387,7 @@ export type AssemblyPlanMethod = {
   keeps: PlanLine[];
 };
 
-export type AssemblyPlanRoot = {
+export type AssemblyPlanRoot = MappedRowPlan & {
   partNumber: string;
   name: string | null;
   description: string | null;
@@ -870,12 +1399,8 @@ export type AssemblyPlanRoot = {
   proposed: ProposedItem | null;
   /** Reuse only: the existing item's current manufacturing fields. */
   current?: ItemFieldSnapshot | null;
-  /** Reuse only: the descriptions the push overwrites with Onshape's. */
+  /** Reuse only: the descriptions in "everyPush" mode the push overwrites. */
   changes?: OwnedFieldChange[];
-  /** Mapped custom fields for the root item (element properties). */
-  customFields?: PlanCustomField[];
-  unmappedProperties?: UnmappedProperty[];
-  customFieldProblems?: string[];
 };
 
 /**
@@ -946,7 +1471,9 @@ export function buildAssemblyPlan({
   linkedItemIdByExternalId = new Map(),
   linkedItemIds,
   configuration = null,
-  reusableDraftByItemId = new Map()
+  reusableDraftByItemId = new Map(),
+  mapping,
+  rootProperties = null
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -988,6 +1515,10 @@ export function buildAssemblyPlan({
    * (`loadReusableDrafts`), so the review counts that Draft's lines.
    */
   reusableDraftByItemId?: Map<string, { id: string; version: number | null }>;
+  /** The company's property map; absent, only descriptions are planned. */
+  mapping?: PlanMappingContext;
+  /** The assembly's own properties (element metadata). BOM rows carry theirs. */
+  rootProperties?: OnshapePropertyValue[] | null;
 }): AssemblyPlan {
   // One row per part number: the latest revision, whatever order the rows
   // arrived in, so the plan pins the same item the apply would pick.
@@ -1014,7 +1545,7 @@ export function buildAssemblyPlan({
   const all = depth === "top" ? nodes : everything;
 
   // A node with children is made, at every depth — a sub-assembly the push is
-  // not exploding is still an assembly, and classifying it as purchased
+  // not exploding is still an assembly, and classifying it as bought
   // because this push declined to look inside it would be wrong.
   const madePartNumbers = new Set<string>([root.partNumber]);
   for (const node of everything) {
@@ -1042,6 +1573,38 @@ export function buildAssemblyPlan({
     }
   }
 
+  const descriptionModes =
+    mapping?.descriptionModes ?? DEFAULT_DESCRIPTION_MODES;
+  const resolve = (
+    properties: OnshapePropertyValue[] | null | undefined,
+    matchByName: boolean
+  ) =>
+    mapping && mapping.map.length > 0 && properties
+      ? resolveMappedFields({
+          properties,
+          map: mapping.map,
+          definitions: mapping.definitions,
+          units: options.unitsOfMeasure,
+          matchByName
+        })
+      : null;
+  const existingPlan = (
+    item: PlanItemRow,
+    onshape: { name: string | null; description: string | null },
+    resolved: ReturnType<typeof resolve>
+  ) => {
+    const { changes, ...planned } = planExistingItem({
+      current: currentItemFields(item),
+      item,
+      onshape,
+      resolved,
+      heldCustomFields: mapping?.heldCustomFields.get(item.readableId),
+      descriptionModes,
+      units: options.unitsOfMeasure
+    });
+    return { ...planned, ...nonEmpty("changes", changes) };
+  };
+
   const rootItem = itemByReadableId.get(root.partNumber);
   const linkedRootId = linkedItemIdByExternalId.get(
     externalIdForAssembly(documentId, elementId, configuration)
@@ -1049,38 +1612,33 @@ export function buildAssemblyPlan({
   const rootConflict =
     !!rootItem &&
     (!linkedRootId || readableIdByItemId.get(linkedRootId) !== root.partNumber);
-  const planRoot: AssemblyPlanRoot = {
+  // BOM rows are not reported as unmapped: every column would be.
+  const rootResolved = resolve(rootProperties, false);
+  const rootIdentity = {
     partNumber: root.partNumber,
     name: root.name,
     description: root.description,
-    revision: root.revision,
-    action: rootItem ? "reuse" : "create",
-    itemId: rootItem?.id ?? null,
-    ...(rootConflict ? { conflict: true } : {}),
-    ...(rootItem ? { current: currentItemFields(rootItem) } : {}),
-    // The pushed assembly is always linked, so its descriptions follow Onshape.
-    ...(rootItem
-      ? nonEmpty(
-          "changes",
-          assemblyTextChanges(rootItem, {
-            name: root.name,
-            description: root.description
-          })
-        )
-      : {}),
-    proposed: rootItem
-      ? null
-      : proposeItem(
-          {
-            partNumber: root.partNumber,
-            name: root.name,
-            description: root.description,
-            revision: root.revision,
-            purchased: false
-          },
-          options
-        )
+    revision: root.revision
   };
+  // The pushed assembly is always linked, so it takes "everyPush" values.
+  const planRoot: AssemblyPlanRoot = rootItem
+    ? {
+        ...rootIdentity,
+        ...existingPlan(rootItem, root, rootResolved),
+        ...nonEmpty("unmappedProperties", rootResolved?.unmapped ?? []),
+        action: "reuse",
+        itemId: rootItem.id,
+        ...(rootConflict ? { conflict: true } : {}),
+        current: currentItemFields(rootItem),
+        proposed: null
+      }
+    : {
+        ...rootIdentity,
+        ...planCreatedItem(rootIdentity, rootResolved, options),
+        ...nonEmpty("unmappedProperties", rootResolved?.unmapped ?? []),
+        action: "create",
+        itemId: null
+      };
 
   // Which BOM rows this push links to their Onshape part, the way apply's
   // `linkChildParts` decides: already linked to it, or neither the item nor
@@ -1093,7 +1651,9 @@ export function buildAssemblyPlan({
     numbers.add(node.partNumber);
     numbersBySource.set(externalId, numbers);
   }
-  const ownsText = (node: OnshapeBomNode, item: PlanItemRow) => {
+  // An item the push links, or one linked to this row already, takes the
+  // "everyPush" values. One linked to another source is left alone.
+  const pushWrites = (node: OnshapeBomNode, item: PlanItemRow) => {
     if (!node.partNumber) return false;
     if (linkedPartNumbers.has(node.partNumber)) return true;
     if (!linkedItemIds || linkedItemIds.has(item.id)) return false;
@@ -1126,41 +1686,44 @@ export function buildAssemblyPlan({
       );
       continue;
     }
-    const made = madePartNumbers.has(node.partNumber) || !node.purchased;
-    planItems.push({
+    const identity = {
       partNumber: node.partNumber,
       name: node.name,
       revision: node.revision,
-      action: existing ? "reuse" : "create",
-      itemId: existing?.id ?? null,
-      ...(existing && !linkedPartNumbers.has(node.partNumber)
-        ? { conflict: true }
-        : {}),
-      ...(existing ? { current: currentItemFields(existing) } : {}),
-      ...(existing && ownsText(node, existing)
-        ? nonEmpty(
-            "changes",
-            assemblyTextChanges(existing, {
-              name: node.name,
-              description: node.description
-            })
-          )
-        : {}),
-      proposed: existing
-        ? null
-        : proposeItem(
-            {
-              partNumber: node.partNumber,
-              name: node.name,
-              description: node.description,
-              revision: node.revision,
-              purchased: !made
-            },
-            options
-          ),
       isAssembly: node.children.length > 0,
-      purchased: node.purchased,
       ...(node.shownAsUnit ? { shownAsUnit: true as const } : {})
+    };
+    if (existing) {
+      planItems.push({
+        ...identity,
+        ...(pushWrites(node, existing)
+          ? existingPlan(existing, node, resolve(node.properties, true))
+          : {}),
+        action: "reuse",
+        itemId: existing.id,
+        ...(!linkedPartNumbers.has(node.partNumber) ? { conflict: true } : {}),
+        current: currentItemFields(existing),
+        proposed: null
+      });
+      continue;
+    }
+    planItems.push({
+      ...identity,
+      ...planCreatedItem(
+        {
+          partNumber: node.partNumber,
+          name: node.name,
+          description: node.description,
+          revision: node.revision,
+          // A sub-assembly this push does not explode is still made.
+          hasChildren: madePartNumbers.has(node.partNumber),
+          standardContent: node.standardContent === true
+        },
+        resolve(node.properties, true),
+        options
+      ),
+      action: "create",
+      itemId: null
     });
   }
 
@@ -1195,8 +1758,7 @@ export function buildAssemblyPlan({
         index: child.index,
         partNumber: child.partNumber as string,
         name: child.name,
-        quantity: child.quantity,
-        purchased: child.purchased
+        quantity: child.quantity
       }));
     const replaces = linesMethodId
       ? (mappedLinesByMethodId.get(linesMethodId) ?? [])
@@ -1309,7 +1871,7 @@ export type ReleasePlanItemAction =
   /** A released drawing with no model item to attach to. */
   | "drawing-unmatched";
 
-export type ReleasePlanItem = {
+export type ReleasePlanItem = MappedRowPlan & {
   partNumber: string;
   revision: string;
   elementType: number;
@@ -1334,6 +1896,8 @@ export type ReleasePlanItem = {
    * new revision inherits them). Seeds the editor; only changes are sent.
    */
   current?: ItemFieldSnapshot | null;
+  /** reuse/revision only: the descriptions in "everyPush" mode it takes. */
+  changes?: OwnedFieldChange[];
   /**
    * Released assemblies only: whether the BOM can be applied to the target
    * method. A reused item with a released (Active) method is refused.
@@ -1342,11 +1906,10 @@ export type ReleasePlanItem = {
 };
 
 /** A BOM child of a released assembly that is not itself in the release. */
-export type ReleasePlanChild = {
+export type ReleasePlanChild = MappedRowPlan & {
   partNumber: string;
   name: string | null;
   revision: string | null;
-  purchased: boolean;
   action: "create" | "reuse";
   itemId: string | null;
   proposed: ProposedItem | null;
@@ -1375,7 +1938,9 @@ export function buildReleasePlan({
   items,
   bomLinesByElementId,
   methodByItemId,
-  options
+  options,
+  mapping,
+  propertiesByPartNumber
 }: {
   documentId: string;
   release: PanelRelease;
@@ -1388,7 +1953,52 @@ export function buildReleasePlan({
   bomLinesByElementId: Record<string, OnshapeBomNode[] | null>;
   methodByItemId: Map<string, PlanMethodRow>;
   options: PlanOptions;
+  /** The company's property map; absent, only descriptions are planned. */
+  mapping?: PlanMappingContext;
+  /**
+   * Each released model item's properties at its released version, by part
+   * number. BOM children carry theirs on the BOM row.
+   */
+  propertiesByPartNumber?: ReadonlyMap<string, OnshapePropertyValue[]>;
 }): ReleasePlan {
+  const descriptionModes =
+    mapping?.descriptionModes ?? DEFAULT_DESCRIPTION_MODES;
+  const resolve = (
+    properties: OnshapePropertyValue[] | null | undefined,
+    matchByName: boolean
+  ) =>
+    mapping && mapping.map.length > 0 && properties
+      ? resolveMappedFields({
+          properties,
+          map: mapping.map,
+          definitions: mapping.definitions,
+          units: options.unitsOfMeasure,
+          matchByName
+        })
+      : null;
+  // A reused letter and a new revision's base are existing items: the new
+  // revision copies the base, then takes the "everyPush" values.
+  const existingPlan = (
+    item: PlanItemRow,
+    onshape: { name: string | null; description: string | null },
+    partNumber: string
+  ) => {
+    const resolved = resolve(propertiesByPartNumber?.get(partNumber), false);
+    const { changes, ...planned } = planExistingItem({
+      current: currentItemFields(item),
+      item,
+      onshape,
+      resolved,
+      heldCustomFields: mapping?.heldCustomFields.get(item.readableId),
+      descriptionModes,
+      units: options.unitsOfMeasure
+    });
+    return {
+      ...planned,
+      ...nonEmpty("changes", changes),
+      ...nonEmpty("unmappedProperties", resolved?.unmapped ?? [])
+    };
+  };
   const byReadable = new Map<string, PlanItemRow[]>();
   for (const row of items) {
     const list = byReadable.get(row.readableId) ?? [];
@@ -1430,11 +2040,19 @@ export function buildReleasePlan({
     }
 
     const isAssembly = item.elementType === 1;
+    const node = bomNodeByPartNumber.get(item.partNumber);
+    const properties = propertiesByPartNumber?.get(item.partNumber);
+    const onshapeText = {
+      name: propertyText(properties, "Name") ?? node?.name ?? null,
+      description:
+        propertyText(properties, "Description") ?? node?.description ?? null
+    };
     const existingLetter = letterRowFor(item.partNumber, item.revision);
     if (existingLetter) {
       const method = methodByItemId.get(existingLetter.id);
       planItems.push({
         ...releaseIdentity(item),
+        ...existingPlan(existingLetter, onshapeText, item.partNumber),
         action: "reuse",
         baseItemId: null,
         baseRevision: null,
@@ -1458,6 +2076,7 @@ export function buildReleasePlan({
       const base = latestBase;
       planItems.push({
         ...releaseIdentity(item),
+        ...existingPlan(base, onshapeText, item.partNumber),
         action: "revision",
         baseItemId: base.id,
         baseRevision: base.revision,
@@ -1469,29 +2088,32 @@ export function buildReleasePlan({
       continue;
     }
 
-    const node = bomNodeByPartNumber.get(item.partNumber);
+    const resolved = resolve(properties, false);
     planItems.push({
       ...releaseIdentity(item),
+      ...planCreatedItem(
+        {
+          partNumber: item.partNumber,
+          name: onshapeText.name,
+          description: onshapeText.description,
+          revision: item.revision,
+          hasChildren: isAssembly
+        },
+        resolved,
+        options
+      ),
+      ...nonEmpty("unmappedProperties", resolved?.unmapped ?? []),
       action: "create",
       baseItemId: null,
       baseRevision: null,
       existingItemId: null,
-      proposed: proposeItem(
-        {
-          partNumber: item.partNumber,
-          name: node?.name ?? null,
-          description: node?.description ?? null,
-          revision: item.revision,
-          purchased: false
-        },
-        options
-      ),
       methodStatus: isAssembly ? "new" : null
     });
   }
 
   // Level-1 BOM children that are not release items: reused when Carbon has
-  // any revision of them (purchased hardware), created otherwise.
+  // any revision of them (bought hardware), created otherwise. A reused child
+  // is not linked by the release, so it takes no mapped value.
   const children: ReleasePlanChild[] = [];
   const childSeen = new Set<string>();
   for (const lines of Object.values(bomLinesByElementId)) {
@@ -1500,26 +2122,37 @@ export function buildReleasePlan({
       if (childSeen.has(node.partNumber)) continue;
       childSeen.add(node.partNumber);
       const existing = pickLatestRow(byReadable.get(node.partNumber) ?? []);
-      children.push({
+      const identity = {
         partNumber: node.partNumber,
         name: node.name,
-        revision: node.revision,
-        purchased: node.purchased,
-        action: existing ? "reuse" : "create",
-        itemId: existing?.id ?? null,
-        ...(existing ? { current: currentItemFields(existing) } : {}),
-        proposed: existing
-          ? null
-          : proposeItem(
-              {
-                partNumber: node.partNumber,
-                name: node.name,
-                description: node.description,
-                revision: node.revision,
-                purchased: node.purchased
-              },
-              options
-            )
+        revision: node.revision
+      };
+      if (existing) {
+        children.push({
+          ...identity,
+          action: "reuse",
+          itemId: existing.id,
+          current: currentItemFields(existing),
+          proposed: null
+        });
+        continue;
+      }
+      children.push({
+        ...identity,
+        ...planCreatedItem(
+          {
+            partNumber: node.partNumber,
+            name: node.name,
+            description: node.description,
+            revision: node.revision,
+            hasChildren: node.children.length > 0,
+            standardContent: node.standardContent === true
+          },
+          resolve(node.properties, true),
+          options
+        ),
+        action: "create",
+        itemId: null
       });
     }
   }
@@ -1554,6 +2187,17 @@ export function buildReleasePlan({
     alreadyPushed: !createsAnything,
     options
   };
+}
+
+/** A text property's value ("Name", "Description"); null when empty. */
+function propertyText(
+  properties: OnshapePropertyValue[] | undefined,
+  name: string
+): string | null {
+  const value = properties?.find((property) => property.name === name)?.value;
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text === "" ? null : text;
 }
 
 function releaseIdentity(item: PanelReleaseItem) {

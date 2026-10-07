@@ -9,8 +9,14 @@ import {
   type DraftCandidate,
   pickReusableDraft
 } from "../panel/method-version";
-import type { PlanLine, PlanMethodRow, PlanOptions } from "../panel/plan";
+import type {
+  PlanLine,
+  PlanMappingContext,
+  PlanMethodRow,
+  PlanOptions
+} from "../panel/plan";
 import { parsePushDefaults } from "../panel/preferences";
+import { parseDescriptionModes, parsePropertyMap } from "../panel/properties";
 import { selectInBatches } from "./batched-filter";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
@@ -368,4 +374,55 @@ export async function loadPartCustomFieldDefinitions(
       dataTypeId: row.dataTypeId,
       listOptions: row.listOptions
     }));
+}
+
+/**
+ * What a plan builder needs to resolve the company's property map: the map,
+ * the description modes, the part custom field definitions and the custom
+ * field values Carbon holds for the given part numbers. Reads only what the
+ * map needs: no custom field target, no custom field reads.
+ *
+ * Throws on a failed read, like `loadPartCustomFieldDefinitions`: planning
+ * against an unread map would skip every "everyPush" value. Callers answer 500.
+ */
+export async function loadPlanMapping(
+  client: Client,
+  companyId: string,
+  readableIds: string[]
+): Promise<PlanMappingContext> {
+  const integration = await client
+    .from("companyIntegration")
+    .select("metadata")
+    .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (integration.error) {
+    throw new Error(
+      `Failed to read the Onshape property map: ${integration.error.message}`
+    );
+  }
+  const metadata = integration.data?.metadata;
+  const map = parsePropertyMap(metadata);
+  const descriptionModes = parseDescriptionModes(metadata);
+  const heldCustomFields = new Map<string, unknown>();
+  if (!map.some((entry) => entry.target.kind === "customField")) {
+    return { map, definitions: [], descriptionModes, heldCustomFields };
+  }
+  const [definitions, held] = await Promise.all([
+    loadPartCustomFieldDefinitions(client, companyId),
+    selectInBatches([...new Set(readableIds)], (batch) =>
+      client
+        .from("part")
+        .select("id, customFields")
+        .eq("companyId", companyId)
+        .in("id", batch)
+    )
+  ]);
+  if (held.error) {
+    throw new Error(`Failed to read Carbon parts: ${held.error.message}`);
+  }
+  for (const part of held.data ?? []) {
+    heldCustomFields.set(part.id, part.customFields);
+  }
+  return { map, definitions, descriptionModes, heldCustomFields };
 }

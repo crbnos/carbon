@@ -174,7 +174,6 @@ export type PanelAssemblyLineStatus = {
   partNumber: string | null;
   name: string | null;
   quantity: number;
-  purchased: boolean;
   state: "linked" | "matched" | "missing";
   itemId: string | null;
   lastSyncedAt: string | null;
@@ -186,7 +185,6 @@ export type PanelAssemblyLineInput = {
   partNumber: string | null;
   name: string | null;
   quantity: number;
-  purchased: boolean;
   itemSource: {
     documentId?: string;
     elementId?: string;

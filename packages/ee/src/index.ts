@@ -97,7 +97,8 @@ export {
   flattenBomTree,
   metadataProperty,
   missingBomColumnsMessage,
-  parseBomTree
+  parseBomTree,
+  withoutProperties
 } from "./onshape/panel/bom";
 export type { OnshapePanelContext } from "./onshape/panel/messages";
 export {
@@ -115,10 +116,15 @@ export type {
   AssemblyPlanRoot,
   ChangeNoticeEdit,
   ItemEdit,
+  ItemFieldChange,
   ItemFieldSnapshot,
   ItemMethodType,
   ItemReplenishmentSystem,
+  ItemSourcingType,
   ItemTrackingType,
+  KeptDifference,
+  MappedItemValues,
+  MappedRowPlan,
   MergeResult,
   OwnedFieldChange,
   PartPlan,
@@ -126,10 +132,12 @@ export type {
   PartPlanRow,
   PlanItemRow,
   PlanLine,
+  PlanMappingContext,
   PlanMappingRow,
   PlanMethodRow,
   PlanOptions,
   PlanUnitOfMeasure,
+  ProposalInput,
   ProposedItem,
   ReleasePlan,
   ReleasePlanChild,
@@ -144,7 +152,9 @@ export {
   buildReleasePlan,
   CHANGE_NOTICE_DESCRIPTION_MAX_LENGTH,
   CHANGE_NOTICE_NAME_MAX_LENGTH,
+  changedItemFields,
   changeNoticeDescriptionJson,
+  createdItemExtras,
   currentItemFields,
   defaultUnitOfMeasureCode,
   EDITABLE_ITEM_FIELDS,
@@ -153,15 +163,22 @@ export {
   ITEM_METHOD_TYPES,
   ITEM_NAME_MAX_LENGTH,
   ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_SOURCING_TYPES,
   ITEM_TRACKING_TYPES,
+  interlockItemFields,
+  mappedItemValues,
   mergeChangeNoticeEdit,
   mergeEditsForCreates,
   mergeExistingItemEdits,
   mergeItemEdits,
+  methodForReplenishment,
   pickAdoptTarget,
   pickLatestRow,
   pickReuseRow,
+  planCreatedItem,
+  planExistingItem,
   proposeItem,
+  proposeMappedItem,
   reconcileMethodForReplenishment,
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./onshape/panel/plan";
@@ -172,25 +189,35 @@ export {
   reconcilePushDefaults
 } from "./onshape/panel/preferences";
 export type {
+  DescriptionModes,
+  MappingMode,
   OnshapePropertyValue,
   PlanCustomField,
   PlanCustomFieldDefinition,
+  PlanItemField,
   PropertyMapEntry,
+  PropertyMapTarget,
   UnmappedProperty
 } from "./onshape/panel/properties";
 export {
   CUSTOM_FIELD_DATA_TYPES,
   coerceOnshapeValue,
+  customFieldDisplayValue,
+  customFieldKeptDifferences,
+  customFieldWrites,
+  DEFAULT_DESCRIPTION_MODES,
+  everyPushTargets,
   MAPPABLE_VALUE_TYPES,
+  MAPPING_MODES,
   mappedFieldValues,
   mergeCustomFieldValues,
-  ownedCustomFieldsDiffer,
+  parseDescriptionModes,
   parseProperties,
   parsePropertyMap,
   partPropertiesFromElementMetadata,
   propertyDisplayValue,
   resolveMappedFields,
-  withoutNoOpClears
+  targetKey
 } from "./onshape/panel/properties";
 export type {
   PanelRelease,
@@ -204,6 +231,23 @@ export {
   releaseKeyFor,
   resolveReleaseStates
 } from "./onshape/panel/releases";
+export type {
+  StandardField,
+  StandardFieldId,
+  StandardFieldWriter,
+  TranslatedValue,
+  ValueTranslation
+} from "./onshape/panel/standard-fields";
+export {
+  defaultTranslations,
+  isStandardFieldId,
+  STANDARD_FIELD_IDS,
+  STANDARD_FIELDS,
+  standardField,
+  standardFieldValues,
+  translateValue,
+  translationErrors
+} from "./onshape/panel/standard-fields";
 export type {
   PanelAssemblyLineInput,
   PanelAssemblyLineStatus,

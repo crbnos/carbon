@@ -4,19 +4,27 @@
 
 import type { Json } from "@carbon/database";
 import type {
+  DescriptionModes,
   OnshapePropertyValue,
   PlanCustomFieldDefinition,
   PropertyMapEntry
 } from "@carbon/ee";
 import {
   MAPPABLE_VALUE_TYPES,
+  MAPPING_MODES,
+  parseDescriptionModes,
   parseProperties,
-  parsePropertyMap
+  parsePropertyMap,
+  STANDARD_FIELD_IDS,
+  standardField,
+  targetKey,
+  translationErrors
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
   loadPartCustomFieldDefinitions,
+  loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure
@@ -43,7 +51,10 @@ const querySchema = z.object({
   elementId: z.string().min(1)
 });
 
-/** Fields editor data: properties, property map, custom field definitions. */
+/**
+ * Fields editor data: properties, the property map, the description modes,
+ * the custom field definitions and the company's units.
+ */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -129,7 +140,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("id", ONSHAPE_V2_INTEGRATION_ID)
       .eq("companyId", companyId)
       .maybeSingle(),
-    loadPartCustomFieldDefinitions(client, companyId)
+    loadPartCustomFieldDefinitions(client, companyId),
+    loadPlanOptions(client, companyId)
   ]).catch((error) => {
     logger.error("Failed to read custom fields", { companyId, error });
     return null;
@@ -137,7 +149,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!reads) {
     return data({ error: "Failed to read custom fields" }, { status: 500 });
   }
-  const [integration, definitions] = reads;
+  const [integration, definitions, options] = reads;
   if (integration.error) {
     logger.error("Failed to read the property map", {
       companyId,
@@ -156,17 +168,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
         mappable: Object.hasOwn(MAPPABLE_VALUE_TYPES, property.valueType)
       })),
       map: parsePropertyMap(integration.data?.metadata),
-      definitions
+      descriptionModes: parseDescriptionModes(integration.data?.metadata),
+      definitions,
+      units: options.unitsOfMeasure
     },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
 
+const modeSchema = z.enum(MAPPING_MODES);
+
 const entrySchema = z.object({
   onshapePropertyId: z.string().min(1),
   onshapeName: z.string(),
   valueType: z.string().min(1),
-  carbonFieldId: z.string().min(1)
+  target: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("customField"), fieldId: z.string().min(1) }),
+    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) })
+  ]),
+  mode: modeSchema,
+  translations: z
+    .array(
+      z.object({
+        onshape: z.string().max(255),
+        carbon: z.string().nullable()
+      })
+    )
+    .max(100)
+    .optional()
 });
 
 const payloadSchema = z.object({
@@ -177,7 +206,8 @@ const payloadSchema = z.object({
     .refine(
       (entries) =>
         new Set(entries.map((e) => e.onshapePropertyId)).size === entries.length
-    )
+    ),
+  descriptionModes: z.object({ name: modeSchema, description: modeSchema })
 });
 
 type FieldError = { key: string; errors: string[] };
@@ -192,7 +222,10 @@ function duplicates(values: string[]): Set<string> {
   return twice;
 }
 
-/** Replace the property map; the panel always posts the whole list. */
+/**
+ * Replace the property map and the description modes; the panel always posts
+ * the whole list.
+ */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requireOnshapePanelPermissions(request, {
     update: "settings"
@@ -205,6 +238,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid property map payload" }, { status: 400 });
   }
   const { entries } = parsed.data;
+  const descriptionModes: DescriptionModes = parsed.data.descriptionModes;
 
   const fieldErrors: FieldError[] = [];
 
@@ -218,11 +252,12 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const duplicateFieldIds = duplicates(
-    entries.map((entry) => entry.carbonFieldId)
+  // A target takes one property.
+  const duplicateTargets = duplicates(
+    entries.map((entry) => targetKey(entry.target))
   );
   for (const entry of entries) {
-    if (duplicateFieldIds.has(entry.carbonFieldId)) {
+    if (duplicateTargets.has(targetKey(entry.target))) {
       fieldErrors.push({
         key: entry.onshapePropertyId,
         errors: ["Another property already maps to this Carbon field"]
@@ -230,7 +265,33 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const existingIds = [...new Set(entries.map((entry) => entry.carbonFieldId))];
+  // Item fields: the value type the field takes, and a translation whose
+  // every Carbon value is one the field allows.
+  const itemEntries = entries.filter((entry) => entry.target.kind === "item");
+  let units: Awaited<ReturnType<typeof loadPlanOptions>>["unitsOfMeasure"] = [];
+  if (itemEntries.length > 0) {
+    units = (await loadPlanOptions(client, companyId)).unitsOfMeasure;
+  }
+  for (const entry of itemEntries) {
+    if (entry.target.kind !== "item") continue;
+    const field = standardField(entry.target.field);
+    if (!field) continue;
+    const errors: string[] = [];
+    if (!field.valueTypes.includes(entry.valueType)) {
+      errors.push(
+        `An Onshape ${entry.valueType} property can't set ${field.label}`
+      );
+    }
+    errors.push(...translationErrors(field, entry.translations ?? [], units));
+    if (errors.length > 0) {
+      fieldErrors.push({ key: entry.onshapePropertyId, errors });
+    }
+  }
+
+  const customFieldIds = entries.flatMap((entry) =>
+    entry.target.kind === "customField" ? [entry.target.fieldId] : []
+  );
+  const existingIds = [...new Set(customFieldIds)];
   if (existingIds.length > 0) {
     const existing = await client
       .from("customField")
@@ -249,7 +310,8 @@ export async function action({ request }: ActionFunctionArgs) {
       (existing.data ?? []).map((row) => [row.id, row.dataTypeId])
     );
     for (const entry of entries) {
-      const dataTypeId = dataTypes.get(entry.carbonFieldId);
+      if (entry.target.kind !== "customField") continue;
+      const dataTypeId = dataTypes.get(entry.target.fieldId);
       if (dataTypeId === undefined) {
         fieldErrors.push({
           key: entry.onshapePropertyId,
@@ -275,25 +337,40 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // One mode: Onshape always wins (see `properties.ts`).
-  const mapEntries: PropertyMapEntry[] = entries.map((entry) => ({
-    onshapePropertyId: entry.onshapePropertyId,
-    onshapeName: entry.onshapeName,
-    valueType: entry.valueType,
-    carbonFieldId: entry.carbonFieldId,
-    mode: "owned"
-  }));
+  // A translation is kept for a list item field only; text fields take the
+  // value as it is.
+  const mapEntries: PropertyMapEntry[] = entries.map((entry) => {
+    const field =
+      entry.target.kind === "item" ? standardField(entry.target.field) : null;
+    return {
+      onshapePropertyId: entry.onshapePropertyId,
+      onshapeName: entry.onshapeName,
+      valueType: entry.valueType,
+      target: entry.target,
+      mode: entry.mode,
+      ...(field?.kind === "list"
+        ? {
+            translations: (entry.translations ?? []).map((row) => ({
+              onshape: row.onshape.trim(),
+              carbon: row.carbon
+            }))
+          }
+        : {})
+    };
+  });
 
-  // jsonb_set patches only propertyMap; other writers own the sibling keys.
-  // The column is json, hence the casts.
+  // jsonb_set patches only propertyMap and descriptionModes; other writers
+  // own the sibling keys. The column is json, hence the casts.
   const db = getDatabaseClient();
   let updatedRows: bigint;
   try {
     const updated = await db
       .updateTable("companyIntegration")
       .set({
-        metadata: sql<Json>`jsonb_set(metadata::jsonb, '{propertyMap}', ${JSON.stringify(
+        metadata: sql<Json>`jsonb_set(jsonb_set(metadata::jsonb, '{propertyMap}', ${JSON.stringify(
           mapEntries
+        )}::jsonb, true), '{descriptionModes}', ${JSON.stringify(
+          descriptionModes
         )}::jsonb, true)::json`
       })
       .where("id", "=", ONSHAPE_V2_INTEGRATION_ID)
@@ -326,7 +403,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return data(
-    { map: mapEntries, definitions, ...(warning ? { warning } : {}) },
+    {
+      map: mapEntries,
+      descriptionModes,
+      definitions,
+      ...(warning ? { warning } : {})
+    },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

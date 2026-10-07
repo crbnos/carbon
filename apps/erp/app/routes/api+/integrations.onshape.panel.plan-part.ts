@@ -2,20 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { PartPlan, PlanItemRow, PlanMappingRow } from "@carbon/ee";
-import {
-  buildPartPlan,
-  normalizeConfiguration,
-  ownedCustomFieldsDiffer,
-  parsePropertyMap,
-  resolveMappedFields,
-  withoutNoOpClears
+import type {
+  OnshapePropertyValue,
+  PartPlan,
+  PlanItemRow,
+  PlanMappingContext,
+  PlanMappingRow
 } from "@carbon/ee";
+import { buildPartPlan, normalizeConfiguration } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   createPanelPlan,
   getOnshapeClient,
-  loadPartCustomFieldDefinitions,
+  loadPlanMapping,
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
@@ -44,7 +43,7 @@ const payloadSchema = z.object({
 });
 
 const ITEM_COLUMNS =
-  "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType";
+  "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, sourcingType, unitOfMeasureCode, mpn";
 
 /** Plan a part push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
@@ -108,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
     )
   ];
 
-  const [mappings, matches, options, integration] = await Promise.all([
+  const [mappings, matches, options] = await Promise.all([
     client
       .from("externalIntegrationMapping")
       .select("entityId, externalId, lastSyncedAt, metadata")
@@ -124,14 +123,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("readableId", batch)
         .order("revision")
     ),
-    loadPlanOptions(client, companyId),
-    // getOnshapeClient reads this row but does not expose its metadata.
-    client
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("companyId", companyId)
-      .maybeSingle()
+    loadPlanOptions(client, companyId)
   ]);
 
   if (mappings.error) {
@@ -139,13 +131,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   if (matches.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
-  }
-  // Planning without the map would silently skip owned fields.
-  if (integration.error) {
-    return data(
-      { error: "Failed to read the Onshape property map" },
-      { status: 500 }
-    );
   }
 
   const mappingRows: PlanMappingRow[] = (mappings.data ?? []).map((row) => ({
@@ -177,6 +162,46 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const mappedItems = mappedResult.data as PlanItemRow[];
 
+  const candidates = [...matchedItems, ...mappedItems];
+
+  // Planning without the map would silently skip "everyPush" values.
+  let mapping: PlanMappingContext;
+  try {
+    mapping = await loadPlanMapping(
+      client,
+      companyId,
+      candidates.map((item) => item.readableId)
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the Onshape property map"
+      },
+      { status: 500 }
+    );
+  }
+
+  // No map means no extra Onshape read. Unchanged parts are read too: a
+  // property mapped after the last push must reach Carbon.
+  let propertiesByPartId: Map<string, OnshapePropertyValue[]> | undefined;
+  if (mapping.map.length > 0 && requested.length > 0) {
+    try {
+      propertiesByPartId = await readPartProperties(
+        onshape.client,
+        document,
+        elementId,
+        partIds,
+        configuration
+      );
+    } catch (error) {
+      const failure = onshapeFailure(error);
+      return data(failure.body, { status: failure.status });
+    }
+  }
+
   const rows = buildPartPlan({
     documentId,
     elementId,
@@ -184,93 +209,16 @@ export async function action({ request }: ActionFunctionArgs) {
     parts,
     requestedPartIds: partIds,
     mappings: mappingRows,
-    items: [...matchedItems, ...mappedItems],
-    options
+    items: candidates,
+    options,
+    mapping,
+    propertiesByPartId
   });
   if (rows.length === 0) {
     return data(
       { error: "None of the selected parts are in this element" },
       { status: 422 }
     );
-  }
-
-  // No map means no extra Onshape reads. Unchanged rows still resolve: a
-  // property mapped after the last push must reach Carbon.
-  const propertyMap = parsePropertyMap(integration.data?.metadata);
-  const resolvable = rows.filter((row) => row.action !== "skip-no-part-number");
-  if (propertyMap.length > 0 && resolvable.length > 0) {
-    let definitions: Awaited<ReturnType<typeof loadPartCustomFieldDefinitions>>;
-    let properties: Awaited<ReturnType<typeof readPartProperties>>;
-    try {
-      [definitions, properties] = await Promise.all([
-        loadPartCustomFieldDefinitions(client, companyId),
-        readPartProperties(
-          onshape.client,
-          document,
-          elementId,
-          resolvable.map((row) => row.partId),
-          configuration
-        )
-      ]);
-    } catch (error) {
-      const failure = onshapeFailure(error);
-      return data(failure.body, { status: failure.status });
-    }
-    for (const row of resolvable) {
-      const resolved = resolveMappedFields({
-        properties: properties.get(row.partId) ?? [],
-        map: propertyMap,
-        definitions
-      });
-      if (resolved.fields.length > 0) row.customFields = resolved.fields;
-      if (resolved.unmapped.length > 0) {
-        row.unmappedProperties = resolved.unmapped;
-      }
-      if (resolved.problems.length > 0) {
-        row.customFieldProblems = resolved.problems;
-      }
-    }
-
-    // An unchanged row becomes an update (no model export) only when its mapped
-    // fields differ from Carbon's; no row clears a field Carbon doesn't hold.
-    const existing = resolvable.filter(
-      (row) => row.item && (row.customFields ?? []).length > 0
-    );
-    const held = await selectInBatches(
-      [
-        ...new Set(
-          existing.flatMap((row) => (row.item ? [row.item.readableId] : []))
-        )
-      ],
-      (batch) =>
-        client
-          .from("part")
-          .select("id, customFields")
-          .eq("companyId", companyId)
-          .in("id", batch)
-    );
-    if (held.error) {
-      return data({ error: "Failed to read Carbon parts" }, { status: 500 });
-    }
-    const heldByReadableId = new Map(
-      (held.data ?? []).map((part) => [part.id, part.customFields])
-    );
-    for (const row of existing) {
-      const current = row.item
-        ? heldByReadableId.get(row.item.readableId)
-        : undefined;
-      if (row.action === "unchanged") {
-        if (!ownedCustomFieldsDiffer(current, row.customFields ?? [])) {
-          delete row.customFields;
-          continue;
-        }
-        row.action = "update";
-        row.cadUnchanged = true;
-      }
-      const fields = withoutNoOpClears(current, row.customFields ?? []);
-      if (fields.length > 0) row.customFields = fields;
-      else delete row.customFields;
-    }
   }
 
   const plan: PartPlan = {

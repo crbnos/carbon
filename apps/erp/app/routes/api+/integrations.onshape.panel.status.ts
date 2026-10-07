@@ -145,7 +145,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
           partNumber: node.partNumber,
           name: node.name,
           quantity: node.quantity,
-          purchased: node.purchased,
           itemSource: node.itemSource
         });
         walk(node.children);

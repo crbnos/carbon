@@ -7,17 +7,18 @@ import type { PropertyMapEntry } from "./properties";
 import {
   CUSTOM_FIELD_DATA_TYPES,
   coerceOnshapeValue,
+  customFieldKeptDifferences,
+  customFieldWrites,
   MAPPABLE_VALUE_TYPES,
   mappedFieldValues,
   mergeCustomFieldValues,
-  ownedCustomFieldsDiffer,
+  parseDescriptionModes,
   parseProperties,
   parsePropertyMap,
   partPropertiesFromElementMetadata,
   propertyDisplayValue,
   propertyMapEqual,
-  resolveMappedFields,
-  withoutNoOpClears
+  resolveMappedFields
 } from "./properties";
 
 const textField = {
@@ -153,7 +154,7 @@ describe("coerceOnshapeValue / propertyDisplayValue", () => {
 });
 
 describe("parsePropertyMap", () => {
-  it("reads entries and treats every one as owned, whatever mode is stored", () => {
+  it("reads the earlier shape: carbonFieldId is a custom field, owned is every push", () => {
     expect(
       parsePropertyMap({
         propertyMap: [
@@ -161,16 +162,22 @@ describe("parsePropertyMap", () => {
             onshapePropertyId: "p1",
             onshapeName: "Vendor",
             valueType: "STRING",
-            carbonFieldId: "cf_text"
+            carbonFieldId: "cf_text",
+            mode: "owned"
           },
           {
             onshapePropertyId: "p2",
-            onshapeName: "Line",
+            onshapeName: "Finish",
             valueType: "ENUM",
             carbonFieldId: "cf_list",
             mode: "default"
           },
-          { onshapeName: "broken" }
+          {
+            onshapePropertyId: "p3",
+            onshapeName: "Coating",
+            valueType: "STRING",
+            carbonFieldId: "cf_other"
+          }
         ]
       })
     ).toEqual([
@@ -178,19 +185,108 @@ describe("parsePropertyMap", () => {
         onshapePropertyId: "p1",
         onshapeName: "Vendor",
         valueType: "STRING",
-        carbonFieldId: "cf_text",
-        mode: "owned"
+        target: { kind: "customField", fieldId: "cf_text" },
+        mode: "everyPush"
       },
       {
         onshapePropertyId: "p2",
-        onshapeName: "Line",
+        onshapeName: "Finish",
         valueType: "ENUM",
-        carbonFieldId: "cf_list",
-        mode: "owned"
+        target: { kind: "customField", fieldId: "cf_list" },
+        mode: "create"
+      },
+      {
+        onshapePropertyId: "p3",
+        onshapeName: "Coating",
+        valueType: "STRING",
+        target: { kind: "customField", fieldId: "cf_other" },
+        mode: "create"
       }
     ]);
     expect(parsePropertyMap(null)).toEqual([]);
     expect(parsePropertyMap({ credentials: {} })).toEqual([]);
+  });
+
+  it("reads item targets with their translation", () => {
+    expect(
+      parsePropertyMap({
+        propertyMap: [
+          {
+            onshapePropertyId: "p1",
+            onshapeName: "Make or buy",
+            valueType: "ENUM",
+            target: { kind: "item", field: "replenishmentSystem" },
+            mode: "everyPush",
+            translations: [
+              { onshape: "Purchased", carbon: "Buy" },
+              { onshape: "Unknown", carbon: null }
+            ]
+          }
+        ]
+      })
+    ).toEqual([
+      {
+        onshapePropertyId: "p1",
+        onshapeName: "Make or buy",
+        valueType: "ENUM",
+        target: { kind: "item", field: "replenishmentSystem" },
+        mode: "everyPush",
+        translations: [
+          { onshape: "Purchased", carbon: "Buy" },
+          { onshape: "Unknown", carbon: null }
+        ]
+      }
+    ]);
+  });
+
+  it("gives a list item field with no stored translation the default rows", () => {
+    const [entry] = parsePropertyMap({
+      propertyMap: [
+        {
+          onshapePropertyId: "p1",
+          onshapeName: "Tracking",
+          valueType: "STRING",
+          target: { kind: "item", field: "itemTrackingType" },
+          mode: "create"
+        }
+      ]
+    });
+    expect(entry?.translations?.map((row) => row.onshape)).toEqual([
+      "Inventory",
+      "Non-Inventory",
+      "Serial",
+      "Batch"
+    ]);
+  });
+
+  it("drops an entry with an unknown target", () => {
+    expect(
+      parsePropertyMap({
+        propertyMap: [
+          {
+            onshapePropertyId: "p1",
+            onshapeName: "Price",
+            valueType: "DOUBLE",
+            target: { kind: "item", field: "unitCost" },
+            mode: "create"
+          }
+        ]
+      })
+    ).toEqual([]);
+  });
+});
+
+describe("parseDescriptionModes", () => {
+  it("defaults each description to Set at creation", () => {
+    expect(parseDescriptionModes(null)).toEqual({
+      name: "create",
+      description: "create"
+    });
+    expect(
+      parseDescriptionModes({
+        descriptionModes: { name: "everyPush", description: "owned" }
+      })
+    ).toEqual({ name: "everyPush", description: "create" });
   });
 });
 
@@ -200,22 +296,22 @@ describe("resolveMappedFields", () => {
       onshapePropertyId: "p1",
       onshapeName: "Vendor",
       valueType: "STRING",
-      carbonFieldId: "cf_text",
-      mode: "owned" as const
+      target: { kind: "customField" as const, fieldId: "cf_text" },
+      mode: "everyPush" as const
     },
     {
       onshapePropertyId: "p2",
       onshapeName: "Mass",
       valueType: "DOUBLE",
-      carbonFieldId: "cf_num",
-      mode: "default" as const
+      target: { kind: "customField" as const, fieldId: "cf_num" },
+      mode: "create" as const
     },
     {
       onshapePropertyId: "p3",
       onshapeName: "Gone",
       valueType: "STRING",
-      carbonFieldId: "cf_deleted",
-      mode: "owned" as const
+      target: { kind: "customField" as const, fieldId: "cf_deleted" },
+      mode: "everyPush" as const
     }
   ];
   const properties = [
@@ -242,7 +338,7 @@ describe("resolveMappedFields", () => {
       {
         fieldId: "cf_text",
         name: "Coating",
-        mode: "owned",
+        mode: "everyPush",
         dataTypeId: 5,
         listOptions: null,
         value: "ACME",
@@ -265,40 +361,163 @@ describe("resolveMappedFields", () => {
   });
 });
 
-describe("mappedFieldValues", () => {
-  it("writes every owned value, null included, and set default values", () => {
-    const field = (
-      fieldId: string,
-      mode: "owned" | "default",
-      value: string | null
-    ) => ({
-      fieldId,
-      name: fieldId,
-      mode,
-      dataTypeId: 5,
-      listOptions: null,
-      value,
-      onshapeName: fieldId
+describe("resolveMappedFields — item fields", () => {
+  const units = [
+    { code: "EA", name: "Each" },
+    { code: "KG", name: "Kilogram" }
+  ];
+  const map: PropertyMapEntry[] = [
+    {
+      onshapePropertyId: "p-make",
+      onshapeName: "Make or buy",
+      valueType: "ENUM",
+      target: { kind: "item", field: "replenishmentSystem" },
+      mode: "create",
+      translations: [
+        { onshape: "Buy", carbon: "Buy" },
+        { onshape: "Make", carbon: "Make" },
+        { onshape: "Either", carbon: null }
+      ]
+    },
+    {
+      onshapePropertyId: "p-mpn",
+      onshapeName: "Vendor part",
+      valueType: "STRING",
+      target: { kind: "item", field: "mpn" },
+      mode: "everyPush"
+    },
+    {
+      onshapePropertyId: "p-unit",
+      onshapeName: "Unit",
+      valueType: "STRING",
+      target: { kind: "item", field: "unitOfMeasureCode" },
+      mode: "create",
+      translations: []
+    }
+  ];
+  const property = (propertyId: string, name: string, value: unknown) => ({
+    propertyId,
+    name,
+    valueType: "STRING",
+    value
+  });
+
+  it("translates list values and keeps text as it is, with its source", () => {
+    const { itemFields, problems } = resolveMappedFields({
+      properties: [
+        property("p-make", "Make or buy", " buy "),
+        property("p-mpn", "Vendor part", "SKF-6203"),
+        property("p-unit", "Unit", "kilogram")
+      ],
+      map,
+      definitions: [],
+      units
     });
+    expect(problems).toEqual([]);
+    expect(itemFields).toEqual([
+      {
+        field: "replenishmentSystem",
+        label: "Replenishment",
+        value: "Buy",
+        mode: "create",
+        onshapeName: "Make or buy"
+      },
+      {
+        field: "mpn",
+        label: "Manufacturer Part Number",
+        value: "SKF-6203",
+        mode: "everyPush",
+        onshapeName: "Vendor part"
+      },
+      {
+        field: "unitOfMeasureCode",
+        label: "Unit of Measure",
+        value: "KG",
+        mode: "create",
+        onshapeName: "Unit"
+      }
+    ]);
+  });
+
+  it("reports a value no row matches, and gives No value for a row set to it", () => {
+    const outsourced = resolveMappedFields({
+      properties: [property("p-make", "Make or buy", "Outsourced")],
+      map,
+      definitions: [],
+      units
+    });
+    expect(outsourced.itemFields).toEqual([]);
+    expect(outsourced.problems).toEqual([
+      'Make or buy: "Outsourced" has no Carbon value. Replenishment not written.'
+    ]);
+    const either = resolveMappedFields({
+      properties: [property("p-make", "Make or buy", "Either")],
+      map,
+      definitions: [],
+      units
+    });
+    expect(either.problems).toEqual([]);
+    expect(either.itemFields[0]?.value).toBeNull();
+  });
+
+  it("matches a BOM column by name when its id is not the property id", () => {
+    const { itemFields } = resolveMappedFields({
+      properties: [property("column-7", "Make or buy", "Make")],
+      map,
+      definitions: [],
+      units,
+      matchByName: true
+    });
+    expect(itemFields.map((field) => field.value)).toEqual(["Make"]);
     expect(
-      mappedFieldValues([
-        field("cf_owned", "owned", "Anodized"),
-        field("cf_emptied", "owned", null),
-        field("cf_default", "default", "Painted"),
-        field("cf_unset", "default", null)
-      ])
-    ).toEqual({
-      cf_owned: "Anodized",
-      cf_emptied: null,
-      cf_default: "Painted"
-    });
+      resolveMappedFields({
+        properties: [property("column-7", "Make or buy", "Make")],
+        map,
+        definitions: [],
+        units
+      }).itemFields
+    ).toEqual([]);
   });
 });
 
-describe("ownedCustomFieldsDiffer", () => {
+describe("mappedFieldValues", () => {
+  const field = (
+    fieldId: string,
+    mode: "create" | "everyPush",
+    value: string | null
+  ) => ({
+    fieldId,
+    name: fieldId,
+    mode,
+    dataTypeId: 5,
+    listOptions: null,
+    value,
+    onshapeName: fieldId
+  });
+  const fields = [
+    field("cf_every", "everyPush", "Anodized"),
+    field("cf_emptied", "everyPush", null),
+    field("cf_create", "create", "Painted"),
+    field("cf_unset", "create", null)
+  ];
+
+  it("writes every value on a create, nulls left out", () => {
+    const { values, fieldIds } = mappedFieldValues(fields, true);
+    expect(values).toEqual({ cf_every: "Anodized", cf_create: "Painted" });
+    expect([...fieldIds]).toEqual(["cf_every", "cf_create"]);
+  });
+
+  it("writes only every-push values on an existing item, nulls included", () => {
+    const { values, fieldIds } = mappedFieldValues(fields, false);
+    expect(values).toEqual({ cf_every: "Anodized", cf_emptied: null });
+    expect([...fieldIds]).toEqual(["cf_every", "cf_emptied"]);
+  });
+});
+
+describe("customFieldWrites", () => {
   const field = (
     value: string | number | boolean | null,
-    mode: "owned" | "default" = "owned"
+    mode: "create" | "everyPush" = "everyPush"
   ) => ({
     fieldId: "cf-title",
     name: "Title",
@@ -309,42 +528,33 @@ describe("ownedCustomFieldsDiffer", () => {
     onshapeName: "Description"
   });
 
-  it("is true when a newly mapped value is not in Carbon yet", () => {
-    expect(ownedCustomFieldsDiffer({}, [field("Rubber pad")])).toBe(true);
-    expect(ownedCustomFieldsDiffer(null, [field("Rubber pad")])).toBe(true);
+  it("writes a newly mapped value that Carbon does not hold yet", () => {
+    expect(customFieldWrites({}, [field("Rubber pad")])).toHaveLength(1);
+    expect(customFieldWrites(null, [field("Rubber pad")])).toHaveLength(1);
   });
 
-  it("is false when Carbon already holds the value", () => {
+  it("writes nothing when Carbon already holds the value", () => {
     expect(
-      ownedCustomFieldsDiffer({ "cf-title": "Rubber pad" }, [
-        field("Rubber pad")
-      ])
-    ).toBe(false);
+      customFieldWrites({ "cf-title": "Rubber pad" }, [field("Rubber pad")])
+    ).toEqual([]);
   });
 
-  it("is true when Onshape emptied a value Carbon still holds", () => {
+  it("clears a value Onshape emptied, and only when Carbon holds one", () => {
     expect(
-      ownedCustomFieldsDiffer({ "cf-title": "Rubber pad" }, [field(null)])
-    ).toBe(true);
-    expect(ownedCustomFieldsDiffer({}, [field(null)])).toBe(false);
+      customFieldWrites({ "cf-title": "Rubber pad" }, [field(null)])
+    ).toHaveLength(1);
+    expect(customFieldWrites({}, [field(null)])).toEqual([]);
+    // The item form saves a blank field as "".
+    expect(customFieldWrites({ "cf-title": "" }, [field(null)])).toEqual([]);
   });
 
-  it("treats a blank field saved by the item form as empty", () => {
-    expect(ownedCustomFieldsDiffer({ "cf-title": "" }, [field(null)])).toBe(
-      false
-    );
-  });
-
-  it("ignores fields the push does not own", () => {
-    expect(ownedCustomFieldsDiffer({}, [field("x", "default")])).toBe(false);
+  it("never writes a Set at creation field to an existing item", () => {
+    expect(customFieldWrites({}, [field("x", "create")])).toEqual([]);
   });
 });
 
-describe("withoutNoOpClears", () => {
-  const field = (
-    value: string | null,
-    mode: "owned" | "default" = "owned"
-  ) => ({
+describe("customFieldKeptDifferences", () => {
+  const field = (value: string | null, mode: "create" | "everyPush") => ({
     fieldId: "cf-title",
     name: "Title",
     mode,
@@ -354,26 +564,21 @@ describe("withoutNoOpClears", () => {
     onshapeName: "Description"
   });
 
-  it("drops an owned clear when Carbon holds no value", () => {
-    expect(withoutNoOpClears({}, [field(null)])).toEqual([]);
-    expect(withoutNoOpClears({ "cf-title": null }, [field(null)])).toEqual([]);
-    expect(withoutNoOpClears({ "cf-title": "" }, [field(null)])).toEqual([]);
-    expect(withoutNoOpClears(null, [field(null)])).toEqual([]);
-  });
-
-  it("keeps an owned clear when Carbon holds a value", () => {
+  it("lists a Set at creation value that differs from Carbon's", () => {
     expect(
-      withoutNoOpClears({ "cf-title": "Rubber pad" }, [field(null)])
-    ).toEqual([field(null)]);
-  });
-
-  it("keeps values and fields the push does not own", () => {
-    expect(withoutNoOpClears({}, [field("Rubber pad")])).toEqual([
-      field("Rubber pad")
-    ]);
-    expect(withoutNoOpClears({}, [field(null, "default")])).toEqual([
-      field(null, "default")
-    ]);
+      customFieldKeptDifferences({ "cf-title": "Ours" }, [
+        field("Theirs", "create")
+      ])
+    ).toHaveLength(1);
+    expect(
+      customFieldKeptDifferences({ "cf-title": "Same" }, [
+        field("Same", "create")
+      ])
+    ).toEqual([]);
+    expect(
+      customFieldKeptDifferences({}, [field("Theirs", "everyPush")])
+    ).toEqual([]);
+    expect(customFieldKeptDifferences({}, [field(null, "create")])).toEqual([]);
   });
 });
 
@@ -437,9 +642,14 @@ describe("MAPPABLE_VALUE_TYPES", () => {
 });
 
 describe("propertyMapEqual", () => {
-  const entry = (onshapePropertyId: string, carbonFieldId: string) => ({
+  const entry = (
+    onshapePropertyId: string,
+    fieldId: string,
+    mode: "create" | "everyPush" = "create"
+  ) => ({
     onshapePropertyId,
-    carbonFieldId
+    target: { kind: "customField" as const, fieldId },
+    mode
   });
 
   it("ignores the order the entries arrive in", () => {
@@ -459,6 +669,20 @@ describe("propertyMapEqual", () => {
       false
     );
     expect(propertyMapEqual(base, [entry("p1", "f1")])).toBe(false);
+  });
+
+  it("notices a changed mode and a changed translation", () => {
+    expect(
+      propertyMapEqual([entry("p1", "f1")], [entry("p1", "f1", "everyPush")])
+    ).toBe(false);
+    const item = (carbon: string | null) => ({
+      onshapePropertyId: "p1",
+      target: { kind: "item" as const, field: "replenishmentSystem" as const },
+      mode: "create" as const,
+      translations: [{ onshape: "Buy", carbon }]
+    });
+    expect(propertyMapEqual([item("Buy")], [item("Buy")])).toBe(true);
+    expect(propertyMapEqual([item("Buy")], [item(null)])).toBe(false);
   });
 
   it("notices a duplicated row on either side", () => {
@@ -481,16 +705,14 @@ describe("propertyMapEqual", () => {
       {
         ...entry("p1", "f1"),
         onshapeName: "Vendor",
-        valueType: "STRING",
-        mode: "owned"
+        valueType: "STRING"
       }
     ];
     const renamed: PropertyMapEntry[] = [
       {
         ...entry("p1", "f1"),
         onshapeName: "Supplier",
-        valueType: "ENUM",
-        mode: "owned"
+        valueType: "ENUM"
       }
     ];
     expect(propertyMapEqual(stored, renamed)).toBe(true);

@@ -12,7 +12,13 @@
  * "1.1", "1.1.2"), not a children array. Rows may also carry `itemSource`
  * (documentId/elementId/partId of the row's origin), which Carbon uses to
  * link child parts when present.
+ *
+ * Every non-empty cell is kept on its row as an Onshape property (the column
+ * id stands in for the property id), so a BOM row resolves through the
+ * company's property map like a part.
  */
+
+import type { OnshapePropertyValue } from "./properties";
 
 export type OnshapeBomNode = {
   /** Dotted position, e.g. "1.2". The top-level assembly row is "0". */
@@ -24,15 +30,15 @@ export type OnshapeBomNode = {
   description: string | null;
   quantity: number;
   /**
-   * Bought as a unit: the "Purchasing Level" column says Purchased, or the
-   * sub-assembly's "Subassembly BOM behavior" is Show Assembly only.
-   */
-  purchased: boolean;
-  /**
    * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so the
-   * BOM carries none of its components.
+   * BOM carries none of its components. Structure only: it says nothing about
+   * whether the company buys or builds it.
    */
   shownAsUnit?: true;
+  /** The row comes from Onshape's Standard content library (bought hardware). */
+  standardContent?: true;
+  /** The row's non-empty cells, one per column. Dropped before a plan is stored. */
+  properties?: OnshapePropertyValue[];
   itemSource: {
     documentId?: string;
     elementId?: string;
@@ -45,16 +51,18 @@ export type OnshapeBomNode = {
   children: OnshapeBomNode[];
 };
 
-type BomHeader = { id: string; name: string };
+type BomHeader = { id: string; name: string; valueType?: unknown };
 type BomRow = {
   headerIdToValue?: Record<string, unknown>;
   itemSource?: Record<string, unknown>;
+  isStandardContent?: unknown;
 };
 
 /**
  * Onshape's "Subassembly BOM behavior" for a sub-assembly listed as one line
- * with no components — the setting Onshape suggests for one bought (or built)
- * as a unit. The API returns the label as text; compared case-insensitively.
+ * with no components. Designers use it for sub-assemblies they buy and for
+ * ones they build, so it decides structure only. The API returns the label as
+ * text; compared case-insensitively.
  */
 const SHOWN_AS_UNIT = "show assembly only";
 
@@ -114,6 +122,20 @@ export function parseBomTree(payload: unknown): {
     const source = row.itemSource ?? null;
     const shownAsUnit =
       get(row, "Subassembly BOM behavior")?.toLowerCase() === SHOWN_AS_UNIT;
+    const standardContent =
+      row.isStandardContent === true || source?.isStandardContent === true;
+    const properties: OnshapePropertyValue[] = [];
+    for (const header of headers) {
+      const value = row.headerIdToValue?.[header.id];
+      if (cell(value) === null) continue;
+      properties.push({
+        propertyId: header.id,
+        name: header.name,
+        valueType:
+          typeof header.valueType === "string" ? header.valueType : "STRING",
+        value
+      });
+    }
     return {
       index,
       level: index === "" ? 0 : index.split(".").length,
@@ -122,8 +144,9 @@ export function parseBomTree(payload: unknown): {
       name: get(row, "Name"),
       description: get(row, "Description"),
       quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-      purchased: get(row, "Purchasing Level") === "Purchased" || shownAsUnit,
       ...(shownAsUnit ? { shownAsUnit: true as const } : {}),
+      ...(standardContent ? { standardContent: true as const } : {}),
+      ...(properties.length > 0 ? { properties } : {}),
       itemSource: source
         ? {
             documentId: cell(source.documentId) ?? undefined,
@@ -171,6 +194,14 @@ export function parseBomTree(payload: unknown): {
   sortRec(lines);
 
   return { root, lines, missingColumns };
+}
+
+/** The tree without its cells: a stored plan needs the structure only. */
+export function withoutProperties(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
+  return nodes.map(({ properties: _properties, children, ...node }) => ({
+    ...node,
+    children: withoutProperties(children)
+  }));
 }
 
 export function missingBomColumnsMessage(missingColumns: string[]): string {

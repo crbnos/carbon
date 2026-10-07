@@ -7368,9 +7368,6 @@ msgstr "Desconectar"
 msgid "Detach from Onshape?"
 msgstr "Desconectar de Onshape?"
 
-msgid "Detach to edit them in Carbon."
-msgstr "Desconecte para editá-los no Carbon."
-
 msgid "Detail"
 msgstr "Detalhe"
 
@@ -7947,6 +7944,9 @@ msgstr "Cada unidade física obtém sua própria entidade rastreada e número ú
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "O vendedor (ou criador) de cada contrato de aluguel ou contrato recebe um resumo diário de suas faturas."
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "As operações terceirizadas de cada fornecedor de todas as ordens de produção vão em um novo pedido de compra ou em um rascunho existente que você escolhe."
@@ -16588,6 +16588,13 @@ msgid "Push to accounting"
 msgstr "Enviar para contabilidade"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr ""
 
 msgid "Putting your data back"
@@ -19658,12 +19665,6 @@ msgstr "curto"
 
 msgid "Short"
 msgstr "Falta"
-
-msgid "Short and long descriptions are managed in Onshape."
-msgstr "A descrição breve e a descrição longa são gerenciadas no Onshape."
-
-msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "A descrição breve e a descrição longa ficam editáveis no Carbon e deixam de acompanhar o Onshape. Enviar esta peça novamente do Onshape vincula-a outra vez."
 
 msgid "Short Description"
 msgstr "Descrição Breve"

@@ -3,25 +3,34 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Onshape properties → Carbon custom fields.
+ * Onshape properties → Carbon fields.
  *
  * Onshape objects carry properties — standard (Name, Part number, Vendor,
  * Project, …) and company-defined custom ones — each with a stable
- * `propertyId` and a value type. Carbon custom fields are per-table
- * definitions (`customField`, table "part") whose values live as JSON on the
- * row, keyed by field id. The bridge is one explicit map per company, stored
- * on the Onshape integration's settings metadata: which Onshape property
- * feeds which Carbon field.
+ * `propertyId` and a value type. A property can feed one of two targets:
+ * a part custom field (`customField`, table "part", values as JSON on the
+ * row keyed by field id), or a Carbon item field from the target list
+ * (`standard-fields.ts`). The bridge is one explicit map per company, stored
+ * on the Onshape integration's settings metadata.
  *
- * Onshape always wins: every mapped field is written on every push, and a
- * property emptied in Onshape empties the Carbon field. There is one mode,
- * "owned". The `mode` field stays on the types so the merge helpers keep one
- * shape.
+ * Each mapping has a mode. "create" (Set at creation) writes the value only
+ * when a push creates the item. "everyPush" (Update on every push) also
+ * writes it to an existing item the push links, replacing Carbon's value.
+ * Name and Description are not mappings; their modes are on
+ * `descriptionModes`.
  *
  * Everything here is pure so the plan a user reviewed is the plan that runs.
  */
 
 import { parseDate } from "@internationalized/date";
+import type { PlanUnitOfMeasure } from "./plan";
+import type { StandardFieldId, ValueTranslation } from "./standard-fields";
+import {
+  defaultTranslations,
+  isStandardFieldId,
+  standardField,
+  translateValue
+} from "./standard-fields";
 
 /** One property on an Onshape object, as the metadata API returns it. */
 export type OnshapePropertyValue = {
@@ -33,14 +42,42 @@ export type OnshapePropertyValue = {
   editable?: boolean;
 };
 
+/**
+ * "create": Set at creation — the value reaches an item the push creates, and
+ * Carbon owns the field after that. "everyPush": Update on every push — the
+ * value also replaces Carbon's on an existing item the push links.
+ */
+export const MAPPING_MODES = ["create", "everyPush"] as const;
+export type MappingMode = (typeof MAPPING_MODES)[number];
+
+/** What a mapping writes: a part custom field or an item field. */
+export type PropertyMapTarget =
+  | { kind: "customField"; fieldId: string }
+  | { kind: "item"; field: StandardFieldId };
+
 /** One entry of the company's property map (integration settings metadata). */
 export type PropertyMapEntry = {
   onshapePropertyId: string;
-  /** Display only; the propertyId is the join. */
+  /** Display, and the BOM column fallback; the propertyId is the join. */
   onshapeName: string;
   valueType: string;
-  carbonFieldId: string;
-  mode: "owned" | "default";
+  target: PropertyMapTarget;
+  mode: MappingMode;
+  /** List item fields only: Onshape value → Carbon value. */
+  translations?: ValueTranslation[];
+};
+
+/** The modes of the two descriptions, which every push reads from Onshape. */
+export type DescriptionModes = {
+  /** Short Description (`item.name`). */
+  name: MappingMode;
+  /** Long Description (`item.description`). */
+  description: MappingMode;
+};
+
+export const DEFAULT_DESCRIPTION_MODES: DescriptionModes = {
+  name: "create",
+  description: "create"
 };
 
 /** A Carbon custom field definition the panel needs (customField row). */
@@ -56,11 +93,25 @@ export type PlanCustomFieldDefinition = {
 export type PlanCustomField = {
   fieldId: string;
   name: string;
-  mode: "owned" | "default";
+  mode: MappingMode;
   dataTypeId: number;
   listOptions: string[] | null;
   /** Coerced to the Carbon type; null when Onshape holds no value. */
   value: string | number | boolean | null;
+  /** The Onshape property it came from, for the review's provenance line. */
+  onshapeName: string;
+};
+
+/** A mapped item field on a plan row, with the property it came from. */
+export type PlanItemField = {
+  field: StandardFieldId;
+  label: string;
+  /**
+   * The Carbon value after translation. Null is "No value": nothing is
+   * written, and the next rule in the precedence order decides.
+   */
+  value: string | null;
+  mode: MappingMode;
   /** The Onshape property it came from, for the review's provenance line. */
   onshapeName: string;
 };
@@ -263,9 +314,31 @@ export function coerceOnshapeValue(
   }
 }
 
+function isMappingMode(value: unknown): value is MappingMode {
+  return value === "create" || value === "everyPush";
+}
+
+function parseTranslations(value: unknown): ValueTranslation[] | null {
+  if (!Array.isArray(value)) return null;
+  const out: ValueTranslation[] = [];
+  for (const row of value) {
+    if (!isRecord(row) || typeof row.onshape !== "string") continue;
+    out.push({
+      onshape: row.onshape,
+      carbon: typeof row.carbon === "string" ? row.carbon : null
+    });
+  }
+  return out;
+}
+
 /**
- * The stored property map, tolerating absent/malformed metadata. Every entry
- * reads as owned, whatever mode is stored.
+ * The stored property map, tolerating absent/malformed metadata.
+ *
+ * It also reads the earlier shape: a `carbonFieldId` is a custom field
+ * target, and a stored mode of "owned" is Update on every push, which is how
+ * every push behaved when that map was saved. Any other mode reads as Set at
+ * creation. A list item field saved without a translation gets the default
+ * rows.
  */
 export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
   const raw = isRecord(metadata) ? metadata.propertyMap : null;
@@ -274,21 +347,86 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
   for (const entry of raw) {
     if (!isRecord(entry)) continue;
     const { onshapePropertyId, onshapeName, valueType, carbonFieldId } = entry;
-    if (
-      typeof onshapePropertyId !== "string" ||
-      typeof carbonFieldId !== "string"
-    ) {
-      continue;
+    if (typeof onshapePropertyId !== "string") continue;
+    const type = typeof valueType === "string" ? valueType : "STRING";
+
+    let target: PropertyMapTarget | null = null;
+    const stored = isRecord(entry.target) ? entry.target : null;
+    if (stored?.kind === "customField" && typeof stored.fieldId === "string") {
+      target = { kind: "customField", fieldId: stored.fieldId };
+    } else if (stored?.kind === "item" && isStandardFieldId(stored.field)) {
+      target = { kind: "item", field: stored.field };
+    } else if (!stored && typeof carbonFieldId === "string") {
+      target = { kind: "customField", fieldId: carbonFieldId };
     }
-    out.push({
+    if (!target) continue;
+
+    const mode: MappingMode =
+      entry.mode === "everyPush" || entry.mode === "owned"
+        ? "everyPush"
+        : "create";
+    const mapped: PropertyMapEntry = {
       onshapePropertyId,
       onshapeName: typeof onshapeName === "string" ? onshapeName : "",
-      valueType: typeof valueType === "string" ? valueType : "STRING",
-      carbonFieldId,
-      mode: "owned"
-    });
+      valueType: type,
+      target,
+      mode
+    };
+    if (target.kind === "item") {
+      const field = standardField(target.field);
+      if (field?.kind === "list") {
+        mapped.translations =
+          parseTranslations(entry.translations) ??
+          defaultTranslations(field, type);
+      }
+    }
+    out.push(mapped);
   }
   return out;
+}
+
+/** The two descriptions' modes; a missing or unknown value is Set at creation. */
+export function parseDescriptionModes(metadata: unknown): DescriptionModes {
+  const raw = isRecord(metadata) ? metadata.descriptionModes : null;
+  const modes = isRecord(raw) ? raw : {};
+  return {
+    name: isMappingMode(modes.name) ? modes.name : "create",
+    description: isMappingMode(modes.description) ? modes.description : "create"
+  };
+}
+
+/**
+ * The Carbon fields every push replaces, read from the integration's
+ * metadata: the descriptions and the mapping targets in "everyPush" mode. The
+ * item card names them so a person knows which edits a push overwrites.
+ */
+export function everyPushTargets(metadata: unknown): {
+  descriptions: Array<keyof DescriptionModes>;
+  itemFields: StandardFieldId[];
+  customFieldIds: string[];
+} {
+  const modes = parseDescriptionModes(metadata);
+  const map = parsePropertyMap(metadata).filter(
+    (entry) => entry.mode === "everyPush"
+  );
+  return {
+    descriptions: (["name", "description"] as const).filter(
+      (field) => modes[field] === "everyPush"
+    ),
+    itemFields: map.flatMap((entry) =>
+      entry.target.kind === "item" ? [entry.target.field] : []
+    ),
+    customFieldIds: map.flatMap((entry) =>
+      entry.target.kind === "customField" ? [entry.target.fieldId] : []
+    )
+  };
+}
+
+/** A target as one string, for a Select value or a duplicate check. */
+export function targetKey(target: PropertyMapTarget): string {
+  return target.kind === "customField"
+    ? `customField:${target.fieldId}`
+    : `item:${target.field}`;
 }
 
 /**
@@ -299,8 +437,19 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
  */
 type PropertyMapDecision = {
   onshapePropertyId: string;
-  carbonFieldId?: string;
+  target: PropertyMapTarget;
+  mode: MappingMode;
+  translations?: ValueTranslation[];
 };
+
+/** A mapping's decisions as one comparable string. */
+function decisionKey(entry: PropertyMapDecision): string {
+  return JSON.stringify([
+    targetKey(entry.target),
+    entry.mode,
+    (entry.translations ?? []).map((row) => [row.onshape, row.carbon])
+  ]);
+}
 
 /**
  * Whether two property maps say the same thing, order ignored. The Fields
@@ -322,53 +471,89 @@ export function propertyMapEqual(
     seen.add(entry.onshapePropertyId);
     const other = index.get(entry.onshapePropertyId);
     if (!other) return false;
-    if (other.carbonFieldId !== entry.carbonFieldId) return false;
+    if (decisionKey(other) !== decisionKey(entry)) return false;
   }
   return true;
 }
 
 /**
- * Resolve one object's properties through the map: the fields apply would
- * write (with coercion problems surfaced, not silently dropped) and the
- * valued properties nothing maps yet — the review shows those as "not
- * mapped" so the map grows from real parts.
+ * Resolve one object's properties through the map: the custom fields and
+ * item fields a push would write, the values that cannot be written (shown,
+ * never dropped silently) and the valued properties nothing maps yet. The
+ * review shows those as "not mapped" so the map grows from real parts.
+ *
+ * `matchByName` is for a BOM row: its cells are keyed by column, and a column
+ * whose id is not the property id still matches by the property's name.
  */
 export function resolveMappedFields({
   properties,
   map,
-  definitions
+  definitions,
+  units = [],
+  matchByName = false
 }: {
   properties: OnshapePropertyValue[];
   map: PropertyMapEntry[];
   definitions: PlanCustomFieldDefinition[];
+  units?: readonly PlanUnitOfMeasure[];
+  matchByName?: boolean;
 }): {
   fields: PlanCustomField[];
+  itemFields: PlanItemField[];
   problems: string[];
   unmapped: UnmappedProperty[];
 } {
   const definitionById = new Map(definitions.map((d) => [d.id, d]));
-  const entryByPropertyId = new Map(
-    map.map((entry) => [entry.onshapePropertyId, entry])
-  );
-  const fields: PlanCustomField[] = [];
-  const problems: string[] = [];
-  const unmapped: UnmappedProperty[] = [];
-
-  for (const property of properties) {
-    const entry = entryByPropertyId.get(property.propertyId);
-    if (!entry) {
-      const value = propertyDisplayValue(property.value);
-      if (value !== null && !RESERVED_PROPERTY_NAMES.has(property.name)) {
-        unmapped.push({
-          propertyId: property.propertyId,
-          name: property.name,
-          valueType: property.valueType,
-          value
-        });
+  const propertyById = new Map(properties.map((p) => [p.propertyId, p]));
+  const propertyByName = new Map<string, OnshapePropertyValue>();
+  if (matchByName) {
+    for (const property of properties) {
+      if (!propertyByName.has(property.name)) {
+        propertyByName.set(property.name, property);
       }
+    }
+  }
+  const fields: PlanCustomField[] = [];
+  const itemFields: PlanItemField[] = [];
+  const problems: string[] = [];
+  const used = new Set<string>();
+
+  for (const entry of map) {
+    const property =
+      propertyById.get(entry.onshapePropertyId) ??
+      (entry.onshapeName ? propertyByName.get(entry.onshapeName) : undefined);
+    // The object does not carry the property: there is nothing to write.
+    if (!property) continue;
+    used.add(property.propertyId);
+
+    if (entry.target.kind === "item") {
+      const field = standardField(entry.target.field);
+      if (!field) continue;
+      const translated = translateValue({
+        field,
+        text: propertyDisplayValue(property.value),
+        // The map's type: a BOM column may not report one.
+        valueType: entry.valueType,
+        translations: entry.translations ?? [],
+        units
+      });
+      if (!translated.ok) {
+        problems.push(
+          `${property.name}: ${translated.reason}. ${field.label} not written.`
+        );
+        continue;
+      }
+      itemFields.push({
+        field: field.id,
+        label: field.label,
+        value: translated.value,
+        mode: entry.mode,
+        onshapeName: property.name
+      });
       continue;
     }
-    const definition = definitionById.get(entry.carbonFieldId);
+
+    const definition = definitionById.get(entry.target.fieldId);
     if (!definition) {
       problems.push(
         `${property.name}: the mapped Carbon field no longer exists`
@@ -394,24 +579,60 @@ export function resolveMappedFields({
       onshapeName: property.name
     });
   }
-  return { fields, problems, unmapped };
+
+  const unmapped: UnmappedProperty[] = [];
+  for (const property of properties) {
+    if (used.has(property.propertyId)) continue;
+    const value = propertyDisplayValue(property.value);
+    if (value !== null && !RESERVED_PROPERTY_NAMES.has(property.name)) {
+      unmapped.push({
+        propertyId: property.propertyId,
+        name: property.name,
+        valueType: property.valueType,
+        value
+      });
+    }
+  }
+  return { fields, itemFields, problems, unmapped };
 }
 
 /**
- * The values a push writes for a row's mapped fields, keyed by field id. An
- * owned field carries its null through, so `mergeCustomFieldValues` deletes
- * the key and a property emptied in Onshape empties in Carbon.
+ * The values a push writes for a row's mapped fields, keyed by field id. On
+ * an item the push creates, every non-empty value. On an existing item, the
+ * "everyPush" fields only, and their nulls too: `mergeCustomFieldValues`
+ * deletes the key, so a property emptied in Onshape empties in Carbon.
  */
 export function mappedFieldValues(
-  fields: PlanCustomField[]
-): Record<string, string | number | boolean | null> {
+  fields: PlanCustomField[],
+  isCreate: boolean
+): {
+  values: Record<string, string | number | boolean | null>;
+  fieldIds: Set<string>;
+} {
   const values: Record<string, string | number | boolean | null> = {};
+  const fieldIds = new Set<string>();
   for (const field of fields) {
-    if (field.mode === "owned" || field.value !== null) {
-      values[field.fieldId] = field.value;
-    }
+    if (isCreate ? field.value === null : field.mode !== "everyPush") continue;
+    values[field.fieldId] = field.value;
+    fieldIds.add(field.fieldId);
   }
-  return values;
+  return { values, fieldIds };
+}
+
+/**
+ * A mapped value as review text; "—" when nothing will be written. A Yes/No
+ * field stores BOOLEAN_TRUE or no key, so the raw "on" never reaches the
+ * review text.
+ */
+export function customFieldDisplayValue(
+  field: Pick<PlanCustomField, "value" | "dataTypeId">
+): string {
+  if (field.dataTypeId === CUSTOM_FIELD_DATA_TYPES.boolean) {
+    return field.value === BOOLEAN_TRUE || field.value === true ? "Yes" : "—";
+  }
+  if (field.value === null) return "—";
+  if (typeof field.value === "boolean") return field.value ? "Yes" : "No";
+  return String(field.value);
 }
 
 /**
@@ -443,17 +664,19 @@ function isBlankCustomValue(value: unknown): boolean {
 }
 
 /**
- * Whether writing the owned mapped fields would change what Carbon holds. A
- * part whose CAD is unchanged still needs a push when a property was mapped,
+ * The fields an existing item takes: the "everyPush" ones whose value differs
+ * from Carbon's. A clear of a field Carbon doesn't hold is dropped, so the
+ * review says "will be cleared" only when something is. A part whose CAD is
+ * unchanged still needs a push when this is not empty: a property was mapped,
  * or remapped, after its last push.
  */
-export function ownedCustomFieldsDiffer(
+export function customFieldWrites(
   current: unknown,
   fields: PlanCustomField[]
-): boolean {
+): PlanCustomField[] {
   const held = isRecord(current) ? current : {};
-  return fields.some((field) => {
-    if (field.mode !== "owned") return false;
+  return fields.filter((field) => {
+    if (field.mode !== "everyPush") return false;
     const value = held[field.fieldId];
     return field.value === null
       ? !isBlankCustomValue(value)
@@ -462,18 +685,18 @@ export function ownedCustomFieldsDiffer(
 }
 
 /**
- * Drop owned fields that would clear a value Carbon doesn't hold, so the
- * review says "will be cleared" only when something is.
+ * The "create" fields Onshape holds a different value for, on an existing
+ * item. The push writes none of them; the review shows each one.
  */
-export function withoutNoOpClears(
+export function customFieldKeptDifferences(
   current: unknown,
   fields: PlanCustomField[]
 ): PlanCustomField[] {
   const held = isRecord(current) ? current : {};
   return fields.filter(
     (field) =>
-      field.mode !== "owned" ||
-      field.value !== null ||
-      !isBlankCustomValue(held[field.fieldId])
+      field.mode === "create" &&
+      field.value !== null &&
+      held[field.fieldId] !== field.value
   );
 }

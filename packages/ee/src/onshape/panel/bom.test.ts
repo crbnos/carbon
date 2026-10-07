@@ -3,7 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { flattenBomTree, missingBomColumnsMessage, parseBomTree } from "./bom";
+import {
+  flattenBomTree,
+  missingBomColumnsMessage,
+  parseBomTree,
+  withoutProperties
+} from "./bom";
 
 const H = [
   { id: "h-item", name: "Item" },
@@ -48,8 +53,67 @@ describe("parseBomTree", () => {
     expect(lines.map((l) => l.index)).toEqual(["1", "2"]);
     expect(lines[0]?.children.map((c) => c.partNumber)).toEqual(["LEG-003"]);
     expect(lines[0]?.quantity).toBe(2);
-    expect(lines[1]?.purchased).toBe(true);
     expect(lines[0]?.revision).toBe("A");
+  });
+
+  it("keeps each row's non-empty cells as properties", () => {
+    const { lines } = parseBomTree({
+      headers: [...H, { id: "p-make", name: "Make or buy", valueType: "ENUM" }],
+      rows: [
+        {
+          headerIdToValue: {
+            "h-item": "1",
+            "h-pn": "BRG-6203",
+            "h-qty": 2,
+            "h-pl": "",
+            "p-make": { displayName: "Buy" }
+          }
+        }
+      ]
+    });
+    expect(lines[0]?.properties).toEqual([
+      { propertyId: "h-item", name: "Item", valueType: "STRING", value: "1" },
+      {
+        propertyId: "h-pn",
+        name: "Part number",
+        valueType: "STRING",
+        value: "BRG-6203"
+      },
+      { propertyId: "h-qty", name: "Quantity", valueType: "STRING", value: 2 },
+      {
+        propertyId: "p-make",
+        name: "Make or buy",
+        valueType: "ENUM",
+        value: { displayName: "Buy" }
+      }
+    ]);
+    expect(withoutProperties(lines)[0]).not.toHaveProperty("properties");
+  });
+
+  it("does not read the Purchasing Level column as Buy", () => {
+    const { lines } = parseBomTree({
+      headers: H,
+      rows: [row("1", "TOP-001", 1, "Purchased")]
+    });
+    expect(lines[0]).not.toHaveProperty("purchased");
+  });
+
+  it("marks a row from Standard content", () => {
+    const { lines } = parseBomTree({
+      headers: H,
+      rows: [
+        row("1", "SCREW-M4", 8, "", {
+          itemSource: { documentId: "d", isStandardContent: true }
+        }),
+        row("2", "SCREW-M5", 8, "", { isStandardContent: true }),
+        row("3", "BRACKET-1", 1)
+      ]
+    });
+    expect(lines.map((line) => line.standardContent)).toEqual([
+      true,
+      true,
+      undefined
+    ]);
   });
 
   it("defaults a missing or bad quantity to 1 and survives missing columns", () => {
@@ -146,7 +210,7 @@ describe("parseBomTree Subassembly BOM behavior", () => {
     };
   };
 
-  it("treats a sub-assembly Onshape shows as one unit as bought", () => {
+  it("marks a sub-assembly Onshape shows as one unit, for structure only", () => {
     const { lines } = parseBomTree({
       headers,
       rows: [
@@ -155,12 +219,10 @@ describe("parseBomTree Subassembly BOM behavior", () => {
         withBehavior("3", "PAD-005", "N/A")
       ]
     });
-    expect(
-      lines.map((line) => [line.partNumber, line.purchased, line.shownAsUnit])
-    ).toEqual([
-      ["ASM-009", true, true],
-      ["ASM-008", false, undefined],
-      ["PAD-005", false, undefined]
+    expect(lines.map((line) => [line.partNumber, line.shownAsUnit])).toEqual([
+      ["ASM-009", true],
+      ["ASM-008", undefined],
+      ["PAD-005", undefined]
     ]);
   });
 });

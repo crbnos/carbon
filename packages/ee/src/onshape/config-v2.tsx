@@ -33,24 +33,26 @@ export const OnshapeV2 = defineIntegration({
   shortDescription: "Push CAD data to Carbon from inside Onshape.",
   images: [],
   /*
-   * What a push fills in that Onshape has no field for. Everything else a
-   * created item carries — part number, name, description, revision, Buy vs
-   * Make — comes from Onshape, and is changed there. These are read at plan
-   * time by `parsePushDefaults`. The generic settings save merges into the
-   * stored metadata, so the property map and connection keys survive.
+   * What a push fills in when nothing else decides. A created item's part
+   * number, name, description and revision come from Onshape, and a mapped
+   * property (the panel's Fields page) wins over every default here. These
+   * are read at plan time by `parsePushDefaults`. The generic settings save
+   * merges into the stored metadata, so the property map and connection keys
+   * survive.
    */
   settingGroups: [
     {
       name: "Push defaults",
       description:
-        "Values Carbon gives items it creates from Onshape. Change an individual item on its page in Carbon after the push."
+        "Values Carbon gives items it creates from Onshape when no mapped property sets them. Map Onshape properties to item fields on the Fields page of the Onshape panel. Change an individual item on its page in Carbon after the push."
     }
   ],
   settings: [
     {
       name: "defaultReplenishmentSystem",
-      label: "Replenishment for designed parts",
-      description: "Parts marked purchased in Onshape's BOM are always Buy.",
+      label: "Replenishment",
+      description:
+        "A BOM row with components is always Make, and a Standard content row is Buy.",
       group: "Push defaults",
       type: "select",
       listOptions: [...ITEM_REPLENISHMENT_SYSTEMS],
@@ -59,7 +61,8 @@ export const OnshapeV2 = defineIntegration({
     },
     {
       name: "defaultMethodTypeForMake",
-      label: "Method for designed parts",
+      label: "Method for the replenishment above",
+      description: "Also used for a BOM row with components, which is Make.",
       group: "Push defaults",
       type: "select",
       listOptions: [...ITEM_METHOD_TYPES],
@@ -68,7 +71,9 @@ export const OnshapeV2 = defineIntegration({
     },
     {
       name: "defaultMethodTypeForBuy",
-      label: "Method for purchased parts",
+      label: "Method for Buy items",
+      description:
+        "Used when a mapped property or Standard content makes an item Buy.",
       group: "Push defaults",
       type: "select",
       listOptions: [...VALID_METHOD_TYPES_BY_REPLENISHMENT.Buy],

@@ -21,10 +21,13 @@ import {
   pickAdoptTarget,
   pickLatestRow,
   pickReuseRow,
+  planExistingItem,
   proposeItem,
+  proposeMappedItem,
   reconcileMethodForReplenishment
 } from "./plan";
 import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
+import type { PlanItemField, PropertyMapEntry } from "./properties";
 import type { PanelRelease } from "./releases";
 
 const options = {
@@ -43,7 +46,6 @@ const node = (over: Partial<OnshapeBomNode> = {}): OnshapeBomNode => ({
   name: "Foot pad",
   description: null,
   quantity: 1,
-  purchased: false,
   itemSource: null,
   children: [],
   ...over
@@ -65,9 +67,14 @@ describe("proposeItem", () => {
     });
   });
 
-  it("defaults a purchased BOM row to Buy / Pull from Inventory", () => {
+  it("defaults a Standard content BOM row to Buy / Pull from Inventory", () => {
     const item = proposeItem(
-      { partNumber: "HDW-010", name: null, purchased: true, revision: "B" },
+      {
+        partNumber: "HDW-010",
+        name: null,
+        standardContent: true,
+        revision: "B"
+      },
       options
     );
     expect(item.replenishmentSystem).toBe("Buy");
@@ -349,12 +356,50 @@ describe("buildPartPlan", () => {
     ]);
     expect(rows[0]?.proposed?.readableId).toBe("TOP-001");
     expect(rows[1]?.itemId).toBe("item-1");
-    expect(rows[1]?.changes).toEqual([
-      { field: "name", from: "Foot pad (old)", to: "Foot pad" },
-      { field: "description", from: null, to: "Rubber" }
+    // Descriptions are Set at creation unless the company says otherwise:
+    // the push keeps Carbon's text and shows the difference.
+    expect(rows[1]?.changes).toEqual([]);
+    expect(rows[1]?.keptDifferences).toEqual([
+      {
+        label: "Short Description",
+        onshape: "Foot pad",
+        carbon: "Foot pad (old)"
+      },
+      { label: "Long Description", onshape: "Rubber", carbon: null }
     ]);
     expect(rows[2]?.item?.readableId).toBe("STD-006");
     expect(rows[2]?.proposed).toBeNull();
+  });
+
+  it("overwrites the descriptions set to Update on every push", () => {
+    const rows = buildPartPlan({
+      documentId: "d",
+      elementId: "e",
+      parts,
+      requestedPartIds: ["p1"],
+      mappings: [
+        {
+          entityId: "item-1",
+          externalId: "d:e:p1",
+          lastSyncedAt: null,
+          metadata: { microversionId: "m1" }
+        }
+      ],
+      items,
+      options,
+      mapping: {
+        map: [],
+        definitions: [],
+        descriptionModes: { name: "everyPush", description: "create" },
+        heldCustomFields: new Map()
+      }
+    });
+    expect(rows[0]?.changes).toEqual([
+      { field: "name", from: "Foot pad (old)", to: "Foot pad" }
+    ]);
+    expect(rows[0]?.keptDifferences).toEqual([
+      { label: "Long Description", onshape: "Rubber", carbon: null }
+    ]);
   });
 
   it("reports unchanged when the mapping's microversion matches", () => {
@@ -408,7 +453,7 @@ describe("buildAssemblyPlan", () => {
           level: 2,
           partNumber: "HDW-010",
           name: "Bolt",
-          purchased: true,
+          standardContent: true,
           quantity: 2
         }),
         node({ index: "1.3", level: 2, partNumber: null, name: "Unnamed" })
@@ -522,7 +567,7 @@ describe("buildAssemblyPlan", () => {
 
     it("still classifies an unexploded sub-assembly as an assembly", () => {
       // The trap: with its children out of scope, ASM-008 looks like a leaf.
-      // Treating it as purchased would create it as a Buy part and break the
+      // Treating it as bought would create it as a Buy part and break the
       // link to its own make method.
       const item = build("top").items.find((i) => i.partNumber === "ASM-008");
       expect(item?.isAssembly).toBe(true);
@@ -699,7 +744,7 @@ describe("buildAssemblyPlan", () => {
       ["WB-100", "active"],
       ["ASM-008", "missing"]
     ]);
-    // A purchased-marked row that has children is still made.
+    // A row that has children is made.
     expect(plan.root.proposed).toBeNull();
   });
 
@@ -919,13 +964,13 @@ describe("buildReleasePlan", () => {
             index: "3",
             partNumber: "HDW-010",
             name: "Bolt",
-            purchased: true
+            standardContent: true
           }),
           node({
             index: "4",
             partNumber: "HDW-011",
             name: "Nut",
-            purchased: true
+            standardContent: true
           })
         ]
       },
@@ -990,7 +1035,7 @@ describe("buildReleasePlan", () => {
           node({
             partNumber: "HDW-011",
             name: "Nut",
-            purchased: true
+            standardContent: true
           })
         ]
       },
@@ -1073,9 +1118,16 @@ describe("buildAssemblyPlan descriptions", () => {
     elementId: "ps",
     partId
   });
+  const everyPush = {
+    map: [],
+    definitions: [],
+    descriptionModes: { name: "everyPush", description: "everyPush" } as const,
+    heldCustomFields: new Map()
+  };
   const build = (
     linkedItemIds?: Set<string>,
-    links = new Map<string, string>()
+    links = new Map<string, string>(),
+    mapping: typeof everyPush | null = everyPush
   ) =>
     buildAssemblyPlan({
       documentId: "d",
@@ -1139,7 +1191,8 @@ describe("buildAssemblyPlan descriptions", () => {
       manualLinesByMethodId: new Map(),
       options,
       linkedItemIdByExternalId: links,
-      linkedItemIds
+      linkedItemIds,
+      mapping: mapping ?? undefined
     });
 
   it("writes the root's and every child's this push links, not one linked elsewhere", () => {
@@ -1167,6 +1220,21 @@ describe("buildAssemblyPlan descriptions", () => {
     const byNumber = new Map(plan.items.map((item) => [item.partNumber, item]));
     expect(byNumber.get("LEG-003")?.changes).toHaveLength(1);
     expect(byNumber.get("HDW-010")?.changes).toBeUndefined();
+  });
+
+  it("keeps Carbon's text when the descriptions are Set at creation", () => {
+    const plan = build(new Set(["leg"]), new Map([["d2:ps:JND", "leg"]]), null);
+    expect(plan.root.changes).toBeUndefined();
+    expect(plan.root.keptDifferences).toEqual([
+      {
+        label: "Short Description",
+        onshape: "Workbench",
+        carbon: "Workbench (Carbon)"
+      }
+    ]);
+    const leg = plan.items.find((item) => item.partNumber === "LEG-003");
+    expect(leg?.changes).toBeUndefined();
+    expect(leg?.keptDifferences).toHaveLength(1);
   });
 });
 
@@ -1292,8 +1360,10 @@ describe("changeNoticeDescriptionJson", () => {
 });
 
 describe("buildAssemblyPlan Show Assembly only", () => {
-  it("proposes a sub-assembly Onshape shows as one unit as bought, with no BOM", () => {
-    const plan = buildAssemblyPlan({
+  const unitPlan = (
+    mapping?: Parameters<typeof buildAssemblyPlan>[0]["mapping"]
+  ) =>
+    buildAssemblyPlan({
       documentId: "d",
       wv: "w",
       wvId: "w1",
@@ -1309,25 +1379,476 @@ describe("buildAssemblyPlan Show Assembly only", () => {
           index: "1",
           partNumber: "ASM-009",
           name: "Foot assembly",
-          purchased: true,
-          shownAsUnit: true
+          shownAsUnit: true,
+          properties: [
+            {
+              propertyId: "p-make",
+              name: "Make or buy",
+              valueType: "ENUM",
+              value: "Buy"
+            }
+          ]
         })
       ],
       items: [],
       methodByItemId: new Map(),
       mappedLinesByMethodId: new Map(),
       manualLinesByMethodId: new Map(),
-      options
+      options,
+      mapping
     });
+
+  it("reads Show Assembly only as structure: no BOM, and Make by default", () => {
+    const plan = unitPlan();
     expect(plan.items[0]).toMatchObject({
       partNumber: "ASM-009",
       shownAsUnit: true,
       isAssembly: false,
       proposed: {
-        replenishmentSystem: "Buy",
-        defaultMethodType: "Pull from Inventory"
+        replenishmentSystem: "Make",
+        defaultMethodType: "Make to Order"
       }
     });
     expect(plan.methods.map((m) => m.parentPartNumber)).toEqual(["WB-100"]);
+  });
+
+  it("takes Buy for a one-unit sub-assembly only from a mapped property", () => {
+    const plan = unitPlan({
+      map: [
+        {
+          onshapePropertyId: "p-make",
+          onshapeName: "Make or buy",
+          valueType: "ENUM",
+          target: { kind: "item", field: "replenishmentSystem" },
+          mode: "create",
+          translations: [
+            { onshape: "Buy", carbon: "Buy" },
+            { onshape: "Make", carbon: "Make" }
+          ]
+        }
+      ],
+      definitions: [],
+      descriptionModes: { name: "create", description: "create" },
+      heldCustomFields: new Map()
+    });
+    expect(plan.items[0]?.proposed).toMatchObject({
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Pull from Inventory"
+    });
+    expect(plan.items[0]?.itemFields).toEqual([
+      {
+        field: "replenishmentSystem",
+        label: "Replenishment",
+        value: "Buy",
+        mode: "create",
+        onshapeName: "Make or buy"
+      }
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Mapped item fields
+// ---------------------------------------------------------------------------
+
+const itemField = (
+  field: PlanItemField["field"],
+  value: string | null,
+  mode: PlanItemField["mode"] = "everyPush",
+  onshapeName = "Make or buy"
+): PlanItemField => ({
+  field,
+  label:
+    {
+      mpn: "Manufacturer Part Number",
+      replenishmentSystem: "Replenishment",
+      defaultMethodType: "Default Method Type",
+      sourcingType: "Sourcing",
+      itemTrackingType: "Tracking Type",
+      unitOfMeasureCode: "Unit of Measure"
+    }[field] ?? field,
+  value,
+  mode,
+  onshapeName
+});
+
+describe("proposeMappedItem — precedence for a new item", () => {
+  it("puts a mapped value above children, Standard content and the defaults", () => {
+    const made = proposeMappedItem(
+      {
+        partNumber: "ASM-1",
+        name: null,
+        hasChildren: true,
+        mapped: { replenishmentSystem: "Buy" }
+      },
+      options
+    );
+    expect(made.proposed.replenishmentSystem).toBe("Buy");
+    // A mapped Buy with no mapped method takes the push default for Buy.
+    expect(made.proposed.defaultMethodType).toBe("Pull from Inventory");
+    expect(made.problems).toEqual([]);
+  });
+
+  it("makes a row with children Make, and a Standard content row Buy", () => {
+    const buyDefaults = {
+      ...options,
+      defaults: {
+        ...DEFAULT_PUSH_DEFAULTS,
+        replenishmentSystem: "Buy" as const,
+        methodTypeForMake: "Pull from Inventory" as const
+      }
+    };
+    expect(
+      proposeItem(
+        { partNumber: "A", name: null, hasChildren: true },
+        buyDefaults
+      )
+    ).toMatchObject({
+      replenishmentSystem: "Make",
+      defaultMethodType: "Pull from Inventory"
+    });
+    expect(
+      proposeItem(
+        { partNumber: "B", name: null, standardContent: true },
+        options
+      )
+    ).toMatchObject({
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Pull from Inventory"
+    });
+    expect(
+      proposeItem({ partNumber: "C", name: null }, buyDefaults)
+    ).toMatchObject({
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Pull from Inventory"
+    });
+  });
+
+  it("refuses a mapped method the replenishment does not allow", () => {
+    const { proposed, problems } = proposeMappedItem(
+      {
+        partNumber: "P",
+        name: null,
+        mapped: {
+          replenishmentSystem: "Buy",
+          defaultMethodType: "Make to Order"
+        }
+      },
+      options
+    );
+    expect(proposed.defaultMethodType).toBe("Pull from Inventory");
+    expect(problems).toEqual([
+      "Default Method Type: Make to Order is not a method for Buy items. Not written."
+    ]);
+  });
+
+  it("writes Sourcing only on a Buy and Make item, with the method it sets", () => {
+    const dropShip = proposeMappedItem(
+      {
+        partNumber: "P",
+        name: null,
+        mapped: {
+          replenishmentSystem: "Buy and Make",
+          sourcingType: "Drop Ship"
+        }
+      },
+      options
+    );
+    expect(dropShip.proposed).toMatchObject({
+      replenishmentSystem: "Buy and Make",
+      sourcingType: "Drop Ship",
+      defaultMethodType: "Purchase to Order"
+    });
+    const onMake = proposeMappedItem(
+      { partNumber: "P", name: null, mapped: { sourcingType: "Drop Ship" } },
+      options
+    );
+    expect(onMake.proposed.sourcingType).toBeUndefined();
+    expect(onMake.problems).toEqual([
+      "Sourcing applies only to Buy and Make items. Not written."
+    ]);
+  });
+
+  it("carries a mapped MPN, tracking type and unit", () => {
+    expect(
+      proposeItem(
+        {
+          partNumber: "P",
+          name: null,
+          mapped: {
+            mpn: "SKF-6203",
+            itemTrackingType: "Serial",
+            unitOfMeasureCode: "M"
+          }
+        },
+        options
+      )
+    ).toMatchObject({
+      mpn: "SKF-6203",
+      itemTrackingType: "Serial",
+      unitOfMeasureCode: "M"
+    });
+  });
+});
+
+describe("planExistingItem — modes", () => {
+  const current = currentItemFields({
+    replenishmentSystem: "Make",
+    defaultMethodType: "Make to Order",
+    itemTrackingType: "Inventory",
+    sourcingType: "Specified",
+    unitOfMeasureCode: "EA",
+    mpn: null
+  });
+  const plan = (itemFields: PlanItemField[]) =>
+    planExistingItem({
+      current,
+      item: { name: "Bracket", description: null },
+      onshape: { name: "Bracket", description: null },
+      resolved: { fields: [], itemFields, problems: [] },
+      heldCustomFields: {},
+      descriptionModes: { name: "create", description: "create" },
+      units: options.unitsOfMeasure
+    });
+
+  it("writes an every-push Buy with the method the item page sets", () => {
+    const planned = plan([itemField("replenishmentSystem", "Buy")]);
+    expect(planned.target).toMatchObject({
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Purchase to Order"
+    });
+    expect(planned.itemFieldChanges).toEqual([
+      {
+        field: "replenishmentSystem",
+        label: "Replenishment",
+        from: "Make",
+        to: "Buy",
+        onshapeName: "Make or buy"
+      },
+      {
+        field: "defaultMethodType",
+        label: "Default Method Type",
+        from: "Make to Order",
+        to: "Purchase to Order",
+        onshapeName: null
+      }
+    ]);
+    expect(planned.keptDifferences).toBeUndefined();
+  });
+
+  it("keeps Carbon's value for a Set at creation mapping and says so", () => {
+    const planned = plan([itemField("replenishmentSystem", "Buy", "create")]);
+    expect(planned.target).toBeUndefined();
+    expect(planned.itemFieldChanges).toBeUndefined();
+    expect(planned.keptDifferences).toEqual([
+      { label: "Replenishment", onshape: "Buy", carbon: "Make" }
+    ]);
+  });
+
+  it("writes nothing for an empty or matching value", () => {
+    const planned = plan([
+      itemField("replenishmentSystem", null),
+      itemField("itemTrackingType", "Inventory", "everyPush", "Tracking")
+    ]);
+    expect(planned.target).toBeUndefined();
+    expect(planned.keptDifferences).toBeUndefined();
+  });
+
+  it("orders the interlock: replenishment, then method, then sourcing", () => {
+    const planned = plan([
+      itemField("replenishmentSystem", "Buy and Make"),
+      itemField(
+        "defaultMethodType",
+        "Pull from Inventory",
+        "everyPush",
+        "Method"
+      ),
+      itemField("sourcingType", "Drop Ship", "everyPush", "Sourcing")
+    ]);
+    expect(planned.target).toMatchObject({
+      replenishmentSystem: "Buy and Make",
+      sourcingType: "Drop Ship",
+      defaultMethodType: "Purchase to Order"
+    });
+    expect(planned.mappedFieldProblems).toBeUndefined();
+  });
+
+  it("skips Sourcing on a Make item, and a method Make does not allow", () => {
+    const planned = plan([
+      itemField("sourcingType", "Drop Ship", "everyPush", "Sourcing"),
+      itemField("defaultMethodType", "Purchase to Order", "everyPush", "Method")
+    ]);
+    expect(planned.target).toBeUndefined();
+    expect(planned.mappedFieldProblems).toEqual([
+      "Default Method Type: Purchase to Order is not a method for Make items. Not written.",
+      "Sourcing applies only to Buy and Make items. Not written."
+    ]);
+  });
+
+  it("writes every-push custom fields and keeps Set at creation ones out", () => {
+    const field = (
+      fieldId: string,
+      mode: "create" | "everyPush",
+      value: string
+    ) => ({
+      fieldId,
+      name: fieldId,
+      mode,
+      dataTypeId: 5,
+      listOptions: null,
+      value,
+      onshapeName: fieldId
+    });
+    const planned = planExistingItem({
+      current,
+      item: { name: "Bracket" },
+      onshape: { name: "Bracket", description: null },
+      resolved: {
+        fields: [
+          field("Finish", "everyPush", "Anodized"),
+          field("Coating", "create", "Zinc")
+        ],
+        itemFields: [],
+        problems: []
+      },
+      heldCustomFields: { Finish: "Raw", Coating: "None" },
+      descriptionModes: { name: "create", description: "create" },
+      units: options.unitsOfMeasure
+    });
+    expect(planned.customFields?.map((f) => f.fieldId)).toEqual(["Finish"]);
+    expect(planned.keptDifferences).toEqual([
+      { label: "Coating", onshape: "Zinc", carbon: "None" }
+    ]);
+  });
+});
+
+describe("buildPartPlan — mapped fields", () => {
+  const map: PropertyMapEntry[] = [
+    {
+      onshapePropertyId: "p-make",
+      onshapeName: "Make or buy",
+      valueType: "ENUM",
+      target: { kind: "item", field: "replenishmentSystem" },
+      mode: "everyPush",
+      translations: [
+        { onshape: "Buy", carbon: "Buy" },
+        { onshape: "Make", carbon: "Make" }
+      ]
+    }
+  ];
+  const mapping = {
+    map,
+    definitions: [],
+    descriptionModes: { name: "create", description: "create" } as const,
+    heldCustomFields: new Map()
+  };
+  const props = (value: string) =>
+    new Map([
+      [
+        "p1",
+        [
+          {
+            propertyId: "p-make",
+            name: "Make or buy",
+            valueType: "ENUM",
+            value
+          }
+        ]
+      ]
+    ]);
+  const build = (value: string, microversionId: string) =>
+    buildPartPlan({
+      documentId: "d",
+      elementId: "e",
+      parts: [
+        {
+          partId: "p1",
+          name: "Bracket",
+          partNumber: "BR-1",
+          revision: null,
+          microversionId: "m1"
+        }
+      ],
+      requestedPartIds: ["p1"],
+      mappings: [
+        {
+          entityId: "item-1",
+          externalId: "d:e:p1",
+          lastSyncedAt: null,
+          metadata: { microversionId }
+        }
+      ],
+      items: [
+        {
+          id: "item-1",
+          readableId: "BR-1",
+          revision: "0",
+          name: "Bracket",
+          replenishmentSystem: "Make",
+          defaultMethodType: "Make to Order",
+          itemTrackingType: "Inventory"
+        }
+      ],
+      options,
+      mapping,
+      propertiesByPartId: props(value)
+    });
+
+  it("turns an unchanged part into an update when an every-push value differs", () => {
+    const [row] = build("Buy", "m1");
+    expect(row?.action).toBe("update");
+    expect(row?.cadUnchanged).toBe(true);
+    expect(row?.target?.replenishmentSystem).toBe("Buy");
+  });
+
+  it("leaves an unchanged part unchanged when Carbon already agrees", () => {
+    const [row] = build("Make", "m1");
+    expect(row?.action).toBe("unchanged");
+    expect(row?.cadUnchanged).toBeUndefined();
+  });
+
+  it("gives a created part the mapped value", () => {
+    const [row] = buildPartPlan({
+      documentId: "d",
+      elementId: "e",
+      parts: [
+        { partId: "p1", name: "Bracket", partNumber: "BR-2", revision: null }
+      ],
+      requestedPartIds: ["p1"],
+      mappings: [],
+      items: [],
+      options,
+      mapping,
+      propertiesByPartId: props("Buy")
+    });
+    expect(row?.action).toBe("create");
+    expect(row?.proposed?.replenishmentSystem).toBe("Buy");
+    expect(row?.itemFields?.[0]?.onshapeName).toBe("Make or buy");
+  });
+});
+
+describe("mergeExistingItemEdits on top of mapped values", () => {
+  it("lays the reviewer's edit over the mapped target and reports changes against Carbon", () => {
+    const current = currentItemFields({
+      replenishmentSystem: "Make",
+      defaultMethodType: "Make to Order",
+      itemTrackingType: "Inventory"
+    });
+    const target = {
+      ...current,
+      replenishmentSystem: "Buy" as const,
+      defaultMethodType: "Purchase to Order" as const
+    };
+    const kept = mergeExistingItemEdits(current, {}, target);
+    expect(kept.ok && kept.changed).toEqual({
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Purchase to Order"
+    });
+    const overridden = mergeExistingItemEdits(
+      current,
+      { replenishmentSystem: "Make", defaultMethodType: "Make to Order" },
+      target
+    );
+    expect(overridden.ok && overridden.changed).toEqual({});
   });
 });
