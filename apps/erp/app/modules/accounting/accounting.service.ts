@@ -20,6 +20,7 @@ import {
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   isBalanced,
+  isUniqueViolation,
   MONTH_NUMBER,
   round,
   toDisplayCredit,
@@ -2244,7 +2245,7 @@ export async function upsertExchangeRateOverride(
   // Two concurrent first-time pins can both miss the update and race the
   // insert; the loser hits the (companyId, currencyCode) unique constraint.
   // Retry as an update so the second write wins instead of erroring.
-  if (insert.error?.code === "23505") {
+  if (isUniqueViolation(insert.error)) {
     const retry = await client
       .from("exchangeRateOverride")
       .update({
@@ -6648,10 +6649,9 @@ export async function createOpeningBalanceJournal(
     // A unique violation on journal_one_posted_opening_balance_per_company means
     // a concurrent request already posted the company's opening balances — the
     // atomic backstop for the check-then-post race.
-    const message =
-      (posted.error as { code?: string }).code === "23505"
-        ? "An opening balance entry already exists — reverse it before entering new balances"
-        : posted.error.message;
+    const message = isUniqueViolation(posted.error)
+      ? "An opening balance entry already exists — reverse it before entering new balances"
+      : posted.error.message;
     return { data: null, error: { message } };
   }
 

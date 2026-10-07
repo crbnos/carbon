@@ -33,6 +33,9 @@ import type { PurchaseOrder } from "../../types";
 
 type PurchaseOrderFinalizeModalProps = {
   purchaseOrder?: PurchaseOrder;
+  /** The order to finalize when the modal is opened away from its own page
+   *  (the planning pages); the route's `orderId` otherwise. */
+  purchaseOrderId?: string;
   fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
   defaultCc?: string[];
@@ -41,12 +44,14 @@ type PurchaseOrderFinalizeModalProps = {
 
 const PurchaseOrderFinalizeModal = ({
   purchaseOrder,
+  purchaseOrderId,
   onClose,
   fetcher,
   defaultCc = [],
   resolvedAttachments = []
 }: PurchaseOrderFinalizeModalProps) => {
-  const { orderId } = useParams();
+  const params = useParams();
+  const orderId = purchaseOrderId ?? params.orderId;
   if (!orderId) throw new Error("orderId not found");
 
   const { t } = useLingui();

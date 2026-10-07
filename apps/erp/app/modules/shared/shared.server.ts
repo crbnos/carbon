@@ -668,6 +668,38 @@ export async function requireCompanyRecord(
   }
 }
 
+/**
+ * Whether `userId` is an ACTIVE employee of `companyId` — the check every
+ * user-id field that names a person in the company needs before it is saved
+ * (a planning action's assignee, a responsible employee). Those columns
+ * reference the global `user` table, so the database accepts anyone's id,
+ * including a person from another company or one since deactivated. One query;
+ * a failed read is logged and answered false (fail closed).
+ */
+export async function isActiveCompanyEmployee(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("employee")
+    .select("id")
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error) {
+    logger.error("Failed to verify employee for company", {
+      companyId,
+      userId,
+      error
+    });
+    return false;
+  }
+  return data !== null;
+}
+
 /** `quoteLine` → `quote line`, for a message a person reads. */
 function recordName(table: string): string {
   return table.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();

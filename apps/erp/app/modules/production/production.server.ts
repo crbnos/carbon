@@ -11,10 +11,12 @@ import { serverFns } from "@carbon/server-functions";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
 import { isJobLocked } from "./production.models";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
+  returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "./production.service";
@@ -195,6 +197,99 @@ export async function releaseJobs({
     purchaseOrdersBySupplierId: purchaseOrders,
     releasedJobIds
   };
+}
+
+// Cancel a job. The one cancel path: the job status route and the planning
+// Cancel action both call it, so neither can skip a step. In order:
+//   1. return the picked material the job did not consume,
+//   2. cancel its lines on every open picking list,
+//   3. set the job Cancelled and clear its assignee.
+// It stops at the first failure, before the status changes, so a retry starts
+// from the same place. Returns null on success, else the failure with the
+// message to show the user.
+//
+// `fromStatuses` limits the cancel to jobs still in one of them, checked
+// before step 1 and again in the status UPDATE. Planning's Cancel passes
+// Draft / Planned: it read the status earlier, and a job released since must
+// not lose its picks. A job outside them is `refused`, with nothing changed.
+export async function cancelJob({
+  client,
+  db,
+  jobId,
+  companyId,
+  userId,
+  fromStatuses
+}: {
+  client: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  jobId: string;
+  companyId: string;
+  userId: string;
+  fromStatuses?: Database["public"]["Enums"]["jobStatus"][];
+}): Promise<{ error: unknown; message: string; refused?: boolean } | null> {
+  if (fromStatuses) {
+    const current = await client
+      .from("job")
+      .select("status")
+      .eq("id", jobId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (current.error) {
+      return { error: current.error, message: "Failed to read the job" };
+    }
+    if (!current.data || !fromStatuses.includes(current.data.status)) {
+      return {
+        error: null,
+        message: "The job's status changed; cancel it on the job",
+        refused: true
+      };
+    }
+  }
+
+  const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), db, {
+    jobId,
+    userId,
+    companyId
+  });
+  if (sweep.error) {
+    return {
+      error: sweep.error,
+      message: "Cancel aborted: returning picked material failed"
+    };
+  }
+
+  const picks = await cancelOpenPickingListsForJob(db, {
+    jobId,
+    companyId,
+    userId
+  });
+  if (picks.error) {
+    return {
+      error: picks.error,
+      message: "Cancel aborted: its picking lists could not be closed"
+    };
+  }
+
+  const update = await updateJobStatus(client, {
+    id: jobId,
+    companyId,
+    status: "Cancelled",
+    assignee: null,
+    updatedBy: userId,
+    ...(fromStatuses ? { fromStatuses } : {})
+  });
+  if (update.error) {
+    return { error: update.error, message: "Failed to update job status" };
+  }
+  if (!update.updated) {
+    return {
+      error: null,
+      message: "The job's status changed; cancel it on the job",
+      refused: true
+    };
+  }
+
+  return null;
 }
 
 // Releasing a batch releases its Draft/Planned member jobs through the same

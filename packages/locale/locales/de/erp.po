@@ -75,6 +75,10 @@ msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehme
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher können sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.}}"
 
+#. placeholder {0}: item.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# Woche} other {# Wochen}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Der Planer behandelt diese Komponente als einen starren Körper – einen Schritt in der Anleitung. Führen Sie den Plan erneut aus, um dies anzuwenden.} other {Der Planer behandelt diese # Komponenten als einen starren Körper – einen Schritt in der Anleitung. Führen Sie den Plan erneut aus, um dies anzuwenden.}}"
@@ -114,6 +118,10 @@ msgstr "{0} kann nicht gelöscht werden, da es noch verwendet wird von: {where}.
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} Zellen mit Deltas"
+
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} verbraucht"
 
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
@@ -294,6 +302,11 @@ msgstr "{0} Werte"
 msgid "{0} values missing"
 msgstr "{0} Werte fehlen"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr "{0} wurde mit einem Problem freigegeben: {1}"
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0} wird als {name} gespeichert"
@@ -359,6 +372,9 @@ msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# weitere nach {fenceLabel}} other {# weitere nach {fenceLabel}}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# Los auflösen} other {# Lose auflösen}}"
 
@@ -389,6 +405,9 @@ msgstr "{delegatedTo} bucht dies in Ihr Ledger, daher schiebt Carbon es nicht. I
 msgid "{discount} off"
 msgstr "{discount} Rabatt"
 
+msgid "{dismissed} dismissed"
+msgstr "{dismissed} zurückgewiesen"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} von {total} Phasen abgeschlossen"
 
@@ -408,6 +427,9 @@ msgstr "{hiddenCount} weitere: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eingefügt, {updated} aktualisiert, {0} benötigen Behebung, {1} übersprungen."
+
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# Tag} other {# Tage}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# Zeile} other {# Zeilen}}"
@@ -486,6 +508,9 @@ msgstr "{removed} geplante Rechnungen werden entfernt."
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} Ressourcen · {reservationCount} Reservierungen · {jobCount} Fertigungsaufträge"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{revisionLabel} wird zur Planung als nächste Revision wieder geöffnet. Das bereits an den Lieferanten gesendete Dokument bleibt unverändert, bis Sie die Bestellung abschließen und erneut versenden."
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} Berechtigungen"
 
@@ -528,9 +553,6 @@ msgstr "{unmappedRequiredCount, plural, one {Ordnen Sie zunächst das # verbleib
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} können nicht eingeplant werden"
 
-msgid "{updatedJobCount} jobs updated"
-msgstr "{updatedJobCount} Fertigungsaufträge aktualisiert"
-
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} hochgeladen — Felder wurden aus dem Dokument ausgefüllt."
 
@@ -571,6 +593,9 @@ msgstr "≈ {0}"
 msgid "0 operations"
 msgstr "0 Arbeitsgänge"
 
+msgid "0 suggests a move for any date difference."
+msgstr "0 schlägt das Umlagern für jeden Datumsunterschied vor."
+
 msgid "0-4 weeks"
 msgstr "0-4 Wochen"
 
@@ -604,9 +629,6 @@ msgstr "1 Rechnung wurde in Ihrem vorherigen System fakturiert und wird nicht er
 msgid "1 job created"
 msgstr "1 Auftrag erstellt"
 
-msgid "1 job updated"
-msgstr "1 Auftrag aktualisiert"
-
 msgid "1 line"
 msgstr "1 Position"
 
@@ -621,6 +643,9 @@ msgstr "Eine geplante Rechnung wird entfernt."
 
 msgid "1 problem — not published"
 msgstr "1 Problem — nicht veröffentlicht"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Einkauf = {conversionFactor} Bestände"
 
 msgid "1 suggested batch"
 msgstr "1 empfohlenes Los"
@@ -639,6 +664,9 @@ msgstr "12 monatliche Perioden"
 
 msgid "13+ weeks"
 msgstr "13+ Wochen"
+
+msgid "1st Negative On Hand"
+msgstr "1. Negativer Bestand"
 
 msgid "1Y"
 msgstr "1 Jahr"
@@ -1242,6 +1270,9 @@ msgstr "Ein Schritt benötigt einen Namen."
 
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "Eine gespeicherte Buchung eines Arbeitsplatzes oder Werkers für den zeitlichen Umfang eines plazierten Arbeitsgangs — die materialisierte Ausgabe eines Planungslaufs und das, was die Prognose zeichnet."
+
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Ein Vorschlag, den MRP nach jedem Durchlauf erstellt: Neue Deckung bestellen oder Eigenfertigung durchführen, oder eine offene Bestellungsposition oder einen Fertigungsauftrag vorziehen, verschieben, erhöhen, verringern oder abbrechen. Wenden Sie ihn von der Planungsseite an, verwerfen Sie ihn oder weisen Sie ihn zu."
 
 msgid "A supplier contact and location are optional"
 msgstr "Ein Lieferantenkontakt und ein Standort sind optional"
@@ -2288,6 +2319,12 @@ msgstr "Ein Arbeitsgang dieses Auftrags läuft in diesem Batch"
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Die Position eines Arbeitsgangs in der Warteschlange seines Arbeitsplatzes — die Reihenfolge, in der die Fertigung die Arbeit aufnimmt. Die Engine nummeriert sie nach Platzierungsreihenfolge (frühester prognostizierter Start zuerst); das Neuordnen von Karten auf der Arbeitsplatz-Tafel setzt sie außer Kraft, ohne die Daten zu ändern."
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr "Eine Bestellung, die aus Materialplanung erstellt wird, folgt der gleichen Genehmigungsregel wie jede andere Bestellung."
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr "Eine Bestellung, die aus Materialplanung erstellt wird, wird freigegeben, sobald sie abgeschlossen ist, ohne Genehmigungsanfrage."
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "Ein unerwarteter Fehler ist beim Verbinden mit Onshape aufgetreten. Speichern Sie die Integrationseinstellungen, um es erneut zu versuchen."
 
@@ -2454,6 +2491,9 @@ msgstr "Preisregeln anwenden"
 
 msgid "Apply Rules On Top"
 msgstr "Wenden Sie Regeln Oben An"
+
+msgid "Apply Suggested Changes"
+msgstr "Vorgeschlagene Änderungen anwenden"
 
 msgid "Apply suggestions"
 msgstr "Vorschläge anwenden"
@@ -3150,6 +3190,9 @@ msgstr "Zuweisen an"
 msgid "Assign to Groups"
 msgstr "Gruppen zuweisen"
 
+msgid "Assign to Me"
+msgstr "Mir zuweisen"
+
 msgid "Assigned"
 msgstr "Zugewiesen"
 
@@ -3160,6 +3203,9 @@ msgid "Assigned to Me"
 msgstr "Mir zugewiesen"
 
 msgid "Assignee"
+msgstr "Bearbeiter"
+
+msgid "Assignees"
 msgstr "Bearbeiter"
 
 msgid "Assignment"
@@ -3908,6 +3954,9 @@ msgstr "Vertrag abbrechen"
 msgid "Cancel Job"
 msgstr "Auftrag abbrechen"
 
+msgid "Cancel job {target}"
+msgstr "Fertigungsauftrag {target} abbrechen"
+
 msgid "Cancel Order"
 msgstr "Auftrag stornieren"
 
@@ -3916,6 +3965,9 @@ msgstr "Kommissionierliste abbrechen"
 
 msgid "Cancel Purchase Order"
 msgstr "Bestellung stornieren"
+
+msgid "Cancel purchase order {target}"
+msgstr "Bestellung {target} abbrechen"
 
 msgid "Cancel Return"
 msgstr "Rückgabe stornieren"
@@ -3970,6 +4022,12 @@ msgstr "Kann nicht in den Teile-Bucket ohne Element-ID verschoben werden"
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "Bestellung kann nicht aufgegeben werden - kein Lieferant mit diesem Artikel verknüpft"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "Bestellung nicht möglich — {count} Artikel haben keinen Lieferanten"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "Bestellung nicht möglich — 1 Artikel hat keinen Lieferanten"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "Kann nicht buchen – Lieferung enthält abgelaufene verfolgte Entitäten."
@@ -4203,6 +4261,9 @@ msgstr "Geändert"
 msgid "Changed By"
 msgstr "Geändert von"
 
+msgid "Changed for this view only. The item's planning horizon is not updated."
+msgstr "Nur für diese Ansicht geändert. Der Planungshorizont des Artikels wird nicht aktualisiert."
+
 msgid "Changelog"
 msgstr "Änderungslog"
 
@@ -4317,6 +4378,9 @@ msgstr "Wählen Sie die Dienstleistungen, die dieser Vertrag fakturiert. Jede wi
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Wählen Sie, was auf der gedruckten Laufkarte erscheint."
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "Legen Sie fest, wann MRP automatisch neu berechnet wird. Sie können es jederzeit auf den Planungsseiten mit „Neu berechnen“ selbst erneut ausführen."
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Wählen Sie, ob der Bill-of-Material-Explorer auf Artikeln, Angeboten und Fertigungsaufträgen jede Position mit ihrer Beschreibung oder ihrer Artikel-ID beschriftet."
@@ -4544,6 +4608,9 @@ msgstr "Unternehmen"
 
 msgid "Company"
 msgstr "Unternehmen"
+
+msgid "Company default"
+msgstr "Unternehmensstandard"
 
 msgid "Company default ({companyLabel})"
 msgstr "Unternehmensstandard ({companyLabel})"
@@ -5405,8 +5472,10 @@ msgid "Could not read the document: {0}"
 msgstr "Dokument konnte nicht gelesen werden: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Konnte {0} nicht freigeben: {1}"
@@ -5672,6 +5741,9 @@ msgstr "Abteilung erstellt"
 
 msgid "Created failure mode"
 msgstr "Fehlermodus erstellt"
+
+msgid "Created from planning"
+msgstr "Aus der Planung erstellt"
 
 msgid "Created gauge type"
 msgstr "Prüfmittelart erstellt"
@@ -6282,6 +6354,15 @@ msgstr "Dezimalstellen"
 msgid "Declining balance"
 msgstr "Degressive Abschreibung"
 
+msgid "Decrease"
+msgstr "Verringern"
+
+msgid "Decrease job {target} to {amount}"
+msgstr "Fertigungsauftrag {target} auf {amount} verringern"
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr "Bestellung {target} auf {amount} verringern"
+
 msgid "Deep in the small hours, {name}."
 msgstr "Tief in der Nacht, {name}."
 
@@ -6351,6 +6432,9 @@ msgstr "Standard-Aufwandskonto für Instandhaltung von Anlagen und Einrichtungen
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Standard-Aufwandskonto für regelmäßige Abschreibungsläufe."
 
+msgid "Default horizon (days)"
+msgstr "Standard-Horizont (Tage)"
+
 msgid "Default Method"
 msgstr "Standardmethode"
 
@@ -6410,6 +6494,15 @@ msgstr "Wird standardmäßig auf das Enddatum gesetzt"
 
 msgid "Defaults to the go-live or start date"
 msgstr "Wird standardmäßig auf das Live-Datum oder Startdatum gesetzt"
+
+msgid "Defer"
+msgstr "Verschieben"
+
+msgid "Defer job {target} to {date}"
+msgstr "Fertigungsauftrag {target} auf {date} verschieben"
+
+msgid "Defer purchase order {target} to {date}"
+msgstr "Bestellung {target} auf {date} verschieben"
 
 msgid "Deferral"
 msgstr "Stundung"
@@ -7083,6 +7176,9 @@ msgstr "Entdeckung"
 msgid "Dismiss"
 msgstr "Verwerfen"
 
+msgid "Dismissed"
+msgstr "Zurückgewiesen"
+
 msgid "Dispatch"
 msgstr "Instandhaltungsauftrag"
 
@@ -7503,6 +7599,9 @@ msgstr "Die Fremdarbeitsgänge jedes Lieferanten aus jedem Fertigungsauftrag wer
 
 msgid "Each, lb, ft…"
 msgstr "Stück, kg, m…"
+
+msgid "Earlier weeks are consumed first."
+msgstr "Frühere Wochen werden zuerst verbraucht."
 
 msgid "Earliest operation start"
 msgstr "Frühestmöglicher Operationsbeginn"
@@ -8313,6 +8412,9 @@ msgstr "Ereignistyp"
 msgid "Events"
 msgstr "Ereignisse"
 
+msgid "Every 3 hours"
+msgstr "Alle 3 Stunden"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Alle unternehmensbezogenen Datensätze. Zugangsdaten, Integrations-Tokens und Webhooks sind nie enthalten."
 
@@ -8459,6 +8561,15 @@ msgstr "Erwarteter Eingang"
 
 msgid "Expected Receipt Date"
 msgstr "Erwartetes Eingangsdatum"
+
+msgid "Expedite"
+msgstr "Beschleunigen"
+
+msgid "Expedite job {target} to {date}"
+msgstr "Fertigungsauftrag {target} auf {date} vorziehen"
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr "Bestellung {target} auf {date} vorziehen"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Aufwandskonto für Kundensalden, die beim Debitoren-Abgleich als uneinbringlich abgeschrieben werden"
@@ -8943,11 +9054,17 @@ msgstr "Fehler beim Aktualisieren der Inventur"
 msgid "Failed to update item cost"
 msgstr "Fehler beim Aktualisieren der Artikelkosten"
 
+msgid "Failed to update job"
+msgstr "Fertigungsauftrag konnte nicht aktualisiert werden"
+
 msgid "Failed to update lead times"
 msgstr "Aktualisierung der Beschaffungszeiten fehlgeschlagen"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Verkaufschance konnte nicht mit Bestellung aktualisiert werden"
+
+msgid "Failed to update purchase order line"
+msgstr "Bestellposition konnte nicht aktualisiert werden"
 
 msgid "Failed to update quote line"
 msgstr "Angebotsposition konnte nicht aktualisiert werden"
@@ -9158,6 +9275,9 @@ msgstr "Vorname"
 msgid "First Operation"
 msgstr "Erste Operation"
 
+msgid "First week the projected stock goes below zero"
+msgstr "Erste Woche, in der der prognostizierte Bestand unter Null fällt"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Anlage"
 
@@ -9250,6 +9370,12 @@ msgstr "für alles. Sie werden die richtige Person hinzuziehen."
 
 msgid "Forecast"
 msgstr "Prognose"
+
+msgid "Forecast consumption"
+msgstr "Prognose-Verbrauch"
+
+msgid "Forecast Consumption"
+msgstr "Prognose-Verbrauch"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -9735,8 +9861,8 @@ msgstr "Hat Arbeitsgänge, die nicht eingeplant werden können"
 msgid "Headers"
 msgstr "Header"
 
-msgid "healthy"
-msgstr "fehlerfrei"
+msgid "Healthy"
+msgstr "Fehlerfrei"
 
 msgid "Help"
 msgstr "Hilfe"
@@ -9905,6 +10031,9 @@ msgstr "Wie viele Tage nach dem Berechnungsdatum der Frühzahlungsrabatt noch ve
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Wie viele Tage nach dem Berechnungsdatum der volle Betrag fällig ist."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "Die Anzahl der Tage, um die eine offene Bestellung vom benötigten Datum abweichen darf, bevor MRP eine Verschiebung vorschlägt. Eingestellt unter Einstellungen → Planung; Standard: 7 Tage."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "Wie viele Tage ab dem Rechnungsdatum dieser Kunde zum Zahlen bekommt; bestimmt das Standard-Fälligkeitsdatum auf Kundenrechnungen."
@@ -10186,6 +10315,9 @@ msgstr "In diesem Schritt"
 msgid "In use"
 msgstr "In Gebrauch"
 
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "In der Zeitzone Ihres Unternehmens ({companyTimeZone})."
+
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "Bearbeiten Sie in Ihren Enterprise-Einstellungen unter Developer die Berechtigungen der privaten OAuth-Anwendung, um „Application can write to your documents\" einzuschließen, dann speichern Sie die Integrationseinstellungen erneut."
 
@@ -10200,9 +10332,6 @@ msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche T
 
 msgid "In-Service Date"
 msgstr "Inbetriebnahmedatum"
-
-msgid "inactive"
-msgstr "inaktiv"
 
 msgid "Inactive"
 msgstr "Inaktiv"
@@ -10261,6 +10390,15 @@ msgstr "Incoterm"
 msgid "Incoterm Location"
 msgstr "Incoterm-Ort"
 
+msgid "Increase"
+msgstr "Erhöhen"
+
+msgid "Increase job {target} to {amount}"
+msgstr "Fertigungsauftrag {target} auf {amount} erhöhen"
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr "Bestellung {target} auf {amount} erhöhen"
+
 msgid "Indirect"
 msgstr "Indirekt"
 
@@ -10299,6 +10437,9 @@ msgstr "Geerbt aus der Gruppe: ob dieses Konto zum Gewinnvortrag (Erträge) gesc
 
 msgid "Inherited from the parent group."
 msgstr "Geerbt aus der übergeordneten Gruppe."
+
+msgid "inherits {inheritedName}"
+msgstr "erbt {inheritedName}"
 
 msgid "Input"
 msgstr "Eingabe"
@@ -10895,6 +11036,9 @@ msgstr "Auftragspriorität"
 msgid "Job readable"
 msgstr "Auftrag lesbar"
 
+msgid "Job released"
+msgstr "Fertigungsauftrag freigegeben"
+
 msgid "Job Traveler"
 msgstr "Fertigungsauftrag-Laufkarte"
 
@@ -11119,8 +11263,14 @@ msgstr "Zuletzt verwendet"
 msgid "Late in the evening, {name}."
 msgstr "Spät am Abend, {name}."
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr "Spätere Wochen werden verbraucht, sobald frühere aufgebraucht sind."
+
 msgid "Latest operation end"
 msgstr "Ende der neuesten Operation"
+
+msgid "Latest Order Date"
+msgstr "Spätestes Bestelldatum"
 
 msgid "Latitude"
 msgstr "Breitengrad"
@@ -11172,6 +11322,9 @@ msgstr "Lassen Sie das Feld leer, um die nächste Revision automatisch zu verwen
 
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
+
+msgid "Leave empty, or enter 0, to show everything MRP plans."
+msgstr "Leer lassen oder 0 eingeben, um alles anzuzeigen, das MRP plant."
 
 msgid "Leave this page"
 msgstr "Diese Seite verlassen"
@@ -11292,7 +11445,7 @@ msgid "Lines"
 msgstr "Zeilen"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "Positionen erscheinen hier, nachdem ein Wareneingang aus einer Bestellung gebucht wurde, und nur für Mengen, die nicht bereits für eine andere Lieferantenrückgabe genehmigt wurden. Verwenden Sie Hinzufügen für eine blinde Rückgabe."
+msgstr "Positionen erscheinen hier, sobald ein Bestellungs-Wareneingang gebucht wurde, und nur für Mengen, die nicht bereits für eine andere Lieferantenrückgabe genehmigt wurden. Verwenden Sie „Artikel hinzufügen\" für eine Blindrückgabe."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Positionen erscheinen hier, nachdem eine Lieferung eines Kundenauftrags gebucht wurde, und nur für Mengen, die nicht bereits durch ein anderes RMA autorisiert wurden. Verwenden Sie Position hinzufügen für blinde Rückgaben."
@@ -11476,6 +11629,12 @@ msgstr "Lange Beschreibung"
 msgid "Longitude"
 msgstr "Längengrad"
 
+msgid "Look ahead (weeks)"
+msgstr "Vorausschau (Wochen)"
+
+msgid "Look back (weeks)"
+msgstr "Rückblick (Wochen)"
+
 msgid "Looks empty here"
 msgstr "Sieht hier leer aus"
 
@@ -11610,6 +11769,12 @@ msgstr "Wesentlicher Teil der wirtschaftlichen Lebensdauer (%)"
 
 msgid "Make"
 msgstr "Herstellen"
+
+msgid "Make {amount} for {date}"
+msgstr "{amount} bis {date} herstellen"
+
+msgid "Make {quantity}"
+msgstr "{quantity} herstellen"
 
 msgid "Make Active"
 msgstr "Aktivieren"
@@ -11893,6 +12058,9 @@ msgstr "Werkstoff-Artikel"
 
 msgid "Material Planning"
 msgstr "Materialplanung"
+
+msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
+msgstr "Die Materialplanung zeigt nur die Maßnahmen und vorgeschlagenen Bestellungen an, die innerhalb dieser Anzahl von Tagen ab heute fällig werden, damit entfernte Anforderungen bis zu ihrer Relevanz außer Sicht bleiben. Der eigene Planungshorizont eines Artikels setzt diesen Standard außer Kraft."
 
 msgid "Material Properties"
 msgstr "Materialeigenschaften"
@@ -12305,6 +12473,18 @@ msgstr "MRP (Planung)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP wird automatisch alle 3 Stunden ausgeführt, aber Sie können es hier manuell ausführen."
 
+msgid "MRP runs automatically every day at {time} ({timeZone}), but you can run it manually here."
+msgstr "MRP wird jeden Tag um {time} ({timeZone}) automatisch ausgeführt, aber Sie können es hier manuell ausführen."
+
+msgid "MRP Schedule"
+msgstr "MRP-Terminplan"
+
+msgid "MRP Suggestions"
+msgstr "MRP-Vorschläge"
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr "MRP schlägt das Umlagern einer bestehenden Bestellung nur vor, wenn ihr Datum um mehr als diese Anzahl von Tagen abweicht. Kleinere Abweichungen werden ignoriert, damit die Aufgabenliste ruhig bleibt."
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Mehrere Fertigungsaufträge können auf diesem Verfahren gleichzeitig laufen — z. B. Lasertisch, Ofen oder Galvanikbad."
 
@@ -12601,9 +12781,6 @@ msgstr "Neue Zahlungsbedingung"
 
 msgid "New Picking List"
 msgstr "Neue Kommissionierliste"
-
-msgid "New PO"
-msgstr "Neue Bestellung"
 
 msgid "New Price Override"
 msgstr "Neue Preisübersteuerung"
@@ -13328,7 +13505,7 @@ msgid "No results found"
 msgstr "Keine Ergebnisse gefunden"
 
 msgid "No returnable lines for this customer"
-msgstr "Keine rückgabefähigen Positionen für diesen Kunden"
+msgstr "Keine Rückgabepositionen für diesen Kunden"
 
 msgid "No returnable lines for this supplier"
 msgstr "Keine rückgabefähigen Positionen für diesen Lieferanten"
@@ -13398,6 +13575,9 @@ msgstr "Keine Lagereinheit"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Keine Lagereinheiten oder Verfolgungsnummern stimmen überein."
+
+msgid "No Supplier"
+msgstr "Kein Lieferant"
 
 msgid "No suppliers yet"
 msgstr "Noch keine Lieferanten"
@@ -13776,6 +13956,9 @@ msgstr "Pünktliche Lieferung"
 msgid "Onboard your agent to Carbon"
 msgstr "Ihren Agenten bei Carbon registrieren"
 
+msgid "Once a day"
+msgstr "Einmal täglich"
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -13940,11 +14123,17 @@ msgstr "Offener Fertigungsauftrag-Bedarf plus ausstehende Umlagerungen aus diese
 msgid "Open jobs"
 msgstr "Offene Fertigungsaufträge"
 
+msgid "Open Jobs"
+msgstr "Offene Fertigungsaufträge"
+
 msgid "Open menu"
 msgstr "Menü öffnen"
 
 msgid "Open navigation"
 msgstr "Navigation öffnen"
+
+msgid "Open Orders"
+msgstr "Offene Bestellungen"
 
 msgid "Open payables by supplier and age"
 msgstr "Offene Verbindlichkeiten nach Lieferant und Fälligkeitsdauer"
@@ -14174,8 +14363,17 @@ msgstr "{0} × {substitute} für diesen Fertigungsauftrag bestellen"
 msgid "Order {0} for this job"
 msgstr "{0} für diesen Auftrag bestellen"
 
+msgid "Order {amount} for {date}"
+msgstr "{amount} bis {date} bestellen"
+
+msgid "Order {quantity}"
+msgstr "{quantity} bestellen"
+
 msgid "Order by"
 msgstr "Bestellung bis"
+
+msgid "Order By"
+msgstr "Sortieren nach"
 
 msgid "Order date"
 msgstr "Bestelldatum"
@@ -14365,6 +14563,9 @@ msgstr "Verantwortlicher"
 
 msgid "Owner (cost center)"
 msgstr "Verantwortlicher (Kostenstelle)"
+
+msgid "Ownership"
+msgstr "Zuständigkeit"
 
 msgid "Ownership transfers"
 msgstr "Eigentumsübertragungen"
@@ -14899,8 +15100,35 @@ msgstr "Geplante Zeit"
 msgid "Planning"
 msgstr "Planung"
 
+msgid "Planning action"
+msgstr "Planungsaktion"
+
+msgid "Planning horizon"
+msgstr "Planungshorizont"
+
+msgid "Planning Horizon"
+msgstr "Planungshorizont"
+
+msgid "Planning Horizon (Days)"
+msgstr "Planungshorizont (Tage)"
+
+msgid "Planning Horizon:"
+msgstr "Planungshorizont:"
+
+msgid "Planning Ownership"
+msgstr "Planungseigentümer"
+
+msgid "Planning purchase orders need approval"
+msgstr "Bestellungen aus Planung benötigen eine Genehmigung"
+
+msgid "Planning purchase orders skip approval"
+msgstr "Bestellungen aus Planung überspringen die Genehmigung"
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Planungsrunden schlugen eine Auffüllung bis zu einem ganzen Vielfachen dieser Zahl vor."
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "Die Planung zeigt nur die Maßnahmen und vorgeschlagenen Bestellungen an, die innerhalb dieser Anzahl von Tagen fällig werden. Leer lassen, um den Standard des Unternehmens zu verwenden, oder 0 eingeben, um alles für diesen Artikel anzuzeigen."
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Untere Grenze der Planung für eine vorgeschlagene Auffüllungsmenge; unterscheidet sich vom MOQ des Lieferanten, der im Datensatz des Lieferanten-Teils lebt."
@@ -15350,6 +15578,9 @@ msgstr "Projektplan"
 msgid "Project start"
 msgstr "Projektstart"
 
+msgid "Projected"
+msgstr "Prognostiziert"
+
 msgid "Projected completion"
 msgstr "Geplante Fertigstellung"
 
@@ -15370,6 +15601,12 @@ msgstr "Geplante Lagerbestandserschöpfung in der Woche vom {0}"
 
 msgid "Projected stock"
 msgstr "Geplanter Bestand"
+
+msgid "Projected stock by week"
+msgstr "Prognostizierter Bestand pro Woche"
+
+msgid "Projected stock is already below zero this week"
+msgstr "Der prognostizierte Bestand liegt bereits unter Null diese Woche"
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -15521,6 +15758,9 @@ msgstr "Bestellung"
 msgid "Purchase Order Amount"
 msgstr "Bestellmenge"
 
+msgid "Purchase Order Approval"
+msgstr "Bestellungsgenehmigung"
+
 msgid "Purchase Order approval rule"
 msgstr "Genehmigungsregel für Bestellung"
 
@@ -15547,6 +15787,9 @@ msgstr "Bestellungen"
 
 msgid "Purchase Orders and Planning"
 msgstr "Bestellungen und Planung"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr "Bestellungen, die aus Materialplanung erstellt werden, können abgeschlossen werden, ohne die Genehmigungsregel zu durchlaufen. Das Hinzufügen, Ändern oder Löschen einer Position von Hand sendet sie zur erneuten Genehmigung."
 
 msgid "Purchase orders required"
 msgstr "Bestellungen erforderlich"
@@ -15659,9 +15902,6 @@ msgstr "Menge"
 
 msgid "Qty On Hand"
 msgstr "Bestandsmenge"
-
-msgid "Qty to Order"
-msgstr "Bestellmenge"
 
 msgid "Qty. Complete"
 msgstr "Menge abgeschlossen"
@@ -15982,6 +16222,9 @@ msgstr "Angebotsbereit"
 
 msgid "ready to keep or revert"
 msgstr "bereit zum Behalten oder Zurücksetzen"
+
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "Kundenaufträge verbrauchen zunächst die Bedarfsprognose ihrer Woche, dann frühere und spätere Wochen im Fenster des Unternehmens. Daher werden Prognose- und tatsächlicher Bedarf nie beide für dieselben Einheiten eingeplant."
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Echtzeit-Bestandsverwaltung und Shopfloor-Sichtbarkeit"
@@ -16352,8 +16595,14 @@ msgstr "Freigabenkontrolle"
 msgid "Release Job"
 msgstr "Auftrag freigeben"
 
+msgid "Release job {target} by {date}"
+msgstr "Fertigungsauftrag {target} bis {date} freigeben"
+
 msgid "Release Jobs"
 msgstr "Fertigungsaufträge freigeben"
+
+msgid "Release purchase order {target} by {date}"
+msgstr "Bestellung {target} bis {date} freigeben"
 
 msgid "Released"
 msgstr "Freigegeben"
@@ -16560,6 +16809,9 @@ msgstr "Leihauslastung"
 msgid "Reopen"
 msgstr "Wieder öffnen"
 
+msgid "Reopen as Revision"
+msgstr "Wieder öffnen als Revision"
+
 msgid "Reorder"
 msgstr "Neu anordnen"
 
@@ -16753,6 +17005,12 @@ msgstr "Reparatur erforderlich"
 msgid "Requires staffing"
 msgstr "Erfordert Personal"
 
+msgid "Reschedule tolerance"
+msgstr "Verschiebungstoleranz"
+
+msgid "Reschedule Tolerance"
+msgstr "Umplanungstoleranz"
+
 msgid "Reserve floor"
 msgstr "Reservemindestbestand"
 
@@ -16822,6 +17080,12 @@ msgstr "Ressourcen"
 
 msgid "Resources"
 msgstr "Ressourcen"
+
+msgid "Responsible employee"
+msgstr "Verantwortlicher Mitarbeiter"
+
+msgid "Responsible Employee"
+msgstr "Verantwortlicher Mitarbeiter"
 
 msgid "Restock"
 msgstr "Wiederauffüllung"
@@ -17308,6 +17572,9 @@ msgstr "Durchlauf-ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Monatsabschluss durchführen und standardmäßige Abstimmungen durchführen"
+
+msgid "Run MRP"
+msgstr "MRP ausführen"
 
 msgid "Run payment batches and track aging"
 msgstr "Zahlungschargen ausführen und Fälligkeitsanalyse verfolgen"
@@ -18031,7 +18298,7 @@ msgid "Select operations"
 msgstr "Arbeitsgänge wählen"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "Wählen Sie gebuchte Wareneingangspositionen von diesem Lieferant aus, um sie zurückzusenden."
+msgstr "Wählen Sie gebuchte Wareneingangspositionen von diesem Lieferanten zur Rücksendung aus."
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "Gebuchte Lieferpositionen an diesen Kunden zur Rückgabe auswählen."
@@ -18272,7 +18539,7 @@ msgid "Session locked"
 msgstr "Sitzung gesperrt"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "Legen Sie einen Kunden für diese Rückgabe fest, um aus einer Lieferung hinzuzufügen."
+msgstr "Legen Sie einen Kunden für diese Rücksendung fest, um aus einer Lieferung hinzuzufügen."
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Wählen Sie einen Lieferanten für diese Rückgabe aus, um Positionen von einem Wareneingang hinzuzufügen."
@@ -18988,6 +19255,9 @@ msgstr "Starten"
 msgid "Start {0} Day Free Trial"
 msgstr "Starten Sie die {0}-tägige kostenlose Testversion"
 
+msgid "Start By"
+msgstr "Starten nach"
+
 msgid "Start counting"
 msgstr "Zählung starten"
 
@@ -19130,6 +19400,9 @@ msgstr "Schritte werden eigenständig erstellt und dann als ein Stück zusammeng
 
 msgid "Still dark out on the floor."
 msgstr "Es ist noch dunkel auf der Werkstatt."
+
+msgid "Stock Availability"
+msgstr "Bestandsverfügbarkeit"
 
 msgid "Stock movement corrected"
 msgstr "Lagerbewegung korrigiert"
@@ -19380,6 +19653,15 @@ msgstr "Mit KI vorschlagen"
 
 msgid "Suggested from the change in recurring value"
 msgstr "Aus der Änderung des wiederkehrenden Werts vorgeschlagen"
+
+msgid "Suggested Jobs"
+msgstr "Vorgeschlagene Fertigungsaufträge"
+
+msgid "Suggested Orders"
+msgstr "Vorgeschlagene Bestellungen"
+
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "Vorgeschlagene Bestellungen erforderlich nach dem Planungshorizont dieses Artikels. Erweitern Sie den Horizont, um sie einzuschließen."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Vorgeschlagene Bestellungen, die Sie noch nicht aufgegeben haben."
@@ -19638,7 +19920,7 @@ msgstr "Synchronisieren"
 msgid "Sync Activity"
 msgstr "Synchronisierungsaktivität"
 
-msgid "sync off"
+msgid "Sync Off"
 msgstr "Synchronisierung aus"
 
 msgid "Sync operation"
@@ -20491,6 +20773,9 @@ msgstr "Der Prozentsatz des Kassenrabatts. Verwenden Sie 0 für keinen Rabatt."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Der Berechtigungssatz, den neue Mitarbeiter dieses Typs automatisch erhalten; durch die Bearbeitung hier wird nur die Vorlage für zukünftige Mitarbeiter geändert – vorhandene Mitarbeiter behalten das, was sie haben, es sei denn, es wird explizit in großen Mengen aktualisiert."
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "Die Person, der eine Planungsaktion zugewiesen ist: der Verantwortliche des Artikels an diesem Standort, sonst der Verantwortliche der Artikelgruppe, sonst der Verantwortliche des Standorts, sonst der Standard des Unternehmens."
+
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "Die geplanten Rechnungen eines Vertrags, die aus seinen Positionen nach Abrechnungshäufigkeit, Ausrichtung und Zeitpunkt erstellt werden; während der Vertrag ein Entwurf ist, können Sie Rechnungen ändern, hinzufügen und löschen, solange jede Position ihren vollen Betrag abrechnet."
 
@@ -20517,6 +20802,9 @@ msgstr "Die Verfahren, die dieser Arbeitsplatz ausführen kann; erscheint in Ver
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Der Provider bietet keine Dimensionsziele. Aktivieren Sie die Funktion zuerst beim Provider (z. B. Tracking-Kategorien, Klassenverfolgung oder Felder)."
+
+msgid "The purchase order"
+msgstr "Die Bestellung"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Die Mengenestaffeln, zu denen diese Position bewertet ist; jede Spalte hat seinen eigenen Stückpreis für Käufer–Lieferant-Verhandlungen und für die Umwandlung in nachgelagerte Dokumente."
@@ -20891,6 +21179,9 @@ msgstr "Diese Buchungssätze sind noch Entwurf, sodass ihre Sollposten und Haben
 
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "Diese Arbeitsgänge nutzen ein Verfahren mit mehreren Lieferanten. Wählen Sie für jeden einen Lieferanten."
+
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "Diese Bestellungen konnten nicht geladen werden. Schließen und öffnen Sie erneut, um es zu versuchen."
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Diese Teile werden durch dieses Teil ersetzt. Jede Regel ist auf dem alten Teil konfiguriert; öffnen Sie es, um die Regel zu ändern."
@@ -21446,6 +21737,9 @@ msgstr "Tol+"
 msgid "Tolerance (+/-)"
 msgstr "Toleranz (+/-)"
 
+msgid "Tolerance (days)"
+msgstr "Toleranz (Tage)"
+
 msgid "Tomorrow"
 msgstr "Morgen"
 
@@ -21514,7 +21808,7 @@ msgid "Total Hours"
 msgstr "Gesamtstunden"
 
 msgid "Total Indirect Cost"
-msgstr "Gesamtindirektkosten"
+msgstr "Indirekte Gesamtkosten"
 
 msgid "Total Material Cost"
 msgstr "Gesamte Materialkosten"
@@ -21852,8 +22146,8 @@ msgstr "Gruppierung aufheben"
 msgid "Unguaranteed Residual Value"
 msgstr "Ungarantierter Restwert"
 
-msgid "unhealthy"
-msgstr "ungesund"
+msgid "Unhealthy"
+msgstr "Ungesund"
 
 msgid "Uninstall"
 msgstr "Deinstallieren"
@@ -22969,6 +23263,9 @@ msgstr "Wenn sich {name} ändert"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Wenn die Haltbarkeit eines Fertigprodukts auf „Berechnet\" eingestellt ist, wählen Sie aus, welche verbrauchten Eingaben die Berechnung speisen."
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr "Wenn ein Kundenauftrag oder Fertigungsauftrag in einer Woche ohne verbleibende Prognose landet, verbraucht er die Prognose aus nahegelegenen Wochen, anstatt hinzugerechnet zu werden. Setzen Sie beide auf 0, um nur innerhalb derselben Woche zu verrechnen."
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Wenn ein Serial oder Batch abläuft, und was passiert, wenn er danach verwendet wird — eine Unternehmensrichtlinie kann Warnung, Blockierung oder BlockMitÜberschreitung sein."
 
@@ -23181,6 +23478,9 @@ msgstr "Wer wird auf was und in welchem Format geschult. Ihre Aufgabe: Schützen
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Wer muss Angebote, Bestellungen und Käufe genehmigen – und wann"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "Wer ist Eigentümer von MRP-Planungsaktionen. Standorte erben den Unternehmensstandard; Artikelgruppen erben ihren Standort. Die spezifischste Zuweisung gewinnt, und jeder Artikel kann auf seiner Registerkarte „Planung\" eine Übersteuerung vornehmen."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Wer die Rechnungen erhält, wo und zu welchen Bedingungen."

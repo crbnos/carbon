@@ -457,7 +457,7 @@ guard went missing instead. `check-clobbers` compares against the merge base and
 nothing. After merging main, list main's migrations newer than your branch's oldest and grep
 them for every function and view your migrations define; for any hit, write a NEW migration
 dated after both that carries both changes (here, since folded into
-`20261006131701_complete-job-to-asset.sql`).
+`20261006221601_complete-job-to-asset.sql`).
 
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
@@ -2813,6 +2813,32 @@ drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, 
 `search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
 helper.
 
+## A `@container` block has no intrinsic width — it vanishes in a shrink-to-fit parent
+
+**Context:** The planning grid's expanded row (`PlanningActionLines`) was reused inside the
+order drawer, under a `VStack`, to list an item's suggested changes. The heading rendered and
+the rows did not.
+
+**Problem:** The block's root is `@container` (`container-type: inline-size`), which is
+inline-size containment: the element contributes NO intrinsic width to its parent. In the
+grid the Table hands it a width. `VStack` is `flex flex-col items-start`, so its children
+shrink-to-fit — and a contained element's fit width is zero plus padding. The table inside
+was `w-full` of nothing. Typecheck, lint and unit tests all pass on this; only a render
+shows it.
+
+**Rule:** Anything marked `@container` must be stretched by its parent (`w-full`, a block
+parent, or a flex column with default `items-stretch`) — never placed in `VStack`/`HStack`
+or any `items-start`/`inline-*`/`w-fit` parent without an explicit width. When moving a
+component to a new host, check what the OLD host was giving it for free: width, padding
+offsets (`pl-[52px]` lined the block up under a grid row and means nothing in a drawer) and
+column widths sized for a different pane. A layout built for one host usually wants its own
+variant in the next (the drawer now has its own `OpenOrdersGrid`), sharing only the
+behaviour.
+
+**Applies to:** `apps/erp/app/modules/production/ui/Planning/PlanningActionLines.tsx`
+(`PlanningActionLines` vs `PlanningOrderGrids.tsx`), and any `@container` component rendered
+through `VStack`/`HStack` (`packages/react/src/VStack.tsx` is `items-start`).
+
 ## A write that changes nothing still costs a queue message, an Inngest event and a function run
 
 **Context:** `/api/inngest` was the largest consumer on the ERP deployment (2026-10-01
@@ -2885,6 +2911,103 @@ and diff the tool NAMES against the pre-merge list. A name that disappears is a 
 tag until proven otherwise.
 
 **Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
+
+## A supply figure that includes scrap cannot be written back as the order quantity
+
+**Context:** Planning actions measure each open job against demand and suggest Decrease /
+Increase. The job's supply came from `openProductionOrders.quantityToReceive`, which is
+`productionQuantity − received`, and `productionQuantity` is the generated `quantity + scrapQuantity`.
+
+**Problem:** Apply writes the suggested figure to `job.quantity`, the good units. A job of 80
+with scrap 4 counted as 84 against a demand of 80: "Only 80 of 84 is required", every run, for
+every job on an item with a scrap rate — and applying it changed nothing, so it came back.
+An Increase was 4 too high the same way. No test covered a job with scrap.
+
+**Rule:** Measure a document in the unit the action will WRITE. If the engine reads a derived
+total (with scrap, with a conversion factor), either convert at the boundary or read the base
+column. And when a write changes a base quantity, restate what rides on it (the scrap
+allowance), as the insert path does — a patch that sets one column of a pair is the bug class
+`.claude/rules/supersession-system.md` describes for `itemScrapPercentage`.
+
+**Applies to:** `generatePlanningActions` (`packages/planning/src/mrp/planning-actions.ts`),
+`updatePlanningJob` (`production.service.ts`), any engine that reads `openProductionOrders`
+or `openPurchaseOrderLines` and writes a document quantity back.
+
+## An `.in()` list built from a result set has no upper bound
+
+**Context:** The planning grids load the actions for the 100 parts on a page, then looked up
+each action's purchase order line with `.in("id", lineIds)`.
+
+**Problem:** `.in()` writes every id into the URL. The list was one id per ACTION, so it grew
+with the data, not the page size: 2,357 ids was a 54 kB request line and the gateway rejected
+it (HTTP 431). The loader did `planningActions.data ?? []`, so the page rendered every part
+with no actions — indistinguishable from "nothing to do". Demo data and hand-made test parts
+(a few actions each) never came near the limit; it took load data to see it.
+
+**Rule:** An id list for `.in()` must be bounded by something you control (the page size), and
+chunked when that bound is large — about 100 ids per request. When the related rows hang off
+a foreign key, embed them in the first read instead of looking them up afterwards. And a
+loader never swaps a failed read for an empty list: log it and throw.
+
+A list the USER builds (the ids of a bulk selection: Apply, Dismiss, Assign) has no bound at
+all, and chunking a WRITE breaks its atomicity — a claim that lands in chunk 1 and fails in
+chunk 2 leaves rows claimed with nothing applied. Send such a list through Kysely instead:
+`where("id", "in", ids)` binds the ids as parameters, one statement, no URL, no `max_rows`.
+The same bulk Apply did this over PostgREST in five functions and would have failed whole on a
+page of busy parts.
+
+**Applies to:** `getPlanningActions` and the planning action worklist writes in
+`apps/erp/app/modules/production/production.service.ts`, the planning loaders and
+`planning.update` routes (`x+/purchasing+/planning*.tsx`, `x+/production+/planning*.tsx`), and
+any "read rows, then `.in()` their ids" enrichment.
+
+## `useNumberFormatter()` with no argument is a new formatter on every render
+
+**Context:** Opening or closing the order drawer on the planning pages stuttered. The drawer
+itself was cheap; the table behind it was the cost.
+
+**Problem:** react-aria memoizes the formatter on the options OBJECT
+(`useMemo(() => new NumberFormatter(locale, options), [locale, options])`), and the default
+`options = {}` is a new object on each call. So `useNumberFormatter()` returns a new formatter
+every render. It was a dependency of the table's `columns` memo, so every render rebuilt the
+columns; TanStack then sees new `cell` functions and React REMOUNTS every cell, and the
+shared `Table` re-measures its column widths. Opening the drawer re-rendered the table six
+times through fetcher state — 1,824 DOM nodes replaced, six main-thread blocks of 90–220 ms.
+With a stable formatter: zero nodes replaced, and the drawer shows in ~100 ms instead of ~220.
+
+**Rule:** A value that feeds a `useMemo`/`useCallback` dependency list must be stable. Pass
+`useNumberFormatter` a module-level options constant (or use the `@carbon/utils` formatter
+hooks), never the bare call. When a table feels slow, count DOM nodes replaced in its
+`tbody` during the interaction before optimizing anything else — a non-zero count on an
+interaction that changes no data means the columns are being rebuilt.
+
+**Applies to:** `PurchasingPlanningTable.tsx`, `ProductionPlanningTable.tsx` (fixed), and the
+other ERP files that still call `useNumberFormatter()` bare — it only costs where the
+formatter reaches a memo dependency list (`InventoryTable`, `TrackedEntitiesTable`,
+`JobMaterialsTable`, `DemandProjectionTable`, `JobOperationStepRecordsTable` are the
+candidates to check).
+
+## A drawer rendered as `{item && <Drawer />}` cannot animate closed
+
+**Context:** The planning order drawer slid in but vanished on close.
+
+**Problem:** Three things each removed it before a closing animation could run. The tables
+rendered it as `{selectedItem && <Drawer />}` and closed it by clearing `selectedItem`, so
+it left the DOM in the same render. The shared `Drawer` panel only had a slide-IN. And Radix
+keeps a closing dialog mounted only while the element its portal wraps is animating — that
+element is `DrawerPortal`'s positioning div, which had no animation, so even a mounted
+drawer with an exit animation on its panel was removed at once. Adding the exit classes to
+the panel alone changed nothing; the frame-by-frame trace still showed zero closing frames.
+
+**Rule:** A drawer that should animate closed stays mounted and is driven by `open`; keep the
+record it shows until the next open (`useDrawerItem`), and key it per open so each open
+still starts fresh. When a Radix exit animation does not play, check every element between
+the portal and the animated node — each `Presence` looks only at its own child. Verify with
+a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye.
+
+**Applies to:** `packages/react/src/Drawer.tsx` (`portalVariants` + `sheetVariants` closing
+durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and the
+other state-driven drawers that still unmount on close.
 
 ## A cast that silences excess-property errors hides failed writes
 
@@ -3009,11 +3132,11 @@ creates an opportunity for it in the same transaction. Nullable in the schema do
 mean optional in the app.
 
 **Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
-of `salesInvoice`; backfilled by `20261006130901_sales-invoice-opportunity-backfill.sql`.
+of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backfill.sql`.
 
 ## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
 
-**Context:** The contracts migration (`20261006131401_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
+**Context:** The contracts migration (`20261006221301_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
 
 **Problem:** After `generate:types`, the ERP typecheck failed with TS2589 ("type instantiation is excessively deep") in four files that the change did not touch. Each did a bare embed such as `.select("salesInvoice(id, invoiceId)")` from `salesInvoiceLine`. More relationships on the table make the inference of a bare embed too deep. A `@ts-ignore` would hide it, but the next new FK moves the error to another file.
 

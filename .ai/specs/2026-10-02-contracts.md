@@ -478,7 +478,7 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
   1. **Creation is a wizard.** It has five steps: Details, Products, Invoicing, Revenue and Review. This overrides "one page, not Rillet's wizard" in UI Changes. After Confirm, the contract page stays the place to work on a contract.
   2. **Next on Details saves the Draft.** Each later step edits that Draft through the real endpoints. Each step is a route: `/x/contract/:id/setup/<step>`.
   3. **The conservation rule stays.** The invoice grid and the revenue grid only move money. The invoices of each line must add up to its total, and its revenue must equal what it bills. Confirm waits until both residuals are zero.
-  4. **The contract has a ship-to address** (`customerContract.shipToCustomerLocationId`). `create-contract-invoices` copies it onto each drafted invoice's `salesInvoiceShipment.customerLocationId` (added for this, in `20261006131501_sales-invoice-discount-and-ship-to.sql`).
+  4. **The contract has a ship-to address** (`customerContract.shipToCustomerLocationId`). `create-contract-invoices` copies it onto each drafted invoice's `salesInvoiceShipment.customerLocationId` (added for this, in `20261006221401_sales-invoice-discount-and-ship-to.sql`).
   5. **Phase B ships now.** Carbon stores the revenue schedule of each line as the **revenue plan**, one amount per month. A person can edit it while the contract is a Draft. This overrides "read-only" and the out-of-scope item "hand-edited revenue schedules". The GL engine posts from the revenue plan.
 
   The plan refined the design with 13 decisions. The code implements them as follows:

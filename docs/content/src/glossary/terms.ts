@@ -1262,6 +1262,30 @@ export const terms = {
     term: msg`Maximum Order Quantity`,
     definition: msg`Planning's upper bound on a single suggested replenishment; quantities above this are split into multiple orders.`
   },
+  "item-planning-horizon": {
+    term: msg`Planning Horizon (Days)`,
+    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
+  },
+  "planning-action": {
+    term: msg`Planning action`,
+    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
+    href: "/docs/reference/planning#planning-actions"
+  },
+  "reschedule-tolerance": {
+    term: msg`Reschedule tolerance`,
+    definition: msg`How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days.`,
+    href: "/docs/reference/planning#reschedule-tolerance"
+  },
+  "responsible-employee": {
+    term: msg`Responsible employee`,
+    definition: msg`The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default.`,
+    href: "/docs/reference/planning#planning-ownership"
+  },
+  "forecast-consumption": {
+    term: msg`Forecast consumption`,
+    definition: msg`Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units.`,
+    href: "/docs/reference/forecast"
+  },
 
   // ── Items: Supersession (ItemSupersessionForm) ──────────────────────────
   supersession: {

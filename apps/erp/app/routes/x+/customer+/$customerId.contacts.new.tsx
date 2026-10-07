@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import {
@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (createCustomerContact.error) {
     let errorMessage = "Failed to create customer contact";
-    if (createCustomerContact.error.message?.includes("duplicate key value")) {
+    if (isUniqueViolation(createCustomerContact.error)) {
       const contact = await client
         .from("contact")
         .select("id")

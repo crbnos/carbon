@@ -99,7 +99,7 @@ child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
 `paymentId` / `memoId`), `reimbursement` (+ `reimbursementLine`), `pickingList` (+ `pickingListLine`),
 `depreciationRun` (+ `depreciationRunLine`), `revenueRecognitionRun` (+ `revenueRecognitionRunLine`);
 each table queues its changes through `events: true` in `packages/database/src/event-system/attachments.ts`
-(shipped by `20261006205843_posting-documents-audit-events.sql`). An audited table needs that entry.
+(shipped by `20261006221901_posting-documents-audit-events.sql`). An audited table needs that entry.
 (~36 entities; the old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension
 table of `item`.) Every table logs INSERT, UPDATE and DELETE except an extension table's INSERT
 (created 1:1 with its parent). A child's `entityIdColumn` may be a list: the row is logged once per

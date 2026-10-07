@@ -13,7 +13,7 @@ import type {
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
-import { datetime, withPathIds } from "@carbon/utils";
+import { datetime, isUniqueViolation, withPathIds } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
@@ -275,9 +275,11 @@ async function copyItemPlanningAndPurchasing(
     .execute();
 
   // A reorder policy is only meaningful with its parameters (Maximum
-  // Quantity needs a reorder point and a maximum, and so on), so the whole
-  // planning form is copied, location by location. A location the source has
-  // no planning row for keeps the defaults.
+  // Quantity needs a reorder point and a maximum, and so on), so the policy
+  // and its sizing parameters are copied together, location by location.
+  // The planning horizon and the responsible employee are not copied: a new
+  // revision inherits the company defaults for both. A location the source
+  // has no planning row for keeps the defaults.
   await trx
     .updateTable("itemPlanning as target")
     .from("itemPlanning as source")
@@ -7435,7 +7437,7 @@ export async function createChangeNoticeDraftMethod(
       }
       // 23505 = unique_violation (makeMethod_unique_itemId_version); a parallel
       // CO grabbed this number first — recompute the next free version + retry.
-      if (res.error?.code === "23505") {
+      if (isUniqueViolation(res.error)) {
         const latest = await getActiveMakeMethodId(client, itemId, companyId);
         nextVersion = (latest?.maxVersion ?? nextVersion) + 1;
         continue;

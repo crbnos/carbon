@@ -4,8 +4,9 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
+import { isUniqueViolation } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import type { ToolSummary } from "~/modules/items";
@@ -42,6 +43,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
+
+  // buyMethod_part_supplier_unique: one supplier part per item and supplier
+  if (isUniqueViolation(createToolSupplier.error)) {
+    return validationError({
+      fieldErrors: {
+        supplierId: "This item already has a supplier part for this supplier"
+      }
+    });
+  }
 
   if (createToolSupplier.error) {
     return {

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261006205843",
+  "schemaVersion": "20261006221901",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-06T20:59:41.623Z",
+  "exportedAt": "2026-10-07T01:57:00.455Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -93,13 +93,13 @@
         "intercompanyPayablesAccount",
         "salesShippingRevenueAccount",
         "salesReturnsAccount",
+        "employeeReimbursementsPayableAccount",
         "deferredRevenueAccount",
         "contractAssetAccount",
         "rentalIncomeAccount",
         "leaseRevenueAccount",
         "leaseInterestIncomeAccount",
-        "netInvestmentInLeasesAccount",
-        "employeeReimbursementsPayableAccount"
+        "netInvestmentInLeasesAccount"
       ]
     },
     {
@@ -440,12 +440,19 @@
         "requireMfa",
         "allowLowercaseItemIds",
         "includeOperationsOnTraveler",
-        "leaseMajorPartThresholdPercent",
-        "leaseSubstantiallyAllThresholdPercent",
-        "leaseDefaultDiscountRate",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
         "showBomExplorerReadableId",
+        "defaultResponsibleEmployee",
+        "rescheduleToleranceDays",
+        "forecastConsumptionBackwardPeriods",
+        "forecastConsumptionForwardPeriods",
+        "defaultPlanningHorizonDays",
+        "mrpRunTime",
+        "skipApprovalForPlanningPurchaseOrders",
+        "leaseMajorPartThresholdPercent",
+        "leaseSubstantiallyAllThresholdPercent",
+        "leaseDefaultDiscountRate",
         "invoiceAutomation",
         "invoiceNotificationGroup"
       ]
@@ -1190,7 +1197,8 @@
         "customFields",
         "tags",
         "code",
-        "requiresStaffing"
+        "requiresStaffing",
+        "responsibleEmployee"
       ]
     },
     {
@@ -1213,6 +1221,21 @@
         "updatedBy",
         "updatedAt",
         "customFields"
+      ]
+    },
+    {
+      "name": "itemPostingGroupResponsibility",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "locationId",
+        "itemPostingGroupId",
+        "responsibleEmployee",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2775,7 +2798,8 @@
         "createdAt",
         "updatedAt",
         "updatedBy",
-        "id"
+        "id",
+        "consumedQuantity"
       ]
     },
     {
@@ -2947,7 +2971,9 @@
         "tags",
         "maximumInventoryQuantity",
         "demandAccumulationSafetyStock",
-        "minimumReserveQuantity"
+        "minimumReserveQuantity",
+        "responsibleEmployee",
+        "planningHorizonDays"
       ]
     },
     {
@@ -4251,6 +4277,7 @@
         "trackedEntityId",
         "quantity",
         "rateUnit",
+        "rate",
         "fairValue",
         "economicLifeMonths",
         "guaranteedResidualValue",
@@ -4270,8 +4297,7 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt",
-        "rate"
+        "updatedAt"
       ]
     },
     {
@@ -4387,6 +4413,7 @@
         "invoiceCustomerId",
         "invoiceCustomerContactId",
         "invoiceCustomerLocationId",
+        "shipToCustomerLocationId",
         "salesPersonId",
         "salesOrderId",
         "projectId",
@@ -4417,8 +4444,7 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields",
-        "shipToCustomerLocationId"
+        "customFields"
       ]
     },
     {
@@ -4503,9 +4529,9 @@
         "pricingRuleId",
         "priceTrace",
         "sortOrder",
+        "configuration",
         "serviceStartDate",
-        "serviceEndDate",
-        "configuration"
+        "serviceEndDate"
       ]
     },
     {
@@ -6006,9 +6032,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
+        "employeeId",
         "salesOrderId",
-        "rentalAgreementId",
-        "employeeId"
+        "rentalAgreementId"
       ]
     },
     {
@@ -6127,6 +6153,37 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "planningAction",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemId",
+        "locationId",
+        "periodId",
+        "type",
+        "status",
+        "suggestedQuantity",
+        "suggestedDate",
+        "isASAP",
+        "horizonDate",
+        "latestOrderDate",
+        "purchaseOrderLineId",
+        "jobId",
+        "requiresManualAction",
+        "supplierId",
+        "policyName",
+        "reason",
+        "triggerValues",
+        "assignee",
+        "assigneeOverridden",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6888,7 +6945,8 @@
         "supplierInteractionId",
         "purchaseOrderType",
         "jobId",
-        "jobReadableId"
+        "jobReadableId",
+        "createdFromPlanning"
       ]
     },
     {

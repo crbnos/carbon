@@ -47,6 +47,20 @@ Single subpath `@carbon/planning` (`./src/index.ts`):
 | `resolveLocationWindows` / `resolveWorkCenterWindows` / `subtractIntervals` | Machine/work-center availability window resolvers (`src/scheduling/`) |
 | types (`LadderShiftRow`, `MrpPayload`, `MrpResult`, `LocationScheduleResult`, `ExpediteWhatIfResult`, `NewlyLateJob`, …) | Engine type surface |
 
+Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId })`
+(`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /
+Increase / Decrease / Cancel, diff-written to `planningAction` in one transaction that holds a
+per-company `pg_advisory_xact_lock` across the read and the write; `runMrp` calls it after its
+Phase-7 commit), `loadResponsibleEmployeeResolver(db, companyId)` / `resolveResponsibleEmployee(rungs)`
+(`src/mrp/responsible-employee.ts` — who owns an item + location's actions: item → location item
+group → location → company default, first non-null wins), `consumeForecast` (`src/mrp/forecast-consumption.ts` —
+actual demand consumes the demand projection in its own week, then backward, then forward,
+per the company's consumption window; the consumed amount is persisted on
+`demandProjection.consumedQuantity`), and `purchaseOrderLineArrivalDate` / `jobCompletionDate`
+(`src/mrp/supply-date.ts` — when an open PO line arrives: promised date, else required
+date, else order date (today when unset) + lead time; when a job completes: due date, else
+today + 30 for No Deadline, else today — shared by the projection and the action generator).
+
 ## Consumers
 
 - `@carbon/jobs` — `scheduled/mrp.ts` (`runMrp`), `tasks/recalculate.ts` &

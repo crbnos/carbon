@@ -11,17 +11,15 @@ import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
   getJobReleaseReadiness,
   jobStatus,
   makeToAssetItemError,
   recalculateJobRequirements,
-  returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
-import { releaseJobs } from "~/modules/production/production.server";
+import { cancelJob, releaseJobs } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -211,55 +209,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // picked-material return sweep. The UI never sends Completed to this route —
   // the Complete button uses $jobId.complete.tsx, which runs both.
   if (status === "Cancelled") {
-    const sweep = await returnPickedRemaindersForJob(
-      getCarbonServiceRole(),
-      getDatabaseClient(),
-      {
-        jobId: id,
-        userId,
-        companyId
-      }
-    );
-    if (sweep.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(sweep.error, "Cancel aborted: returning picked material failed")
-        )
-      );
-    }
-    const picks = await cancelOpenPickingListsForJob(getDatabaseClient(), {
+    // Returns picked material and closes picking lists before the status
+    // changes — the same path the planning Cancel action takes.
+    const failed = await cancelJob({
+      client,
+      db: getDatabaseClient(),
       jobId: id,
       companyId,
       userId
     });
-    if (picks.error) {
+    if (failed) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(
-            picks.error,
-            "Cancel aborted: its picking lists could not be closed"
-          )
-        )
+        await flash(request, error(failed.error, failed.message))
       );
     }
-  }
-
-  const update = await updateJobStatus(client, {
-    id,
-    companyId,
-    status,
-    assignee: ["Cancelled"].includes(status) ? null : undefined,
-    updatedBy: userId
-  });
-  if (update.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(id),
-      await flash(request, error(update.error, "Failed to update job status"))
-    );
+  } else {
+    const update = await updateJobStatus(client, {
+      id,
+      companyId,
+      status,
+      updatedBy: userId
+    });
+    if (update.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(update.error, "Failed to update job status"))
+      );
+    }
   }
 
   if (status === "Planned" && shouldSchedule) {

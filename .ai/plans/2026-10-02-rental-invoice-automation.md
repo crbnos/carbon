@@ -85,10 +85,10 @@ pnpm --filter @carbon/jobs test && pnpm --filter @carbon/database test && pnpm -
 **Depends on:** 1
 **Files:**
 - Create: `packages/database/supabase/migrations/<timestamp>_rental-invoice-automation.sql` (via `pnpm db:migrate:new rental-invoice-automation`)
-- Copy from (precedent): `packages/database/supabase/migrations/20261006130501_rental-agreements.sql:319-347` (the `rentalAgreements` view), `packages/database/supabase/migrations/20260916143022_invoice-settlement-source-amount-fallback.sql:13-92` (the `salesInvoices` view)
+- Copy from (precedent): `packages/database/supabase/migrations/20261006220501_rental-agreements.sql:319-347` (the `rentalAgreements` view), `packages/database/supabase/migrations/20260916143022_invoice-settlement-source-amount-fallback.sql:13-92` (the `salesInvoices` view)
 
 **Steps:**
-1. `pnpm db:migrate:new rental-invoice-automation`. The timestamp must be newer than `20261006130801`; if it isn't, STOP.
+1. `pnpm db:migrate:new rental-invoice-automation`. The timestamp must be newer than `20261006220801`; if it isn't, STOP.
 2. Write:
 ```sql
 DO $$ BEGIN
@@ -116,7 +116,7 @@ ALTER TABLE "salesInvoice"
   ADD COLUMN IF NOT EXISTS "sentTo" TEXT,
   ADD COLUMN IF NOT EXISTS "sendError" TEXT;
 ```
-3. Recreate `rentalAgreements`. Copy `20261006130501_rental-agreements.sql:320-347` VERBATIM (its `DROP VIEW IF EXISTS` + `CREATE VIEW … WITH(SECURITY_INVOKER=true)` selecting `ra.*`), with one change: add `COALESCE(ra."invoiceAutomation", cs."invoiceAutomation") AS "effectiveInvoiceAutomation"` to the select list and `LEFT JOIN "companySettings" cs ON cs."id" = ra."companyId"` to the FROM. First `grep -rn '"rentalAgreements"' packages/database/supabase/migrations` and confirm no migration newer than `20261006130501` redefines it. If one does, copy THAT body instead.
+3. Recreate `rentalAgreements`. Copy `20261006220501_rental-agreements.sql:320-347` VERBATIM (its `DROP VIEW IF EXISTS` + `CREATE VIEW … WITH(SECURITY_INVOKER=true)` selecting `ra.*`), with one change: add `COALESCE(ra."invoiceAutomation", cs."invoiceAutomation") AS "effectiveInvoiceAutomation"` to the select list and `LEFT JOIN "companySettings" cs ON cs."id" = ra."companyId"` to the FROM. First `grep -rn '"rentalAgreements"' packages/database/supabase/migrations` and confirm no migration newer than `20261006220501` redefines it. If one does, copy THAT body instead.
 4. Recreate `salesInvoices`. `grep -rln 'VIEW "salesInvoices"' packages/database/supabase/migrations | sort | tail -1` must be `20260916143022_invoice-settlement-source-amount-fallback.sql`; if not, copy the newest. Copy its full `CREATE OR REPLACE VIEW "salesInvoices"` statement and APPEND, after the last column (`si."status" AS "baseStatus"`):
 ```sql
   , si."automationHoldReason"

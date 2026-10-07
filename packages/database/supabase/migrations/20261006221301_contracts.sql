@@ -2,7 +2,7 @@
 -- schedule, the per-line revenue plan, and the movement ledger behind each line's
 -- Deferred Revenue / Contract Assets position, plus contract provenance on sales
 -- invoices, memos and recognition schedule rows. The salesInvoiceLines view picks up
--- the new line columns in 20261006131501_sales-invoice-discount-and-ship-to.sql.
+-- the new line columns in 20261006221401_sales-invoice-discount-and-ship-to.sql.
 -- RLS comes from the authz manifest (packages/database/src/authz/manifest.ts).
 
 -- 1) Header -----------------------------------------------------------------------------

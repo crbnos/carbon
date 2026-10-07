@@ -86,15 +86,18 @@ the type-scoped `revisions` array.
   - `itemReplenishment`: `lotSize` (Batch Size), `scrapPercentage`, `leadTime`,
     `preferredSupplierId`, and with it `purchasingUnitOfMeasureCode` +
     `conversionFactor` (both derived from the preferred supplier's supplier part).
-  - `itemPlanning`, per location: `reorderingPolicy` and every parameter the
-    planning form edits (accumulation period, safety stock, reorder point and
-    quantity, maximum inventory, min/max order quantity, order multiple). A policy
-    without its parameters is invalid, so they travel together.
+  - `itemPlanning`, per location: `reorderingPolicy` and its sizing parameters
+    (accumulation period, safety stock, reorder point and quantity, maximum
+    inventory, min/max order quantity, order multiple). A policy without its
+    parameters is invalid, so they travel together. The two other fields on the
+    planning form, `planningHorizonDays` and `responsibleEmployee`, are NOT
+    copied (`copyItemPlanningAndPurchasing`, `items.service.ts`).
   - `itemCost.itemPostingGroupId` (the item group).
   - `supplierPart` rows and their `supplierPartPrice` price breaks, paired by
     `supplierId` (unique per item).
   NOT copied: costs, `itemUnitSalePrice`, `requiresConfiguration` and the
-  blocked flags, `minimumReserveQuantity`, supersession, pick method, shelf life.
+  blocked flags, `minimumReserveQuantity`, supersession, pick method, shelf life,
+  `itemPlanning.planningHorizonDays`, `itemPlanning.responsibleEmployee`.
 - **Deleting an item deletes its price breaks first.** `supplierPart.itemId`
   cascades from `item`, but `supplierPartPrice → supplierPart` is
   `ON DELETE RESTRICT`, and every revision of an item with price breaks now

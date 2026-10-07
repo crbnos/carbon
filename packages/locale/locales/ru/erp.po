@@ -75,6 +75,10 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому она не может быть зарезервирована. Пропуск позволит зарезервировать все остальное.} other {# строк связаны с данными вне этой организации, поэтому они не могут быть зарезервированы. Пропуск позволит зарезервировать все остальное.}}"
 
+#. placeholder {0}: item.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# неделя} few {# недели} many {# недель} other {# недели}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.}}"
@@ -114,6 +118,10 @@ msgstr "{0} нельзя удалить, так как она всё ещё ис
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} ячеек с разницами"
+
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} израсходовано"
 
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
@@ -294,6 +302,11 @@ msgstr "{0} значений"
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr "{0} был запущен с проблемой: {1}"
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0} будет сохранено как {name}"
@@ -359,6 +372,9 @@ msgstr "{count, plural, one {# счет с остатком} other {# счето
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, one {# еще после {fenceLabel}} few {# еще после {fenceLabel}} many {# еще после {fenceLabel}} other {# еще после {fenceLabel}}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Расформировать # серию} few {Расформировать # серии} many {Расформировать # серий} other {Расформировать # серий}}"
 
@@ -389,6 +405,9 @@ msgstr "${delegatedTo} отправляет это в вашу бухгалте�
 msgid "{discount} off"
 msgstr "{discount} скидка"
 
+msgid "{dismissed} dismissed"
+msgstr "{dismissed} отклонено"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -408,6 +427,9 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
+
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"
@@ -486,6 +508,9 @@ msgstr "{removed} запланированные счет-фактуры уда�
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} ресурсов · {reservationCount} резервирований · {jobCount} производственных заказов"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{revisionLabel} будет открыта заново для планирования в качестве следующей ревизии. Документ, уже отправленный поставщику, остаётся без изменений до окончательного утверждения и повторной отправки заказа."
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} прав доступа"
 
@@ -528,9 +553,6 @@ msgstr "{unmappedRequiredCount, plural, one {Сначала сопоставьт
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
 
-msgid "{updatedJobCount} jobs updated"
-msgstr "{updatedJobCount} производственных заказов обновлено"
-
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
 
@@ -571,6 +593,9 @@ msgstr "≈ {0}"
 msgid "0 operations"
 msgstr "0 операций"
 
+msgid "0 suggests a move for any date difference."
+msgstr "0 предлагает перемещение для любой разницы в датах."
+
 msgid "0-4 weeks"
 msgstr "0-4 недели"
 
@@ -604,9 +629,6 @@ msgstr "1 счет-фактура была выставлена в вашей п
 msgid "1 job created"
 msgstr "1 задание создано"
 
-msgid "1 job updated"
-msgstr "1 задание обновлено"
-
 msgid "1 line"
 msgstr "1 строка"
 
@@ -621,6 +643,9 @@ msgstr "1 запланированная счет-фактура удалена.
 
 msgid "1 problem — not published"
 msgstr "1 проблема — не опубликовано"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 Покупка = {conversionFactor} Запасы"
 
 msgid "1 suggested batch"
 msgstr "1 предложенная серия"
@@ -639,6 +664,9 @@ msgstr "12 ежемесячных периодов"
 
 msgid "13+ weeks"
 msgstr "13+ недель"
+
+msgid "1st Negative On Hand"
+msgstr "Первое отрицательное значение запаса"
 
 msgid "1Y"
 msgstr "1 год"
@@ -1242,6 +1270,9 @@ msgstr "Шаг должен иметь имя."
 
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "Сохраненное бронирование рабочего центра или оператора на время размещения одной операции — материализованный результат запуска планирования и то, что отображает Прогноз."
+
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "Предложение, которое MRP создает после каждого запуска: заказать или начать производство нового обеспечения, или ускорить, отсрочить, увеличить, уменьшить или отменить строку открытого заказа поставщику или производственный заказ. Примените его со страницы планирования, отклоните его или назначьте его."
 
 msgid "A supplier contact and location are optional"
 msgstr "Контактное лицо и площадка поставщика опциональны"
@@ -2288,6 +2319,12 @@ msgstr "Операция этого задания входит в эту пар
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Позиция операции в очереди ее рабочего центра — порядок, в котором цех берет работу. Двигатель нумерует ее по порядку размещения (самое раннее предполагаемое начало в первую очередь); переупорядочение карт на доске Рабочих центров переопределяет его без изменения дат."
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr "Заказ, созданный из Планирования материалов, следует тому же правилу утверждения, что и любой другой заказ поставщику."
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr "Заказ, созданный из Планирования материалов, запускается сразу же после его завершения без запроса утверждения."
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "Во время подключения к Onshape произошла неожиданная ошибка. Сохраните настройки интеграции и попробуйте еще раз."
 
@@ -2454,6 +2491,9 @@ msgstr "Применять правила ценообразования"
 
 msgid "Apply Rules On Top"
 msgstr "Применить правила выше"
+
+msgid "Apply Suggested Changes"
+msgstr "Применить предложенные изменения"
 
 msgid "Apply suggestions"
 msgstr "Применить предложения"
@@ -3150,6 +3190,9 @@ msgstr "Назначить"
 msgid "Assign to Groups"
 msgstr "Назначить группам"
 
+msgid "Assign to Me"
+msgstr "Назначить мне"
+
 msgid "Assigned"
 msgstr "Назначено"
 
@@ -3161,6 +3204,9 @@ msgstr "Назначено мне"
 
 msgid "Assignee"
 msgstr "Исполнитель"
+
+msgid "Assignees"
+msgstr "Исполнители"
 
 msgid "Assignment"
 msgstr "Назначение"
@@ -3908,6 +3954,9 @@ msgstr "Отмена контракта"
 msgid "Cancel Job"
 msgstr "Отменить задание"
 
+msgid "Cancel job {target}"
+msgstr "Отменить производственный заказ {target}"
+
 msgid "Cancel Order"
 msgstr "Отменить заказ"
 
@@ -3916,6 +3965,9 @@ msgstr "Отменить лист отбора"
 
 msgid "Cancel Purchase Order"
 msgstr "Отмена Заказа поставщику"
+
+msgid "Cancel purchase order {target}"
+msgstr "Отменить заказ поставщику {target}"
 
 msgid "Cancel Return"
 msgstr "Отменить возврат"
@@ -3970,6 +4022,12 @@ msgstr "Невозможно переместить в корзину детал
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "Невозможно разместить заказ - с этим товаром не связан поставщик"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "Невозможно оформить заказ — у {count} позиций нет поставщика"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "Невозможно оформить заказ — у 1 позиции нет поставщика"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "Невозможно провести — отгрузка содержит сущности, срок действия которых истек."
@@ -4203,6 +4261,9 @@ msgstr "Изменено"
 msgid "Changed By"
 msgstr "Изменено"
 
+msgid "Changed for this view only. The item's planning horizon is not updated."
+msgstr "Изменено только для этого представления. Горизонт планирования номенклатуры не обновлен."
+
 msgid "Changelog"
 msgstr "Журнал изменений"
 
@@ -4317,6 +4378,9 @@ msgstr "Выберите услуги, которые этот контракт 
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "Выберите, когда MRP будет пересчитываться автоматически. Вы в любой момент можете запустить его вручную, нажав кнопку Пересчет на страницах планирования."
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Выберите, будут ли подписаны каждая строка спецификации на номенклатуре, коммерческих предложениях и производственных заказах с описанием или кодом номенклатуры."
@@ -4544,6 +4608,9 @@ msgstr "Компании"
 
 msgid "Company"
 msgstr "Организация"
+
+msgid "Company default"
+msgstr "По умолчанию организации"
 
 msgid "Company default ({companyLabel})"
 msgstr "Значение по умолчанию организации ({companyLabel})"
@@ -5405,8 +5472,10 @@ msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Не удалось запустить в работу {0}: {1}"
@@ -5672,6 +5741,9 @@ msgstr "Отдел создан"
 
 msgid "Created failure mode"
 msgstr "Режим отказа создан"
+
+msgid "Created from planning"
+msgstr "Создано из планирования"
 
 msgid "Created gauge type"
 msgstr "Создан тип средства измерения"
@@ -6282,6 +6354,15 @@ msgstr "Десятичные разряды"
 msgid "Declining balance"
 msgstr "Уменьшаемый остаток"
 
+msgid "Decrease"
+msgstr "Уменьшить"
+
+msgid "Decrease job {target} to {amount}"
+msgstr "Уменьшить производственный заказ {target} до {amount}"
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr "Уменьшить заказ поставщику {target} до {amount}"
+
 msgid "Deep in the small hours, {name}."
 msgstr "Глубокая ночь, {name}."
 
@@ -6351,6 +6432,9 @@ msgstr "Счет расходов главной книги по умолчан�
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Счет расходов главной книги по умолчанию для периодических начислений амортизации."
 
+msgid "Default horizon (days)"
+msgstr "Горизонт планирования по умолчанию (дней)"
+
 msgid "Default Method"
 msgstr "Метод по умолчанию"
 
@@ -6410,6 +6494,15 @@ msgstr "По умолчанию - дата окончания"
 
 msgid "Defaults to the go-live or start date"
 msgstr "По умолчанию - дата запуска или дата начала"
+
+msgid "Defer"
+msgstr "Отложить"
+
+msgid "Defer job {target} to {date}"
+msgstr "Отложить производственный заказ {target} на {date}"
+
+msgid "Defer purchase order {target} to {date}"
+msgstr "Отложить заказ поставщику {target} на {date}"
 
 msgid "Deferral"
 msgstr "Отсрочка"
@@ -7083,6 +7176,9 @@ msgstr "Обнаружение"
 msgid "Dismiss"
 msgstr "Отклонить"
 
+msgid "Dismissed"
+msgstr "Отклонено"
+
 msgid "Dispatch"
 msgstr "Заявка на техобслуживание"
 
@@ -7503,6 +7599,9 @@ msgstr "Внешние операции каждого поставщика из
 
 msgid "Each, lb, ft…"
 msgstr "Каждый, фунт, фут…"
+
+msgid "Earlier weeks are consumed first."
+msgstr "Запас из ранних недель расходуется в первую очередь."
 
 msgid "Earliest operation start"
 msgstr "Самое раннее начало операции"
@@ -8313,6 +8412,9 @@ msgstr "Тип события"
 msgid "Events"
 msgstr "События"
 
+msgid "Every 3 hours"
+msgstr "Каждые 3 часа"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Все записи компании. Учётные данные, токены интеграций и вебхуки никогда не включаются."
 
@@ -8459,6 +8561,15 @@ msgstr "Ожидаемое получение"
 
 msgid "Expected Receipt Date"
 msgstr "Ожидаемая дата получения"
+
+msgid "Expedite"
+msgstr "Ускорить"
+
+msgid "Expedite job {target} to {date}"
+msgstr "Ускорить производственный заказ {target} к {date}"
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr "Ускорить заказ поставщику {target} к {date}"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Счет расходов для остатков покупателей, списанных как безнадежные при урегулировании дебиторской задолженности"
@@ -8943,11 +9054,17 @@ msgstr "Ошибка обновления подсчета"
 msgid "Failed to update item cost"
 msgstr "Не удалось обновить себестоимость номенклатуры"
 
+msgid "Failed to update job"
+msgstr "Не удалось обновить производственный заказ"
+
 msgid "Failed to update lead times"
 msgstr "Не удалось обновить сроки поставки"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Не удалось обновить сделку заказом поставщику"
+
+msgid "Failed to update purchase order line"
+msgstr "Не удалось обновить строку заказа поставщику"
 
 msgid "Failed to update quote line"
 msgstr "Не удалось обновить строку предложения"
@@ -9158,6 +9275,9 @@ msgstr "Имя"
 msgid "First Operation"
 msgstr "Первая операция"
 
+msgid "First week the projected stock goes below zero"
+msgstr "Первая неделя, когда прогнозируемый запас упадет ниже нуля"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Основной Актив"
 
@@ -9250,6 +9370,12 @@ msgstr "для чего угодно. Они привлекут нужного �
 
 msgid "Forecast"
 msgstr "Прогноз"
+
+msgid "Forecast consumption"
+msgstr "Потребление прогноза"
+
+msgid "Forecast Consumption"
+msgstr "Потребление прогноза"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -9735,8 +9861,8 @@ msgstr "Имеет операции, которые не могут быть с�
 msgid "Headers"
 msgstr "Заголовки"
 
-msgid "healthy"
-msgstr "здоровый"
+msgid "Healthy"
+msgstr "Здоровый"
 
 msgid "Help"
 msgstr "Справка"
@@ -9905,6 +10031,9 @@ msgstr "Сколько дней после даты расчета скидка 
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Сколько дней после даты расчета полная сумма становится подлежащей уплате."
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "Количество дней, на которое открытый заказ может отклониться от требуемой даты до того, как MRP предложит его перенести. Установить в Настройки → Планирование; по умолчанию 7 дней."
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "Количество дней от даты счета-фактуры, отведенных покупателю на оплату; определяет срок выполнения по умолчанию на счетах-фактурах покупателя."
@@ -10186,6 +10315,9 @@ msgstr "На этом шаге"
 msgid "In use"
 msgstr "В использовании"
 
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "В часовом поясе вашей организации ({companyTimeZone})."
+
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "В настройках Enterprise под разделом Developer отредактируйте разрешения приватного OAuth приложения, чтобы включить «Приложение может записывать в ваши документы», затем сохраните настройки интеграции снова."
 
@@ -10200,9 +10332,6 @@ msgstr "Уведомления в приложении всегда достав
 
 msgid "In-Service Date"
 msgstr "Дата ввода в эксплуатацию"
-
-msgid "inactive"
-msgstr "неактивный"
 
 msgid "Inactive"
 msgstr "Неактивно"
@@ -10261,6 +10390,15 @@ msgstr "Инкотермс"
 msgid "Incoterm Location"
 msgstr "Место поставки по Инкотермс"
 
+msgid "Increase"
+msgstr "Увеличить"
+
+msgid "Increase job {target} to {amount}"
+msgstr "Увеличить производственный заказ {target} до {amount}"
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr "Увеличить заказ поставщику {target} до {amount}"
+
 msgid "Indirect"
 msgstr "Косвенный"
 
@@ -10299,6 +10437,9 @@ msgstr "Унаследовано из группы: закрывается ли 
 
 msgid "Inherited from the parent group."
 msgstr "Унаследовано от родительской группы."
+
+msgid "inherits {inheritedName}"
+msgstr "от {inheritedName}"
 
 msgid "Input"
 msgstr "Ввод"
@@ -10895,6 +11036,9 @@ msgstr "Приоритет работы"
 msgid "Job readable"
 msgstr "Читаемая работа"
 
+msgid "Job released"
+msgstr "Производственный заказ запущен"
+
 msgid "Job Traveler"
 msgstr "Маршрутный лист работы"
 
@@ -11119,8 +11263,14 @@ msgstr "Последний раз использован"
 msgid "Late in the evening, {name}."
 msgstr "Поздно вечером, {name}."
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr "Запас из поздних недель расходуется после того, как запас из ранних недель исчерпан."
+
 msgid "Latest operation end"
 msgstr "Конец последней операции"
+
+msgid "Latest Order Date"
+msgstr "Последняя дата заказа"
 
 msgid "Latitude"
 msgstr "Широта"
@@ -11172,6 +11322,9 @@ msgstr "Оставить пусто, чтобы использовать сле�
 
 msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
+
+msgid "Leave empty, or enter 0, to show everything MRP plans."
+msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
 
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
@@ -11292,7 +11445,7 @@ msgid "Lines"
 msgstr "Строки"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "Строки появляются здесь, когда поступление проведено, и только для количеств, не авторизованных на другом возврате поставщику. Используйте добавление строки для слепого возврата."
+msgstr "Строки появятся здесь после проведения поступления заказа поставщику и только для количеств, не авторизованных в другом возврате поставщику. Используйте Добавить строку для слепого возврата."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Строки появляются здесь после проведения отгрузки, и только для количеств, не авторизованных на другой RMA. Используйте функцию «Добавить строку» для слепого возврата."
@@ -11476,6 +11629,12 @@ msgstr "Подробное описание"
 msgid "Longitude"
 msgstr "Долгота"
 
+msgid "Look ahead (weeks)"
+msgstr "Смотреть вперед (недели)"
+
+msgid "Look back (weeks)"
+msgstr "Смотреть назад (недели)"
+
 msgid "Looks empty here"
 msgstr "Здесь пусто"
 
@@ -11610,6 +11769,12 @@ msgstr "Основная часть срока экономической жиз
 
 msgid "Make"
 msgstr "Производить"
+
+msgid "Make {amount} for {date}"
+msgstr "Произвести {amount} на {date}"
+
+msgid "Make {quantity}"
+msgstr "Произвести {quantity}"
 
 msgid "Make Active"
 msgstr "Сделать активным"
@@ -11893,6 +12058,9 @@ msgstr "Номенклатура материала"
 
 msgid "Material Planning"
 msgstr "Планирование материалов"
+
+msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
+msgstr "Планирование материалов показывает только действия и рекомендуемые заказы, выполняемые в течение этого количества дней с сегодня, чтобы удаленные потребности оставались в стороне, пока они не станут важны. Собственный горизонт планирования номенклатуры переопределяет это значение по умолчанию."
 
 msgid "Material Properties"
 msgstr "Свойства материалов"
@@ -12305,6 +12473,18 @@ msgstr "MRP (планирование)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
 
+msgid "MRP runs automatically every day at {time} ({timeZone}), but you can run it manually here."
+msgstr "MRP запускается автоматически каждый день в {time} ({timeZone}), но вы можете запустить его вручную здесь."
+
+msgid "MRP Schedule"
+msgstr "MRP График"
+
+msgid "MRP Suggestions"
+msgstr "Предложения MRP"
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr "MRP предлагает переместить существующий заказ только если его дата отличается более чем на это количество дней. Меньшие разницы остаются без изменений, чтобы список работ оставался управляемым."
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Несколько производственных заказов могут выполняться на этом процессе одновременно — например, лазерный станок, печь или ванна для гальваники"
 
@@ -12601,9 +12781,6 @@ msgstr "Новые условия оплаты"
 
 msgid "New Picking List"
 msgstr "Новый лист отбора"
-
-msgid "New PO"
-msgstr "Новый ПО"
 
 msgid "New Price Override"
 msgstr "Новое переопределение цены"
@@ -13399,6 +13576,9 @@ msgstr "Нет единицы хранения"
 msgid "No storage units or tracking numbers match."
 msgstr "Единицы хранения или номера отслеживания не совпадают."
 
+msgid "No Supplier"
+msgstr "Нет поставщика"
+
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
 
@@ -13776,6 +13956,9 @@ msgstr "Своевременная доставка"
 msgid "Onboard your agent to Carbon"
 msgstr "Подключите вашего агента к Carbon"
 
+msgid "Once a day"
+msgstr "Один раз в день"
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -13940,11 +14123,17 @@ msgstr "Открытая потребность производственног
 msgid "Open jobs"
 msgstr "Открытые производственные заказы"
 
+msgid "Open Jobs"
+msgstr "Открытые производственные заказы"
+
 msgid "Open menu"
 msgstr "Открыть меню"
 
 msgid "Open navigation"
 msgstr "Открыть навигацию"
+
+msgid "Open Orders"
+msgstr "Открытые заказы"
 
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
@@ -14174,8 +14363,17 @@ msgstr "Заказать {0} × {substitute} для этого производ�
 msgid "Order {0} for this job"
 msgstr "Заказать {0} для этого задания"
 
+msgid "Order {amount} for {date}"
+msgstr "Заказать {amount} на {date}"
+
+msgid "Order {quantity}"
+msgstr "Заказать {quantity}"
+
 msgid "Order by"
 msgstr "Заказать до"
+
+msgid "Order By"
+msgstr "Сортировать по"
 
 msgid "Order date"
 msgstr "Дата заказа"
@@ -14365,6 +14563,9 @@ msgstr "Ответственный"
 
 msgid "Owner (cost center)"
 msgstr "Ответственный (Центр затрат)"
+
+msgid "Ownership"
+msgstr "Владение"
 
 msgid "Ownership transfers"
 msgstr "Передача собственности"
@@ -14899,8 +15100,35 @@ msgstr "Плановое время"
 msgid "Planning"
 msgstr "Планирование"
 
+msgid "Planning action"
+msgstr "Действие планирования"
+
+msgid "Planning horizon"
+msgstr "Горизонт планирования"
+
+msgid "Planning Horizon"
+msgstr "Горизонт планирования"
+
+msgid "Planning Horizon (Days)"
+msgstr "Горизонт планирования (дней)"
+
+msgid "Planning Horizon:"
+msgstr "Горизонт планирования:"
+
+msgid "Planning Ownership"
+msgstr "Ответственность планирования"
+
+msgid "Planning purchase orders need approval"
+msgstr "Заказы поставщику из Планирования материалов требуют утверждения"
+
+msgid "Planning purchase orders skip approval"
+msgstr "Заказы поставщику из Планирования материалов не требуют утверждения"
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Циклы планирования предложили пополнение до целого кратного этому числу."
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "Планирование показывает только действия и рекомендуемые заказы, выполняемые в течение этого количества дней. Оставьте пусто, чтобы использовать значение по умолчанию организации, или введите 0, чтобы показать все для этой номенклатуры."
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Нижняя граница планирования предлагаемого количества пополнения; отличается от минимального количества заказа поставщика, которое находится в карточке поставщик-номенклатура."
@@ -15350,6 +15578,9 @@ msgstr "План проекта"
 msgid "Project start"
 msgstr "Начало проекта"
 
+msgid "Projected"
+msgstr "Спрогнозировано"
+
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
 
@@ -15370,6 +15601,12 @@ msgstr "Прогнозируемое исчерпание запасов на н
 
 msgid "Projected stock"
 msgstr "Прогнозируемый запас"
+
+msgid "Projected stock by week"
+msgstr "Прогнозируемый запас по неделям"
+
+msgid "Projected stock is already below zero this week"
+msgstr "Прогнозируемый запас уже ниже нуля на этой неделе"
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -15521,6 +15758,9 @@ msgstr "Заказ поставщику"
 msgid "Purchase Order Amount"
 msgstr "Сумма заказа поставщику"
 
+msgid "Purchase Order Approval"
+msgstr "Утверждение заказа поставщику"
+
 msgid "Purchase Order approval rule"
 msgstr "Правило утверждения заказа поставщику"
 
@@ -15547,6 +15787,9 @@ msgstr "Заказы поставщику"
 
 msgid "Purchase Orders and Planning"
 msgstr "Заказы поставщику и Планирование"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr "Заказы поставщику, созданные из Планирования материалов, могут быть завершены без прохождения правила утверждения. Добавление, изменение или удаление строки вручную отправляет его обратно на утверждение."
 
 msgid "Purchase orders required"
 msgstr "Требуются заказы поставщику"
@@ -15659,9 +15902,6 @@ msgstr "Кол-во"
 
 msgid "Qty On Hand"
 msgstr "Кол-во в наличии"
-
-msgid "Qty to Order"
-msgstr "Кол-во для заказа"
 
 msgid "Qty. Complete"
 msgstr "Кол-во завершено"
@@ -15982,6 +16222,9 @@ msgstr "Готово к предложению"
 
 msgid "ready to keep or revert"
 msgstr "готово к сохранению или восстановлению"
+
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "Реальные заказы сначала потребляют прогноз потребности на их собственную неделю, затем на более ранние и более поздние недели в пределах окна компании, поэтому прогноз и фактическая потребность никогда не планируются для одних и тех же единиц одновременно."
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Видимость запасов и производства в реальном времени"
@@ -16352,8 +16595,14 @@ msgstr "Управление запуском в работу"
 msgid "Release Job"
 msgstr "Запустить производственный заказ в работу"
 
+msgid "Release job {target} by {date}"
+msgstr "Запустить производственный заказ {target} к {date}"
+
 msgid "Release Jobs"
 msgstr "Запустить в работу производственные заказы"
+
+msgid "Release purchase order {target} by {date}"
+msgstr "Запустить заказ поставщику {target} к {date}"
 
 msgid "Released"
 msgstr "Выпущено"
@@ -16560,6 +16809,9 @@ msgstr "Использование арендованного оборудова
 msgid "Reopen"
 msgstr "Открыть заново"
 
+msgid "Reopen as Revision"
+msgstr "Открыть заново как ревизию"
+
 msgid "Reorder"
 msgstr "Переупорядочить"
 
@@ -16648,7 +16900,7 @@ msgid "Reports"
 msgstr "Отчеты"
 
 msgid "Reprice with current rules"
-msgstr "Переоценить с учетом текущих правил"
+msgstr "Пересчитать с применением текущих правил"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -16753,6 +17005,12 @@ msgstr "Требует ремонта"
 msgid "Requires staffing"
 msgstr "Требует персонала"
 
+msgid "Reschedule tolerance"
+msgstr "Допуск переноса"
+
+msgid "Reschedule Tolerance"
+msgstr "Допуск переноса"
+
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
 
@@ -16822,6 +17080,12 @@ msgstr "ресурсы"
 
 msgid "Resources"
 msgstr "Ресурсы"
+
+msgid "Responsible employee"
+msgstr "Ответственный сотрудник"
+
+msgid "Responsible Employee"
+msgstr "Ответственный сотрудник"
 
 msgid "Restock"
 msgstr "Пополнение"
@@ -17308,6 +17572,9 @@ msgstr "Идентификатор запуска"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Выполнить закрытие конца месяца и стандартные сверки"
+
+msgid "Run MRP"
+msgstr "Запустить MRP"
 
 msgid "Run payment batches and track aging"
 msgstr "Запускать пакеты платежей и отслеживать просрочку"
@@ -18272,7 +18539,7 @@ msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "Укажите покупателя в этом возврате для добавления из отгрузки."
+msgstr "Укажите покупателя для этого возврата, чтобы добавить из отгрузки."
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Установите поставщика для этого возврата, чтобы добавить из поступления."
@@ -18988,6 +19255,9 @@ msgstr "Начать"
 msgid "Start {0} Day Free Trial"
 msgstr "Начать {0}-дневный бесплатный пробный период"
 
+msgid "Start By"
+msgstr "Начать с"
+
 msgid "Start counting"
 msgstr "Начать подсчёт"
 
@@ -19130,6 +19400,9 @@ msgstr "Шаги, построенные отдельно, затем собра
 
 msgid "Still dark out on the floor."
 msgstr "На производстве всё ещё темно."
+
+msgid "Stock Availability"
+msgstr "Наличие запаса"
 
 msgid "Stock movement corrected"
 msgstr "Движение запаса исправлено"
@@ -19380,6 +19653,15 @@ msgstr "Предложить с помощью ИИ"
 
 msgid "Suggested from the change in recurring value"
 msgstr "Предложено на основе изменения повторяющегося значения"
+
+msgid "Suggested Jobs"
+msgstr "Рекомендуемые производственные заказы"
+
+msgid "Suggested Orders"
+msgstr "Рекомендуемые заказы"
+
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "Рекомендуемые заказы требуются после горизонта планирования этой номенклатуры. Расширьте горизонт, чтобы включить их."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Предложенные заказы, которые вы еще не разместили."
@@ -19638,8 +19920,8 @@ msgstr "Синхронизация"
 msgid "Sync Activity"
 msgstr "Активность синхронизации"
 
-msgid "sync off"
-msgstr "синхронизация отключена"
+msgid "Sync Off"
+msgstr "Синхронизация отключена"
 
 msgid "Sync operation"
 msgstr "Операция синхронизации"
@@ -20491,6 +20773,9 @@ msgstr "Процент скидки при оплате наличными. Ис
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Набор прав доступа, который автоматически получают новые сотрудники этого типа; редактирование здесь изменяет шаблон только для будущих сотрудников — существующие сотрудники сохраняют свои права, пока их явно не обновить массово."
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "Лицо, которому назначено действие планирования: ответственный номенклатуры на этой площадке, иначе ответственный группы номенклатуры, иначе ответственный площадки, иначе ответственный организации по умолчанию."
+
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "Запланированные счета-фактуры контракта, вырезанные из его строк по частоте выставления счетов, выравниванию и времени; пока контракт является черновиком, вы можете изменять, добавлять и удалять счета-фактуры, если каждая строка по-прежнему выставляет счет на полную сумму."
 
@@ -20517,6 +20802,9 @@ msgstr "Процессы, которые может выполнять этот 
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Поставщик не предлагает целевые показатели по измерениям. Сначала включите функцию у поставщика (например, категории отслеживания, отслеживание класса или поля)."
+
+msgid "The purchase order"
+msgstr "Заказ поставщику"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва по количеству, при которых рассчитывается цена этой строки; каждый столбец содержит свою цену за единицу для переговоров между закупщиком и поставщиком и для преобразования в последующие документы."
@@ -20891,6 +21179,9 @@ msgstr "Эти операции по-прежнему находятся в ре
 
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "Эти операции выполняются по процессу с несколькими поставщиками. Выберите поставщика для каждой операции."
+
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "Эти заказы не удалось загрузить. Закройте и откройте заново, чтобы попробовать снова."
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Эти детали заменяются на эту. Каждое правило установлено на старой детали; откройте ее, чтобы изменить правило."
@@ -21446,6 +21737,9 @@ msgstr "Допуск+"
 msgid "Tolerance (+/-)"
 msgstr "Допуск (+/-)"
 
+msgid "Tolerance (days)"
+msgstr "Допуск (дней)"
+
 msgid "Tomorrow"
 msgstr "Завтра"
 
@@ -21852,8 +22146,8 @@ msgstr "Разгруппировать"
 msgid "Unguaranteed Residual Value"
 msgstr "Негарантированная ликвидационная стоимость"
 
-msgid "unhealthy"
-msgstr "некорректно"
+msgid "Unhealthy"
+msgstr "Некорректно"
 
 msgid "Uninstall"
 msgstr "Удалить"
@@ -22969,6 +23263,9 @@ msgstr "Когда {name} изменяется"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Когда срок хранения готового продукта установлен на Рассчитанный, выберите, какие потребленные входные данные питают расчет."
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr "Когда заказ покупателя или производственный заказ попадает на неделю без оставшегося прогноза, он использует прогноз из соседних недель вместо добавления к существующему. Установите оба на 0, чтобы рассчитать только в пределах той же недели."
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Когда истекает срок годности серии или производственной серии и что происходит при использовании после — политика организации может предупредить, заблокировать или заблокировать с переопределением."
 
@@ -23181,6 +23478,9 @@ msgstr "Кто получает обучение, по каким темам и 
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Кто должен утвердить коммерческие предложения, заказы и закупки — и когда"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "Кто владеет действиями планирования MRP. Площадки наследуют значение по умолчанию организации; группы номенклатуры наследуют свою площадку. Наиболее специфичное назначение применяется, и каждая номенклатура может переопределить на вкладке «Планирование»."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Кто получает счета-фактуры, где и на каких условиях."

@@ -1,7 +1,7 @@
 -- Rental agreements: rate ladders (item, customer, customer type), agreement header +
 -- lines + charges + billing periods, the sales-type lease schedule, the Rental invoice
 -- line, deposits on payments, lease settings, the RA sequence, and the fleetAssets view.
--- The rentalAgreements view is created by 20261006131201_rental-invoice-automation.sql,
+-- The rentalAgreements view is created by 20261006221101_rental-invoice-automation.sql,
 -- which adds the columns it reads. RLS is rendered from the authz manifest.
 -- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3–§4, Data Model §5
 
@@ -216,7 +216,7 @@ CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalBillingPeriodId_idx" ON "sale
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalAgreementChargeId_idx" ON "salesInvoiceLine" ("rentalAgreementChargeId");
 
 -- salesInvoiceLines is recreated with every new line column by
--- 20261006131501_sales-invoice-discount-and-ship-to.sql.
+-- 20261006221401_sales-invoice-discount-and-ship-to.sql.
 
 -- 7) Deposits: a receipt may reference the sales order or the agreement it secures ---------
 ALTER TABLE "payment"

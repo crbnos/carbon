@@ -8065,11 +8065,15 @@ export type Database = {
           autoStartOperationTimer: boolean
           consoleEnabled: boolean
           defaultCustomerCc: string[] | null
+          defaultPlanningHorizonDays: number | null
+          defaultResponsibleEmployee: string | null
           defaultSupplierCc: string[] | null
           digitalQuoteEnabled: boolean
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
           enforceInspectionFourEyes: boolean
+          forecastConsumptionBackwardPeriods: number
+          forecastConsumptionForwardPeriods: number
           gaugeCalibrationExpiredNotificationGroup: string[]
           id: string
           includeMaterialsOnTraveler: boolean
@@ -8085,6 +8089,7 @@ export type Database = {
           leaseSubstantiallyAllThresholdPercent: number
           maintenanceDispatchNotificationGroup: string[] | null
           materialGeneratedIds: boolean
+          mrpRunTime: string | null
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
           plmReleaseControl: string
@@ -8097,6 +8102,7 @@ export type Database = {
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
           requireSupplierContactAndLocation: boolean
+          rescheduleToleranceDays: number
           returnPickedMaterialTiming: string
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
@@ -8107,6 +8113,7 @@ export type Database = {
           showCurrencyTrailingZeros: boolean
           showCustomerReadableId: boolean
           showSupplierReadableId: boolean
+          skipApprovalForPlanningPurchaseOrders: boolean
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
           updateLeadTimesOnReceipt: boolean
@@ -8125,11 +8132,15 @@ export type Database = {
           autoStartOperationTimer?: boolean
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
+          defaultPlanningHorizonDays?: number | null
+          defaultResponsibleEmployee?: string | null
           defaultSupplierCc?: string[] | null
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
+          forecastConsumptionBackwardPeriods?: number
+          forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id: string
           includeMaterialsOnTraveler?: boolean
@@ -8145,6 +8156,7 @@ export type Database = {
           leaseSubstantiallyAllThresholdPercent?: number
           maintenanceDispatchNotificationGroup?: string[] | null
           materialGeneratedIds?: boolean
+          mrpRunTime?: string | null
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
@@ -8157,6 +8169,7 @@ export type Database = {
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
+          rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
@@ -8167,6 +8180,7 @@ export type Database = {
           showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
+          skipApprovalForPlanningPurchaseOrders?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
@@ -8185,11 +8199,15 @@ export type Database = {
           autoStartOperationTimer?: boolean
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
+          defaultPlanningHorizonDays?: number | null
+          defaultResponsibleEmployee?: string | null
           defaultSupplierCc?: string[] | null
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
+          forecastConsumptionBackwardPeriods?: number
+          forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id?: string
           includeMaterialsOnTraveler?: boolean
@@ -8205,6 +8223,7 @@ export type Database = {
           leaseSubstantiallyAllThresholdPercent?: number
           maintenanceDispatchNotificationGroup?: string[] | null
           materialGeneratedIds?: boolean
+          mrpRunTime?: string | null
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
@@ -8217,6 +8236,7 @@ export type Database = {
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
+          rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
@@ -8227,6 +8247,7 @@ export type Database = {
           showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
+          skipApprovalForPlanningPurchaseOrders?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
@@ -8260,6 +8281,41 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "companySettings_defaultResponsibleEmployee_fkey"
+            columns: ["defaultResponsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_defaultResponsibleEmployee_fkey"
+            columns: ["defaultResponsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_defaultResponsibleEmployee_fkey"
+            columns: ["defaultResponsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_defaultResponsibleEmployee_fkey"
+            columns: ["defaultResponsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_defaultResponsibleEmployee_fkey"
+            columns: ["defaultResponsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -14435,6 +14491,7 @@ export type Database = {
         Row: {
           companyId: string
           confidence: number | null
+          consumedQuantity: number
           createdAt: string
           createdBy: string
           forecastMethod: string | null
@@ -14450,6 +14507,7 @@ export type Database = {
         Insert: {
           companyId: string
           confidence?: number | null
+          consumedQuantity?: number
           createdAt?: string
           createdBy: string
           forecastMethod?: string | null
@@ -14465,6 +14523,7 @@ export type Database = {
         Update: {
           companyId?: string
           confidence?: number | null
+          consumedQuantity?: number
           createdAt?: string
           createdBy?: string
           forecastMethod?: string | null
@@ -25207,9 +25266,11 @@ export type Database = {
           minimumOrderQuantity: number
           minimumReserveQuantity: number
           orderMultiple: number
+          planningHorizonDays: number | null
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint: number
           reorderQuantity: number
+          responsibleEmployee: string | null
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -25230,9 +25291,11 @@ export type Database = {
           minimumOrderQuantity?: number
           minimumReserveQuantity?: number
           orderMultiple?: number
+          planningHorizonDays?: number | null
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
           reorderQuantity?: number
+          responsibleEmployee?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -25253,9 +25316,11 @@ export type Database = {
           minimumOrderQuantity?: number
           minimumReserveQuantity?: number
           orderMultiple?: number
+          planningHorizonDays?: number | null
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
           reorderQuantity?: number
+          responsibleEmployee?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -25372,6 +25437,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "itemPlanning_updatedBy_fkey"
@@ -25544,6 +25644,190 @@ export type Database = {
           },
           {
             foreignKeyName: "itemPostingGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      itemPostingGroupResponsibility: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemPostingGroupId: string
+          locationId: string
+          responsibleEmployee: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemPostingGroupId: string
+          locationId: string
+          responsibleEmployee?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemPostingGroupId?: string
+          locationId?: string
+          responsibleEmployee?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_group_fkey"
+            columns: ["itemPostingGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "itemPostingGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_location_fkey"
+            columns: ["locationId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroupResponsibility_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -30661,6 +30945,7 @@ export type Database = {
           name: string
           postalCode: string
           requiresStaffing: boolean
+          responsibleEmployee: string | null
           stateProvince: string | null
           tags: string[] | null
           timezone: string
@@ -30683,6 +30968,7 @@ export type Database = {
           name: string
           postalCode: string
           requiresStaffing?: boolean
+          responsibleEmployee?: string | null
           stateProvince?: string | null
           tags?: string[] | null
           timezone: string
@@ -30705,6 +30991,7 @@ export type Database = {
           name?: string
           postalCode?: string
           requiresStaffing?: boolean
+          responsibleEmployee?: string | null
           stateProvince?: string | null
           tags?: string[] | null
           timezone?: string
@@ -30739,6 +31026,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "location_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_responsibleEmployee_fkey"
+            columns: ["responsibleEmployee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -42675,6 +42997,357 @@ export type Database = {
         }
         Relationships: []
       }
+      planningAction: {
+        Row: {
+          assignee: string | null
+          assigneeOverridden: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          horizonDate: string
+          id: string
+          isASAP: boolean
+          itemId: string
+          jobId: string | null
+          latestOrderDate: string | null
+          locationId: string
+          periodId: string
+          policyName: string | null
+          purchaseOrderLineId: string | null
+          reason: string | null
+          requiresManualAction: boolean
+          status: Database["public"]["Enums"]["planningActionStatus"]
+          suggestedDate: string
+          suggestedQuantity: number
+          supplierId: string | null
+          triggerValues: Json | null
+          type: Database["public"]["Enums"]["planningActionType"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          assignee?: string | null
+          assigneeOverridden?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          horizonDate: string
+          id?: string
+          isASAP?: boolean
+          itemId: string
+          jobId?: string | null
+          latestOrderDate?: string | null
+          locationId: string
+          periodId: string
+          policyName?: string | null
+          purchaseOrderLineId?: string | null
+          reason?: string | null
+          requiresManualAction?: boolean
+          status?: Database["public"]["Enums"]["planningActionStatus"]
+          suggestedDate: string
+          suggestedQuantity: number
+          supplierId?: string | null
+          triggerValues?: Json | null
+          type: Database["public"]["Enums"]["planningActionType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          assignee?: string | null
+          assigneeOverridden?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          horizonDate?: string
+          id?: string
+          isASAP?: boolean
+          itemId?: string
+          jobId?: string | null
+          latestOrderDate?: string | null
+          locationId?: string
+          periodId?: string
+          policyName?: string | null
+          purchaseOrderLineId?: string | null
+          reason?: string | null
+          requiresManualAction?: boolean
+          status?: Database["public"]["Enums"]["planningActionStatus"]
+          suggestedDate?: string
+          suggestedQuantity?: number
+          supplierId?: string | null
+          triggerValues?: Json | null
+          type?: Database["public"]["Enums"]["planningActionType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planningAction_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "planningAction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "planningAction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "planningAction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "planningAction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_periodId_fkey"
+            columns: ["periodId"]
+            isOneToOne: false
+            referencedRelation: "period"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "openPurchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       pricingRule: {
         Row: {
           active: boolean
@@ -45342,6 +46015,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          createdFromPlanning: boolean
           currencyCode: string | null
           customFields: Json | null
           exchangeRate: number | null
@@ -45372,6 +46046,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          createdFromPlanning?: boolean
           currencyCode?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
@@ -45402,6 +46077,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          createdFromPlanning?: boolean
           currencyCode?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
@@ -78359,6 +79035,7 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           promisedDate: string | null
+          quantityToConsume: number | null
           quantityToSend: number | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
@@ -89952,6 +90629,101 @@ export type Database = {
           week9: number
         }[]
       }
+      get_production_planning_grid: {
+        Args: {
+          action_assignees?: string[]
+          action_types?: string[]
+          as_of?: string
+          company_id: string
+          location_id: string
+          periods: string[]
+        }
+        Returns: {
+          active: boolean
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          firstNegativeDate: string
+          id: string
+          itemPostingGroupId: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          latestOrderDate: string
+          leadTime: number
+          lotSize: number
+          manufacturingBlocked: boolean
+          maximumInventoryQuantity: number
+          maximumOrderQuantity: number
+          minimumOrderQuantity: number
+          minimumReserveQuantity: number
+          name: string
+          orderMultiple: number
+          orderQuantity: number
+          planningHorizonDays: number
+          quantityOnHand: number
+          quantityToOrder: number
+          readableIdWithRevision: string
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          reorderPoint: number
+          reorderQuantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          supersessionMode: string
+          thumbnailPath: string
+          timeFenceDate: string
+          type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string
+          week1: number
+          week10: number
+          week11: number
+          week12: number
+          week13: number
+          week14: number
+          week15: number
+          week16: number
+          week17: number
+          week18: number
+          week19: number
+          week2: number
+          week20: number
+          week21: number
+          week22: number
+          week23: number
+          week24: number
+          week25: number
+          week26: number
+          week27: number
+          week28: number
+          week29: number
+          week3: number
+          week30: number
+          week31: number
+          week32: number
+          week33: number
+          week34: number
+          week35: number
+          week36: number
+          week37: number
+          week38: number
+          week39: number
+          week4: number
+          week40: number
+          week41: number
+          week42: number
+          week43: number
+          week44: number
+          week45: number
+          week46: number
+          week47: number
+          week48: number
+          week49: number
+          week5: number
+          week50: number
+          week51: number
+          week52: number
+          week6: number
+          week7: number
+          week8: number
+          week9: number
+        }[]
+      }
       get_production_projections: {
         Args: { company_id: string; location_id: string; periods: string[] }
         Returns: {
@@ -90061,6 +90833,105 @@ export type Database = {
           supersessionMode: string
           suppliers: Json
           thumbnailPath: string
+          type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string
+          week1: number
+          week10: number
+          week11: number
+          week12: number
+          week13: number
+          week14: number
+          week15: number
+          week16: number
+          week17: number
+          week18: number
+          week19: number
+          week2: number
+          week20: number
+          week21: number
+          week22: number
+          week23: number
+          week24: number
+          week25: number
+          week26: number
+          week27: number
+          week28: number
+          week29: number
+          week3: number
+          week30: number
+          week31: number
+          week32: number
+          week33: number
+          week34: number
+          week35: number
+          week36: number
+          week37: number
+          week38: number
+          week39: number
+          week4: number
+          week40: number
+          week41: number
+          week42: number
+          week43: number
+          week44: number
+          week45: number
+          week46: number
+          week47: number
+          week48: number
+          week49: number
+          week5: number
+          week50: number
+          week51: number
+          week52: number
+          week6: number
+          week7: number
+          week8: number
+          week9: number
+        }[]
+      }
+      get_purchasing_planning_grid: {
+        Args: {
+          action_assignees?: string[]
+          action_types?: string[]
+          as_of?: string
+          company_id: string
+          location_id: string
+          periods: string[]
+        }
+        Returns: {
+          active: boolean
+          conversionFactor: number
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          firstNegativeDate: string
+          id: string
+          itemPostingGroupId: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          latestOrderDate: string
+          leadTime: number
+          lotSize: number
+          maximumInventoryQuantity: number
+          maximumOrderQuantity: number
+          minimumOrderQuantity: number
+          minimumReserveQuantity: number
+          name: string
+          orderMultiple: number
+          orderQuantity: number
+          planningHorizonDays: number
+          preferredSupplierId: string
+          purchasingBlocked: boolean
+          purchasingUnitOfMeasureCode: string
+          quantityOnHand: number
+          quantityToOrder: number
+          readableIdWithRevision: string
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          reorderPoint: number
+          reorderQuantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          supersessionMode: string
+          suppliers: Json
+          thumbnailPath: string
+          timeFenceDate: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string
           week1: number
@@ -91703,11 +92574,11 @@ export type Database = {
         | "Sales Return Shipment"
         | "Purchase Return Shipment"
         | "Charge"
+        | "Reimbursement"
+        | "Maintenance Event"
         | "Revenue Recognition"
         | "Asset Transfer"
         | "Lease"
-        | "Reimbursement"
-        | "Maintenance Event"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -91734,10 +92605,10 @@ export type Database = {
         | "Scrap"
         | "Batch Merge"
         | "Charge"
-        | "Asset Transfer"
-        | "Rental Agreement"
         | "Reimbursement"
         | "Maintenance Event"
+        | "Asset Transfer"
+        | "Rental Agreement"
         | "Contract"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
@@ -91854,6 +92725,16 @@ export type Database = {
         | "Cancelled"
         | "Partial"
       pickMethodSortMethod: "Default" | "FEFO" | "FIFO" | "LIFO"
+      planningActionStatus: "Open" | "Dismissed" | "Actioned"
+      planningActionType:
+        | "Order"
+        | "Make"
+        | "Expedite"
+        | "Defer"
+        | "Cancel"
+        | "Increase"
+        | "Decrease"
+        | "Release"
       pricingRuleAmountType: "Percentage" | "Fixed"
       pricingRuleType: "Discount" | "Markup" | "Configuration"
       procedureStatus: "Draft" | "Active" | "Archived"
@@ -93199,11 +94080,11 @@ export const Constants = {
         "Sales Return Shipment",
         "Purchase Return Shipment",
         "Charge",
+        "Reimbursement",
+        "Maintenance Event",
         "Revenue Recognition",
         "Asset Transfer",
         "Lease",
-        "Reimbursement",
-        "Maintenance Event",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -93231,10 +94112,10 @@ export const Constants = {
         "Scrap",
         "Batch Merge",
         "Charge",
-        "Asset Transfer",
-        "Rental Agreement",
         "Reimbursement",
         "Maintenance Event",
+        "Asset Transfer",
+        "Rental Agreement",
         "Contract",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
@@ -93364,6 +94245,17 @@ export const Constants = {
         "Partial",
       ],
       pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
+      planningActionStatus: ["Open", "Dismissed", "Actioned"],
+      planningActionType: [
+        "Order",
+        "Make",
+        "Expedite",
+        "Defer",
+        "Cancel",
+        "Increase",
+        "Decrease",
+        "Release",
+      ],
       pricingRuleAmountType: ["Percentage", "Fixed"],
       pricingRuleType: ["Discount", "Markup", "Configuration"],
       procedureStatus: ["Draft", "Active", "Archived"],

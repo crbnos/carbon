@@ -79,6 +79,8 @@ vi.mock("~/modules/production", () => ({
 vi.mock("~/modules/production/production.server", async () => {
   const production = await import("~/modules/production");
   return {
+    // Cancel is delegated whole; its steps live in cancelJob.
+    cancelJob: vi.fn(async () => null),
     releaseJobs: vi.fn(async ({ jobIds, companyId, userId }) => {
       for (const id of jobIds) {
         await production.updateJobStatus({} as any, {
@@ -103,6 +105,7 @@ import {
   returnPickedRemaindersForJob,
   updateJobStatus
 } from "~/modules/production";
+import { cancelJob } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { action } from "./$jobId.status";
 
@@ -296,7 +299,10 @@ describe("Job status tenancy", () => {
 });
 
 describe("Job cancel status action", () => {
-  it("returns staged material, then cancels the job's open picking lists", async () => {
+  // The steps (return picked material, close picking lists, then cancel) live
+  // in cancelJob, shared with planning's Cancel. The route must never set the
+  // status itself, which would cancel the job without them.
+  it("cancels through cancelJob and never sets the status itself", async () => {
     await expect(
       action({
         request: cancelRequest(),
@@ -305,13 +311,13 @@ describe("Job cancel status action", () => {
       } as any)
     ).rejects.toBeInstanceOf(Response);
 
-    expect(returnPickedRemaindersForJob).toHaveBeenCalledOnce();
-    expect(cancelOpenPickingListsForJob).toHaveBeenCalledWith(
-      expect.anything(),
-      { jobId: "job-1", companyId: "company-1", userId: "user-1" }
+    expect(cancelJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobId: "job-1",
+        companyId: "company-1",
+        userId: "user-1"
+      })
     );
-    expect(events.indexOf("returnPickedRemainders")).toBeLessThan(
-      events.indexOf("cancelOpenPickingLists")
-    );
+    expect(updateJobStatus).not.toHaveBeenCalled();
   });
 });

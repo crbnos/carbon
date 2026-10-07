@@ -56,7 +56,7 @@ import { useLocations } from "~/components/Form/Location";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
-import { useUrlParams } from "~/hooks";
+import { useMrpScheduleDescription, useUrlParams } from "~/hooks";
 import {
   itemReorderingPolicies,
   itemReplenishmentSystems
@@ -647,6 +647,7 @@ const InventoryTable = memo(
     };
 
     const mrpFetcher = useFetcher<typeof mrpAction>();
+    const mrpScheduleDescription = useMrpScheduleDescription();
 
     return (
       <Table<InventoryItem>
@@ -694,9 +695,7 @@ const InventoryTable = memo(
                     <Trans>Recalculate</Trans>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {t`MRP runs automatically every 3 hours, but you can run it manually here.`}
-                </TooltipContent>
+                <TooltipContent>{mrpScheduleDescription}</TooltipContent>
               </Tooltip>
             </mrpFetcher.Form>
           </div>

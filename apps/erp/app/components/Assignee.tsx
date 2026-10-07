@@ -43,6 +43,10 @@ export type AssigneeProps = Omit<
   placeholder?: string;
   variant?: AssigneeVariants;
   onChange?: (selected: string) => void;
+  /** Saves the choice through the caller instead of the generic assign
+   *  route — for a record whose assignment has rules of its own (a planning
+   *  action marks a hand-set assignee so MRP never re-resolves it). */
+  onAssign?: (selected: string) => void;
 };
 
 const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
@@ -56,6 +60,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       placeholder,
       variant = "button",
       onChange,
+      onAssign,
       className,
       ...props
     },
@@ -69,6 +74,10 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
     const permissions = usePermissions();
 
     const handleChange = (value: string) => {
+      if (onAssign) {
+        onAssign(value);
+        return;
+      }
       const formData = new FormData();
       formData.append("id", id);
       formData.append("assignee", value);

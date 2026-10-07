@@ -75,6 +75,10 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
 
+#. placeholder {0}: item.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, other {#周}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。} other {计划员将这 # 个组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。}}"
@@ -114,6 +118,10 @@ msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改�
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
+
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} 已消耗"
 
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
@@ -294,6 +302,11 @@ msgstr "{0} 个值"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: warning.readableId
+#. placeholder {1}: warning.message
+msgid "{0} was released with a problem: {1}"
+msgstr "{0} 发布时出现问题：{1}"
+
 #. placeholder {0}: file.name
 msgid "{0} will be saved as {name}"
 msgstr "{0} 将被保存为 {name}"
@@ -359,6 +372,9 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{count, plural, other {{fenceLabel}之后还有 # 个}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {关闭 # 生产批次} other {关闭 # 生产批次}}"
 
@@ -389,6 +405,9 @@ msgstr "{delegatedTo}将其发布到您的分类账，因此Carbon不会推送�
 msgid "{discount} off"
 msgstr "{discount} 折扣"
 
+msgid "{dismissed} dismissed"
+msgstr "{dismissed} 已忽略"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
@@ -408,6 +427,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
+
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, other {#天}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -486,6 +508,9 @@ msgstr "{removed} 个已计划发票已移除。"
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} 个资源 · {reservationCount} 个预留 · {jobCount} 个任务"
 
+msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{revisionLabel} 将作为其下一个修订版重新打开以进行计划。已发送给供应商的文件在您最终确定并重新发送订单之前保持不变。"
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
 
@@ -528,9 +553,6 @@ msgstr "{unmappedRequiredCount, plural, one {先映射剩余的 # 个必需账�
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
 
-msgid "{updatedJobCount} jobs updated"
-msgstr "已更新{updatedJobCount}个工单"
-
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "已上传{uploadedFileName}——字段从文件填充。"
 
@@ -571,6 +593,9 @@ msgstr "≈ {0}"
 msgid "0 operations"
 msgstr "0个工序"
 
+msgid "0 suggests a move for any date difference."
+msgstr "0 代表为任何日期差异建议移动。"
+
 msgid "0-4 weeks"
 msgstr "0-4 周"
 
@@ -604,9 +629,6 @@ msgstr "1 张发票已在您的上一个系统中开票，不会再次起草"
 msgid "1 job created"
 msgstr "1 个作业已创建"
 
-msgid "1 job updated"
-msgstr "1 个作业已更新"
-
 msgid "1 line"
 msgstr "1 行"
 
@@ -621,6 +643,9 @@ msgstr "1 个已计划发票已移除。"
 
 msgid "1 problem — not published"
 msgstr "1个问题——未发布"
+
+msgid "1 Purchase = {conversionFactor} Inventory"
+msgstr "1 采购 = {conversionFactor} 库存管理"
 
 msgid "1 suggested batch"
 msgstr "1 个建议生产批次"
@@ -639,6 +664,9 @@ msgstr "12个月度期间"
 
 msgid "13+ weeks"
 msgstr "13周以上"
+
+msgid "1st Negative On Hand"
+msgstr "首次出现负库存"
 
 msgid "1Y"
 msgstr "1年"
@@ -1242,6 +1270,9 @@ msgstr "步骤需要一个名称。"
 
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "工作中心或操作员在某个工序预定时间段内的预约记录——排程运行的物化输出，也是预测显示的内容。"
+
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
+msgstr "MRP在每次运行后写入的建议：订购或自制新供应，或加急、延期、增加、减少或取消未结的采购订单行或工单。从计划页面应用它、关闭它或分配它。"
 
 msgid "A supplier contact and location are optional"
 msgstr "供应商联系人和地点是可选的"
@@ -2288,6 +2319,12 @@ msgstr "此工作的一道工序在此批次中运行"
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "工序在所在工作中心队列中的位置——车间人员拿工作的顺序。引擎按安排顺序编号（最早预计开始时间优先）；在工作中心看板上重新排列卡片会覆盖它，不会改变日期。"
 
+msgid "An order raised from Material Planning follows the same approval rule as any other purchase order."
+msgstr "从物料计划创建的订单遵循与任何其他采购订单相同的审批规则。"
+
+msgid "An order raised from Material Planning is released as soon as it is finalized, without an approval request."
+msgstr "从物料计划创建的订单一旦最终确定就被下达，无需审批申请。"
+
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 msgstr "连接到 Onshape 时出现意外错误。保存集成设置以重试。"
 
@@ -2454,6 +2491,9 @@ msgstr "应用定价规则"
 
 msgid "Apply Rules On Top"
 msgstr "在顶部应用规则"
+
+msgid "Apply Suggested Changes"
+msgstr "应用建议的更改"
 
 msgid "Apply suggestions"
 msgstr "应用建议"
@@ -3150,6 +3190,9 @@ msgstr "分配给"
 msgid "Assign to Groups"
 msgstr "分配给组"
 
+msgid "Assign to Me"
+msgstr "分配给我"
+
 msgid "Assigned"
 msgstr "已分配"
 
@@ -3160,6 +3203,9 @@ msgid "Assigned to Me"
 msgstr "已分配给我"
 
 msgid "Assignee"
+msgstr "经办人"
+
+msgid "Assignees"
 msgstr "经办人"
 
 msgid "Assignment"
@@ -3908,6 +3954,9 @@ msgstr "取消合约"
 msgid "Cancel Job"
 msgstr "取消工作"
 
+msgid "Cancel job {target}"
+msgstr "取消工单 {target}"
+
 msgid "Cancel Order"
 msgstr "取消订单"
 
@@ -3916,6 +3965,9 @@ msgstr "取消拣货单"
 
 msgid "Cancel Purchase Order"
 msgstr "取消采购订单"
+
+msgid "Cancel purchase order {target}"
+msgstr "取消采购订单 {target}"
 
 msgid "Cancel Return"
 msgstr "取消退货"
@@ -3970,6 +4022,12 @@ msgstr "无法在没有项目ID的情况下移动到零件桶"
 
 msgid "Cannot place order - no supplier associated with this item"
 msgstr "无法下单 - 此项目没有关联的供应商"
+
+msgid "Cannot place the order — {count} items have no supplier"
+msgstr "无法下单 — {count} 个物料没有供应商"
+
+msgid "Cannot place the order — 1 item has no supplier"
+msgstr "无法下单 — 1 个物料没有供应商"
 
 msgid "Cannot post — shipment contains expired tracked entities."
 msgstr "无法过账 — 发货包含已过期的追踪实体。"
@@ -4203,6 +4261,9 @@ msgstr "已更改"
 msgid "Changed By"
 msgstr "更改者"
 
+msgid "Changed for this view only. The item's planning horizon is not updated."
+msgstr "仅对此视图进行了更改。该物料的计划周期未更新。"
+
 msgid "Changelog"
 msgstr "更新日志"
 
@@ -4317,6 +4378,9 @@ msgstr "选择此合同开票的服务。每个作为循环行添加，您可以
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "选择MRP何时自动重新计算。您可以随时在计划页面上使用「重新计算」功能手动运行。"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描述或物料 ID 标记每行。"
@@ -4544,6 +4608,9 @@ msgstr "公司"
 
 msgid "Company"
 msgstr "公司"
+
+msgid "Company default"
+msgstr "公司默认值"
 
 msgid "Company default ({companyLabel})"
 msgstr "公司默认值 ({companyLabel})"
@@ -5405,8 +5472,10 @@ msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
 #. placeholder {0}: d.failed.length
+#. placeholder {0}: failure.readableId
 #. placeholder {0}: result.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: failure.message
 #. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "无法下达{0}：{1}"
@@ -5672,6 +5741,9 @@ msgstr "已创建部门"
 
 msgid "Created failure mode"
 msgstr "已创建故障模式"
+
+msgid "Created from planning"
+msgstr "从计划创建"
 
 msgid "Created gauge type"
 msgstr "已创建量具类型"
@@ -6282,6 +6354,15 @@ msgstr "小数位数"
 msgid "Declining balance"
 msgstr "余额递减法"
 
+msgid "Decrease"
+msgstr "减少"
+
+msgid "Decrease job {target} to {amount}"
+msgstr "减少工单 {target} 至 {amount}"
+
+msgid "Decrease purchase order {target} to {amount}"
+msgstr "减少采购订单 {target} 至 {amount}"
+
 msgid "Deep in the small hours, {name}."
 msgstr "深夜时分，{name}。"
 
@@ -6351,6 +6432,9 @@ msgstr "设备和设施维护的默认总账费用科目"
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "定期折旧处理的默认总账费用科目"
 
+msgid "Default horizon (days)"
+msgstr "默认计划周期（天数）"
+
 msgid "Default Method"
 msgstr "默认方法"
 
@@ -6410,6 +6494,15 @@ msgstr "默认为结束日期"
 
 msgid "Defaults to the go-live or start date"
 msgstr "默认为上线或开始日期"
+
+msgid "Defer"
+msgstr "延后"
+
+msgid "Defer job {target} to {date}"
+msgstr "推迟工单 {target} 至 {date}"
+
+msgid "Defer purchase order {target} to {date}"
+msgstr "推迟采购订单 {target} 至 {date}"
 
 msgid "Deferral"
 msgstr "递延"
@@ -7083,6 +7176,9 @@ msgstr "发现"
 msgid "Dismiss"
 msgstr "关闭"
 
+msgid "Dismissed"
+msgstr "已忽略"
+
 msgid "Dispatch"
 msgstr "维护工单"
 
@@ -7503,6 +7599,9 @@ msgstr "每个供应商的外协工序从每个工单转至一份新采购订单
 
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
+
+msgid "Earlier weeks are consumed first."
+msgstr "较早的周次先被消耗。"
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
@@ -8313,6 +8412,9 @@ msgstr "事件类型"
 msgid "Events"
 msgstr "事件"
 
+msgid "Every 3 hours"
+msgstr "每3小时"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
 
@@ -8459,6 +8561,15 @@ msgstr "预期收货"
 
 msgid "Expected Receipt Date"
 msgstr "预期收货日期"
+
+msgid "Expedite"
+msgstr "加急"
+
+msgid "Expedite job {target} to {date}"
+msgstr "加快工单 {target} 至 {date}"
+
+msgid "Expedite purchase order {target} to {date}"
+msgstr "加快采购订单 {target} 至 {date}"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
@@ -8943,11 +9054,17 @@ msgstr "更新计数失败"
 msgid "Failed to update item cost"
 msgstr "更新项目成本失败"
 
+msgid "Failed to update job"
+msgstr "无法更新工单"
+
 msgid "Failed to update lead times"
 msgstr "无法更新提前期"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "未能使用采购订单更新商机"
+
+msgid "Failed to update purchase order line"
+msgstr "无法更新采购订单行"
 
 msgid "Failed to update quote line"
 msgstr "未能更新报价行"
@@ -9158,6 +9275,9 @@ msgstr "名字"
 msgid "First Operation"
 msgstr "首次操作"
 
+msgid "First week the projected stock goes below zero"
+msgstr "投影库存首次低于零的周"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "在常规MACRS折旧计划开始之前的第一年额外扣除。"
 
@@ -9250,6 +9370,12 @@ msgstr "用于任何事项。他们会调配合适的人员。"
 
 msgid "Forecast"
 msgstr "预测"
+
+msgid "Forecast consumption"
+msgstr "预测消耗"
+
+msgid "Forecast Consumption"
+msgstr "预测消耗"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -9735,7 +9861,7 @@ msgstr "有无法排程的工序"
 msgid "Headers"
 msgstr "标头"
 
-msgid "healthy"
+msgid "Healthy"
 msgstr "健康"
 
 msgid "Help"
@@ -9905,6 +10031,9 @@ msgstr "计算日期后多少天提前付款折扣仍然可用。"
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "计算日期后多少天全额应付。"
+
+msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
+msgstr "未结订单可以晚于需要日期多少天到达，MRP才建议移动它。在设置 → 计划中设置；默认为7天。"
 
 msgid "How many days from invoice date this customer is given to pay; drives the default due date on customer invoices."
 msgstr "此客户从发票日期起支付的天数; 确定客户发票上的默认到期日期。"
@@ -10186,6 +10315,9 @@ msgstr "在此步骤中"
 msgid "In use"
 msgstr "使用中"
 
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "在您公司的时区({companyTimeZone})。"
+
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "在您的企业设置的开发者下，编辑私有 OAuth 应用程序的权限以包括\"应用程序可以写入您的文档\"，然后再次保存集成设置。"
 
@@ -10200,9 +10332,6 @@ msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮
 
 msgid "In-Service Date"
 msgstr "投入使用日期"
-
-msgid "inactive"
-msgstr "已停用"
 
 msgid "Inactive"
 msgstr "已停用"
@@ -10261,6 +10390,15 @@ msgstr "贸易术语"
 msgid "Incoterm Location"
 msgstr "贸易术语地点"
 
+msgid "Increase"
+msgstr "增加"
+
+msgid "Increase job {target} to {amount}"
+msgstr "增加工单 {target} 至 {amount}"
+
+msgid "Increase purchase order {target} to {amount}"
+msgstr "增加采购订单 {target} 至 {amount}"
+
 msgid "Indirect"
 msgstr "间接"
 
@@ -10299,6 +10437,9 @@ msgstr "从公司继承：此账户是结转至未分配利润（收益）还是
 
 msgid "Inherited from the parent group."
 msgstr "从父组继承。"
+
+msgid "inherits {inheritedName}"
+msgstr "继承自 {inheritedName}"
 
 msgid "Input"
 msgstr "输入"
@@ -10895,6 +11036,9 @@ msgstr "工作优先级"
 msgid "Job readable"
 msgstr "工作可读性"
 
+msgid "Job released"
+msgstr "工单已下达"
+
 msgid "Job Traveler"
 msgstr "工单流转卡"
 
@@ -11119,8 +11263,14 @@ msgstr "最后使用"
 msgid "Late in the evening, {name}."
 msgstr "傍晚晚些时候，{name}。"
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr "一旦较早的周次用完，较晚的周次将被消耗。"
+
 msgid "Latest operation end"
 msgstr "最新操作结束"
+
+msgid "Latest Order Date"
+msgstr "最晚订单日期"
 
 msgid "Latitude"
 msgstr "纬度"
@@ -11172,6 +11322,9 @@ msgstr "留空以自动使用下一个修订版"
 
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
+
+msgid "Leave empty, or enter 0, to show everything MRP plans."
+msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
 
 msgid "Leave this page"
 msgstr "离开此页面"
@@ -11292,7 +11445,7 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "采购订单收货已过账后，行将显示在此处，并且仅限于尚未在另一个供应商退货中授权的数量。使用添加行项目进行盲退货。"
+msgstr "采购订单收货过账后，行才会在此显示，且仅针对尚未在其他供应商退货上授权的数量。盲目退货请使用添加行项目。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "销售订单发货已过账后，行将显示在此处，仅适用于尚未在另一个RMA中授权的数量。对于盲目退货，请使用添加行项目。"
@@ -11476,6 +11629,12 @@ msgstr "长描述"
 msgid "Longitude"
 msgstr "经度"
 
+msgid "Look ahead (weeks)"
+msgstr "前瞻（周）"
+
+msgid "Look back (weeks)"
+msgstr "回顾（周）"
+
 msgid "Looks empty here"
 msgstr "看起来这里是空的"
 
@@ -11610,6 +11769,12 @@ msgstr "经济寿命的主要部分(%)"
 
 msgid "Make"
 msgstr "制造"
+
+msgid "Make {amount} for {date}"
+msgstr "自制 {amount} 件至 {date}"
+
+msgid "Make {quantity}"
+msgstr "制造 {quantity}"
 
 msgid "Make Active"
 msgstr "启用"
@@ -11893,6 +12058,9 @@ msgstr "原材料物料"
 
 msgid "Material Planning"
 msgstr "物料规划"
+
+msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
+msgstr "物料规划仅显示今天起 X 天内到期的操作和建议订单，以便远期需求不会造成干扰，直到需要时才显示。该物料自己的计划周期会覆盖此默认值。"
 
 msgid "Material Properties"
 msgstr "原材料属性"
@@ -12305,6 +12473,18 @@ msgstr "MRP (计划)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
+msgid "MRP runs automatically every day at {time} ({timeZone}), but you can run it manually here."
+msgstr "MRP 将在每天 {time} ({timeZone}) 自动运行，但您也可以在此手动运行。"
+
+msgid "MRP Schedule"
+msgstr "MRP 时间表"
+
+msgid "MRP Suggestions"
+msgstr "MRP 建议"
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr "MRP 仅在现有订单的日期偏差超过此天数时才建议移动订单。较小的偏差将被忽略，以保持工作列表的清晰。"
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
 
@@ -12601,9 +12781,6 @@ msgstr "新建付款条件"
 
 msgid "New Picking List"
 msgstr "新拣货单"
-
-msgid "New PO"
-msgstr "新采购订单"
 
 msgid "New Price Override"
 msgstr "新价格覆盖"
@@ -13328,7 +13505,7 @@ msgid "No results found"
 msgstr "未找到结果"
 
 msgid "No returnable lines for this customer"
-msgstr "此客户没有可退货行。"
+msgstr "此客户无可退货行"
 
 msgid "No returnable lines for this supplier"
 msgstr "此供应商没有可退货的行"
@@ -13398,6 +13575,9 @@ msgstr "无存储单元"
 
 msgid "No storage units or tracking numbers match."
 msgstr "没有存储单元或追踪号与之匹配。"
+
+msgid "No Supplier"
+msgstr "无供应商"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -13776,6 +13956,9 @@ msgstr "准时交付"
 msgid "Onboard your agent to Carbon"
 msgstr "将您的代理接入Carbon"
 
+msgid "Once a day"
+msgstr "每天一次"
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -13940,11 +14123,17 @@ msgstr "未结工单需求加上从此料箱转出的未清调拨"
 msgid "Open jobs"
 msgstr "未结工单"
 
+msgid "Open Jobs"
+msgstr "未结工单"
+
 msgid "Open menu"
 msgstr "打开菜单"
 
 msgid "Open navigation"
 msgstr "打开导航"
+
+msgid "Open Orders"
+msgstr "未结订单"
 
 msgid "Open payables by supplier and age"
 msgstr "按供应商和期限打开应付款项"
@@ -14174,8 +14363,17 @@ msgstr "为此工单订购{0} × {substitute}"
 msgid "Order {0} for this job"
 msgstr "为此作业订购 {0}"
 
+msgid "Order {amount} for {date}"
+msgstr "订购 {amount} 件至 {date}"
+
+msgid "Order {quantity}"
+msgstr "订购 {quantity}"
+
 msgid "Order by"
 msgstr "订购截止日期"
+
+msgid "Order By"
+msgstr "排序方式"
 
 msgid "Order date"
 msgstr "订单日期"
@@ -14365,6 +14563,9 @@ msgstr "负责人"
 
 msgid "Owner (cost center)"
 msgstr "负责人（成本中心）"
+
+msgid "Ownership"
+msgstr "所有权"
 
 msgid "Ownership transfers"
 msgstr "所有权转移"
@@ -14899,8 +15100,35 @@ msgstr "已计划时间"
 msgid "Planning"
 msgstr "计划"
 
+msgid "Planning action"
+msgstr "计划行动"
+
+msgid "Planning horizon"
+msgstr "计划周期"
+
+msgid "Planning Horizon"
+msgstr "计划周期"
+
+msgid "Planning Horizon (Days)"
+msgstr "计划周期（天）"
+
+msgid "Planning Horizon:"
+msgstr "计划周期："
+
+msgid "Planning Ownership"
+msgstr "计划所有权"
+
+msgid "Planning purchase orders need approval"
+msgstr "计划采购订单需要审批"
+
+msgid "Planning purchase orders skip approval"
+msgstr "计划采购订单跳过审批"
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "计划将建议的补货数量舍入至该数字的整数倍。"
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "计划仅显示 X 天内到期的操作和建议订单。留空以使用公司默认值，或输入 0 以显示此物料的所有内容。"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "计划对建议补货数量的下限；不同于供应商的最小订购量 (MOQ)，该值位于供应商-物料记录上。"
@@ -15350,6 +15578,9 @@ msgstr "项目计划"
 msgid "Project start"
 msgstr "项目开始"
 
+msgid "Projected"
+msgstr "预测"
+
 msgid "Projected completion"
 msgstr "预计完成"
 
@@ -15370,6 +15601,12 @@ msgstr "{0}周的预计缺货"
 
 msgid "Projected stock"
 msgstr "预计库存"
+
+msgid "Projected stock by week"
+msgstr "按周投影库存"
+
+msgid "Projected stock is already below zero this week"
+msgstr "投影库存本周已经低于零"
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -15521,6 +15758,9 @@ msgstr "采购订单"
 msgid "Purchase Order Amount"
 msgstr "采购订单金额"
 
+msgid "Purchase Order Approval"
+msgstr "采购订单审批"
+
 msgid "Purchase Order approval rule"
 msgstr "采购订单审批规则"
 
@@ -15547,6 +15787,9 @@ msgstr "采购订单"
 
 msgid "Purchase Orders and Planning"
 msgstr "采购订单和计划"
+
+msgid "Purchase orders created from Material Planning can be finalized without going through the approval rule. Adding, changing or deleting a line on one by hand sends it back through approval."
+msgstr "从物料计划创建的采购订单可以直接最终确定，无需通过审批规则。手动添加、更改或删除其中的行会将其发送回审批。"
 
 msgid "Purchase orders required"
 msgstr "采购订单必需"
@@ -15659,9 +15902,6 @@ msgstr "数量"
 
 msgid "Qty On Hand"
 msgstr "现有数量"
-
-msgid "Qty to Order"
-msgstr "订购数量"
 
 msgid "Qty. Complete"
 msgstr "数量. 完成"
@@ -15982,6 +16222,9 @@ msgstr "可报价"
 
 msgid "ready to keep or revert"
 msgstr "就绪保存或恢复"
+
+msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
+msgstr "实际订单首先消耗其本周的需求预测，然后消耗公司时间窗口内较早和较晚周次的需求预测，因此预测和实际需求永远不会同时为相同的物料单位进行计划。"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "实时库存管理和车间可见性"
@@ -16352,8 +16595,14 @@ msgstr "下达控制"
 msgid "Release Job"
 msgstr "下达工单"
 
+msgid "Release job {target} by {date}"
+msgstr "下达工单 {target} 至 {date}"
+
 msgid "Release Jobs"
 msgstr "下达工单"
+
+msgid "Release purchase order {target} by {date}"
+msgstr "下达采购订单 {target} 至 {date}"
 
 msgid "Released"
 msgstr "已下达"
@@ -16560,6 +16809,9 @@ msgstr "租赁设备利用率"
 msgid "Reopen"
 msgstr "重新打开"
 
+msgid "Reopen as Revision"
+msgstr "作为修订版重新打开"
+
 msgid "Reorder"
 msgstr "重新排序"
 
@@ -16648,7 +16900,7 @@ msgid "Reports"
 msgstr "报告"
 
 msgid "Reprice with current rules"
-msgstr "用当前规则重新定价"
+msgstr "按当前规则重新定价"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
@@ -16753,6 +17005,12 @@ msgstr "需要维修"
 msgid "Requires staffing"
 msgstr "需要人工配置"
 
+msgid "Reschedule tolerance"
+msgstr "改期容差"
+
+msgid "Reschedule Tolerance"
+msgstr "重新安排容差"
+
 msgid "Reserve floor"
 msgstr "储备下限"
 
@@ -16822,6 +17080,12 @@ msgstr "资源"
 
 msgid "Resources"
 msgstr "资源"
+
+msgid "Responsible employee"
+msgstr "负责员工"
+
+msgid "Responsible Employee"
+msgstr "负责员工"
 
 msgid "Restock"
 msgstr "补货"
@@ -17308,6 +17572,9 @@ msgstr "运行ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "运行月末结账和标准对账"
+
+msgid "Run MRP"
+msgstr "运行MRP"
 
 msgid "Run payment batches and track aging"
 msgstr "运行付款批次并跟踪账龄"
@@ -18031,7 +18298,7 @@ msgid "Select operations"
 msgstr "选择工序"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "选择从此供应商的已过账收货行以退货。"
+msgstr "从该供应商选择已过账的收货行以退货。"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "从该客户的已过账发货行中选择要退货的"
@@ -18272,7 +18539,7 @@ msgid "Session locked"
 msgstr "会话已锁定"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "在此退货中设置客户以从发货添加。"
+msgstr "在此退货上设置客户以从发货中添加。"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "为此退货指定供应商以从其收货中添加"
@@ -18613,7 +18880,7 @@ msgid "Show all hidden on this step"
 msgstr "显示此步骤上隐藏的全部内容"
 
 msgid "Show available batch numbers"
-msgstr "显示可用的生产批次号"
+msgstr "显示可用批次号"
 
 msgid "Show available tracking numbers"
 msgstr "显示可用的跟踪号码"
@@ -18988,6 +19255,9 @@ msgstr "开始"
 msgid "Start {0} Day Free Trial"
 msgstr "开始 {0} 天免费试用"
 
+msgid "Start By"
+msgstr "开始于"
+
 msgid "Start counting"
 msgstr "开始盘点"
 
@@ -19130,6 +19400,9 @@ msgstr "步骤独自构建，然后作为一个整体拼接：在使用它的步
 
 msgid "Still dark out on the floor."
 msgstr "车间仍在黑暗中。"
+
+msgid "Stock Availability"
+msgstr "库存可用性"
 
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
@@ -19380,6 +19653,15 @@ msgstr "使用 AI 建议"
 
 msgid "Suggested from the change in recurring value"
 msgstr "根据循环值的更改建议"
+
+msgid "Suggested Jobs"
+msgstr "建议工单"
+
+msgid "Suggested Orders"
+msgstr "建议订单"
+
+msgid "Suggested orders required after this item's planning horizon. Extend the horizon to include them."
+msgstr "此物料的计划周期之后需要的建议订单。延长计划周期以包含它们。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -19638,7 +19920,7 @@ msgstr "同步"
 msgid "Sync Activity"
 msgstr "同步活动"
 
-msgid "sync off"
+msgid "Sync Off"
 msgstr "同步已关闭"
 
 msgid "Sync operation"
@@ -20491,6 +20773,9 @@ msgstr "现金折扣的百分比。使用 0 表示无折扣。"
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "该类型的新员工自动接收的权限集；在此处编辑仅更改模板以供将来雇用 - 现有员工保留他们拥有的内容，除非明确进行批量更新。"
 
+msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+msgstr "计划行动被分配给的个人：该地点的物料负责人，否则为物料组的负责人，否则为地点的负责人，否则为公司默认值。"
+
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "合同的计划发票，从其行按计费频率、对齐和时间切割；当合同处于草稿状态时，您可以更改、添加和删除发票，只要每行仍然计费其全额。"
 
@@ -20517,6 +20802,9 @@ msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "提供商不提供维度目标。首先在提供商中启用该功能（例如跟踪类别、类跟踪或字段）。"
+
+msgid "The purchase order"
+msgstr "采购订单"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点;每一列都有自己的单位价格,用于采购方–供应商谈判和转换为下游文件。"
@@ -20891,6 +21179,9 @@ msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账
 
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "这些工序使用的工艺支持多个供应商。请为每个工序选择一个供应商。"
+
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "这些订单无法加载。关闭并重新打开以重试。"
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
@@ -21446,6 +21737,9 @@ msgstr "公差+"
 msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"
 
+msgid "Tolerance (days)"
+msgstr "容差（天）"
+
 msgid "Tomorrow"
 msgstr "明天"
 
@@ -21852,7 +22146,7 @@ msgstr "取消分组"
 msgid "Unguaranteed Residual Value"
 msgstr "无保证残值"
 
-msgid "unhealthy"
+msgid "Unhealthy"
 msgstr "异常"
 
 msgid "Uninstall"
@@ -22969,6 +23263,9 @@ msgstr "当 {name} 更改时"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "当成品的保质期设置为计算时，选择哪些已消耗的输入项用于计算。"
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr "当销售订单或工单落在没有剩余预测的周次时，该订单或工单将从附近周次的预测中抵消，而不是累加计算。将两者都设置为 0 以仅在同一周内抵消。"
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "当序列号或批次过期时,以及之后使用时会发生什么 — 公司政策可以警告、阻止或使用覆盖阻止。"
 
@@ -23181,6 +23478,9 @@ msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "谁必须审批报价单、订单和采购——以及何时"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继承其地点。最具体的分配优先，每个物料可以在其计划选项卡上覆盖。"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "谁接收发票、在哪里以及按什么条款。"

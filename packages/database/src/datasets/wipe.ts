@@ -73,15 +73,20 @@ const PRESERVED_TABLES = new Set([
 ]);
 
 /**
- * MRP planning output — regenerated wholesale on the next run, and deleted
- * before the FK-nulling pass because their discriminator CHECKs cannot survive
- * it. Mirrors TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts.
+ * MRP planning output — regenerated on the next run, and deleted before the
+ * FK-nulling pass because their CHECKs cannot survive it. The first four are
+ * also TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts; planningAction
+ * is NOT (a backup keeps it: Dismissed and assigneeOverridden are the planner's
+ * own state), it is only transient for a dataset apply.
  */
 const TRANSIENT_MRP_TABLES = [
   "demandForecastSource",
   "demandActual",
   "supplyForecast",
-  "supplyActual"
+  "supplyActual",
+  // planningAction_change_target_chk: a change action must keep its job or
+  // PO line, and the FK-nulling pass would clear jobId while jobs still exist.
+  "planningAction"
 ];
 
 // Their content CHECK (imagePath OR modelUploadId) cannot survive the FK-nulling
@@ -375,9 +380,9 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // so on for jobId / demandProjectionId) over columns that are all nullable,
   // so nullNullableReferences below — which nulls every nullable FK whose
   // parent is being deleted — would violate the CHECK and abort the wipe.
-  // Deleting outright is safe and loses nothing: MRP regenerates these wholesale
-  // on its next run, which is why the backup catalog also treats them as
-  // transient (see TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts).
+  // Deleting outright is safe for a dataset apply: MRP regenerates these on
+  // its next run (the planner's dismissals and assignments on planningAction
+  // go with the rest of the company's data, as the apply intends).
   for (const t of [...TRANSIENT_MRP_TABLES, ...MODEL_SLIDE_TABLES]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [

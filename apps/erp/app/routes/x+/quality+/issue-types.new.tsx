@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   getIssueTypeByName,
@@ -61,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (insertIssueType.error?.code === "23505") {
+  if (isUniqueViolation(insertIssueType.error)) {
     return validationError({
       fieldErrors: { name: "An issue type with this name already exists" }
     });

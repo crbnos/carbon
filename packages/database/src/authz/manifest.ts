@@ -777,6 +777,11 @@ export const manifest = {
   }),
   itemPlanning: company("parts", { read: "parts_view", delete: false }),
   itemPostingGroup: company("accounting", { read: "accounting_view" }),
+  itemPostingGroupResponsibility: company("settings", {
+    create: "settings_update",
+    update: "settings_update",
+    delete: "settings_update"
+  }),
   itemRentalRate: company("sales", { read: "sales_view" }),
   itemReplenishment: company("parts", { read: "parts_view" }),
   itemSerialSequence: company("settings"),
@@ -1061,6 +1066,18 @@ export const manifest = {
   }),
   pickMethod: company("parts", { read: "parts_view", delete: false }),
   plan: policies({ select: authenticated }),
+  // Read-only through the API. MRP writes it (Kysely) and the planning routes
+  // change it with the service role after their own checks; an API write could
+  // point an action's jobId / purchaseOrderLineId at another company's row
+  // (single-column foreign keys), which the service-role read then shows.
+  planningAction: company("production", {
+    // Read by the production AND purchasing planning pages with the user's
+    // client; the row names a supplier, an open quantity and an assignee.
+    read: anyOf("production_view", "purchasing_view"),
+    create: false,
+    update: false,
+    delete: false
+  }),
   pricingRule: company("sales"),
   printerRoute: company("printing", { read: "printing_view" }),
   printJob: company("printing", { read: "printing_view" }),

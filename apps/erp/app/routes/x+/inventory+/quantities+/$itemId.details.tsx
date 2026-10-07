@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { pluckUnique, redirect } from "@carbon/utils";
+import { isUniqueViolation, pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
@@ -119,10 +119,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       createdBy: userId
     });
 
-    if (
-      insertPickMethod.error &&
-      !insertPickMethod.error.message.includes("duplicate key value")
-    ) {
+    if (insertPickMethod.error && !isUniqueViolation(insertPickMethod.error)) {
       throw redirect(
         path.to.inventory,
         await flash(

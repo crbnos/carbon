@@ -2,7 +2,7 @@
 -- asset targets, the fixedAssetTransfer document and the CIP cost ledger, PP&E
 -- accounts, and the Rental Fleet and Construction in Progress classes. The
 -- fleetAssets view comes with the rental agreements it reads
--- (20261006130501_rental-agreements.sql). Idempotent.
+-- (20261006220501_rental-agreements.sql). Idempotent.
 -- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §2
 
 -- 1) Columns ---------------------------------------------------------------------

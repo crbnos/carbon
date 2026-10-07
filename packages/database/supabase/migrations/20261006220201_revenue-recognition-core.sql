@@ -173,7 +173,7 @@ END $svcdates$;
 -- 7) salesOrderLines selects sl.* before aliased columns, so the new columns need a
 --    DROP + CREATE (never CREATE OR REPLACE). Body copied verbatim from
 --    20260811123619_widen-sales-production-scale.sql. salesInvoiceLines is recreated
---    with every new line column by 20261006131501_sales-invoice-discount-and-ship-to.sql.
+--    with every new line column by 20261006221401_sales-invoice-discount-and-ship-to.sql.
 DROP VIEW IF EXISTS "salesOrderLines";
 CREATE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT
