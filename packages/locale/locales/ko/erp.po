@@ -5162,6 +5162,9 @@ msgstr "부서 생성됨"
 msgid "Created failure mode"
 msgstr "고장 모드 생성됨"
 
+msgid "Created from planning"
+msgstr "계획에서 생성됨"
+
 msgid "Created gauge type"
 msgstr "계측기 유형이 생성되었습니다."
 

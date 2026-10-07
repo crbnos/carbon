@@ -304,6 +304,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.purchaseOrder.closedBy": msg`Closed by`,
   "entity.purchaseOrder.createdAt": msg`Created at`,
   "entity.purchaseOrder.createdBy": msg`Created by`,
+  "entity.purchaseOrder.createdFromPlanning": msg`Created from planning`,
   "entity.purchaseOrder.currencyCode": msg`Currency code`,
   "entity.purchaseOrder.exchangeRate": msg`Exchange rate`,
   "entity.purchaseOrder.exchangeRateUpdatedAt": msg`Exchange rate updated at`,

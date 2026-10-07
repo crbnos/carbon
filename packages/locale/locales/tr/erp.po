@@ -5162,6 +5162,9 @@ msgstr "Departman oluşturuldu"
 msgid "Created failure mode"
 msgstr "Başarısız mod oluşturuldu"
 
+msgid "Created from planning"
+msgstr "Planlamadan oluşturuldu"
+
 msgid "Created gauge type"
 msgstr "Ölçüm aleti türü oluşturuldu"
 

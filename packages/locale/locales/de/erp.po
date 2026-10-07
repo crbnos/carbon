@@ -5162,6 +5162,9 @@ msgstr "Abteilung erstellt"
 msgid "Created failure mode"
 msgstr "Fehlermodus erstellt"
 
+msgid "Created from planning"
+msgstr "Aus der Planung erstellt"
+
 msgid "Created gauge type"
 msgstr "Prüfmittelart erstellt"
 

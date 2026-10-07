@@ -5162,6 +5162,9 @@ msgstr "Created department"
 msgid "Created failure mode"
 msgstr "Created failure mode"
 
+msgid "Created from planning"
+msgstr "Created from planning"
+
 msgid "Created gauge type"
 msgstr "Created gauge type"
 

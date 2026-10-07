@@ -5162,6 +5162,9 @@ msgstr "विभाग बनाया गया"
 msgid "Created failure mode"
 msgstr "विफलता मोड बनाया गया"
 
+msgid "Created from planning"
+msgstr "योजना से बनाया गया"
+
 msgid "Created gauge type"
 msgstr "गेज प्रकार बनाया गया"
 

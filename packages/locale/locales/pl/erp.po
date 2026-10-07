@@ -5162,6 +5162,9 @@ msgstr "Utworzono dział"
 msgid "Created failure mode"
 msgstr "Utworzony tryb awarii"
 
+msgid "Created from planning"
+msgstr "Utworzono z planowania"
+
 msgid "Created gauge type"
 msgstr "Utworzono typ przyrządu"
 

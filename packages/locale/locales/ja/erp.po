@@ -5162,6 +5162,9 @@ msgstr "部門を作成しました"
 msgid "Created failure mode"
 msgstr "障害モードを作成しました"
 
+msgid "Created from planning"
+msgstr "計画から作成"
+
 msgid "Created gauge type"
 msgstr "測定器タイプを作成しました"
 

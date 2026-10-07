@@ -5162,6 +5162,9 @@ msgstr "Departamento criado"
 msgid "Created failure mode"
 msgstr "Modo de falha criado"
 
+msgid "Created from planning"
+msgstr "Criado a partir do planejamento"
+
 msgid "Created gauge type"
 msgstr "Tipo de instrumento criado"
 

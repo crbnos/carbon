@@ -5162,6 +5162,9 @@ msgstr "Отдел создан"
 msgid "Created failure mode"
 msgstr "Режим отказа создан"
 
+msgid "Created from planning"
+msgstr "Создано из планирования"
+
 msgid "Created gauge type"
 msgstr "Создан тип средства измерения"
 

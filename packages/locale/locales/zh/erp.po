@@ -5162,6 +5162,9 @@ msgstr "已创建部门"
 msgid "Created failure mode"
 msgstr "已创建故障模式"
 
+msgid "Created from planning"
+msgstr "从计划创建"
+
 msgid "Created gauge type"
 msgstr "已创建量具类型"
 

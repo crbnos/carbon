@@ -1143,7 +1143,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     supplierInteractionId: { kind: "primitive", of: "string" },
     purchaseOrderType: { kind: "primitive", of: "string" },
     jobId: { kind: "entity", of: "job" },
-    jobReadableId: { kind: "primitive", of: "string" }
+    jobReadableId: { kind: "primitive", of: "string" },
+    createdFromPlanning: { kind: "primitive", of: "boolean" }
   },
   quote: {
     id: { kind: "primitive", of: "string" },
