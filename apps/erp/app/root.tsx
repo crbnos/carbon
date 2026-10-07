@@ -58,7 +58,9 @@ import {
   Scripts,
   ScrollRestoration,
   UNSAFE_FrameworkContext,
-  useLoaderData
+  useLoaderData,
+  useLocation,
+  useMatches
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
@@ -66,6 +68,7 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import "@carbon/lib/shims";
 import { MotionConfig } from "motion/react";
@@ -322,7 +325,12 @@ export default function App() {
   const prefs = loaderData?.preferences;
   const appLanguage = resolveLanguage(prefs.locale);
   const catalog = useCatalog(appLanguage);
-  const mode = useMode();
+  const userMode = useMode();
+  const { search } = useLocation();
+  const hostMode = useMatches()
+    .map((match) => (match.handle as Handle | undefined)?.hostMode)
+    .find((value) => value !== undefined);
+  const mode = hostMode ? hostMode(new URLSearchParams(search)) : userMode;
 
   // One client for both consumers: the imperative `window.clientCache`
   // read-through convention (clientLoader/cachedApiQuery) and hook-based

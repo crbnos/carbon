@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { RouteRealtimeTable } from "@carbon/database/realtime-tables";
+import type { Mode } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import type { ComponentType, ReactNode } from "react";
 
@@ -26,6 +27,9 @@ export type Handle = {
   // Phones only: the app bar's subtitle under a record's ID ("Sales Order"),
   // in place of the list crumb. Child routes (a line page) inherit it.
   appBarSubtitle?: MessageDescriptor;
+  // A page another product frames (the Onshape panel) takes its mode from the
+  // host's URL, not from the user's own mode.
+  hostMode?: (searchParams: URLSearchParams) => Mode;
 };
 
 // A breadcrumb label may be plain text/markup or a Lingui MessageDescriptor

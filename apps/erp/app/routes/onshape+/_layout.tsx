@@ -4,6 +4,16 @@
 
 import { TooltipProvider } from "@carbon/react";
 import { Outlet } from "react-router";
+import type { Handle } from "~/utils/handle";
+
+/**
+ * Onshape passes its theme as `theme`. The panel matches it, and is light when
+ * the parameter is missing, so it never follows the Carbon user's own mode.
+ */
+export const handle: Handle = {
+  hostMode: (searchParams) =>
+    searchParams.get("theme")?.toLowerCase() === "dark" ? "dark" : "light"
+};
 
 /**
  * Bare shell for pages that render inside another product (the Onshape right
