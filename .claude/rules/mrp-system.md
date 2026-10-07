@@ -383,8 +383,10 @@ never offered a Cancel, Defer or Expedite.
   order's due date (`purchaseOrderLineArrivalDate` / `jobCompletionDate`) less
   the item's lead time less one day, so due in 8 days with a 7-day lead time
   is today. A PO is released once, so all its lines carry the EARLIEST line's
-  date (`earlierRelease`). `horizonDate` is that date (the fence hides it until
-  it is close), `isASAP` once it has come, `latestOrderDate` null (not new
+  date (`earlierRelease`). It is raised only from `RELEASE_NOTICE_DAYS` (1)
+  before that date — every planned order has one, so raised weeks out it was
+  a standing row nobody could act on; the diff-write deletes an Open one whose
+  date moves back out. `horizonDate` is that date, `isASAP` once it has come, `latestOrderDate` null (not new
   supply), and an order MRP would Cancel gets none; it sits beside a change to
   the same order (the natural key includes the type). It is never applied
   by the planning routes (Apply Suggested Changes skips it,

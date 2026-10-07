@@ -57,6 +57,12 @@ const WEEKS_TO_PLAN = 48;
 /** Planning periods are weeks. */
 const DAYS_PER_PERIOD = 7;
 const BATCH_SIZE = 500;
+/**
+ * A Release is raised this many days before its release day, not earlier.
+ * Every planned order has one, so raised the moment the order exists it is a
+ * standing row weeks ahead of anything anyone can do about it.
+ */
+const RELEASE_NOTICE_DAYS = 1;
 
 export type PlanningActionType =
   | "Order"
@@ -633,8 +639,9 @@ export function convertOrdersToIncreases(args: {
 
 /**
  * One Release per planned order (`OpenSupplyOrder.release`), dated the last
- * day to release it. Released from the order itself — the planning pages link
- * to it — so it is never applied. An order MRP would Cancel gets none.
+ * day to release it, raised only from `RELEASE_NOTICE_DAYS` before that day.
+ * Released from the order itself — the planning pages link to it — so it is
+ * never applied. An order MRP would Cancel gets none.
  */
 export function deriveReleaseActions(args: {
   openOrders: OpenSupplyOrder[];
@@ -665,6 +672,8 @@ export function deriveReleaseActions(args: {
   for (const order of openOrders) {
     const release = order.release;
     if (!release) continue;
+    // not yet: the run on the day before raises it
+    if (daysBetween(release.date, todayDate) > RELEASE_NOTICE_DAYS) continue;
     if (cancelled.has(order.purchaseOrderLineId ?? order.jobId ?? null)) {
       continue;
     }

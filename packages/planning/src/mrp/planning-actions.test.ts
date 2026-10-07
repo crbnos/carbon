@@ -1382,7 +1382,7 @@ describe("deriveReleaseActions", () => {
       openOrders: [planned("pol-1", "2026-10-12")],
       changeActions: [],
       periods,
-      todayDate: today
+      todayDate: "2026-10-11"
     });
     expect(release).toMatchObject({
       type: "Release",
@@ -1409,6 +1409,22 @@ describe("deriveReleaseActions", () => {
     ).toEqual([
       ["today", true, "w0"],
       ["late", true, "w0"]
+    ]);
+  });
+
+  it("waits until the day before the release day", () => {
+    const actions = deriveReleaseActions({
+      openOrders: [
+        planned("tomorrow", "2026-10-07"),
+        planned("in-two-days", "2026-10-08"),
+        planned("next-week", "2026-10-12")
+      ],
+      changeActions: [],
+      periods,
+      todayDate: today
+    });
+    expect(actions.map((a) => [a.purchaseOrderLineId, a.isASAP])).toEqual([
+      ["tomorrow", false]
     ]);
   });
 
