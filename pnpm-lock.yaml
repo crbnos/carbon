@@ -3625,12 +3625,21 @@ importers:
       '@fastify/compress':
         specifier: 'catalog:'
         version: 9.2.0
+      '@fastify/send':
+        specifier: 4.1.1
+        version: 4.1.1
       '@fastify/static':
         specifier: 'catalog:'
         version: 10.1.5
+      close-with-grace:
+        specifier: 2.5.0
+        version: 2.5.0
       fastify:
         specifier: 'catalog:'
         version: 5.12.5
+      negotiator:
+        specifier: 1.0.0
+        version: 1.0.0
       react-router:
         specifier: 'catalog:'
         version: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3638,6 +3647,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@types/negotiator':
+        specifier: 0.6.5
+        version: 0.6.5
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
@@ -10791,6 +10803,9 @@ packages:
   '@types/mysql@2.15.27':
     resolution: {integrity: sha512-YfWiV16IY0OeBfBCk8+hXKmdTKrKlwKN1MNKAPBu5JYxLwBEZl7QzeEpGnlZb3VMGJrrGmB84gXiH+ofs/TezA==}
 
+  '@types/negotiator@0.6.5':
+    resolution: {integrity: sha512-MPOlB48mfWhoUlynY0ga7CFsXIPcH6vGPkjzXMn2p+4PH1QUyn2KPtw0hrLLmO6SaX4zse3X6h2x/083vveAlA==}
+
   '@types/node@20.19.39':
     resolution: {integrity: sha512-orrrD74MBUyK8jOAD/r0+lfa1I2MO6I+vAkmAWzMYbCcgrN4lCrmK52gRFQq/JRxfYPfonkr4b0jcY7Olqdqbw==}
 
@@ -11884,6 +11899,9 @@ packages:
   clone@2.1.2:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
+
+  close-with-grace@2.5.0:
+    resolution: {integrity: sha512-MewUtZQU6N4YVHIne63zGtjIQzTINgr6lQp2Y0CutaCw2FsdYahW57dH1Wdz+aV5ipbBzEBZD5znwX2NooS+IA==}
 
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
@@ -25555,6 +25573,8 @@ snapshots:
     dependencies:
       '@types/node': 22.19.7
 
+  '@types/negotiator@0.6.5': {}
+
   '@types/node@20.19.39':
     dependencies:
       undici-types: 6.21.0
@@ -26761,6 +26781,8 @@ snapshots:
   clone@1.0.4: {}
 
   clone@2.1.2: {}
+
+  close-with-grace@2.5.0: {}
 
   clsx@2.1.1: {}
 

@@ -7,9 +7,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { brotliCompressSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { allowedActionOrigins, createApp, takesBrotli } from "./index.ts";
+import { allowedActionOrigins, createApp } from "./index.ts";
 
 const SCRIPT = "console.log('carbon');\n".repeat(200);
+const MODEL = Buffer.alloc(2 * 1024 * 1024, 7);
 
 describe("allowedActionOrigins", () => {
   it("is the host of the configured site URL", () => {
@@ -25,17 +26,6 @@ describe("allowedActionOrigins", () => {
     expect(allowedActionOrigins(undefined)).toEqual([]);
     expect(allowedActionOrigins("")).toEqual([]);
     expect(allowedActionOrigins("erp.acme.com")).toEqual([]);
-  });
-});
-
-describe("takesBrotli", () => {
-  it("is what the header says, a refusal included", () => {
-    expect(takesBrotli("gzip, deflate, br")).toBe(true);
-    expect(takesBrotli("BR;q=0.5, gzip")).toBe(true);
-    expect(takesBrotli("gzip, br;q=0")).toBe(false);
-    expect(takesBrotli("gzip, br; q=0.0")).toBe(false);
-    expect(takesBrotli("gzip, brotli")).toBe(false);
-    expect(takesBrotli(undefined)).toBe(false);
   });
 });
 
@@ -55,9 +45,12 @@ describe("createApp", () => {
     );
     // Too small to be worth compressing, so it stays as it is.
     writeFileSync(path.join(root, "robots.txt"), "User-agent: *\n");
+    // Too large to hold in memory: sent from disk, where ranges work.
+    writeFileSync(path.join(root, "assets", "model-abc123.glb"), MODEL);
 
     app = await createApp({
       clientDirectory: root,
+      logger: false,
       handleRequest: async (request: Request) => {
         seen.push(request);
         const headers = new Headers({ "content-type": "text/plain" });
@@ -98,18 +91,28 @@ describe("createApp", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-encoding"]).toBe("br");
     expect(res.headers["cache-control"]).toContain("immutable");
-    expect(res.headers["content-type"]).toContain("text/javascript");
+    expect(res.headers["content-type"]).toBe(
+      "application/javascript; charset=utf-8"
+    );
     expect(res.headers.vary).toContain("Accept-Encoding");
     expect(res.rawPayload.length).toBeLessThan(SCRIPT.length / 10);
   });
 
-  it("sends the file itself to a caller that refuses Brotli", async () => {
-    const res = await app.inject({
-      url: "/assets/entry-abc123.js",
-      headers: { "accept-encoding": "br;q=0" }
-    });
-    expect(res.headers["content-encoding"]).toBeUndefined();
-    expect(res.payload).toBe(SCRIPT);
+  it("reads Accept-Encoding as the header means it", async () => {
+    const encoding = async (header: string) =>
+      (
+        await app.inject({
+          url: "/assets/entry-abc123.js",
+          headers: { "accept-encoding": header }
+        })
+      ).headers["content-encoding"];
+    expect(await encoding("BR;q=0.5")).toBe("br");
+    expect(await encoding("*")).toBe("br");
+    // A refusal, alone and beside a wildcard that would otherwise allow it.
+    expect(await encoding("br;q=0")).toBeUndefined();
+    expect(await encoding("brotli")).toBeUndefined();
+    // The wildcard still allows gzip, which the original is then sent as.
+    expect(await encoding("br;q=0, *")).toBe("gzip");
   });
 
   it("sends the file itself to a caller that cannot take Brotli", async () => {
@@ -144,6 +147,43 @@ describe("createApp", () => {
   it("names the charset of a page", async () => {
     const res = await app.inject({ url: "/page" });
     expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
+  });
+
+  it("answers a conditional request without the body", async () => {
+    const headers = { "accept-encoding": "br" };
+    const first = await app.inject({ url: "/assets/entry-abc123.js", headers });
+    const again = await app.inject({
+      url: "/assets/entry-abc123.js",
+      headers: { ...headers, "if-none-match": String(first.headers.etag) }
+    });
+    expect(again.statusCode).toBe(304);
+    expect(again.rawPayload.length).toBe(0);
+    expect(again.headers["cache-control"]).toContain("immutable");
+  });
+
+  it("answers HEAD with the headers and nothing else", async () => {
+    const res = await app.inject({
+      method: "HEAD",
+      url: "/assets/entry-abc123.js",
+      headers: { "accept-encoding": "br" }
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-encoding"]).toBe("br");
+    expect(Number(res.headers["content-length"])).toBeGreaterThan(0);
+    expect(res.rawPayload.length).toBe(0);
+  });
+
+  it("sends a large file from disk, a range of it when asked", async () => {
+    const whole = await app.inject({ url: "/assets/model-abc123.glb" });
+    expect(whole.statusCode).toBe(200);
+    expect(whole.rawPayload.length).toBe(MODEL.length);
+    expect(whole.headers["cache-control"]).toContain("immutable");
+    const part = await app.inject({
+      url: "/assets/model-abc123.glb",
+      headers: { range: "bytes=0-99" }
+    });
+    expect(part.statusCode).toBe(206);
+    expect(part.rawPayload.length).toBe(100);
   });
 
   it("answers a missing asset itself", async () => {

@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
+    "isolatedModules": true,
     "noEmit": true,
     "verbatimModuleSyntax": true
   },

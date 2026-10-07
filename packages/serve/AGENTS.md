@@ -25,10 +25,16 @@ options, so nothing could be put between a request and React Router.
   Vercel's) writes a `.br` beside each asset and keeps the original. The
   `.br` goes as it is to anything that accepts Brotli; the original to a
   caller that does not. Both answers carry `Vary: Accept-Encoding`.
-- **Which files exist is read once, at start.** `@fastify/static` is only
-  used to send the file that index names (`serve: false`, `reply.sendFile`).
-  Left to find files itself it lists the parent directory on every request,
-  which with two thousand chunks was slower than compressing on the fly.
+- **Files are read once, at start** (`src/assets.ts`). Every Brotli copy,
+  and every uncompressed file up to 1 MB that has none, is held in memory
+  with its headers already made; serving one is a lookup and a write.
+  Read per request, each cost a stat, an open and a stream on libuv's four
+  threads — the same four that compress rendered pages. Larger files, and
+  the original of a compressed one for a caller that refuses Brotli, are
+  sent from disk by `reply.sendFile`, which answers ranges. Nothing here
+  may read a file while handling a request.
+- **`/assets/*` and `/_vercel/*` are routes of their own.** A file or a
+  plain 404, never a rendered page.
 - **React Router is a route, not the not-found handler.** `@fastify/compress`
   attaches to routes only; from the not-found handler pages went out
   uncompressed.
@@ -36,11 +42,17 @@ options, so nothing could be put between a request and React Router.
   request stream reaches React Router whole.
 - **The request URL is joined as text**, never resolved against a base: a
   path of `//other.host/x` would name another host, and React Router checks
-  a form's `Origin` against that URL.
+  a form's `Origin` against that URL. `@mjackson/node-fetch-server`
+  resolves, which is why `src/request.ts` is ours.
 - **Fastify's defaults are not all kept.** `keepAliveTimeout` is above any
   proxy's idle timeout, and `requestTimeout` is Node's 300s (Fastify sets
   none). `bodyLimit` does not apply: no body is parsed here. A request whose `Content-Type` is not a
   media type at all is a 415 from Fastify before React Router sees it.
+- **What a library already answers is left to it.** `negotiator` reads
+  `Accept-Encoding` (a `br;q=0` is a refusal), `@fastify/send` names a
+  file's content type — the same code that sends the original, so both
+  copies of an asset are called one thing — and `close-with-grace` shuts
+  the server down: requests in flight finish, bounded at twenty seconds.
 - Routes that should not go through React Router at all belong here, in front
   of the catch-all — not as a path check inside a route.
 
