@@ -2520,13 +2520,26 @@ export async function endProductionEventsByWorkCenter(
     .eq("companyId", args.companyId);
 }
 
+/**
+ * Called when the auto-start moved a job from Draft / Planned (never Ready) to
+ * In Progress — a release the ERP never saw. Routes pass the server-only First
+ * Article generation (`generateFirstArticlesForStartedJob`); this service is
+ * browser-bundled and cannot hold the Kysely client itself.
+ */
+export type OnJobReleased = (jobId: string) => Promise<void>;
+
 // Phase 3 (auto-start): when an operator starts a production event, flip a not-yet-started
 // job + operation to "In Progress" so the shop floor doesn't have to mark it manually. Status
 // guards make re-starts and already-running jobs no-ops. Best-effort — a failure here must not
 // block the production event that already succeeded.
 async function autoStartJobAndOperation(
   client: SupabaseClient<Database>,
-  args: { jobOperationId: string; userId: string; companyId: string }
+  args: {
+    jobOperationId: string;
+    userId: string;
+    companyId: string;
+    onJobReleased?: OnJobReleased;
+  }
 ) {
   const op = await client
     .from("jobOperation")
@@ -2547,17 +2560,45 @@ async function autoStartJobAndOperation(
         .in("status", ["Todo", "Ready", "Waiting"])
     );
   }
-  if (op.data.jobId) {
-    updates.push(
-      client
-        .from("job")
-        .update({ status: "In Progress", updatedBy: args.userId })
-        .eq("id", op.data.jobId)
-        .eq("companyId", args.companyId)
-        .in("status", ["Draft", "Planned", "Ready"])
-    );
+  // Two guarded writes so the caller learns whether THIS start released the
+  // job: a row back from the Draft/Planned write means the prior status was
+  // one of those (the filter is the proof, and only one concurrent start can
+  // win it). Ready → In Progress is an ordinary start; that job was released
+  // already, and its first articles were generated then.
+  const jobId = op.data.jobId;
+  const releasing: Promise<string | null> = jobId
+    ? (async () => {
+        const fromUnreleased = await client
+          .from("job")
+          .update({ status: "In Progress", updatedBy: args.userId })
+          .eq("id", jobId)
+          .eq("companyId", args.companyId)
+          .in("status", ["Draft", "Planned"])
+          .select("id");
+        if (fromUnreleased.error) return null;
+        if ((fromUnreleased.data ?? []).length > 0) return jobId;
+        await client
+          .from("job")
+          .update({ status: "In Progress", updatedBy: args.userId })
+          .eq("id", jobId)
+          .eq("companyId", args.companyId)
+          .eq("status", "Ready");
+        return null;
+      })()
+    : Promise.resolve(null);
+
+  const [released] = await Promise.all([releasing, ...updates]);
+
+  if (released && args.onJobReleased) {
+    try {
+      await args.onJobReleased(released);
+    } catch (err) {
+      log.error("Failed to run job release follow-up after auto-start", {
+        error: err,
+        jobId: released
+      });
+    }
   }
-  await Promise.all(updates);
 }
 
 /**
@@ -2651,7 +2692,9 @@ export async function startProductionEvent(
   trackedEntityId: string | undefined,
   unitIndex?: number,
   /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
-  source: WorkSource = "mes"
+  source: WorkSource = "mes",
+  /** Runs when this start released a Draft / Planned job (see `OnJobReleased`). */
+  onJobReleased?: OnJobReleased
 ) {
   const refs = await verifyProductionEventRefs(client, {
     companyId: data.companyId,
@@ -2731,7 +2774,8 @@ export async function startProductionEvent(
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
       userId: data.createdBy,
-      companyId: data.companyId
+      companyId: data.companyId,
+      onJobReleased
     });
 
     trackWorkEvent("job_operation_started", {
@@ -2755,7 +2799,8 @@ export async function startProductionEvent(
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
       userId: data.createdBy,
-      companyId: data.companyId
+      companyId: data.companyId,
+      onJobReleased
     });
 
     const inserted = eventInsert.data?.[0];

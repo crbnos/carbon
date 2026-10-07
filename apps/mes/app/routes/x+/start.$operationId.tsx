@@ -19,6 +19,7 @@ import {
   getTrackedEntitiesByMakeMethodId,
   startProductionEvent
 } from "~/services/operations.service";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
@@ -268,7 +269,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     },
     trackedEntityId || undefined,
     undefined,
-    "mes_qr"
+    "mes_qr",
+    (jobId) =>
+      generateFirstArticlesForStartedJob(serviceRole, {
+        jobId,
+        companyId,
+        userId
+      })
   );
 
   if (startEvent.error) {

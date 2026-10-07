@@ -70,7 +70,11 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
+import {
+  type BalloonRegionAnalysis,
+  type featureOfSizeTypes,
+  materialConditions
+} from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
 import { procedureStepType } from "~/modules/shared/shared.models";
@@ -338,14 +342,59 @@ type FeatureRow = {
   samplingSeverity: SamplingRule["samplingSeverity"];
   /** Optional gauge type the feature must be measured with. */
   gaugeTypeId: string | null;
+  /** AS9102 Form 3 characteristic designator (e.g. "KC", "Critical"). */
+  designator: string;
+  /** Drawing zone / sheet the characteristic is found at. */
+  referenceLocation: string;
+  /** RFS = no bonus; MMC/LMC take their bonus from `sizeFeatureId`. */
+  materialCondition: MaterialCondition;
+  featureOfSize: FeatureOfSize | "";
+  /** Another row's featureId (the editor mints ids); "" = none. */
+  sizeFeatureId: string;
   featureDirty?: boolean;
   geometryDirty?: boolean;
 };
+
+type MaterialCondition = (typeof materialConditions)[number];
+type FeatureOfSize = (typeof featureOfSizeTypes)[number];
+
+/** Defaults of the fields a new characteristic starts without. */
+const EMPTY_CHARACTERISTIC_FIELDS = {
+  gaugeTypeId: null,
+  designator: "",
+  referenceLocation: "",
+  materialCondition: "RFS",
+  featureOfSize: "",
+  sizeFeatureId: ""
+} satisfies Pick<
+  FeatureRow,
+  | "gaugeTypeId"
+  | "designator"
+  | "referenceLocation"
+  | "materialCondition"
+  | "featureOfSize"
+  | "sizeFeatureId"
+>;
 
 const featureTypeOptions = procedureStepType.map((t) => ({
   label: t,
   value: t
 }));
+
+const materialConditionOptions = materialConditions.map((condition) => ({
+  label: condition,
+  value: condition
+}));
+
+/** A Measurement characteristic whose tolerance takes a bonus (MMC/LMC). */
+function hasBonusTolerance(
+  row: Pick<FeatureRow, "type" | "materialCondition">
+) {
+  return (
+    row.type === "Measurement" &&
+    (row.materialCondition === "MMC" || row.materialCondition === "LMC")
+  );
+}
 
 // Compact display of a sampling rule ("AQL 1 · II · Normal"); null = no rule
 // (a feature inherits the document default; the document falls back to All).
@@ -363,6 +412,21 @@ function samplingRuleSummary(rule: SamplingRule): string | null {
       return null;
   }
 }
+
+type EditableFeatureField =
+  | "label"
+  | "featureName"
+  | "nominalValue"
+  | "tolerancePlus"
+  | "toleranceMinus"
+  | "units"
+  | "type"
+  | "gaugeTypeId"
+  | "designator"
+  | "referenceLocation"
+  | "materialCondition"
+  | "featureOfSize"
+  | "sizeFeatureId";
 
 type FeatureMutationFn = (
   accessorKey: string,
@@ -396,6 +460,19 @@ const ConditionalMeasurementList =
       return <span className="text-muted-foreground text-sm">&mdash;</span>;
     }
     return EditableList(baseMutation, options)(props);
+  };
+
+/** Editable only on MMC/LMC Measurement rows; options may depend on the row. */
+const ConditionalBonusList =
+  (
+    baseMutation: FeatureMutationFn,
+    getOptions: (row: FeatureRow) => { label: string; value: string }[]
+  ) =>
+  (props: EditableTableCellComponentProps<FeatureRow>) => {
+    if (!hasBonusTolerance(props.row)) {
+      return <span className="text-muted-foreground text-sm">&mdash;</span>;
+    }
+    return EditableList(baseMutation, getOptions(props.row))(props);
   };
 
 // Optional gauge type: a clearable list (cleared = any gauge may be used).
@@ -494,6 +571,54 @@ function getBalloonValueOrNull(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** The characteristic keys of a feature's save item. `sizeFeatureId` is the
+ * referenced row's featureId — the editor mints ids, so a row created in the
+ * same save is named by the id it will be inserted with. */
+function featureCharacteristicPayload(r: FeatureRow) {
+  const bonus = hasBonusTolerance(r);
+  return {
+    designator: getBalloonValueOrNull(r.designator),
+    referenceLocation: getBalloonValueOrNull(r.referenceLocation),
+    materialCondition: r.type === "Measurement" ? r.materialCondition : null,
+    featureOfSize: bonus && r.featureOfSize ? r.featureOfSize : null,
+    sizeFeatureId: bonus && r.sizeFeatureId ? r.sizeFeatureId : null
+  };
+}
+
+/** Why the rows cannot be saved as they are, or null when they can: an MMC/LMC
+ * characteristic needs a size feature (another Measurement row) and a declared
+ * feature of size. The save validators refuse both. */
+function invalidBonusCharacteristic(
+  rows: FeatureRow[]
+): "sizeFeature" | "featureOfSize" | null {
+  const bonusRows = rows.filter(hasBonusTolerance);
+  if (bonusRows.length === 0) return null;
+  const measurementIds = new Set(
+    rows.filter((r) => r.type === "Measurement").map((r) => r.featureId)
+  );
+  if (
+    bonusRows.some(
+      (r) =>
+        r.sizeFeatureId === r.featureId || !measurementIds.has(r.sizeFeatureId)
+    )
+  ) {
+    return "sizeFeature";
+  }
+  if (bonusRows.some((r) => !r.featureOfSize)) return "featureOfSize";
+  return null;
+}
+
+const REFUSED_FEATURE_DELETE_PATTERN =
+  /Feature "(.*)" has recorded results and cannot be deleted/;
+
+/** A characteristic deleted locally, kept until the delete has saved so a
+ * refused delete can put it back where it was. */
+type DeletedFeatureSnapshot = {
+  row: FeatureRow;
+  index: number;
+  anchors: SelectorRect[];
+};
+
 function blobToBase64Data(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -586,6 +711,12 @@ function mapFeatureRowFromRecords(
     samplingSeverity:
       (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
     gaugeTypeId: (feature.gaugeTypeId as string | null) ?? null,
+    designator: String(feature.designator ?? ""),
+    referenceLocation: String(feature.referenceLocation ?? ""),
+    materialCondition:
+      (feature.materialCondition as MaterialCondition | null) ?? "RFS",
+    featureOfSize: (feature.featureOfSize as FeatureOfSize | null) ?? "",
+    sizeFeatureId: String(feature.sizeFeatureId ?? ""),
     featureDirty: false,
     geometryDirty: false
   };
@@ -668,6 +799,19 @@ export default function InspectionDocumentEditor({
   const debouncedSaveName = useDebounce((value: string) => {
     nameFetcher.submit(
       { drawingNumber: value },
+      {
+        method: "post",
+        action: path.to.updateInspectionDocumentName(diagramId)
+      }
+    );
+  }, 500);
+  const revisionFetcher = useFetcher();
+  const [drawingRevision, setDrawingRevision] = useState(
+    content?.drawingRevision ?? ""
+  );
+  const debouncedSaveRevision = useDebounce((value: string) => {
+    revisionFetcher.submit(
+      { drawingRevision: value },
       {
         method: "post",
         action: path.to.updateInspectionDocumentName(diagramId)
@@ -763,6 +907,11 @@ export default function InspectionDocumentEditor({
   const [pdfMetricsDirty, setPdfMetricsDirty] = useState(false);
   /** Persisted feature ids to hard-delete on the next save. */
   const pendingFeatureDeleteIdsRef = useRef(new Set<string>());
+  /** Rows (and their anchors) whose delete is queued, by featureId, so a
+   * delete the server refuses can be undone. */
+  const deletedFeatureSnapshotsRef = useRef(
+    new Map<string, DeletedFeatureSnapshot>()
+  );
   /** Persisted balloon ids to hard-delete on the next save (unballoon). */
   const pendingBalloonDeleteIdsRef = useRef(new Set<string>());
   /** The save in flight; null when none is. */
@@ -928,6 +1077,44 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [pdfFile, pdfUrl]);
 
+  // A save refused to delete a characteristic that has recorded results: put
+  // the named row back with its anchor (every row that save deleted, when the
+  // name matches none of them) and drop it from the pending deletes. Putting
+  // it back changes the rows, so the rest of the refused save goes out again —
+  // without the delete.
+  const restoreRefusedFeatureDeletes = useCallback(
+    (label: string, featureDeleteIds: string[]) => {
+      const deleted = featureDeleteIds
+        .map((id) => deletedFeatureSnapshotsRef.current.get(id))
+        .filter((s): s is DeletedFeatureSnapshot => s != null);
+      const named = deleted.filter((s) => s.row.label === label);
+      const toRestore = (named.length > 0 ? named : deleted).sort(
+        (a, b) => a.index - b.index
+      );
+      if (toRestore.length === 0) return;
+
+      const restoredIds = new Set(toRestore.map((s) => s.row.featureId));
+      for (const id of restoredIds) {
+        pendingFeatureDeleteIdsRef.current.delete(id);
+        deletedFeatureSnapshotsRef.current.delete(id);
+      }
+      setFeatureRows((prev) => {
+        const next = prev.filter((r) => !restoredIds.has(r.featureId));
+        for (const s of toRestore) {
+          next.splice(Math.min(s.index, next.length), 0, s.row);
+        }
+        return next;
+      });
+      setSelectorRects((prev) => [
+        ...prev,
+        ...toRestore
+          .flatMap((s) => s.anchors)
+          .filter((anchor) => !prev.some((sel) => sel.id === anchor.id))
+      ]);
+    },
+    []
+  );
+
   // Merges each save response into the editor's current state. It reads the
   // current rows, so it also runs on every edit; handledSaveDataRef makes each
   // response merge exactly once.
@@ -943,6 +1130,12 @@ export default function InspectionDocumentEditor({
       failedSaveRef.current = sent;
       pdfReplaceToastRef.current = false;
       toast.error(data.message ?? t`Failed to save inspection plan`);
+      const refused = data.message
+        ? REFUSED_FEATURE_DELETE_PATTERN.exec(data.message)
+        : null;
+      if (refused) {
+        restoreRefusedFeatureDeletes(refused[1] ?? "", sent.featureDeleteIds);
+      }
       return;
     }
 
@@ -959,6 +1152,7 @@ export default function InspectionDocumentEditor({
     for (const id of sent.createdIds) unsavedIdsRef.current.delete(id);
     for (const id of sent.featureDeleteIds) {
       pendingFeatureDeleteIdsRef.current.delete(id);
+      deletedFeatureSnapshotsRef.current.delete(id);
     }
     for (const id of sent.balloonDeleteIds) {
       pendingBalloonDeleteIdsRef.current.delete(id);
@@ -977,7 +1171,14 @@ export default function InspectionDocumentEditor({
         t`Drawing replaced. Balloon placements were removed; characteristic rows are unchanged.`
       );
     }
-  }, [fetcher.data, featureRows, anchorRects, pdfUrl, t]);
+  }, [
+    fetcher.data,
+    featureRows,
+    anchorRects,
+    pdfUrl,
+    restoreRefusedFeatureDeletes,
+    t
+  ]);
 
   const loadAnnotations = useCallback(async () => {
     setAnnotations([]);
@@ -1290,7 +1491,7 @@ export default function InspectionDocumentEditor({
               samplingAql: null,
               samplingInspectionLevel: null,
               samplingSeverity: null,
-              gaugeTypeId: null
+              ...EMPTY_CHARACTERISTIC_FIELDS
             }
           ];
         });
@@ -2132,7 +2333,8 @@ export default function InspectionDocumentEditor({
         samplingAql: r.samplingAql,
         samplingInspectionLevel: r.samplingInspectionLevel,
         samplingSeverity: r.samplingSeverity,
-        gaugeTypeId: r.gaugeTypeId
+        gaugeTypeId: r.gaugeTypeId,
+        ...featureCharacteristicPayload(r)
       }));
 
     const featuresUpdate = featureRows
@@ -2157,7 +2359,8 @@ export default function InspectionDocumentEditor({
         samplingAql: r.samplingAql,
         samplingInspectionLevel: r.samplingInspectionLevel,
         samplingSeverity: r.samplingSeverity,
-        gaugeTypeId: r.gaugeTypeId
+        gaugeTypeId: r.gaugeTypeId,
+        ...featureCharacteristicPayload(r)
       }));
 
     formData.set(
@@ -2302,9 +2505,24 @@ export default function InspectionDocumentEditor({
     failedSave.anchorRects === anchorRects &&
     failedSave.docSampling === docSampling &&
     failedSave.pdfUrl === pdfUrl;
+  // An MMC/LMC characteristic without its size feature or feature of size is
+  // refused by the save validators, so it is not sent until it is complete.
+  const invalidCharacteristic = useMemo(
+    () => invalidBonusCharacteristic(featureRows),
+    [featureRows]
+  );
+  const invalidCharacteristicMessage =
+    invalidCharacteristic === "sizeFeature"
+      ? t`Choose the size feature for MMC/LMC characteristics`
+      : invalidCharacteristic === "featureOfSize"
+        ? t`Choose Internal or External feature of size for MMC/LMC characteristics`
+        : null;
+  /** The invalid-characteristic message last toasted — said once, not per edit. */
+  const reportedInvalidMessageRef = useRef<string | null>(null);
+  const cannotSave = saveFailed || invalidCharacteristicMessage != null;
 
   // Leaving with unsaved changes saves them first, then continues; only a
-  // failed save asks.
+  // failed (or unsaveable) save asks.
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       (hasUnsavedChanges || isSaving) &&
@@ -2313,15 +2531,30 @@ export default function InspectionDocumentEditor({
   const isLeaving = blocker.state === "blocked";
 
   useEffect(() => {
+    if (invalidCharacteristicMessage == null) {
+      reportedInvalidMessageRef.current = null;
+    }
     if (!hasUnsavedChanges || isSaving || uploading || saveFailed) return;
     if (dragKind !== null) return;
-    const timer = setTimeout(saveChanges, isLeaving ? 0 : AUTOSAVE_DELAY_MS);
+    const delay = isLeaving ? 0 : AUTOSAVE_DELAY_MS;
+    if (invalidCharacteristicMessage != null) {
+      if (reportedInvalidMessageRef.current === invalidCharacteristicMessage) {
+        return;
+      }
+      const timer = setTimeout(() => {
+        reportedInvalidMessageRef.current = invalidCharacteristicMessage;
+        toast.error(invalidCharacteristicMessage);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+    const timer = setTimeout(saveChanges, delay);
     return () => clearTimeout(timer);
   }, [
     hasUnsavedChanges,
     isSaving,
     uploading,
     saveFailed,
+    invalidCharacteristicMessage,
     dragKind,
     isLeaving,
     saveChanges
@@ -2421,17 +2654,31 @@ export default function InspectionDocumentEditor({
   const handleDeleteFeature = useCallback(
     (featureId: string) => {
       setFeatureRows((prev) => {
-        const row = prev.find((r) => r.featureId === featureId);
+        const index = prev.findIndex((r) => r.featureId === featureId);
+        const row = index >= 0 ? prev[index] : undefined;
         if (row) queueDelete(pendingFeatureDeleteIdsRef.current, row.featureId);
+        // Only a delete that goes to the server can be refused.
+        const queued =
+          row != null && pendingFeatureDeleteIdsRef.current.has(row.featureId);
         const nextRows = prev.filter((r) => r.featureId !== featureId);
         const keptAnchorIds = new Set(
           nextRows
             .map((r) => r.balloonAnchorId)
             .filter((id): id is string => id.length > 0)
         );
-        setSelectorRects((sels) =>
-          sels.filter((sel) => keptAnchorIds.has(sel.id))
-        );
+        setSelectorRects((sels) => {
+          if (row && queued) {
+            deletedFeatureSnapshotsRef.current.set(row.featureId, {
+              row,
+              index,
+              anchors: sels.filter(
+                (sel) =>
+                  sel.id === row.balloonAnchorId && !keptAnchorIds.has(sel.id)
+              )
+            });
+          }
+          return sels.filter((sel) => keptAnchorIds.has(sel.id));
+        });
         return nextRows;
       });
     },
@@ -2467,7 +2714,7 @@ export default function InspectionDocumentEditor({
           samplingAql: null,
           samplingInspectionLevel: null,
           samplingSeverity: null,
-          gaugeTypeId: null
+          ...EMPTY_CHARACTERISTIC_FIELDS
         }
       ];
     });
@@ -2509,19 +2756,7 @@ export default function InspectionDocumentEditor({
   );
 
   const updateFeatureField = useCallback(
-    (
-      featureId: string,
-      field:
-        | "label"
-        | "featureName"
-        | "nominalValue"
-        | "tolerancePlus"
-        | "toleranceMinus"
-        | "units"
-        | "type"
-        | "gaugeTypeId",
-      value: string
-    ) => {
+    (featureId: string, field: EditableFeatureField, value: string) => {
       setFeatureRows((prev) =>
         prev.map((r) =>
           r.featureId !== featureId
@@ -2541,15 +2776,7 @@ export default function InspectionDocumentEditor({
     async (accessorKey: string, newValue: string, row: FeatureRow) => {
       updateFeatureField(
         row.featureId,
-        accessorKey as
-          | "label"
-          | "featureName"
-          | "nominalValue"
-          | "tolerancePlus"
-          | "toleranceMinus"
-          | "units"
-          | "type"
-          | "gaugeTypeId",
+        accessorKey as EditableFeatureField,
         newValue
       );
       return {
@@ -2595,6 +2822,34 @@ export default function InspectionDocumentEditor({
     [gaugeTypes]
   );
 
+  const featureOfSizeOptions = useMemo(
+    () =>
+      [
+        { label: t`Internal`, value: "Internal" },
+        { label: t`External`, value: "External" }
+      ] satisfies { label: string; value: FeatureOfSize }[],
+    [t]
+  );
+
+  // Measurement rows a MMC/LMC characteristic can take its size from. Keyed on
+  // id + label only, so unrelated row edits don't rebuild the grid's editors.
+  const sizeFeatureCandidatesKey = JSON.stringify(
+    featureRows
+      .filter((r) => r.type === "Measurement")
+      .map((r) => [r.featureId, r.label])
+  );
+  const sizeFeatureCandidates = useMemo(
+    () =>
+      (JSON.parse(sizeFeatureCandidatesKey) as [string, string][]).map(
+        ([value, label]) => ({ value, label })
+      ),
+    [sizeFeatureCandidatesKey]
+  );
+  const sizeFeatureLabelById = useMemo(
+    () => new Map(sizeFeatureCandidates.map((c) => [c.value, c.label])),
+    [sizeFeatureCandidates]
+  );
+
   const featureEditableComponents = useMemo(
     () => ({
       type: EditableList(featureMutation, featureTypeOptions),
@@ -2604,9 +2859,28 @@ export default function InspectionDocumentEditor({
       tolerancePlus: ConditionalMeasurementText(featureMutation),
       toleranceMinus: ConditionalMeasurementText(featureMutation),
       units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions),
-      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions)
+      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions),
+      designator: EditableText(featureMutation),
+      referenceLocation: EditableText(featureMutation),
+      materialCondition: ConditionalMeasurementList(
+        featureMutation,
+        materialConditionOptions
+      ),
+      sizeFeatureId: ConditionalBonusList(featureMutation, (row) =>
+        sizeFeatureCandidates.filter((c) => c.value !== row.featureId)
+      ),
+      featureOfSize: ConditionalBonusList(
+        featureMutation,
+        () => featureOfSizeOptions
+      )
     }),
-    [featureMutation, unitOfMeasureOptions, gaugeTypeOptions]
+    [
+      featureMutation,
+      unitOfMeasureOptions,
+      gaugeTypeOptions,
+      sizeFeatureCandidates,
+      featureOfSizeOptions
+    ]
   );
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
@@ -2674,6 +2948,41 @@ export default function InspectionDocumentEditor({
           ) : (
             <span className="text-muted-foreground">{t`Any`}</span>
           )
+      },
+      { accessorKey: "designator", header: t`Designator`, size: 120 },
+      {
+        accessorKey: "referenceLocation",
+        header: t`Ref. location`,
+        size: 120
+      },
+      {
+        accessorKey: "materialCondition",
+        header: t`Material condition`,
+        size: 140,
+        cell: ({ row }) =>
+          row.original.type === "Measurement"
+            ? row.original.materialCondition
+            : null
+      },
+      {
+        accessorKey: "sizeFeatureId",
+        header: t`Size feature`,
+        size: 128,
+        cell: ({ row }) =>
+          hasBonusTolerance(row.original)
+            ? (sizeFeatureLabelById.get(row.original.sizeFeatureId) ?? null)
+            : null
+      },
+      {
+        accessorKey: "featureOfSize",
+        header: t`Feature of size`,
+        size: 128,
+        cell: ({ row }) =>
+          hasBonusTolerance(row.original)
+            ? (featureOfSizeOptions.find(
+                (o) => o.value === row.original.featureOfSize
+              )?.label ?? null)
+            : null
       },
       {
         id: "sampling",
@@ -2758,6 +3067,8 @@ export default function InspectionDocumentEditor({
       isOverlayReady,
       uomCodeToName,
       gaugeTypeIdToName,
+      sizeFeatureLabelById,
+      featureOfSizeOptions,
       t
     ]
   );
@@ -2889,6 +3200,17 @@ export default function InspectionDocumentEditor({
               debouncedSaveName(e.target.value);
             }}
           />
+          <Input
+            borderless
+            value={drawingRevision}
+            placeholder={t`Drawing revision`}
+            aria-label={t`Drawing revision`}
+            className="field-sizing-content min-w-[6rem] max-w-[12rem] text-sm text-muted-foreground truncate"
+            onChange={(e) => {
+              setDrawingRevision(e.target.value);
+              debouncedSaveRevision(e.target.value);
+            }}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -2948,8 +3270,13 @@ export default function InspectionDocumentEditor({
             <span className="text-xs text-muted-foreground">
               {t`View only — changes are not saved`}
             </span>
-          ) : saveFailed ? (
-            <span className="text-xs text-destructive">{t`Could not save`}</span>
+          ) : cannotSave ? (
+            <span
+              className="text-xs text-destructive"
+              title={invalidCharacteristicMessage ?? undefined}
+            >
+              {t`Could not save`}
+            </span>
           ) : hasUnsavedChanges || isSaving ? (
             <span className="text-xs text-muted-foreground">{t`Saving…`}</span>
           ) : hasSaved ? (
@@ -3047,7 +3374,7 @@ export default function InspectionDocumentEditor({
         </HStack>
       </div>
 
-      {isLeaving && saveFailed && (
+      {isLeaving && cannotSave && (
         <Modal open onOpenChange={(open) => !open && blocker.reset?.()}>
           <ModalContent>
             <ModalHeader>

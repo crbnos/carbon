@@ -4,8 +4,13 @@
 
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { getLocationTimeZone } from "@carbon/database";
-import { lockIssueDispositions } from "@carbon/database/quality";
+import { getCompanyTimeZone, getLocationTimeZone } from "@carbon/database";
+import { resolveFirstArticleNeeds } from "@carbon/database/first-article";
+import {
+  createFirstArticleInspections,
+  loadFirstArticleNeedInput,
+  lockIssueDispositions
+} from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
@@ -25,6 +30,83 @@ import {
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
 const logger = getLogger("mes", "quality");
+
+// -------------------------------------------------------------
+// First Article (AS9102) on the shop floor
+// -------------------------------------------------------------
+
+/**
+ * First Article generation for a job the MES auto-start moved straight from
+ * Draft / Planned to In Progress (`startProductionEvent`'s `onJobReleased`) —
+ * the release the ERP would otherwise have run `afterJobsReleased` for. Same
+ * shared generator and the same `resolveFirstArticleNeeds`, so the lots match
+ * an ERP release. Form 2 is NOT seeded here: its lineage resolver lives in the
+ * ERP, which seeds an empty Draft FAI the first time its detail page loads.
+ *
+ * Best-effort: a failure is logged and never fails the production event. The
+ * release blocker is deliberately not applied — the operator is already
+ * working; a part with no plan shows the "plan missing" banner instead
+ * (`getFirstArticlePlansMissingForJob`).
+ */
+export async function generateFirstArticlesForStartedJob(
+  serviceRole: ServiceRole,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<void> {
+  try {
+    const today = datetime
+      .today(await getCompanyTimeZone(serviceRole, args.companyId))
+      .toString();
+    const created = await createFirstArticleInspections(getDatabaseClient(), {
+      ...args,
+      today
+    });
+    if (created.error) {
+      logger.error("Failed to create first article inspections", {
+        error: created.error,
+        ...args
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to create first article inspections", {
+      error: err,
+      ...args
+    });
+  }
+}
+
+/**
+ * The job's parts whose first article is required and due but has no plan to
+ * inspect against (`resolveFirstArticleNeeds` → `blocked`) — the ERP release
+ * blocker. A job the MES auto-started skipped that blocker, so the job and
+ * operation pages warn the operator instead of refusing the start.
+ * Informational: a failure is logged and reads as nothing missing.
+ */
+export async function getFirstArticlePlansMissingForJob(
+  serviceRole: ServiceRole,
+  args: { jobId: string; companyId: string }
+): Promise<{ jobMakeMethodId: string; description: string }[]> {
+  try {
+    const today = datetime
+      .today(await getCompanyTimeZone(serviceRole, args.companyId))
+      .toString();
+    const input = await loadFirstArticleNeedInput(getDatabaseClient(), {
+      ...args,
+      today
+    });
+    return resolveFirstArticleNeeds(input)
+      .filter((need) => need.blocked)
+      .map((need) => ({
+        jobMakeMethodId: need.jobMakeMethodId,
+        description: need.description
+      }));
+  } catch (err) {
+    logger.error("Failed to evaluate first article plans", {
+      error: err,
+      ...args
+    });
+    return [];
+  }
+}
 
 export type ProductionEventIds = {
   setupProductionEventId?: string;
@@ -627,6 +709,10 @@ export async function createInspectionRejectionIssue(
     companyId: string;
     userId: string;
     nonConformanceTypeId?: string;
+    // The operation the issue is raised against. Defaults to the lot's own
+    // job operation; a First Article lot belongs to a make method, so its
+    // caller names one of that method's operations.
+    jobOperationId?: string;
   }
 ): Promise<{ error: unknown | null; message: string | null }> {
   const { inspectionId, companyId, userId } = args;
@@ -647,7 +733,11 @@ export async function createInspectionRejectionIssue(
       message: "Failed to load the lot for the quality issue"
     };
   }
-  const jobOperationId = insp.sourceDocumentLineId as string | null;
+  const jobOperationId =
+    args.jobOperationId ??
+    (insp.sourceDocument === "Job Operation"
+      ? (insp.sourceDocumentLineId as string | null)
+      : null);
   if (!jobOperationId) {
     return { error: null, message: "Lot has no job operation to link" };
   }

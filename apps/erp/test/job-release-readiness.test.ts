@@ -31,6 +31,7 @@ function cappedClient(tables: Record<string, Record<string, unknown>[]>) {
         rows = rows.filter((row) => values.includes(row[column] as string));
         return chain;
       };
+      chain.maybeSingle = async () => ({ data: rows[0] ?? null, error: null });
       chain.range = async (from: number, to: number) => ({
         data: rows.slice(from, Math.min(to + 1, from + ROW_CAP)),
         error: null
@@ -114,6 +115,7 @@ describe("getJobReleaseReadiness", () => {
         missingAssemblies: [
           { makeMethodId: "sub-late", description: "Late Bracket" }
         ],
+        firstArticlesWithoutPlan: [],
         outsideOperationsWithoutSupplier: [],
         supplierIds: ["supplier-a"]
       }

@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getClientIp,
+  getPreferenceHeaders,
   getRequestHost,
   getRequestOrigin,
   getRequestProtocol
@@ -71,5 +72,34 @@ describe("getRequestHost / getRequestOrigin", () => {
         req({ "x-forwarded-host": "erp.x.dev", "x-forwarded-proto": "https" })
       )
     ).toBe("https://erp.x.dev");
+  });
+});
+
+describe("getPreferenceHeaders", () => {
+  const request = (headers: Record<string, string>) =>
+    new Request("https://app.carbon.ms/x", { headers });
+
+  it("reads the locale cookie", () => {
+    expect(
+      getPreferenceHeaders(request({ cookie: "locale=de-DE" })).locale
+    ).toBe("de-DE");
+  });
+
+  it("falls back instead of throwing on a malformed locale cookie", () => {
+    expect(
+      getPreferenceHeaders(
+        request({ cookie: "locale=en_US!!", "accept-language": "fr-FR" })
+      ).locale
+    ).toBe("fr-FR");
+    expect(
+      getPreferenceHeaders(request({ cookie: "locale=en_US!!" })).locale
+    ).toBe("en-US");
+  });
+
+  it("skips a malformed Accept-Language entry", () => {
+    expect(
+      getPreferenceHeaders(request({ "accept-language": "x_y!!, es-ES;q=0.8" }))
+        .locale
+    ).toBe("es-ES");
   });
 });

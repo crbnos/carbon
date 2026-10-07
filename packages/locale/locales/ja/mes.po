@@ -105,6 +105,9 @@ msgstr "バージョン情報"
 msgid "Accept"
 msgstr "承諾"
 
+msgid "Accept first article?"
+msgstr "初期品を承諾しますか？"
+
 msgid "Accept Lot"
 msgstr "ロット承諾"
 
@@ -133,11 +136,17 @@ msgstr "追加"
 msgid "Add & Issue"
 msgstr "追加して払出"
 
+msgid "Add a note to this reading"
+msgstr "この読取値にメモを追加"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
 msgid "Add Inventory"
 msgstr "在庫追加"
+
+msgid "Add note"
+msgstr "メモを追加"
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
@@ -175,6 +184,9 @@ msgstr "不合格ユニットを割り当てる"
 
 msgid "Allocate units"
 msgstr "ユニットを割り当てる"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "許容値 {allowableLabel} (ボーナス {bonusLabel})"
 
 msgid "Appearance"
 msgstr "外観"
@@ -543,6 +555,9 @@ msgstr "各製造指図の出力はそれぞれのロット — 各製造指図�
 msgid "Edit"
 msgstr "編集"
 
+msgid "Edit note"
+msgstr "メモを編集"
+
 msgid "Elapsed"
 msgstr "経過時間"
 
@@ -605,6 +620,9 @@ msgstr "失敗"
 msgid "Failed characteristics"
 msgstr "不合格特性"
 
+msgid "Failed features"
+msgstr ""
+
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
 
@@ -663,6 +681,19 @@ msgstr "アカウントのセットアップを完了する"
 
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
+
+msgid "First article"
+msgstr "初期品"
+
+msgid "First article plan missing for {description}"
+msgstr "{description}の初期品検査計画がありません"
+
+msgid "First article plan missing for {part}"
+msgstr "{part}の初期品検査計画がありません"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "{0} に初期品が必要です"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -726,8 +757,14 @@ msgstr "開いているメニュー内"
 msgid "In Progress"
 msgstr "進行中"
 
+msgid "Inspect"
+msgstr "検査"
+
 msgid "Inspect Item"
 msgstr "アイテムを検査"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "残りを開始する前に、最初の単位のすべての特性を検査してください。"
 
 msgid "inspected"
 msgstr "検査済み"
@@ -1106,6 +1143,9 @@ msgstr "作業区が存在しません。"
 msgid "None"
 msgstr "なし"
 
+msgid "Note"
+msgstr "メモ"
+
 msgid "Notes"
 msgstr "メモ"
 
@@ -1365,6 +1405,9 @@ msgstr "記録済"
 
 msgid "Reject"
 msgstr "却下"
+
+msgid "Reject first article?"
+msgstr "初期品を却下しますか？"
 
 msgid "Reject Lot"
 msgstr "ロットを却下"
@@ -1707,8 +1750,17 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr "品質部門に連絡してください — この部品は初期品検査が必要ですが、検査計画が割り当てられていません。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "初期品は不合格としてマークされ、その結果はロック中になります。数量は記録されません。"
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "初期品は合格としてマークされ、その結果はロック中になります。数量は記録されません。"
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"

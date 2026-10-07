@@ -105,6 +105,9 @@ msgstr "Acerca de"
 msgid "Accept"
 msgstr "Aceptar"
 
+msgid "Accept first article?"
+msgstr "¿Aceptar primera pieza?"
+
 msgid "Accept Lot"
 msgstr "Aceptar lote"
 
@@ -133,11 +136,17 @@ msgstr "Agregar"
 msgid "Add & Issue"
 msgstr "Agregar y emitir"
 
+msgid "Add a note to this reading"
+msgstr "Agregar una nota a esta lectura"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Agregue una impresora en la configuración de impresión para imprimir etiquetas directamente."
 
 msgid "Add Inventory"
 msgstr "Agregar inventario"
+
+msgid "Add note"
+msgstr "Agregar nota"
 
 msgid "Add Sample"
 msgstr "Agregar muestra"
@@ -175,6 +184,9 @@ msgstr "Asignar unidades fallidas"
 
 msgid "Allocate units"
 msgstr "Asignar unidades"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "permitido {allowableLabel} (bonificación {bonusLabel})"
 
 msgid "Appearance"
 msgstr "Apariencia"
@@ -543,6 +555,9 @@ msgstr "La salida de cada orden de trabajo es su propio lote: mantén las piezas
 msgid "Edit"
 msgstr "Editar"
 
+msgid "Edit note"
+msgstr "Editar nota"
+
 msgid "Elapsed"
 msgstr "Tiempo transcurrido"
 
@@ -605,6 +620,9 @@ msgstr "Fallido"
 msgid "Failed characteristics"
 msgstr "Características fallidas"
 
+msgid "Failed features"
+msgstr ""
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Error al completar el ajuste de inventario"
 
@@ -663,6 +681,19 @@ msgstr "Finalizar la configuración de su cuenta"
 
 msgid "Finish with material unpicked?"
 msgstr "¿Finalizar con material sin recoger?"
+
+msgid "First article"
+msgstr "Primera pieza"
+
+msgid "First article plan missing for {description}"
+msgstr "Falta el plan de primera pieza para {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "Falta el plan de primera pieza para {part}"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "Primera pieza requerida para {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -726,8 +757,14 @@ msgstr "En un menú abierto"
 msgid "In Progress"
 msgstr "En curso"
 
+msgid "Inspect"
+msgstr "Inspeccionar"
+
 msgid "Inspect Item"
 msgstr "Inspeccionar artículo"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Inspeccionar la primera unidad en cada característica antes de procesar el resto."
 
 msgid "inspected"
 msgstr "inspeccionado"
@@ -1106,6 +1143,9 @@ msgstr "No existen centros de trabajo"
 msgid "None"
 msgstr "Ninguno"
 
+msgid "Note"
+msgstr "Nota"
+
 msgid "Notes"
 msgstr "Notas"
 
@@ -1365,6 +1405,9 @@ msgstr "Registrado"
 
 msgid "Reject"
 msgstr "Rechazar"
+
+msgid "Reject first article?"
+msgstr "¿Rechazar primera pieza?"
 
 msgid "Reject Lot"
 msgstr "Rechazar lote"
@@ -1707,8 +1750,17 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etiqueta"
 
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr "Notifique a Calidad — esta pieza necesita una inspección de primera pieza, pero no tiene un plan de inspección asignado."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La cantidad completada para esta operación es menor que la cantidad requerida de {targetQuantity}."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "La primera pieza se marcará como Rechazada y sus resultados se bloquearán. No se registran cantidades."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "La primera pieza se marcará como Superada y sus resultados se bloquearán. No se registran cantidades."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Las órdenes de trabajo y piezas que componen esta ejecución."

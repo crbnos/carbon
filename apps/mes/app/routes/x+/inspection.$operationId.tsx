@@ -19,21 +19,15 @@ import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
   getJobByOperationId,
-  getJobMakeMethod,
   getJobOperationById,
   getProductionEventsForJobOperation,
-  getProductionQuantitiesForJobOperation,
-  getTrackedEntitiesByMakeMethodId
+  getProductionQuantitiesForJobOperation
 } from "~/services/operations.service";
 import {
   getInspection,
-  getInspectionDocumentWithBalloons,
-  getInspectionGauges,
-  getInspectionMeasurements,
-  getInspectionSamplingPlans,
-  getIssueTypesList
+  getInspectionViewData
 } from "~/services/quality.service";
-import type { InspectionSample, OperationWithDetails } from "~/services/types";
+import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { resolveOperationView } from "~/utils/operationView";
@@ -154,48 +148,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [
-    features,
-    measurements,
-    issueTypes,
-    trackedEntities,
-    jobMakeMethod,
-    events,
-    quantities,
-    linkedQuantities,
-    document,
-    gauges,
-    recentGauges
-  ] = await Promise.all([
-    getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
-    getInspectionMeasurements(serviceRole, lot.data.id, companyId),
-    getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      op.jobMakeMethodId,
-      companyId
-    ),
-    getJobMakeMethod(serviceRole, op.jobMakeMethodId),
-    getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
-    getProductionQuantitiesForJobOperation(serviceRole, operationId),
-    // Verdict-driven postings link back to their sample — the UI derives
-    // "Complete passed (n)" from what is passed but not yet posted.
-    serviceRole
-      .from("productionQuantity")
-      .select("id, type, quantity, inspectionSampleId")
-      .eq("inspectionId", lot.data.id),
-    inspection.inspectionDocumentId
-      ? getInspectionDocumentWithBalloons(
-          serviceRole,
-          inspection.inspectionDocumentId
-        )
-      : Promise.resolve(null),
-    getInspectionGauges(serviceRole, companyId, lot.data.id),
-    getRecentInspectionGauges(getDatabaseClient(), {
-      inspectionId: lot.data.id,
-      companyId
-    })
-  ]);
+  const [viewData, events, quantities, linkedQuantities, recentGauges] =
+    await Promise.all([
+      getInspectionViewData(serviceRole, {
+        inspection,
+        jobMakeMethodId: op.jobMakeMethodId,
+        companyId
+      }),
+      getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
+      getProductionQuantitiesForJobOperation(serviceRole, operationId),
+      // Verdict-driven postings link back to their sample — the UI derives
+      // "Complete passed (n)" from what is passed but not yet posted.
+      serviceRole
+        .from("productionQuantity")
+        .select("id, type, quantity, inspectionSampleId")
+        .eq("inspectionId", lot.data.id),
+      // The gauges most recently recorded at this operation, offered first.
+      getRecentInspectionGauges(getDatabaseClient(), {
+        inspectionId: lot.data.id,
+        companyId
+      })
+    ]);
 
   const linkedProductionRows = (linkedQuantities.data ?? []).filter(
     (row) => row.type === "Production"
@@ -211,29 +184,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     { scrap: 0, production: 0, rework: 0 }
   );
 
-  // Sample column order must match the engine's required-feature derivation
-  // (createdAt asc, id asc).
-  const samples = (
-    [...(inspection.inspectionSample ?? [])] as InspectionSample[]
-  ).sort(
-    (a, b) =>
-      (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
-      a.id.localeCompare(b.id)
-  );
-
   return {
+    ...viewData,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     inspection,
-    samples,
-    features: features.data ?? [],
-    measurements: measurements.data ?? [],
-    gauges: gauges.data ?? [],
     recentGaugeIds: recentGauges.data ?? [],
-    issueTypes: issueTypes.data ?? [],
-    trackedEntities: trackedEntities.data ?? [],
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
     events: events.data ?? [],
     productionQuantities,
     linkedSampleIds: linkedProductionRows
@@ -243,10 +199,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (sum, row) => sum + (row.quantity ?? 0),
       0
     ),
-    jobId: job.data.id ?? null,
-    balloons: document?.data?.balloons ?? [],
-    documentName: document?.data?.name ?? null,
-    pdfUrl: document?.data?.pdfUrl ?? null
+    jobId: job.data.id ?? null
   };
 }
 

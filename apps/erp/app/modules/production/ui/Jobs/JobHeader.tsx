@@ -54,6 +54,7 @@ import {
   LuCirclePause,
   LuCirclePlay,
   LuCircleStop,
+  LuClipboardCheck,
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
@@ -61,6 +62,7 @@ import {
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
+  LuPlus,
   LuQrCode,
   LuSettings,
   LuShoppingCart,
@@ -87,12 +89,20 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { JobFirstArticleInspection } from "~/modules/quality/types";
+import FirstArticleStatus from "~/modules/quality/ui/FirstArticles/FirstArticleStatus";
+import { useFirstArticleLabels } from "~/modules/quality/ui/FirstArticles/useFirstArticleLabels";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
+import type {
+  FirstArticleWithoutPlan,
+  JobReleaseReadiness
+} from "../../production.service";
 import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
+import { FirstArticlePlanLinks } from "./FirstArticlePlanLinks";
 import JobStatus from "./JobStatus";
 import {
   getDefaultSerialCompleteQuantity,
@@ -145,6 +155,12 @@ const JobHeader = () => {
   const routeData = useRouteData<{
     job: Job;
     unbatchedBatchableOperations?: number;
+    firstArticles?: JobFirstArticleInspection[];
+    firstArticlesDue?: {
+      jobMakeMethodId: string;
+      description: string;
+      reason: "New Part" | "Production Lapse";
+    }[];
   }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
@@ -157,6 +173,12 @@ const JobHeader = () => {
   const status = routeData?.job?.status;
   const unbatchedBatchableOperations =
     routeData?.unbatchedBatchableOperations ?? 0;
+  const firstArticles = routeData?.firstArticles ?? [];
+  const firstArticlesDue = routeData?.firstArticlesDue ?? [];
+  const openFirstArticles = firstArticles.filter(
+    (firstArticle) => firstArticle.status !== "Approved"
+  );
+  const firstArticleLabels = useFirstArticleLabels();
 
   const getOptionFromPath = (jobId: string) => {
     if (location.pathname.includes(path.to.jobMaterials(jobId)))
@@ -327,6 +349,32 @@ const JobHeader = () => {
               {t`${unbatchedBatchableOperations} awaiting batching`}
             </Status>
           )}
+          {firstArticlesDue.length > 0 && (
+            <Status
+              color="orange"
+              tooltip={firstArticlesDue
+                .map(
+                  (due) =>
+                    `${due.description}: ${firstArticleLabels.reason(due.reason)}`
+                )
+                .join(", ")}
+            >
+              {t`FAI due`}
+            </Status>
+          )}
+          {openFirstArticles.length > 0 && (
+            <Status
+              color="yellow"
+              tooltip={openFirstArticles
+                .map(
+                  (firstArticle) =>
+                    `${firstArticle.inspection?.inspectionId ?? ""}: ${firstArticleLabels.status(firstArticle.status)}`
+                )
+                .join(", ")}
+            >
+              {t`FAI open`}
+            </Status>
+          )}
         </HStack>
         <HStack>
           {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
@@ -463,6 +511,44 @@ const JobHeader = () => {
           >
             Release
           </SplitButton>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                leftIcon={<LuClipboardList />}
+                rightIcon={<LuChevronDown />}
+                variant="secondary"
+              >
+                <Trans>First Article</Trans>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72">
+              {firstArticles.map((firstArticle) => (
+                <DropdownMenuItem key={firstArticle.id} asChild>
+                  <Link to={path.to.firstArticle(firstArticle.id)}>
+                    <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                    <span className="flex-1 truncate">
+                      {firstArticle.inspection?.inspectionId}{" "}
+                      {firstArticle.item?.readableIdWithRevision}
+                    </span>
+                    <FirstArticleStatus status={firstArticle.status} />
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+              {firstArticles.length > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                disabled={!permissions.can("create", "quality")}
+                asChild
+              >
+                <Link
+                  to={`${path.to.newFirstArticle}?jobId=${encodeURIComponent(jobId)}`}
+                >
+                  <DropdownMenuIcon icon={<LuPlus />} />
+                  <Trans>New First Article</Trans>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
             onClick={completeModal.onOpen}
@@ -607,6 +693,9 @@ export function JobStartModal({
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
   >([]);
+  const [firstArticlesWithoutPlan, setFirstArticlesWithoutPlan] = useState<
+    FirstArticleWithoutPlan[]
+  >([]);
   const [
     eachOutsideOperationHasASupplier,
     setEachOutsideOperationHasASupplier
@@ -637,7 +726,13 @@ export function JobStartModal({
 
   const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
-    const [makeMethod, materials, operations, methodTree] = await Promise.all([
+    const [
+      makeMethod,
+      materials,
+      operations,
+      methodTree,
+      partsWithoutFirstArticlePlan
+    ] = await Promise.all([
       carbon
         .from("jobMakeMethod")
         .select("*")
@@ -649,7 +744,8 @@ export function JobStartModal({
         .select("*")
         .eq("jobId", job.id!),
       carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-      getJobMethodTree(carbon, job.id!)
+      getJobMethodTree(carbon, job.id!),
+      getFirstArticlesWithoutPlan(job.id!)
     ]);
 
     // Check for existing purchase order lines for outside operations
@@ -851,6 +947,7 @@ export function JobStartModal({
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
+      setFirstArticlesWithoutPlan(partsWithoutFirstArticlePlan);
 
       // Show the release UI whenever there are outside operations still needing handling,
       // whether or not they have a supplier yet
@@ -912,6 +1009,7 @@ export function JobStartModal({
             <ModalBody>
               <VStack>
                 {missingOperationAssemblies.length === 0 &&
+                  firstArticlesWithoutPlan.length === 0 &&
                   eachOutsideOperationHasASupplier && (
                     <p className="text-sm">
                       <Trans>
@@ -1053,6 +1151,26 @@ export function JobStartModal({
                     </AlertDescription>
                   </Alert>
                 )}
+                {firstArticlesWithoutPlan.length > 0 && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Missing First Article Plans</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        These parts need a first article inspection but have no
+                        inspection plan to inspect against. Assign a first
+                        article plan on each part before releasing.
+                      </Trans>
+                      <p className="mt-2">
+                        <FirstArticlePlanLinks
+                          parts={firstArticlesWithoutPlan}
+                        />
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {!eachOutsideOperationHasASupplier && hasOutsideOperations && (
                   <Alert variant="warning">
                     <LuTriangleAlert />
@@ -1099,6 +1217,7 @@ export function JobStartModal({
                   isDisabled={
                     fetcher.state !== "idle" ||
                     missingOperationAssemblies.length > 0 ||
+                    firstArticlesWithoutPlan.length > 0 ||
                     !eachOutsideOperationHasASupplier
                   }
                   type="submit"
@@ -1265,6 +1384,29 @@ function JobExpediteModal({
       </ModalContent>
     </Modal>
   );
+}
+
+// Parts of this job that need a first article at release but resolve no
+// inspection plan, from the server's release readiness — the check the release
+// action enforces. Empty when it cannot be read: the action still refuses.
+async function getFirstArticlesWithoutPlan(
+  jobId: string
+): Promise<FirstArticleWithoutPlan[]> {
+  try {
+    const response = await fetch(
+      path.to.api.batchReleaseReadiness({ jobIds: [jobId] })
+    );
+    if (!response.ok) return [];
+    const body = (await response.json()) as
+      | JobReleaseReadiness
+      | { error: string };
+    return "jobs" in body
+      ? (body.jobs.find((job) => job.id === jobId)?.firstArticlesWithoutPlan ??
+          [])
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 // What the job has received as of now, from api+/production.job.$jobId.receipts.

@@ -720,6 +720,9 @@ msgstr "Varlığın Faydalı ömrü boyunca her dönemde eşit bir tutarı yükl
 msgid "A different inspector is required"
 msgstr "Farklı bir denetçi gereklidir"
 
+msgid "A FAIR number from outside Carbon"
+msgstr "Carbon dışından bir FAIR numarası"
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Adı {0} olan bir dosya zaten var — önce silin veya yeniden adlandırın"
@@ -815,6 +818,9 @@ msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sab
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Her tedarikçi için yeni bir satın alma siparişi oluşturulacaktır. Alternatif olarak, tedarikçinin dış operasyonları eklemesi için mevcut taslak bir satın alma siparişi seçebilirsiniz."
+
+msgid "A new revision is issued under the same number. Earlier revisions stay downloadable."
+msgstr "Yeni bir revizyon aynı numara altında yayınlanır. Önceki revizyonlar indirilebilir kalır."
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Yeni bir revizyon, mevcut revizyonun bir kopyası kullanılarak oluşturulacaktır"
@@ -1215,6 +1221,12 @@ msgstr "Kabul"
 msgid "Acceptance passed"
 msgstr "Kabul geçti"
 
+msgid "Acceptance Report"
+msgstr "Kabul Raporu"
+
+msgid "Acceptance Report Number"
+msgstr "Kabul Raporu Numarası"
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} tarihinde kabul edildi"
@@ -1449,6 +1461,9 @@ msgstr "Belgeye bir satır ekle"
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
 
+msgid "Add a note to this reading"
+msgstr "Bu okumaya not ekle"
+
 msgid "Add a parameter (procedures only)"
 msgstr "Bir parametre ekle (yalnızca prosedürler için)"
 
@@ -1499,6 +1514,9 @@ msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 
 msgid "Add Calibration Record"
 msgstr "Kalibrasyon Kaydı Ekle"
+
+msgid "Add Certificate"
+msgstr "Sertifika Ekle"
 
 msgid "Add Characteristic"
 msgstr "Özellik Ekle"
@@ -1575,6 +1593,9 @@ msgstr "Eşleştirme ekle"
 msgid "Add Model"
 msgstr "Model Ekle"
 
+msgid "Add note"
+msgstr "Not Ekle"
+
 msgid "Add Note"
 msgstr "Not Ekle"
 
@@ -1639,6 +1660,9 @@ msgstr "Gereklilik Ekle"
 msgid "Add Risk"
 msgstr "Risk Ekle"
 
+msgid "Add Row"
+msgstr "Satır Ekle"
+
 msgid "Add rule"
 msgstr "Kural ekle"
 
@@ -1680,6 +1704,9 @@ msgstr "Tedarikçi Ekle"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç satın almak yerine."
+
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr "Müşterilerinizin sertifikalar üzerinde gerektirdiği beyanları ekleyin — örneğin DFARS 252.225-7009 özel metaller, DFARS 252.246-7008 sahte parçalar, RoHS, REACH."
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya tıklayın. DNS değişiklikleri yaygınlaştırılması birkaç dakika sürebilir."
@@ -1724,6 +1751,9 @@ msgstr "Demo kayıtları ekleniyor"
 
 msgid "Adding..."
 msgstr "Ekleniyor..."
+
+msgid "Additional Changes"
+msgstr "Ek Değişiklikler"
 
 msgid "Address"
 msgstr "Adres"
@@ -1882,6 +1912,9 @@ msgstr "Tüm İş Merkezleri"
 
 msgid "Allocated"
 msgstr "Tahsis edildi"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "izin verilen {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
@@ -2177,6 +2210,9 @@ msgstr "Uygulama"
 msgid "Applies to all"
 msgstr "Tümüne uygulanır"
 
+msgid "Applies to all customers"
+msgstr "Tüm müşterilere uygulanır"
+
 msgid "Applies to all work centers"
 msgstr "Tüm iş merkezlerine uygulanır"
 
@@ -2252,8 +2288,17 @@ msgstr "Onaylar"
 msgid "Approve"
 msgstr "Onayla"
 
+msgid "Approve first article?"
+msgstr "İlk makalıyı onayla?"
+
+msgid "Approved"
+msgstr "Onaylandı"
+
 msgid "Approved By"
 msgstr "Onaylayan"
+
+msgid "Approved By (Customer)"
+msgstr "Onaylandı (Müşteri)"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Yaklaşık — planlanan tarihlerden türetilmiştir; bu satır için kapasite rezervasyonu yok."
@@ -2394,6 +2439,10 @@ msgstr "Bu işlemden {0}'ı silmek istediğinizden emin misiniz? Bu geri alınam
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0} öğesini silmek istediğinizden emin misiniz?"
 
+#. placeholder {0}: lot.inspectionId
+msgid "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
+msgstr "Silmek istediğinizden emin misiniz {0}? Muayenesi bununla birlikte silinir. Bu geri alınamaz."
+
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
@@ -2445,6 +2494,10 @@ msgstr "{0} değişiklik bildirisi işlemini silmek istediğinizden emin misiniz
 #. placeholder {0}: changeNoticeType.name
 msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
 msgstr "{0} değişiklik bildirisi kategorisini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr "Uyum beyanını silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "{name} taşeronunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
@@ -2855,6 +2908,9 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "assign a first article plan for"
+msgstr "bir ilk makalı planı için ata"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
@@ -2908,6 +2964,9 @@ msgstr "En az bir koşul eşleşmelidir"
 
 msgid "At operation completion"
 msgstr "İşlem tamamlandığında"
+
+msgid "Attach Certificate"
+msgstr "Sertifikayı Bağla"
 
 msgid "Attach File"
 msgstr "Dosya Ekle"
@@ -3152,6 +3211,9 @@ msgstr "Baz malzeme — örn. çelik vs alüminyum"
 
 msgid "Base Price"
 msgstr "Temel Fiyat"
+
+msgid "Baseline First Article"
+msgstr "Temel İlk Makalı"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Temel ERP, MES ve QMS işlevselliği"
@@ -3745,11 +3807,29 @@ msgstr "Merkezleştirilmiş faturalandırma etkinleştirildi"
 msgid "Cert Version"
 msgstr "Sertifika Versiyonu"
 
+msgid "Certificate"
+msgstr "Sertifika"
+
+msgid "Certificate added"
+msgstr "Sertifika eklendi"
+
+msgid "Certificate deleted"
+msgstr "Sertifika silindi"
+
 msgid "Certificate Number"
 msgstr "Sertifika Numarası"
 
+msgid "Certificate of Conformance Number"
+msgstr "Uygunluk Sertifikası Numarası"
+
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Certificates"
+msgstr "Sertifikalar"
+
+msgid "Certifications"
+msgstr "Sertifikalar"
 
 msgid "Certified"
 msgstr "Sertifikalı"
@@ -3868,6 +3948,9 @@ msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok ka
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
 
+msgid "Checking first articles and certificates…"
+msgstr "İlk makaleler ve sertifikalar kontrol ediliyor…"
+
 msgid "Checking Stripe for this customer…"
 msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 
@@ -3910,6 +3993,12 @@ msgstr "Başka bir dosya seç"
 
 msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
+
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr "MMC/LMC karakteristikleri için boyut özelliğinin Dahili veya Harici olmasını seçiniz"
+
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr "MMC/LMC özellikleri için boyut özelliğini seçin"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
@@ -4215,6 +4304,12 @@ msgstr "Tamamlama devam ediyor — Atölye'de yeniden deneyin"
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
+
+msgid "Compliance Statement"
+msgstr "Uyum Beyanı"
+
+msgid "Compliance Statements"
+msgstr "Uyum Beyanları"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -4833,6 +4928,9 @@ msgstr "Düzeltmeler"
 msgid "Corrective action"
 msgstr "Düzeltici faaliyet"
 
+msgid "Corrective Action"
+msgstr "Düzeltici faaliyet"
+
 msgid "cost center"
 msgstr "maliyet merkezi"
 
@@ -4880,6 +4978,9 @@ msgstr "Maliyetlendirme Yöntemi"
 
 msgid "Costing Method"
 msgstr "Maliyetlendirme Yöntemi"
+
+msgid "COTS"
+msgstr "COTS"
 
 msgid "Could not analyze cropped region"
 msgstr "Kırpılmış bölge analiz edilemedi"
@@ -5256,6 +5357,9 @@ msgstr "İş merkezi oluşturuldu"
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Henüz ödenmemiş sevkiyat miktarları için taslak bir tedarikçi alacak dekontu oluşturur"
 
+msgid "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+msgstr "Bir işin bir parçası için AS9102 ilk makalı muayenesi oluşturur; parçanın ilk makalı planına göre muayene edilir."
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Mali yıl için 12 aylık dönem oluşturur. Zaten mevcut olan dönemler korunur."
 
@@ -5409,6 +5513,12 @@ msgstr "Müşteri Hesapları"
 
 msgid "Customer and supplier pages"
 msgstr "Müşteri ve tedarikçi sayfaları"
+
+msgid "Customer Approval"
+msgstr "Müşteri Onayı"
+
+msgid "Customer Approval Verification"
+msgstr "Müşteri Onayı Doğrulaması"
 
 msgid "Customer contact"
 msgstr "Müşteri ilgili kişisi"
@@ -5737,6 +5847,9 @@ msgstr "Bir operatör atölyede henüz çıkış yapılmamış malzeme varken Bi
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri akışının ne zaman gerçekleşeceğine karar verin."
 
+msgid "Decide when releasing a job creates first article inspections."
+msgstr "İş emrinin serbest bırakılması sırasında ilk makalı muayeneleri oluşturulup oluşturulmayacağına karar verin."
+
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
 
@@ -5951,6 +6064,9 @@ msgstr "Özniteliği Sil"
 msgid "Delete Category"
 msgstr "Kategoriyi Sil"
 
+msgid "Delete certificate"
+msgstr "Sertifikayı sil"
+
 msgid "Delete Change Notice"
 msgstr "Değişiklik Bildirisini Sil"
 
@@ -6002,6 +6118,9 @@ msgstr "Hata Modunu Sil"
 
 msgid "Delete file"
 msgstr "Dosyayı sil"
+
+msgid "Delete First Article"
+msgstr "İlk Makalıyı Sil"
 
 msgid "Delete Group"
 msgstr "Grubu Sil"
@@ -6158,6 +6277,9 @@ msgstr "Sevkiyat satırını sil"
 
 msgid "Delete Shipping Method"
 msgstr "Sevkiyat Yöntemini Sil"
+
+msgid "Delete Statement"
+msgstr "Beyanı Sil"
 
 msgid "Delete step"
 msgstr "Adımı sil"
@@ -6343,6 +6465,12 @@ msgstr "Değişiklimin Açıklaması"
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
 
+msgid "Design Change"
+msgstr "Tasarım Değişikliği"
+
+msgid "Designator"
+msgstr "Tanımlayıcı"
+
 msgid "Detail"
 msgstr "Detay"
 
@@ -6497,6 +6625,9 @@ msgstr "İtilmiş"
 msgid "Disposition"
 msgstr "Karar"
 
+msgid "Disposition the inspection before verifying"
+msgstr "Muayeneyi doğrulamadan önce Karar verin"
+
 msgid "Dispositions"
 msgstr "Kararlar"
 
@@ -6539,6 +6670,9 @@ msgstr "Belge Türü"
 
 msgid "Document:"
 msgstr "Belge:"
+
+msgid "Documented Nonconformance"
+msgstr "Belgelenmiş Uygunsuzluk"
 
 msgid "Documents"
 msgstr "Belgeler"
@@ -6652,6 +6786,12 @@ msgstr "Resim numarası"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleştirmeleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "Drawing revision"
+msgstr "çizim revizyonu"
+
+msgid "Drawing Revision"
+msgstr "Çizim Revizyonu"
+
 msgid "Drop Ship"
 msgstr "Direkt Sevkiyat"
 
@@ -6728,6 +6868,9 @@ msgstr "hemen teslim"
 
 msgid "Duplicate"
 msgstr "Çoğalt"
+
+msgid "Duplicate characteristic numbers"
+msgstr "Yinelenen Özellik Numaraları"
 
 msgid "Duplicate file names after image conversion"
 msgstr "Görüntü dönüştürmeden sonra yinelenen dosya adları"
@@ -6809,6 +6952,10 @@ msgstr "örneğin Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
+
+#. placeholder {0}: duplicates.join(", ")
+msgid "Each characteristic needs a unique number on the report. Used more than once: {0}"
+msgstr "Her özelliğin raporda benzersiz bir numarası olması gerekir. Birden fazla kullanılan: {0}"
 
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "Her İş emri kendi Lotunu tutar. Atölye bunları değiştiremez."
@@ -6908,6 +7055,9 @@ msgstr "Değişiklik Bildirisi Türünü Düzenle"
 
 msgid "Edit column visibility"
 msgstr "Sütun görünürlüğünü düzenle"
+
+msgid "Edit Compliance Statement"
+msgstr "Uygunluk Beyanı Düzenle"
 
 msgid "Edit Component Group"
 msgstr "Bileşen Grubunu Düzenle"
@@ -7036,6 +7186,9 @@ msgstr "Memo Düzenle"
 msgid "Edit Non Conformance Type"
 msgstr "Uygunsuzluk Türünü Düzenle"
 
+msgid "Edit note"
+msgstr "Not Düzenle"
+
 msgid "Edit Part"
 msgstr "Parç Düzenle"
 
@@ -7102,6 +7255,12 @@ msgstr "Makbuzu Düzenle"
 msgid "Edit Revision"
 msgstr "Revizyon Düzenle"
 
+msgid "Edit row"
+msgstr "Satırı Düzenle"
+
+msgid "Edit Row"
+msgstr "Satırı Düzenle"
+
 msgid "Edit rule"
 msgstr "Kuralı düzenle"
 
@@ -7137,6 +7296,9 @@ msgstr "Sevkiyat Yöntemi Düzenle"
 
 msgid "Edit Size"
 msgstr "Boyut Düzenle"
+
+msgid "Edit Statement"
+msgstr "Beyanı Düzenle"
 
 msgid "Edit Stock Transfer"
 msgstr "Stok Transfer Düzenle"
@@ -7224,6 +7386,9 @@ msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-po
 
 msgid "Email notifications not configured"
 msgstr "E-posta bildirimleri yapılandırılmamış"
+
+msgid "Email to customer"
+msgstr "Müşteriye E-posta Gönder"
 
 msgid "Emails"
 msgstr "E-posta Adresleri"
@@ -7857,6 +8022,9 @@ msgstr "Genelletilmiş Fiyat"
 msgid "External"
 msgstr "Harici"
 
+msgid "External Baseline"
+msgstr "Harici Referans"
+
 msgid "External Delta"
 msgstr "Harici Fark"
 
@@ -7892,6 +8060,18 @@ msgstr "İstekle gönderilen ek bilgiler, örneğin bir yetkilendirme anahtarı;
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "GL raporlamanızı bölümlendirmek için ekstra etiketler"
+
+msgid "FAI Complete (Verified)"
+msgstr "FAI Tamamlandı (Doğrulandı)"
+
+msgid "FAI due"
+msgstr "FAI Vadesi"
+
+msgid "FAI open"
+msgstr "FAI Açık"
+
+msgid "FAI Report"
+msgstr "FAI Raporu"
 
 msgid "Fail"
 msgstr "Uygun değil"
@@ -8262,6 +8442,7 @@ msgstr "Yeni konuma dosya yüklenemedi"
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "Dosyük yüklenemedi: {0}"
 
@@ -8292,6 +8473,9 @@ msgstr "Arıza Modu"
 msgid "Failure Modes"
 msgstr "Arıza Modları"
 
+msgid "FAIR"
+msgstr "FAIR"
+
 msgid "Favorite"
 msgstr "Favori"
 
@@ -8300,6 +8484,9 @@ msgstr "Faks"
 
 msgid "Fax Number"
 msgstr "Faks Numarası"
+
+msgid "Feature of size"
+msgstr "Boyuttaki Özellik"
 
 msgid "Fees"
 msgstr "Ücretler"
@@ -8321,6 +8508,9 @@ msgstr "Alan Adlandırma"
 
 msgid "Fields"
 msgstr "Alanlar"
+
+msgid "File"
+msgstr "Dosya"
 
 msgid "File deleted successfully"
 msgstr "Dosya başarıyla silindi"
@@ -8419,6 +8609,19 @@ msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar redd
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Teklif satırları, satış siparişi satırları ve satış faturası satırlarında tetikleyin."
+
+msgid "First Article"
+msgstr "İlk Parça"
+
+#. placeholder {0}: item.itemReadableId
+msgid "First article due for {0}"
+msgstr "{0} için ilk parça vadesi"
+
+msgid "First Article Inspection"
+msgstr "İlk Parça Muayenesi"
+
+msgid "First Articles"
+msgstr "İlk Parçalar"
 
 msgid "First light, {name}."
 msgstr "İlk ışık, {name}."
@@ -8520,6 +8723,15 @@ msgstr "biçim"
 msgid "Form"
 msgstr "Form"
 
+msgid "Form 1: Part Number Accountability"
+msgstr "Form 1: Parça Numarası Sorumluluğu"
+
+msgid "Form 2: Product Accountability"
+msgstr "Form 2: Ürün Sorumluluğu"
+
+msgid "Form 3: Characteristic Accountability"
+msgstr "Form 3: Özellik Sorumluluğu"
+
 msgid "Format"
 msgstr "Biçim"
 
@@ -8585,6 +8797,9 @@ msgstr "Depolama biriminden"
 msgid "Fulfillment Location"
 msgstr "Sevkiyat lokasyonu"
 
+msgid "Full"
+msgstr "Tam"
+
 msgid "Full name"
 msgstr "Tam adı"
 
@@ -8593,6 +8808,12 @@ msgstr "Tam kurulum ve göçler"
 
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
+
+msgid "Functional Test"
+msgstr "Fonksiyonel Test"
+
+msgid "Functional Test Procedure Number"
+msgstr "İşlevsel Test Prosedürü Numarası"
 
 msgid "FX G/L"
 msgstr "FX K/Z"
@@ -9463,6 +9684,9 @@ msgstr ""
 msgid "Increase purchase order {target} to {amount}"
 msgstr ""
 
+msgid "Index of Parts and Sub-assemblies"
+msgstr "Parçalar ve Alt Montajların Dizini"
+
 msgid "Indirect"
 msgstr "Dolaylı"
 
@@ -9541,6 +9765,9 @@ msgstr "Muayene belgesi"
 
 msgid "Inspection Level"
 msgstr "Muayene Seviyesi"
+
+msgid "Inspection Method Change"
+msgstr "Muayene Yöntemi Değişikliği"
 
 msgid "Inspection Plan"
 msgstr "Kontrol planı"
@@ -9848,6 +10075,9 @@ msgstr "Sorun"
 msgid "Issue (material)"
 msgstr "Sorun (malzeme)"
 
+msgid "Issue Certificate of Conformance"
+msgstr "Uygunluk Belgesi Yayınla"
+
 msgid "Issue Credit"
 msgstr "Kredi Sorunu"
 
@@ -9889,6 +10119,9 @@ msgstr "İş Akışları"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Sorun iş akışları, bir sorun için ön ayarlanmış değerleri tanımlar. Örneğin, bir 8D iş akışınız veya çevreleme iş akışınız olabilir."
+
+msgid "Issue…"
+msgstr "Yayınla…"
 
 msgid "Issued"
 msgstr "Çıkış Yapıldı"
@@ -10000,6 +10233,9 @@ msgstr "Tasarımı, değişiklik bildirisi yayınlanmadan önce değişebilir."
 
 msgid "Job"
 msgstr "İş"
+
+msgid "Job deleted"
+msgstr "İş emri silindi"
 
 msgid "Job ID"
 msgstr "İş Emri Kimliği"
@@ -10127,6 +10363,9 @@ msgstr "Anahtar"
 
 msgid "Keyboard shortcuts"
 msgstr "Klavye kısayolları"
+
+msgid "Kind"
+msgstr "Tür"
 
 msgid "Kind of record"
 msgstr "Kayıt türü"
@@ -10542,6 +10781,9 @@ msgstr "Konum"
 msgid "Location / Item"
 msgstr "Konum / Ürün"
 
+msgid "Location Change"
+msgstr "Lokasyon Değişikliği"
+
 msgid "Location Name"
 msgstr "Konum Adı"
 
@@ -10747,6 +10989,9 @@ msgstr "Pasif Hale Getir"
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Üretim ürünleri doğrudan faturalandırılamaz. Devam etmek için yöntemi Seçime değiştirin."
 
+msgid "Make method removed"
+msgstr "Üretim yöntemi kaldırıldı"
+
 msgid "Make Method Version"
 msgstr "Üretim Yöntemi Sürümü"
 
@@ -10824,6 +11069,12 @@ msgstr "Üretim"
 
 msgid "manufacturing is blocked"
 msgstr "üretim engellendi"
+
+msgid "Manufacturing Process Reference"
+msgstr "Üretim Prosesi Referansı"
+
+msgid "Manufacturing Source Change"
+msgstr "Üretim Kaynağı Değişikliği"
 
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
@@ -10961,6 +11212,12 @@ msgstr "Malzeme"
 msgid "Material"
 msgstr "Malzeme"
 
+msgid "Material Change"
+msgstr "Malzeme Değişikliği"
+
+msgid "Material condition"
+msgstr "Malzeme durumu"
+
 msgid "Material Cost"
 msgstr "Malzeme Maliyeti"
 
@@ -11008,6 +11265,12 @@ msgstr "malzeme stok kartı"
 
 msgid "Material item"
 msgstr "Malzeme Stok Kartı"
+
+msgid "Material or Process"
+msgstr "Malzeme veya Proses"
+
+msgid "Material or Process Name"
+msgstr "Malzeme veya Proses Adı"
 
 msgid "Material Planning"
 msgstr "Malzeme Planlama"
@@ -11226,6 +11489,9 @@ msgstr "Uyuşmazlık"
 msgid "Missing"
 msgstr "Eksik"
 
+msgid "Missing First Article Plans"
+msgstr "Eksik İlk Makale Planları"
+
 msgid "Missing Information"
 msgstr "Eksik Bilgi"
 
@@ -11423,6 +11689,9 @@ msgstr "Belgelerim"
 msgid "My Saved View"
 msgstr "Kaydedilmiş Görünümüm"
 
+msgid "N/A"
+msgstr "Uygulanamaz"
+
 msgid "Name"
 msgstr "Adı"
 
@@ -11435,11 +11704,20 @@ msgstr "Adlar, bu rollerin hub genelinde referans verildiği her yerde doldurulu
 msgid "Native CAD integration (for example Onshape)"
 msgstr "Yerel CAD entegrasyonu (örneğin Onshape)"
 
+msgid "Natural or Man-made Event"
+msgstr "Doğal veya İnsan Kaynaklı Olay"
+
 msgid "Navigate"
 msgstr "Gözat"
 
 msgid "Navigation"
 msgstr "Gezinme"
+
+msgid "NC Program Change"
+msgstr "NC Program Değişikliği"
+
+msgid "NCR"
+msgstr "NCR"
 
 msgid "NCRs by Type"
 msgstr "Tipe Göre NCR'ler"
@@ -11540,6 +11818,9 @@ msgstr "Yeni Değişiklik Bildirisi İşlemi"
 msgid "New Change Notice Type"
 msgstr "Yeni Değişiklik Bildirisi Türü"
 
+msgid "New Compliance Statement"
+msgstr "Yeni Uyum Beyanı"
+
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
 
@@ -11584,6 +11865,9 @@ msgstr "Yeni Hata Modu"
 
 msgid "New Field"
 msgstr "Yeni Alan"
+
+msgid "New First Article"
+msgstr "Yeni İlk Makale"
 
 msgid "New Fixed Asset"
 msgstr "Yeni sabit kıymet"
@@ -11719,6 +12003,9 @@ msgstr "Yeni Fiyat Teklifi"
 
 msgid "New RMA"
 msgstr "Yeni RMA"
+
+msgid "New Row"
+msgstr "Yeni Satır"
 
 msgid "New rule"
 msgstr "Yeni kural"
@@ -11955,6 +12242,15 @@ msgstr "Kalibrasyon kaydı bulunamadı"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü görmek için bir işi planlayın."
 
+msgid "No certificate on file"
+msgstr "Dosyada sertifika yok"
+
+msgid "No certificate on file for {name}"
+msgstr "Dosyada {name} için sertifika yok"
+
+msgid "No certificates on this line yet."
+msgstr "Bu satırda henüz sertifika yok."
+
 msgid "No changes recorded"
 msgstr "Değişiklik kaydedilmedi"
 
@@ -12153,6 +12449,9 @@ msgstr "Eşleşen operasyon yok"
 msgid "No materials"
 msgstr "Malzeme yok"
 
+msgid "No materials, special processes or functional tests yet."
+msgstr "Henüz malzeme, özel prosesler veya işlevsel testler yok."
+
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
@@ -12334,6 +12633,9 @@ msgstr "Atanmış kural yok"
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
 
+msgid "No serial number"
+msgstr "Seri numarası yok"
+
 msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
@@ -12442,6 +12744,9 @@ msgstr "Bu lokasyonda İş merkezi yok"
 msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
 
+msgid "No."
+msgstr "Hayır."
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -12483,6 +12788,12 @@ msgstr "Planlama ve kapasite tarafından dikkate alınan çalışılmayan günle
 
 msgid "None"
 msgstr "Yok"
+
+msgid "None — a detail part."
+msgstr "Yok — bir detay parçası."
+
+msgid "None approved"
+msgstr "Hiçbiri onaylanmadı"
 
 msgid "Normal"
 msgstr "Normal"
@@ -13169,6 +13480,9 @@ msgstr "Siparişler"
 msgid "Orders submitted"
 msgstr "Siparişler gönderildi"
 
+msgid "Organization Name"
+msgstr "Kuruluş Adı"
+
 msgid "Origin"
 msgstr "Kaynak"
 
@@ -13377,11 +13691,20 @@ msgstr "Parça üretim için yapılandırılmış"
 msgid "Part lead times update from posted purchase receipts."
 msgstr "Parça tedarik süreleri muhasebeleştirilmiş mal kabul belgelerinden güncellenmiştir."
 
+msgid "Part Name"
+msgstr "Parça Adı"
+
 msgid "Part Number"
 msgstr "Parça Numarası"
 
+msgid "Part Revision"
+msgstr "Parça Revizyon"
+
 msgid "Part Supersession"
 msgstr "Parça İkamesi"
+
+msgid "Part Type"
+msgstr "Parça Türü"
 
 msgid "Partial"
 msgstr "Kısmi"
@@ -13917,6 +14240,9 @@ msgstr "Bir kez deftere kaydedildi, düzeltme yok."
 msgid "Posting"
 msgstr "Muhasebeleştirme"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr "Bu müşteriye sevkiyat muhasebeleştirmesi bir sertifika çıkarır ve onu sevkiyat ilgili kişisine e-postayla gönderir."
+
 msgid "Posting date"
 msgstr "Muhasebeleştirme tarihi"
 
@@ -14070,6 +14396,9 @@ msgstr "Etiket Yazdır"
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
 
+msgid "Printed on every Certificate of Conformance"
+msgstr "Her Uyum Sertifikasında Yazdırılan"
+
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
 
@@ -14114,6 +14443,9 @@ msgstr "süreçler"
 
 msgid "Process"
 msgstr "Proses"
+
+msgid "Process Change"
+msgstr "Proses Değişikliği"
 
 msgid "Process Name"
 msgstr "İşlem Adı"
@@ -14162,6 +14494,9 @@ msgstr "Üretim olayları"
 
 msgid "Production Events"
 msgstr "Üretim Olayları"
+
+msgid "Production Lapse"
+msgstr "Üretim Aksaması"
 
 msgid "Production planning"
 msgstr "Üretim planlama"
@@ -14760,6 +15095,9 @@ msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur 
 msgid "Ratio"
 msgstr "Oran"
 
+msgid "Raw material, special processes and functional tests"
+msgstr "Ham malzeme, özel prosesler ve işlevsel testler"
+
 msgid "Raw Materials"
 msgstr "Hammadde"
 
@@ -14837,6 +15175,9 @@ msgstr "Reddetme nedeni (İsteğe bağlı)"
 
 msgid "Reason for skipping (required)"
 msgstr "Atlamak için neden (gerekli)"
+
+msgid "Reason for Update"
+msgstr "Güncelleme Nedeni"
 
 msgid "Reasons"
 msgstr "Nedenler"
@@ -14980,6 +15321,9 @@ msgstr "Kayıt silindi"
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 
+msgid "Record Results"
+msgstr "Sonuçları Kaydet"
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
@@ -15013,6 +15357,12 @@ msgstr "Doğrulama sayfasına yönlendiriliyor..."
 msgid "Reduced"
 msgstr "Gevşetilmiş"
 
+msgid "Ref. location"
+msgstr "Ref. lokasyon"
+
+msgid "Ref. Location"
+msgstr "Ref. Lokasyon"
+
 msgid "Reference"
 msgstr "Referans"
 
@@ -15021,6 +15371,9 @@ msgstr "Yenile"
 
 msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
+
+msgid "Refresh from Traceability"
+msgstr "İzlenebilirlikten Yenile"
 
 msgid "Refund from Supplier"
 msgstr "Tedarikçiden İade"
@@ -15072,6 +15425,15 @@ msgstr "Çalışana Gider Talebi"
 
 msgid "Reimbursements"
 msgstr "Geri Ödemeler"
+
+msgid "Reissue"
+msgstr "Yeniden Düzenle"
+
+msgid "Reissue Certificate of Conformance"
+msgstr "Uyum Sertifikasını Yeniden Düzenle"
+
+msgid "Reissue…"
+msgstr "Yeniden Düzenle…"
 
 msgid "Reject"
 msgstr "Reddet"
@@ -15148,6 +15510,12 @@ msgstr "Yayınlanan revizyon kilitlidir"
 msgid "Released with problems: {0}"
 msgstr "Sorunlarla serbest bırakıldı: {0}"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr "Bir iş emrini serbest bırakmak, üzerindeki onaylanmış ilk makaleye sahip olmayan veya iki yıldır yapılmayan her parça için bir ilk makale muayenesi oluşturur."
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr "Bu müşteri için bir iş emrini serbest bırakmak, buna ihtiyaç duyan parçalar için ilk makale muayeneleri oluşturur."
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birinin atölye için hazır olması gerekir."
 
@@ -15206,6 +15574,9 @@ msgstr "Bozuk verileri kaldır ve geri yükle"
 
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
+
+msgid "Remove file"
+msgstr "Dosyayı Kaldır"
 
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"
@@ -15413,6 +15784,9 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
 
+msgid "Require first article for new parts and revisions"
+msgstr "Yeni parçalar ve revizyonlar için ilk makale gerektir"
+
 msgid "Require Match"
 msgstr "Eşleştirme Gerekli"
 
@@ -15466,6 +15840,12 @@ msgstr "Eylem Gerektirir"
 
 msgid "Requires Adjustment"
 msgstr "Düzeltme gerekli"
+
+msgid "Requires Certificate of Conformance"
+msgstr "Uygunluk Belgesi Gerektirir"
+
+msgid "Requires First Article"
+msgstr "İlk Makale Gerektirir"
 
 msgid "Requires Repair"
 msgstr "Onarım Gerektirir"
@@ -15727,6 +16107,9 @@ msgstr "İncele"
 msgid "Review & create"
 msgstr "İncele ve oluştur"
 
+msgid "Review before issuing"
+msgstr "Yayınlamadan önce incele"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her stok kartın değişikliklerini incele, sonra onayla — serbest bırakma geri alınamaz."
 
@@ -15738,6 +16121,9 @@ msgstr "Uygulamadan önce önerilen eşleşmeleri incele. Bunlar en iyi tahmini 
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Aşağıdaki uyarıları incele, sonra düzeltmeleri uygulamak için sayımı muhasebeleştir."
+
+msgid "Reviewed (Approved)"
+msgstr "İncelendi (Onaylandı)"
 
 msgid "Revision"
 msgstr "Revizyon"
@@ -16709,6 +17095,9 @@ msgstr "Kendi kendine yardım referansı docs.carbon.ms adresinde"
 msgid "Send"
 msgstr "Gönder"
 
+msgid "Send {number}"
+msgstr "{number} Gönder"
+
 msgid "Send Invite"
 msgstr "Davet Gönder"
 
@@ -16724,11 +17113,18 @@ msgstr "Carbon'a Gönder"
 msgid "Send Via"
 msgstr "Gönderim Yolu"
 
+msgid "Send…"
+msgstr "Gönder…"
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
+
+#. placeholder {0}: formatDate( certificate.lastSentAt, undefined, locale )
+msgid "Sent {0}"
+msgstr "{0} Gönderildi"
 
 msgid "Sent complete date"
 msgstr "Gönderilen tamamlama tarihi"
@@ -16744,6 +17140,10 @@ msgstr "Ardışık"
 
 msgid "Serial"
 msgstr "Seri"
+
+#. placeholder {0}: detail.serialNumber
+msgid "Serial {0}"
+msgstr "Seri {0}"
 
 msgid "Serial / Batch"
 msgstr "Seri / Parti"
@@ -17262,6 +17662,10 @@ msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Bu sorun kapatılmadan önce kaydedilmesi gereken onaylar; iş akışı tarafından gerekli olan olanların dışında."
 
+#. placeholder {0}: formatDate( certificate.signedAt, undefined, locale )
+msgid "Signed {0}"
+msgstr "{0} İmzalanmış"
+
 msgid "Signed in as {name}"
 msgstr "Oturum açıldı olarak {name}"
 
@@ -17291,6 +17695,9 @@ msgstr "Siteler, konumlar, iş merkezleri, kullanıcılar, tedarikçiler ve şir
 
 msgid "Size"
 msgstr "Boyut"
+
+msgid "Size feature"
+msgstr "Boyut özelliği"
 
 msgid "Sizes"
 msgstr "Boyutlar"
@@ -17446,6 +17853,12 @@ msgstr "Yedek Parça Maliyeti"
 msgid "Spec"
 msgstr "Spesifikasyon"
 
+msgid "Special Process"
+msgstr "Özel Proses"
+
+msgid "Special Process Supplier Code"
+msgstr "Özel Proses Tedarikçi Kodu"
+
 msgid "Specific Customer"
 msgstr "Belirli Müşteri"
 
@@ -17454,6 +17867,9 @@ msgstr "Belirli Müşteriler"
 
 msgid "Specific Items"
 msgstr "Belirli Ürünler"
+
+msgid "Specification"
+msgstr "Spesifikasyon"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Tedarikçi, ürün veya kategoriye göre harcama — en büyük maliyet sürücüleriniz"
@@ -17951,6 +18367,9 @@ msgstr "Tedarikçi Hesapları"
 msgid "Supplier added and selected"
 msgstr "Tedarikçi eklendi ve seçildi"
 
+msgid "Supplier Code"
+msgstr "Tedarikçi Kodu"
+
 msgid "Supplier contact"
 msgstr "tedarikçi ilgili kişisi"
 
@@ -18360,6 +18779,9 @@ msgstr "Hizmet Şartları"
 msgid "Test"
 msgstr "Test"
 
+msgid "Test Procedure"
+msgstr "Test Prosedürü"
+
 msgid "Test run"
 msgstr "Test çalıştırması"
 
@@ -18502,6 +18924,9 @@ msgstr "Bu müşterinin ait olduğu kategori (OEM, distribütör, son kullanıc�
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Bu tedarikçinin ait olduğu kategori (hammadde, hizmetler, sözleşmeli üretici); varsayılan GL hesaplarını ve rapor gruplandırmalarını belirler."
 
+msgid "The certificate is signed by you and stored with the shipment."
+msgstr "Sertifika sizin tarafından imzalanır ve sevkiyat ile saklanır."
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "Operatörlerin işi tamamlandı olarak işaretlemek için taradığı kanban kartına basılan kod; boş bırakılırsa otomatik olarak oluşturulur."
 
@@ -18628,6 +19053,12 @@ msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
 msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"
 
+msgid "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "İlk makale Başarısız olarak işaretlenecektir. Karar nihai: hiçbir şey muhasebeleştirilmez ve okumalar kilitlidir."
+
+msgid "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "İlk makale Geçti olarak işaretlenecektir. Karar nihai: hiçbir şey muhasebeleştirilmez ve okumalar kilitlidir."
+
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Parti büyüklüğüne bakılmaksızın her Lot'un başından muayene edilecek sabit Adet sayısı."
 
@@ -18712,6 +19143,9 @@ msgstr "Bu Tedarikçiden gelen Sevkiyatlarda nakliyeyi kimin ödeyeceğini, risk
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "Bu Müşteriye giden Sevkiyatlarda nakliyeyi kimin ödeyeceğini, riski kimin yükleyeceğini ve mülkiyetin transferinin nerede gerçekleşeceğini yönetebilen Incoterm Kuralı (FOB, DAP, EXW, CIF, …)."
 
+msgid "The inspection plan has no characteristics."
+msgstr "Kontrol planının hiçbir özelliği yok."
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "Bir Sevkiyat muhasebeleştirildiğinde tanınan ve Stok kartının Maliyetlendirme yöntemiyle değerlendirilen Envanter Maliyeti."
 
@@ -18726,6 +19160,9 @@ msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü d
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr "İş emrinin Üretim yöntemi artık mevcut değil, bu nedenle indeks türetilemiyor."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "İşin konumunun planlama kuyruğundaki konumu — Carbon'un son tarih ve deadline türünden hesapladığı kesirli bir sayı, Düşük/Yüksek bir puanlama değil."
@@ -19285,6 +19722,9 @@ msgstr "Bu siparişler yüklenemedi. Kapatıp yeniden açarak tekrar deneyin."
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Bu parçalar bu birim tarafından değiştiriliyor. Her kural eski parçaya ayarlanmış; kuralı değiştirmek için açın."
 
+msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgstr "Bu parçalar ilk makale muayenesi gerektirir ancak karşı muayene yapılacak bir kontrol planı yoktur. Serbest bırakmadan önce her parça üzerine bir ilk makale planı atayın."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "Bu satırlar bu şirketin dışındaki verilere bağlantılı, bu yüzden mevcut verilerinizin güvenlik kopyası oluşturulamaz. Onları silmek geri alınamaz. Eğer bu grup içindeki diğer şirketlerle paylaşıldığı ortaya çıkarsa, hiçbir şey silinmez ve demo verileri uygulanmaz."
 
@@ -19777,6 +20217,9 @@ msgstr "Alet Detayları"
 
 msgid "Tool ID"
 msgstr "Alet Kimliği"
+
+msgid "Tooling Change"
+msgstr "Takım Değişikliği"
 
 msgid "Tooling Cost"
 msgstr "Takım Maliyeti"
@@ -20532,6 +20975,9 @@ msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
 msgid "Use Sub-Assembly"
 msgstr "Alt Montaj Kullanın"
 
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr "Bu parçanın ilk makale muayeneleri için kullanılır. Parçanın tek planının yerini alır."
+
 msgid "Used in"
 msgstr "Kullanıldığı Yer"
 
@@ -20697,8 +21143,14 @@ msgstr "Doğrulama Hatası"
 msgid "Verification failed"
 msgstr "Doğrulama başarısız"
 
+msgid "Verification of every design characteristic on the inspection plan"
+msgstr "Kontrol planındaki her tasarım özelliğinin doğrulanması"
+
 msgid "Verified"
 msgstr "Doğrulandı"
+
+msgid "Verified By"
+msgstr "Tarafından Doğrulanan"
 
 msgid "Verify"
 msgstr "Doğrula"
@@ -21694,6 +22146,9 @@ msgstr "Bu ürünü siz aldınız"
 
 msgid "You received this lot"
 msgstr "Bu partiyi aldınız"
+
+msgid "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
+msgstr "Bu ilk makaleyi doğruladınız. AS9102 farklı bir onaylayanı önerir. Yine de onayla mı?"
 
 msgid "You're live on Carbon"
 msgstr "Carbon'da canlısınız"

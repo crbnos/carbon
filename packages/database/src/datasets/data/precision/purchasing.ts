@@ -302,6 +302,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "BRG-DBL-6205",
+          certificate: {
+            type: "Other",
+            certificateNumber: "BRG-COC-6205-44",
+            specification: "ABEC 7"
+          },
           orderQuantity: 4,
           outstandingQuantity: 0,
           receivedQuantity: 4,
@@ -355,6 +360,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "MAT-SS316-PLT",
+          certificate: {
+            type: "Material",
+            certificateNumber: "HT-316-55012",
+            specification: "ASTM A240 316L plate"
+          },
           orderQuantity: 120,
           outstandingQuantity: 40,
           receivedQuantity: 80,
@@ -541,6 +551,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "BSH-PTFE-2012",
+          certificate: {
+            type: "Other",
+            certificateNumber: "PTFE-COC-2012",
+            specification: "ASTM D4894"
+          },
           orderQuantity: 20,
           outstandingQuantity: 0,
           receivedQuantity: 20,

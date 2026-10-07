@@ -105,6 +105,9 @@ msgstr "About"
 msgid "Accept"
 msgstr "Accept"
 
+msgid "Accept first article?"
+msgstr "Accept first article?"
+
 msgid "Accept Lot"
 msgstr "Accept Lot"
 
@@ -133,11 +136,17 @@ msgstr "Add"
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
+msgid "Add a note to this reading"
+msgstr "Add a note to this reading"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
 msgid "Add Inventory"
 msgstr "Add Inventory"
+
+msgid "Add note"
+msgstr "Add note"
 
 msgid "Add Sample"
 msgstr "Add Sample"
@@ -175,6 +184,9 @@ msgstr "Allocate failed units"
 
 msgid "Allocate units"
 msgstr "Allocate units"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "allowable {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Appearance"
 msgstr "Appearance"
@@ -543,6 +555,9 @@ msgstr "Each job's output is its own lot — keep each job's parts apart."
 msgid "Edit"
 msgstr "Edit"
 
+msgid "Edit note"
+msgstr "Edit note"
+
 msgid "Elapsed"
 msgstr "Elapsed"
 
@@ -605,6 +620,9 @@ msgstr "Failed"
 msgid "Failed characteristics"
 msgstr "Failed characteristics"
 
+msgid "Failed features"
+msgstr "Failed features"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
 
@@ -663,6 +681,19 @@ msgstr "Finish setting up your account"
 
 msgid "Finish with material unpicked?"
 msgstr "Finish with material unpicked?"
+
+msgid "First article"
+msgstr "First article"
+
+msgid "First article plan missing for {description}"
+msgstr "First article plan missing for {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "First article plan missing for {part}"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "First article required for {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -726,8 +757,14 @@ msgstr "In an open menu"
 msgid "In Progress"
 msgstr "In Progress"
 
+msgid "Inspect"
+msgstr "Inspect"
+
 msgid "Inspect Item"
 msgstr "Inspect Item"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Inspect the first unit on every characteristic before running the rest."
 
 msgid "inspected"
 msgstr "inspected"
@@ -1106,6 +1143,9 @@ msgstr "No work centers exist"
 msgid "None"
 msgstr "None"
 
+msgid "Note"
+msgstr "Note"
+
 msgid "Notes"
 msgstr "Notes"
 
@@ -1365,6 +1405,9 @@ msgstr "Recorded"
 
 msgid "Reject"
 msgstr "Reject"
+
+msgid "Reject first article?"
+msgstr "Reject first article?"
 
 msgid "Reject Lot"
 msgstr "Reject Lot"
@@ -1707,8 +1750,17 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "The first article will be marked Failed and its results locked. No quantities are recorded."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "The first article will be marked Passed and its results locked. No quantities are recorded."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."

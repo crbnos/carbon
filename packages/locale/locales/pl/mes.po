@@ -105,6 +105,9 @@ msgstr "O programie"
 msgid "Accept"
 msgstr "Zaakceptuj"
 
+msgid "Accept first article?"
+msgstr "Zaakceptować pierwszą sztukę?"
+
 msgid "Accept Lot"
 msgstr "Zaakceptuj partię"
 
@@ -133,11 +136,17 @@ msgstr "Dodaj"
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
+msgid "Add a note to this reading"
+msgstr "Dodaj notatkę do tego pomiaru"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpośrednio."
 
 msgid "Add Inventory"
 msgstr "Dodaj zapasy"
+
+msgid "Add note"
+msgstr "Dodaj notatkę"
 
 msgid "Add Sample"
 msgstr "Dodaj próbkę"
@@ -175,6 +184,9 @@ msgstr "Przydziel jednostki z błędami"
 
 msgid "Allocate units"
 msgstr "Przydziel jednostki"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "dopuszczalny {allowableLabel} (dodatek {bonusLabel})"
 
 msgid "Appearance"
 msgstr "Wygląd"
@@ -543,6 +555,9 @@ msgstr "Wynik każdego zlecenia produkcyjnego to jego własna partia — trzymaj
 msgid "Edit"
 msgstr "Edytuj"
 
+msgid "Edit note"
+msgstr "Edytuj notatkę"
+
 msgid "Elapsed"
 msgstr "Minęło"
 
@@ -605,6 +620,9 @@ msgstr "Nieudane"
 msgid "Failed characteristics"
 msgstr "Nieudane cechy"
 
+msgid "Failed features"
+msgstr ""
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Nie udało się zakończyć korekty zapasów"
 
@@ -663,6 +681,19 @@ msgstr "Dokończ konfigurowanie swojego konta"
 
 msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez wybranego materiału?"
+
+msgid "First article"
+msgstr "Pierwsza sztuka"
+
+msgid "First article plan missing for {description}"
+msgstr "Brak planu kontroli pierwszej sztuki dla {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "Brak planu kontroli pierwszej sztuki dla {part}"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "Wymagana pierwsza sztuka dla {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -726,8 +757,14 @@ msgstr "W otwartym menu"
 msgid "In Progress"
 msgstr "W toku"
 
+msgid "Inspect"
+msgstr "Zbadaj"
+
 msgid "Inspect Item"
 msgstr "Zbadaj artykuł"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Zbadaj pierwszą sztukę dla każdej cechy przed przystąpieniem do pozostałych."
 
 msgid "inspected"
 msgstr "zbadane"
@@ -1106,6 +1143,9 @@ msgstr "Brak stanowisk roboczych"
 msgid "None"
 msgstr "Brak"
 
+msgid "Note"
+msgstr "Notatka"
+
 msgid "Notes"
 msgstr "Notatki"
 
@@ -1365,6 +1405,9 @@ msgstr "Zaraportowano"
 
 msgid "Reject"
 msgstr "Odrzuć"
+
+msgid "Reject first article?"
+msgstr "Odrzucić pierwszą sztukę?"
 
 msgid "Reject Lot"
 msgstr "Odrzuć partię"
@@ -1707,8 +1750,17 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr "Powiadom dział jakości — ta część wymaga kontroli pierwszej sztuki, ale nie ma przypisanego planu kontroli."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {targetQuantity}."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "Pierwsza sztuka zostanie oznaczona jako Nie zaliczona i jej wyniki zostaną zablokowane. Żadne ilości nie będą zarejestrowane."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "Pierwsza sztuka zostanie oznaczona jako Zaliczona i jej wyniki zostaną zablokowane. Żadne ilości nie będą zarejestrowane."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Zlecenia produkcyjne i części, które składają się na ten przebieg."

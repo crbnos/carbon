@@ -105,6 +105,9 @@ msgstr "À propos"
 msgid "Accept"
 msgstr "Accepter"
 
+msgid "Accept first article?"
+msgstr "Accepter le premier article ?"
+
 msgid "Accept Lot"
 msgstr "Accepter lot"
 
@@ -133,11 +136,17 @@ msgstr "Ajouter"
 msgid "Add & Issue"
 msgstr "Ajouter et distribuer"
 
+msgid "Add a note to this reading"
+msgstr "Ajouter une note à cette lecture"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Ajoutez une imprimante dans les paramètres d'impression pour imprimer les étiquettes directement."
 
 msgid "Add Inventory"
 msgstr "Ajouter au stock"
+
+msgid "Add note"
+msgstr "Ajouter une note"
 
 msgid "Add Sample"
 msgstr "Ajouter échantillon"
@@ -175,6 +184,9 @@ msgstr "Allouer les unités défaillantes"
 
 msgid "Allocate units"
 msgstr "Allouer les unités"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "valeur admissible {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Appearance"
 msgstr "Apparence"
@@ -543,6 +555,9 @@ msgstr "La production de chaque ordre de fabrication est son propre lot — gard
 msgid "Edit"
 msgstr "Modifier"
 
+msgid "Edit note"
+msgstr "Modifier la note"
+
 msgid "Elapsed"
 msgstr "Durée écoulée"
 
@@ -605,6 +620,9 @@ msgstr "Échoué"
 msgid "Failed characteristics"
 msgstr "Caractéristiques non conformes"
 
+msgid "Failed features"
+msgstr ""
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Échec de l'ajustement de stock"
 
@@ -663,6 +681,19 @@ msgstr "Terminez la configuration de votre compte"
 
 msgid "Finish with material unpicked?"
 msgstr "Terminer avec du matériel non prélevé?"
+
+msgid "First article"
+msgstr "Premier article"
+
+msgid "First article plan missing for {description}"
+msgstr "Plan de première pièce manquant pour {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "Plan de première pièce manquant pour {part}"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "Premier article requis pour {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -726,8 +757,14 @@ msgstr "Dans un menu déroulant"
 msgid "In Progress"
 msgstr "En cours"
 
+msgid "Inspect"
+msgstr "Inspecter"
+
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Inspecter la première unité sur chaque caractéristique avant de traiter le reste."
 
 msgid "inspected"
 msgstr "inspecté"
@@ -1106,6 +1143,9 @@ msgstr "Aucun poste de travail n'existe"
 msgid "None"
 msgstr "Aucun"
 
+msgid "Note"
+msgstr "Note"
+
 msgid "Notes"
 msgstr "Notes"
 
@@ -1365,6 +1405,9 @@ msgstr "Enregistré"
 
 msgid "Reject"
 msgstr "Rejeter"
+
+msgid "Reject first article?"
+msgstr "Rejeter le premier article ?"
 
 msgid "Reject Lot"
 msgstr "Rejeter lot"
@@ -1707,8 +1750,17 @@ msgstr "Système"
 msgid "Tag"
 msgstr "Étiquette"
 
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr "Informer la qualité — cette pièce a besoin d'une inspection de première pièce, mais aucun plan de contrôle ne lui est assigné."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantité produite pour cette opération est inférieure à la quantité requise de {targetQuantity}."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "Le premier article sera marqué Échoué et ses résultats verrouillés. Aucune quantité n'est enregistrée."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "Le premier article sera marqué Réussi et ses résultats verrouillés. Aucune quantité n'est enregistrée."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Les ordres de fabrication et les pièces qui composent cette série."

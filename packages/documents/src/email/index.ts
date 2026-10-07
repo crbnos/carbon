@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import CertificateOfConformanceEmail from "./CertificateOfConformanceEmail";
 import ChangelogEntryEmail from "./ChangelogEntryEmail";
 import CompanyDeletionWarningEmail from "./CompanyDeletionWarningEmail";
 import GetStartedEmail from "./GetStartedEmail";
@@ -25,6 +26,7 @@ export {
 } from "./WeeklyReminderEmail";
 
 export {
+  CertificateOfConformanceEmail,
   ChangelogEntryEmail,
   CompanyDeletionWarningEmail,
   GetStartedEmail,

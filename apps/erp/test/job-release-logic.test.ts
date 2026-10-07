@@ -135,4 +135,16 @@ describe("jobReleaseProblems", () => {
       "Paint has no supplier"
     ]);
   });
+
+  it("names the parts that need a first article plan", () => {
+    expect(
+      jobReleaseProblems({
+        ...ready,
+        firstArticlesWithoutPlan: [
+          { description: "P-1001 Rev B" },
+          { description: "P-2002" }
+        ]
+      })
+    ).toEqual(["assign a first article plan for P-1001 Rev B, P-2002"]);
+  });
 });

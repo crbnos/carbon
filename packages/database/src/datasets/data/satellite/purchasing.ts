@@ -296,6 +296,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "BAT-LIION-48V",
+          certificate: {
+            type: "Other",
+            certificateNumber: "VCELL-COC-24-1187",
+            specification: "UN 38.3; supplier CofC"
+          },
           orderQuantity: 2,
           outstandingQuantity: 0,
           receivedQuantity: 2,
@@ -308,6 +313,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         },
         {
           item: "PCB-BARE-REV3",
+          certificate: {
+            type: "Other",
+            certificateNumber: "PCB-COC-7741",
+            specification: "IPC-6012 Class 3"
+          },
           orderQuantity: 10,
           outstandingQuantity: 0,
           receivedQuantity: 10,
@@ -349,6 +359,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "TANK-TI-4L",
+          certificate: {
+            type: "Material",
+            certificateNumber: "HT-24-0871",
+            specification: "AMS 4911 Ti-6Al-4V"
+          },
           orderQuantity: 4,
           outstandingQuantity: 2,
           receivedQuantity: 2,

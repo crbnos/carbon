@@ -2,10 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, toast } from "@carbon/react";
+import type { RevaluatedDependentMeasurement } from "@carbon/database/quality";
+import {
+  Button,
+  cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Textarea,
+  toast
+} from "@carbon/react";
+import { formatQuantity } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuCheck, LuX } from "react-icons/lu";
+import { LuCheck, LuStickyNote, LuX } from "react-icons/lu";
 import type {
   InspectionGauge,
   InspectionMeasurement,
@@ -27,6 +38,20 @@ export type MeasurementSaveResult = {
   columnIndex: number;
   value: number | null;
   passed: boolean | null;
+  notes: string | null;
+  // MMC/LMC geometric tolerances: the bonus earned from the related size
+  // feature's reading and the resulting allowable tolerance.
+  bonus: number | null;
+  allowable: number | null;
+  // MMC/LMC readings on the same sample that the server re-valuated because
+  // this save changed their size feature's reading. Empty for most saves.
+  dependents: RevaluatedDependentMeasurement[];
+};
+
+type MeasurementPayload = {
+  value?: string;
+  passed?: "true" | "false";
+  notes?: string;
 };
 
 // Synthetic feature id for the single pass/fail row shown when the lot has no
@@ -204,6 +229,13 @@ const InspectionMeasurementMatrix = ({
   const [valueByCell, setValueByCell] = useState<Record<string, number | null>>(
     {}
   );
+  // Per-reading note and MMC/LMC bonus, mirrored the same way.
+  const [notesByCell, setNotesByCell] = useState<Record<string, string | null>>(
+    {}
+  );
+  const [toleranceByCell, setToleranceByCell] = useState<
+    Record<string, { bonus: number | null; allowable: number | null }>
+  >({});
 
   const measurementFor = useCallback(
     (sampleId: string | undefined, featureId: string) =>
@@ -244,12 +276,39 @@ const InspectionMeasurementMatrix = ({
     [valueByCell, sampleIdByColumn, measurementFor]
   );
 
+  const cellNotes = useCallback(
+    (columnIndex: number, featureId: string): string | null => {
+      const key = `${columnIndex}:${featureId}`;
+      if (key in notesByCell) return notesByCell[key];
+      return (
+        measurementFor(sampleIdByColumn[columnIndex], featureId)?.notes ?? null
+      );
+    },
+    [notesByCell, sampleIdByColumn, measurementFor]
+  );
+
+  const cellTolerance = useCallback(
+    (columnIndex: number, featureId: string) => {
+      const key = `${columnIndex}:${featureId}`;
+      if (key in toleranceByCell) return toleranceByCell[key];
+      const measurement = measurementFor(
+        sampleIdByColumn[columnIndex],
+        featureId
+      );
+      return {
+        bonus: measurement?.bonus ?? null,
+        allowable: measurement?.allowable ?? null
+      };
+    },
+    [toleranceByCell, sampleIdByColumn, measurementFor]
+  );
+
   // Document-driven cell: record a per-feature measurement.
   const persistMeasurement = useCallback(
     async (
       row: MatrixRow,
       columnIndex: number,
-      payload: { value?: string; passed?: "true" | "false" }
+      payload: MeasurementPayload
     ): Promise<MeasurementSaveResult | null> => {
       const formData = new FormData();
       formData.set("inspectionId", inspectionId);
@@ -258,6 +317,13 @@ const InspectionMeasurementMatrix = ({
       formData.set("inspectionFeatureId", row.featureId);
       if (payload.value !== undefined) formData.set("value", payload.value);
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
+      // The engine writes the note on every save, so a value/verdict edit
+      // re-sends the cell's current note to keep it.
+      const notes =
+        payload.notes !== undefined
+          ? payload.notes.trim()
+          : (cellNotes(columnIndex, row.featureId) ?? "");
+      if (notes) formData.set("notes", notes);
 
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
@@ -269,6 +335,9 @@ const InspectionMeasurementMatrix = ({
           measurementId: string;
           measurementStatus: string;
           sampleStatus: string;
+          bonus: number | null;
+          allowable: number | null;
+          dependents?: RevaluatedDependentMeasurement[];
         } | null;
         error?: { message: string } | null;
       } | null;
@@ -291,10 +360,14 @@ const InspectionMeasurementMatrix = ({
           payload.value !== undefined && payload.value !== ""
             ? Number(payload.value)
             : null,
-        passed: payload.passed !== undefined ? payload.passed === "true" : null
+        passed: payload.passed !== undefined ? payload.passed === "true" : null,
+        notes: notes || null,
+        bonus: body.data.bonus ?? null,
+        allowable: body.data.allowable ?? null,
+        dependents: body.data.dependents ?? []
       };
     },
-    [inspectionId, sampleIdByColumn, t]
+    [inspectionId, sampleIdByColumn, cellNotes, t]
   );
 
   // No-document cell: set the sample's Pass/Fail status directly. Serial
@@ -337,7 +410,11 @@ const InspectionMeasurementMatrix = ({
         inspectionFeatureId: OVERALL_ROW_ID,
         columnIndex,
         value: null,
-        passed: status === "Passed"
+        passed: status === "Passed",
+        notes: null,
+        bonus: null,
+        allowable: null,
+        dependents: []
       };
     },
     [inspectionId, sampleIdByColumn, samples, t]
@@ -347,7 +424,7 @@ const InspectionMeasurementMatrix = ({
     async (
       row: MatrixRow,
       columnIndex: number,
-      payload: { value?: string; passed?: "true" | "false" }
+      payload: MeasurementPayload
     ): Promise<MeasurementSaveResult | null> => {
       const result =
         row.featureId === OVERALL_ROW_ID
@@ -368,10 +445,93 @@ const InspectionMeasurementMatrix = ({
         ...prev,
         [`${columnIndex}:${row.featureId}`]: result.value
       }));
+      setNotesByCell((prev) => ({
+        ...prev,
+        [`${columnIndex}:${row.featureId}`]: result.notes
+      }));
+      setToleranceByCell((prev) => ({
+        ...prev,
+        [`${columnIndex}:${row.featureId}`]: {
+          bonus: result.bonus,
+          allowable: result.allowable
+        }
+      }));
+      // A size reading re-valuates the MMC/LMC readings that take their bonus
+      // from it on the same sample: show the server's verdicts for those
+      // cells too (never recomputed here), and report them upward so the
+      // disposition gating sees the same statuses.
+      const dependentCell = (featureId: string) =>
+        `${columnIndex}:${featureId}`;
+      if (result.dependents.length > 0) {
+        setStatusByCell((prev) => {
+          const next = { ...prev };
+          for (const dependent of result.dependents) {
+            next[dependentCell(dependent.inspectionFeatureId)] =
+              dependent.status;
+          }
+          return next;
+        });
+        setToleranceByCell((prev) => {
+          const next = { ...prev };
+          for (const dependent of result.dependents) {
+            next[dependentCell(dependent.inspectionFeatureId)] = {
+              bonus: dependent.bonus,
+              allowable: dependent.allowable
+            };
+          }
+          return next;
+        });
+      }
       onMeasurementSaved(result);
+      for (const dependent of result.dependents) {
+        onMeasurementSaved({
+          ...result,
+          measurementId: dependent.measurementId,
+          measurementStatus: dependent.status,
+          inspectionFeatureId: dependent.inspectionFeatureId,
+          value: cellValue(columnIndex, dependent.inspectionFeatureId),
+          passed: null,
+          notes: cellNotes(columnIndex, dependent.inspectionFeatureId),
+          bonus: dependent.bonus,
+          allowable: dependent.allowable,
+          dependents: []
+        });
+      }
       return result;
     },
-    [persistMeasurement, persistOverall, onMeasurementSaved]
+    [
+      persistMeasurement,
+      persistOverall,
+      onMeasurementSaved,
+      cellValue,
+      cellNotes
+    ]
+  );
+
+  // Note popover Save: re-post the cell's current reading with the new note
+  // (numeric cells their value, attribute cells their verdict).
+  const saveNote = useCallback(
+    async (
+      row: MatrixRow,
+      columnIndex: number,
+      notes: string
+    ): Promise<boolean> => {
+      let payload: MeasurementPayload;
+      if (row.isNumeric) {
+        const value = cellValue(columnIndex, row.featureId);
+        payload = { value: value == null ? "" : String(value), notes };
+      } else {
+        const status = cellStatus(columnIndex, row.featureId);
+        payload =
+          status === "Passed"
+            ? { passed: "true", notes }
+            : status === "Failed"
+              ? { passed: "false", notes }
+              : { notes };
+      }
+      return (await persistCell(row, columnIndex, payload)) != null;
+    },
+    [cellValue, cellStatus, persistCell]
   );
 
   // The gauge recorded per feature: the plan rows' value, overridden
@@ -634,17 +794,19 @@ const InspectionMeasurementMatrix = ({
                 {Array.from({ length: columnCount }, (_, columnIndex) => {
                   const disabled = isReadOnly;
                   const status = cellStatus(columnIndex, row.featureId);
+                  const hasNoteButton = row.featureId !== OVERALL_ROW_ID;
                   return (
                     // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
                     <td
                       key={`${row.featureId}-${columnIndex}`}
-                      className="h-px border-b border-r border-border p-0 text-center align-middle last:border-r-0"
+                      className="relative h-px border-b border-r border-border p-0 text-center align-middle last:border-r-0"
                     >
                       {row.isNumeric ? (
                         <NumericCell
                           disabled={disabled}
                           status={status}
                           value={cellValue(columnIndex, row.featureId)}
+                          tolerance={cellTolerance(columnIndex, row.featureId)}
                           onCommit={(value) =>
                             persistCell(row, columnIndex, { value })
                           }
@@ -658,6 +820,13 @@ const InspectionMeasurementMatrix = ({
                           }
                         />
                       )}
+                      {hasNoteButton ? (
+                        <MeasurementNote
+                          notes={cellNotes(columnIndex, row.featureId)}
+                          isReadOnly={disabled}
+                          onSave={(notes) => saveNote(row, columnIndex, notes)}
+                        />
+                      ) : null}
                     </td>
                   );
                 })}
@@ -677,7 +846,7 @@ function statusClasses(status: string | undefined) {
     case "Failed":
       return "bg-red-500/10 text-red-600 dark:text-red-400";
     default:
-      return "bg-transparent text-foreground hover:bg-muted/40 focus:bg-background";
+      return "bg-transparent text-foreground hover:bg-muted/40 focus-within:bg-background";
   }
 }
 
@@ -685,13 +854,22 @@ function NumericCell({
   disabled,
   status,
   value,
+  tolerance,
   onCommit
 }: {
   disabled: boolean;
   status: string | undefined;
   value: number | null;
+  tolerance: { bonus: number | null; allowable: number | null };
   onCommit: (value: string) => void;
 }) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const { bonus, allowable } = tolerance;
+  const showsBonus = bonus != null && bonus > 0 && allowable != null;
+  const allowableLabel =
+    allowable != null ? formatQuantity(allowable, locale) : "";
+  const bonusLabel = bonus != null ? formatQuantity(bonus, locale) : "";
   const [draft, setDraft] = useState(value == null ? "" : String(value));
 
   // Re-sync when the persisted value changes underneath (e.g. save response).
@@ -706,23 +884,119 @@ function NumericCell({
   };
 
   return (
-    <input
-      type="text"
-      inputMode="decimal"
-      disabled={disabled}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.currentTarget.blur();
-        }
-      }}
+    <div
       className={cn(
-        "block h-full min-h-12 w-full min-w-[88px] text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
+        "flex h-full min-h-12 w-full min-w-[88px] flex-col transition-colors",
         statusClasses(status)
       )}
-    />
+    >
+      <input
+        type="text"
+        inputMode="decimal"
+        disabled={disabled}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+          }
+        }}
+        className="block min-h-12 w-full flex-1 bg-transparent text-center font-mono text-base tabular-nums outline-none focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
+      />
+      {showsBonus ? (
+        <span className="px-1 pb-1 text-xs text-muted-foreground tabular-nums">
+          {t`allowable ${allowableLabel} (bonus ${bonusLabel})`}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+// Per-reading note: a corner icon button (filled when the reading has a note)
+// that opens a popover editor. Save re-posts the cell's reading with the note.
+function MeasurementNote({
+  notes,
+  isReadOnly,
+  onSave
+}: {
+  notes: string | null;
+  isReadOnly: boolean;
+  onSave: (notes: string) => Promise<boolean>;
+}) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(notes ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+  const hasNote = !!notes?.trim();
+
+  if (isReadOnly && !hasNote) return null;
+
+  const save = async () => {
+    setIsSaving(true);
+    const saved = await onSave(draft);
+    setIsSaving(false);
+    if (saved) setOpen(false);
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setDraft(notes ?? "");
+        setOpen(next);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={hasNote ? t`Edit note` : t`Add note`}
+          className={cn(
+            "absolute right-0.5 top-0.5 z-10 flex size-7 items-center justify-center rounded-md transition-transform active:scale-[0.96]",
+            hasNote
+              ? "text-muted-foreground"
+              : "text-muted-foreground/60 hover:text-foreground"
+          )}
+        >
+          <LuStickyNote
+            className={cn("size-4", hasNote && "fill-muted-foreground/20")}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80">
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-medium">{t`Note`}</span>
+          <Textarea
+            size="lg"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            readOnly={isReadOnly}
+            rows={3}
+            placeholder={t`Add a note to this reading`}
+            autoFocus
+          />
+          {isReadOnly ? null : (
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => setOpen(false)}
+              >
+                {t`Cancel`}
+              </Button>
+              <Button
+                size="lg"
+                isLoading={isSaving}
+                isDisabled={isSaving || draft.trim() === (notes ?? "").trim()}
+                onClick={save}
+              >
+                {t`Save`}
+              </Button>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

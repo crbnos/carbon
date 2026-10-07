@@ -93,6 +93,8 @@ export function resolveOperationSupplier(
 export function jobReleaseProblems(job: {
   manufacturingBlocked: boolean;
   missingAssemblies: { description: string }[];
+  /** Parts that need a first article but resolve no inspection plan. */
+  firstArticlesWithoutPlan?: { description: string }[];
   outsideOperationsWithoutSupplier: {
     description: string;
     missing: "none" | "choose";
@@ -104,6 +106,13 @@ export function jobReleaseProblems(job: {
       ? [
           `no operations on ${job.missingAssemblies
             .map((m) => m.description)
+            .join(", ")}`
+        ]
+      : []),
+    ...((job.firstArticlesWithoutPlan ?? []).length > 0
+      ? [
+          `assign a first article plan for ${job
+            .firstArticlesWithoutPlan!.map((m) => m.description)
             .join(", ")}`
         ]
       : []),

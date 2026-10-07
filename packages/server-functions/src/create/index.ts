@@ -17,6 +17,7 @@ import {
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime, round, settleQuantity } from "@carbon/utils";
+import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -1082,12 +1083,6 @@ const create = defineServerFn({
               .returning(["id", "receiptId"])
               .where("companyId", "=", companyId)
               .execute();
-            // delete existing receipt lines
-            await trx
-              .deleteFrom("receiptLine")
-              .where("receiptId", "=", receiptId)
-              .where("companyId", "=", companyId)
-              .execute();
           } else {
             receiptIdReadable = await getNextSequence(
               trx,
@@ -1114,18 +1109,16 @@ const create = defineServerFn({
             receiptIdReadable = newReceipt?.[0]?.receiptId!;
           }
 
-          if (receiptLineItems.length > 0) {
-            await trx
-              .insertInto("receiptLine")
-              .values(
-                receiptLineItems.map((line) => ({
-                  ...line,
-                  receiptId: receiptId,
-                  locationId
-                }))
-              )
-              .execute();
-          }
+          await replaceReceiptLines(trx, {
+            receiptId,
+            companyId,
+            userId,
+            lines: receiptLineItems.map((line) => ({
+              ...line,
+              receiptId: receiptId,
+              locationId
+            }))
+          });
 
           const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
             (d) => d.assetId && d.purchaseQuantity && !d.receivedComplete
@@ -1299,21 +1292,15 @@ const create = defineServerFn({
             id = insertReceipt[0]?.id ?? "";
           }
 
-          await trx
-            .deleteFrom("receiptLine")
-            .where("receiptId", "=", id)
-            .where("companyId", "=", companyId)
-            .execute();
-
-          await trx
-            .insertInto("receiptLine")
-            .values(
-              receiptLineItems.map((lineItem) => ({
-                ...lineItem,
-                receiptId: id
-              }))
-            )
-            .execute();
+          await replaceReceiptLines(trx, {
+            receiptId: id,
+            companyId,
+            userId,
+            lines: receiptLineItems.map((lineItem) => ({
+              ...lineItem,
+              receiptId: id
+            }))
+          });
 
           return { id };
         });
@@ -1487,21 +1474,15 @@ const create = defineServerFn({
             id = insertReceipt[0]?.id ?? "";
           }
 
-          await trx
-            .deleteFrom("receiptLine")
-            .where("receiptId", "=", id)
-            .where("companyId", "=", companyId)
-            .execute();
-
-          await trx
-            .insertInto("receiptLine")
-            .values(
-              receiptLineItems.map((lineItem) => ({
-                ...lineItem,
-                receiptId: id
-              }))
-            )
-            .execute();
+          await replaceReceiptLines(trx, {
+            receiptId: id,
+            companyId,
+            userId,
+            lines: receiptLineItems.map((lineItem) => ({
+              ...lineItem,
+              receiptId: id
+            }))
+          });
 
           return { id };
         });
@@ -3406,6 +3387,127 @@ const create = defineServerFn({
     }
   }
 }) as Create;
+
+/**
+ * Replace every line of a receipt with `lines`, carrying its certificates
+ * across. Regenerating a receipt (new source document or location) rebuilds
+ * its lines, and `certificate.receiptLineId` is ON DELETE CASCADE, so deleting
+ * the old lines first silently deleted every certificate attached to them.
+ *
+ * The new lines go in BEFORE the old ones are deleted, and each certificate is
+ * MOVED (an UPDATE, so it keeps its id) to the new line with the same source
+ * line — `receiptLine.lineId`, or the `itemId` when the old line had no
+ * `lineId`. Keeping the id matters: a First Article Form 2 row points at the
+ * certificate (`firstArticleInspectionProduct.certificateId`, ON DELETE SET
+ * NULL), and a Draft outside-processing receipt's certificates are on Form 2.
+ * A certificate whose source line is no longer on the receipt has nowhere to
+ * go (`certificate_one_target` needs a target) and is deleted with its old
+ * line, and is logged.
+ */
+async function replaceReceiptLines(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    receiptId: string;
+    companyId: string;
+    userId: string;
+    lines: Database["public"]["Tables"]["receiptLine"]["Insert"][];
+  }
+): Promise<void> {
+  const { receiptId, companyId, userId, lines } = args;
+
+  const certificates = await trx
+    .selectFrom("certificate")
+    .innerJoin("receiptLine", "receiptLine.id", "certificate.receiptLineId")
+    .select([
+      "certificate.id",
+      "certificate.certificateNumber",
+      "receiptLine.lineId",
+      "receiptLine.itemId"
+    ])
+    .where("receiptLine.receiptId", "=", receiptId)
+    .where("certificate.companyId", "=", companyId)
+    .execute();
+
+  const inserted =
+    lines.length > 0
+      ? await trx
+          .insertInto("receiptLine")
+          .values(lines)
+          .returning(["id", "lineId", "itemId"])
+          .execute()
+      : [];
+
+  if (certificates.length > 0) {
+    const newLineBySourceLine = new Map<string, string>();
+    const newLineByItem = new Map<string, string>();
+    for (const line of inserted) {
+      if (line.lineId && !newLineBySourceLine.has(line.lineId)) {
+        newLineBySourceLine.set(line.lineId, line.id);
+      }
+      if (line.itemId && !newLineByItem.has(line.itemId)) {
+        newLineByItem.set(line.itemId, line.id);
+      }
+    }
+
+    const moves: { id: string; receiptLineId: string }[] = [];
+    const dropped: { id: string; certificateNumber: string }[] = [];
+    for (const certificate of certificates) {
+      const receiptLineId = certificate.lineId
+        ? newLineBySourceLine.get(certificate.lineId)
+        : newLineByItem.get(certificate.itemId);
+      if (receiptLineId) {
+        moves.push({ id: certificate.id, receiptLineId });
+      } else {
+        dropped.push({
+          id: certificate.id,
+          certificateNumber: certificate.certificateNumber
+        });
+      }
+    }
+
+    if (moves.length > 0) {
+      await trx
+        .updateTable("certificate")
+        .set({
+          receiptLineId: sql<string>`CASE "id" ${sql.join(
+            moves.map(
+              (move) => sql`WHEN ${move.id} THEN ${move.receiptLineId}`
+            ),
+            sql` `
+          )} END`,
+          updatedBy: userId,
+          updatedAt: sql<string>`NOW()`
+        })
+        .where(
+          "id",
+          "in",
+          moves.map((move) => move.id)
+        )
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    if (dropped.length > 0) {
+      logger.warn(
+        "Receipt regenerated without the source line of {count} certificate(s); they are deleted with their old lines",
+        { receiptId, companyId, count: dropped.length, certificates: dropped }
+      );
+    }
+  }
+
+  let deleteOldLines = trx
+    .deleteFrom("receiptLine")
+    .where("receiptId", "=", receiptId)
+    .where("companyId", "=", companyId);
+  if (inserted.length > 0) {
+    deleteOldLines = deleteOldLines.where(
+      "id",
+      "not in",
+      inserted.map((line) => line.id)
+    );
+  }
+  await deleteOldLines.execute();
+}
 
 export type ReceiptLineItem = Omit<
   Database["public"]["Tables"]["receiptLine"]["Insert"],

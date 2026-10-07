@@ -19,6 +19,7 @@ import {
   updateJobStatus
 } from "~/modules/production";
 import { cancelJob, releaseJobs } from "~/modules/production/production.server";
+import { afterJobsReleased } from "~/modules/quality/firstArticle.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -57,14 +58,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (status === "Ready") {
-    const { data } = await client
+  // Leaving Draft/Planned for the floor is a release — Ready, or straight to
+  // In Progress. Ready from Paused is a resume, which neither re-checks release
+  // readiness nor creates first articles.
+  let isRelease = false;
+  if (status === "Ready" || status === "In Progress") {
+    const { data, error: jobError } = await client
       .from("job")
-      .select("item(itemReplenishment(manufacturingBlocked))")
+      .select("status, item(itemReplenishment(manufacturingBlocked))")
       .eq("id", id)
+      .eq("companyId", companyId)
       .single();
+    // Fail closed: without the prior status a release would skip the first
+    // article blocker and the manufacturing-blocked check.
+    if (jobError || !data) {
+      logger.error("Failed to load the job before a status change", {
+        jobId: id,
+        companyId,
+        status,
+        error: jobError
+      });
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(jobError, "Failed to load job"))
+      );
+    }
+    isRelease = data.status === "Draft" || data.status === "Planned";
 
-    if (data?.item?.itemReplenishment?.manufacturingBlocked) {
+    if (
+      status === "Ready" &&
+      data.item?.itemReplenishment?.manufacturingBlocked
+    ) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
@@ -74,10 +98,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The Release dialog: the shared release path (also run by batch release),
   // re-checking what the dialog checked, then one schedule run for the location.
+  // Only a real release: a job that already left Draft/Planned would otherwise
+  // be put through releaseJobs again (purchase orders, first articles).
   if (status === "Ready" && shouldSchedule) {
+    if (!isRelease) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(null, "Only a Draft or Planned job can be released")
+        )
+      );
+    }
     const readiness = await getJobReleaseReadiness(client, [id], companyId);
-    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
-    if (readiness.error || missing.length > 0) {
+    const job = readiness.data?.jobs[0];
+    const missing = job?.missingAssemblies ?? [];
+    const withoutPlan = job?.firstArticlesWithoutPlan ?? [];
+    if (readiness.error || missing.length > 0 || withoutPlan.length > 0) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(
@@ -86,9 +123,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
             readiness.error,
             readiness.error
               ? "Failed to validate job"
-              : `Assign an operation to each assembly before releasing: ${missing
-                  .map((m) => m.description)
-                  .join(", ")}`
+              : missing.length > 0
+                ? `Assign an operation to each assembly before releasing: ${missing
+                    .map((m) => m.description)
+                    .join(", ")}`
+                : firstArticlePlanRefusal(withoutPlan)
           )
         )
       );
@@ -150,6 +189,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // A plain Ready (or In Progress) post that releases the job: a part that
+  // needs a first article but has no plan to inspect against refuses it here
+  // too, so no release path skips the blocker.
+  if (isRelease) {
+    const readiness = await getJobReleaseReadiness(client, [id], companyId);
+    const withoutPlan = readiness.data?.jobs[0]?.firstArticlesWithoutPlan ?? [];
+    if (readiness.error || withoutPlan.length > 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            readiness.error,
+            readiness.error
+              ? "Failed to validate job"
+              : firstArticlePlanRefusal(withoutPlan)
+          )
+        )
+      );
+    }
+  }
+
   if (["Planned", "Ready"].includes(status)) {
     const serviceRole = getCarbonServiceRole();
     await recalculateJobRequirements(serviceRole, getDatabaseClient(), {
@@ -203,6 +264,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(update.error, "Failed to update job status"))
       );
     }
+  }
+
+  if (isRelease) {
+    await afterJobsReleased(getDatabaseClient(), client, {
+      jobIds: [id],
+      companyId,
+      userId
+    });
   }
 
   if (status === "Planned" && shouldSchedule) {
@@ -261,6 +330,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     requestReferrer(request) ?? path.to.job(id),
     await flash(request, success("Updated job status"))
   );
+}
+
+function firstArticlePlanRefusal(parts: { description: string }[]) {
+  return `Assign a first article plan for ${parts
+    .map((part) => part.description)
+    .join(", ")}`;
 }
 
 // Forecast-first scheduling regenerates the whole location the job is in,

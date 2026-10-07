@@ -50,6 +50,7 @@ import {
   LuCalendar,
   LuCircleAlert,
   LuEllipsisVertical,
+  LuFileBadge,
   LuGroup,
   LuSplit,
   LuTrash,
@@ -75,7 +76,7 @@ import FileDropzone from "~/components/FileDropzone";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
-import { useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
   BatchProperty,
   ItemTracking,
@@ -83,6 +84,7 @@ import type {
   ReceiptLine
 } from "~/modules/inventory";
 import { splitValidator } from "~/modules/inventory";
+import { CertificatesDrawer } from "~/modules/quality/ui/Certificates";
 import { getDocumentType } from "~/modules/shared/shared.service";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -452,6 +454,8 @@ function ReceiptLineItem({
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const certificatesDisclosure = useDisclosure();
+  const permissions = usePermissions();
 
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
@@ -476,6 +480,10 @@ function ReceiptLineItem({
             >
               <DropdownMenuIcon icon={<LuSplit />} />
               {t`Split receipt line`}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={certificatesDisclosure.onOpen}>
+              <DropdownMenuIcon icon={<LuFileBadge />} />
+              {t`Certificates`}
             </DropdownMenuItem>
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
@@ -718,6 +726,13 @@ function ReceiptLineItem({
             />
           )}
         </>
+      )}
+      {certificatesDisclosure.isOpen && (
+        <CertificatesDrawer
+          receiptLineId={line.id!}
+          isReadOnly={!permissions.can("update", "inventory")}
+          onClose={certificatesDisclosure.onClose}
+        />
       )}
     </div>
   );

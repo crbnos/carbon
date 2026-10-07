@@ -18,6 +18,7 @@ import {
   getOperationEligibility,
   startProductionEvent
 } from "~/services/operations.service";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -121,7 +122,14 @@ export async function action({ request }: ActionFunctionArgs) {
         createdBy: userId
       },
       trackedEntityId,
-      unitIndex
+      unitIndex,
+      "mes",
+      (jobId) =>
+        generateFirstArticlesForStartedJob(serviceRole, {
+          jobId,
+          companyId,
+          userId
+        })
     );
 
     if (startEvent.error) {

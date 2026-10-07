@@ -82,6 +82,7 @@ const SalesInvoiceHeader = () => {
     success?: boolean;
     message?: string;
     violations?: unknown[];
+    certificateFailed?: boolean;
   }>;
 
   const { carbon } = useCarbon();

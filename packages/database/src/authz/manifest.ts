@@ -227,6 +227,17 @@ export const manifest = {
       inCompany("companyId", "invoicing_delete")
     )
   }),
+  // Supplier certificates on a receipt line (receiving) or a job operation
+  // (quality), so either module may maintain them.
+  certificate: company("inventory", {
+    create: anyOf("inventory_create", "quality_create"),
+    update: anyOf("inventory_update", "quality_update"),
+    delete: anyOf("inventory_delete", "quality_delete")
+  }),
+  // Issued with a posted shipment, which is an update of that shipment.
+  certificateOfConformance: company("inventory", {
+    create: "inventory_update"
+  }),
   challengeAttempt: policies({
     select: owner("userId"),
     insert: owner("userId")
@@ -260,6 +271,8 @@ export const manifest = {
     column: "id"
   }),
   companyUsage: policies({ select: and(authenticated, member("id")) }),
+  complianceStatement: company("quality"),
+  complianceStatementAssignment: company("quality"),
   config: policies({ select: authenticated }),
   configurationParameter: company("parts", { read: "member" }),
   configurationParameterGroup: company("parts", { read: "member" }),
@@ -603,6 +616,8 @@ export const manifest = {
     )
   }),
   feedback: serviceOnly(),
+  firstArticleInspection: company("quality"),
+  firstArticleInspectionProduct: company("quality"),
   fiscalYearSettings: company("settings", { read: "settings_view" }),
   fixedAsset: company("accounting", { read: "accounting_view" }),
   fixedAssetClass: company("accounting", { read: "accounting_view" }),

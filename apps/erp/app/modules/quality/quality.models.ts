@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { procedureStepType } from "../shared/shared.models";
@@ -481,9 +482,16 @@ export const inspectionDispositionValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-export const inspectionSourceDocuments = ["Receipt", "Job Operation"] as const;
+export const inspectionSourceDocuments = [
+  "Receipt",
+  "Job Operation",
+  "First Article"
+] as const satisfies readonly Database["public"]["Enums"]["inspectionSourceDocument"][];
 
-export const inspectionDocumentUsages = ["Receipt"] as const;
+export const inspectionDocumentUsages = [
+  "Receipt",
+  "First Article"
+] as const satisfies readonly Database["public"]["Enums"]["inspectionDocumentUsage"][];
 
 export const itemInspectionDocumentAssignmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
@@ -506,6 +514,170 @@ export const inspectionMeasurementValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
+export const certificateTypes = [
+  "Material",
+  "Special Process",
+  "Functional Test",
+  "Other"
+] as const satisfies readonly Database["public"]["Enums"]["certificateType"][];
+
+export const firstArticleInspectionStatuses = [
+  "Draft",
+  "Verified",
+  "Approved"
+] as const satisfies readonly Database["public"]["Enums"]["firstArticleInspectionStatus"][];
+
+export const firstArticleInspectionScopes = [
+  "Full",
+  "Partial"
+] as const satisfies readonly Database["public"]["Enums"]["firstArticleInspectionScope"][];
+
+export const firstArticleInspectionTypes = [
+  "Detail",
+  "Assembly"
+] as const satisfies readonly Database["public"]["Enums"]["firstArticleInspectionType"][];
+
+export const firstArticleInspectionReasons = [
+  "New Part",
+  "Design Change",
+  "Manufacturing Source Change",
+  "Process Change",
+  "Inspection Method Change",
+  "Tooling Change",
+  "Material Change",
+  "Location Change",
+  "NC Program Change",
+  "Natural or Man-made Event",
+  "Production Lapse",
+  "Corrective Action",
+  "Other"
+] as const satisfies readonly Database["public"]["Enums"]["firstArticleInspectionReason"][];
+
+export const customerApprovalVerifications = [
+  "Yes",
+  "No",
+  "N/A"
+] as const satisfies readonly Database["public"]["Enums"]["customerApprovalVerification"][];
+
+// A certificate is evidence for exactly one thing: a received line (supplier
+// cert) or a job operation (special process / functional test). The DB
+// enforces the same rule (certificate_one_target).
+export const certificateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    type: z.enum(certificateTypes, {
+      error: "Type is required"
+    }),
+    certificateNumber: z
+      .string()
+      .trim()
+      .min(1, { message: "Certificate number is required" }),
+    specification: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional()),
+    supplierId: zfd.text(z.string().optional()),
+    receiptLineId: zfd.text(z.string().optional()),
+    jobOperationId: zfd.text(z.string().optional()),
+    documentId: zfd.text(z.string().optional())
+  })
+  .refine((data) => !!data.receiptLineId !== !!data.jobOperationId, {
+    message: "A certificate belongs to one receipt line or one job operation",
+    path: ["receiptLineId"]
+  });
+
+export const complianceStatementValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  content: z.string().trim().min(1, { message: "Content is required" }),
+  appliesToAllCustomers: zfd.checkbox(),
+  active: zfd.checkbox(),
+  customerIds: z.array(z.string()).optional(),
+  itemIds: z.array(z.string()).optional()
+});
+
+export const firstArticleInspectionCreateValidator = z
+  .object({
+    jobId: z.string().min(1, { message: "Job is required" }),
+    jobMakeMethodId: z.string().min(1, { message: "Make method is required" }),
+    scope: z.enum(firstArticleInspectionScopes, {
+      error: "Scope is required"
+    }),
+    reason: z.enum(firstArticleInspectionReasons, {
+      error: "Reason is required"
+    }),
+    baselineFirstArticleInspectionId: zfd.text(z.string().optional()),
+    baselineReference: zfd.text(z.string().optional())
+  })
+  // A Partial (delta) FAI only re-verifies what changed, so it must point at
+  // the full FAI it builds on — one in Carbon or an external reference.
+  .refine(
+    (data) =>
+      data.scope !== "Partial" ||
+      !!data.baselineFirstArticleInspectionId ||
+      !!data.baselineReference,
+    {
+      message: "A partial first article needs a baseline",
+      path: ["baselineFirstArticleInspectionId"]
+    }
+  );
+
+export const firstArticleInspectionHeaderValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  // AS9102 Form 1
+  partNumber: z.string().trim().min(1, { message: "Part number is required" }),
+  partName: z.string().trim().min(1, { message: "Part name is required" }),
+  partRevision: zfd.text(z.string().optional()),
+  drawingNumber: zfd.text(z.string().optional()),
+  drawingRevision: zfd.text(z.string().optional()),
+  additionalChanges: zfd.text(z.string().optional()),
+  manufacturingProcessReference: z
+    .string()
+    .trim()
+    .min(1, { message: "Manufacturing process reference is required" }),
+  organizationName: z
+    .string()
+    .trim()
+    .min(1, { message: "Organization name is required" }),
+  supplierCode: zfd.text(z.string().optional()),
+  purchaseOrderNumber: zfd.text(z.string().optional()),
+  scope: z.enum(firstArticleInspectionScopes, {
+    error: "Scope is required"
+  }),
+  reason: z.enum(firstArticleInspectionReasons, {
+    error: "Reason is required"
+  }),
+  baselineFirstArticleInspectionId: zfd.text(z.string().optional()),
+  baselineReference: zfd.text(z.string().optional()),
+  comments: zfd.text(z.string().optional())
+});
+
+// AS9102 Form 2 row: a material, special process or functional test.
+export const firstArticleInspectionProductValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  firstArticleInspectionId: z
+    .string()
+    .min(1, { message: "First article inspection is required" }),
+  kind: z.enum(certificateTypes, {
+    error: "Kind is required"
+  }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  specification: zfd.text(z.string().optional()),
+  code: zfd.text(z.string().optional()),
+  supplier: zfd.text(z.string().optional()),
+  certificateNumber: zfd.text(z.string().optional()),
+  certificateId: zfd.text(z.string().optional()),
+  functionalTestProcedureNumber: zfd.text(z.string().optional()),
+  acceptanceReportNumber: zfd.text(z.string().optional()),
+  comments: zfd.text(z.string().optional()),
+  customerApprovalVerification: z.enum(customerApprovalVerifications, {
+    error: "Customer approval verification is required"
+  })
+});
+
+export const firstArticleCustomerApprovalValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  customerApprovalName: zfd.text(z.string().optional()),
+  customerApprovalDate: zfd.text(z.string().optional())
+});
 // Records the gauge used for one feature of a lot; an empty gaugeId clears it.
 export const inspectionGaugeValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
@@ -520,6 +692,7 @@ export const inspectionDocumentValidator = z.object({
   name: zfd.text(z.string().optional()),
   partId: z.string().min(1, { message: "Part is required" }),
   drawingNumber: zfd.text(z.string().optional()),
+  drawingRevision: zfd.text(z.string().optional()),
   pdfUrl: zfd.text(z.string().optional()),
   annotations: zfd.text(z.string().optional()),
   features: zfd.text(z.string().optional())
@@ -661,6 +834,73 @@ const inspectionFeatureGaugeTypeValidator = {
 // read the persisted id back from the save's id maps.
 const clientIdValidator = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
 
+// Geometric (bonus) tolerance of a Measurement feature: RFS = no bonus; MMC/LMC
+// read the bonus off the measured size of `sizeFeatureId`.
+export const materialConditions = [
+  "RFS",
+  "MMC",
+  "LMC"
+] as const satisfies readonly Database["public"]["Enums"]["materialCondition"][];
+
+export const featureOfSizeTypes = [
+  "Internal",
+  "External"
+] as const satisfies readonly Database["public"]["Enums"]["featureOfSizeType"][];
+
+const inspectionFeatureCharacteristicFieldsValidator = {
+  designator: z.string().nullable().optional(),
+  referenceLocation: z.string().nullable().optional(),
+  materialCondition: z.enum(materialConditions).nullable().optional(),
+  featureOfSize: z.enum(featureOfSizeTypes).nullable().optional(),
+  // A persisted feature id, or the id of a feature created in the same save.
+  sizeFeatureId: z.string().nullable().optional()
+};
+
+// An MMC/LMC characteristic needs its feature of size declared: without it
+// the bonus has no direction (a hole's MMC is its lower limit, a pin's its
+// upper) and the engine judges it against the stated tolerance only.
+function requireFeatureOfSizeForBonus(
+  item: {
+    materialCondition?: (typeof materialConditions)[number] | null;
+    featureOfSize?: (typeof featureOfSizeTypes)[number] | null;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (
+    (item.materialCondition === "MMC" || item.materialCondition === "LMC") &&
+    item.featureOfSize == null
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Feature of size is required for MMC/LMC characteristics",
+      path: ["featureOfSize"]
+    });
+  }
+}
+
+// An update is partial: a payload that omits `featureOfSize` keeps the stored
+// one, so only an explicit null next to MMC/LMC is refused here. The merged
+// row is held to the rule by the `inspectionFeature_bonus_requires_feature_of_size`
+// CHECK, which also catches a lone `featureOfSize: null` on a stored MMC row.
+function requireFeatureOfSizeForBonusUpdate(
+  item: {
+    materialCondition?: (typeof materialConditions)[number] | null;
+    featureOfSize?: (typeof featureOfSizeTypes)[number] | null;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (
+    (item.materialCondition === "MMC" || item.materialCondition === "LMC") &&
+    item.featureOfSize === null
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Feature of size is required for MMC/LMC characteristics",
+      path: ["featureOfSize"]
+    });
+  }
+}
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
     id: clientIdValidator.optional(),
@@ -674,12 +914,14 @@ export const inspectionSaveFeatureCreateItemValidator = z
     unit: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
     ...inspectionFeatureSamplingFieldsValidator,
-    ...inspectionFeatureGaugeTypeValidator
+    ...inspectionFeatureGaugeTypeValidator,
+    ...inspectionFeatureCharacteristicFieldsValidator
   })
   .strict()
   .refine((data) => Boolean(data.id) || Boolean(data.tempId), {
     message: "id or tempId is required"
-  });
+  })
+  .superRefine(requireFeatureOfSizeForBonus);
 
 export const inspectionSaveFeatureUpdateItemValidator = z
   .object({
@@ -693,9 +935,11 @@ export const inspectionSaveFeatureUpdateItemValidator = z
     unit: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
     ...inspectionFeatureSamplingFieldsValidator,
-    ...inspectionFeatureGaugeTypeValidator
+    ...inspectionFeatureGaugeTypeValidator,
+    ...inspectionFeatureCharacteristicFieldsValidator
   })
-  .strict();
+  .strict()
+  .superRefine(requireFeatureOfSizeForBonusUpdate);
 
 export const inspectionSaveFeaturesPayloadValidator = z
   .object({

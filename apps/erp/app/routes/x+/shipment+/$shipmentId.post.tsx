@@ -20,10 +20,14 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { serverFns } from "@carbon/server-functions";
-import { datetime, redirect } from "@carbon/utils";
+import { datetime, getPreferenceHeaders, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { upsertDocument } from "~/modules/documents";
+import {
+  autoIssueCertificatesOfConformance,
+  type CertificateAutoIssueOutcome
+} from "~/modules/inventory/inventory.server";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   getCompanyTimeZone,
@@ -293,6 +297,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   /** Set by the catch below when the post was rolled back to Draft. */
   let reverted = false;
+  /** The auto-issued certificate's outcome, reported with the post. */
+  let certificateOutcome: CertificateAutoIssueOutcome | null = null;
 
   try {
     // Get shipment details to check if it's related to a sales order
@@ -480,12 +486,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
       shipmentId,
       sourceDocument: shipmentForSurface?.sourceDocument ?? null
     });
+
+    certificateOutcome = await autoIssueCertificatesOfConformance(
+      getDatabaseClient(),
+      client,
+      {
+        shipmentIds: [shipmentId],
+        companyId,
+        userId,
+        locale: getPreferenceHeaders(request).locale
+      }
+    );
   }
 
-  if (expiredWarning) {
+  // One flash per response: the expired-batch warning and the certificate
+  // outcome share it.
+  const messages = [expiredWarning, certificateOutcome?.message].filter(
+    (message): message is string => !!message
+  );
+  if (messages.length > 0) {
+    const message = messages.join(" ");
     throw redirect(
       path.to.shipmentDetails(shipmentId),
-      await flash(request, success(expiredWarning))
+      await flash(
+        request,
+        certificateOutcome && !certificateOutcome.ok
+          ? error(null, message)
+          : success(message)
+      )
     );
   }
 

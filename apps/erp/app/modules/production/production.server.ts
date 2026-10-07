@@ -12,6 +12,7 @@ import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
+import { afterJobsReleased } from "~/modules/quality/firstArticle.server";
 import { isJobLocked } from "./production.models";
 import {
   getJobReleaseReadiness,
@@ -74,9 +75,10 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
 }
 
 // Release jobs to the floor: the one path the job page and batch release share.
-// Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
-// operations on purchase orders, stamp releasedDate. Scheduling is the
-// caller's (one location run, or a notify, after all jobs are released).
+// Per job, in order: refresh requirements, run MRP, flip to Ready, create its
+// first article lots, put outside operations on purchase orders, stamp
+// releasedDate. Scheduling is the caller's (one location run, or a notify,
+// after all jobs are released).
 //
 // `purchaseOrdersBySupplierId` maps a supplier to "new" or a Draft PO id; a
 // supplier's first "new" PO is reused for the jobs after it, so a batch puts
@@ -153,6 +155,10 @@ export async function releaseJobs({
       return fail("The job is no longer Draft or Planned");
     }
     releasedJobIds.push(id);
+
+    // The job is on the floor from here, so its first article lots are too —
+    // even if a later step (purchase orders) fails. Best-effort, never throws.
+    await afterJobsReleased(db, client, { jobIds: [id], companyId, userId });
 
     const purchaseOrder = await serverFns
       .system({ db, companyId, userId })

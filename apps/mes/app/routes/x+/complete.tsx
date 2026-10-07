@@ -128,6 +128,22 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // An Inspection operation completes only through its inspection, never a
+  // quantity posted here.
+  if (jobOperation.data.operationType === "Inspection") {
+    log.warn("Refused to complete an Inspection operation directly", {
+      jobOperationId: jobOperation.data.id,
+      companyId
+    });
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, "Record this operation through its inspection"),
+        flash: "error"
+      })
+    );
+  }
+
   // The production event ids ride along into the productionQuantity row and
   // the issue call; RLS does not check a foreign key's tenant, so verify them.
   const productionEventIds = [

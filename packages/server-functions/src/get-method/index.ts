@@ -89,6 +89,15 @@ const normalizeOperationType = (value: unknown) =>
       ? "Outside Processing"
       : value) as Database["public"]["Enums"]["operationType"];
 
+// An operation's inspection-document link is only valid on an Inspection
+// operation (the `*_inspectionDocument_type_check` CHECK on jobOperation,
+// quoteOperation and methodOperation). A configurator rule can change the
+// type, so the link follows the FINAL type of the row being inserted.
+const inspectionDocumentFor = (
+  operationType: unknown,
+  inspectionDocumentId: string | null | undefined
+) => (operationType === "Inspection" ? (inspectionDocumentId ?? null) : null);
+
 // Copy an operation step's reference slides (grandchild) when a method/job/quote is
 // copied. Source slides are queried by their (old) step ids and remapped onto the freshly
 // inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
@@ -1086,7 +1095,10 @@ const getMethod = defineServerFn({
                   // Carry the Assembly → BOP sync link so the MES can drive the
                   // animated instruction player on jobs made from a synced method.
                   assemblyInstructionId: op.assemblyInstructionId,
-                  inspectionDocumentId: op.inspectionDocumentId,
+                  inspectionDocumentId: inspectionDocumentFor(
+                    normalizeOperationType(operationType),
+                    op.inspectionDocumentId
+                  ),
                   operationSupplierProcessId: op.operationSupplierProcessId,
                   ...getOutsideOperationRates(
                     processId,
@@ -2030,7 +2042,10 @@ const getMethod = defineServerFn({
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType,
+                  op.inspectionDocumentId
+                ),
                 operationUnitCost: op.operationUnitCost ?? 0,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
@@ -2915,7 +2930,10 @@ const getMethod = defineServerFn({
                     processId,
                     procedureId,
                     assemblyInstructionId: op.assemblyInstructionId,
-                    inspectionDocumentId: op.inspectionDocumentId,
+                    inspectionDocumentId: inspectionDocumentFor(
+                      normalizeOperationType(operationType),
+                      op.inspectionDocumentId
+                    ),
                     workCenterId,
                     description,
                     setupTime,
@@ -3503,7 +3521,10 @@ const getMethod = defineServerFn({
                 processId: op.processId,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType,
+                  op.inspectionDocumentId
+                ),
                 workCenterId: op.workCenterId,
                 description: op.description,
                 setupTime: op.setupTime,
@@ -3934,7 +3955,10 @@ const getMethod = defineServerFn({
                 processId: op.processId!,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType ?? "Process",
+                  op.inspectionDocumentId
+                ),
                 workCenterId: op.workCenterId,
                 description: op.description ?? "",
                 setupTime: op.setupTime ?? 0,
@@ -4263,7 +4287,10 @@ const getMethod = defineServerFn({
                 processId: op.processId!,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType ?? "Process",
+                  op.inspectionDocumentId
+                ),
                 // workCenterId: op.workCenterId,
                 description: op.description ?? "",
                 setupTime: op.setupTime ?? 0,
@@ -4904,7 +4931,10 @@ const getMethod = defineServerFn({
                   // Carry the Assembly → BOP sync link so the MES can drive the
                   // animated instruction player on the copied job.
                   assemblyInstructionId: op.assemblyInstructionId,
-                  inspectionDocumentId: op.inspectionDocumentId,
+                  inspectionDocumentId: inspectionDocumentFor(
+                    op.operationType,
+                    op.inspectionDocumentId
+                  ),
                   operationSupplierProcessId: op.operationSupplierProcessId,
                   operationMinimumCost: op.operationMinimumCost ?? 0,
                   operationLeadTime: op.operationLeadTime ?? 0,
@@ -5769,7 +5799,10 @@ const getMethod = defineServerFn({
                 processId: op.processId!,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType ?? "Process",
+                  op.inspectionDocumentId
+                ),
                 workCenterId: op.workCenterId,
                 description: op.description ?? "",
                 setupTime: op.setupTime ?? 0,
@@ -6111,7 +6144,10 @@ const getMethod = defineServerFn({
                 processId: op.processId!,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType ?? "Process",
+                  op.inspectionDocumentId
+                ),
                 workCenterId: op.workCenterId,
                 description: op.description ?? "",
                 setupTime: op.setupTime ?? 0,
@@ -6662,7 +6698,10 @@ const getMethod = defineServerFn({
                   // Carry the Assembly → BOP sync link so the MES can drive the
                   // animated instruction player on jobs made from a synced method.
                   assemblyInstructionId: op.assemblyInstructionId,
-                  inspectionDocumentId: op.inspectionDocumentId,
+                  inspectionDocumentId: inspectionDocumentFor(
+                    op.operationType,
+                    op.inspectionDocumentId
+                  ),
                   operationSupplierProcessId: op.operationSupplierProcessId,
                   operationMinimumCost: op.operationMinimumCost ?? 0,
                   operationLeadTime: op.operationLeadTime ?? 0,
@@ -7060,7 +7099,10 @@ const getMethod = defineServerFn({
                 processId: op.processId,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType,
+                  op.inspectionDocumentId
+                ),
                 workCenterId: op.workCenterId,
                 description: op.description,
                 setupTime: op.setupTime,
@@ -7603,7 +7645,10 @@ const getMethod = defineServerFn({
                 processId: op.processId,
                 procedureId: op.procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType,
+                  op.inspectionDocumentId
+                ),
                 workCenterId: op.workCenterId,
                 description: op.description,
                 setupTime: op.setupTime,

@@ -839,6 +839,21 @@ type DispositionRow = {
 
 type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
+export type NonTrackedOrigin = "receipt" | "production" | "none";
+
+/**
+ * Where an NCR's non-tracked stock stands, from the source documents of its
+ * linked inspections. A Receipt reject already wrote the lot off; a Job
+ * Operation or First Article lot is WIP that never reached on-hand; with no
+ * inspection link the stock is still on hand.
+ */
+export function nonTrackedOrigin(
+  inspectionSources: readonly (string | null | undefined)[]
+): NonTrackedOrigin {
+  if (inspectionSources.includes("Receipt")) return "receipt";
+  return inspectionSources.length > 0 ? "production" : "none";
+}
+
 export async function closeIssue(
   client: SupabaseClient<Database>,
   args: { nonConformanceId: string; companyId: string; userId: string }
@@ -1022,13 +1037,16 @@ export async function closeIssue(
   const readableNc = issueResult.data.nonConformanceId ?? nonConformanceId;
   const locationId = issueResult.data.locationId;
 
-  // Non-tracked origin: an inspection-rejected Inventory lot was already written
-  // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
-  // scrap must be written off now. Detected via the NCR's inspection link (only
-  // the reject route creates one).
+  // Non-tracked origin, read off the NCR's inspection links:
+  // - a RECEIPT inspection's reject already wrote the lot off, so Use As Is /
+  //   Rework restores value and Scrap posts nothing more;
+  // - a Job Operation or First Article inspection works on WIP, which never
+  //   reached on-hand stock: neither a restore nor a write-off applies (the MES
+  //   disposition already posted the production outcome);
+  // - no inspection link (MES/manual): Scrap is written off now.
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
-  let inspectionOriginated = false;
+  let origin: NonTrackedOrigin = "none";
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
     const [trackingRes, inspectionRes] = await Promise.all([
@@ -1039,15 +1057,16 @@ export async function closeIssue(
         .eq("companyId", companyId),
       client
         .from("nonConformanceInspection")
-        .select("id")
+        .select("id, inspection!inner(sourceDocument)")
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
-        .limit(1)
     ]);
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    inspectionOriginated = (inspectionRes.data?.length ?? 0) > 0;
+    origin = nonTrackedOrigin(
+      (inspectionRes.data ?? []).map((link) => link.inspection?.sourceDocument)
+    );
   }
 
   // Build the inventory value movements: tracked Scrap/Return → one −qty per
@@ -1094,7 +1113,8 @@ export async function closeIssue(
       continue;
     }
     if (!inventoryItemIds.has(row.itemId)) continue; // Non-Inventory: no ledger
-    if (isScrap && !inspectionOriginated) {
+    if (origin === "production") continue; // WIP: no on-hand to move
+    if (isScrap && origin === "none") {
       let writeOff = row.quantity;
       if (row.disposition === "Return to Supplier") {
         const coverage = remainingCoverageByItem.get(row.itemId) ?? 0;
@@ -1114,7 +1134,7 @@ export async function closeIssue(
       });
       continue;
     }
-    if (isKeep && inspectionOriginated) {
+    if (isKeep && origin === "receipt") {
       movements.push({
         itemId: row.itemId,
         locationId,

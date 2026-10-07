@@ -18,6 +18,11 @@ vi.mock("~/modules/inventory/inventory.service", () => ({
 }));
 // production.models reaches the module barrels (and through them a Supabase
 // client built at import); cancelJob needs nothing from it.
+// The first-article hook reaches the quality module's server graph (Redis via
+// @carbon/kv); cancelJob never releases, so it needs none of it.
+vi.mock("~/modules/quality/firstArticle.server", () => ({
+  afterJobsReleased: vi.fn()
+}));
 vi.mock("./production.models", () => ({
   isJobLocked: vi.fn(() => false)
 }));
