@@ -62,6 +62,7 @@ import {
   Submit,
   TextArea
 } from "~/components/Form";
+import { rowMenuColumn, setupGridHeight } from "~/components/Setup";
 import {
   useCompanyToday,
   useCurrencyDecimals,
@@ -80,7 +81,6 @@ import {
   customerContractTypes
 } from "../../sales.models";
 import ContractMoney from "./ContractMoney";
-import { contractGridHeight, rowMenuColumn } from "./contractGrid";
 import type {
   Contract,
   ContractLine,
@@ -726,7 +726,7 @@ const ContractAmendModal = ({
                 <div
                   className="w-full overflow-hidden rounded-lg border border-border"
                   style={{
-                    height: contractGridHeight(
+                    height: setupGridHeight(
                       rows.length,
                       rows.some(
                         (row) => row.readableId && row.readableId !== row.name

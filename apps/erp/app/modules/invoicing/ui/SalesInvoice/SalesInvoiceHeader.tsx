@@ -222,7 +222,8 @@ const SalesInvoiceHeader = () => {
   const contractReadableId = contract?.readableId;
 
   const showPostModal = async () => {
-    // check if there are any lines that are not associated with a PO
+    // The lines posting will ship: items not on a sales order. A Service is
+    // never shipped — post-sales-invoice skips it — so it is not listed.
     if (!carbon) throw new Error("carbon not found");
     const { data, error } = await carbon
       .from("salesInvoiceLine")
@@ -233,7 +234,6 @@ const SalesInvoiceHeader = () => {
         "Material",
         "Tool",
         "Consumable",
-        "Service",
         "Fixture"
       ])
       .is("salesOrderLineId", null);

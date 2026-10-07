@@ -18,16 +18,14 @@ Routes: /x/contract/new, /x/contract/:id/details, /x/contract/:id/lines/new,
   current month or earlier.
 
 ## Steps
-### 1. New contract (/x/contract/new)
-> Stale since Phase B: /x/contract/new is now a five-step setup wizard, not one
-> page. Re-record this step on the next /test run.
-Name = first textbox; Customer = first combobox (option by name); the date groups
-are Close Date, Start Date, then First Invoice / Billed Through / Recognize Revenue
-From — click the month spinbutton and `type` MM, DD, YYYY into the three
-spinbuttons. Billing Alignment / Invoicing are comboboxes (open, click option).
-Renewal Uplift is a textbox: `fill` then click another field to blur.
-requestSubmit the form whose submit button text contains "Save" → redirect to
-`/x/contract/<id>/details`.
+### 1. New contract (/x/contract/new) — setup wizard step 1
+Re-recorded 2026-10-07. Customer = first combobox → option (the name fills in as
+"<Customer> — <Mon YYYY>"); Start Date / Duration default to today / 12 months.
+requestSubmit the form whose submit button contains "Next" →
+`/x/contract/<id>/setup/products`. Products: "Add Services" → combobox → option →
+Escape → requestSubmit the dialog's form (line added at rate 0). Rate cell: click
+the 4th td of the row → textbox → fill → Tab (saves via `$lineId/update`). Every
+`/setup/{products,invoicing,revenue,review,details}` of a Draft renders.
 
 Faster for extra contracts: from the logged-in page, POST a FormData to
 `/x/contract/new` with the same fields the form posts (name, customerId,

@@ -21,6 +21,7 @@ import {
   NumberInputStepper,
   VStack
 } from "@carbon/react";
+import { useNumberFormatter } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import {
@@ -80,6 +81,9 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     } = useField(name);
     const [controlValue, setControlValue] = useControlField<number>(name);
     const [inlineMode, setInlineMode] = useState(inline);
+    // The inline preview reads the value with the digits it is edited with
+    // ($10,000.00, 8.25%) — a raw number would show 10000 or 0.0825.
+    const formatter = useNumberFormatter(rest.formatOptions ?? {});
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -107,7 +111,9 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
         <HStack spacing={0} className="w-full justify-between">
           {value !== undefined && (
             <span className="flex flex-grow line-clamp-1 items-center">
-              {value}
+              {rest.formatOptions && !isNaN(value)
+                ? formatter.format(value)
+                : value}
             </span>
           )}
           <IconButton

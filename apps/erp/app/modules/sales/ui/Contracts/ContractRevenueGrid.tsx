@@ -32,6 +32,11 @@ import {
 } from "~/components/Editable";
 import { ConfirmDelete } from "~/components/Modals";
 import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
+import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
@@ -42,13 +47,7 @@ import { contractRevenueMethods } from "../../sales.models";
 import ContractAmountsModal from "./ContractAmountsModal";
 import { Remaining } from "./ContractInvoiceGrid";
 import ContractMoney from "./ContractMoney";
-import {
-  contractGridHeight,
-  contractLineName,
-  lineColumnKey,
-  rowMenuColumn,
-  useContractCellSave
-} from "./contractGrid";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueGridProps = Pick<
@@ -92,7 +91,7 @@ const ContractRevenueGrid = ({
 }: ContractRevenueGridProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const save = useContractCellSave();
+  const save = useCellSave();
   const { formatDate } = useDateFormatter();
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
@@ -278,7 +277,7 @@ const ContractRevenueGrid = ({
       ) : (
         <div
           className="w-full overflow-hidden rounded-lg border border-border"
-          style={{ height: contractGridHeight(months.length, 49) }}
+          style={{ height: setupGridHeight(months.length, 49) }}
         >
           <Table<MonthRow>
             compact
@@ -393,7 +392,7 @@ export const ContractRecognitionGrid = ({
 }: Pick<ContractRouteData, "contract" | "lines">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const save = useContractCellSave();
+  const save = useCellSave();
   const { formatDate } = useDateFormatter();
 
   const contractId = contract.id!;
@@ -515,7 +514,7 @@ export const ContractRecognitionGrid = ({
   return (
     <div
       className="w-full overflow-hidden rounded-lg border border-border"
-      style={{ height: contractGridHeight(rows.length) }}
+      style={{ height: setupGridHeight(rows.length) }}
     >
       <Table<RecognitionRow>
         compact

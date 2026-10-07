@@ -21,6 +21,11 @@ import { Table } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import { ConfirmDelete } from "~/components/Modals";
 import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
+import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
@@ -29,13 +34,7 @@ import {
 import { path } from "~/utils/path";
 import ContractAmountsModal from "./ContractAmountsModal";
 import ContractMoney from "./ContractMoney";
-import {
-  contractGridHeight,
-  contractLineName,
-  lineColumnKey,
-  rowMenuColumn,
-  useContractCellSave
-} from "./contractGrid";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractRouteData } from "./types";
 
 type ContractInvoiceGridProps = Pick<
@@ -71,7 +70,7 @@ const ContractInvoiceGrid = ({
 }: ContractInvoiceGridProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const save = useContractCellSave();
+  const save = useCellSave();
   const { formatDate } = useDateFormatter();
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
@@ -318,7 +317,7 @@ const ContractInvoiceGrid = ({
       ) : (
         <div
           className="w-full overflow-hidden rounded-lg border border-border"
-          style={{ height: contractGridHeight(rows.length, 49) }}
+          style={{ height: setupGridHeight(rows.length, 49) }}
         >
           <Table<InvoiceRow>
             compact

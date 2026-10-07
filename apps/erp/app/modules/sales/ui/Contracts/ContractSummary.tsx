@@ -33,9 +33,9 @@ type ContractSummaryProps = Pick<
   "contract" | "lines" | "schedule" | "computedSchedule"
 >;
 
-/** The contract at a glance, laid out like the rental agreement summary: its
- *  lines as one sentence each, then the recurring value per billing period,
- *  the next invoice and the contract value. */
+/** The contract at a glance: its lines, each with its amount in a right-hand
+ *  column, then the recurring value per billing period, the next invoice and
+ *  the contract value in the same column. */
 const ContractSummary = ({
   contract,
   lines,
@@ -78,10 +78,10 @@ const ContractSummary = ({
       )
     : null;
   const recurringLabel: Record<typeof frequency, string> = {
-    Week: t`Recurring per week:`,
-    Month: t`Recurring per month:`,
-    Quarter: t`Recurring per quarter:`,
-    Year: t`Recurring per year:`
+    Week: t`Recurring per week`,
+    Month: t`Recurring per month`,
+    Quarter: t`Recurring per quarter`,
+    Year: t`Recurring per year`
   };
 
   // A line an amendment replaced keeps its history but no longer bills past
@@ -139,41 +139,46 @@ const ContractSummary = ({
           </VStack>
         )}
 
-        <VStack spacing={2} className="mt-8">
+        <VStack spacing={2} className="mt-6">
           {recurring !== null && (
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <HStack className="w-full justify-between text-sm text-muted-foreground">
               <span>{recurringLabel[frequency]}</span>
               <MotionMoney
+                className="tabular-nums"
                 value={recurring}
                 currency={currencyCode}
                 decimalPlaces={currencyDecimals}
               />
             </HStack>
           )}
-          <HStack className="justify-between text-sm text-muted-foreground w-full">
+          <HStack className="w-full justify-between text-sm text-muted-foreground">
             <span>
-              <Trans>Next Invoice:</Trans>
+              <Trans>Next invoice</Trans>
+              {nextInvoice && (
+                <>
+                  {" · "}
+                  <DateTime value={nextInvoice.invoiceDate} variant="date" />
+                </>
+              )}
             </span>
             {nextInvoice ? (
-              <span className="flex items-center gap-2">
-                <DateTime value={nextInvoice.invoiceDate} variant="date" />
-                <span aria-hidden>·</span>
-                <MotionMoney
-                  value={nextInvoice.total}
-                  currency={currencyCode}
-                  decimalPlaces={currencyDecimals}
-                />
-              </span>
+              <MotionMoney
+                className="tabular-nums"
+                value={nextInvoice.total}
+                currency={currencyCode}
+                decimalPlaces={currencyDecimals}
+              />
             ) : (
               <span>—</span>
             )}
           </HStack>
-          <div className="h-px bg-border my-2 w-full" />
-          <HStack className="justify-between text-xl font-semibold w-full">
+          <div className="my-2 h-px w-full bg-border" />
+          <HStack className="w-full justify-between text-lg font-semibold">
             <span>
-              <Trans>Contract Value:</Trans>
+              <Trans>Contract value</Trans>
             </span>
             <MotionMoney
+              className="tabular-nums"
               value={contractValue}
               currency={currencyCode}
               decimalPlaces={currencyDecimals}
@@ -195,7 +200,9 @@ const ContractSummary = ({
   );
 };
 
-/** "Platform access · 10 × $40.00 per month · 20% off until 31 Oct 2027". */
+/** One line: its name and terms on the left ("Recurring · 10 × $40.00 ·
+ *  20% off until Oct 31, 2027"), what it bills on the right ("$320.00 per
+ *  month"), so every amount sits in one column above the totals. */
 function SummaryLine({
   contract,
   line,
@@ -211,6 +218,7 @@ function SummaryLine({
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
   const percent = usePercentFormatter();
+  const money = useCurrencyFormatter({ currency: currencyCode });
   const rateFormatter = useCurrencyFormatter({
     currency: currencyCode,
     rate: true
@@ -218,8 +226,11 @@ function SummaryLine({
 
   const name = line.description || line.item?.name || line.itemId;
   const quantity = Number(line.quantity);
-  const rate = rateFormatter.format(Number(line.rate));
+  const rate = Number(line.rate);
   const discount = Number(line.discountPercent);
+  // What the line bills once (One-time) or per its rate unit (Recurring),
+  // after its discount — display only, rounded by the formatter.
+  const amount = quantity * rate * (1 - discount);
   const perUnit: Record<NonNullable<ContractLine["rateUnit"]>, string> = {
     Day: t`per day`,
     Week: t`per week`,
@@ -227,47 +238,58 @@ function SummaryLine({
     Quarter: t`per quarter`,
     Year: t`per year`
   };
+  const isRecurring = line.revenueType === "Recurring";
 
-  const segments: string[] = [];
-  if (line.revenueType === "One-time") {
-    segments.push(t`one-time`);
-    segments.push(
-      quantity === 1 ? rate : `${formatQuantity(quantity)} × ${rate}`
-    );
-  } else {
-    const per = line.rateUnit ? ` ${perUnit[line.rateUnit]}` : "";
-    segments.push(`${formatQuantity(quantity)} × ${rate}${per}`);
+  const details: string[] = [isRecurring ? t`Recurring` : t`One-time`];
+  if (quantity !== 1) {
+    details.push(`${formatQuantity(quantity)} × ${rateFormatter.format(rate)}`);
   }
   if (discount > 0) {
     const off = percent.format(discount);
-    segments.push(
+    details.push(
       line.discountEndsOn
         ? t`${off} off until ${formatDate(line.discountEndsOn)}`
         : t`${off} off`
     );
   }
-  // A line that stops before the contract does (an amendment replaced it, or
-  // it was signed for less).
-  if (line.endDate && line.endDate !== contract.endDate) {
-    segments.push(t`until ${formatDate(line.endDate)}`);
+  // A recurring line that stops before the contract does (an amendment
+  // replaced it, or it was signed for less). A one-time fee has no end to
+  // speak of — its dates only spread its revenue.
+  if (isRecurring && line.endDate && line.endDate !== contract.endDate) {
+    details.push(t`until ${formatDate(line.endDate)}`);
   }
 
   return (
-    <div className="border-b border-input py-3 w-full min-w-0">
-      <p className="text-sm">
+    <div className="flex w-full min-w-0 items-start justify-between gap-6 border-b border-input py-3">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <Link
           to={path.to.contractLine(contract.id!, line.id)}
           className={cn(
-            "font-medium hover:underline",
+            "truncate text-sm font-medium hover:underline",
             isReplaced && "line-through text-muted-foreground"
           )}
         >
           {name}
         </Link>
-        <span className="text-muted-foreground">
-          {segments.map((segment) => ` · ${segment}`).join("")}
+        <span className="text-xs text-muted-foreground">
+          {details.join(" · ")}
         </span>
-      </p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+        <span
+          className={cn(
+            "text-sm font-medium tabular-nums",
+            isReplaced && "line-through text-muted-foreground"
+          )}
+        >
+          {money.format(amount)}
+        </span>
+        {isRecurring && line.rateUnit && (
+          <span className="text-xs text-muted-foreground">
+            {perUnit[line.rateUnit]}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

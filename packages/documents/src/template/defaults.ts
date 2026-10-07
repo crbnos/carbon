@@ -430,7 +430,17 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
     salesInvoice: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "salesInvoice",
-      blocks: transactionalBlocks(),
+      // An invoice line's description is the whole story of what is billed —
+      // a rental or contract period, its days and rate — so it wraps rather
+      // than losing its end to an ellipsis.
+      blocks: transactionalBlocks().map((block) =>
+        block.type === "lineItems"
+          ? {
+              ...block,
+              options: { ...DEFAULT_LINE_ITEMS_OPTIONS, textOverflow: "wrap" }
+            }
+          : block
+      ),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,

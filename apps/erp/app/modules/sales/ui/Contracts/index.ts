@@ -21,12 +21,6 @@ import ContractRevenue from "./ContractRevenue";
 import ContractRevenueGrid, {
   ContractRecognitionGrid
 } from "./ContractRevenueGrid";
-import {
-  ContractSetupBody,
-  ContractSetupFooter,
-  ContractSetupFrame,
-  ContractSetupSection
-} from "./ContractSetupLayout";
 import ContractSetupSteps, { contractSetupSteps } from "./ContractSetupSteps";
 import ContractStatus from "./ContractStatus";
 import ContractSummary from "./ContractSummary";
@@ -63,10 +57,6 @@ export {
   ContractRevenue,
   ContractRevenueGrid,
   ContractRevenueMigration,
-  ContractSetupBody,
-  ContractSetupFooter,
-  ContractSetupFrame,
-  ContractSetupSection,
   ContractSetupSteps,
   ContractStatus,
   ContractSummary,

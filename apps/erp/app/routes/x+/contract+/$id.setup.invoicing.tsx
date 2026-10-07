@@ -4,13 +4,12 @@
 
 import { Trans } from "@lingui/react/macro";
 import { useParams } from "react-router";
+import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractBillTo,
-  ContractInvoiceGrid,
-  ContractSetupBody,
-  ContractSetupSection
+  ContractInvoiceGrid
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
@@ -30,12 +29,12 @@ export default function ContractSetupInvoicingRoute() {
       null);
 
   return (
-    <ContractSetupBody>
+    <SetupBody>
       <ContractBillTo
         contract={contract}
         plannedFirstInvoice={plannedFirstInvoice}
       />
-      <ContractSetupSection
+      <SetupSection
         title={<Trans>Invoices</Trans>}
         description={
           <Trans>
@@ -51,7 +50,7 @@ export default function ContractSetupInvoicingRoute() {
           computedSchedule={computedSchedule}
           residuals={residuals}
         />
-      </ContractSetupSection>
-    </ContractSetupBody>
+      </SetupSection>
+    </SetupBody>
   );
 }

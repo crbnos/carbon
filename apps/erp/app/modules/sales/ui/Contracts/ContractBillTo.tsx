@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { DatePicker, Select, ValidatedForm } from "@carbon/form";
+import { DatePicker, Select } from "@carbon/form";
 import {
   Button,
   Checkbox,
@@ -11,7 +11,6 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   LuCalendarCheck,
@@ -20,13 +19,13 @@ import {
   LuChevronRight
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { z } from "zod";
 import {
   Customer,
   CustomerContact,
   CustomerLocation,
   PaymentTerm
 } from "~/components/Form";
+import { SetupSection, TermForm } from "~/components/Setup";
 import { useDateFormatter, usePermissions, useSettings } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -34,7 +33,6 @@ import {
   type contractBillingTimings,
   invoiceAutomations
 } from "../../sales.models";
-import { ContractSetupSection } from "./ContractSetupLayout";
 import type { Contract } from "./types";
 import { useContractLabels } from "./useContractLabels";
 
@@ -55,28 +53,6 @@ type Term =
 
 /** The Select's value for "no override": Radix refuses an empty item value. */
 const COMPANY_DEFAULT = "default";
-
-/** One field in its own form, so it validates and saves on its own. Keyed by
- *  its stored value: when a save changes it (or clears it, as a new bill-to
- *  clears the contact), the field shows what was stored. */
-export const TermForm = ({
-  name,
-  value,
-  children
-}: {
-  name: string;
-  value: unknown;
-  children: ReactNode;
-}) => (
-  <ValidatedForm
-    key={`${name}:${String(value ?? "")}`}
-    defaultValues={{ [name]: value ?? "" }}
-    validator={z.object({ [name]: z.any() })}
-    className="w-full"
-  >
-    {children}
-  </ValidatedForm>
-);
 
 /** Saves one term of a Draft through the properties route, which validates
  *  the terms as a whole; a refusal toasts. Returns `save` and a way to save
@@ -145,13 +121,13 @@ const ContractBillTo = ({
 
   return (
     <>
-      <ContractSetupSection
+      <SetupSection
         title={<Trans>Bill To</Trans>}
         description={
           <Trans>Who receives the invoices, where, and on what terms.</Trans>
         }
       >
-        <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+        <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
           <TermForm name="invoiceCustomerId" value={contract.invoiceCustomerId}>
             <Customer
               name="invoiceCustomerId"
@@ -218,9 +194,9 @@ const ContractBillTo = ({
             />
           </TermForm>
         </div>
-      </ContractSetupSection>
+      </SetupSection>
 
-      <ContractSetupSection
+      <SetupSection
         title={<Trans>Schedule</Trans>}
         description={
           <Trans>
@@ -229,7 +205,7 @@ const ContractBillTo = ({
           </Trans>
         }
       >
-        <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+        <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
           <TermForm name="billingFrequency" value={contract.billingFrequency}>
             <Select
               name="billingFrequency"
@@ -259,6 +235,7 @@ const ContractBillTo = ({
           </TermForm>
           <ChoiceCardGroup<BillingTiming>
             className="md:col-span-2"
+            direction="row"
             label={t`Billing Timing`}
             value={contract.billingTiming ?? "Advance"}
             onChange={(value) => onChange("billingTiming", value)}
@@ -304,7 +281,7 @@ const ContractBillTo = ({
             </label>
           </div>
         </div>
-      </ContractSetupSection>
+      </SetupSection>
 
       <ContractInvoicingAdvanced
         contract={contract}
@@ -353,7 +330,7 @@ const ContractInvoicingAdvanced = ({
         <Trans>Advanced</Trans>
       </Button>
       {isOpen && (
-        <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+        <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
           <TermForm
             name="invoiceAutomation"
             value={contract.invoiceAutomation ?? COMPANY_DEFAULT}

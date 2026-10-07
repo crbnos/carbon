@@ -4,14 +4,13 @@
 
 import { Trans } from "@lingui/react/macro";
 import { useParams } from "react-router";
+import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractRecognitionGrid,
   ContractRevenueGrid,
-  ContractRevenueMigration,
-  ContractSetupBody,
-  ContractSetupSection
+  ContractRevenueMigration
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
@@ -26,8 +25,8 @@ export default function ContractSetupRevenueRoute() {
     routeData;
 
   return (
-    <ContractSetupBody>
-      <ContractSetupSection
+    <SetupBody>
+      <SetupSection
         title={<Trans>Recognition</Trans>}
         description={
           <Trans>
@@ -37,8 +36,8 @@ export default function ContractSetupRevenueRoute() {
         }
       >
         <ContractRecognitionGrid contract={contract} lines={lines} />
-      </ContractSetupSection>
-      <ContractSetupSection
+      </SetupSection>
+      <SetupSection
         title={<Trans>Revenue Plan</Trans>}
         description={
           <Trans>
@@ -55,7 +54,7 @@ export default function ContractSetupRevenueRoute() {
           revenueResiduals={revenueResiduals}
         />
         <ContractRevenueMigration contract={contract} />
-      </ContractSetupSection>
-    </ContractSetupBody>
+      </SetupSection>
+    </SetupBody>
   );
 }

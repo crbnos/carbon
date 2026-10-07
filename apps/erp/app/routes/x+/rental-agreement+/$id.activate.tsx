@@ -69,8 +69,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Activated from the setup wizard, which is for a Draft only: straight to
+  // the agreement's page rather than through the wizard's redirect.
+  const referrer = requestReferrer(request);
   throw redirect(
-    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
+    referrer && !referrer.includes("/setup/")
+      ? referrer
+      : path.to.rentalAgreementDetails(id),
     await flash(request, success("Rental agreement activated"))
   );
 }

@@ -10,6 +10,7 @@ import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
+  attachPostedInvoicePdf,
   emailPostedInvoice,
   findInvoicesToAutomate,
   postSalesInvoiceUnattended,
@@ -290,6 +291,14 @@ export const recurringBillingFunction = inngest.createFunction(
             result("held");
             continue;
           }
+          // Every posted invoice gets its PDF, as a manual Post files one.
+          await step.run(`pdf-${invoice.invoiceId}`, () =>
+            attachPostedInvoicePdf({
+              client: serviceRole,
+              companyId: company.id,
+              invoiceId: invoice.invoiceId
+            })
+          );
           if (
             invoice.mode !== "Post and Email" &&
             invoice.mode !== "Post and Send via Stripe"

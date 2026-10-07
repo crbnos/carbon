@@ -13,7 +13,7 @@ const subheadingVariants = cva("uppercase tracking-wide", {
   variants: {
     variant: {
       heavy: "text-xs font-medium text-muted-foreground",
-      light: "text-[11px]/[13px] font-light text-foreground/70"
+      light: "text-xs font-light text-foreground/70"
     }
   },
   defaultVariants: {

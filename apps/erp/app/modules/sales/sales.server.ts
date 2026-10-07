@@ -1192,3 +1192,27 @@ export async function draftContractSetupPath(
   }
   return path.to.contractSetup(id, "products");
 }
+
+/** Where a Draft rental agreement opens: its setup wizard, for anyone who
+ *  can edit it (the wizard needs `update: sales`). Null for an activated
+ *  agreement, or for a viewer who cannot edit — they get the agreement page. */
+export async function draftRentalAgreementSetupPath(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; id: string }
+): Promise<string | null> {
+  const { companyId, userId, id } = args;
+  const [agreement, claims] = await Promise.all([
+    client
+      .from("rentalAgreement")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getUserClaims(userId, companyId)
+  ]);
+  if (agreement.data?.status !== "Draft") return null;
+  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+    return null;
+  }
+  return path.to.rentalAgreementSetup(id, "units");
+}

@@ -485,6 +485,23 @@ async function readInvoiceOwnerEmail(
   companyId: string,
   invoiceId: string
 ): Promise<string | null> {
+  const ownerId = await readInvoiceOwnerId(client, companyId, invoiceId);
+  if (!ownerId) return null;
+  const user = await client
+    .from("user")
+    .select("email")
+    .eq("id", ownerId)
+    .maybeSingle();
+  return user.data?.email || null;
+}
+
+/** The recurring source's owner as a user id — the contract's or agreement's
+ *  salesperson, else its creator. Null without a source or a real user. */
+async function readInvoiceOwnerId(
+  client: Client,
+  companyId: string,
+  invoiceId: string
+): Promise<string | null> {
   const customerContractId = await getInvoiceContractId(
     client,
     companyId,
@@ -515,13 +532,162 @@ async function readInvoiceOwnerEmail(
     source = agreement.data;
   }
   const ownerId = source?.salesPersonId ?? source?.createdBy;
-  if (!ownerId || ownerId === "system") return null;
-  const user = await client
-    .from("user")
-    .select("email")
-    .eq("id", ownerId)
-    .maybeSingle();
-  return user.data?.email || null;
+  return ownerId && ownerId !== "system" ? ownerId : null;
+}
+
+/**
+ * Renders a posted invoice's PDF and files it on the invoice, as a manual
+ * Post does: in the company bucket under the invoice's opportunity (the
+ * folder its Files card lists), with a `document` row. The path is the
+ * invoice's own — company name and invoice number — so a retry overwrites
+ * the file and the row is recorded once. Returns the PDF for a send.
+ */
+async function fileInvoicePdf(args: {
+  client: Client;
+  companyId: string;
+  companyGroupId: string;
+  invoiceId: string;
+  opportunityId: string | null;
+}) {
+  const { client, companyId, companyGroupId, invoiceId, opportunityId } = args;
+
+  // The PDF is rendered here, so its logo is fetched from the internal URL.
+  const document = await loadSalesInvoiceDocument({
+    client,
+    companyId,
+    companyGroupId,
+    invoiceId,
+    locale: "en-US",
+    storageUrl: SUPABASE_INTERNAL_URL ?? ""
+  });
+  const pdf = await renderSalesInvoicePdf(document.pdfProps);
+
+  const path = `${companyId}/${
+    opportunityId
+      ? `opportunity/${opportunityId}`
+      : `sales-invoice/${invoiceId}`
+  }/${storageFileName(document.fileName)}`;
+  const upload = await storage(client)
+    .company(companyId)
+    .upload(path, pdf, { contentType: "application/pdf", upsert: true });
+  if (upload.error) throw new Error(upload.error.message);
+
+  // Whoever owns the recurring source reads the PDF in Documents, as the
+  // poster does on a manual Post; with no owner it is the system's alone.
+  let ownerId: string | null = null;
+  try {
+    ownerId = await readInvoiceOwnerId(client, companyId, invoiceId);
+  } catch (error) {
+    logger.error("Failed to read the invoice owner", {
+      companyId,
+      invoiceId,
+      error
+    });
+  }
+  const groups = ownerId ? [ownerId] : ["system"];
+
+  const existing = await client
+    .from("document")
+    .select("id, readGroups")
+    .eq("companyId", companyId)
+    .eq("path", path)
+    .limit(1);
+  const existingRow = existing.data?.[0];
+  if (existingRow && ownerId && !existingRow.readGroups?.includes(ownerId)) {
+    // Filed before it had an owner to file it for (or by an older run).
+    const regrouped = await client
+      .from("document")
+      .update({ readGroups: groups, writeGroups: groups })
+      .eq("companyId", companyId)
+      .eq("path", path);
+    if (regrouped.error) {
+      logger.error("Failed to share the invoice PDF with its owner", {
+        companyId,
+        invoiceId,
+        error: regrouped.error
+      });
+    }
+  } else if (!existing.error && !existingRow) {
+    const documentRow = await client.from("document").insert({
+      path,
+      name: document.fileName,
+      size: Math.round(pdf.byteLength / 1024),
+      type: getDocumentType(document.fileName),
+      sourceDocument: "Sales Invoice",
+      sourceDocumentId: invoiceId,
+      readGroups: groups,
+      writeGroups: groups,
+      createdBy: "system",
+      companyId
+    });
+    if (documentRow.error) {
+      // The file is in place; only its row on the invoice is missing.
+      logger.error("Failed to record the invoice PDF", {
+        companyId,
+        invoiceId,
+        error: documentRow.error
+      });
+    }
+  } else if (existing.error) {
+    logger.error("Failed to read the invoice PDF's document row", {
+      companyId,
+      invoiceId,
+      error: existing.error
+    });
+  }
+
+  return { document, pdf };
+}
+
+/**
+ * Files a posted invoice's PDF on it whatever the invoicing mode — a Post
+ * that sends nothing still leaves the invoice with its PDF, as a manual Post
+ * does. Never throws: the invoice is already posted, and a missing PDF must
+ * not stop the send that follows (which renders its own if need be).
+ */
+export async function attachPostedInvoicePdf(args: {
+  client: Client;
+  companyId: string;
+  invoiceId: string;
+}): Promise<{ attached: boolean; error?: string }> {
+  const { client, companyId, invoiceId } = args;
+  try {
+    const invoice = await client
+      .from("salesInvoice")
+      .select("status, opportunityId")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (invoice.error) throw new Error(invoice.error.message);
+    if (!invoice.data || !isPostedSalesInvoice(invoice.data.status)) {
+      return { attached: false };
+    }
+    const company = await client
+      .from("company")
+      .select("companyGroupId")
+      .eq("id", companyId)
+      .single();
+    if (company.error) throw new Error(company.error.message);
+    if (!company.data.companyGroupId) {
+      throw new Error("The company has no company group");
+    }
+    await fileInvoicePdf({
+      client,
+      companyId,
+      companyGroupId: company.data.companyGroupId,
+      invoiceId,
+      opportunityId: invoice.data.opportunityId
+    });
+    return { attached: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error("Failed to file the posted invoice's PDF", {
+      companyId,
+      invoiceId,
+      error
+    });
+    return { attached: false, error: message };
+  }
 }
 
 /**
@@ -588,47 +754,13 @@ export async function emailPostedInvoice(args: {
       throw new Error("The company has no company group");
     }
 
-    // The PDF is rendered here, so its logo is fetched from the internal URL.
-    const document = await loadSalesInvoiceDocument({
+    const { document, pdf } = await fileInvoicePdf({
       client,
       companyId,
       companyGroupId: company.data.companyGroupId,
       invoiceId,
-      locale: "en-US",
-      storageUrl: SUPABASE_INTERNAL_URL ?? ""
+      opportunityId: invoice.data.opportunityId
     });
-    const pdf = await renderSalesInvoicePdf(document.pdfProps);
-
-    const path = `${companyId}/${
-      invoice.data.opportunityId
-        ? `opportunity/${invoice.data.opportunityId}`
-        : `sales-invoice/${invoiceId}`
-    }/${storageFileName(document.fileName)}`;
-    const upload = await storage(client)
-      .company(companyId)
-      .upload(path, pdf, { contentType: "application/pdf", upsert: true });
-    if (upload.error) throw new Error(upload.error.message);
-
-    const documentRow = await client.from("document").insert({
-      path,
-      name: document.fileName,
-      size: Math.round(pdf.byteLength / 1024),
-      type: getDocumentType(document.fileName),
-      sourceDocument: "Sales Invoice",
-      sourceDocumentId: invoiceId,
-      readGroups: ["system"],
-      writeGroups: ["system"],
-      createdBy: "system",
-      companyId
-    });
-    if (documentRow.error) {
-      // The email still goes out; only the copy on the invoice is missing.
-      logger.error("Failed to record the sent invoice PDF", {
-        companyId,
-        invoiceId,
-        error: documentRow.error
-      });
-    }
 
     const receivablesEmail = settings.data?.accountsReceivableEmail || null;
     const replyTo = receivablesEmail ?? ownerEmail ?? undefined;

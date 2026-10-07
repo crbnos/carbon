@@ -4,13 +4,10 @@
 
 import { Trans } from "@lingui/react/macro";
 import { useParams } from "react-router";
+import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import {
-  ContractProductsGrid,
-  ContractSetupBody,
-  ContractSetupSection
-} from "~/modules/sales/ui/Contracts";
+import { ContractProductsGrid } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
 /** Setup step 2: the services the contract bills. */
@@ -23,8 +20,8 @@ export default function ContractSetupProductsRoute() {
   const { contract, lines, lineTotals } = routeData;
 
   return (
-    <ContractSetupBody>
-      <ContractSetupSection
+    <SetupBody>
+      <SetupSection
         title={<Trans>Services</Trans>}
         description={
           <Trans>
@@ -38,7 +35,7 @@ export default function ContractSetupProductsRoute() {
           lines={lines}
           lineTotals={lineTotals}
         />
-      </ContractSetupSection>
-    </ContractSetupBody>
+      </SetupSection>
+    </SetupBody>
   );
 }

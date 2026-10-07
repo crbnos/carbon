@@ -54,7 +54,8 @@ import {
   RETURNABLE_LINE_STATUSES,
   type RentalAgreementPayload,
   type ResidualDestination,
-  unitAvailabilityError
+  unitAvailabilityError,
+  unpricedUnitError
 } from "./validators";
 
 // The lifecycle of a rental agreement (spec §3, §4). Four actions, each ONE
@@ -525,6 +526,11 @@ async function activate(
       // to the rate cards never touches a live line.
       const rate = Number(line.rate);
       const rateUnit = line.rateUnit;
+      const unpriced = unpricedUnitError(name, rate);
+      if (unpriced) {
+        problems.push(unpriced);
+        continue;
+      }
 
       // ASC 842 classification, from the unit's rate and the agreement's
       // terms. An overridden line keeps the classification the override

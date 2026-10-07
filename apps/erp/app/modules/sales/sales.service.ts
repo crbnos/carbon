@@ -9021,6 +9021,84 @@ export async function upsertRentalAgreementLine(
     .single();
 }
 
+/** Adds several fleet units to a Draft agreement at once (the setup wizard's
+ *  Add Units), each at its rate on file for the frequency — the customer's,
+ *  its type's, else the item's — or 0 when there is none, to be priced in
+ *  the grid. One read of the agreement, one of the units, one of the rates,
+ *  one insert. Not an MCP tool: `upsertRentalAgreementLine` covers a single
+ *  unit. */
+export async function insertRentalAgreementLines(
+  client: SupabaseClient<Database>,
+  args: {
+    rentalAgreementId: string;
+    companyId: string;
+    createdBy: string;
+    fixedAssetIds: string[];
+    rateUnit: z.infer<typeof rentalAgreementLineValidator>["rateUnit"];
+  }
+) {
+  const { rentalAgreementId, companyId, createdBy, rateUnit } = args;
+  const fixedAssetIds = [...new Set(args.fixedAssetIds)];
+
+  const agreement = await client
+    .from("rentalAgreement")
+    .select("status, customerId, currencyCode, startDate")
+    .eq("id", rentalAgreementId)
+    .eq("companyId", companyId)
+    .single();
+  if (agreement.error) return agreement;
+  if (agreement.data.status !== "Draft") {
+    return rentalRefusal(
+      "RENTAL_AGREEMENT_NOT_DRAFT",
+      "Units can only be added or changed on a Draft rental agreement"
+    );
+  }
+
+  const assets = await client
+    .from("fixedAsset")
+    .select("id, itemId, trackedEntityId")
+    .eq("companyId", companyId)
+    .in("id", fixedAssetIds);
+  if (assets.error) return assets;
+  if (assets.data.length !== fixedAssetIds.length) {
+    return rentalRefusal(
+      "RENTAL_ASSET_NOT_FOUND",
+      "A fleet unit could not be found"
+    );
+  }
+  if (assets.data.some((asset) => !asset.itemId)) {
+    return rentalRefusal("RENTAL_ASSET_NO_ITEM", "The fleet unit has no item");
+  }
+
+  const itemIds = [
+    ...new Set(assets.data.map((asset) => asset.itemId as string))
+  ];
+  const defaults = await getDefaultRentalRates(client, {
+    companyId,
+    customerId: agreement.data.customerId,
+    currencyCode: agreement.data.currencyCode,
+    asOf: agreement.data.startDate,
+    itemIds
+  });
+  if (defaults.error) return defaults;
+
+  return client
+    .from("rentalAgreementLine")
+    .insert(
+      assets.data.map((asset) => ({
+        rentalAgreementId,
+        fixedAssetId: asset.id,
+        itemId: asset.itemId as string,
+        trackedEntityId: asset.trackedEntityId,
+        rateUnit,
+        rate: defaults.data[asset.itemId as string]?.[rateUnit]?.rate ?? 0,
+        companyId,
+        createdBy
+      }))
+    )
+    .select("id");
+}
+
 /** Only from a Draft agreement — an activated line has billing periods
  *  behind it; return the unit or cancel the agreement instead. * @mcp delete
  */

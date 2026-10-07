@@ -8,15 +8,20 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import {
   insertRentalAgreement,
   rentalAgreementValidator,
   upsertRentalAgreementLine
 } from "~/modules/sales";
-import { RentalAgreementForm } from "~/modules/sales/ui/Rentals";
+import {
+  RentalAgreementDetailsForm,
+  RentalSetupSteps
+} from "~/modules/sales/ui/Rentals";
 import { getCompanySettings, getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -36,13 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     // Annual %, the rate lease classification discounts payments at.
-    defaultDiscountRate: companySettings.data?.leaseDefaultDiscountRate ?? 0,
-    leasePolicy: {
-      majorPartPercent:
-        companySettings.data?.leaseMajorPartThresholdPercent ?? 75,
-      substantiallyAllPercent:
-        companySettings.data?.leaseSubstantiallyAllThresholdPercent ?? 90
-    }
+    defaultDiscountRate: companySettings.data?.leaseDefaultDiscountRate ?? 0
   };
 }
 
@@ -110,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
     if (line.error) {
       throw redirect(
-        path.to.rentalAgreementDetails(agreement.data.id),
+        path.to.rentalAgreementSetup(agreement.data.id, "units"),
         await flash(
           request,
           error(
@@ -122,13 +121,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  throw redirect(path.to.rentalAgreementDetails(agreement.data.id));
+  throw redirect(path.to.rentalAgreementSetup(agreement.data.id, "units"));
 }
 
+/** Step 1 of the rental agreement setup: creating the Draft. Every later
+ *  step edits the Draft this saves (`$id.setup.*`). */
 export default function NewRentalAgreementRoute() {
-  const { defaultDiscountRate, leasePolicy } = useLoaderData<typeof loader>();
+  const { defaultDiscountRate } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
-  const { company, defaults } = useUser();
+  const { company, defaults, id: userId } = useUser();
   const companyToday = useCompanyToday();
 
   const initialValues = {
@@ -136,8 +137,11 @@ export default function NewRentalAgreementRoute() {
     rentalAgreementId: undefined,
     customerId: params.get("customerId") ?? "",
     locationId: defaults?.locationId ?? "",
+    // The person setting the agreement up is usually the one who sold it.
+    salesPersonId: userId,
     startDate: companyToday,
     endDate: undefined,
+    // What a new agreement bills on until the Billing step says otherwise.
     billingCycle: "Calendar Month" as const,
     billingTiming: "Advance" as const,
     currencyCode: company?.baseCurrencyCode ?? "USD",
@@ -150,12 +154,16 @@ export default function NewRentalAgreementRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <RentalAgreementForm
+    <SetupFrame
+      title={<Trans>New Rental Agreement</Trans>}
+      step="details"
+      steps={<RentalSetupSteps current="details" />}
+    >
+      <RentalAgreementDetailsForm
         initialValues={initialValues}
+        action={path.to.newRentalAgreement}
         fixedAssetId={params.get("fixedAssetId") ?? undefined}
-        leasePolicy={leasePolicy}
       />
-    </div>
+    </SetupFrame>
   );
 }

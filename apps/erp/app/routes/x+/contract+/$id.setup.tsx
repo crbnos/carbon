@@ -9,6 +9,7 @@ import { Trans } from "@lingui/react/macro";
 import { LuCircleCheck } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useMatches, useParams } from "react-router";
+import { SetupFooter, SetupFrame } from "~/components/Setup";
 import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
 import type {
   ContractRouteData,
@@ -16,8 +17,7 @@ import type {
 } from "~/modules/sales/ui/Contracts";
 import {
   ContractConfirmModal,
-  ContractSetupFooter,
-  ContractSetupFrame,
+  ContractSetupSteps,
   contractSetupSteps
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
@@ -84,19 +84,19 @@ export default function ContractSetupRoute() {
     Object.values(revenueResiduals).every((r) => equals(r, 0));
 
   return (
-    <ContractSetupFrame
+    <SetupFrame
       title={contract.name || contract.customerContractId}
       subtitle={[contract.customerContractId, contract.customerName]
         .filter(Boolean)
         .join(" · ")}
       step={step}
-      contractId={id}
+      steps={<ContractSetupSteps current={step} contractId={id} />}
     >
       <RecordOutlet />
       {/* The Details step is a form and renders its own footer, with Next
           as its submit. */}
       {step !== "details" && (
-        <ContractSetupFooter
+        <SetupFooter
           summary={
             <span className="flex items-baseline gap-2">
               <span className="text-muted-foreground">
@@ -155,6 +155,6 @@ export default function ContractSetupRoute() {
       {confirm.isOpen && (
         <ContractConfirmModal contract={contract} onClose={confirm.onClose} />
       )}
-    </ContractSetupFrame>
+    </SetupFrame>
   );
 }

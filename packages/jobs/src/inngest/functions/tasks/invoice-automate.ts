@@ -5,6 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getJobDatabaseClient } from "../../../db";
 import {
+  attachPostedInvoicePdf,
   emailPostedInvoice,
   postSalesInvoiceUnattended,
   resolveInvoiceAutomation,
@@ -54,6 +55,13 @@ export const invoiceAutomateFunction = inngest.createFunction(
         invoiceId
       })
     );
+    // Every posted invoice gets its PDF, as a manual Post files one — also
+    // under a mode that sends nothing.
+    if (posted.outcome === "posted") {
+      await step.run("pdf", () =>
+        attachPostedInvoicePdf({ client, companyId, invoiceId })
+      );
+    }
     if (posted.outcome === "posted" && mode === "Post and Send via Stripe") {
       const sent = await step.run("stripe", () =>
         sendPostedInvoiceViaStripe({

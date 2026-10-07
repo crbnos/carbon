@@ -1497,6 +1497,15 @@ export const rentalAgreementLineValidator = z.object({
   unguaranteedResidualValue: zfd.numeric(z.number().min(0).optional())
 });
 
+/** Several fleet units at once (the setup wizard's Add Units), each at its
+ *  rate on file for the frequency. */
+export const rentalAgreementLinesAddValidator = z.object({
+  fixedAssetIds: z
+    .array(z.string().min(1))
+    .min(1, { message: "Choose at least one unit" }),
+  rateUnit: z.enum(rentalRateUnits, { error: "Rate frequency is required" })
+});
+
 /** No `chargeType`: the form only ever adds a `Charge`. `Rent` comes from the
  *  schedule and `Purchase Option` from Sell to Customer, both server-side. */
 export const rentalAgreementChargeValidator = z.object({

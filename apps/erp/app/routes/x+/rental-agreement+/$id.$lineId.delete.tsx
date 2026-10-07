@@ -13,7 +13,7 @@ import {
   getRentalAgreement,
   getRentalAgreementLine
 } from "~/modules/sales";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -65,8 +65,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Back where the unit was removed from (the setup wizard's Units step),
+  // unless that was the removed unit's own page.
+  const referrer = requestReferrer(request);
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    referrer && !referrer.includes(lineId)
+      ? referrer
+      : path.to.rentalAgreementDetails(id),
     await flash(request, success("Removed unit from the agreement"))
   );
 }

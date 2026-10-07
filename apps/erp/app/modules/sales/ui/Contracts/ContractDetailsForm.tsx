@@ -24,6 +24,7 @@ import {
   Submit,
   TextArea
 } from "~/components/Form";
+import { SetupBody, SetupFooter, SetupSection } from "~/components/Setup";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { useCustomers } from "~/stores";
 import {
@@ -35,11 +36,6 @@ import {
   customerContractValidator
 } from "../../sales.models";
 import ContractProject from "./ContractProject";
-import {
-  ContractSetupBody,
-  ContractSetupFooter,
-  ContractSetupSection
-} from "./ContractSetupLayout";
 import type { ContractType } from "./types";
 import { useContractLabels } from "./useContractLabels";
 
@@ -187,14 +183,14 @@ const ContractDetailsForm = ({
         <Hidden name="renewalUplift" value="0" />
       )}
 
-      <ContractSetupBody>
-        <ContractSetupSection
+      <SetupBody>
+        <SetupSection
           title={<Trans>Customer</Trans>}
           description={
             <Trans>Who the contract is with and what it is called.</Trans>
           }
         >
-          <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
             <Customer
               autoFocus={!isEditing}
               name="customerId"
@@ -228,9 +224,9 @@ const ContractDetailsForm = ({
             <Input name="customerReference" label={t`PO Number`} />
             {showsCurrencyUpFront && currencyField}
           </div>
-        </ContractSetupSection>
+        </SetupSection>
 
-        <ContractSetupSection
+        <SetupSection
           title={<Trans>Term</Trans>}
           description={
             <Trans>
@@ -238,7 +234,7 @@ const ContractDetailsForm = ({
             </Trans>
           }
         >
-          <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
             <DatePicker
               name="startDate"
               label={t`Start Date`}
@@ -280,9 +276,10 @@ const ContractDetailsForm = ({
           </div>
 
           {!isOpenEnded && (
-            <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+            <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
               <ChoiceCardGroup<ContractRenewal>
                 className="md:col-span-2"
+                direction="row"
                 label={t`Action on Completion`}
                 value={renewal}
                 onChange={setRenewal}
@@ -313,15 +310,15 @@ const ContractDetailsForm = ({
               )}
             </div>
           )}
-        </ContractSetupSection>
+        </SetupSection>
 
-        <ContractSetupSection
+        <SetupSection
           title={<Trans>More Details</Trans>}
           description={
             <Trans>Who sold it, what it belongs to, and when it closed.</Trans>
           }
         >
-          <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
             <Employee name="salesPersonId" label={t`Sales Person`} />
             <ContractProject name="projectId" label={t`Project`} />
             <DatePicker
@@ -335,10 +332,10 @@ const ContractDetailsForm = ({
             </div>
             <CustomFormFields table="customerContract" />
           </div>
-        </ContractSetupSection>
-      </ContractSetupBody>
+        </SetupSection>
+      </SetupBody>
 
-      <ContractSetupFooter
+      <SetupFooter
         actions={
           <Submit
             isDisabled={

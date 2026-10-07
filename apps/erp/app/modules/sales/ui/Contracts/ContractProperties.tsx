@@ -34,6 +34,7 @@ import {
   PaymentTerm
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { TermForm } from "~/components/Setup";
 import { usePermissions, useRouteData, useSettings } from "~/hooks";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -47,7 +48,6 @@ import {
   customerContractTypes,
   invoiceAutomations
 } from "../../sales.models";
-import { TermForm } from "./ContractBillTo";
 import ContractProject from "./ContractProject";
 import type { Contract, ContractRouteData } from "./types";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";

@@ -166,6 +166,14 @@ export function unitAvailabilityError(
   return null;
 }
 
+/** Why a unit cannot be activated at its rate, or null: a unit at no rate
+ *  would go on rent and bill nothing. */
+export function unpricedUnitError(name: string, rate: number): string | null {
+  return rate > 0
+    ? null
+    : `${name} has no rate; enter its rate before activating`;
+}
+
 /** Why a unit cannot be returned on `returnedAt`, or null: a return records
  *  what has happened, so it is never dated after the company's today — an
  *  operating return would otherwise cut billing short ahead of time, and a

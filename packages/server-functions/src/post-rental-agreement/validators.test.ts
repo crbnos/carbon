@@ -12,7 +12,8 @@ import {
   futureReturnError,
   payloadValidator,
   toRate,
-  unitAvailabilityError
+  unitAvailabilityError,
+  unpricedUnitError
 } from "./validators";
 
 const scope = {
@@ -385,4 +386,12 @@ it("a return is never dated after the company's today", () => {
   expect(futureReturnError("2028-01-01", "2027-12-31")).toEqual(
     "The return date cannot be in the future"
   );
+});
+
+it("a unit at no rate cannot be activated", () => {
+  expect(unpricedUnitError("FA000001", 0)).toEqual(
+    "FA000001 has no rate; enter its rate before activating"
+  );
+  expect(unpricedUnitError("FA000001", Number.NaN)).not.toEqual(null);
+  expect(unpricedUnitError("FA000001", 0.01)).toEqual(null);
 });

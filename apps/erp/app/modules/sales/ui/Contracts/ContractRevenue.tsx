@@ -32,16 +32,13 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Table as DataTable, DateTime } from "~/components";
+import { setupGridHeight } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
 import ContractMoney from "./ContractMoney";
 import ContractRevenueGrid, {
   ContractRecognitionGrid
 } from "./ContractRevenueGrid";
-import {
-  contractGridHeight,
-  contractLineName,
-  lineColumnKey
-} from "./contractGrid";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueProps = Pick<
@@ -510,7 +507,7 @@ function ContractRevenuePlan({
   return (
     <div
       className="w-full overflow-hidden rounded-lg border border-border"
-      style={{ height: contractGridHeight(months.length) }}
+      style={{ height: setupGridHeight(months.length) }}
     >
       <DataTable<MonthRow>
         compact

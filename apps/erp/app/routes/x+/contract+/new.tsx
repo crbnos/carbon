@@ -11,6 +11,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUser } from "~/hooks";
 import { getExchangeRate } from "~/modules/accounting";
 import {
@@ -21,7 +22,7 @@ import {
 import { contractInvoicingDefaults } from "~/modules/sales/sales.server";
 import {
   ContractDetailsForm,
-  ContractSetupFrame
+  ContractSetupSteps
 } from "~/modules/sales/ui/Contracts";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
@@ -197,11 +198,15 @@ export default function NewContractRoute() {
   };
 
   return (
-    <ContractSetupFrame title={<Trans>New Contract</Trans>} step="details">
+    <SetupFrame
+      title={<Trans>New Contract</Trans>}
+      step="details"
+      steps={<ContractSetupSteps current="details" />}
+    >
       <ContractDetailsForm
         initialValues={initialValues}
         action={path.to.newContract}
       />
-    </ContractSetupFrame>
+    </SetupFrame>
   );
 }

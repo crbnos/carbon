@@ -6,12 +6,11 @@ import { equals } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuCircleCheck, LuTriangleAlert } from "react-icons/lu";
 import { Link, useParams } from "react-router";
+import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractMoney,
-  ContractSetupBody,
-  ContractSetupSection,
   ContractSummary,
   contractLineName
 } from "~/modules/sales/ui/Contracts";
@@ -49,8 +48,8 @@ export default function ContractSetupReviewRoute() {
     lines.length > 0 && invoiceGaps.length === 0 && revenueGaps.length === 0;
 
   return (
-    <ContractSetupBody>
-      <ContractSetupSection
+    <SetupBody>
+      <SetupSection
         title={<Trans>Review</Trans>}
         description={
           <Trans>
@@ -67,9 +66,9 @@ export default function ContractSetupReviewRoute() {
             computedSchedule={computedSchedule}
           />
         </div>
-      </ContractSetupSection>
+      </SetupSection>
 
-      <ContractSetupSection title={<Trans>Before You Confirm</Trans>}>
+      <SetupSection title={<Trans>Before You Confirm</Trans>}>
         {isReady ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <LuCircleCheck className="size-4 shrink-0" />
@@ -110,8 +109,8 @@ export default function ContractSetupReviewRoute() {
             ))}
           </ul>
         )}
-      </ContractSetupSection>
-    </ContractSetupBody>
+      </SetupSection>
+    </SetupBody>
   );
 }
 

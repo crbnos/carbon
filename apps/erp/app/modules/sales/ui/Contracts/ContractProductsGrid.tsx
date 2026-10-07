@@ -33,6 +33,11 @@ import {
 import { Submit } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
+import {
   useCurrencyDecimals,
   useDateFormatter,
   usePercentFormatter,
@@ -48,12 +53,7 @@ import {
 } from "../../sales.models";
 import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
-import {
-  contractGridHeight,
-  contractLineName,
-  rowMenuColumn,
-  useContractCellSave
-} from "./contractGrid";
+import { contractLineName } from "./contractGrid";
 import type { Contract, ContractLine } from "./types";
 
 type ProductRow = {
@@ -87,7 +87,7 @@ const ContractProductsGrid = ({
 }: ContractProductsGridProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const save = useContractCellSave();
+  const save = useCellSave();
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
   const percent = usePercentFormatter();
@@ -374,7 +374,7 @@ const ContractProductsGrid = ({
           <div
             className="w-full overflow-hidden rounded-lg border border-border"
             style={{
-              height: contractGridHeight(
+              height: setupGridHeight(
                 rows.length,
                 rows.some(
                   (row) => row.readableId && row.readableId !== row.name

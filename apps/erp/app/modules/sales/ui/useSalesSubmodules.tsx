@@ -59,6 +59,17 @@ export default function useSalesSubmodules() {
           table: "salesOrder"
         },
         {
+          name: t`Returns`,
+          to: path.to.salesReturnOrders,
+          icon: <LuUndo2 />,
+          table: "salesReturnOrder"
+        }
+      ]
+    },
+    {
+      name: t`Deals`,
+      routes: [
+        {
           name: t`Service Contracts`,
           to: path.to.contracts,
           icon: <LuSection />,
@@ -69,12 +80,6 @@ export default function useSalesSubmodules() {
           to: path.to.rentalAgreements,
           icon: <LuKeyRound />,
           table: "rentalAgreement"
-        },
-        {
-          name: t`Returns`,
-          to: path.to.salesReturnOrders,
-          icon: <LuUndo2 />,
-          table: "salesReturnOrder"
         }
       ]
     },

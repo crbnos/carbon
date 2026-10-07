@@ -84,6 +84,7 @@ vi.mock("@carbon/files", () => ({
 }));
 
 import {
+  attachPostedInvoicePdf,
   companyFromAddress,
   emailPostedInvoice,
   INVOICE_POST_INTERRUPTED,
@@ -608,5 +609,132 @@ describe("email headers", () => {
         receivablesEmail: "ar@acme.com"
       })
     ).toEqual(["ops@acme.com", "ar@acme.com"]);
+  });
+});
+
+describe("attachPostedInvoicePdf", () => {
+  const tables = (invoice: Row) => ({
+    salesInvoice: [invoice],
+    company: [{ id: "co-1", name: "Acme Rentals", companyGroupId: "g-1" }],
+    document: [] as Row[]
+  });
+
+  it("files the posted invoice's PDF under its opportunity", async () => {
+    const { client, tables: rows } = fakeClient(
+      tables(draftInvoice({ status: "Submitted" }))
+    );
+    expect(await attachPostedInvoicePdf({ client, ...args })).toEqual({
+      attached: true
+    });
+    expect(rows.document).toHaveLength(1);
+    expect(rows.document![0]).toMatchObject({
+      path: "co-1/opportunity/opp-1/Acme - INV-1.pdf",
+      name: "Acme - INV-1.pdf",
+      sourceDocument: "Sales Invoice",
+      sourceDocumentId: "inv-1"
+    });
+  });
+
+  it("files it once however often it runs", async () => {
+    const { client, tables: rows } = fakeClient(
+      tables(draftInvoice({ status: "Submitted" }))
+    );
+    await attachPostedInvoicePdf({ client, ...args });
+    await attachPostedInvoicePdf({ client, ...args });
+    expect(rows.document).toHaveLength(1);
+  });
+
+  it("lets the agreement's sales person read the filed PDF", async () => {
+    const { client, tables: rows } = fakeClient({
+      ...tables(draftInvoice({ status: "Submitted" })),
+      salesInvoiceLine: [
+        { invoiceId: "inv-1", companyId: "co-1", rentalAgreementId: "ra-1" }
+      ],
+      rentalAgreement: [
+        {
+          id: "ra-1",
+          companyId: "co-1",
+          salesPersonId: "user-sales",
+          createdBy: "user-creator"
+        }
+      ]
+    });
+    await attachPostedInvoicePdf({ client, ...args });
+    expect(rows.document![0]).toMatchObject({
+      readGroups: ["user-sales"],
+      writeGroups: ["user-sales"]
+    });
+  });
+
+  it("moves a PDF filed for no one to the sales person on the next run", async () => {
+    const { client, tables: rows } = fakeClient({
+      ...tables(draftInvoice({ status: "Submitted" })),
+      salesInvoiceLine: [
+        { invoiceId: "inv-1", companyId: "co-1", rentalAgreementId: "ra-1" }
+      ],
+      rentalAgreement: [
+        {
+          id: "ra-1",
+          companyId: "co-1",
+          salesPersonId: null,
+          createdBy: "user-creator"
+        }
+      ],
+      document: [
+        {
+          id: "doc-1",
+          companyId: "co-1",
+          path: "co-1/opportunity/opp-1/Acme - INV-1.pdf",
+          readGroups: ["system"],
+          writeGroups: ["system"]
+        }
+      ]
+    });
+    await attachPostedInvoicePdf({ client, ...args });
+    expect(rows.document).toHaveLength(1);
+    expect(rows.document![0]).toMatchObject({
+      readGroups: ["user-creator"],
+      writeGroups: ["user-creator"]
+    });
+  });
+
+  it("files a PDF with no recurring source for the system only", async () => {
+    const { client, tables: rows } = fakeClient(
+      tables(draftInvoice({ status: "Submitted" }))
+    );
+    await attachPostedInvoicePdf({ client, ...args });
+    expect(rows.document![0]).toMatchObject({ readGroups: ["system"] });
+  });
+
+  it("files nothing for an invoice that is not posted", async () => {
+    const { client, tables: rows } = fakeClient(tables(draftInvoice()));
+    expect(await attachPostedInvoicePdf({ client, ...args })).toEqual({
+      attached: false
+    });
+    expect(rows.document).toHaveLength(0);
+  });
+
+  it("an email after it reuses the filed PDF rather than filing another", async () => {
+    const { client, tables: rows } = fakeClient({
+      ...tables(draftInvoice({ status: "Submitted" })),
+      customerContact: [
+        {
+          id: "cc-1",
+          companyId: "co-1",
+          contact: { email: "ap@buyer.com", firstName: "Ana", lastName: "B" }
+        }
+      ],
+      companySettings: [
+        { id: "co-1", accountsReceivableEmail: null, defaultCustomerCc: [] }
+      ],
+      customer: [{ id: "cust-1", companyId: "co-1", defaultCc: [] }],
+      salesInvoiceLine: []
+    });
+    await attachPostedInvoicePdf({ client, ...args });
+    await emailPostedInvoice({ client, ...args });
+    expect(rows.document).toHaveLength(1);
+    expect(sendEmail.mock.calls[0]![0].attachments[0].filename).toBe(
+      "Acme - INV-1.pdf"
+    );
   });
 });

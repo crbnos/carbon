@@ -26,6 +26,7 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
+  LuListChecks,
   LuPanelLeft,
   LuPlay,
   LuTrash
@@ -72,6 +73,8 @@ const RentalAgreementHeader = ({
   const isDraft = status === "Draft";
   const isActive = status === "Active";
   const hasLines = lines.length > 0;
+  // Activation refuses a unit at no rate.
+  const hasUnpricedUnit = lines.some((line) => Number(line.rate) <= 0);
   const allLinesBack = lines.every(
     (line) => line.status === "Returned" || line.status === "Sold"
   );
@@ -240,9 +243,21 @@ const RentalAgreementHeader = ({
             )}
             {isDraft && (
               <Button
+                variant="secondary"
+                leftIcon={<LuListChecks />}
+                isDisabled={!canUpdate}
+                asChild
+              >
+                <Link to={path.to.rentalAgreementSetup(id, "units")}>
+                  <Trans>Continue Setup</Trans>
+                </Link>
+              </Button>
+            )}
+            {isDraft && (
+              <Button
                 variant="primary"
                 leftIcon={<LuPlay />}
-                isDisabled={!canUpdate || !hasLines}
+                isDisabled={!canUpdate || !hasLines || hasUnpricedUnit}
                 onClick={() => open("activate")}
               >
                 <Trans>Activate</Trans>

@@ -5,23 +5,23 @@
 import { cn, Heading } from "@carbon/react";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
-import type { ContractSetupStep } from "./ContractSetupSteps";
-import ContractSetupSteps from "./ContractSetupSteps";
 
 /** The whole setup page: a header with the title and the steps, then the
  *  step's body and its sticky footer. Owns the page's scroll, so the footer
  *  stays in view however long the step is. */
-export const ContractSetupFrame = ({
+export const SetupFrame = ({
   title,
   subtitle,
+  steps,
   step,
-  contractId,
   children
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
-  step: ContractSetupStep;
-  contractId?: string;
+  /** The stepper (`SetupSteps`). */
+  steps: ReactNode;
+  /** The current step: a new one scrolls the page back to the top. */
+  step: string;
   children: ReactNode;
 }) => {
   // The frame outlives the steps, so a new step starts at the top.
@@ -48,7 +48,7 @@ export const ContractSetupFrame = ({
               </p>
             )}
           </div>
-          <ContractSetupSteps current={step} contractId={contractId} />
+          {steps}
         </div>
       </header>
       <div className="flex w-full flex-1 flex-col">{children}</div>
@@ -57,7 +57,7 @@ export const ContractSetupFrame = ({
 };
 
 /** A step's content: centred, capped and generously spaced. */
-export const ContractSetupBody = ({ children }: { children: ReactNode }) => (
+export const SetupBody = ({ children }: { children: ReactNode }) => (
   <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-4 py-10 md:px-8">
     {children}
   </div>
@@ -66,7 +66,7 @@ export const ContractSetupBody = ({ children }: { children: ReactNode }) => (
 /** One group of a step: a heading, one muted line saying what it is for, an
  *  optional action on the right, then its content. Groups after the first
  *  are separated by a hairline. */
-export const ContractSetupSection = ({
+export const SetupSection = ({
   title,
   description,
   actions,
@@ -102,9 +102,9 @@ export const ContractSetupSection = ({
   </section>
 );
 
-/** The setup page's bottom bar: the contract total on the left, the way
- *  back and the way on to the right. Sticks to the bottom of the page. */
-export const ContractSetupFooter = ({
+/** The setup page's bottom bar: a running total on the left, the way back
+ *  and the way on to the right. Sticks to the bottom of the page. */
+export const SetupFooter = ({
   summary,
   actions
 }: {

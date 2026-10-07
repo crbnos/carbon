@@ -632,7 +632,7 @@ async function rollBillingPeriodsForward(
  *  SN-1001", "… · 31 days · Month rate — …" (a Monthly unit on a Calendar
  *  Month agreement is its month rate prorated by days, so it names no unit
  *  count), or for an early-return credit "Early return credit — 3 days used". */
-function rentLineDescription(period: {
+export function rentLineDescription(period: {
   cycle: Database["public"]["Enums"]["rentalBillingCycle"];
   periodStart: string;
   periodEnd: string;
@@ -642,9 +642,13 @@ function rentLineDescription(period: {
   assetName: string | null;
   serialNumber: string | null;
 }): string {
-  const unit = [period.assetName, period.serialNumber]
-    .filter(Boolean)
-    .join(" ");
+  // A unit capitalized from stock is named "<item> <serial>": its serial is
+  // named once, not twice.
+  const serial =
+    period.serialNumber && !period.assetName?.includes(period.serialNumber)
+      ? period.serialNumber
+      : null;
+  const unit = [period.assetName, serial].filter(Boolean).join(" ");
   if (period.isAdjustment) {
     return `Early return credit — ${period.days} days used${unit ? ` — ${unit}` : ""}`;
   }

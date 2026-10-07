@@ -2175,6 +2175,14 @@ export const path = {
       generatePath(`${x}/rental-agreement/${id}/${lineId}/return`),
     rentalAgreementLineSell: (id: string, lineId: string) =>
       generatePath(`${x}/rental-agreement/${id}/${lineId}/sell`),
+    rentalAgreementLinesAdd: (id: string) =>
+      generatePath(`${x}/rental-agreement/${id}/lines/add`),
+    rentalAgreementLineUpdate: (id: string, lineId: string) =>
+      generatePath(`${x}/rental-agreement/${id}/${lineId}/update`),
+    rentalAgreementSetup: (
+      id: string,
+      step: "details" | "units" | "billing" | "accounting" | "review"
+    ) => generatePath(`${x}/rental-agreement/${id}/setup/${step}`),
     rentalAgreementStatus: (id: string) =>
       generatePath(`${x}/rental-agreement/${id}/status`),
     rentalAgreements: `${x}/sales/rental-agreements`,

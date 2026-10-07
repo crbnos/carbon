@@ -9,6 +9,28 @@ Activation decides each unit's **accounting treatment**: **Rental** or **Sale**,
 
 Rental agreements live under **Sales → Rental Agreements**, and the quickest way to start one is the **"Rent"** action on an available unit in the Fleet register.
 
+## Setting up an agreement
+
+A new agreement opens a five-step setup. **"Next"** on the first step saves it as a draft, and later steps save as you edit. Opening a draft continues its setup if you can edit sales; anyone else sees its page.
+
+<Steps>
+<Step>
+**Details.** The customer, **"Rental Site"**, **"Customer Contact"** and **"Shipping Location"**, then the term: *Open-ended* or *Fixed Term* with its **"End Date"**, from the **"Start Date"**. Under **More Details**, the sales person, currency and notes.
+</Step>
+<Step>
+**Units.** **"Add Units"** adds several available fleet units at once, each at its [rate on file](#rates) for the frequency you choose, or at no rate when there is none. Click a cell to change a unit's **"Rate Frequency"** or **"Rate"**. A serial number missing from the list is not in the fleet yet: on the part's **Inventory** tab, find it under **Storage Units** and choose **"Capitalize as Fixed Asset"**.
+</Step>
+<Step>
+**Billing.** The **"Billing Cycle"** and **"Billing Timing"** ([billing](#billing)), **"Payment Terms"**, **"Deposit"**, **"Tax Percent"**, and what happens to each invoice once it is created.
+</Step>
+<Step>
+**Accounting.** How each unit would be [accounted for](#accounting-treatment). A fixed-term agreement also takes the discount rate, purchase option and end-of-term terms, and each unit's fair value, economic life and residual values.
+</Step>
+<Step>
+**Review.** A summary, a linked list of anything that blocks **"Activate"** (no units, or a unit with no rate), and the commencement journal of each unit treated as a sale. **"Activate"** is here, and **"Save as Draft"** returns to the list.
+</Step>
+</Steps>
+
 ## Lifecycle
 
 <StatusFlow entity="rentalAgreement">
@@ -18,7 +40,7 @@ Rental agreements live under **Sales → Rental Agreements**, and the quickest w
   <Status name="Cancelled" terminal>Abandoned before anything was billed; units are released.</Status>
 </StatusFlow>
 
-**"Activate"** checks every unit and reports every problem in one message. Each unit must be available (or held by this agreement), in service, and an Active or Fully Depreciated asset, and it needs a [rate](#rates).
+**"Activate"** checks every unit and reports every problem in one message. Each unit must be available (or held by this agreement), in service, and an Active or Fully Depreciated asset, and it needs a [rate](#rates) above zero.
 
 Activation then fixes each unit's rate, so a later price change never touches a live agreement, cuts the billing periods, and [decides each unit's accounting treatment](#accounting-treatment). A unit treated as a rental posts nothing to the ledger; a unit treated as a sale books its [commencement](#commencement). The terms and units are fixed from here on.
 
@@ -274,6 +296,9 @@ A unit was added without a rate (from the Fleet register's **"Rent"** action, or
 
 ### "UNIT is treated as a sale, which on a Calendar Month agreement needs a monthly rate"
 A Daily or Weekly unit bills a different amount each calendar month, and a sale is valued as a level monthly payment that its invoices must match. Make the unit Monthly, or use a 28 Days agreement.
+
+### "UNIT has no rate; enter its rate before activating"
+A unit at a rate of zero would go on rent and bill nothing. Set its **"Rate"** on the setup's Units step, or on the unit's page.
 
 ### "Add at least one fleet unit before activating the agreement" / "Every line needs a fleet unit"
 The agreement has no units, or a line has no fleet unit.
