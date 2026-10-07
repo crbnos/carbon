@@ -2822,6 +2822,8 @@ const importCsv = defineServerFn({
             workCenterInserts: workCenterInserts.length,
             workCenterUpdates: workCenterUpdates.length
           });
+          summary.inserted += workCenterInserts.length;
+          summary.updated += workCenterUpdates.length;
 
           if (workCenterInserts.length > 0) {
             const inserted = await inChunks(workCenterInserts, (rows) =>
@@ -2941,6 +2943,8 @@ const importCsv = defineServerFn({
             processInserts: processInserts.length,
             processUpdates: processUpdates.length
           });
+          summary.inserted += processInserts.length;
+          summary.updated += processUpdates.length;
 
           if (processInserts.length > 0) {
             const inserted = await inChunks(processInserts, (rows) =>
