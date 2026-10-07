@@ -99,8 +99,7 @@ import {
   type shelfLifeTriggerTimings,
   type supplierPartValidator,
   type toolValidator,
-  type unitOfMeasureValidator,
-  withoutOnshapeOwnedFields
+  type unitOfMeasureValidator
 } from "./items.models";
 import {
   checkMaterialProperties,
@@ -115,7 +114,6 @@ import {
   sentFields,
   sentMaterialProperties
 } from "./material-properties";
-import { checkItemIdentityEdit } from "./onshape-lock";
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
@@ -4135,41 +4133,20 @@ export async function upsertPart(
     return newPart;
   }
 
-  // Resolved first: the Onshape link is keyed by item id, and `part.id` may
-  // be the readable id.
-  const resolved = await resolveTypedItemRevision(client, {
-    id: part.id,
-    companyId: part.companyId,
-    type: "Part"
-  });
-  if (resolved.error) return resolved;
-
-  const identity = await checkItemIdentityEdit(client, {
-    companyId: part.companyId,
-    itemIds: [resolved.data.id],
-    name: part.name,
-    description: part.description
-  });
-  if (identity.error) return identity;
-
-  const item = {
-    name: part.name,
-    description: part.description,
-    replenishmentSystem: part.replenishmentSystem,
-    defaultMethodType: part.defaultMethodType,
-    itemTrackingType: part.itemTrackingType,
-    unitOfMeasureCode: part.unitOfMeasureCode,
-    active: true
-  };
   const updated = await updateTypedItem(client, {
-    id: resolved.data.id,
+    id: part.id,
     companyId: part.companyId,
     updatedBy: part.updatedBy,
     type: "Part",
-    item:
-      identity.data.linkedItemIds.length > 0
-        ? withoutOnshapeOwnedFields(item)
-        : item,
+    item: {
+      name: part.name,
+      description: part.description,
+      replenishmentSystem: part.replenishmentSystem,
+      defaultMethodType: part.defaultMethodType,
+      itemTrackingType: part.itemTrackingType,
+      unitOfMeasureCode: part.unitOfMeasureCode,
+      active: true
+    },
     typed: { customFields: part.customFields }
   });
   if (updated.error) return updated;
@@ -4218,17 +4195,6 @@ export async function updateItem(
     shelfLifeCalculateFromBom: _shelfLifeCalculateFromBom,
     ...row
   } = item;
-
-  // `sanitize` writes a key that is present but undefined as null, and leaves
-  // an absent key alone; the check reads the edit the same way.
-  const identity = await checkItemIdentityEdit(client, {
-    companyId: item.companyId,
-    itemIds: [item.id],
-    name: item.name,
-    description: "description" in item ? (item.description ?? null) : undefined
-  });
-  if (identity.error) return identity;
-
   return client
     .from("item")
     .update(sanitize(row))
