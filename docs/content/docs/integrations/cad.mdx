@@ -354,10 +354,19 @@ has one of two settings:
   field; an empty item field or description is never written.
 
 **Set up Buy or Make.** Onshape has no Buy/Make property. Create a list property in
-Onshape, for example *Make or buy*, with the options Buy, Make, and Buy and Make, and
-give it the default Make. Map it to Replenishment here. Change the value on the parts
-your company buys. Parts from Onshape's Standard content library (fasteners and other
-hardware) come in as Buy when no property gives a value.
+Onshape, for example *Make or buy*, with the options Buy, Make, and Buy and Make. Map
+it to Replenishment here. Set the value on the parts your company buys. Parts from
+Onshape's Standard content library (fasteners and other hardware) come in as Buy when
+no property gives a value.
+
+- Carbon matches a list value by its display name in Onshape, or by its value when it
+  has no display name.
+- An Onshape default is a value: every part that has no value of its own sends the
+  default. With **Update on every push**, a default replaces Carbon's value on every
+  linked item nobody set in Onshape. Leave the default empty, and the push defaults
+  decide for new items.
+- A property that applies only to parts has no value on assembly rows. Carbon writes
+  nothing there.
 
 **Refresh** re-reads the properties and the field list. **Save mappings** needs the
 **settings: update** permission in Carbon.
@@ -375,6 +384,7 @@ integration page in Carbon.
 | Panel is blank inside Onshape | The route is framed from an origin other than `*.onshape.com`, or the ERP host is unreachable from the browser. | Carbon only allows Onshape to frame it; check the ERP origin in the action URL. |
 | Sign-in popup shows *Open this page from the Carbon panel in Onshape* | The popup was opened directly, not from the panel. | Use the **Sign in to Carbon** button. |
 | *Carbon is not reachable* after sign-in | The panel token expired (12 h) or Redis is down. | **Sign in again**; check `REDIS_URL` on the server. |
+| *The yearly API limit for Carbon's Onshape app is used up* | Onshape answers every call with HTTP 402 once the yearly API limit of the account that owns the OAuth application is spent. | Raise the limit with Onshape. The owner sees its usage under **Company settings → Developer**. A publicly listed App Store application is exempt. |
 | Nothing connected, but Settings → Integrations shows Onshape installed | Only **Onshape** (pull) is connected. | Connect **Onshape V2**. |
 | Push review answers 503 | The plan store could not write to Redis. | Check `REDIS_URL`. |
 | Push review answers 410 | The 15-minute review expired, or it was already applied. | Open the review again. |

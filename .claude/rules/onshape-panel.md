@@ -310,7 +310,14 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   it; verified live for built-in properties). A reused release BOM child is
   not linked and takes no value. A list (ENUM) value is read as its option's
   label: the metadata API sends the stored value ("2"), the BOM cell the label
-  ("Released"), and `parseProperties` maps one to the other (`enumLabel`). Map
+  ("Released"), and `parseProperties` maps one to the other (`enumLabel`); an
+  option with no display name has an empty label and the value is used. A
+  company custom property's BOM column id is its property id too, hidden
+  columns included (verified live 2026-10-08). A BOM cell "N/A" is Onshape's
+  text for a property the row does not have (a part-only property on an
+  assembly row): `isNotApplicable` drops it in `parseBomTree` and reads it as
+  null in `parseProperties`. A list default reads as the value, in metadata
+  and BOM alike, for parts that never set it. Map
   empty → zero extra reads for mapped values. `loadPlanMapping` reads the map,
   the modes, the definitions and the held `part.customFields`.
 - The editor is the panel's **Fields** page: Onshape lists properties only from
@@ -400,7 +407,9 @@ in batch order, so anything relying on `.order(...)` re-sorts afterwards.
   than the source document's own BOM at the same version.
 - A refresh token still worked after seven days unused.
 - Quota: private apps debit the app owner's annual quota; publicly listed App
-  Store apps are exempt.
+  Store apps are exempt. A spent quota answers every call with HTTP 402;
+  `onshapeFailure` (`lib/onshape-failure.ts`) says so rather than "try again".
+  The owner's usage is under Company settings → Developer.
 
 ## Dev workflow
 

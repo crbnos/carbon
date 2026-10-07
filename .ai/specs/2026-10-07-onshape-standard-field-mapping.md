@@ -1,6 +1,6 @@
 # Onshape: map properties to Carbon item fields
 
-> Status: built; live push verified 2026-10-07 with built-in Onshape properties; the spikes on company custom properties (S1-S3) pending
+> Status: built; live push verified 2026-10-07 with built-in Onshape properties; S1 and S3 verified on company custom properties 2026-10-08; a push with custom properties waits on the Onshape app's yearly API limit
 > Author: Raul (with Claude)
 > Date: 2026-10-07
 > Builds on: `.ai/specs/2026-08-28-onshape-app.md` (section "Custom fields")
@@ -464,15 +464,15 @@ code is final. Use an existing release. Create no release.
 | S4 | Does a BOM row show that it comes from Standard content? | Remove precedence rule 4. The docs say so. |
 | S5 | Does the element metadata at a released version return the custom properties? | Released items use the push defaults. The docs say so. |
 
-Results (2026-10-07, on the WB-100 test documents; the development account has
-no company custom property yet, so S1-S3 are answered for built-in properties
-only):
+Results (2026-10-07 on the WB-100 test documents with built-in properties;
+2026-10-08 with three company custom properties: a list with a default, a text
+and a list without a default, all scoped to parts):
 
 | # | Result |
 |---|--------|
-| S1 | Yes for built-in properties: every one comes back with `onlyVisibleColumns=false`, and its header id is its property id. A custom property is not yet checked. |
-| S2 | The metadata API gives a list's stored value (State "2"), the BOM cell its label ("Released"). `parseProperties` now reads the label from `enumValues`, so a part push and a BOM row give the same text. A custom list's options are not yet checked. |
-| S3 | Not checked: it needs a custom property with a default. |
+| S1 | Yes: every property, built-in or custom, comes back with `onlyVisibleColumns=false` (custom columns hidden in the BOM table too), and its header id is its property id. A part-only property's cell on an assembly row is the text "N/A"; `isNotApplicable` reads it as no value, on BOM rows and part pushes alike. |
+| S2 | The metadata API gives a list's stored value (State "2"), the BOM cell its label ("Released"). `parseProperties` now reads the label from `enumValues`, so a part push and a BOM row give the same text. A custom list's options come back in `enumValues` (and in the BOM row's `selectedMetadataEnumValues`); an option with no display name has an empty label, and the value is used. Onshape refuses a display name equal to the value, ignoring case. A custom list with display names is not checked. |
+| S3 | Yes: a list property created with a default reads as that value on parts that existed before it and never had it set, in the metadata and in the BOM. Carbon cannot tell a default from a set value, so with "Update on every push" a default replaces Carbon's value on every linked item. The docs say to leave the default empty. Adding a default to an existing property is not checked. |
 | S4 | Yes: `itemSource.isStandardContent` is true on every library fastener row (204 rows in one machine assembly). The fasteners in a pushed assembly came in as Buy. |
 | S5 | Yes for built-in properties: a release push read State at the released version and wrote the mapped Replenishment on the new revision. |
 
@@ -480,7 +480,7 @@ only):
 
 - `docs/content/docs/integrations/cad.mdx`: add a section on mapping item
   fields. Cover the two modes and the translation. Describe the list property
-  convention: the options Buy, Make, and Buy and Make, with the default Make.
+  convention: the options Buy, Make, and Buy and Make, with no default (S3).
   Remove "Purchasing Level", the "Show assembly only" Buy rule and the
   description lock.
 - `.claude/rules/onshape-panel.md`: describe the target list, the modes, the
@@ -548,3 +548,10 @@ only):
      shown disabled with its property, unmappable properties named, and the
      save's refusals name what fits.
   7. The panel follows Onshape's light or dark theme, light by default.
+- 2026-10-08: Spikes on company custom properties (S1-S3 results above). Fixes
+  from them:
+  1. A BOM cell "N/A" (a part-only property on an assembly row) is no value.
+  2. An Onshape 402 (the OAuth app owner's yearly API limit is spent) says so,
+     instead of "try again". The push with custom properties was not run: the
+     development app's limit is spent.
+  3. The docs no longer advise a default on the Buy/Make property.

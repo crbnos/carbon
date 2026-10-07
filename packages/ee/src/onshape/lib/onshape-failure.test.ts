@@ -74,6 +74,12 @@ describe("onshapeFailure", () => {
     expect(onshapeFailure(new OnshapeApiError("x", 404)).status).toBe(404);
   });
 
+  it("names a used-up API limit instead of asking for a retry", () => {
+    const failure = onshapeFailure(new OnshapeApiError("x", 402));
+    expect(failure.body.error).toMatch(/yearly API limit/);
+    expect(failure.body.error).not.toMatch(/Try again/);
+  });
+
   it("reports any other Onshape status without echoing its body", () => {
     const failure = onshapeFailure(
       new OnshapeApiError('Onshape API error (500): {"stack":"secret"}', 500)

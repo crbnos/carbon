@@ -90,6 +90,33 @@ describe("parseBomTree", () => {
     expect(withoutProperties(lines)[0]).not.toHaveProperty("properties");
   });
 
+  it("drops a cell Onshape fills with N/A, a property the row does not have", () => {
+    const { lines } = parseBomTree({
+      headers: [
+        ...H,
+        { id: "p-make", name: "Make or Buy", valueType: "ENUM" },
+        { id: "p-mpn", name: "MPN", valueType: "STRING" }
+      ],
+      rows: [
+        {
+          headerIdToValue: {
+            "h-item": "1",
+            "h-pn": "ASM-100",
+            "h-qty": 1,
+            "h-pl": "",
+            "p-make": "N/A",
+            "p-mpn": "N/A"
+          }
+        }
+      ]
+    });
+    expect(lines[0]?.properties?.map((property) => property.name)).toEqual([
+      "Item",
+      "Part number",
+      "Quantity"
+    ]);
+  });
+
   it("does not read the Purchasing Level column as Buy", () => {
     const { lines } = parseBomTree({
       headers: H,

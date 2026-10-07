@@ -97,6 +97,18 @@ export function onshapeFailure(
     };
   }
 
+  // Onshape answers 402 to every call once the yearly API limit of the
+  // account that owns the OAuth app is used up. A retry cannot help.
+  if (status === 402) {
+    return {
+      status: 502,
+      body: {
+        error:
+          "Onshape refused the request: the yearly API limit for Carbon's Onshape app is used up. Ask your Carbon administrator to raise it with Onshape."
+      }
+    };
+  }
+
   return {
     status: 502,
     body: {

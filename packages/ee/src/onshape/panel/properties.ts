@@ -205,6 +205,15 @@ function enumLabel(value: unknown, options: unknown): unknown {
   return typeof label === "string" && label.trim() !== "" ? label : value;
 }
 
+/**
+ * Onshape's text for a property the object does not have: a BOM row shows
+ * "N/A" for a part-only property on an assembly row. It is no value. A value
+ * typed as "N/A" reads the same way on a part push, so both paths agree.
+ */
+export function isNotApplicable(value: unknown): boolean {
+  return typeof value === "string" && value.trim() === "N/A";
+}
+
 /** The `properties` array of a metadata payload, normalised. */
 export function parseProperties(payload: unknown): OnshapePropertyValue[] {
   const properties = isRecord(payload) ? payload.properties : null;
@@ -220,8 +229,9 @@ export function parseProperties(payload: unknown): OnshapePropertyValue[] {
       propertyId,
       name,
       valueType: typeof valueType === "string" ? valueType : "STRING",
-      value:
-        valueType === "ENUM"
+      value: isNotApplicable(property.value)
+        ? null
+        : valueType === "ENUM"
           ? enumLabel(property.value, property.enumValues)
           : property.value,
       editable:

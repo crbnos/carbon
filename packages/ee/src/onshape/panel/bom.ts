@@ -18,7 +18,7 @@
  * company's property map like a part.
  */
 
-import type { OnshapePropertyValue } from "./properties";
+import { isNotApplicable, type OnshapePropertyValue } from "./properties";
 
 export type OnshapeBomNode = {
   /** Dotted position, e.g. "1.2". The top-level assembly row is "0". */
@@ -127,7 +127,7 @@ export function parseBomTree(payload: unknown): {
     const properties: OnshapePropertyValue[] = [];
     for (const header of headers) {
       const value = row.headerIdToValue?.[header.id];
-      if (cell(value) === null) continue;
+      if (cell(value) === null || isNotApplicable(value)) continue;
       properties.push({
         propertyId: header.id,
         name: header.name,

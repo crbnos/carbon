@@ -100,6 +100,15 @@ describe("parseProperties", () => {
     expect(unit?.value).toBe("Each");
     expect(unknown?.value).toBe("9");
   });
+
+  it("reads N/A as no value, as a BOM row does", () => {
+    const [mpn] = parseProperties({
+      properties: [
+        { propertyId: "p1", name: "MPN", valueType: "STRING", value: "N/A" }
+      ]
+    });
+    expect(mpn?.value).toBeNull();
+  });
 });
 
 describe("partPropertiesFromElementMetadata", () => {
