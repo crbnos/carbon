@@ -4,7 +4,7 @@
 
 // Which drafted contract invoices a person must review before invoice
 // automation posts them. Pure, so the generator and its tests agree.
-// Spec: .ai/specs/2026-10-02-contracts.md
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III
 
 import {
   type InvoiceAutomation,

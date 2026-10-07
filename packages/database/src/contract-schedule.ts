@@ -12,8 +12,8 @@
 // no JS `Date`. Calendar arithmetic is `@internationalized/date`; amounts round
 // at internal scale through `./precision` (persist boundary — the caller writes
 // what these functions return).
-// Spec: .ai/specs/2026-10-02-contracts.md "The invoice schedule";
-// plan: .ai/plans/2026-10-03-contracts-phase-a.md decisions 8–10, Task 5.
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III "The invoice schedule";
+// plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III decisions 8–10, Task 5.
 
 import {
   type CalendarDate,

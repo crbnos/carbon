@@ -786,7 +786,7 @@ export type Events = {
   };
 
   // Invoice automation: post (and email) one drafted recurring invoice.
-  // Spec: .ai/specs/2026-10-02-rental-invoice-automation.md
+  // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II
   "carbon/invoice.automate": {
     data: {
       companyId: string;

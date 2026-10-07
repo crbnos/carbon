@@ -6,7 +6,7 @@
 // per (line, calendar month). Shared by `post-customer-contract` and
 // `create-contract-invoices`. Every statement is scoped by `companyId`, and
 // each logical write is one set-based statement.
-// Plan: .ai/plans/2026-10-04-contracts-wizard-phase-b.md (D1, D2, D8, D9).
+// Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV (D1, D2, D8, D9).
 
 import type { KyselyTx } from "@carbon/database/client";
 import {

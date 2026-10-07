@@ -1,6 +1,6 @@
 # Verification runs: revenue recognition and rentals
 
-Browser verification of each phase of `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md` (spec `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md`), one section per phase, in order. Each records its own date, commit and environment.
+Browser verification of each phase of `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I (spec `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I), one section per phase, in order. Each records its own date, commit and environment.
 
 ## Phase A — recognition core (Task 18)
 
@@ -9,7 +9,7 @@ Browser verification of each phase of `.ai/plans/implemented/2026-09-22-revenue-
 - Commit: 371ffc0f5f
 - URL: https://erp.revenue-recognition-rentals-spec.dev (company "Carbon Development", timezone UTC)
 - Mode: verify only — no code changes, no DB writes outside the UI; SQL cross-checks are read-only via `pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -tAc`
-- Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md` Task 18; spec `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` §1
+- Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I Task 18; spec `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §1
 - Note: a previous attempt was interrupted before writing anything; it left Draft invoice `AR000002` (si_7sbouNFK5GGm7YtA1XgDhg, Apex Space Research, no lines). `AR000001` is an older unrelated Draft (Part line) and was left alone.
 
 ### Starting state (SQL, before any check)
@@ -229,7 +229,7 @@ Left as-is: revenue-recognition toggle ON; October 2026 Locked; runs RR000001/RR
 - Commit: 9d2cf1fcab (HEAD at the time the browser run started; 7cf5f42130 when the task was handed over)
 - URL: https://erp.revenue-recognition-rentals-spec.dev (company "Carbon Development", timezone UTC)
 - Mode: verify only — no code changes, no DB writes outside the UI; SQL cross-checks are read-only via `pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -tAc`
-- Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md` Task 31; spec `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` §2; rule `.claude/rules/fixed-asset-lifecycle.md`
+- Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I Task 31; spec `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §2; rule `.claude/rules/fixed-asset-lifecycle.md`
 - Browser: isolated `agent-browser` session `AGENT_BROWSER_SESSION=revrec-lagos-b`, dev-bypass login as test@carbon.ms
 - Environment note: the ERP Vite dev server (pid 27897, `crbn up --all --no-migrate --no-regen`) was mid cold-compile when the run started; `/login` returned no bytes for ~50 min (99 % CPU in rolldown workers) and the first request completed after 294 s, after which the app answered in ~0.1 s.
 
@@ -516,7 +516,7 @@ Consequence: every id recorded for checks (a), (b) and the W-1 registration abov
 - URL: https://erp.revenue-recognition-rentals-spec.dev, company "Carbon Development" (`dapm0k5hs0gg26itf610`), dev-bypass login test@carbon.ms
 - Browser: `AGENT_BROWSER_SESSION=verify-phase-c`
 - Mode: verify only, no code changes. Data created through the UI and the route actions it calls. Read-only SQL through `docker exec … psql`; three diagnostic INSERTs ran inside `BEGIN … ROLLBACK` (nothing persisted). **One accidental write**, disclosed under Environment.
-- Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md` Task 46; spec §3 + Acceptance Criteria; user doc `docs/content/docs/reference/rental-agreements.mdx`.
+- Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I Task 46; spec §3 + Acceptance Criteria; user doc `docs/content/docs/reference/rental-agreements.mdx`.
 
 ### Result summary
 

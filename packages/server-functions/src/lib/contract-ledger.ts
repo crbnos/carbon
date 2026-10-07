@@ -8,7 +8,7 @@
 // company's position lock, reads each touched line's position (Σ of its
 // entries) and applies its movements to it through `applyContractMovement`
 // (`@carbon/database/contract-position`). Plan:
-// .ai/plans/2026-10-04-contracts-wizard-phase-b.md (D3–D7)
+// `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV (D3–D7)
 
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {

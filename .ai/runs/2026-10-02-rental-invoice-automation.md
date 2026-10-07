@@ -1,6 +1,6 @@
 # Execution log — rental invoice automation
 
-Plan: `.ai/plans/2026-10-02-rental-invoice-automation.md`. Context: `.ai/runs/2026-10-02-contracts.md` (U1–U4, G7).
+Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II. Context: `.ai/runs/2026-10-02-contracts.md` (U1–U4, G7).
 
 ## Task 1 — baseline
 - Committed the uncommitted spec/plan docs (c59a49e52d), merged origin/main (a528a17865). 24 conflicts, none in the plan's stop-list files. Main's side of the 13 UI conflicts was only the `MENU_ITEM_SHORTCUTS` Delete/Edit shortcut; HEAD had moved those menus into `*Header` components (DocumentPage), so HEAD was kept and the shortcut re-applied there. `invoicing.service.ts` / `sales.service.ts`: main's column-strip destructure combined with HEAD's service period. Fixed-asset docs: HEAD text kept (describes building/capitalizing/work-center link). MCP digest regenerated.

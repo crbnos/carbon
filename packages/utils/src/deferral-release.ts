@@ -7,7 +7,7 @@
 // latest Planned rows first (the cancelled days are at the end of the period)
 // and only what no Planned row still holds comes out of Sales — that part was
 // already recognized. Pure, so the memo posting and its tests agree.
-// Plan: .ai/plans/2026-10-03-contracts-phase-a.md (decision 4, Task 14)
+// Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III (decision 4, Task 14)
 
 import { equals, round } from "@carbon/database/precision";
 

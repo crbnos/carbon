@@ -1,6 +1,6 @@
 # Contract Exchange Rates Research: Best Practices Survey
 
-Date: 2026-10-04. Context: the contracts spec (`.ai/specs/2026-10-02-contracts.md`) and the Phase A run log (`.ai/runs/2026-10-02-contracts.md`, BUG-2 and the "FX" row of the self-review fixes).
+Date: 2026-10-04. Context: the contracts spec (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III) and the Phase A run log (`.ai/runs/2026-10-02-contracts.md`, BUG-2 and the "FX" row of the self-review fixes).
 
 ## Summary
 

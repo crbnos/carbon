@@ -537,7 +537,7 @@ export const POSTING_POLICY: Record<
   },
   // Off by default like the returns types above: a new journal type must never
   // start pushing to a customer's external ledger unasked (plan decision 1,
-  // .ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md).
+  // `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I).
   "Revenue Recognition": {
     representation: "journal",
     defaultEnabled: false,

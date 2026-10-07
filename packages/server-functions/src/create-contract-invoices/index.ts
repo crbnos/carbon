@@ -9,8 +9,8 @@
 // horizon, draft every Planned invoice that is due, and end a contract that
 // has run its course. Posting stays with post-sales-invoice (and invoice
 // automation): this only drafts.
-// Spec: .ai/specs/2026-10-02-contracts.md; plan:
-// .ai/plans/2026-10-03-contracts-phase-a.md Task 12.
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III; plan:
+// `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III Task 12.
 
 import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";

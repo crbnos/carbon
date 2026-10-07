@@ -33,7 +33,7 @@ type DraftedInvoice = {
 
 /**
  * The one daily job for every recurring-invoice source — rental agreements
- * and AR contracts (.ai/specs/2026-10-02-contracts.md): draft what is due,
+ * and AR contracts (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III): draft what is due,
  * run invoice automation over the drafts, and send each owner one digest.
  */
 export const recurringBillingFunction = inngest.createFunction(

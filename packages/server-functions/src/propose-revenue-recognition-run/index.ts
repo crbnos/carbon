@@ -6,7 +6,7 @@
 // routes and the monthly Inngest job, so a human and the scheduler propose exactly the same
 // rows for a period. Posting stays in the ERP (accounting.server.ts): it is a
 // human action under the period matrix.
-// Spec: .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md §1
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §1
 
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";

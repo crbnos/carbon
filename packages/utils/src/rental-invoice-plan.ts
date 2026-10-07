@@ -5,7 +5,7 @@
 // How one rental agreement's due lines become invoices under invoice
 // automation: which invoices to draft and which of them a person must review
 // before they are posted. Pure, so the generator and its tests agree.
-// Spec: .ai/specs/2026-10-02-rental-invoice-automation.md
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II
 
 import type { Database } from "@carbon/database";
 

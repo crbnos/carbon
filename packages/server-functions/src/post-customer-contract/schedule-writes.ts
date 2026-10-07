@@ -6,7 +6,7 @@
 // `create-contract-invoices`: lock and load a contract, translate its rows into
 // the pure planner's types (`@carbon/database/contract-schedule`), and write
 // what the planner returns. Every statement is scoped by `companyId`.
-// Plan: .ai/plans/2026-10-03-contracts-phase-a.md Task 9 step 2.
+// Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III Task 9 step 2.
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase, KyselyTx } from "@carbon/database/client";

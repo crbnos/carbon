@@ -9595,7 +9595,7 @@ export async function getRentalAgreementDeposits(
 }
 
 // ----------------------------------------------------------------------
-// Customer contracts (.ai/specs/2026-10-02-contracts.md). Confirm, schedule
+// Customer contracts (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III). Confirm, schedule
 // edits, amend, cancel and revert go through the `post-customer-contract`
 // server function; invoices are drafted by `create-contract-invoices`. These
 // are the plain reads and the Draft-stage writes. They are MCP tools, so they

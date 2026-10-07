@@ -1,13 +1,33 @@
-# Revenue Recognition Core + Rental Fleet (Sell vs. Rent Manufactured Units)
+# Revenue Recognition, Rentals and Contracts
 
-> Status: implemented (2026-10-04). Phases A–D built and browser-verified (`.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`); plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md`. Open questions resolved 2026-09-22 (N1–N6 accepted by Brad, N7–N16 recommended and not vetoed).
+> Status: implemented (2026-10-07). Every Part is built and browser-verified, except one check in Part II: the email send and the "Recurring invoicing" digest have not been run against a live SMTP server (plan Part II, Task 21).
+> Consolidated 2026-10-07 from the three specs below (each kept verbatim as a Part) plus the decisions that until then lived only in plans (Part IV) and the later changes that had no spec (Part V).
+> Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` (Parts I–VI).
+> Run logs: `.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`, `.ai/runs/2026-10-02-rental-invoice-automation.md`, `.ai/runs/2026-10-02-contracts.md`.
+> Acceptance-criteria checklists are kept as written; an unticked box is a criterion, not an open task.
+
+## Contents
+
+| Part | Scope | Was |
+|---|---|---|
+| I | Revenue recognition and rentals | `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` |
+| II | Recurring invoicing (rental invoice automation) | `.ai/specs/2026-10-02-rental-invoice-automation.md` |
+| III | Contracts | `.ai/specs/2026-10-02-contracts.md` |
+| IV | Period runs: one Draft per period, per-month journals, Reverse Run, the close checklist's run preview | decisions in plan Parts V and VI |
+| V | Later changes: the rental agreement setup wizard; capitalization cost | no spec |
+
+# Part I — Revenue recognition and rentals
+
+> Was `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` ("Revenue Recognition Core + Rental Fleet (Sell vs. Rent Manufactured Units)"), merged here verbatim on 2026-10-07. Decision, question and section numbers in this Part (D1, Q3, §2, Task 4) are its own.
+
+> Status: implemented (2026-10-04). Phases A–D built and browser-verified (`.ai/runs/2026-09-22-revenue-recognition-and-rentals.md`); plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I. Open questions resolved 2026-09-22 (N1–N6 accepted by Brad, N7–N16 recommended and not vetoed).
 > Author: Claude (with Brad Barbin)
 > Date: 2026-09-22
 > Tracking issues: crbnos/carbon#1048 (revenue recognition — this spec is its Phase 1), crbnos/carbon#1056 (leases — this spec supersedes the lessor slice), crbnos/carbon#1041 (fixed assets — this spec defines the inventory→asset bridge the make/CIP work reuses), crbnos/carbon#1060 (program tracker)
 > Research: `.ai/research/2026-09-21-sell-vs-rent-rental-revenue-recognition.md`
 > Related specs: `.ai/specs/2026-07-04-revenue-recognition.md` (full ASC 606 model; its SSP allocation, arrangements and POC become Phases 2–3 on the substrate built here), `.ai/specs/2026-07-04-lease-accounting.md` (lessee accounting, modifications, IFRS 16 delta stay there), `.ai/specs/archived/2026-07-04-fixed-assets-completeness.md` (components / impairment / reclassification; its CIP scope is carried here), `.ai/specs/2026-07-04-close-automation.md` (propose-only posture this spec follows), `.ai/specs/2026-08-07-rma-module.md` (tracked-entity reactivation precedent)
 
-## TLDR
+### TLDR
 
 A manufacturer that rents out a unit it built is a **lessor**. Under ASC 842 / IFRS 16 the rental is an **operating lease** unless it transfers control (bargain purchase option, term covering most of the economic life, PV ≥ substantially all of fair value…), in which case it is a **sales-type lease** — a financed sale. Carbon today can only sell: revenue posts in full at invoice, a built unit can never leave inventory except by shipment, and there is no rental document, no recurring invoicing, no deferred-revenue writer and no "at customer" state for a serial. This spec builds four things on one substrate, in the order the plan will sequence them:
 
@@ -18,7 +38,7 @@ A manufacturer that rents out a unit it built is a **lessor**. Under ASC 842 / I
 
 Every posting is period-gated and immutable through the existing journal path; every new source type gets a `POSTING_POLICY` entry; no existing posting surface changes unless a Rental line or the rev-rec flag is present.
 
-## Problem Statement
+### Problem Statement
 
 Verified in code on 2026-09-21 (details and line references in the research file's *Carbon Baseline*):
 
@@ -29,9 +49,9 @@ Verified in code on 2026-09-21 (details and line references in the research file
 
 The customer-facing consequence: a vehicle maker that rents part of its output cannot show rented vehicles on the balance sheet, cannot bill them monthly without hand-typed invoices, and cannot recognize the revenue in the right month.
 
-## Proposed Solution
+### Proposed Solution
 
-### 0. Phasing (one spec, four build phases; the plan sequences them)
+#### 0. Phasing (one spec, four build phases; the plan sequences them)
 
 | Phase | Delivers | Depends on |
 |---|---|---|
@@ -42,7 +62,7 @@ The customer-facing consequence: a vehicle maker that rents part of its output c
 
 Out of this spec (tracked elsewhere): SSP allocation, arrangements, contract modifications and POC (#1048 Phases 2–3); lessee accounting, remeasurements, disclosures package, IFRS 16 delta (#1056); components, impairment, class reclassification and CIP aging (#1041 follow-ons); bulk / non-serialized fleet units, anniversary billing cycles, payment escalations (straight-line rent receivable), maintenance-module integration for fleet units (dispatches, meter-based service intervals), MRP demand for fleet builds, FX remeasurement of the net investment, automatic machine-rate derivation from asset depreciation.
 
-### 1. Revenue recognition core (Phase A)
+#### 1. Revenue recognition core (Phase A)
 
 **Accounts** — resolved by id through `accountDefault` (never by number at posting time — `.ai/lessons.md`):
 
@@ -75,7 +95,7 @@ Deposits use the existing `prepaymentAccount` → 2110 Customer Prepayments. New
 
 **Sync.** `POSTING_POLICY` (`@carbon/ee`) gains `'Revenue Recognition'`: `representation: "journal"`, syncable, `defaultEnabled: true`. The rental *invoices* are documents and follow the AR document sync; their Rental lines have no item, so the provider mapper must send them as **account-costed lines to the deferred-revenue account** (Xero: any account code; QBO/Rillet: verified at plan stage — see Risks).
 
-### 2. Fleet bridge (Phase B)
+#### 2. Fleet bridge (Phase B)
 
 **Columns.** `fixedAsset` gains `itemId` (FK `item`), `trackedEntityId` (FK `trackedEntity`, unique per company while the asset is not Disposed), `quantity NUMERIC NOT NULL DEFAULT 1` (forward hook for bulk pools — v1 CHECK `quantity = 1`), `workCenterId` (see *Work-center link*) and `outOfServiceSince` / `outOfServiceReason` (see *Out of service*); `fixedAssetStatus` gains `'Under Construction'`. `serialNumber` is filled from `trackedEntity.readableId` on capitalization.
 
@@ -109,7 +129,7 @@ Late costs after capitalization (decided 2026-10-04) post to the now-Active asse
 
 **Fleet register.** View `fleetAssets`: `fixedAsset` where `itemId IS NOT NULL` joined to item, tracked entity, work center and the active `rentalAgreementLine`, exposing `fleetStatus` in precedence order — `Sold` (Disposed by sale), `Returned to Stock` (Disposed by transfer), `Under Construction`, `On Rent`, `In Maintenance` (`outOfServiceSince` set), `Reserved` (Active agreement, line Pending), `Available` (Active / Fully Depreciated, none of the above) — plus `customerId` / `customerLocationId` of the active line, `outOfServiceReason` and NBV. Derived, never stored.
 
-### 3. Rental agreements — operating (Phase C)
+#### 3. Rental agreements — operating (Phase C)
 
 **Placement.** Sales module (`sales.models.ts` / `sales.service.ts` / `sales.server.ts`, UI `sales/ui/Rentals/`, routes `x+/rental-agreement+/` and `x+/sales+/rental-agreements*`). The agreement is the customer-facing contract; postings live in edge functions and `accounting.server.ts`.
 
@@ -146,7 +166,7 @@ The `Rental` line type is added to `salesInvoiceLineType` only (rentals never si
 
 **Utilization.** `getRentalUtilization(companyId, { from, to, fixedAssetClassId? })`: per fleet asset (and class total) **time utilization** = on-rent days ÷ days the unit was in the fleet in the range, and **dollar utilization** = rental + lease-interest income recognized in the range ÷ Σ `acquisitionCost` (annualized) — read from agreement line dates and posted schedule rows; CSV export via the table-export surface.
 
-### 4. Sales-type leases (Phase D)
+#### 4. Sales-type leases (Phase D)
 
 **Classification** (`classifyLessorLease`, `accounting.utils.ts`, computed per line at activation and stored with its inputs): the term is `startDate → endDate` in months (open-ended ⇒ 1 month ⇒ always Operating; Sales-Type therefore requires `endDate`). Tests (ASC 842-10-25-2): (a) `ownershipTransfers`; (b) `purchaseOptionReasonablyCertain`; (c) term ≥ `companySettings.leaseMajorPartThresholdPercent` (75) % of `economicLifeMonths`; (d) PV(fixed payments + purchase option if reasonably certain + guaranteed residual) ≥ `leaseSubstantiallyAllThresholdPercent` (90) % of `fairValue`; (e) `specializedAsset`. Any true ⇒ **Sales-Type**, else **Operating**. Direct Financing (PV substantially all *only* through a third-party residual guarantee) has no input in v1 and is unreachable; the enum value exists for #1056. An override with a required reason is allowed (`update: accounting`) and audit-logged. Thresholds and `leaseDefaultDiscountRate` live on `companySettings`.
 
@@ -166,7 +186,7 @@ Selling profit = PVpay − (C − PVres), stored on the line. Balanced by constr
 
 **End of term.** *Purchase option exercised*: the agreement's "Sell to customer" action bills a `Purchase Option` Rental line (Dr AR / Cr 1160); the line becomes `Sold`. *Returned with unguaranteed residual*: `return` posts Dr class asset account (into the Rental Fleet class as a new fleet asset at the residual, or Dr Finished Goods when returned to stock) / Cr 1160 for the closing net investment; the tracked entity is reactivated as in §2. *Ownership transfers*: nothing remains. Early termination of a Sales-Type line is a manual journal in v1 (blocked in the UI with that message).
 
-### Design Decisions
+#### Design Decisions
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
@@ -179,7 +199,7 @@ Selling profit = PVpay − (C − PVres), stored on the line. Balanced by constr
 | 7 | Rental revenue timing | `Rental` lines always defer; the run releases and accrues unbilled rent to contract assets | One rule for advance and arrears; period-correct regardless of invoice posting date |
 | 8 | Recognition vehicle | `revenueRecognitionRun` Draft → Posted batch (depreciation-run pattern) | Propose-only posture (close-automation decision, Brad 2026-07-04); no hook into `postJournalEntry`; approvable batch |
 | 9 | Schedule rows carry accounts | `debitAccountId` / `creditAccountId` captured at creation | The run stays a pure poster; new methods add rows, not branches |
-| 10 | Billing | Calendar Month (prorated month tier) or 28 Days (thirteen per year, day / week / month ladder), advance or arrears, Draft invoices proposed daily, one invoice per agreement per cycle | Texada / point-solution convention (research §4); anniversary cycles later. **Propose-only superseded by `2026-10-02-rental-invoice-automation.md`** (Draft Only / Post / Post and Email; charges split onto a held invoice when automating) |
+| 10 | Billing | Calendar Month (prorated month tier) or 28 Days (thirteen per year, day / week / month ladder), advance or arrears, Draft invoices proposed daily, one invoice per agreement per cycle | Texada / point-solution convention (research §4); anniversary cycles later. **Propose-only superseded by Part II** (Draft Only / Post / Post and Email; charges split onto a held invoice when automating) |
 | 11 | Rates | One frequency and one rate per line, starting from customer → customer type → item rate cards (`customerItemRentalRate`, `itemRentalRate`) and editable while Draft — not pricing rules, which price one unit with quantity breaks; Best Rate removed; a Daily / Weekly unit on a Calendar Month agreement bills the days / whole weeks (amended 2026-09-28); fixed at activation; best rate per billing period with ties to the larger unit; level for the term, escalations later | Odoo cheapest-line rule + Texada single-tier rule; per-period evaluation keeps every charge non-negative and known when cut; level payments ⇒ straight-line = billing, no straight-line receivable in v1 |
 | 12 | Revenue account | Company default `rentalIncomeAccount` (+ lease accounts), fleet asset accounts per class | Flat defaults + per-entity assignment (lesson: no N×M matrix); the class already owns the balance-sheet accounts |
 | 13 | Deposits | `payment.rentalAgreementId` / `salesOrderId` → 2110 via the deposit branch; refund via existing Disbursement refund | Reuses AR/AP payment machinery; #1048's design generalized |
@@ -199,7 +219,7 @@ Selling profit = PVpay − (C − PVres), stored on the line. Balanced by constr
 | 27 | Out of service | Two columns on `fixedAsset`; fleet status derives `In Maintenance`; depreciation unaffected | Point-solution status buckets; the accounting status enum stays clean |
 | 28 | Service dates scope | Service lines only (Rental lines carry their billing period); forms, validators, upserts and posting all enforce it | Brad 2026-09-23: every Part is a physical good earned at shipment; a Service item on its own line is what splits the bundle's revenue |
 
-## Data Model Changes
+### Data Model Changes
 
 Three migrations (enums first, per the ADD VALUE transaction rule; randomized HHMMSS; idempotent), then `pnpm run generate:types`.
 
@@ -575,7 +595,7 @@ ALTER TABLE "payment"
 
 Tracked-entity attribute vocabulary (`functions/lib/utils.ts` `TrackedEntityAttributes`) gains `"Fixed Asset"` and `"Rental Agreement"`; `Customer` is written for the first time. `trackedActivity.type` values added: `Capitalize`, `Return to Inventory`, `Lease Commencement`.
 
-## API / Service Changes
+### API / Service Changes
 
 ```ts
 // accounting.service.ts (client-first, {data, error})
@@ -630,7 +650,7 @@ computePeriodReadiness: evaluator 'unposted-revenue-schedules' (see §1)
 
 Routes: `x+/sales+/rental-agreements.tsx` (+ `.new`), `x+/rental-agreement+/$id.{tsx,details,lines,$lineId,charges,activate,deliver,return,close,cancel,invoice,delete}.tsx`, `x+/sales+/item-rental-rates.tsx` (or the item's sales tab), `x+/accounting+/revenue-recognition-runs.tsx` (+ `.new`), `x+/revenue-recognition-run+/$runId.{tsx,post,repeat,delete}.tsx`, `x+/accounting+/fleet.tsx`, `x+/accounting+/revenue-waterfall.tsx`, `x+/accounting+/rental-utilization.tsx`, `x+/accounting+/lease-net-investment.tsx`, `x+/fixed-asset+/$fixedAssetId.{return-to-inventory,attach-job,capitalize,out-of-service}.tsx`, `x+/part+/$itemId.inventory.tsx` gains a per-serial "Capitalize as fixed asset" action posting to `x+/fixed-asset+/capitalize.tsx`, the job form gains a **Complete to** target (inventory / a fixed-asset class / an Under Construction asset), and the work-center detail page gains the read-only capital-cost panel. Settings: `x+/accounting+/defaults.tsx` (six new mappings), `x+/settings+/…` rev-rec flag + lease thresholds.
 
-## UI Changes
+### UI Changes
 
 - **Rental agreements** table (status, customer, units, next due, unbilled) + New form (cycle, timing, dates, deposit); detail page with Lines (fleet unit picker filtered to `Available` and in service, rate mode + the snapshotted day / week / month tiers, fair value / life / residual / classification chip with test results and override), Charges, Billing periods (days, tier applied, status, invoice link, adjustments flagged), Deposits (payments referencing the agreement), and actions Activate / Deliver / Return (with meter reading and an out-of-service checkbox) / Generate invoices / Close / Cancel with confirmation modals showing the journal preview for sales-type activation.
 - **Fleet register** (`fleetAssets`): status badges Under Construction / Available / Reserved / On Rent / In Maintenance / Sold / Returned to Stock, NBV, customer, out-of-service reason; row actions Rent (opens New agreement pre-filled), Take out of service / Return to service, Return to inventory (NBV preview); header action **Build for fleet** (opens New job with the Rental Fleet class as the completion target).
@@ -639,7 +659,7 @@ Routes: `x+/sales+/rental-agreements.tsx` (+ `.new`), `x+/rental-agreement+/$id.
 - **Sales invoice** line form: `Rental` type is read-only (generated), shows agreement / period / kind; Service and Part lines gain optional service dates (visible when the rev-rec flag is on). **Payment** form gains a Deposit-for picker (sales order or rental agreement). **Item** sales tab gains the rental rate ladder (day / week / month).
 - Close drawer shows the new task through the checklist substrate. Flash messages on every transition (`.claude/rules/flash-system.md`).
 
-## Acceptance Criteria
+### Acceptance Criteria
 
 Numbers are USD, base currency, tax 0 unless stated; the *Rental Fleet* class is Straight Line, 60 months, 20 % residual.
 
@@ -667,7 +687,7 @@ Numbers are USD, base currency, tax 0 unless stated; the *Rental Fleet* class is
 - [ ] **Sync policy.** `POSTING_POLICY` has entries for `'Asset Transfer'`, `'Lease'`, `'Revenue Recognition'`; `pnpm --filter @carbon/ee typecheck` passes.
 - [ ] **Hygiene.** `pnpm run generate:types`, scoped `typecheck` (erp, database, jobs, ee), `pnpm run lint`, unit tests for `spreadStraightLine`, `prorateByDays`, `bestRateCharge`, `generateRentalBillingPeriods`, `presentValue`, `classifyLessorLease`, `buildLessorSchedule` (incl. the numeric examples above) pass; the `complete_job_to_inventory` redefinition is forked from the newest migration and diffed against `origin/main` before merge; all migrations apply idempotently twice; every new table has four RLS policies; `pnpm db:check:datasets` and `pnpm db:check:backups` pass.
 
-## Risks
+### Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
@@ -685,7 +705,7 @@ Numbers are USD, base currency, tax 0 unless stated; the *Rental Fleet* class is
 | Negative Rental lines depend on posting's signed-line handling | Med | Early-return AC; unit test `buildSalesPostingLines` with a negative Rental line; mixed-sign invoice lines are already supported (lesson) |
 | Rate-ladder tie-breaks and 28-day periods straddling two accounting periods | Low | `bestRateCharge` and `generateRentalBillingPeriods` are pure and unit-tested; deferral rows split per accounting period exactly as in Phase A |
 
-## Open Questions
+### Open Questions
 
 > Resolutions from Brad (2026-09-22) are recorded verbatim in intent; questions surfaced while writing carry a recommended answer and are marked **pending veto** — they do not block `/plan`, but a veto changes the affected section.
 
@@ -720,7 +740,7 @@ Added 2026-09-22 when the tier-1 items were folded in (recommended, **pending ve
 - [x] **N15 — Out of service is two columns on `fixedAsset` with no maintenance-module integration in v1.** — **Recommended:** yes; the flag covers the daily need, and dispatch integration needs the maintenance module to accept assets as targets.
 - [x] **N16 — The schedule/run substrate keeps the `revenueRecognition*` names.** — **Recommended:** keep for now and rename to a generic accounting schedule/run in the same PR that schedules lessee accounting or prepaid amortization, if either lands within the year. Brad did not opt into the rename when asked.
 
-## Known gaps
+### Known gaps
 
 Recorded at the Phase D close-out and still open:
 
@@ -731,7 +751,7 @@ Recorded at the Phase D close-out and still open:
 - Intercompany elimination does not know the deferred-revenue or rental accounts.
 - Provider sync of Rental lines is unverified.
 
-### Review notes (PR #1697, reconciled with the built code 2026-10-04)
+#### Review notes (PR #1697, reconciled with the built code 2026-10-04)
 
 The DDL in *Data Model Changes* is the design-time sketch; the built migrations are the source of truth.
 
@@ -744,12 +764,12 @@ The DDL in *Data Model Changes* is the design-time sketch; the built migrations 
 - **Editing a generated Rental line.** Built: `SalesInvoiceLineForm` renders a read-only `RentalInvoiceLineSummary` for a `Rental` line, so its `unitPrice` cannot be edited in the UI. This replaces the Risks row that allows edits. Known gap: the line `details` action does not refuse a direct POST for a `Rental` line.
 - **Rate tiers.** Built: a line bills one rate (`rateUnit` and `rate` NOT NULL, `rentalAgreementLine_rate_nonnegative`). The `rateMode` / Fixed design is gone, and with it the null-tier case. Known gap: `itemRentalRate_tier_check` and `customerItemRentalRate_tier_check` require at least one tier but do not refuse a negative one. Only the zod validators (`min(0)`) do. A negative card rate still cannot reach billing, because the line's own check refuses it.
 
-## Changelog
+### Changelog
 
 - 2026-10-04: Implemented; moved to `implemented/`. The branch's migrations were folded into one file per change: enums `20261006220301_fleet-rental-lease-enums.sql`; tables `20261006220201_revenue-recognition-core.sql`, `20261006220401_fleet-bridge.sql`, `20261006220501_rental-agreements.sql` (now also `customerItemRentalRate`, `rentalLeaseScheduleLine`, the single-rate line and the named SET NULL FKs), `20261006220601_serial-cost-layer.sql`; `complete_job_to_inventory` in `20261006221601_complete-job-to-asset.sql`; RLS in `20261006221501_revenue-recognition-rentals-contracts-rls.sql`. Migration names in the entries below are the pre-fold ones.
 
 - 2026-10-04: Note added: capital projects (`2026-10-03-projects.md`) build on this spec's CIP asset, ledger, job sweep and `capitalizeCip`. Projects owns the widened CIP sources, the late-cost rule and the remaining-life depreciation change.
-- 2026-10-02: Decision 10's propose-only posture reversed for rentals by `.ai/specs/2026-10-02-rental-invoice-automation.md`.
+- 2026-10-02: Decision 10's propose-only posture reversed for rentals by Part II.
 - 2026-09-28: Merged main's authz manifest (#1737). The 11 new tables' policies moved out of the branch migrations into `packages/database/src/authz/manifest.ts` (`company("accounting", { read: "accounting_view" })` for the recognition and asset-transfer tables, `company("sales", { read: "sales_view" })` for the rental tables — the same policies as before), shipped by the generated `20260928014618_rental-revenue-recognition-rls.sql`. `20260928014435_complete-job-to-asset-guarded.sql` restores the Make to Asset branch of `complete_job_to_inventory`, which main's `20260925121735_rpc-function-guards.sql` had replaced, and adds that migration's `assert_company_access` guard.
 - 2026-09-23: Phases A–D built (plan Tasks 1–54; browser verification of B, C and D pending in Tasks 31, 46, 56). Plan-level decisions folded in:
   1. New journal source types `'Revenue Recognition'`, `'Asset Transfer'` and `'Lease'` ship `defaultEnabled: false` in `POSTING_POLICY` (this spec said `true`); the returns-types precedent that a new journal type never starts pushing to a customer's ledger unasked wins.
@@ -767,3 +787,838 @@ The DDL in *Data Model Changes* is the design-time sketch; the built migrations 
   - Open follow-ups: see Known gaps.
 - 2026-09-22 (later): Folded in the tier-1 items from the likelihood-of-use ranking (Brad: "let's include all the 1's"): Make to Asset (the job→asset branch of `complete_job_to_inventory`) plus the #1041 CIP contract and the work-center link; the day / week / month rate ladder with per-period best rate and the 28 Days cycle (early-return adjustments, holdover); the out-of-service flag with the `In Maintenance` fleet status. New pending-veto items N10–N16.
 - 2026-09-22: Created after research (`.ai/research/2026-09-21-sell-vs-rent-rental-revenue-recognition.md`) and Brad's answers to the eight open questions; nine questions surfaced while writing recorded with recommended answers pending veto. Phases #1048 (this is Phase 1), supersedes the lessor slice of #1056, defines the inventory→asset bridge for #1041.
+
+# Part II — Recurring invoicing (rental invoice automation)
+
+> Was `.ai/specs/2026-10-02-rental-invoice-automation.md` ("Rental Invoice Automation — post and email recurring rental invoices"), merged here verbatim on 2026-10-07. Decision, question and section numbers in this Part (D1, Q3, §2, Task 4) are its own.
+
+> Status: in-progress
+> Author: barbinbrad (with Claude)
+> Date: 2026-10-02
+> Research: `.ai/research/rental-invoice-automation.md`
+> Amends: Part I Decision 10 ("propose-only Draft invoices") — reversed for rentals, see D1
+> Shared layer (2026-10-02): this automation is the source-agnostic **recurring-invoicing layer** — one mode list (`invoiceAutomation`), one company default + per-document override, one pipeline in `packages/jobs/src/invoicing/` (`automateSalesInvoice`), one daily `recurring-billing` job and one "Recurring invoicing" digest. Rental agreements are its first source; AR contracts (Part III) plug in as the second and add the `Post and Send via Stripe` mode. Names were generalized before any code existed; behaviour for rentals is unchanged. Decisions: `.ai/runs/2026-10-02-contracts.md` (U1–U4, G4b, G7).
+
+### TLDR
+
+The daily `rental-billing` job drafts one invoice per rental agreement, and then someone has to open, post and email each one by hand, every billing cycle, for every agreement. This spec adds an **invoice automation** setting with three modes: `Draft Only`, `Post` and `Post and Email`. It is set company-wide on a new **Settings → Invoicing** page, defaults to `Post and Email`, and can be overridden per agreement. Rent invoices are posted (and emailed) in the same run that drafts them.
+
+Anything that needs a human eye is left in Draft with a reason:
+- hand-entered charges, split onto their own Draft invoice so the rent is never delayed;
+- early-return credits;
+- sales-rule violations;
+- a missing required contact;
+- posting failures such as a locked period.
+
+An invoice whose contact has no email is posted and flagged, not sent. A daily notification tells each agreement's internal owner (salesperson, else creator) what was posted, emailed and held, with no setup; an optional "Also notify" group gets the company-wide summary. A voided invoice's re-bill is always held for review.
+
+### Problem Statement
+
+`packages/jobs/src/inngest/functions/scheduled/rental-billing.ts:56` says it plainly: "Posting stays a human action in the ERP; this only drafts invoices."
+
+- A fleet of 40 agreements on calendar-month billing produces 40 Draft invoices on the 1st. Each one needs a person to open it, press Post, choose Email and confirm.
+- The invoices are fully determined by the agreement's terms, so the human adds nothing on the normal path. The research found that every peer system lets that path run unattended: NetSuite bill runs, Business Central's Subscription Billing, Odoo, Xero "Approve for sending", QuickBooks "Scheduled" and Stripe `auto_advance`.
+- Hidden bug on today's manual path: posting a rental invoice with Send Via = Email uploads the PDF to `${companyId}/opportunity/null/…`. Rental invoices have `opportunityId: null`, and the email branch of `$invoiceId.post.tsx:802` doesn't guard for it; only the Stripe branch does (`:85`). This spec fixes it as a side effect (D12).
+
+### Proposed Solution
+
+#### Flow
+
+```
+recurring-billing cron (05:00 UTC, per company step; renamed from `rental-billing`)
+  └─ create-rental-invoices server function      (packages/server-functions/src/create-rental-invoices/)
+       ├─ effective mode = agreement.invoiceAutomation ?? companySettings.invoiceAutomation
+       ├─ Draft Only  → one Draft invoice per agreement (today's behaviour, unchanged)
+       └─ Post / Post and Email →
+            ├─ RENT invoice:    every due rent period (incl. early-return adjustments)
+            │                   held when it re-bills a voided invoice's rows (D26) or carries an early-return adjustment
+            └─ CHARGES invoice: every due charge (Charge + Purchase Option), always Draft,
+                                automationHoldReason = "charges are reviewed before posting"
+       returns [{ invoiceId, rentalAgreementId, mode, holdReason }]
+  └─ per unheld invoice: step.run("automate-<invoiceId>") → automateSalesInvoice()
+  └─ notify → one digest per agreement owner (salesPersonId ?? createdBy) + one company-wide digest to the "Also notify" group
+
+automateSalesInvoice(invoiceId, mode)          (packages/jobs/src/invoicing/automate-invoice.ts)
+  1. re-read invoice; skip unless status = Draft and automationHoldReason IS NULL
+  2. contact requirement (checkPartyContactRequirement, moved to a package)  → hold on fail
+  3. evaluateSalesRulesForSalesDocument("salesInvoice") — ANY violation           → hold
+  4. claim: UPDATE status = 'Pending' WHERE status = 'Draft'   (0 rows → someone else has it; stop)
+  5. invoke post-sales-invoice (service role, userId "system"); read status back
+       not Submitted → reset Pending→Draft, hold with the function's error message
+  6. raiseMoment("invoicing.salesInvoicePosted")
+  7. mode = Post and Email:
+       skip if sentAt IS NOT NULL
+       contact email missing → sendError = "The invoice contact has no email" (stays posted)
+       else render PDF + email → stamp sentAt / sentTo; on failure stamp sendError
+```
+
+"Generate Invoices" (`$id.invoice.tsx`) and "Sell to Customer" (`$id.$lineId.sell.tsx`) call the same generator. They then send `carbon/rental-invoice.automate` events for the invoices it returns. A small event-triggered Inngest function runs the same `automateSalesInvoice`. So pressing the button behaves exactly like the cron, minus the digest.
+
+#### Design Decisions
+
+| # | Decision | Choice | Rationale |
+|---|----------|--------|-----------|
+| D1 | Reverse "propose-only" for rentals | Yes, rentals only | The user asked for it (2026-10-02). Rental invoices are fully determined by the agreement's terms; the close-automation posture still governs every other proposal job |
+| D2 | Modes | `Draft Only` / `Post` / `Post and Email`, a new enum `invoiceAutomation` | The three levels every peer system offers (research). `Post` without email serves customers billed through a portal or EDI |
+| D3 | Where it is set | Company default (`companySettings.invoiceAutomation`, NOT NULL DEFAULT `'Post and Email'`) plus a nullable per-agreement override (`rentalAgreement.invoiceAutomation`, NULL = company default) | User decision. Follows the flat-default-plus-override shape `.ai/lessons.md` prescribes (`customer.defaultCc` → `companySettings.defaultCustomerCc`). No customer level (user decision) |
+| D4 | Default | `Post and Email` | User decision. Rentals are not on `main`, so no existing company changes behaviour on deploy |
+| D5 | `Post and Email` needs an email | The agreement override can only be SET to `Post and Email` when the agreement's contact has an email (the service refuses it; the UI disables it). At run time, a missing email degrades to post + `sendError`, never a skipped post | User decision. Checked at both ends because a contact's email can be removed after the setting is chosen, and a company default can't be validated per agreement |
+| D6 | Review window | None. Posted in the same run that drafts | User decision. So there is no "will post on" date, and no "an edit makes it manual" rule |
+| D7 | Charges | When automating, charges (kind `Charge` and `Purchase Option`) go on their OWN Draft invoice, held as "charges are reviewed before posting". Rent periods go on the rent invoice, which posts | User decision. A single charge must not delay the rent. Mirrors NetSuite's Ready/Hold billing stage and Point of Rental's contract hold. `Draft Only` agreements keep today's single combined invoice, since nothing is automated |
+| D8 | Holds (left in Draft) | (a) charges invoice; (b) rent invoice carrying an early-return adjustment row; (c) a sales-rule violation of any severity, warnings included; (d) the company requires a customer contact and location and the invoice lacks one; (e) any posting failure (locked or closed period, missing account default, …), with the edge function's message | User decision (holds a–e; first invoice NOT held). The job can't acknowledge a warning, so a warning holds |
+| D9 | First invoice | Not held | User decision. The terms were just reviewed at activation |
+| D10 | Where automation runs | Inline in the `recurring-billing` cron (renamed from `rental-billing`, U4), one `step.run` per invoice; plus an event-triggered function for the two ERP buttons. Both call one `automateSalesInvoice` | Steps give per-invoice isolation and memoized retries (one failure never stops the run). Sharing one function keeps the button and the cron identical |
+| D11 | Double-post protection | A conditional claim `Draft → Pending` before invoking (the `ramp-sync-bill.ts:179-215` pattern); the step re-reads status first, so a retried step after a successful post skips straight to email | `post-sales-invoice` never checks the invoice is Draft. The button event and the cron can race for the same invoice |
+| D12 | PDF and email in a job | Extract the sales-invoice PDF data loading into a shared server loader in `@carbon/documents` (takes a supabase client). The ERP PDF route, the manual post route and the job all use it. Storage path is `${companyId}/sales-invoice/${invoiceId}/<file>` when the invoice has no opportunity, `opportunity/<id>/…` otherwise | The route loader needs a session (`requirePermissions` `view: sales`), so a job can't call it. Jobs already render `@carbon/documents` PDFs (`tasks/print-job/renderers.tsx`). Also fixes the `opportunity/null` bug on the manual path |
+| D13 | Sender | From: `"<Company name>" <DEFAULT_FROM address>`. Reply-To: `companySettings.accountsReceivableEmail`, else the agreement's owner (`salesPersonId ?? createdBy`) email. To: the invoice contact. CC: `customer.defaultCc` ?? `companySettings.defaultCustomerCc`, plus the receivables email | User decision. Our SMTP can't send AS the customer's domain without SPF/DKIM, so we send from our domain under the company's name and route replies to receivables |
+| D14 | Sent tracking | New `salesInvoice.sentAt`, `sentTo`, `sendError`. The manual post modal's Email path stamps them too | Needed for idempotency (never email twice on retry), for the "Needs review" filter, and so a person can see an invoice went out. Stamping on the manual path keeps one meaning for the columns |
+| D15 | Hold reason storage | `salesInvoice.automationHoldReason TEXT` (a human-readable message) | Read-only display data; the reasons are open-ended (edge-function errors), so an enum would lose the message. Only meaningful while Draft. Kept after a manual post as history and ignored by the filter |
+| D16 | Notification | A new digest event `NotificationEvent.RecurringInvoicing` (documentIds-shaped), at most once per recipient per cron run when anything was posted, emailed or held. **By default each agreement's internal owner (`salesPersonId ?? createdBy`) gets a digest of their agreements' invoices; no setup needed.** `companySettings.invoiceNotificationGroup` (`text[]`, users/groups) is "Also notify": those people get the company-wide digest, and an owner listed in it gets only that one. Delivered in-app and by email | User decisions (daily notification; "a good default should be automatic invoices with notifications to the internal person"). The button path sends none; the person who pressed it is looking at the result |
+| D17 | Settings page | A new `x+/settings+/invoicing.tsx`, with a nav entry in `useSettingsSubmodules`. Cards: **Recurring Invoices** (default mode), **Receivables Email** (`accountsReceivableEmail`, which has no UI today), **Notifications** (`invoiceNotificationGroup`), plus **Emails** (default customer CC) and **Centralized Billing Address** MOVED from `settings+/sales.tsx` with their intents and actions | User decision (new page; move the invoice-related cards) |
+| D18 | Agreement override editable when | Draft and Active (not Closed / Cancelled), through a dedicated service `updateRentalAgreementInvoiceAutomation` and a dedicated `intent` in `x+/rental-agreement+/update.tsx` that bypasses the Draft-only terms guard | It is an operational preference, not a lease term, and touches no accounting. `updateRentalAgreement` stays Draft-only (it is an MCP tool with its own guard) |
+| D19 | Multi-tenancy (heuristic 1) | No new tables. New columns sit on `companySettings` / `rentalAgreement` / `salesInvoice`, all already company-scoped | — |
+| D20 | Service shape (heuristic 2) | `updateRentalAgreementInvoiceAutomation(client, …)` returns `{data, error}` and refuses with a PostgrestError-shaped `RENTAL_INVOICE_EMAIL_NO_CONTACT`, like the other `RENTAL_*` codes | Matches the rental service conventions in sales AGENTS |
+| D21 | RLS (heuristic 3) | Unchanged. The new columns inherit their tables' policies; the job writes with the service role | — |
+| D22 | Permissions (heuristic 4) | Settings → Invoicing: `view: settings` to load, `update: settings` to save (as `settings+/sales.tsx`). The agreement override: `update: sales` | Same scopes as the pages the cards move from |
+| D23 | Forms (heuristic 5) | Settings cards are `ValidatedForm` + fetcher intents like `settings+/sales.tsx`. The agreement field saves through the properties-panel pattern | Existing patterns |
+| D24 | Module layout (heuristic 6) | Validators in `settings.models.ts` / `sales.models.ts`, services in `settings.service.ts` / `sales.service.ts`. The automation itself lives in `packages/jobs/src/invoicing/` (not an ERP module) | One service/models file per module |
+| D25 | Backward compatibility (heuristic 7) | `updateRentalAgreement` (MCP) unchanged. The new service becomes an MCP tool (regenerate the MCP metadata). `checkPartyContactRequirement` moves from `apps/erp/app/modules/settings/party-contact.server.ts` to a package the job can import (`@carbon/database` or `@carbon/ee/rules.server`, to be settled in /plan), and the ERP re-imports it | Nothing frozen is touched |
+| D26 | Re-billing after a VOID | VOID stamps `voidedSalesInvoiceId` on the periods and charges it releases; when automating, a rent invoice re-billing any such row is held with "Re-billing INV-…, which was voided". The stamp survives a deleted draft and is overwritten by a later VOID | User decision. Otherwise the next morning's run re-posts and re-emails the same amounts nobody decided to re-bill (an Active agreement's rates are locked) |
+
+### Data Model Changes
+
+One migration (`pnpm db:migrate:new rental-invoice-automation`):
+
+```sql
+CREATE TYPE "invoiceAutomation" AS ENUM ('Draft Only', 'Post', 'Post and Email');
+
+ALTER TABLE "companySettings"
+  ADD COLUMN "invoiceAutomation" "invoiceAutomation" NOT NULL DEFAULT 'Post and Email',
+  ADD COLUMN "invoiceNotificationGroup" TEXT[] NOT NULL DEFAULT '{}';
+
+-- NULL = use the company default
+ALTER TABLE "rentalAgreement"
+  ADD COLUMN "invoiceAutomation" "invoiceAutomation";
+
+ALTER TABLE "rentalBillingPeriod" ADD COLUMN "voidedSalesInvoiceId" TEXT;
+ALTER TABLE "rentalAgreementCharge" ADD COLUMN "voidedSalesInvoiceId" TEXT;
+
+ALTER TABLE "salesInvoice"
+  ADD COLUMN "automationHoldReason" TEXT,
+  ADD COLUMN "sentAt" TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN "sentTo" TEXT,
+  ADD COLUMN "sendError" TEXT;
+```
+
+- The `rentalAgreements` view is recreated so it exposes `invoiceAutomation` and the effective mode (`COALESCE(ra."invoiceAutomation", cs."invoiceAutomation")`). Fork the body from its LATEST definition (lesson: backdated view forks).
+- `salesInvoices` is recreated only if the list's "Needs review" filter needs a derived column. Prefer filtering on the base columns.
+- `accountsReceivableEmail` already exists (`20260304112615`). No change.
+- After migrating: `pnpm run generate:types`; `pnpm db:check:datasets` (the satellite dataset seeds rental agreements); `pnpm db:check:backups`.
+
+### API / Service Changes
+
+**`packages/server-functions/src/create-rental-invoices/`** (was `packages/database/src/rental-billing.ts`)
+- `createRentalInvoicesForDuePeriods` reads the effective mode per agreement (one join to `companySettings`). When the mode is not `Draft Only` it drafts up to two invoices: rent and charges. It returns `{ invoices: { invoiceId, rentalAgreementId, mode, holdReason }[] }`; keep `invoiceIds` for existing callers or migrate them.
+- Rent invoices with an `isAdjustment` row are stamped with the early-return hold.
+- Stamping and idempotency are unchanged: periods and charges are stamped in the same transaction.
+
+**`packages/jobs/src/invoicing/automate-invoice.ts`** (new)
+- `automateSalesInvoice({ client, db, companyId, invoiceId, mode })` returns `{ outcome: "posted" | "emailed" | "held" | "skipped", reason? }`. The flow is above.
+- The hold-reason strings are constants exported from one module, so the UI and tests share them.
+
+**`packages/jobs/src/inngest/functions/scheduled/rental-billing.ts`**
+- After the draft step: one `step.run` per unheld invoice, then a `notify` step.
+
+**`packages/jobs/src/inngest/functions/tasks/invoice-automate.ts`** (new)
+- Event `carbon/rental-invoice.automate` with `{ companyId, invoiceId }`. Concurrency key `event.data.invoiceId`, limit 1.
+- Register it in `packages/jobs/src/inngest/index.ts` and add the event to the client schema.
+
+**`@carbon/documents`**
+- A server-side sales-invoice loader, `loadSalesInvoiceDocument(client, companyId, invoiceId)`, returning the `SalesInvoicePDF` props and the `SalesInvoiceEmail` props.
+- `routes/file+/sales-invoice+/$id[.]pdf.tsx` and `$invoiceId.post.tsx` switch to it.
+
+**`$invoiceId.post.tsx`**
+- Uses the shared loader and the opportunity-or-invoice storage path (D12).
+- Stamps `sentAt` / `sentTo` / `sendError` on the Email path.
+
+**`apps/erp/app/modules/sales`**
+- `updateRentalAgreementInvoiceAutomation(client, { id, companyId, invoiceAutomation, updatedBy })` (`/** @mcp update */`). Allowed on Draft and Active. Refuses `Post and Email` when the agreement's contact has no email.
+- Add `invoiceAutomation` to the validators.
+
+**`apps/erp/app/modules/settings`**
+- Validators and services for `invoiceAutomation`, `invoiceNotificationGroup` and `accountsReceivableEmail`. `updateAccountsReceivableEmail` already exists, at `settings.service.ts:1361`.
+
+**`$id.invoice.tsx` / `$id.$lineId.sell.tsx`**
+- After generating, send one `carbon/rental-invoice.automate` event per unheld invoice. The flash says "Invoices generated and being posted" when any were sent.
+
+**`@carbon/notifications`**
+- `NotificationEvent.RecurringInvoicing` plus its text: "Recurring invoicing: N posted, M emailed, K need review".
+
+### UI Changes
+
+**Settings → Invoicing (new page)**
+- **Recurring Invoices** card: a select (Draft only / Post / Post and email) with the description "What happens to rental invoices when they're created each day. Invoices with charges, early-return credits or rule violations always wait for review."
+- **Receivables Email**: an email input. Description: "Replies to emailed invoices go here, and it's copied on each one."
+- **Notifications**: a users/groups picker, "Who gets the daily rental invoicing summary".
+- **Emails** and **Centralized Billing Address**: moved verbatim from Sales settings.
+
+**Rental agreement properties panel**
+- A new **Invoicing** select: "Company default (<mode>)" / Draft only / Post / Post and email.
+- Post and email is disabled with the hint "Add a contact with an email to send invoices" when the contact has no email.
+- When the effective mode is Post and email and the contact has no email: an inline note, "Invoices will be posted but not emailed — the contact has no email".
+- Editable while Draft or Active.
+
+**Rental agreement header and summary**
+- The header's "Invoice" button becomes a secondary **Invoice Now**. Its dialog explains that invoices are created automatically every day, and the button is for billing right away, e.g. after adding a charge.
+- Under "Next Due" the summary states the schedule: "Next invoice <date> is created automatically, then posted and emailed" (or "…then posted" / "…and left as a draft for review"). A Draft agreement reads "Invoices are created automatically once the agreement is active."
+
+**Rental agreement details**
+- The invoices list and Billing Periods card show a held invoice's reason, e.g. "Held: charges are reviewed before posting".
+
+**Sales invoice header**
+- A Draft invoice with `automationHoldReason` shows a warning badge with the reason.
+- A posted invoice shows "Emailed to x@y on <date>", or the `sendError` with a "Send" action that opens the existing post/send modal's email path.
+
+**Sales invoices list**
+- A **Needs review** saved filter: Draft with a hold reason, or posted with `sendError` and no `sentAt`.
+
+Follow the `carbon-design` skill for badge and filter conventions. Wrap all strings in Lingui and run `/translate`.
+
+### Acceptance Criteria
+
+- [ ] With the company default `Post and Email`, an Active Calendar-Month agreement whose contact has an email and one due rent period produces, after the cron runs: one sales invoice in `Submitted`, a posted journal, `sentAt` set, and an email to the contact. The email is from "<Company> <no-reply@…>" with Reply-To = the receivables email and the PDF attached at `${companyId}/sales-invoice/<id>/…`.
+- [ ] The same agreement set to `Draft Only` produces one Draft invoice holding rent and charges together (today's behaviour), and nothing is posted.
+- [ ] With a due rent period and a hand-entered damage charge on a `Post` agreement, the cron produces two invoices: rent `Submitted`, charges `Draft` with the hold "charges are reviewed before posting".
+- [ ] A rent invoice carrying an early-return adjustment row stays Draft with the early-return hold.
+- [ ] A sales rule that warns on the customer leaves the invoice Draft with the rule's message as the hold reason.
+- [ ] With the current accounting period Locked, the invoice ends `Draft` (not `Pending`) and its hold reason is the posting function's message.
+- [ ] On a `Post and Email` company default where the contact has no email, the invoice is `Submitted`, `sentAt` is NULL and `sendError` = "The invoice contact has no email". It appears under **Needs review**.
+- [ ] Setting an agreement's override to `Post and Email` when its contact has no email is refused (UI disabled; the service returns `RENTAL_INVOICE_EMAIL_NO_CONTACT`).
+- [ ] Re-running the cron step for an invoice that is already `Submitted` with `sentAt` set posts and emails nothing. Pressing Generate Invoices while the cron automates the same agreement produces exactly one posted invoice (the claim test).
+- [ ] With no notification group configured, an agreement's salesperson (or creator, when none) receives exactly one "Recurring invoicing" notification (in-app and email) per cron run that posted, emailed or held one of their invoices. A user added to "Also notify" additionally receives the company-wide digest, and never two digests for the same run.
+- [ ] An Active agreement's header shows a secondary "Invoice Now" button, and its summary states when the next invoice is created and what happens to it, matching the effective mode.
+- [ ] Voiding a posted rent invoice and then generating again produces a Draft rent invoice held as "Re-billing INV-…, which was voided"; nothing is posted or emailed. Deleting that draft and generating again holds it again.
+- [ ] Posting a non-rental invoice manually with Send Via = Email stamps `sentAt`. A rental invoice posted manually with Email stores its PDF under `sales-invoice/<id>/`, not `opportunity/null/`.
+- [ ] Settings → Invoicing shows the five cards. Settings → Sales no longer shows Emails or Centralized Billing Address, and their saves still work from the new page.
+- [ ] Unit tests: the generator's split/hold decisions (pure helper) and `automateSalesInvoice`'s outcome per hold case (vitest, mocked clients).
+
+### Risks
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| An email is sent but the `sentAt` stamp fails, so an Inngest retry sends it twice | Med | Stamp `sentAt` in the same step immediately after `sendEmail` resolves. Give the email step `retries: 0` on the send itself and record `sendError` on any throw, so a human re-sends rather than the job |
+| An invoice is stuck in `Pending` when the `invoke` call itself fails (network), since the edge function's own catch never ran | Med | `automateSalesInvoice` resets `Pending → Draft` (conditional on `Pending`) on any non-Submitted outcome before recording the hold |
+| Posting an invoice nobody looked at with a wrong rate or tax | Med | Rates and tax were set on the agreement at activation. Charges and credits are held. `Draft Only` exists per agreement. VOID is available |
+| `Post and Email` is the default, so a company's first rental invoice goes to a customer automatically | Low | Rentals are new and unreleased. The settings card and the agreement field both state the effective mode before activation |
+| Rental lines' provider sync (Xero/QBO/Rillet) is unverified (parent spec risk) | Med | Unchanged by this spec; automation only makes posting more frequent. Track it under the parent spec's open follow-up |
+| Moving `checkPartyContactRequirement` to a package widens its import graph | Low | It only reads `companySettings`; /plan picks the package |
+| Moving two Sales settings cards breaks muscle memory and links | Low | Settings search and nav cover it. Mention it in the changelog entry |
+
+### Open Questions
+
+> All resolved with the user on 2026-10-02 before this spec was written.
+
+- [x] Can rental invoices be posted and sent automatically? — **Answer:** Yes. Research in `.ai/research/rental-invoice-automation.md`; posting reuses the `ramp-sync-bill` claim-and-invoke pattern, emailing needs the PDF loader extracted.
+- [x] At what level is it configured? — **Answer:** A company-wide setting on an Invoicing settings page, overridden per agreement. No customer level.
+- [x] Default mode? — **Answer:** `Post and Email`, selectable on an agreement only when its contact has an email.
+- [x] Which invoices are held for review? — **Answer:** Charges (on their own invoice), early-return credits, purchase-option lines (they're charges), sales-rule errors AND warnings, a missing required contact, and locked/closed periods or any posting failure.
+- [x] What if the contact has no email? — **Answer:** Post anyway, flag it (`sendError`), don't send. Record `sentAt` when sent. Send under the company's receivables email.
+- [x] Review window before posting? — **Answer:** None; post immediately in the same run.
+- [x] Where does the company setting live? — **Answer:** A new Settings → Invoicing page.
+- [x] Who is the email from? — **Answer:** Carbon's default sender under the company name, Reply-To the receivables email (fallback: the agreement creator; refined 2026-10-02 to the owner, `salesPersonId ?? createdBy`), receivables CC'd.
+- [x] How are charges handled? — **Answer:** On a separate Draft invoice for review; the rent posts on its own.
+- [x] Hold the agreement's first invoice? — **Answer:** No.
+- [x] How do people learn what happened? — **Answer:** Badges, a Needs review filter, AND a daily notification (recipients: a notification group on the Invoicing page, per the existing `*NotificationGroup` pattern).
+- [x] Should Invoicing also take over the invoice cards from Sales settings? — **Answer:** Yes. Move Emails (default CC) and Centralized Billing Address.
+- [x] Phase posting and emailing separately? — **Answer:** No; ship together.
+- [x] What happens when a rental invoice is voided? — **Answer:** The re-bill is always a held draft (D26).
+- [x] Who is notified by default? — **Answer:** Each agreement's internal owner (salesperson, else creator), with no setup; the settings group is "Also notify" (D16).
+
+### Implementation decisions
+
+Folded in from `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II ("Plan-level decisions") and its execution log (`.ai/runs/2026-10-02-rental-invoice-automation.md`). Where these disagree with sections above, these win.
+
+1. **Email goes out through `sendEmail` directly**, not `trigger("send-email")`: the queued job forces From to `DEFAULT_FROM` and only queues, so a delivery error would never reach `sendError`. The manual post route keeps `trigger("send-email")`, so its `sentAt` means "queued". A send with no SMTP transport stamps `sendError` ("Email sending is not configured"), never `sentAt`.
+2. **`checkPartyContactRequirement` lives in `@carbon/lib`** (`./party-contact`, `./party-contact.server`); the ERP files re-export it.
+3. **One sales-invoice document loader in `@carbon/lib`** (`./sales-invoice-document.server`: `loadSalesInvoiceDocument`, `renderSalesInvoicePdf`), used by the PDF route, the manual post route and the job. The job renders the PDF with internal-URL logos and swaps them for the public URL in the email HTML.
+4. **"Needs review" is the `salesInvoices.needsReview` view column** plus a Receivables → Needs Review sidebar link.
+5. **Send on a posted invoice with `sendError`** is `x+/sales-invoice+/$invoiceId.send.tsx`, firing `carbon/invoice.automate` with `mode: "Post and Email"`.
+6. **The event carries an optional `mode`**; absent, the function resolves the invoice's agreement's effective mode.
+7. **The split and hold decision is pure**: `planRentalInvoices` in `packages/utils/src/rental-invoice-plan.ts` (`@carbon/utils`; first written in `@carbon/database`), vitest-pinned.
+8. **A re-bill after a VOID is always held** (D26): VOID stamps `voidedSalesInvoiceId` on the periods and charges it releases; sticky across a deleted draft.
+9. **Owners are notified with no setup** (D16): each agreement's `salesPersonId ?? createdBy` gets one digest over their invoices; "Also notify" gets the company digest; an owner listed there gets only the company one.
+10. **`automateSalesInvoice` is two functions**, `postSalesInvoiceUnattended` and `emailPostedInvoice` (`packages/jobs/src/invoicing/automate-invoice.ts`), so the cron and the `invoice-automate` function run them as separate memoized steps. A post failure resets the claim to Draft with the error as the hold reason; any email-step failure stamps `sendError`.
+11. **Source-agnostic names in the shared layer** (grill U1): `INVOICE_SEND_NO_EMAIL`, `invoiceNotificationValidator` / `updateInvoiceNotificationSetting`, digest results keyed by `sourceId`.
+12. **Posting is in-process** (2026-10-03, after main replaced the edge functions with Node server functions): the automation calls `post-sales-invoice` through `serverFns.system({ db, companyId, userId: "system" })`, so a failure's message comes back directly (no edge-function body to unwrap; `getEdgeFunctionErrorMessage` and `@carbon/lib/edge-function-error` are gone). The manual Post route keeps a Draft-only claim even though `assertPostable` admits Pending — an automation claim is a Pending row.
+13. **Generator and run proposal are server functions** (2026-10-03, for consistency with main's server-functions rule — Kysely, multi-table, shared by the ERP and jobs): `create-rental-invoices` (`{ asOf, rentalAgreementId? }`, `update: sales` + `create: invoicing`) and `propose-revenue-recognition-run` (`{ periodEnd }`, `create: accounting`). The pure rental/lease/automation libs (`rental-periods`, `revenue-schedule`, `lessor-lease`, `rental-invoice-plan`) live in `@carbon/utils`, since nothing in `@carbon/database` needs them any more. `releaseRentalInvoiceStamps` moved into the ERP's `sales.server.ts`, its only caller.
+
+### Changelog
+
+- 2026-10-03: Implemented per the plan (Tasks 1–20); status in-progress pending browser verification. Implementation decisions folded in above.
+- 2026-10-02 (later): The agreement says invoicing is automatic (summary schedule line, "Invoice Now" button). D16 notifies each agreement's owner by default (the group becomes "Also notify"); D26 holds re-bills after a VOID. Both were user decisions made while planning.
+- 2026-10-02: Created. Questions resolved with the user before writing. Reverses Part I Decision 10 for rentals.
+
+# Part III — Contracts
+
+> Was `.ai/specs/2026-10-02-contracts.md` ("Contracts — AR contracts with independent billing and revenue schedules"), merged here verbatim on 2026-10-07. Decision, question and section numbers in this Part (D1, Q3, §2, Task 4) are its own.
+
+> Status: Phase A implemented (2026-10-04, plan `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III); Phase B and the setup wizard implemented (2026-10-04, plan `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV)
+> Author: Brad (with Claude)
+> Date: 2026-10-02
+> Research: `.ai/research/subscription-recurring-invoicing.md` (SAP, NetSuite, Business Central, D365 F&O, Acumatica, Odoo, Xero, QuickBooks, Stripe, Chargebee, Maxio; Rillet and Stripe API data models; Rillet's Contract screens)
+> Interview record: `.ai/runs/2026-10-02-contracts.md` (Q1–Q11, U1–U4, G1–G9)
+> Builds on: Part II (the shared recurring-invoicing layer — this spec is its second source), Part I (revenue recognition run, Contract Assets accrual, rental revenue posting model)
+> Delivers from the billing side: the "revenue arrangement" of `.ai/specs/2026-07-04-revenue-recognition.md` Phases 2–3 (without SSP allocation)
+> Supersedes: the earlier "Subscriptions" draft of this file (same path history)
+> Coordinates with: `.ai/specs/2026-10-03-projects.md` (branch `projects-wbs-research-spec`) — its Phase 4 adds Time & Materials / Cost Plus lines; the two one-way doors it needs are taken here (project on the line; revenue *method*)
+
+### TLDR
+
+A **contract** is a new AR document in Sales for everything a customer buys as an agreement rather than a shipment: SaaS access, support and maintenance plans, implementation and setup fees, prepaid licences. Its **lines** are **One-time** or **Recurring** **Service** items, each with quantity, rate, discount %, tax, its own dates, a **project** (optional), and a **revenue method** (*Daily* or *Even per month*, prorated first & last) over revenue dates that default to the line's (a **go-live** date can push the start). A contract has two **independent schedules** built from the same lines:
+
+- an **invoice schedule** — computed from the billing frequency (Week / Month / Quarter / Year), alignment (Anniversary or Calendar), timing (Advance / Arrears) and first invoice date, with one-time lines on the first invoice — that the user can **edit while Draft** (move, split, merge invoices; each line's billed total conserved);
+- a **revenue schedule** — read-only, computed per line from its revenue method and revenue dates — with an **invoiced / recognized / deferred** summary per month.
+
+Revenue follows the **line, not the invoice**: the monthly recognition run recognizes each line's schedule, releasing Deferred Revenue where it was billed ahead and accruing **Contract Assets** where it was earned first, and invoice posting relieves the accrual before deferring the rest — the rental revenue model, generalized. Due invoices are drafted daily by the shared **`recurring-billing`** job and handed to the shared **recurring-invoicing layer** (post / email / send via Stripe / hold / digest), with the company default automation mode and a per-contract override. Changes are **amendments** (a dated header with a reason and contract type, plus replacement lines), prorated from the change date or effective from the next period. **Cancel** picks an end date and can credit unused prepaid time as a credit memo. A fixed **term** renews automatically with an optional uplift %. Every contract and amendment carries a **contract type** (New Sales, Existing, Expansion, Reactivation, Contraction). Migrated contracts carry **Billed through** and **Recognize revenue from** dates. Contracts are created standalone or from chosen Service lines of a sales order. Rental agreements stay their own document and share the invoicing layer. Nothing on the AP side.
+
+### Problem Statement
+
+A customer moving all of its customer invoicing to Carbon needs one-off invoices (covered), rentals (covered by rental agreements, being automated by Part II), and **contracts** — which Carbon cannot express:
+
+- No recurring-invoice, subscription, contract or copy-invoice feature exists in the sales or invoicing domain (verified; `@carbon/stripe` subscription code is Carbon's own plan billing).
+- Rental agreements bill on a cycle but need a serialized fleet unit per line.
+- Revenue is tied to the invoice: a Service line defers over its own service dates at posting. There is no way to bill $60,000 for implementation on signature and recognize it over the six months it is delivered, to recognize revenue earned before it is invoiced, or to see a contract's invoiced vs recognized vs deferred position.
+- Every renewal, seat increase, discount expiry and cancellation is tracked outside Carbon.
+
+Worked example used throughout: *Acme* signs on 15 October 2026 — implementation $60,000 one-time (revenue over 1 Nov–30 Apr, go-live 1 Nov), platform access 10 seats × $40 per Month with 20 % off the first year, premium support $1,200 per Year — invoiced Monthly, Calendar, in Advance, first invoice 1 November, 12-month term renewing at +5 %.
+
+### Proposed Solution
+
+#### Concepts
+
+| Term | Meaning |
+|---|---|
+| **Contract** | The AR agreement header: customer, invoicing terms, schedule settings, term and renewal, contract type, migration dates, automation override. Readable id `CON000001`. |
+| **Contract line** | A Service item, **One-time** or **Recurring**, with quantity, rate, discount %, tax %, start / end dates, revenue method, revenue start / end, go-live date, project. |
+| **Project** | Optional: the existing accounting project (`project`, on main since `20260919153014_accounting-projects.sql`) on the contract as the default and on a line as an override. Every revenue-side journal line the contract line produces carries it as the Project dimension. |
+| **Rate unit** | Recurring lines only: what the rate is per — Day, Week, Month, Quarter, Year. Independent of the billing frequency ($10 per Day invoiced Monthly). |
+| **Billing frequency / alignment / timing** | Every Week / Month / Quarter / Year; *Anniversary* (from the start date) or *Calendar* (1st of week (Monday) / month / quarter / year, first period prorated); *Advance* (due on the period's first day) or *Arrears* (last day). |
+| **Invoice schedule** | Persisted planned invoices (`customerContractInvoice`) and their lines (`customerContractInvoiceLine` — contract line, billing period, amount). Computed, then editable while Draft with each contract line's billed total conserved. |
+| **Revenue method** | How a line earns revenue. The v1 methods are schedules: *Daily* (equal per day) or *Even per month, prorated first & last* (equal per calendar month, partial first/last months by days) — Rillet `DAILY` / `EVEN_PERIOD`. Deliberately a *method*, not a *pattern*: later methods — *As Invoiced* (time & materials) and *Percent Complete* (project contracts, cost-to-cost) — earn revenue without a schedule known up front and arrive as new enum values, not a rename. |
+| **Revenue schedule** | The **per-line revenue ledger** (`customerContractRevenue`), one row per line per month. For the v1 schedule methods the rows are planned at confirmation from the method over the line's revenue dates. Later methods have the recognition run generate the month's row instead (*As Invoiced*: equal to the line's invoice lines posted in the month; *Percent Complete*: from cost progress, a catch-up landing in the next unposted month's row). Posting is the same either way. Read-only. |
+| **Amendment** | A dated change (`customerContractAmendment`: date, reason, contract type, effective from *Change Date* or *Next Period*) whose replacement lines point at the lines they replace (`amendsLineId`). A billed line is never edited. |
+| **Adjustment** | An invoice-schedule line correcting an already-billed recurring period when its line's end moved (amendment, cancellation), computed from the amount actually billed. |
+| **Contract type** | New Sales, Existing, Expansion, Reactivation, Contraction — on the contract and on each amendment; suggested automatically, editable. |
+| **Billed through / Recognize revenue from** | Migration dates: periods ending on or before *Billed through* were invoiced elsewhere (never drafted); revenue before *Recognize revenue from* belongs to the old books, after it Carbon releases the migrated Deferred Revenue balance. |
+
+#### Lifecycle
+
+`customerContractStatus`: **Draft → Active → Ended**.
+
+- **Draft** — everything editable, including the invoice schedule. The invoice and revenue previews and the summary are live. Delete allowed.
+- **Confirm** (`update: sales`; `create: invoicing` too when the effective automation mode posts) — validates (≥ 1 line, Service items only, dates consistent, invoice schedule conserves every line's total, Stripe customer linked when the mode is *Post and Send via Stripe* — the existing link step done once here), stamps `confirmedAt`, freezes the schedules, suggests the contract type (New Sales for a customer's first contract; Reactivation when all its earlier contracts ended). From now on changes go through amendments, cancellation and renewal.
+- **Active** — the daily job drafts due invoices and the recognition run recognizes revenue. A cancelled contract stays Active until its end date passes and its last invoice is drafted; the header shows "Ends {date}".
+- **Ended** — set by the daily job once the end date has passed and nothing is left to draft. `cancelledAt` / `cancellationReason` distinguish a cancellation from a term end. Read-only.
+
+Delete is Draft-only. A confirmed contract with nothing invoiced or recognized can be cancelled back to nothing (end date before its start), which removes its planned invoices and revenue rows.
+
+#### The invoice schedule
+
+Pure math in `packages/database/supabase/functions/shared/contract-schedule.ts` (re-exported by `@carbon/utils`, unit-tested):
+
+1. **Grid.** Frequency + alignment define period boundaries. Anniversary anchors on the contract start (a 29th–31st anchor clamps to the month's last day and returns to the anchor day when it exists — `@internationalized/date` `.add({ months })`); Calendar anchors on the 1st of the week / month / quarter / year containing it.
+2. **Recurring lines** get one invoice-schedule line per grid period intersecting `[start, end]`, `units` = the period in the line's rate unit **prorated by day** (Day: days; Week: days ÷ 7; Month / Quarter / Year: whole calendar months ÷ 1 / 3 / 12 plus each partial month's days ÷ its days ÷ 1 / 3 / 12), `amount = round(quantity × rate × units × (1 − discount))` at internal scale. Due on the period's first (Advance) or last (Arrears) day.
+3. **One-time lines** put their whole net amount on the first planned invoice on or after their start date.
+4. **First invoice date** defaults to the first period's due date and can be set (e.g. invoice on signature before the service starts); periods due before it are gathered onto it.
+5. **Editing (Draft only).** The user can move an invoice's date, split an invoice line into installments, merge invoices, and move a one-time line to a later invoice. Every edit must keep each contract line's billed total equal to its computed total (Rillet "redistribution only"); the preview shows the residual until it balances. Billing-period dates on lines stay the service window they cover, wherever the invoice lands.
+6. **Horizon.** Fixed-term contracts are planned to their end date; open-ended contracts through the current period plus the next, rolled forward daily. Only planned rows can be edited, so an open-ended contract's edits reach as far as the horizon.
+7. **Reconcile, never rewrite** (shared with rentals — the create / re-cut / adjust reconciliation extracted from `rental-billing.ts`, rental behaviour pinned by `rental-billing.test.ts`): a planned period whose line's end moved is re-cut; an already-invoiced recurring period that now extends past its line's end gets ONE adjustment = − (billed amount × days after the new end ÷ days billed); never a second one for the same period. An amendment regenerates the unbilled schedule from its effective date and warns that manual edits after that date are reset.
+8. **Billed through.** Planned periods ending on or before it are created *Billed Externally* (no invoice). It must fall on a period end.
+
+#### The revenue schedule
+
+Per line, at confirmation (and on every amendment / cancellation / renewal), `customerContractRevenue` rows — one per calendar month — from the line's revenue method over `[revenueStart, revenueEnd]`:
+
+- **Recurring lines** default revenue dates = the line's dates; the monthly amount follows the method over the same net value the invoice schedule bills for that span.
+- **One-time lines** default revenue dates = the line's start and end (a one-time line with no end = recognized in the month of its start — point in time).
+- **Go-live** (optional) moves the revenue start; the line's billing dates are unchanged.
+- *Daily*: amount ∝ days in the month. *Even per month*: equal per full calendar month, first/last partial months prorated by days. Totals reconcile exactly (`distributeRoundingResidual`).
+- Months before *Recognize revenue from* are not created (migration).
+- The engine below reads only the rows, never the method — which is what lets a later run-generated method (*As Invoiced*, *Percent Complete*) reuse invoice posting, the recognition run and the contract position unchanged.
+
+#### Accounting — revenue follows the line
+
+Gated on `companySettings.accountingEnabled` (off → invoices post straight to revenue, as today). Generalizes the rental model (`post-sales-invoice/rental-posting.ts` `planRentalLine`, `synthesizeRentalAccruals`) from rental lines to contract lines, per contract line:
+
+- **Invoice posting.** A sales-invoice line with `customerContractLineId` takes the contract branch (before the Service deferral branch): Cr **Contract Assets** up to the line's accrued-unbilled balance, the rest Cr **Deferred Revenue**; Dr AR. A negative adjustment line reverses in the opposite order (Dr Deferred Revenue up to the line's deferred balance, rest Dr Contract Assets).
+- **Recognition run.** For each contract line and month ≤ the run's period, recognized revenue = the `customerContractRevenue` row: Dr Deferred Revenue up to the line's deferred balance, the rest Dr **Contract Assets** (earned, not yet billed); Cr the line's revenue account (the item's sales account). Rows post once (`journalId` / `postedAt` stamps), Planned → Posted, the existing revenue-recognition-run Draft → Posted lifecycle and close task.
+- **Migration.** For months from *Recognize revenue from*, a line whose periods are *Billed Externally* draws its Dr from the migrated Deferred Revenue opening balance (the line's deferred balance is seeded with its externally-billed-but-unrecognized amount at confirmation, computed from the revenue schedule; the opening journal must have put that balance in Deferred Revenue).
+- **Cancellation credit** (credit memo, below) posts Dr Deferred Revenue up to the line's deferred balance, the rest Dr Contract Assets / revenue for months already recognized beyond the end date (catch-up in the next run), and the line's future revenue rows after the end date are removed.
+- **Project dimension.** Every revenue-side journal line a contract line produces — Contract Assets / Deferred Revenue at invoice posting, Deferred Revenue / Contract Assets / revenue in the recognition run, the cancellation credit — carries the line's project (`customerContractLine.projectId`, else `customerContract.projectId`) as the **Project** dimension, derived at posting like every other dimension (AR keeps the customer). Recorded from the first invoice because nothing can attach it later: the contract would be the only record of which project a line belonged to, and invoices already pushed to an accounting provider would not pick up a dimension added afterwards. It is what puts a project's billing revenue beside its costs (`2026-10-03-projects.md`). No project → posts exactly as without this.
+- **Contract position** per line and month = invoiced (posted invoice lines), recognized (posted revenue rows), deferred = invoiced − recognized (Deferred Revenue when positive, Contract Assets when negative) — the summary on the contract and the input of a later ARR / waterfall report.
+
+Foreign currency: the contract stores one `exchangeRate`, read from the company's rates when the contract is created or its currency is changed. Every invoice `create-contract-invoices` drafts, and the cancellation credit memo, carries that stored rate and posts at it, not at the rate of the invoice date. Revenue is computed in contract currency. The recognition run applies each month as a movement at the period end's rate (`get_exchange_rate`), and each pool carries base at a weighted-average rate, so a base difference on a cleared balance goes to realized exchange gain or loss (D3). FX remeasurement of the contract balance is out of v1.
+
+#### Invoicing — the shared recurring-invoicing layer
+
+Contracts are the second **source** of the layer defined in Part II:
+
+- **Drafting.** `createContractInvoicesForDuePlannedInvoices(db, { companyId, asOf, customerContractId?, userId })` (`@carbon/database/contract-billing`), one transaction per contract: renewals (below), roll the horizon, then for each planned invoice due on or before `asOf` draft one Draft `salesInvoice` (customer, bill-to, invoice contact, payment term, currency, `customerReference` = the contract's PO number, `customerContractId`) with one line per planned invoice line: `invoiceLineType 'Service'`, the line's item, customer-facing description + the service window, quantity, `unitPrice` and `discountPercent` from the contract line, `taxPercent`, `serviceStartDate` / `serviceEndDate` = the billing period, `customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`. Stamps the planned rows *Invoiced* + `salesInvoiceLineId` (idempotent re-run).
+- **Daily job.** The shared `recurring-billing` cron (renamed from `rental-billing` by the rental automation plan) runs, per company in an isolated step, every source's drafting — rental agreements, then contracts — and then `automateSalesInvoice` over every drafted invoice, sending one "Recurring invoicing" digest per owner (`salesPersonId ?? createdBy`) across both sources.
+- **Mode.** `customerContract.invoiceAutomation` (nullable) overrides `companySettings.invoiceAutomation` (default *Post and Email*). This spec adds the mode **`Post and Send via Stripe`** to the shared `invoiceAutomation` enum and its branch to `automateSalesInvoice` (post, then the existing Stripe Connect send — Carbon stays the billing engine; never a Stripe Subscription). Rental agreements gain it too.
+- **Contract holds** (the source declares them, as rentals declare charges and early-return credits): an invoice carrying a negative adjustment line; an invoice re-billing rows a VOID released (`voidedSalesInvoiceId` stamp on `customerContractInvoiceLine`, the rental D26 rule); and the shared holds (sales-rule violation, missing required contact, posting failure).
+- **Recipients and sender** (shared rule): To the invoice contact, CC the customer's default CC (else the company default CC); From `"<Company name>" <DEFAULT_FROM>`; Reply-To `companySettings.accountsReceivableEmail`, else the contract owner (`salesPersonId ?? createdBy`).
+- **VOID** of a contract invoice returns its planned rows to Pending and stamps `voidedSalesInvoiceId` (held on re-draft); **deleting** a Draft contract invoice un-stamps them (`releaseRecurringInvoiceStamps`, generalizing `releaseRentalInvoiceStamps`).
+- **Invoice Now** on an Active contract runs drafting + automation for that contract now (`update: sales` + `create: invoicing`).
+
+#### Amendments
+
+**Amend** on an Active contract (`update: sales`) creates a `customerContractAmendment` (date, reason, contract type, effective from) with replacement lines — change quantity, rate, rate unit, discount, tax, description, revenue method / dates, project; add a line; end a line:
+
+- *From the change date* (default): the old line ends the day before the effective date, the new line starts on it; recurring periods are prorated by day and already-billed advance periods adjusted from the billed amount; revenue rows of the old line after the effective date are removed and the new line's are added (prospective).
+- *From the next billing period*: the effective date snaps to the first day of the next unstarted period; nothing is prorated.
+- **Contract type** is suggested from the change in recurring value per period: up → Expansion, down → Contraction; editable.
+- A **preview** shows the adjustment, the next invoices and the revenue change before saving.
+
+A **time-limited discount** (20 % off the first year) is entered as the line's discount plus a scheduled amendment removing it at the date (created at confirmation from an optional "discount ends" date on the line).
+
+#### Cancellation
+
+**Cancel** (`update: sales`): end date (default the end of the current billing period, so nothing is credited), reason, and — only when the date falls inside a period already billed in advance — *Credit unused time*. Ends every open line, removes planned invoices and revenue rows after the date, and, when crediting, drafts one Draft customer **credit memo** (`memo.customerContractId`, amount = Σ the cancellation's adjustment rows, stamped `memoId`) posted through the contract branch of `post-memo` (above). Revertible until the end date passes and only while no credit memo has posted.
+
+#### Renewal
+
+A contract with a **term** (months; presets 6 months / 1, 2, 3 years / custom; or open-ended) and renewal *Renew* is extended by the daily job on its end date: end date + one term, an amendment of type **Existing** effective the new term's first day raising every open recurring line's rate by the uplift % (*From the next billing period*), new planned invoices and revenue rows. Renewal *End* lets it end.
+
+#### Sales order → contract
+
+**Create Contract** on a sales order (`create: sales`) offers its Service lines; the ticked ones become contract lines (One-time, or Recurring with a rate unit), with customer, payment term, currency and PO reference copied and `customerContract.salesOrderId` set. Those order lines are billed by the contract: the `convert` sales order → invoice skips order lines referenced by a contract line, and the order's invoiced rollup counts them as invoiced.
+
+#### Design Decisions
+
+| # | Decision | Choice | Rationale |
+|---|---|---|---|
+| 1 | The document | A generalized AR **Contract** (`customerContract*`), replacing the Subscription draft | G2; Rillet Contract; contract = billing + revenue on the same lines |
+| 2 | Rentals | Stay a separate document; share the recurring-invoicing layer; read-only upcoming-invoices preview; no schedule editing | G2, G4b — custody events re-cut the schedule, sales-type units must bill their valued schedule, rent automation needs determinism |
+| 3 | AP side | Nothing; prepaid expenses and repeating supplier bills are a documented gap | G1; Rillet has none |
+| 4 | Revenue types | One-time + Recurring, Service items only; goods on sales orders; usage later | G3, Q1 |
+| 5 | Rate unit vs frequency | Separate (Day…Year vs Week…Year) | Q2, Q2b |
+| 6 | Alignment / timing | Anniversary (default) or Calendar; Advance or Arrears; first invoice date | Q3, G4, Rillet invoicing |
+| 7 | Proration | By day, exact | NetSuite / BC / Stripe convention |
+| 8 | Invoice schedule | Persisted, computed, editable while Draft with per-line totals conserved | G4; Rillet invoice breakdown |
+| 9 | Revenue | Per-line **revenue method** (v1: Daily / Even per month) over revenue dates (go-live); read-only schedule; invoiced / recognized / deferred summary. `customerContractRevenue` is the per-line revenue ledger — rows planned (schedule methods) or generated by the run (later methods) | G5; Rillet revenue step. Named *method* on 2026-10-03 so *As Invoiced* (T&M) and *Percent Complete* (project contracts, `2026-10-03-projects.md` Phase 4) are added enum values — renaming a column or enum after customer data exists breaks restoring older backups |
+| 10 | Revenue engine | Revenue follows the line: recognition run releases Deferred Revenue or accrues Contract Assets; invoice posting relieves accruals first — rental model generalized | G5 settled-by-model; ASC 606 contract asset / liability |
+| 11 | SSP allocation | None — each line's revenue is its own net price | Rev-rec spec Phase 2–3 allocation stays later |
+| 12 | Discounts | Discount % per line; time-limited via a scheduled amendment | G8 |
+| 13 | Changes | Amendment header + replacement lines; Change Date (prorated, default) or Next Period | Q6, Q11, G6; Rillet amendments |
+| 14 | Adjustment basis | Amount actually billed × unused days ÷ billed days | Stripe flexible billing |
+| 15 | Cancellation | End date (default end of period); optional credit memo | Q7, Q7b |
+| 16 | Renewal | Optional term; Renew with uplift % (an *Existing* amendment) or End | Q8, G6 |
+| 17 | Contract type | New Sales / Existing / Expansion / Reactivation / Contraction on contract + amendment, suggested, editable; ARR report later | G6 |
+| 18 | Migration | *Billed through* + *Recognize revenue from*; Carbon releases the migrated deferred balance | Q10, G9 |
+| 19 | Grouping | One invoice per contract per run | Q4 |
+| 20 | Automation | Shared layer: company default + per-contract override; adds *Post and Send via Stripe*; contract holds (negative adjustments, VOID re-bills) | U1, U2, Q5 |
+| 21 | Recipients / sender | Invoice contact, CC default CC; Reply-To AR email else owner | G7, U3 |
+| 22 | Daily job | One `recurring-billing` job across sources, one digest per owner | U4 |
+| 23 | Origin | Standalone + Create Contract from chosen sales-order Service lines (removed from the order's invoicing) | Q9, Q9b |
+| 24 | Dimensions | No manual per-line dimensions — derived at posting as today. One source field is recorded: an optional **project** on the contract (default) and line (override), written as the Project dimension on the line's revenue-side journal lines | G7 settled-by-codebase; project added 2026-10-03 — a one-way door: revenue posted without it can never be attributed to a project, and project profitability (`2026-10-03-projects.md`) needs it from the first invoice |
+| 25 | Module / naming | Inside `sales` (`sales.models.ts` / `.service.ts` / `.server.ts`, `ui/Contracts/`); tables `customerContract*`; UI "Contracts" | Heuristic 6; rental precedent; room for a supplier contract later |
+| 26 | Multi-tenancy (H1) | `companyId` + `PRIMARY KEY ("id","companyId")` + `id('prefix')` on every table | conventions-database |
+| 27 | Service shape (H2) | `client` first, `{data, error}`, MCP-safe guards (Draft-only edits, explicit field picks) | rental writers precedent |
+| 28 | RLS (H3) | `company("sales", { read: "sales_view" })` per table in `authz/manifest.ts` + `authz migration` | authz-manifest rule |
+| 29 | Permissions (H4) | CRUD / amend / cancel `sales_*`; confirm with a posting mode and Invoice Now also `create: invoicing` | rental Generate Invoices precedent |
+| 30 | Forms (H5) | `customerContractValidator`, `customerContractLineValidator`, `customerContractInvoiceEditValidator`, `customerContractAmendmentValidator`, `customerContractCancelValidator`, `createContractFromSalesOrderValidator` | conventions-forms |
+| 31 | Backward compatibility (H7) | Additive tables/columns/enum values; `post-sales-invoice` / `post-memo` / `convert` gain branches only for contract-linked rows | No FROZEN surface touched |
+
+### Data Model Changes
+
+Migrations: enums first (ADD VALUE rule), then tables; `pnpm db:migrate`, `pnpm --filter @carbon/database authz migration contracts-rls`, `pnpm run generate:types`.
+
+```sql
+CREATE TYPE "customerContractStatus"        AS ENUM ('Draft', 'Active', 'Ended');
+CREATE TYPE "customerContractType"          AS ENUM ('New Sales', 'Existing', 'Expansion', 'Reactivation', 'Contraction');
+CREATE TYPE "contractRevenueType"           AS ENUM ('One-time', 'Recurring');
+CREATE TYPE "contractRateUnit"              AS ENUM ('Day', 'Week', 'Month', 'Quarter', 'Year');
+CREATE TYPE "contractBillingFrequency"      AS ENUM ('Week', 'Month', 'Quarter', 'Year');
+CREATE TYPE "contractBillingAlignment"      AS ENUM ('Anniversary', 'Calendar');
+CREATE TYPE "contractBillingTiming"         AS ENUM ('Advance', 'Arrears');
+CREATE TYPE "contractRenewal"               AS ENUM ('Renew', 'End');
+CREATE TYPE "contractRevenueMethod"         AS ENUM ('Daily', 'Even Period');   -- later: 'As Invoiced', 'Percent Complete'
+CREATE TYPE "contractAmendmentEffect"       AS ENUM ('Change Date', 'Next Period');
+CREATE TYPE "contractInvoiceStatus"         AS ENUM ('Planned', 'Invoiced', 'Billed Externally');
+ALTER TYPE "invoiceAutomation" ADD VALUE IF NOT EXISTS 'Post and Send via Stripe';  -- enum from the rental automation plan
+
+CREATE TABLE "customerContract" (
+  "id" TEXT NOT NULL DEFAULT id('con'),
+  "companyId" TEXT NOT NULL,
+  "customerContractId" TEXT NOT NULL,                 -- readable, sequence 'customerContract' prefix CON
+  "name" TEXT NOT NULL,
+  "status" "customerContractStatus" NOT NULL DEFAULT 'Draft',
+  "contractType" "customerContractType" NOT NULL DEFAULT 'New Sales',
+  "customerId" TEXT NOT NULL REFERENCES "customer"("id"),
+  "invoiceCustomerId" TEXT REFERENCES "customer"("id"),
+  "invoiceCustomerContactId" TEXT REFERENCES "customerContact"("id"),
+  "invoiceCustomerLocationId" TEXT REFERENCES "customerLocation"("id"),
+  "salesPersonId" TEXT REFERENCES "user"("id"),
+  "salesOrderId" TEXT,                                   -- origin
+  "projectId" TEXT,                                      -- default Project dimension for every line (existing accounting project)
+  "customerReference" TEXT,                              -- PO number → every invoice
+  "closeDate" DATE NOT NULL,                             -- booking date
+  "startDate" DATE NOT NULL,
+  "endDate" DATE,                                        -- NULL = open-ended
+  "termMonths" INTEGER CHECK ("termMonths" > 0),
+  "renewal" "contractRenewal" NOT NULL DEFAULT 'End',
+  "renewalUplift" NUMERIC NOT NULL DEFAULT 0 CHECK ("renewalUplift" >= 0),   -- fraction
+  "billingFrequency" "contractBillingFrequency" NOT NULL DEFAULT 'Month',
+  "billingAlignment" "contractBillingAlignment" NOT NULL DEFAULT 'Anniversary',
+  "billingTiming" "contractBillingTiming" NOT NULL DEFAULT 'Advance',
+  "firstInvoiceDate" DATE,
+  "billedThrough" DATE,
+  "recognizeRevenueFrom" DATE,
+  "invoiceAutomation" "invoiceAutomation",               -- NULL = companySettings.invoiceAutomation
+  "paymentTermId" TEXT REFERENCES "paymentTerm"("id"),
+  "currencyCode" TEXT NOT NULL,
+  "notes" JSONB,
+  "confirmedAt" TIMESTAMP WITH TIME ZONE, "confirmedBy" TEXT REFERENCES "user"("id"),
+  "cancelledAt" TIMESTAMP WITH TIME ZONE, "cancellationReason" TEXT,
+  "endedAt" TIMESTAMP WITH TIME ZONE,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "customFields" JSONB,
+  CONSTRAINT "customerContract_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContract_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "customerContract_readable_key" UNIQUE ("customerContractId", "companyId"),
+  CONSTRAINT "customerContract_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId"),
+  CONSTRAINT "customerContract_dates_check" CHECK ("endDate" IS NULL OR "endDate" >= "startDate" - 1)
+);
+
+CREATE TABLE "customerContractAmendment" (
+  "id" TEXT NOT NULL DEFAULT id('cona'),
+  "companyId" TEXT NOT NULL,
+  "customerContractId" TEXT NOT NULL,
+  "amendmentDate" DATE NOT NULL,                         -- effective date after snapping
+  "effect" "contractAmendmentEffect" NOT NULL DEFAULT 'Change Date',
+  "contractType" "customerContractType" NOT NULL,
+  "reason" TEXT NOT NULL,                                -- 'Renewal' for a renewal, 'Cancellation' for a cancel
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"), "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "customerContractAmendment_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContractAmendment_contract_fkey" FOREIGN KEY ("customerContractId", "companyId")
+    REFERENCES "customerContract"("id", "companyId") ON DELETE CASCADE
+);
+
+CREATE TABLE "customerContractLine" (
+  "id" TEXT NOT NULL DEFAULT id('conl'),
+  "companyId" TEXT NOT NULL,
+  "customerContractId" TEXT NOT NULL,
+  "revenueType" "contractRevenueType" NOT NULL,
+  "itemId" TEXT NOT NULL REFERENCES "item"("id"),         -- a Service item (service-layer check)
+  "description" TEXT,                                     -- customer-facing
+  "quantity" NUMERIC NOT NULL DEFAULT 1 CHECK ("quantity" > 0),
+  "rate" NUMERIC NOT NULL CHECK ("rate" >= 0),            -- price; per rate unit when Recurring
+  "rateUnit" "contractRateUnit",                          -- Recurring only
+  "discountPercent" NUMERIC NOT NULL DEFAULT 0 CHECK ("discountPercent" >= 0 AND "discountPercent" <= 1),
+  "discountEndsOn" DATE,                                  -- schedules the removing amendment at confirm
+  "taxPercent" NUMERIC NOT NULL DEFAULT 0 CHECK ("taxPercent" >= 0 AND "taxPercent" <= 1),
+  "startDate" DATE NOT NULL,
+  "endDate" DATE,
+  "goLiveDate" DATE,
+  "revenueMethod" "contractRevenueMethod" NOT NULL DEFAULT 'Daily',
+  "revenueStartDate" DATE,                                -- default goLiveDate ?? startDate
+  "revenueEndDate" DATE,                                  -- default endDate (one-time, no end = point in time)
+  "amendmentId" TEXT,                                     -- the amendment that created it
+  "amendsLineId" TEXT,                                    -- the line it replaces
+  "salesOrderLineId" TEXT,
+  "projectId" TEXT,                                       -- overrides the contract's project
+  "sortOrder" NUMERIC,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"), "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "customFields" JSONB,
+  CONSTRAINT "customerContractLine_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContractLine_contract_fkey" FOREIGN KEY ("customerContractId", "companyId")
+    REFERENCES "customerContract"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "customerContractLine_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId"),
+  CONSTRAINT "customerContractLine_rateUnit_check" CHECK (("revenueType" = 'Recurring') = ("rateUnit" IS NOT NULL)),
+  CONSTRAINT "customerContractLine_amends_check" CHECK ("amendsLineId" IS NULL OR "amendmentId" IS NOT NULL)
+);
+CREATE UNIQUE INDEX "customerContractLine_salesOrderLine_key"
+  ON "customerContractLine" ("salesOrderLineId", "companyId") WHERE "salesOrderLineId" IS NOT NULL;
+
+CREATE TABLE "customerContractInvoice" (                   -- a planned invoice (the editable breakdown)
+  "id" TEXT NOT NULL DEFAULT id('coni'),
+  "companyId" TEXT NOT NULL,
+  "customerContractId" TEXT NOT NULL,
+  "invoiceDate" DATE NOT NULL,
+  "status" "contractInvoiceStatus" NOT NULL DEFAULT 'Planned',
+  "salesInvoiceId" TEXT,                                   -- stamp when drafted
+  "isEdited" BOOLEAN NOT NULL DEFAULT FALSE,
+  /* audit */ "createdBy" TEXT NOT NULL REFERENCES "user"("id"), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"), "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "customerContractInvoice_pkey" PRIMARY KEY ("id", "companyId")
+);
+CREATE INDEX "customerContractInvoice_due_idx" ON "customerContractInvoice" ("companyId", "status", "invoiceDate");
+
+CREATE TABLE "customerContractInvoiceLine" (
+  "id" TEXT NOT NULL DEFAULT id('conil'),
+  "companyId" TEXT NOT NULL,
+  "customerContractInvoiceId" TEXT NOT NULL,
+  "customerContractLineId" TEXT NOT NULL,
+  "periodStart" DATE NOT NULL, "periodEnd" DATE NOT NULL,  -- service window covered
+  "units" NUMERIC NOT NULL,
+  "amount" NUMERIC NOT NULL,                               -- net of discount; negative for an adjustment
+  "isAdjustment" BOOLEAN NOT NULL DEFAULT FALSE,
+  "salesInvoiceLineId" TEXT,                               -- stamp (no FK, rental precedent)
+  "voidedSalesInvoiceId" TEXT,                             -- re-bill hold (rental D26)
+  "memoId" TEXT,                                           -- cancellation credit
+  /* audit */ "createdBy" TEXT NOT NULL REFERENCES "user"("id"), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"), "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "customerContractInvoiceLine_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContractInvoiceLine_dates_check" CHECK ("periodEnd" >= "periodStart")
+);
+
+CREATE TABLE "customerContractRevenue" (                   -- per line per month, read-only
+  "id" TEXT NOT NULL DEFAULT id('conr'),
+  "companyId" TEXT NOT NULL,
+  "customerContractLineId" TEXT NOT NULL,
+  "periodStart" DATE NOT NULL, "periodEnd" DATE NOT NULL,  -- a calendar month (or its covered part)
+  "amount" NUMERIC NOT NULL,
+  "status" "revenueScheduleStatus" NOT NULL DEFAULT 'Planned',   -- existing enum
+  "journalId" TEXT, "postedAt" TIMESTAMP WITH TIME ZONE,
+  /* audit */ "createdBy" TEXT NOT NULL REFERENCES "user"("id"), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"), "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "customerContractRevenue_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContractRevenue_key" UNIQUE ("companyId", "customerContractLineId", "periodStart")
+);
+
+-- Provenance on existing tables (ON DELETE SET NULL FKs on (col, companyId) + indexes)
+ALTER TABLE "salesInvoice"     ADD COLUMN "customerContractId" TEXT;
+ALTER TABLE "salesInvoiceLine" ADD COLUMN "customerContractId" TEXT,
+                               ADD COLUMN "customerContractLineId" TEXT,
+                               ADD COLUMN "customerContractInvoiceLineId" TEXT;
+ALTER TABLE "memo"             ADD COLUMN "customerContractId" TEXT;
+-- Sequence 'customerContract' prefix 'CON' size 6 (seed + seed-company); view "customerContracts":
+-- c.* + customerName, lineCount, recurringPerPeriod, contractValue, nextInvoiceDate,
+-- invoicedToDate, recognizedToDate, deferredBalance.
+```
+
+RLS: each new table `company("sales", { read: "sales_view" })`. Backups: tenant tables discovered automatically; `pnpm db:check:backups` regenerates the manifest (no renames). Demo datasets: one Active contract per dataset (a one-time implementation line + two recurring lines) in the sales slice; coverage floors measured.
+
+### API / Service Changes
+
+- **Pure** — `shared/contract-schedule.ts`: `billingGrid`, `periodUnits`, `planInvoiceSchedule(contract, lines)`, `validateScheduleEdit(lines, plannedRows)` (per-line totals conserved), `revenueSchedule(line, method)`, `amendmentPlan(...)`, `cancellationPlan(...)`, `renewalPlan(...)`, `contractPosition(...)`; the reconciliation helper extracted from `rental-billing.ts`.
+- **Database package** — `@carbon/database/contract-billing`: `createContractInvoicesForDuePlannedInvoices`, `confirmContract`, `applyContractAmendment`, `cancelContract`, `renewDueContracts` (Kysely, one transaction each); `releaseRecurringInvoiceStamps` generalizes `releaseRentalInvoiceStamps`; the revenue-recognition run's synthesizer list gains `synthesizeContractRevenue` (beside `synthesizeRentalAccruals`).
+- **Jobs** — the shared `recurring-billing` cron and `automateSalesInvoice` (rental automation plan) gain the contract source and the Stripe branch.
+- **Edge functions** — `post-sales-invoice`: contract branch (relieve Contract Assets, defer the rest, negative adjustments in reverse; the line's Project dimension on its revenue-side lines — also written by `synthesizeContractRevenue` and the `post-memo` contract branch); VOID: release + `voidedSalesInvoiceId` on contract rows. `post-memo`: contract branch. `convert`: skip contract-linked order lines.
+- **ERP** (`sales.service.ts`, MCP tools with Draft-only guards): `getContracts`, `getContract`, `insertContract`, `updateContract`, `deleteContract`, `getContractLines`, `upsertContractLine`, `deleteContractLine`, `getContractInvoiceSchedule`, `updateContractInvoiceSchedule` (Draft, conserved totals), `getContractRevenueSchedule`, `getContractPosition`, `previewContract`. Server-only (`sales.server.ts`): confirm, amend, cancel, invoice now, create from sales order.
+- **Routes** — `x+/sales+/contracts.tsx`; `x+/contract+/new.tsx`, `$id.tsx` shell, `$id.details.tsx`, `$id.lines.new.tsx`, `$id.$lineId.details.tsx`, `$id.schedule.tsx` (invoice-schedule edits), `$id.confirm.tsx`, `$id.amend.tsx`, `$id.cancel.tsx`, `$id.invoice.tsx`, `$id.delete.tsx`, `update.tsx`; `x+/sales-order+/$orderId.contract.tsx`.
+
+### UI Changes
+
+Built with the `carbon-design` skill. Creation is a five-step setup wizard (Details, Products, Invoicing, Revenue, Review — the five Rillet steps), at `/x/contract/:id/setup/<step>`. Brad chose the wizard on 2026-10-04; it replaces the original "one page, not a wizard" decision. After Confirm, a person works on the contract from the contract page (explorer + center + properties), like the rental agreement page:
+
+- **Sales → Contracts** list: ID, name, customer, type, status, recurring per period, contract value, next invoice, invoiced / recognized / deferred, ends on.
+- **Contract page** — header (status, *Confirm*, *Invoice Now*, *Amend*, *Cancel*, *Delete* while Draft); explorer of lines (*Add Line*: product picker, multi-select like Rillet's "Add to contract"); center sections:
+  - **Summary** — lines as line items ("Implementation · one-time · $60,000", "Platform access · 10 × $40 per month · 20 % off until 31 Oct 2027"), contract value, recurring per period, next invoice.
+  - **Invoices** — the invoice schedule (date, total, lines, status, sales-invoice link). While the contract is a Draft, this is the editable grid of the wizard's Invoicing step. It has one row per invoice, one column per line and a footer row of residuals.
+  - **Revenue** — per line method, project and dates, the monthly schedule, and the **invoiced / recognized / deferred** table per month. While the contract is a Draft, this is the editable grid of the wizard's Revenue step. It has one row per month and one column per line.
+  - **Amendments** — history with date, type, reason and changes.
+- **Properties** panel — name, customer, bill-to, contact, sales person, project, close date, start + **duration** (6 months / 1, 2, 3 years / open-ended / custom) → end date, renewal + uplift, frequency, alignment, timing, first invoice date, billed through, recognize revenue from, invoicing (company default / Draft Only / Post / Post and Email / Post and Send via Stripe), payment term, currency, PO number, contract type, notes, custom fields.
+- **Line form** — Service item, revenue type, description (customer-facing), quantity, rate (+ per rate unit when Recurring), discount % + ends on, tax %, start / end, go-live, revenue method + revenue dates, project (defaults from the contract).
+- **Amend / Cancel modals** with previews (as specified above); **Create Contract** on sales orders; "From contract CON000012" links on invoices, lines and memos.
+- **Settings → Invoicing** (rental automation plan) mode list gains *Post and Send via Stripe*.
+- **Docs** — `docs/content/docs/reference/contracts.mdx` (`carbon-docs`), agent KB regenerated, glossary: *Contract*, *Contract type*, *Invoice schedule*, *Revenue method*, *Billed through*, *Amendment*.
+
+### Acceptance Criteria
+
+Worked example (Acme, accounting enabled):
+
+- [ ] A Draft contract with implementation $60,000 one-time (revenue 1 Nov 2026–30 Apr 2027, Even Period), platform 10 × $40 per Month at 20 % off, support $1,200 per Year, Monthly / Calendar / Advance, first invoice 1 Nov, previews invoice 1 Nov = $60,420.00 (60,000 + 320 + 100) and $420.00 each month after; revenue preview for implementation = $10,000 per month Nov–Apr; summary for November: invoiced $60,420.00, recognized $10,420.00, deferred $50,000.00.
+- [ ] Editing the schedule to split implementation into 3 × $20,000 on 1 Nov / 1 Dec / 1 Jan is accepted; moving $10,000 of it off the schedule is refused with the residual shown.
+- [ ] After confirming, the daily job on 1 Nov drafts one invoice with three Service lines (service windows 1–30 Nov for the recurring lines, 1 Nov–30 Apr for implementation), and re-running drafts nothing; with the company default *Post and Email* it posts and emails the invoice contact (CC default CC, Reply-To the receivables email).
+- [ ] Posting that invoice credits Deferred Revenue $60,420.00 (no Contract Assets yet); the November recognition run recognizes $10,420.00 (Dr Deferred Revenue / Cr each item's sales account).
+- [ ] With the implementation billed later instead — 2 × $30,000 on 1 Jan and 1 Apr — the November and December runs each accrue $10,000 of implementation revenue to Contract Assets (earned, not billed); posting the 1 Jan invoice relieves the $20,000 accrual and defers $10,000, which the January run releases; no Deferred Revenue debit balance or Contract Assets credit balance ever appears.
+- [ ] A line at $10 per Day invoices $310.00 for a 31-day month and $280.00 for February 2027.
+- [ ] Anniversary alignment, start 15 March, monthly: invoices on the 15th, no proration; a 31 January anchor bills 28 February then 31 March.
+- [ ] Amend on 12 March (platform 10 → 15 seats, *From the change date*, March billed $320 net): the next invoice carries −$206.45 (320 × 20/31) and +$309.68 (15 × 40 × 0.8 × 20/31) and the amendment is suggested as *Expansion*; *From the next billing period* produces no March lines.
+- [ ] With 10 seats, the discount ends on 31 Oct 2027 (scheduled amendment) and the term renews the same day with a 5 % uplift: November 2027 bills platform at 10 × $40 × 1.05 = $420.00.
+- [ ] Renewal on 31 Oct 2027 with uplift 5 %: end date extends 12 months, an *Existing* amendment raises recurring rates by 5 %; with renewal *End* the contract ends.
+- [ ] Cancel effective 20 Sep with *Credit unused time* on a September billed at $420: a Draft credit memo for $140.00 (420 × 10/30); posting it debits Deferred Revenue; revenue rows after 20 Sep are removed.
+- [ ] VOID of a posted contract invoice returns its planned rows to Pending; the next run re-drafts and holds it ("Re-billing INV-…, which was voided").
+- [ ] An invoice containing a negative adjustment line is drafted and held for review regardless of the automation mode.
+- [ ] *Post and Send via Stripe*: confirmation requires the Stripe customer link; the job posts and sends through Connect; failures leave a held Draft with the reason.
+- [ ] Migrated annual contract (start 1 May 2026, Billed through 30 Apr 2027, Recognize revenue from 1 Oct 2026, one line $12,000 per Year invoiced Yearly in advance, revenue method Even Period): no invoice before 1 May 2027; the October run recognizes $1,000 from Deferred Revenue (the migrated opening balance); first Carbon invoice 1 May 2027.
+- [ ] Contract type suggestions: a customer's first contract → New Sales; a customer whose earlier contracts all ended → Reactivation; a seat reduction amendment → Contraction.
+- [ ] *Create Contract* from a sales order ticking only the platform line: invoicing the order bills only the remaining lines; the order completes when they are invoiced.
+- [ ] A EUR contract posts with base translation; recognition rows post in base.
+- [ ] A contract with project *P-100* and one line overriding it to *P-200*: the invoice's Contract Assets / Deferred Revenue lines and each recognition run's lines carry the Project dimension of their own line (P-100 / P-200), AR carries none; a contract with no project posts exactly as before.
+- [ ] One company whose contract billing throws does not stop the `recurring-billing` run for other companies; rental billing behaviour and tests are unchanged after the shared extraction.
+
+### Risks
+
+| Risk | Severity | Mitigation |
+|---|---|---|
+| Line-level revenue engine (accrue / defer per line) is new posting territory beyond rentals | High | Generalize the rental model already built and tested (`planRentalLine`, `synthesizeRentalAccruals`); per-line balance invariants in unit tests; journal balance assertions; worked-example tests above |
+| Editable schedules break the conservation invariant | Med | Pure `validateScheduleEdit` on every save and at confirmation; DB-side check at confirm (Σ per line = computed total) |
+| Amendments reset hand-edited future invoices | Low | Warn in the amendment preview; edits before the effective date are kept |
+| Unattended posting / sending a wrong invoice | High | Shared-layer holds (negative adjustments, VOID re-bills, rule violations, posting failures); company default can be set to Draft Only; per-contract override |
+| Migration revenue depends on the opening balance being in Deferred Revenue | Med | Confirmation shows the migrated deferred amount per line; a period-close check compares it with the Deferred Revenue balance |
+| Two sources in one cron grow its runtime | Low | Per-company isolated steps (`.ai/lessons.md` tenant isolation); each source in its own step within the company |
+| Scope overlap with the rev-rec spec Phases 2–3 | Med | This spec delivers the arrangement from the billing side without SSP; a scope note on `2026-07-04-revenue-recognition.md` points here |
+
+### Delivery phases
+
+Two plans, in order, each shippable (decided 2026-10-02; the rental invoice automation plan, which builds the shared layer, executes first):
+
+- **Phase A — contracts, invoice schedule, invoicing.** *Implemented 2026-10-04* (`.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III; see the 2026-10-04 Changelog entry for the decisions that refine this spec). Everything except the line-level revenue engine: tables, contract page, lines, editable invoice schedule, amendments, cancellation + credit memo, renewal, contract types, discounts, migration *Billed through*, Create Contract from sales orders, the contract source in `recurring-billing`, contract holds, and the *Post and Send via Stripe* mode. Interim revenue: contract invoice lines post through the existing **Service-line deferral** — each line's service dates are its billing period, and a one-time line's service dates are its revenue dates — so revenue is right whenever billing is at or ahead of delivery (the common case). The revenue section shows the preview and summary computed from the schedule; *Recognize revenue from* and Even Period are accepted but only take effect in Phase B.
+- **Phase B — revenue follows the line.** *Implemented 2026-10-04* (`.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV; see the second 2026-10-04 Changelog entry). Phase B leaves out the contract position view: the Revenue section of a confirmed contract still shows the preview. `customerContractRevenue`, the contract branch of `post-sales-invoice` / `post-memo` (relieve Contract Assets, defer the rest), `synthesizeContractRevenue` in the recognition run, Even Period, migrated deferred-balance release, the contract position view. Contract lines switch from the Service deferral branch to the contract branch; invoices already posted in Phase A keep their Service deferral rows (no restatement).
+
+### Out of scope (v1)
+
+Usage-based / metered lines; physical goods on contracts; SSP allocation across lines; ARR / MRR waterfall reports (contract type and position are captured for them); per-customer invoice consolidation; customer rate cards for contracts; trials, pausing and coupons; per-line manual dimensions; FX remeasurement of contract balances; Rillet recurring-revenue sync; anything on the AP side (prepaid expenses, repeating supplier bills); merging rental agreements into contracts.
+
+### Open Questions
+
+> All resolved with Brad on 2026-10-02 before this version was written (`.ai/runs/2026-10-02-contracts.md`).
+
+- [x] **Line content** — **Answer:** Service items only (Q1), now One-time + Recurring (G3); usage later.
+- [x] **Frequencies; rate unit vs rhythm** — **Answer:** rates per Day / Week / Month / Quarter / Year; invoiced every Week / Month / Quarter / Year (Q2, Q2b).
+- [x] **Alignment** — **Answer:** Anniversary by default, Calendar optional (Q3).
+- [x] **Grouping** — **Answer:** one invoice per contract per run (Q4).
+- [x] **Automation** — **Answer:** the shared layer: company default + per-contract override, adding *Post and Send via Stripe* (Q5, U1, U2).
+- [x] **Mid-term changes; when they take effect** — **Answer:** amendments prorated by day from the change date (default) or from the next period (Q6, Q11).
+- [x] **Cancellation; credit form** — **Answer:** chosen end date (default end of period); optional credit memo (Q7, Q7b).
+- [x] **Renewal** — **Answer:** optional term; Renew with uplift % or End (Q8).
+- [x] **Origin; sales-order lines** — **Answer:** standalone + Create Contract from chosen Service lines, removed from the order's invoicing (Q9, Q9b).
+- [x] **Migration** — **Answer:** Billed through (Q10) + Recognize revenue from, Carbon releasing the migrated deferred balance (G9).
+- [x] **Reply-to; daily job** — **Answer:** AR email else owner; one `recurring-billing` job (U3, U4).
+- [x] **AP side** — **Answer:** nothing for now (G1).
+- [x] **Contract vs Subscription; rentals** — **Answer:** a generalized Contract; rentals stay separate (G2).
+- [x] **Editable invoice schedule; for rentals?** — **Answer:** editable while Draft with totals conserved (G4); rentals get a read-only preview (G4b).
+- [x] **Revenue per line** — **Answer:** Daily or Even per month over revenue dates with go-live; read-only schedule; invoiced / recognized / deferred summary (G5).
+- [x] **Contract types** — **Answer:** New Sales / Existing / Expansion / Reactivation / Contraction, suggested and editable; reports later (G6, G6b).
+- [x] **Recipients** — **Answer:** invoice contact + default CC (G7, G7b).
+- [x] **Discounts** — **Answer:** discount % per line (G8).
+
+### Changelog
+
+- 2026-10-02: Created as "Subscriptions" after research and a 14-question interview.
+- 2026-10-02: Re-scoped to **Contracts** after reviewing Rillet's Contract (G1–G9) and unifying with rental invoice automation into one recurring-invoicing layer (U1–U4): independent invoice and revenue schedules, editable invoice schedule, per-line revenue patterns and the line-level revenue engine, one-time lines, contract types, discounts, migration revenue; delivery, sender and the daily job now come from the shared layer.
+- 2026-10-03: Two one-way doors taken for the Projects spec (`2026-10-03-projects.md`): an optional **project** on the contract and line, written as the Project dimension on revenue-side journal lines (amends decision 24); **revenue pattern renamed revenue method** (`revenueMethod` / `contractRevenueMethod`) and `customerContractRevenue` framed as the per-line revenue ledger, so *As Invoiced* and *Percent Complete* are later enum values rather than a post-data rename.
+- 2026-10-04: **Phase A implemented** (`.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III, run log `.ai/runs/2026-10-02-contracts.md`). The plan refined this spec with 15 decisions. Brad reviewed them on 2026-10-03. He changed decision 3 to a real invoice line discount and confirmed decision 5.
+  1. **No `customerContractRevenue` table in Phase A.** The Revenue section is a preview that `contract-revenue.ts` computes from the lines. The Service deferral of each invoice line posts the revenue.
+  2. **The invoice schedule persists only after the first edit, or at Confirm.** While a Draft is unedited, the loader computes the schedule from the lines. The first edit writes the `customerContractInvoice` rows with `isEdited = true`. Confirm refuses an edited schedule that no longer conserves the total of each line.
+  3. **Sales invoice lines get a real discount.** `salesInvoiceLine.discountPercent` is a fraction from 0 to 1, with generated `netUnitPrice` / `convertedNetUnitPrice`. It discounts the merchandise (`quantity × unitPrice`) only. Tax applies to the discounted merchandise. Every amount calculation applies it: the `salesInvoices` view, posting, documents, the ERP invoice UI, Stripe, the accounting providers and rental utilization. A contract invoice line carries the list `unitPrice` and the `discountPercent` of its contract line.
+  4. **A contract credit memo posts to Deferred Revenue, not to Sales Discount.** `post-memo` debits Deferred Revenue up to the Planned deferral that it releases, and debits Sales for the remainder. It deletes or trims those Planned rows. `post-memo` refuses to void a contract memo.
+  5. **The project is on `salesInvoiceLine.projectId`.** `post-sales-invoice` writes it as the Project dimension on the revenue-side journal lines. AR keeps the customer.
+  6. **Rental reconciliation is not extracted.** Contracts have their own `reconcileContractSchedule` with the same adjustment rule. The rental files did not change.
+  7. **A sales-order line that a contract takes gets `invoicedComplete = true`** when the contract is created. `deleteContractReleasingSalesOrderLines` and `deleteContractLineReleasingSalesOrderLine` release it when the user deletes the Draft contract or that contract line. `convert` did not change.
+  8. **A row from reconciliation, or a line that starts mid-period, lands on the next regular invoice date.**
+  9. **Recurring units count whole months from the period start, then days.** An Anniversary period such as 15 Mar–14 Apr is exactly 1 month. A partial Calendar period is its days ÷ the days of that month.
+  10. **`rowPricing` prices a schedule row with two roundings at internal scale:** `unitPrice = round(rate × units)` and `amount = round(quantity × unitPrice × (1 − discountPercent))`. A row whose amount is not that product (a split installment, an adjustment) drafts as quantity 1 at its amount, with the discount in the description (`invoiceLinePricing`).
+  11. **A cancellation stores what it changed** in `customerContractAmendment.previousState`, so *Revert cancellation* can restore it. `customerContractInvoiceLine.customerContractInvoiceId` is nullable for memo rows, with a CHECK that the row has an invoice or a memo.
+  12. **Carbon suggests the contract type at creation, and the user can change it.** Confirm does not change it. The amendment preview suggests the amendment type from the change in recurring value per billing period.
+  13. **The list shows contract value, invoiced to date and next invoice date from the `customerContracts` view.** The contract page computes the recurring value per period in TypeScript. Recognized and deferred amounts are Phase B.
+  14. **The Stripe send moved into `@carbon/stripe`** as `sendPostedSalesInvoiceViaStripe` (`send-sales-invoice.server.ts`). The caller injects the mapping write, so `@carbon/stripe` has no commercial dependency.
+  15. **Each demo dataset has one Active contract.**
+
+  This spec predates the move from edge functions to Node server functions. The table maps the names in this spec to the code:
+
+  | Spec says | Code |
+  |---|---|
+  | `packages/database/supabase/functions/shared/contract-schedule.ts` | `packages/database/src/contract-schedule.ts` (`@carbon/database/contract-schedule`, re-exported from `@carbon/utils`) |
+  | Revenue preview math (`revenueSchedule`, `contractPosition`) | `packages/utils/src/contract-revenue.ts` |
+  | `@carbon/database/contract-billing` (`confirmContract`, `applyContractAmendment`, `cancelContract`) | Server function `post-customer-contract`: confirm, schedule edits, amend, cancel, revert cancellation |
+  | `@carbon/database/contract-billing` (`renewDueContracts`, `createContractInvoicesForDuePlannedInvoices`) | Server function `create-contract-invoices`: renewal, horizon roll, end of contract, drafting |
+  | Edge functions `post-sales-invoice` / `post-memo` / `convert` | `packages/server-functions/src/<name>/` |
+  | `automateSalesInvoice` | `postSalesInvoiceUnattended` + `emailPostedInvoice` + `sendPostedInvoiceViaStripe` (`packages/jobs/src/invoicing/automate-invoice.ts`) |
+  | `releaseRecurringInvoiceStamps` | `releaseRecurringInvoiceStamps` in `apps/erp/app/modules/sales/sales.server.ts` (generalized from `releaseRentalInvoiceStamps`) |
+- 2026-10-04: **Phase B implemented + setup wizard** (`.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV). Brad made 5 decisions on 2026-10-04. They override parts of this spec, and they supersede Phase A decisions 1 and 4.
+  1. **Creation is a wizard.** It has five steps: Details, Products, Invoicing, Revenue and Review. This overrides "one page, not Rillet's wizard" in UI Changes. After Confirm, the contract page stays the place to work on a contract.
+  2. **Next on Details saves the Draft.** Each later step edits that Draft through the real endpoints. Each step is a route: `/x/contract/:id/setup/<step>`.
+  3. **The conservation rule stays.** The invoice grid and the revenue grid only move money. The invoices of each line must add up to its total, and its revenue must equal what it bills. Confirm waits until both residuals are zero.
+  4. **The contract has a ship-to address** (`customerContract.shipToCustomerLocationId`). `create-contract-invoices` copies it onto each drafted invoice's `salesInvoiceShipment.customerLocationId` (added for this, in `20261006221401_sales-invoice-discount-and-ship-to.sql`).
+  5. **Phase B ships now.** Carbon stores the revenue schedule of each line as the **revenue plan**, one amount per month. A person can edit it while the contract is a Draft. This overrides "read-only" and the out-of-scope item "hand-edited revenue schedules". The GL engine posts from the revenue plan.
+
+  The plan refined the design with 13 decisions. The code implements them as follows:
+
+  | # | Decision | As built |
+  |---|---|---|
+  | D1 | Revenue plan table | `customerContractRevenue`: one row per line per calendar month, amount in contract currency, `status` Planned / Recognized / Recognized Externally. An unedited Draft has no rows, and the loader plans them live. The first revenue edit, or Confirm, writes them. |
+  | D2 | Revenue plan math | `@carbon/database/contract-revenue-schedule` (`planRevenueSchedule`, `reconcileRevenueSchedule`, `validateRevenueEdit`). The revenue total of a line is the sum of its invoice-schedule rows, adjustments and memo credits included. `@carbon/utils` re-exports it. |
+  | D3 | Position = invoiced − recognized | `applyContractMovement` (`@carbon/database/contract-position`) applies every movement. Deferred Revenue holds the positive part and Contract Assets the negative part, in contract currency and in base. Each pool carries base at a weighted-average rate. Against a receivable, the base difference goes to realized exchange gain or loss, never to revenue. |
+  | D4 | Movement ledger | `customerContractLedgerEntry`, entry types Opening / Invoice / Recognition / Credit Memo / Void. A Recognition entry cascades with its schedule row. |
+  | D5 | Recognition reuses the run | `synthesizeContractRevenue` is the second synthesizer of the run. It writes a Deferral row for the part that the deferred pool covers and an Accrual row for the rest. Run posting writes `documentType 'Contract'` and the Customer, Item and Project dimensions, and marks the month Recognized. |
+  | D6 | Invoice posting branch | A contract line credits Contract Assets up to the asset pool and Deferred Revenue for the rest. It writes no schedule rows. A VOID negates the Invoice entry exactly. If a pool then goes below zero, a reclass on the VOID journal moves it to the other pool. |
+  | D7 | Credit memo branch | `post-memo` applies the credit per line: Deferred Revenue up to the pool, Contract Assets for the rest. It no longer changes recognition schedule rows. Cancel writes no catch-up rows itself; the revenue reconciliation from the new end date makes them (D9). |
+  | D8 | Opening balance at Confirm | The server function writes it at Confirm, not a migration. Per line, it is the Billed Externally rows minus the Recognized Externally revenue, at the contract's exchange rate. It has no journal. |
+  | D9 | Reconcile, never rewrite | `reconcileRevenue` runs after amend, cancel, revert, renewal, the horizon roll and a discount end at Confirm. It keeps Recognized months, and also Planned months that a Draft run holds. |
+  | D10 | Invoice grid operations | `edit-schedule` gains `setAmount`, `addInvoice` and `delete`. The grid replaces the move, split and merge menus on a Draft. Those intents stay in the server function, with no UI. |
+  | D11 | Revenue grid operations | The new action `edit-revenue` has `setAmount`, `addMonth`, `deleteMonth` and `reset`. Confirm refuses a line whose revenue total is not its billed total. |
+  | D12 | Grid | The shared `Table` with `editableComponents`, plus a new `EditableDate` cell in `~/components/Editable`. |
+  | D13 | Wizard shell | `ContractSetupFrame` (heading and stepper) and `ContractSetupFooter` (contract total, Back, Next). |
+
+  The implementers reported 5 differences from the plan:
+  1. **The run recognizes Ended contracts too.** The synthesizer and the close check read every contract that is not a Draft. So the catch-up months of a cancelled contract still post.
+  2. **One lock serializes every writer.** Invoice posting, its VOID, `post-memo` and the synthesizer all take the advisory lock `contract-position:<companyId>`.
+  3. **Run posting refuses an incomplete run.** `postRevenueRecognitionRun` refuses a run while a due contract month has no schedule row. The user must recalculate the run first.
+  4. ~~Drafted invoices do not get the ship-to address.~~ Fixed: see decision 4.
+  5. **The position view is missing.** The loader does not send the ledger position. The Revenue section of a confirmed contract still shows the preview.
+- 2026-10-04: **The contract line field `kind` is now `revenueType`** (enum `contractRevenueType`, migration `20261004202351_contract-line-revenue-type.sql`). The UI label is "Revenue Type". The new name says what the field decides (`.claude/rules/conventions-database.md`). The Data Model above uses the new names.
+
+# Part IV — Period runs (revenue recognition and depreciation)
+
+> These decisions had no spec; they were recorded in the plans (now plan Parts V and VI) after the conversation of 2026-10-04. Research: `.ai/research/2026-10-04-netsuite-period-runs.md`.
+
+## Hardening (plan Part V)
+
+| # | Decision | NetSuite precedent |
+|---|---|---|
+| D0 | Keep the uncommitted baseline: Recalculate on Draft runs, the out-of-date check at Post, and Draft-run sync on invoice void and contract credit memo. | ARM Estimate, re-runnable process |
+| D1 | A posting makes a period Active only when the period contains the company's today. | The current period comes from the system date. |
+| D2 | New, Repeat and Post refuse a run whose `periodEnd` is after the end of the company's current month. The current month stays allowed. | FAM "Allow Future-dated Depreciation" off |
+| D3 | **Reverse Run** on a Posted run reverses its journals, resets the source records, and returns the run to Draft. Depreciation allows it only on the latest posted run. Generic journal reversal refuses run journals. | ARM void or delete makes plan lines recognizable again |
+| D4 | A run posts one journal per month, each in that month's accounting period. If that month's period is Closed, that month posts in the run's own period. | FAM journal per period of depreciation |
+| D5 | A revenue recognition period can have more than one run. Only one Draft per period exists at a time. | ARM "multiple times in a month" |
+
+Terms:
+
+- **Month end**: the last day of a calendar month, `YYYY-MM-DD`.
+- **Company today**: `datetime.today(await getCompanyTimeZone(client, companyId)).toString()`.
+- **Current month end**: `endOfMonth(parseDate(companyToday)).toString()`.
+- **Future run**: a run whose `periodEnd` is after the current month end.
+- **Target date**: the posting date of a month's journal. It is the month end, or the run's `periodEnd` when the month's period is Closed.
+
+## The close checklist asks the runs what is due (plan Part VI)
+
+| # | Decision |
+|---|---|
+| E1 | The close checklist asks the run engines what a run would do now, instead of copying their rules. |
+| E2 | Revenue recognition: a dry run of the proposal (synthesizers + due rows) in a transaction that always rolls back. |
+| E3 | Depreciation: `buildDepreciationRunLines` for the period end — the lines New Run would create. |
+| E4 | Each task shows what is due (count and amount), and offers **Create run**. |
+| E5 | Never leave an empty run: Create run, New Run and the dry run create nothing when nothing is due. |
+
+Terms:
+
+- **Run preview**: `{ revenue: { count, amount }, depreciation: { count, amount } }` for one period end.
+- **Due**: in the preview, or held by a Draft run of the period that is not posted.
+
+# Part V — Later changes
+
+> Built after the Parts above were implemented, with no spec of their own. The code and `apps/erp/app/modules/sales/AGENTS.md` (Rentals → Setup wizard), `.claude/rules/fixed-asset-lifecycle.md` (post-asset-transfer) are the detailed record.
+
+## Rental agreement setup wizard (2026-10-07)
+
+Creating a rental agreement is five routed steps — details → units → billing → accounting → review — on the same `~/components/Setup` pieces as the contract wizard (Part III), replacing the single `RentalAgreementForm`. "Next" on the first step saves a Draft; later steps save as they are edited. Units are added several at a time at their rate on file and priced in a grid. **Activate refuses a unit with no rate** (`unpricedUnitError`, `post-rental-agreement/validators.ts`): a unit at zero would go on rent and bill nothing. Playbook: `.ai/playbooks/rental-agreement-setup-wizard.md`.
+
+## Capitalization cost (2026-10-07)
+
+Capitalizing a stock unit (Part I, the fleet bridge) moves the value inventory already carries: its carrying cost, never a typed amount, since any other amount would strand a balance in the inventory account. The credit is the item's own inventory account (Buy → Raw Materials, Make → Finished Goods), the account its receipts and adjustments debited.
+
+- The capitalize form shows the exact cost from the `preview-asset-capitalization` server function — the same `calculateCOGS` relief, rolled back — instead of the item's unit cost, which differed whenever the unit's own layer, a layer at net book value or the average was not that cost.
+- `post-asset-transfer` `capitalize` refuses a unit whose cost is zero, rather than creating an asset worth nothing with no journal.
+- Not done: inventory accounts per item posting group (so a bought unit held for rent could sit in Finished Goods). It would change every inventory posting, not capitalization alone.

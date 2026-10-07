@@ -1632,7 +1632,7 @@ export const itemRentalRateValidator = z
   );
 
 // ----------------------------------------------------------------------
-// Customer contracts (.ai/specs/2026-10-02-contracts.md): the header, its
+// Customer contracts (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III): the header, its
 // lines, edits to the invoice schedule, amendments, cancellation and Create
 // Contract from a sales order. Each enum array mirrors the DB enum of the
 // same name. Percentages on these forms are percent POINTS (10 = 10%); the

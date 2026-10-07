@@ -1,12 +1,12 @@
 # Contracts — design interview and Phase A run log
 
-The grill that designed contracts (`.ai/specs/2026-10-02-contracts.md`), then the execution log of `.ai/plans/2026-10-03-contracts-phase-a.md`. Phase B has no run log; its notes are in `.ai/plans/2026-10-04-contracts-wizard-phase-b.md` ("Changes during the build").
+The grill that designed contracts (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III), then the execution log of `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III. Phase B has no run log; its notes are in `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV ("Changes during the build").
 
 ## Design interview (Q1–Q11, U1–U4, G1–G9)
 
-> Complete. Q1–Q11 produced the Subscriptions draft; U1–U4 (unify with rental invoice automation) and G1–G9 (generalized AR contracts) re-scoped it. All carried into `.ai/specs/2026-10-02-contracts.md`.
+> Complete. Q1–Q11 produced the Subscriptions draft; U1–U4 (unify with rental invoice automation) and G1–G9 (generalized AR contracts) re-scoped it. All carried into `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III.
 
-Resolutions carried into `.ai/specs/2026-10-02-contracts.md` (originally drafted as `2026-10-02-subscriptions.md`).
+Resolutions carried into `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III (originally drafted as `2026-10-02-subscriptions.md`).
 Research: `.ai/research/subscription-recurring-invoicing.md`.
 
 ### Settled by the codebase (no question)
@@ -103,7 +103,7 @@ Research: `.ai/research/subscription-recurring-invoicing.md`.
 
 ### Unification with rental invoice automation (2026-10-02, after the spec was written)
 
-Context: `.ai/specs/2026-10-02-rental-invoice-automation.md` + its plan (not started, 23 open
+Context: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II + its plan (not started, 23 open
 tasks) independently design the same post / send / hold / notify layer for rentals.
 
 - [x] **U1 — One layer or two?** — **Answer:** Unify. One recurring-invoicing layer: billing
@@ -214,15 +214,15 @@ same lines (a one-time $1.8M item invoiced once, recognized $300k/month over six
   schedule, invoicing via the shared layer, Stripe mode; interim revenue through the existing
   Service-line deferral) and Phase B (line-level revenue engine). Recorded in the spec's
   "Delivery phases".
-- Order of work: (1) execute `.ai/plans/2026-10-02-rental-invoice-automation.md` (builds the
+- Order of work: (1) execute `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II (builds the
   shared recurring-invoicing layer, renamed to source-agnostic names, scope unchanged);
-  (2) `/plan` contracts Phase A from `.ai/specs/2026-10-02-contracts.md`; (3) `/plan` Phase B.
+  (2) `/plan` contracts Phase A from `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III; (3) `/plan` Phase B.
 - Not committed at handoff: contracts spec (renamed from subscriptions), rental automation spec +
   plan renames, rev-rec scope note, this record, the research file additions.
 
 ## Phase A execution
 
-**Plan:** .ai/plans/2026-10-03-contracts-phase-a.md
+**Plan:** `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III
 **Branch:** revenue-recognition-rentals-spec
 
 ### Task 1 — Baseline (2026-10-03)

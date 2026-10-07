@@ -23,9 +23,9 @@
 //                         unused billed time on a Draft credit memo.
 //   revert-cancellation   Undo a cancellation while its memo is still Draft.
 //
-// Spec: .ai/specs/2026-10-02-contracts.md; plans:
-// .ai/plans/2026-10-03-contracts-phase-a.md Tasks 9–11,
-// .ai/plans/2026-10-04-contracts-wizard-phase-b.md T3 (revenue, D8–D11).
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III; plans:
+// `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III Tasks 9–11,
+// `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV T3 (revenue, D8–D11).
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";

@@ -1318,7 +1318,7 @@ databaseTest(
 
 // ---------------------------------------------------------------------------
 // Phase B: invoice-grid and revenue-grid edits, revenue at confirm and on
-// lifecycle changes (.ai/plans/2026-10-04-contracts-wizard-phase-b.md T3).
+// lifecycle changes (`.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV T3).
 
 /** The contract's stored revenue rows, in line and month order. */
 async function revenueRows(

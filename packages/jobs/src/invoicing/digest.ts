@@ -7,7 +7,7 @@
 // digest over THEIR invoices with no setup; the company's "Also notify" group
 // gets one digest over all of them. An owner who is also in that group gets
 // only the company digest, never both.
-// Spec: .ai/specs/2026-10-02-rental-invoice-automation.md (plan decision 9)
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II (plan decision 9)
 
 export type InvoiceRunOutcome = "posted" | "emailed" | "held" | "unsent";
 

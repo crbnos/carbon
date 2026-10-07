@@ -6,8 +6,8 @@
 // it or send it through Stripe. Source-agnostic — rental agreements and AR
 // contracts — so a source only drafts invoices and declares its holds;
 // posting, sending and the sent stamps happen here.
-// Spec: .ai/specs/2026-10-02-rental-invoice-automation.md,
-// .ai/specs/2026-10-02-contracts.md
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II,
+// `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";

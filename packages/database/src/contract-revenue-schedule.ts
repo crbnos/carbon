@@ -5,7 +5,7 @@
 // A contract line's revenue plan: one amount per calendar month, in contract
 // currency. Pure, so the contract page, the lifecycle server function, the
 // recognition run and the demo dataset all plan it the same way.
-// Plan: .ai/plans/2026-10-04-contracts-wizard-phase-b.md (D1, D2, D9, D11)
+// Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV (D1, D2, D9, D11)
 
 import {
   distributeRoundingResidual,

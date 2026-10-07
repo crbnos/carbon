@@ -16,7 +16,7 @@
 // receivable (an invoice or a credit), the receivable is at the document's
 // rate and the difference is realized FX — never revenue. When it is revenue
 // (the recognition run), revenue takes exactly the base the pools move.
-// Plan: .ai/plans/2026-10-04-contracts-wizard-phase-b.md (D3, D4)
+// Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part IV (D3, D4)
 
 import { toBaseAmount } from "./accounting-currency.ts";
 import { EPSILON, round } from "./precision.ts";

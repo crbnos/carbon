@@ -6,7 +6,7 @@
 // on, and which schedule rows it writes or consumes. Pure: post-sales-invoice
 // loads the facts, builds the journal lines through buildSalesPostingLines
 // with the legs planned here, and writes the rows.
-// Spec: .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md §3
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §3
 // ("Posting a Rental line") and §4 (sales-type leases).
 
 import { credit, debit } from "@carbon/database/ledger";

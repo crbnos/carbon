@@ -5,7 +5,7 @@
 // How a contract line's revenue would fall across calendar months, and the
 // month-by-month position (invoiced, recognized, deferred) that follows. Pure,
 // so the contract page and its tests agree.
-// Spec: .ai/specs/2026-10-02-contracts.md
+// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III
 
 import {
   monthStart,

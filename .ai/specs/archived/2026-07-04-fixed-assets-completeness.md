@@ -1,14 +1,14 @@
 # Fixed Assets Completeness — Disposal Proceeds, Impairment, CIP, Components
 
 > Status: archived (superseded)
-> Superseded by (2026-09-22): `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md` §2, which carries the make/self-constructed-asset scope Brad narrowed #1041 to on 2026-09-03 ("Let's add make") — Make to Asset at job completion, the CIP contract (class flag, `Under Construction`, `fixedAssetCipCost`, attach-at-WIP-credit, capitalization transfer) and the inventory→asset bridge (`fixedAsset.itemId/trackedEntityId/quantity`, `fixedAssetTransfer`). Disposal-with-proceeds shipped via #1599 (gain/loss accounts, migration `20260717031529`). Impairment, components and class transfers have no live spec until re-specced.
+> Superseded by (2026-09-22): `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §2, which carries the make/self-constructed-asset scope Brad narrowed #1041 to on 2026-09-03 ("Let's add make") — Make to Asset at job completion, the CIP contract (class flag, `Under Construction`, `fixedAssetCipCost`, attach-at-WIP-credit, capitalization transfer) and the inventory→asset bridge (`fixedAsset.itemId/trackedEntityId/quantity`, `fixedAssetTransfer`). Disposal-with-proceeds shipped via #1599 (gain/loss accounts, migration `20260717031529`). Impairment, components and class transfers have no live spec until re-specced.
 > Scope note (2026-10-04): this file is only partly superseded. Impairment (§2) and components and class transfers (§4) are still open scope, tracked as unspecified follow-ons on the #1041 row of `.ai/specs/2026-07-04-accounting-implementation-meta.md`. Until a live spec under `.ai/specs/` replaces them, §2 and §4 here are their only design reference; a new spec should start from them and from the built `fixedAssetTransfer` table (a class transfer is its `'Reclassification'` type).
 > Author: Claude (readiness remediation, GAP-4 remainder)
 > Date: 2026-07-04
 > Tracking issue: crbnos/carbon#1041
 > Readiness finding: `.ai/specs/2026-07-03-public-company-readiness.md` §GAP-4 (Phase 2 slice)
 > Related: `.ai/specs/2026-07-04-multi-book.md` (book-specific depreciation), close-automation spec (scheduled depreciation — GAP-4.1, **not** this spec), `.ai/specs/2026-07-02-period-closing.md` (posting matrix)
-> Bridge note (2026-09-22): `fixedAsset.itemId/trackedEntityId/quantity` and the `fixedAssetTransfer` table (types Capitalization / Return to Inventory) are defined in `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md`; the CIP work here adds the Reclassification type to that same table rather than a parallel one. The disposal account was split into `gainOnDisposalAccountId` / `lossOnDisposalAccountId` by migration `20260717031529` — references to `disposalAccountId` below are stale.
+> Bridge note (2026-09-22): `fixedAsset.itemId/trackedEntityId/quantity` and the `fixedAssetTransfer` table (types Capitalization / Return to Inventory) are defined in `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I; the CIP work here adds the Reclassification type to that same table rather than a parallel one. The disposal account was split into `gainOnDisposalAccountId` / `lossOnDisposalAccountId` by migration `20260717031529` — references to `disposalAccountId` below are stale.
 
 ## TLDR
 
@@ -352,4 +352,4 @@ CREATE TABLE "fixedAssetTransfer" (
 
 - 2026-07-04: Created from readiness finding GAP-4 remainder (tracking crbnos/carbon#1041); scope resolutions 1–5 baked in; two new blocking questions surfaced (WIP credit timing, Sell-flow fate).
 - 2026-07-04: Remaining open questions resolved under the program ambition heuristic (ambitious scope now; back-out valves at plan stage).
-- 2026-09-22: Inventory→asset bridge (`fixedAsset.itemId/trackedEntityId/quantity`, `fixedAssetTransfer`) defined in `.ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md`; CIP capitalization should reuse that table. Noted the gain/loss account split (`20260717031529`).
+- 2026-09-22: Inventory→asset bridge (`fixedAsset.itemId/trackedEntityId/quantity`, `fixedAssetTransfer`) defined in `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I; CIP capitalization should reuse that table. Noted the gain/loss account split (`20260717031529`).
