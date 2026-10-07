@@ -124,39 +124,57 @@ SELECT 'fixedAssetTransfer', 'Fixed Asset Transfer', 'FAT', NULL, 0, 6, 1, c.id
 FROM "company" c
 WHERE NOT EXISTS (SELECT 1 FROM "sequence" s WHERE s."companyId" = c.id AND s."table" = 'fixedAssetTransfer');
 
--- 5) PP&E accounts, one per company group, parent resolved by group NAME -------------
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '1370', 'Rental Fleet', 'Asset', 'Fixed Asset', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Property, Plant & Equipment'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '1370');
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '1380', 'Accumulated Depreciation – Rental Fleet', 'Asset', 'Accumulated Depreciation', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Property, Plant & Equipment'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '1380');
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '1390', 'Construction in Progress', 'Asset', 'Fixed Asset', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Property, Plant & Equipment'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '1390');
-
-DO $fleetguard$
+-- 5) PP&E accounts, one per company group that has a chart ----------------------------
+-- Re-runnable, and the same parent fallback as 20261006220201_revenue-recognition-core:
+-- the "Property, Plant & Equipment" group by NAME, else the group holding a seeded PP&E
+-- sibling, else the chart root with a NOTICE. A group that already holds the number OR
+-- the name keeps its account.
+DO $fleetaccounts$
 DECLARE
-  n TEXT;
+  spec RECORD;
+  grp TEXT;
+  parent_id TEXT;
 BEGIN
-  FOREACH n IN ARRAY ARRAY['1370', '1380', '1390'] LOOP
-    IF EXISTS (
-      SELECT 1 FROM "account" a
-      GROUP BY a."companyGroupId"
-      HAVING COALESCE(bool_or(a.number = n), false) = false
-    ) THEN
-      RAISE EXCEPTION 'fleet-bridge: a company group is missing account % (PP&E group not found)', n;
-    END IF;
+  FOR spec IN
+    SELECT * FROM (VALUES
+      ('1370', 'Rental Fleet', 'Fixed Asset'),
+      ('1380', 'Accumulated Depreciation – Rental Fleet', 'Accumulated Depreciation'),
+      ('1390', 'Construction in Progress', 'Fixed Asset')
+    ) AS s(number, name, account_type)
+  LOOP
+    FOR grp IN SELECT DISTINCT a."companyGroupId" FROM "account" a LOOP
+      CONTINUE WHEN EXISTS (
+        SELECT 1 FROM "account" a
+        WHERE a."companyGroupId" = grp AND (a.number = spec.number OR a.name = spec.name)
+      );
+
+      SELECT g.id INTO parent_id
+      FROM "account" g
+      WHERE g."companyGroupId" = grp AND g."isGroup" = TRUE AND g.name = 'Property, Plant & Equipment'
+      LIMIT 1;
+
+      IF parent_id IS NULL THEN
+        SELECT p.id INTO parent_id
+        FROM "account" a
+        JOIN "account" p ON p.id = a."parentId" AND p."isGroup" = TRUE
+        WHERE a."companyGroupId" = grp AND a.number = ANY (ARRAY['1310', '1320', '1330', '1340', '1350', '1360'])
+        ORDER BY a.number
+        LIMIT 1;
+      END IF;
+
+      IF parent_id IS NULL THEN
+        RAISE NOTICE 'fleet-bridge: company group % has no "Property, Plant & Equipment" group; account % % is at the chart root',
+          grp, spec.number, spec.name;
+      END IF;
+
+      INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
+      VALUES (
+        id('acct'), spec.number, spec.name, 'Asset', spec.account_type::"accountType",
+        'Balance Sheet', 'Current', parent_id, false, true, false, grp, 'system'
+      );
+    END LOOP;
   END LOOP;
-END $fleetguard$;
+END $fleetaccounts$;
 
 -- 6) Two classes per company ---------------------------------------------------------
 INSERT INTO "fixedAssetClass" (

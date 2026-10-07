@@ -31,97 +31,94 @@ BEGIN
   END LOOP;
 END $rrfk$;
 
--- 2) Accounts, one per company group, parents resolved by group NAME (never number) -----
--- 2160 Deferred Revenue ships with the seeded chart. A group that renumbered it keeps
--- its account (matched by name below); only a group with neither gets a new one, since
--- posting a dated invoice line refuses without the default mapped.
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '2160', 'Deferred Revenue', 'Liability', 'Other Current Liability', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Current Liabilities'
-  AND NOT EXISTS (
-    SELECT 1 FROM "account" a
-    WHERE a."companyGroupId" = g."companyGroupId"
-      AND (a.number = '2160' OR (a.name = 'Deferred Revenue' AND a."isGroup" = FALSE))
-  );
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '1145', 'Contract Assets', 'Asset', 'Other Current Asset', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Receivables'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '1145');
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '1160', 'Net Investment in Leases', 'Asset', 'Other Current Asset', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Receivables'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '1160');
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '4060', 'Rental Income', 'Revenue', 'Income', 'Income Statement', 'Average', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Revenue'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '4060');
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '4070', 'Lease Revenue', 'Revenue', 'Income', 'Income Statement', 'Average', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Revenue'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '4070');
-
-INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
-SELECT id('acct'), '4150', 'Interest Income – Leases', 'Revenue', 'Other Income', 'Income Statement', 'Average', g.id, false, true, false, g."companyGroupId", 'system'
-FROM "account" g
-WHERE g."isGroup" = TRUE AND g.name = 'Other Income'
-  AND NOT EXISTS (SELECT 1 FROM "account" a WHERE a."companyGroupId" = g."companyGroupId" AND a.number = '4150');
-
--- Every group that has a chart must now have all five leaves; a missing parent group
--- would have silently produced nothing above (lesson: never insert orphaned accounts).
-DO $rrguard$
+-- 2) Accounts, one per company group that has a chart ------------------------------
+-- Re-runnable: a group that already holds the number OR the name keeps its account (the
+-- name is unique per group, so inserting a second one would fail). The parent is the
+-- seeded group by NAME (never number, which group headers do not carry); a chart that
+-- renamed or dropped that group falls back to the group holding a seeded sibling, and
+-- only then to the chart root, with a NOTICE naming the group so it can be re-parented.
+DO $rraccounts$
 DECLARE
-  n TEXT;
+  spec RECORD;
+  grp TEXT;
+  parent_id TEXT;
 BEGIN
-  FOREACH n IN ARRAY ARRAY['1145', '1160', '4060', '4070', '4150'] LOOP
-    IF EXISTS (
-      SELECT 1 FROM "account" a
-      GROUP BY a."companyGroupId"
-      HAVING COALESCE(bool_or(a.number = n), false) = false
-    ) THEN
-      RAISE EXCEPTION 'revenue-recognition-core: a company group is missing account % (parent group not found)', n;
-    END IF;
+  FOR spec IN
+    SELECT * FROM (VALUES
+      ('2160', 'Deferred Revenue', 'Liability', 'Other Current Liability', 'Balance Sheet', 'Current', 'Current Liabilities', ARRAY['2110', '2125', '2140', '2150', '2170', '2180']),
+      ('1145', 'Contract Assets', 'Asset', 'Other Current Asset', 'Balance Sheet', 'Current', 'Receivables', ARRAY['1110', '1130', '1150']),
+      ('1160', 'Net Investment in Leases', 'Asset', 'Other Current Asset', 'Balance Sheet', 'Current', 'Receivables', ARRAY['1110', '1130', '1150']),
+      ('4060', 'Rental Income', 'Revenue', 'Income', 'Income Statement', 'Average', 'Revenue', ARRAY['4010', '4020', '4030', '4040', '4050']),
+      ('4070', 'Lease Revenue', 'Revenue', 'Income', 'Income Statement', 'Average', 'Revenue', ARRAY['4010', '4020', '4030', '4040', '4050']),
+      ('4150', 'Interest Income – Leases', 'Revenue', 'Other Income', 'Income Statement', 'Average', 'Other Income', ARRAY['4110', '4120', '4130', '4140'])
+    ) AS s(number, name, class, account_type, income_balance, consolidated_rate, parent_name, sibling_numbers)
+  LOOP
+    FOR grp IN SELECT DISTINCT a."companyGroupId" FROM "account" a LOOP
+      CONTINUE WHEN EXISTS (
+        SELECT 1 FROM "account" a
+        WHERE a."companyGroupId" = grp AND (a.number = spec.number OR a.name = spec.name)
+      );
+
+      SELECT g.id INTO parent_id
+      FROM "account" g
+      WHERE g."companyGroupId" = grp AND g."isGroup" = TRUE AND g.name = spec.parent_name
+      LIMIT 1;
+
+      IF parent_id IS NULL THEN
+        SELECT p.id INTO parent_id
+        FROM "account" a
+        JOIN "account" p ON p.id = a."parentId" AND p."isGroup" = TRUE
+        WHERE a."companyGroupId" = grp AND a.number = ANY (spec.sibling_numbers)
+        ORDER BY array_position(spec.sibling_numbers, a.number)
+        LIMIT 1;
+      END IF;
+
+      IF parent_id IS NULL THEN
+        RAISE NOTICE 'revenue-recognition-core: company group % has no "%" group; account % % is at the chart root',
+          grp, spec.parent_name, spec.number, spec.name;
+      END IF;
+
+      INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
+      VALUES (
+        id('acct'), spec.number, spec.name, spec.class::"glAccountClass", spec.account_type::"accountType",
+        spec.income_balance::"glIncomeBalance", spec.consolidated_rate::"glConsolidatedRate",
+        parent_id, false, true, false, grp, 'system'
+      );
+    END LOOP;
   END LOOP;
-END $rrguard$;
+END $rraccounts$;
 
--- 3) Backfill the six defaults by id -----------------------------------------------
--- Deferred Revenue by number, then by name for a group that renumbered 2160.
-UPDATE "accountDefault" ad SET "deferredRevenueAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '2160'
-WHERE ad."companyId" = c.id AND ad."deferredRevenueAccount" IS NULL;
-
-UPDATE "accountDefault" ad SET "deferredRevenueAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId"
-  AND a.name = 'Deferred Revenue' AND a."isGroup" = FALSE
-WHERE ad."companyId" = c.id AND ad."deferredRevenueAccount" IS NULL;
-
-UPDATE "accountDefault" ad SET "contractAssetAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '1145'
-WHERE ad."companyId" = c.id AND ad."contractAssetAccount" IS NULL;
-
-UPDATE "accountDefault" ad SET "rentalIncomeAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '4060'
-WHERE ad."companyId" = c.id AND ad."rentalIncomeAccount" IS NULL;
-
-UPDATE "accountDefault" ad SET "leaseRevenueAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '4070'
-WHERE ad."companyId" = c.id AND ad."leaseRevenueAccount" IS NULL;
-
-UPDATE "accountDefault" ad SET "leaseInterestIncomeAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '4150'
-WHERE ad."companyId" = c.id AND ad."leaseInterestIncomeAccount" IS NULL;
-
-UPDATE "accountDefault" ad SET "netInvestmentInLeasesAccount" = a.id, "updatedBy" = 'system'
-FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '1160'
-WHERE ad."companyId" = c.id AND ad."netInvestmentInLeasesAccount" IS NULL;
+-- 3) Backfill the six defaults by id: by number, then by leaf name for a group that
+--    renumbered the account (the loop above kept theirs rather than add a duplicate).
+DO $rrdefaults$
+DECLARE
+  spec RECORD;
+BEGIN
+  FOR spec IN
+    SELECT * FROM (VALUES
+      ('deferredRevenueAccount', '2160', 'Deferred Revenue'),
+      ('contractAssetAccount', '1145', 'Contract Assets'),
+      ('rentalIncomeAccount', '4060', 'Rental Income'),
+      ('leaseRevenueAccount', '4070', 'Lease Revenue'),
+      ('leaseInterestIncomeAccount', '4150', 'Interest Income – Leases'),
+      ('netInvestmentInLeasesAccount', '1160', 'Net Investment in Leases')
+    ) AS s(col, number, name)
+  LOOP
+    EXECUTE format(
+      'UPDATE "accountDefault" ad SET %1$I = a.id, "updatedBy" = ''system''
+       FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = %2$L
+       WHERE ad."companyId" = c.id AND ad.%1$I IS NULL',
+      spec.col, spec.number
+    );
+    EXECUTE format(
+      'UPDATE "accountDefault" ad SET %1$I = a.id, "updatedBy" = ''system''
+       FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId"
+         AND a.name = %2$L AND a."isGroup" = FALSE
+       WHERE ad."companyId" = c.id AND ad.%1$I IS NULL',
+      spec.col, spec.name
+    );
+  END LOOP;
+END $rrdefaults$;
 
 -- Revenue recognition follows accountingEnabled, so every company must leave with a
 -- usable Deferred Revenue default: an unmapped or non-Liability-leaf account would make
