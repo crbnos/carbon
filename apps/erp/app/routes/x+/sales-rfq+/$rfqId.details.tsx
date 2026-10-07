@@ -121,7 +121,7 @@ export default function SalesRFQDetailsRoute() {
   if (!rfqData) throw new Error("Could not find rfq data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <OpportunityState
         key={`state-${rfqId}`}
         opportunity={rfqData?.opportunity!}

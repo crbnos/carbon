@@ -452,7 +452,7 @@ export default function QuoteLine() {
       />
 
       {methodData && (
-        <VStack spacing={2}>
+        <VStack spacing={4}>
           <QuoteBillOfProcess
             key={`bop:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
