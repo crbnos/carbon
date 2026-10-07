@@ -1,6 +1,6 @@
 # Onshape: map properties to Carbon item fields
 
-> Status: in progress
+> Status: built; live spikes S1-S5 and the live push pending
 > Author: Raul (with Claude)
 > Date: 2026-10-07
 > Builds on: `.ai/specs/2026-08-28-onshape-app.md` (section "Custom fields")
@@ -92,9 +92,14 @@ fails the typecheck until it has a function.
 
 | Writer | Function | What it also changes |
 |--------|----------|----------------------|
-| `itemMethod` | `deriveItemMethodUpdate`, then `updateItemMethodAndSourcing` | `methodMaterial` rows on Draft make methods |
+| `itemMethod` | `updateItemMethodAndSourcing` | `methodMaterial` rows on Draft make methods |
 | `itemTracking` | item update, then `cascadeItemTrackingType` | Draft and Planned jobs; Draft receipt and shipment lines |
 | `itemColumn` | `updateItemColumns` (new) | nothing |
+
+The plan applies the rules of `deriveItemMethodUpdate` before the apply (see
+"Interlocked fields"). So the `itemMethod` writer gets final values and
+derives nothing. `applyItemFieldWrites` runs the writers in this order:
+`itemMethod`, `itemTracking`, `itemColumn`.
 
 Carbon has no service function for MPN or Unit of Measure. The Properties
 panel (`x+/items+/update.tsx`) updates these columns directly.
@@ -172,8 +177,10 @@ conversion problems work the same way today.
 | Edits in Carbon | Carbon keeps them | the next push replaces them |
 | An empty Onshape value | writes nothing | clears a custom field; writes nothing for an item field or a description |
 
-If the review shows a conflict for an item, the push writes no mapped value to
-it. A conflict is a part number that Carbon has, linked to a different source.
+An assembly push writes no mapped value to an item that is linked to another
+Onshape part. A part push links the item it adopts, so that item takes the
+"Update on every push" values. A release push does not link a reused BOM
+child, so that child takes no mapped value.
 
 A new revision from a release push copies the base revision's Carbon values,
 as `createRevision` does today. Then each mapping in "Update on every push"
@@ -209,22 +216,31 @@ The review sends no value back to Onshape. The review says so in one line.
 ### Interlocked fields on an existing item
 
 In one push, an existing item can get a new Replenishment, Default Method and
-Sourcing. The apply does these steps in order:
+Sourcing. The plan (`interlockItemFields`) does these steps in order:
 
-1. Check the mapped Default Method against the final Replenishment with
+1. Set Replenishment, and the method that goes with it. The rule is the one
+   in `deriveItemMethodUpdate`. Make gives Make to Order. Buy gives Purchase
+   to Order. Buy and Make keeps the method.
+2. Check the mapped Default Method against the final Replenishment with
    `VALID_METHOD_TYPES_BY_REPLENISHMENT`. If the pair is not valid, report a
    problem and skip the method.
-2. Write Replenishment with `deriveItemMethodUpdate`. Carbon then sets the
-   method that goes with it, as the Properties panel does.
-3. Write the mapped Default Method, if there is one.
-4. If the final Replenishment is "Buy and Make", write Sourcing.
-5. If the final Replenishment is not "Buy and Make", skip Sourcing. The review
-   shows "Sourcing applies only to Buy and Make items".
+3. If the final Replenishment is "Buy and Make", set Sourcing and the method
+   it sets. Drop Ship gives Purchase to Order. Ship from Inventory gives Pull
+   from Inventory.
+4. If the final Replenishment is not "Buy and Make", skip Sourcing. The review
+   shows "Sourcing applies only to Buy and Make items. Not written."
+5. Set Tracking Type, Unit of Measure and MPN.
 
-A new item follows the same checks. `upsertPart` writes Replenishment, Default
+The result is the row's `target`. The apply puts the reviewer's edits over
+`target` (`mergeExistingItemEdits`). Then it writes each field that differs
+from Carbon's value, with the field's writer.
+
+A new item follows the same checks (`proposeMappedItem`). For a new item, a
+mapped Replenishment takes the push default method for it, not the method
+`deriveItemMethodUpdate` pins. `upsertPart` writes Replenishment, Default
 Method, Tracking Type and Unit of Measure in one insert. It does not write
 `mpn` or `sourcingType`. So the apply writes these two values right after the
-insert, with their writers.
+insert, with their writers (`createdItemExtras`).
 
 The apply writes all item fields before it writes BOM lines. A new BOM line
 copies `defaultMethodType` from its item. Today the apply reads that value
@@ -243,8 +259,14 @@ method. After this change, the apply reads the method from the edited item.
 
 The BOM read already asks for `onlyVisibleColumns=false`. If spike S1 shows
 that this returns every property, the BOM template needs no column for a
-mapped property. The panel finds a property's cell by the header id. If the
-header id is not the property id, the panel uses the header name.
+mapped property. `parseBomTree` keeps each non-empty cell on its row as a
+property. The resolver finds a mapped property by the column id first, then by
+the column name. The stored plan keeps no cells (`withoutProperties`).
+
+A release push reads each released element's metadata at the released version
+once. It reads only when the map has an entry or a description mode is
+"Update on every push". A failed read is a review warning; that item then
+takes no mapped value.
 
 Today a BOM row and a release push get no mapped values. After this change,
 every row that a push can create gets the same mapped values.
@@ -272,14 +294,16 @@ The user must see what each mode does before a push changes Carbon data.
 | Help under "Update on every push" | "Every push replaces Carbon's value with Onshape's, including edits made in Carbon." |
 | Extra help for Replenishment, Default Method, Sourcing and Tracking Type in "Update on every push" | "A change also updates this item on Draft BOMs and Draft or Planned jobs, the same as editing it in Carbon." |
 | Fields page, translation | "Onshape value → Carbon value. A value with no row shows as a problem in the review and isn't written." |
-| Review, a mapped value | "Buy · from Onshape "Make or buy"" |
+| Review, a mapped value | "Replenishment: Buy · from Onshape "Make or buy"" |
 | Review, footer of the item choices | "Changes here apply to Carbon only. Onshape keeps its values." |
-| Review, kept difference | "Onshape has Buy. Carbon keeps Make (set at creation only)." |
-| Review, existing item in "Update on every push" | "Replaces Make with Buy (updated on every push)." |
+| Review, kept difference | "Replenishment: Onshape has Buy. Carbon keeps Make (set at creation only)." |
+| Review, existing item in "Update on every push" | "Replenishment: Replaces Make with Buy (updated on every push)." |
+| Review, a method that goes with a change | "Default Method Type: Replaces Make to Order with Purchase to Order (goes with the change above)." |
 | Review, a translation problem | "Make or buy: "Outsourced" has no Carbon value. Replenishment not written." |
-| Item card (`ExternalSource.tsx`), no mapping in "Update on every push" | "Linked to Onshape. Pushes don't change this item's fields, so edits made here stay." |
-| Item card, one or more mappings in "Update on every push" | "Linked to Onshape. Each push replaces: Long description, Replenishment. Other edits stay." |
-| Panel, after the first push links items (`Panel.tsx` near line 3126) | "These items are linked to their Onshape parts. You can edit them in Carbon." |
+| Item card (`ExternalSource.tsx`), no mapping in "Update on every push" | "Pushes don't change this item's fields, so edits made here stay." |
+| Item card, one or more mappings in "Update on every push" | "Each push replaces: Long Description, Replenishment. Other edits stay." |
+| Item card, the user cannot read the integration's settings | "Pushes replace only the fields that Onshape's Fields page sets to Update on every push." |
+| Assembly review, descriptions an assembly push replaces | "These items are linked to their Onshape parts, and their descriptions are set to Update on every push. You can edit every other field in Carbon." |
 
 ### Design Decisions
 
@@ -324,17 +348,19 @@ The fields route saves both keys with `jsonb_set`. It touches no other key.
 
 | File | Change |
 |------|--------|
-| `standard-fields.ts` (new) | The target list, `StandardFieldId`, `StandardFieldWriter`, `translateValue`, `defaultTranslations` |
-| `properties.ts` | The new mapping shape and the legacy read. `resolveMappedFields` returns custom fields and item fields, each with its source property and mode. `PlanCustomField` becomes `PlanMappedField`. |
-| `bom.ts` | Removes "Purchasing Level" and `purchased`. Adds `cellsByPropertyId` (S1) and `standardContent` (S4) to each node. |
-| `plan.ts` | `proposeItem` applies the precedence. Each row carries `mappedFields`, `mappedFieldProblems` and `keptDifferences`. The release plan takes mapped values. |
-| `review.ts` | `replenishmentMismatches` uses the resolved Replenishment. Adds the text for a mapped value, a kept difference and a problem. |
+| `standard-fields.ts` (new) | The target list, `StandardFieldId`, `StandardFieldWriter`, `translateValue`, `defaultTranslations`, `translationErrors` |
+| `item-values.ts` (new) | The item enums and `VALID_METHOD_TYPES_BY_REPLENISHMENT`, as a leaf module. `plan.ts` and `standard-fields.ts` both read it, with no import cycle. |
+| `properties.ts` | The new mapping shape, `descriptionModes` and the legacy read. `resolveMappedFields` returns custom fields (`PlanCustomField`) and item fields (`PlanItemField`), each with its source property and mode. `customFieldWrites`, `customFieldKeptDifferences`, `everyPushTargets`. |
+| `bom.ts` | Removes "Purchasing Level" and `purchased`. Adds `properties` (the row's cells) and `standardContent` (S4) to each node, and `withoutProperties`. |
+| `plan.ts` | `proposeMappedItem` applies the precedence. `planCreatedItem` and `planExistingItem` give each row a `MappedRowPlan`: `customFields`, `itemFields`, `itemFieldChanges`, `target`, `keptDifferences`, `mappedFieldProblems`, `unmappedProperties`. `interlockItemFields` holds the interlock order. The release plan takes mapped values. |
+| `review.ts` | `replenishmentMismatches` uses the row's `target`. `mappedValueText`, `keptDifferenceText`, `itemFieldChangeText`, `CARBON_ONLY_NOTE`. |
+| `lib/panel-plan-data.ts` | `loadPlanMapping`: the map, the modes, the definitions and the held `part.customFields` for the plan routes |
 
 `apps/erp/`:
 
 | File | Change |
 |------|--------|
-| `modules/settings/onshape-push.server.ts` | `STANDARD_FIELD_WRITERS`, `updateItemColumns`, `applyMappedItemFields` (the ordered steps above) |
+| `modules/settings/onshape-push.server.ts` | `STANDARD_FIELD_WRITERS`, `updateItemColumns`, `applyItemFieldWrites` (the writers in order), `applyExistingItemFields` (descriptions, then the item fields with the reviewer's edits) |
 | `routes/api+/integrations.onshape.panel.fields.ts` | GET adds the target list, the company's units and `descriptionModes`. POST checks the target, the value type, each translation and the modes. |
 | `routes/api+/integrations.onshape.panel.plan-part.ts` | Resolves item fields. Plans no write for an existing item in "Set at creation" mode. |
 | `routes/api+/integrations.onshape.panel.plan-assembly.ts` | Resolves mapped values for each BOM row from the BOM cells |
@@ -398,13 +424,14 @@ become editable for a linked item because the lock goes.
       new BOM line for that child shows "Make to Order".
 - [ ] A map saved before this change loads. Its mappings keep their custom
       field. Their mode shows as "Update on every push".
-- [ ] The fields route refuses 3 cases: 2 properties on one target, an unknown
-      target, and a translation to a value outside the item field's list.
+- [ ] The fields route refuses 3 cases. They are 2 properties on one
+      target, an unknown target, and a translation value outside the field's
+      list.
 - [ ] `pnpm --filter @carbon/ee typecheck`, `pnpm --filter erp typecheck` and
       the Onshape tests pass.
-- [ ] A live push through the panel on the local stack shows the mapped
-      values, the problems and the kept differences in the review. After the
-      push, Carbon holds the expected values.
+- [ ] A live push on the local stack shows the mapped values, the problems
+      and the kept differences in the review. After the push, Carbon holds
+      the expected values.
 
 ## Tests
 
@@ -413,7 +440,7 @@ become editable for a linked item because the lock goes.
 | `standard-fields.test.ts` (new, next to `properties.test.ts`) | Translation: case, end spaces, unit names, BOOL, "No value", no match |
 | `properties.test.ts` | The legacy read, target checks, and the resolution of item fields and custom fields with mode and source |
 | `plan.test.ts` | The precedence for a part, a BOM row, a release item, a sub-assembly with "Show assembly only" and Standard content. Kept differences and writes per mode. The interlock order and the Sourcing rule. |
-| `bom.test.ts` | Cells by property id and by header name. "Purchasing Level" has no effect. |
+| `bom.test.ts` | Each row's cells as properties, Standard content and "Show assembly only". "Purchasing Level" has no effect. The resolver's match by column name is in `properties.test.ts`. |
 | `review.test.ts` | The text for a mapped value, a kept difference and a problem. Mismatch warnings with the resolved Replenishment. |
 
 ## Live verification spikes
@@ -478,3 +505,10 @@ code is final. Use an existing release. Create no release.
 ## Changelog
 
 - 2026-10-07: Created after the 7 decisions above.
+- 2026-10-07: Built. The spec now names the functions as built. Three changes
+  came from the build:
+  1. The plan applies the interlock, so the apply writes final values.
+  2. The assembly rule names an item linked to another Onshape part, not a
+     review conflict.
+  3. The item card text drops "Linked to Onshape". The card's badge already
+     says it.

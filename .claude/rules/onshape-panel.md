@@ -31,10 +31,10 @@ either sync connection.
   one-active-connection rule (`getConflictingOnshapeIntegration`) is between
   those two and never involves the panel. `OnshapeOAuthIntegrationId` is all
   three grants.
-- Only the `onshape-v2` link means "Onshape owns this item". A sync
+- Only the `onshape-v2` link means "the panel pushes to this item". A sync
   connection's `onshape` item row is BOM-import bookkeeping (the BoM Explorer,
-  `components/OnshapeSync.tsx`, reads it); the item lock, the item card and
-  Detach never read or delete it.
+  `components/OnshapeSync.tsx`, reads it); the item card and Detach never read
+  or delete it.
 - Same Onshape OAuth app, same scopes (`OAuth2Read OAuth2Write`), two redirect
   URIs: `ONSHAPE_OAUTH_REDIRECT_URL` → `/api/integrations/onshape/oauth`,
   `ONSHAPE_V2_OAUTH_REDIRECT_URL` → `/api/integrations/onshape-v2/oauth`. Both
@@ -163,24 +163,21 @@ a failed copy or carry deletes the new Draft with the service role. The
 assembly plan loads the reusable Draft too (`loadReusableDrafts`), so the review
 names the Draft the push will write into.
 
-**Item ownership lock.** A panel-linked item's `name` and `description` (the UI
-labels them Short Description and Long Description; panel and card copy uses
-those labels) belong to Onshape. `checkItemIdentityEdit` (`apps/erp/app/modules/items/onshape-lock.ts`,
-kept out of the service file so it is not an MCP tool, and out of `.server` so
-the client-bundled service can import it) guards `upsertPart` (after resolving
-a readable id), `updateItem` and the Properties sidebar
-(`x+/items+/update.tsx`). It refuses only when a value actually changes; the
-sidebar shows the refusal as its existing error toast. `upsertPart` leaves the
-owned keys out of the write. The panel's own push writes them directly. CSV
-import is not guarded (deliberate admin bulk action).
+**No field is locked.** After a push, a linked item is a Carbon item: every
+field, `name` and `description` included, is editable in Carbon. A later push
+writes only the values whose mode is "Update on every push" (see the property
+map below). There was a description lock (`checkItemIdentityEdit`); it was
+removed on 2026-10-07.
 
 The item page's only integration footprint is the self-loading
-`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`): "Short and
-long descriptions are managed in Onshape", last push time, **Open in Onshape** (the
-exact tab when the link records a workspace, else the document — assembly
-pushes link children without one) and **Detach** (behind a `Confirm` dialog;
-`api+/integrations.onshape.detach` deletes the item's `onshape-v2` row only,
-company-scoped; the card re-reads the link and goes only when it is gone).
+`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`): the
+fields a push replaces (`everyPushTargets` over the integration metadata; a
+user without settings view reads a generic line), last push time, **Open in
+Onshape** (the exact tab when the link records a workspace, else the document —
+assembly pushes link children without one) and **Detach** (behind a `Confirm`
+dialog; `api+/integrations.onshape.detach` deletes the item's `onshape-v2` row
+only, company-scoped; the card re-reads the link and goes only when it is
+gone). A later push can link the item again by part number.
 
 ## Plan / apply — every push is two requests
 
@@ -200,27 +197,29 @@ method is not released).
   the write → the PLAN request answers 503. A missing/expired/foreign plan at
   apply → 410.
 - The review's only editors are three manufacturing selects per row
-  (`ItemFieldSelects.tsx`: replenishment, method type, tracking type). A create
-  validates them with `mergeItemEdits`; an existing item with
-  `mergeExistingItemEdits`, writing only what changed. Name and description
-  always come from Onshape.
+  (`ItemFieldSelects.tsx`: replenishment, method type, tracking type), seeded
+  from the proposal (a create), the row's `target` (an existing item an
+  "everyPush" mapping changes) or `current`. A create validates them with
+  `mergeItemEdits`; an existing item with `mergeExistingItemEdits(current,
+  edit, target)`, writing only what differs from `current`. A choice there is
+  written to Carbon only (`CARBON_ONLY_NOTE`).
 - A part is `unchanged` when its microversion matches the one the last push
-  recorded. When a property map exists, unchanged rows still have their mapped
-  fields resolved; if an owned value differs from Carbon's
-  (`ownedCustomFieldsDiffer`), the row becomes an `update` flagged
-  `cadUnchanged`, and apply writes the fields and link but skips the model
+  recorded. Unchanged rows still resolve the map; if an "everyPush" value or
+  description differs from Carbon's, the row becomes an `update` flagged
+  `cadUnchanged`, and apply writes the values and link but skips the model
   export.
-- `proposeItem` takes the company's push defaults from `parsePushDefaults`
-  (`panel/preferences.ts`, fail-soft to `DEFAULT_PUSH_DEFAULTS`). A null unit
-  resolves from the company's list at plan time. A purchased BOM row is always
-  Buy. `parseBomTree` marks a row purchased when its "Purchasing Level" says
-  Purchased (not a standard Onshape column) or its "Subassembly BOM behavior"
-  is Show Assembly only (`shownAsUnit`): Onshape then lists the sub-assembly
-  with no components, so it is created Buy with no BOM. Buy/Make is seeded at
-  create only; for an existing item Carbon decides, and the assembly review's
-  `replenishmentMismatches` (`panel/review.ts`) lists a Buy item the push
-  writes a BOM into and a Make item Onshape shows as one unit, re-evaluated
-  as the row's Replenishment select changes.
+- A new item's fields follow one precedence (`proposeMappedItem`, plan.ts):
+  the reviewer's choice, the mapped value, a BOM row with children is Make, a
+  Standard content row is Buy (`standardContent`, read from the BOM row's
+  `isStandardContent` — live check pending), then the push defaults from
+  `parsePushDefaults` (`panel/preferences.ts`, fail-soft to
+  `DEFAULT_PUSH_DEFAULTS`). A mapped Buy with no mapped method takes
+  `methodTypeForBuy`. A null unit resolves from the company's list at plan
+  time. "Purchasing Level" is not read, and `shownAsUnit` ("Show Assembly
+  only") decides structure only: no BOM is written for it. The assembly
+  review's `replenishmentMismatches` (`panel/review.ts`) lists a Buy item the
+  push writes a BOM into and a Make item Onshape shows as one unit,
+  re-evaluated as the row's Replenishment select changes.
 - APPLY re-resolves items by readableId before creating. Parts adopt via
   `pickAdoptTarget` (a Part at the same revision, else any Part — never a
   Material/Tool sharing the number). Revisions compare the way
@@ -231,46 +230,93 @@ method is not released).
   linked already (`linkChildParts`); a part push owns the link. The pushed
   assembly itself is always linked. Every reused item that is or becomes
   linked to its BOM row (the root, children already linked to the row, and
-  children `linkChildParts` will link — the plan decides with `linkedItemIds`)
-  takes Onshape's Short and Long Description (`assemblyTextChanges`); only
-  values Onshape gives are written, because Name and Description are optional
-  BOM columns and an empty cell must not blank Carbon's text. The review lists
-  each change.
+  children `linkChildParts` will link — the plan decides with `linkedItemIds`,
+  `pushWrites` in `buildAssemblyPlan`) takes the "everyPush" values and
+  descriptions (`planExistingItem`); an item linked to another source takes
+  none. Only description values Onshape gives are written
+  (`assemblyTextChanges`), because Name and Description are optional BOM
+  columns and an empty cell must not blank Carbon's text. Item fields are
+  written before BOM lines, and a new line copies its method and unit from the
+  item as the push left it.
 - Assembly plans carry a `depth`: `all` (default) or `top` (the root's method
   only, each sub-assembly a line pointing at its own method). `plan-assembly`
   refuses over `MAX_PLAN_PARTS` (1500) distinct part numbers.
 - A root with no part number is refused at plan ("Set a part number on the
   assembly in Onshape first").
 
-## Custom fields — the property map
+## The property map — item fields and custom fields
 
-Onshape properties flow into Carbon part custom fields through ONE map per
-company, `companyIntegration.metadata.propertyMap`. Entry:
-`{ onshapePropertyId, onshapeName, valueType, carbonFieldId, mode }`. Pure logic
-in `packages/ee/src/onshape/panel/properties.ts` (tested).
+One map per company, `companyIntegration.metadata.propertyMap`, plus the two
+descriptions' modes on `metadata.descriptionModes`. Entry: `{ onshapePropertyId,
+onshapeName, valueType, target, mode, translations? }`, where `target` is
+`{ kind: "customField", fieldId }` or `{ kind: "item", field }`. Pure logic in
+`panel/properties.ts` and `panel/standard-fields.ts` (tested). Spec:
+`.ai/specs/2026-10-07-onshape-standard-field-mapping.md`.
 
+- **The target list** (`STANDARD_FIELDS`, `standard-fields.ts`) is the only
+  place an item field becomes mappable: `mpn`, `replenishmentSystem`,
+  `defaultMethodType`, `sourcingType`, `itemTrackingType`,
+  `unitOfMeasureCode`. Each declares its kind (text or list), values, the
+  Onshape value types it takes and its writer key. The ERP holds one function
+  per writer key in `STANDARD_FIELD_WRITERS` (`onshape-push.server.ts`, a
+  typed `Record`, so a new key fails the typecheck): `itemMethod`
+  (`updateItemMethodAndSourcing`, cascades onto Draft method materials),
+  `itemTracking` (update + `cascadeItemTrackingType`), `itemColumn`
+  (`updateItemColumns`, what the Properties panel writes directly). There is
+  no generic column write. The enums live in the leaf `panel/item-values.ts`
+  so `plan.ts` and `standard-fields.ts` can both read them without a cycle.
+- **Translation**: a list target carries rows `{ onshape, carbon | null }`,
+  matched ignoring case and end spaces (`translateValue`); a unit also matches
+  a unit's code or name; a BOOL property's rows are Yes/No. `null` is "No
+  value": the next precedence rule decides. An empty Onshape value is never a
+  problem; an unmatched one is a problem the review shows and the push skips.
+- **Modes**: `create` (Set at creation, default) writes only when the push
+  creates the item; `everyPush` also writes to an existing item the push
+  links or that is linked to its source. `parsePropertyMap` reads the earlier
+  shape: `carbonFieldId` → a custom field target, stored `owned` →
+  `everyPush`, anything else → `create`.
+- **Existing items** (`planExistingItem`): "everyPush" item values go through
+  `interlockItemFields` in the item page's order — Replenishment (with the
+  method `deriveItemMethodUpdate` pins: Make → Make to Order, Buy → Purchase
+  to Order), the method (refused when the final Replenishment does not allow
+  it), Sourcing (Buy and Make only, with the method it sets), then tracking,
+  unit and MPN. The result is the row's `target` and `itemFieldChanges`;
+  "create" values that differ are `keptDifferences`. Apply:
+  `applyExistingItemFields` merges the reviewer's edits over `target` and
+  writes through `applyItemFieldWrites` in writer order.
+- **New items** (`planCreatedItem`): every mapped value goes into the
+  proposal; `upsertPart` takes neither MPN nor Sourcing, so apply writes those
+  right after the insert (`createdItemExtras`).
+- **Where values are read**: parts via `readPartProperties`
+  (`@carbon/ee/onshape.server`, one metadata read at `depth=2`); an
+  assembly root from the element metadata the plan already reads; BOM rows
+  from their cells (`parseBomTree` keeps them as `properties`, matched by
+  column id, then by column name; `withoutProperties` strips them before the
+  plan is stored); released items from metadata at the released version (one
+  read per released element, only when the map or a description mode needs
+  it). A reused release BOM child is not linked and takes no value. Map
+  empty → zero extra reads for mapped values. `loadPlanMapping` reads the map,
+  the modes, the definitions and the held `part.customFields`.
 - The editor is the panel's **Fields** page: Onshape lists properties only from
   inside a document. `api+/integrations.onshape.panel.fields.ts`: GET lists the
-  element's properties (a part studio's as the union across its parts), the map
-  and the part custom field definitions; POST replaces the whole map. Both take
-  settings update; `panel.me` returns `canEditFields`. The save refuses a target
-  type `MAPPABLE_VALUE_TYPES` does not allow, two properties on one field, and
-  deleted fields (422, per property).
-- ONE mode: every entry is `owned` — Onshape writes the field on every push.
-  Nothing on the item page locks mapped custom fields.
-- `MAPPABLE_VALUE_TYPES`: STRING/ENUM/OBJECT→Text, BOOL→Yes/No,
-  INT/DOUBLE→Numeric, DATE→Date. USER/BLOB/COMPUTED/CATEGORY are not mappable,
-  and no type maps to List.
-- Values are read at plan (parts via `readPartProperties`,
-  `@carbon/ee/onshape.server`, one metadata read at `depth=2`; assembly root
-  from the element metadata the plan already reads). Release pushes and BOM
-  children write no custom fields. Map empty → zero extra reads.
-- Values land in `part.customFields`, keyed by readableId (shared across
-  revisions). Writes merge only the mapped keys (`mergeCustomFieldValues`);
-  an owned value emptied in Onshape deletes the key. The plan drops a clear
-  for a field Carbon doesn't hold (`withoutNoOpClears`), so the review says
-  "will be cleared" only when something is. A Yes/No field stores the
-  string `"on"` (`BOOLEAN_TRUE`); a JSON boolean renders unticked.
+  element's properties (a part studio's as the union across its parts), the
+  map, the description modes, the part custom field definitions and the
+  company's units; POST replaces the map and the modes with one `jsonb_set`
+  pair. Both take settings update; `panel.me` returns `canEditFields`. The
+  save refuses a target type `MAPPABLE_VALUE_TYPES` does not allow, an item
+  field that does not take the value type, a translation value outside the
+  field's list, two properties on one target, and deleted fields (422, per
+  property).
+- `MAPPABLE_VALUE_TYPES` (custom fields): STRING/ENUM/OBJECT→Text,
+  BOOL→Yes/No, INT/DOUBLE→Numeric, DATE→Date. USER/BLOB/COMPUTED/CATEGORY are
+  not mappable, and no type maps to a List custom field.
+- Custom field values land in `part.customFields`, keyed by readableId
+  (shared across revisions, so a new revision is not a creation for them).
+  Writes merge only the mapped keys (`mergeCustomFieldValues`); an
+  "everyPush" value emptied in Onshape deletes the key. `customFieldWrites`
+  drops a clear for a field Carbon doesn't hold, so the review says "will be
+  cleared" only when something is. A Yes/No field stores the string `"on"`
+  (`BOOLEAN_TRUE`); a JSON boolean renders unticked.
 
 ## Push release
 
@@ -282,8 +328,9 @@ in `packages/ee/src/onshape/panel/properties.ts` (tested).
   company account rather than "No releases yet".
 - Per released model item: ensure an item AT the released letter —
   `createRevision` from the base or a fresh item. BOM children that are not
-  release items are resolved with one bulk lookup (purchased hardware is
-  reused). Release lines are inserted in one batch per method.
+  release items are resolved with one bulk lookup (bought hardware is
+  reused). Release lines are inserted in one batch per method. A new revision
+  copies its base, then takes the "everyPush" values.
 - What the push creates is staged under one **Draft** change notice, inserted
   before the first item write (if that fails, nothing is written).
   `stageChangeNoticeItem` (`onshape-push.server.ts`) does what

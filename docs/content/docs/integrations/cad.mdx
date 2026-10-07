@@ -217,14 +217,15 @@ Switching views costs no Onshape read; both are built from the same status data.
 Every push is two steps. Pressing **Push** shows a review of exactly what Carbon
 would do — nothing is written yet:
 
-- items that will be **created**, with the values they will get. Short and long
-  description, Buy/Make, default method, tracking type and unit of measure are
-  editable here; the item ID and revision come from Onshape and are not. The starting
-  values come from the company's push defaults (below).
+- items that will be **created**, with the values they will get. Buy/Make, default
+  method and tracking type are editable here; the item ID and revision come from
+  Onshape and are not. Each mapped value shows the Onshape property it came from
+  (see [Fields](#fields)); anything not mapped starts from the push defaults (below).
 - items that will be **linked** to an existing Carbon item by part number, or
-  **updated** because Onshape changed, showing the short and long descriptions and
-  custom fields Onshape will overwrite. Their Buy/Make, default method and tracking
-  type stay editable; the descriptions do not, because Onshape owns them.
+  **updated** because Onshape changed. The review lists the values the push replaces
+  (fields set to *Update on every push*) and the Onshape values Carbon keeps (fields
+  set to *Set at creation*). Buy/Make, default method and tracking type stay
+  editable.
 - for an assembly, each make method with the lines it gains, the lines a previous
   push wrote that will be replaced, the lines you added by hand that the push takes
   over, and the ones it keeps.
@@ -233,9 +234,8 @@ would do — nothing is written yet:
 
 Untick a part, or a BOM item that would be created, to leave it out. **Push to
 Carbon** applies the review as shown; **Cancel** writes nothing. A review is held
-for 15 minutes and then has to be opened again. An edit to an existing item's
-Buy/Make, default method or tracking type is written with the push; the item's
-short and long descriptions stay Onshape's, as described below.
+for 15 minutes and then has to be opened again. A choice made in the review is
+written to Carbon only; Onshape keeps its values.
 
 ### Push a part
 
@@ -244,11 +244,12 @@ ID, plus name, description, revision, the 3D model and a thumbnail. Pushing agai
 after a change updates the item; pushing an unchanged part does nothing. Parts need a
 part number set in Onshape first.
 
-Onshape owns a linked item's **Short Description** and **Long Description**: they
-can't be edited in Carbon while the item is linked, and every push writes Onshape's
-values. The item page shows an **Onshape card** with the link, **Open in Onshape**,
-and **Detach** to make them editable in Carbon again. The card shows links made by
-the panel (**Onshape V2**) only.
+After the push the item is a Carbon item like any other, and every field stays
+editable in Carbon. A later push replaces only the fields set to *Update on every
+push* on the [Fields](#fields) page. The item page shows an **Onshape card** with the
+link, the fields a push replaces, **Open in Onshape**, and **Detach**, which stops
+pushes from updating the item. The card shows links made by the panel
+(**Onshape V2**) only.
 
 ### Push an assembly
 
@@ -259,16 +260,23 @@ wrote are replaced. A line you added by hand in Carbon for a part Onshape's BOM 
 lists is taken over — its quantity follows Onshape, its operation and scrap stay —
 and a hand-added line for a part Onshape doesn't list is left alone.
 
-Items in the BOM that are not yet linked to an Onshape part are linked to theirs, and
-every item linked to its BOM row takes Onshape's short and long descriptions. Only
+Items in the BOM that are not yet linked to an Onshape part are linked to theirs.
+Every item linked to its BOM row takes the values set to *Update on every push*. Only
 values Onshape has are written, so an empty Name or Description cell never blanks
-Carbon's text. An item already linked to a different Onshape part keeps that link.
+Carbon's text. An item already linked to a different Onshape part keeps that link,
+and the push writes nothing to it.
 
-**Buy or Make.** A new item is created as Buy when Onshape marks it bought: a
-sub-assembly whose **Subassembly BOM behavior** is *Show assembly only* (Onshape then
-lists it without components, so it gets no BOM), or a row with no components whose
-*Purchasing Level* column says *Purchased*. Anything else starts as Make. For an item Carbon already
-has, Buy or Make stays Carbon's, and the review warns when the two disagree: a Buy
+**Buy or Make.** For a new item, the first of these that gives a value wins:
+
+1. your choice in the review,
+2. the Onshape property mapped to Replenishment (see [Fields](#fields)),
+3. a BOM row with components is Make,
+4. a part from Onshape's Standard content library is Buy,
+5. the push default.
+
+A sub-assembly whose **Subassembly BOM behavior** is *Show assembly only* is listed
+without components, so the push writes no BOM for it. It says nothing about Buy or
+Make. The review warns when an item's Buy or Make and Onshape's BOM disagree: a Buy
 item that would get a BOM, or a Make item Onshape shows as one unit.
 
 **A released make method is never edited.** When an assembly's current method is
@@ -286,6 +294,9 @@ The **Releases** page lists your document's Onshape releases. Pushing one:
   revision letter,
 - applies each released assembly's BOM (as of the released version) to the new
   revision's method,
+- takes the mapped values of each released item at its released version: a new
+  revision copies its previous revision, then takes the values set to *Update on
+  every push*,
 - attaches models and thumbnails at the released version, and released drawings as
   PDF.
 
@@ -298,24 +309,56 @@ Pushing the same release twice creates nothing twice.
 ### Fields
 
 The **Fields** page maps Onshape properties (Vendor, Project, Material, your
-company's custom properties) onto Carbon custom fields on the part. It lists the
-properties of the element you have open, but the mappings are the company's and
-apply to every push. It lives in the panel because Onshape only lists properties
-from inside a document.
+company's custom properties) onto Carbon. A property can set an **item field** or a
+**custom field** on the part. The page lists the properties of the element you have
+open, but the mappings are the company's and apply to every push. It lives in the
+panel because Onshape only lists properties from inside a document.
 
-- Create the field in Carbon first, then select it here; **Refresh** re-reads the
-  properties and the field list.
-- Text and enum properties map to Text fields, booleans to Yes/No, numbers to
-  Numeric, dates to Date. Properties with no matching Carbon type are hidden unless
-  already mapped.
-- Every push writes each mapped property into its field, and a property emptied in
-  Onshape empties the field. A property that doesn't fit its field is called out in
-  the review and skipped.
-- **Save mappings** needs the **settings: update** permission in Carbon.
+**Item fields** a property can set:
 
-The values a created item starts with (unit of measure, replenishment, methods,
-tracking type) are the push defaults on the **Onshape V2** integration page in
-Carbon.
+| Item field | Values |
+| --- | --- |
+| Manufacturer Part Number | the property's text |
+| Replenishment | Buy, Make, Buy and Make |
+| Default Method Type | Make to Order, Pull from Inventory, Purchase to Order |
+| Sourcing | Specified, Drop Ship, Ship from Inventory (Buy and Make items only) |
+| Tracking Type | Inventory, Non-Inventory, Serial, Batch |
+| Unit of Measure | your company's units |
+
+- A list field has a **translation**: each row turns an Onshape value into a Carbon
+  value. The rows start with Carbon's own values, so an Onshape list with the same
+  options needs no setup. Set a row to *No value* to leave the field to the next
+  rule. An Onshape value with no row is called out in the review and not written.
+- A Unit of Measure value that matches a unit's code or name needs no row.
+- Item fields are written the way the item page writes them. Changing Replenishment
+  also sets the method that goes with it, and changing Replenishment, method,
+  sourcing or tracking type also updates the item on Draft BOMs and open jobs.
+
+**Custom fields:** create the field in Carbon first, then select it here. Text and
+enum properties map to Text fields, booleans to Yes/No, numbers to Numeric, dates to
+Date. Properties with no matching Carbon type are hidden unless already mapped.
+
+**When Onshape writes a field.** Each mapping, and the item's Name and Description,
+has one of two settings:
+
+- **Set at creation** (the default): Onshape fills the field when a push creates the
+  item. After that, Carbon owns the field and later pushes don't change it. Items
+  already in Carbon don't get it.
+- **Update on every push**: every push replaces Carbon's value with Onshape's,
+  including edits made in Carbon. An empty custom field property clears the Carbon
+  field; an empty item field or description is never written.
+
+**Set up Buy or Make.** Onshape has no Buy/Make property. Create a list property in
+Onshape, for example *Make or buy*, with the options Buy, Make, and Buy and Make, and
+give it the default Make. Map it to Replenishment here. Change the value on the parts
+your company buys.
+
+**Refresh** re-reads the properties and the field list. **Save mappings** needs the
+**settings: update** permission in Carbon.
+
+The values a created item starts with when no property sets them (unit of measure,
+replenishment, methods, tracking type) are the push defaults on the **Onshape V2**
+integration page in Carbon.
 
 ## Troubleshooting the panel
 

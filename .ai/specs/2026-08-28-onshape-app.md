@@ -92,9 +92,12 @@ Deployment requirements the split adds:
   person releases it. Mappings are re-derived onto the copy's new line ids by
   natural key (`correlateCopiedLines`: component item, then `order`),
   conservatively — an unpaired line is treated as manual and kept.
-- Onshape-owned item fields (`readableId`, `name`, `description`, `revision`,
-  thumbnail, model): the item update path drops them for mapped items; the
-  item page shows one `ExternalSourceCard` (Open in Onshape, Detach).
+- Onshape owns a linked item's identity (`readableId`, `revision`), thumbnail
+  and model. Since 2026-10-07 no other field is locked: a push writes a value
+  to an existing item only in "Update on every push" mode (see
+  `.ai/specs/2026-10-07-onshape-standard-field-mapping.md`). The item page
+  shows one `ExternalSourceCard` (the fields a push replaces, Open in Onshape,
+  Detach).
 
 ### Push release semantics
 
@@ -148,7 +151,7 @@ read, which the apply leaves alone — an empty array is a genuinely empty BOM.
 Editable at create only: name, description, replenishmentSystem,
 defaultMethodType, itemTrackingType, unitOfMeasureCode (the four the routes
 used to hardcode). Identity (readableId, revision) is Onshape's; adopt and
-update take no edits, so the owned-field lock is untouched. Item type stays
+update take only the three manufacturing edits. Item type stays
 Part. Pure module `packages/ee/src/onshape/panel/plan.ts` (builders, edit
 merging, the ERP's replenishment↔method interlock) is tested; the store and the
 bulk Carbon reads live under `packages/ee/src/onshape/lib/`.
@@ -172,7 +175,8 @@ constants. They are now company settings on the integration metadata
 documented defaults (Make / Make to Order / Pull from Inventory / Inventory /
 unit resolved from the company's list), because a plan must always build.
 `reconcilePushDefaults` keeps the replenishment↔method pair one the Part form
-would accept; purchased BOM rows are always Buy. Edited on the panel's
+would accept. Since 2026-10-07 a mapped property and the BOM rules come first
+(see `.ai/specs/2026-10-07-onshape-standard-field-mapping.md`). Edited on the panel's
 Settings page (`panel.preferences` POST). Release behaviour is fixed, not a
 default: the review states the change notice it records.
 
@@ -187,6 +191,11 @@ Save. Creating a custom field from the panel was removed; fields are created
 in Carbon and selected in the panel.
 
 ### Custom fields (property map, 2026-08-31)
+
+> Superseded on 2026-10-07 by `.ai/specs/2026-10-07-onshape-standard-field-mapping.md`:
+> a mapping can also set item fields, every mapping has a mode ("Set at
+> creation" or "Update on every push"), and BOM rows and release pushes read
+> mapped values. The paragraph below records the first version.
 
 One explicit map per company on the integration metadata: Onshape property →
 Carbon `part` custom field, with per-mapping ownership (`owned` = written on
