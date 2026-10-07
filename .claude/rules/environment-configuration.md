@@ -23,12 +23,23 @@ both resolve here. Prefer importing the exported constant over reading
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "@carbon/auth";
 ```
 
-`getEnv(name, { isRequired = true, isSecret = true })` is the accessor:
-- Throws `${name} is not set` when a required var is missing (validation happens
-  at module load, so a missing required var crashes app boot).
-- When `isSecret` and running in the browser, returns `""` (secrets never reach
-  client code).
-- Server reads `process.env`; browser reads `window.env`.
+Every variable is declared once in `packages/env/src/schema.ts`: group, one-line
+description, optional zod `type`, `secret`, `browser`, `required` and `aliases`.
+`getEnv(name)` reads one — its own name first, then its deprecated aliases
+(`APP_URL` ← `VERCEL_URL`, `APP_ENV` ← `VERCEL_ENV`, `DATABASE_URL` ←
+`SUPABASE_DB_URL`, `AI_API_KEY` ← `OPENAI_API_KEY`).
+- Server reads `process.env`; browser reads `window.env`, and a `secret`
+  variable reads as `""` there.
+- `validateEnv` (`validate.ts`) runs once at module load on the server and
+  `formatReport` prints every problem together, grouped as Required, Invalid and
+  half-configured features, plus the features that are off. A secret's value is
+  never printed.
+- `required: "error"` throws that report. `required: "warn"`, an invalid type and
+  a half-configured feature (some of a group's `needed` variables set, not all)
+  are only printed for now and become errors in the next release.
+- Not validated under Vitest or with `SKIP_ENV_VALIDATION` set.
+- `src/deployments.test.ts` reads what `sst.config.ts` and `crbn up` set and
+  fails when either would hit a startup error.
 
 `window.env` is populated by `getBrowserEnv()`, injected via an inline script in
 each app's `root.tsx` (`apps/erp/app/root.tsx`, `apps/mes/app/root.tsx`). Only the
@@ -118,7 +129,7 @@ checked against the caller's company and user). Managed deployment propagates bo
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
-(required, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
+(optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
@@ -130,8 +141,9 @@ the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or
 Unset = no tracing. See `packages/logger/AGENTS.md` → Tracing. The Rust assembler
 reads the same variables (`apps/assembler/AGENTS.md` → Tracing).
 
-**Deployment** — `VERCEL_URL` (required at module load; value unused off-Vercel,
-set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
+**Deployment** — `APP_URL` (this app's own origin, optional; `VERCEL_URL` is its
+deprecated alias), `APP_ENV` (`production | preview | development`; alias
+`VERCEL_ENV`, defaults to `NODE_ENV`), `NODE_ENV`. `ERP_URL` /
 `MES_URL` drive `getAppUrl()` / `getMESUrl()`.
 
 ## URL resolution
@@ -144,14 +156,17 @@ set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
 
 ## Gotchas
 
-- Required-var validation runs at **module load** — a missing `SUPABASE_URL`,
-  `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `REDIS_URL`, `SESSION_SECRET`,
-  `POSTHOG_*`, or `VERCEL_URL` crashes boot, not lazily at first use.
+- Validation runs at **module load**. Missing `SUPABASE_SERVICE_ROLE_KEY`,
+  `DATABASE_URL` (or `SUPABASE_DB_URL`), `REDIS_URL`, `SESSION_SECRET`, or the
+  Inngest keys without `INNGEST_DEV`, stops boot. Missing `SUPABASE_URL`,
+  `SUPABASE_ANON_KEY`, and outside Cloud in production `ERP_URL`, `MES_URL` and
+  `SMTP_FROM`, is a warning for now. `POSTHOG_*` and `APP_URL` are optional.
 - Email is deliberately lazy: `packages/lib/src/email.server.ts` builds the
   SMTP transport on first send, never at import, so a deployment with no mail
   config boots fine and `sendEmail` no-ops.
 - Only keys in `getBrowserEnv()` reach the client; adding a public var means
-  adding it there AND to the `Window.env` interface declaration.
+  `browser: true` in the schema, adding it there (typecheck enforces this), AND
+  adding it to each app's root-loader `env` object.
 - Don't put ports/URLs/Supabase/Redis/Inngest dev values in `.env` — `crbn up`
   owns them via `.env.local`, which overrides `.env`.
 
