@@ -35,7 +35,7 @@ const CustomerAvatar = ({
       : undefined;
 
   return (
-    <HStack className="truncate no-underline hover:no-underline">
+    <HStack className="truncate no-underline hover:no-underline text-sm text-foreground ">
       <Avatar
         size={size ?? "xs"}
         {...props}
