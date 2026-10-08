@@ -4383,9 +4383,6 @@ msgstr "Wybierz numer partii"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Wybierz proces wsadowy, aby zobaczyć operacje, które mogą działać razem."
 
-msgid "Choose a company"
-msgstr "Wybierz firmę"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Wybierz część, którą zastępuje {itemReadableId}. Reguła jest zapisana na tej części z {itemReadableId} jako jej następnik."
 
@@ -13211,6 +13208,9 @@ msgstr "Brak ścieżki wolnej od kolizji"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Brak komentarzy. Bądź pierwszy i dodaj komentarz."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Nie znaleziono zakończonych zleceń produkcyjnych w danym zakresie"
 
@@ -13835,9 +13835,6 @@ msgstr "Nie pracuje dzisiaj"
 
 msgid "Not yet"
 msgstr "Jeszcze nie"
-
-msgid "Not you?"
-msgstr "To nie ty?"
 
 msgid "Note"
 msgstr "Notatka"
@@ -18154,6 +18151,9 @@ msgstr "Szukaj zdarzeń…"
 msgid "Search fields..."
 msgstr "Wyszukaj pola..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "Wyszukaj istniejący lub utwórz nowy"
 
@@ -22141,6 +22141,9 @@ msgstr "Wyzwolone przez"
 
 msgid "Triggers"
 msgstr "Wyzwalacze"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Wtorek"

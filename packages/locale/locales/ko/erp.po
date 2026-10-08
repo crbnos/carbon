@@ -4383,9 +4383,6 @@ msgstr "배치 번호를 선택하세요"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정을 선택하세요."
 
-msgid "Choose a company"
-msgstr "회사를 선택하세요"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
@@ -13211,6 +13208,9 @@ msgstr "충돌 없는 경로 없음"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "범위 내에 완료된 작업 지시가 없습니다"
 
@@ -13835,9 +13835,6 @@ msgstr "오늘 근무하지 않음"
 
 msgid "Not yet"
 msgstr "아직 아님"
-
-msgid "Not you?"
-msgstr "본인이 아니신가요?"
 
 msgid "Note"
 msgstr "메모"
@@ -18154,6 +18151,9 @@ msgstr "이벤트 검색…"
 msgid "Search fields..."
 msgstr "필드 검색..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
 
@@ -22141,6 +22141,9 @@ msgstr "트리거된 사람/것"
 
 msgid "Triggers"
 msgstr "트리거"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "화요일"

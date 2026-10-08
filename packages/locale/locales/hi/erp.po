@@ -4383,9 +4383,6 @@ msgstr "एक बैच नंबर चुनें"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "एक साथ चल सकने वाले ऑपरेशन देखने के लिए एक बैच योग्य प्रक्रिया चुनें।"
 
-msgid "Choose a company"
-msgstr "कंपनी चुनें"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
@@ -13211,6 +13208,9 @@ msgstr "कोई टकराव-मुक्त पथ नहीं"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "रेंज में कोई पूर्ण जॉब नहीं"
 
@@ -13835,9 +13835,6 @@ msgstr "आज काम नहीं"
 
 msgid "Not yet"
 msgstr "अभी नहीं"
-
-msgid "Not you?"
-msgstr "क्या आप नहीं हैं?"
 
 msgid "Note"
 msgstr "नोट"
@@ -18154,6 +18151,9 @@ msgstr "घटनाओं को खोजें…"
 msgid "Search fields..."
 msgstr "फ़ील्ड खोजें..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "मौजूदा को खोजें या नया बनाएं"
 
@@ -22141,6 +22141,9 @@ msgstr "ट्रिगर किया गया"
 
 msgid "Triggers"
 msgstr "ट्रिगर"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "मंगलवार"

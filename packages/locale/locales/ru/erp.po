@@ -4383,9 +4383,6 @@ msgstr "Выберите номер партии"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Выберите пакетируемый процесс, чтобы увидеть операции, которые могут выполняться вместе."
 
-msgid "Choose a company"
-msgstr "Выберите организацию"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
 
@@ -13211,6 +13208,9 @@ msgstr "Нет пути без столкновений"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Нет завершенных производственных заказов в диапазоне"
 
@@ -13835,9 +13835,6 @@ msgstr "Не работает сегодня"
 
 msgid "Not yet"
 msgstr "Еще нет"
-
-msgid "Not you?"
-msgstr "Это не вы?"
 
 msgid "Note"
 msgstr "Примечание"
@@ -18154,6 +18151,9 @@ msgstr "Поиск событий…"
 msgid "Search fields..."
 msgstr "Поиск полей..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
 
@@ -22141,6 +22141,9 @@ msgstr "Инициировано"
 
 msgid "Triggers"
 msgstr "Триггеры"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Вторник"

@@ -4383,9 +4383,6 @@ msgstr "Bir parti numarası seçin"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebilir bir işlem seçin."
 
-msgid "Choose a company"
-msgstr "Bir şirket seçin"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
@@ -13211,6 +13208,9 @@ msgstr "Çarpışmasız bir yol yok"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu ekleyin."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Aralıkta tamamlanmış İş emri yok"
 
@@ -13835,9 +13835,6 @@ msgstr "Bugün çalışmıyor"
 
 msgid "Not yet"
 msgstr "Henüz değil"
-
-msgid "Not you?"
-msgstr "Sen siz misiniz?"
 
 msgid "Note"
 msgstr "Not"
@@ -18154,6 +18151,9 @@ msgstr "Olayları ara…"
 msgid "Search fields..."
 msgstr "Alanları ara..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
 
@@ -22141,6 +22141,9 @@ msgstr "Tarafından tetiklendi"
 
 msgid "Triggers"
 msgstr "Tetikleyiciler"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Salı"

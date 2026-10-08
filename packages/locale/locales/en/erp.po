@@ -4383,9 +4383,6 @@ msgstr "Choose a batch number"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Choose a batchable process to see the operations that can run together."
 
-msgid "Choose a company"
-msgstr "Choose a company"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
@@ -13211,6 +13208,9 @@ msgstr "No collision-free path"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "No comments yet. Be the first to add a comment."
 
+msgid "No companies match \"{query}\""
+msgstr "No companies match \"{query}\""
+
 msgid "No completed jobs within range"
 msgstr "No completed jobs within range"
 
@@ -13835,9 +13835,6 @@ msgstr "Not working today"
 
 msgid "Not yet"
 msgstr "Not yet"
-
-msgid "Not you?"
-msgstr "Not you?"
 
 msgid "Note"
 msgstr "Note"
@@ -18154,6 +18151,9 @@ msgstr "Search events…"
 msgid "Search fields..."
 msgstr "Search fields..."
 
+msgid "Search for a company"
+msgstr "Search for a company"
+
 msgid "Search for existing or create a new one"
 msgstr "Search for existing or create a new one"
 
@@ -22141,6 +22141,9 @@ msgstr "Triggered by"
 
 msgid "Triggers"
 msgstr "Triggers"
+
+msgid "Try a different name."
+msgstr "Try a different name."
 
 msgid "Tuesday"
 msgstr "Tuesday"

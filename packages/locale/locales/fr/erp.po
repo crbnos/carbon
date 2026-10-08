@@ -4383,9 +4383,6 @@ msgstr "Choisir un numéro de lot"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Choisissez un processus regroupable pour voir les opérations qui peuvent s'exécuter ensemble."
 
-msgid "Choose a company"
-msgstr "Choisir une société"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choisissez une pièce que {itemReadableId} remplace. La règle est enregistrée sur cette pièce avec {itemReadableId} comme successeur."
 
@@ -13211,6 +13208,9 @@ msgstr "Pas de chemin sans collision"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Aucun commentaire pour le moment. Soyez le premier à ajouter un commentaire."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Aucun ordre de fabrication terminé dans cette plage"
 
@@ -13835,9 +13835,6 @@ msgstr "Ne travaille pas aujourd'hui"
 
 msgid "Not yet"
 msgstr "Pas encore"
-
-msgid "Not you?"
-msgstr "Ce n'est pas vous ?"
 
 msgid "Note"
 msgstr "Note"
@@ -18154,6 +18151,9 @@ msgstr "Rechercher les événements…"
 msgid "Search fields..."
 msgstr "Rechercher des champs..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "Rechercher un existant ou en créer un nouveau"
 
@@ -22141,6 +22141,9 @@ msgstr "Déclenché par"
 
 msgid "Triggers"
 msgstr "Déclencheurs"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Mardi"
