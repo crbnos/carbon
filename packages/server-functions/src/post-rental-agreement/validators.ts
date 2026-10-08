@@ -59,23 +59,14 @@ export const unitReturnValidator = z
     }
   );
 
-/** A unit comes back: re-cut its billing, optionally straight to maintenance.
- *  `residualDestination` is where a SALES-TYPE unit goes at the end of its
- *  term — a new Rental Fleet asset, or stock — and is required for such a
- *  line (the function refuses without it); an operating return ignores it. */
-export const returnValidator = z
-  .object({
-    type: z.literal("return"),
-    ...unitReturnFields,
-    ...scope
-  })
-  .refine(
-    (data) => !data.takeOutOfService || !!data.outOfServiceReason?.trim(),
-    {
-      message: "A reason is required to take the unit out of service",
-      path: ["outOfServiceReason"]
-    }
-  );
+/** A Pending unit that never left the yard: stop its billing at
+ *  `returnedAt` and free the unit, with no document (spec Q8). */
+export const releaseValidator = z.object({
+  type: z.literal("release"),
+  rentalAgreementLineId: z.string().min(1),
+  returnedAt: calendarDate,
+  ...scope
+});
 
 /** Every unit is back (or sold) and everything is billed. */
 export const closeValidator = z.object({
@@ -91,7 +82,7 @@ export const cancelValidator = z.object({
 
 export const payloadValidator = z.discriminatedUnion("type", [
   activateValidator,
-  returnValidator,
+  releaseValidator,
   closeValidator,
   cancelValidator
 ]);

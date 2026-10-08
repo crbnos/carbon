@@ -39,28 +39,27 @@ it("activate, close and cancel need only the agreement", () => {
   }
 });
 
-it("return needs the line and a YYYY-MM-DD return date", () => {
+it("release needs the line and a YYYY-MM-DD date", () => {
   const parsed = payloadValidator.parse({
-    type: "return",
+    type: "release",
     rentalAgreementLineId: "ragl_1",
     returnedAt: "2026-10-14",
     ...scope
   });
-  if (parsed.type !== "return") throw new Error("wrong variant");
+  if (parsed.type !== "release") throw new Error("wrong variant");
+  expect(parsed.rentalAgreementLineId).toEqual("ragl_1");
   expect(parsed.returnedAt).toEqual("2026-10-14");
-  expect(parsed.meterIn).toEqual(undefined);
-  expect(parsed.takeOutOfService).toEqual(undefined);
 
   expect(() =>
     payloadValidator.parse({
-      type: "return",
+      type: "release",
       returnedAt: "2026-10-14",
       ...scope
     })
   ).toThrow();
   expect(() =>
     payloadValidator.parse({
-      type: "return",
+      type: "release",
       rentalAgreementLineId: "ragl_1",
       returnedAt: "2026-10-14T00:00:00.000Z",
       ...scope
@@ -68,57 +67,15 @@ it("return needs the line and a YYYY-MM-DD return date", () => {
   ).toThrow();
 });
 
-it("return carries the meter, notes and the out-of-service reason", () => {
+it("release strips a meter reading", () => {
   const parsed = payloadValidator.parse({
-    type: "return",
+    type: "release",
     rentalAgreementLineId: "ragl_1",
     returnedAt: "2026-10-14",
     meterIn: 1250.5,
-    returnNotes: "Scratched boom",
-    takeOutOfService: true,
-    outOfServiceReason: "Hydraulic leak",
     ...scope
   });
-  if (parsed.type !== "return") throw new Error("wrong variant");
-  expect(parsed.meterIn).toEqual(1250.5);
-  expect(parsed.outOfServiceReason).toEqual("Hydraulic leak");
-});
-
-it("taking a unit out of service at return needs a reason", () => {
-  for (const outOfServiceReason of [undefined, null, "", "   "]) {
-    expect(() =>
-      payloadValidator.parse({
-        type: "return",
-        rentalAgreementLineId: "ragl_1",
-        returnedAt: "2026-10-14",
-        takeOutOfService: true,
-        outOfServiceReason,
-        ...scope
-      })
-    ).toThrow();
-  }
-  expect(
-    payloadValidator.parse({
-      type: "return",
-      rentalAgreementLineId: "ragl_1",
-      returnedAt: "2026-10-14",
-      takeOutOfService: false,
-      ...scope
-    }).type
-  ).toEqual("return");
-});
-
-it("a negative meter reading and an unknown type are refused", () => {
-  expect(() =>
-    payloadValidator.parse({
-      type: "return",
-      rentalAgreementLineId: "ragl_1",
-      returnedAt: "2026-10-14",
-      meterIn: -1,
-      ...scope
-    })
-  ).toThrow();
-  expect(() => payloadValidator.parse({ type: "deliver", ...scope })).toThrow();
+  expect("meterIn" in parsed).toEqual(false);
 });
 
 it("activation generates through one cycle past today", () => {
@@ -360,28 +317,6 @@ it("a commenced sales-type line cannot be cancelled: early termination is a manu
       commencedSalesTypeLines: 0
     })
   ).toEqual(null);
-});
-
-it("return accepts a residual destination of Fleet or Inventory, or none", () => {
-  const base = {
-    type: "return",
-    rentalAgreementLineId: "ragl_1",
-    returnedAt: "2029-12-31",
-    ...scope
-  };
-  for (const residualDestination of ["Fleet", "Inventory"] as const) {
-    const parsed = payloadValidator.parse({ ...base, residualDestination });
-    expect(
-      parsed.type === "return" ? parsed.residualDestination : undefined
-    ).toEqual(residualDestination);
-  }
-  const none = payloadValidator.parse(base);
-  expect(none.type === "return" ? none.residualDestination : "unset").toEqual(
-    undefined
-  );
-  expect(() =>
-    payloadValidator.parse({ ...base, residualDestination: "Scrap" })
-  ).toThrow();
 });
 
 it("a return is never dated after the company's today", () => {

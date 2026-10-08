@@ -43,13 +43,15 @@ import { returnRentalUnit } from "./return-unit";
 import {
   cancelBlocker,
   closeBlocker,
-  futureReturnError,
+  futureReleaseError,
   LIVE_LINE_STATUSES,
   openRentalDocumentBlocker,
   payloadValidator,
   RENTABLE_ASSET_STATUSES,
   type RentalAgreementPayload,
+  releaseBlocker,
   unitAvailabilityError,
+  unitLabel,
   unpricedUnitError
 } from "./validators";
 
@@ -64,13 +66,8 @@ import {
 //             'Lease' journal books net investment / COGS / lease revenue, and
 //             the effective-interest schedule plus its Interest recognition
 //             rows are written.
-//   return    a unit comes back, never after today: an operating line's
-//             billing is re-cut at the return date (later Pending periods
-//             dropped, the current one shortened, an advance-billed period
-//             credited), optionally straight to maintenance. A sales-type
-//             line's billing is its term and is left alone; the unit's closing
-//             net investment (the schedule's balance on the return date) moves
-//             into a new Rental Fleet asset or into stock.
+//   A unit comes back through a rental receipt (`post-receipt`), which calls `returnRentalUnit`.
+//   release   a Pending unit that never left the yard stops billing at the release date and is free again.
 //   close     Active → Closed once every unit is back and everything billed.
 //   cancel    Draft, or Active with nothing on rent / billed / recognized /
 //             commenced → Cancelled; the Pending lines are deleted so their
@@ -730,12 +727,12 @@ async function commenceSalesTypeLines(
   return result;
 }
 
-async function returnUnit(
+async function releaseUnit(
   { db, companyId, userId }: Scope,
-  payload: Extract<RentalAgreementPayload, { type: "return" }>,
+  payload: Extract<RentalAgreementPayload, { type: "release" }>,
   today: string
 ): Promise<{ id: string }> {
-  const future = futureReturnError(payload.returnedAt, today);
+  const future = futureReleaseError(payload.returnedAt, today);
   if (future) throw new InvalidInputError(future);
   return db.transaction().execute(async (trx) => {
     const agreement = await lockAgreement(
@@ -745,12 +742,81 @@ async function returnUnit(
     );
     if (agreement.status !== "Active") {
       throw new InvalidInputError(
-        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are returned from an Active agreement`
+        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are released from an Active agreement`
       );
     }
+
+    const line = await trx
+      .selectFrom("rentalAgreementLine")
+      .select(["id", "status", "lessorClassification", "fixedAssetId"])
+      .where("id", "=", payload.rentalAgreementLineId)
+      .where("rentalAgreementId", "=", agreement.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line) throw new NotFoundError("Rental agreement line not found");
+
+    const asset = line.fixedAssetId
+      ? await trx
+          .selectFrom("fixedAsset")
+          .select(["fixedAssetId", "name"])
+          .where("id", "=", line.fixedAssetId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+
+    // A unit an open rental document still holds would be Returned while
+    // the document names it (plan decision P2).
+    const openShipment = await trx
+      .selectFrom("shipment as s")
+      .innerJoin("shipmentFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.shipmentId", "=", "s.id")
+          .onRef("l.companyId", "=", "s.companyId")
+      )
+      .select("s.shipmentId")
+      .where("s.companyId", "=", companyId)
+      .where("s.sourceDocument", "=", "Rental Agreement")
+      .where("s.sourceDocumentId", "=", agreement.id)
+      .where("s.status", "in", ["Draft", "Pending"])
+      .where("l.rentalAgreementLineId", "=", line.id)
+      .orderBy("s.createdAt")
+      .executeTakeFirst();
+    const openReceipt = await trx
+      .selectFrom("receipt as r")
+      .innerJoin("receiptFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.receiptId", "=", "r.id")
+          .onRef("l.companyId", "=", "r.companyId")
+      )
+      .select("r.receiptId")
+      .where("r.companyId", "=", companyId)
+      .where("r.sourceDocument", "=", "Rental Agreement")
+      .where("r.sourceDocumentId", "=", agreement.id)
+      .where("r.status", "in", ["Draft", "Pending"])
+      .where("l.rentalAgreementLineId", "=", line.id)
+      .orderBy("r.createdAt")
+      .executeTakeFirst();
+    const openDocument = openShipment
+      ? `shipment ${openShipment.shipmentId}`
+      : openReceipt
+        ? `receipt ${openReceipt.receiptId}`
+        : null;
+
+    const blocker = releaseBlocker({
+      label: unitLabel(asset, line.id),
+      status: line.status,
+      classification: line.lessorClassification,
+      openDocument
+    });
+    if (blocker) throw new InvalidInputError(blocker);
+
     await returnRentalUnit(trx, {
       agreement,
-      unit: payload,
+      unit: {
+        rentalAgreementLineId: line.id,
+        returnedAt: payload.returnedAt
+      },
       companyId,
       userId,
       today
@@ -986,7 +1052,7 @@ async function cancel(
 export const postRentalAgreementInput = payloadValidator;
 export type PostRentalAgreementInput = RentalAgreementPayload;
 
-/** Activates, returns a unit of, closes or cancels a rental agreement, per
+/** Activates, releases a unit of, closes or cancels a rental agreement, per
  *  `type` — each one transaction that locks the agreement row first. */
 const postRentalAgreement = defineServerFn({
   name: "post-rental-agreement",
@@ -1003,11 +1069,11 @@ const postRentalAgreement = defineServerFn({
           .toString();
         return activate(scope, payload, today);
       }
-      case "return": {
+      case "release": {
         const today = datetime
           .today(await getCompanyTimeZone(db, companyId))
           .toString();
-        return returnUnit(scope, payload, today);
+        return releaseUnit(scope, payload, today);
       }
       case "close":
         return close(scope, payload);
