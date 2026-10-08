@@ -11764,9 +11764,6 @@ msgstr "İleri Görüş (haftalar)"
 msgid "Look back (weeks)"
 msgstr "Geriye Görüş (haftalar)"
 
-msgid "Looks empty here"
-msgstr "Burada boş görünüyor"
-
 msgid "Loss on Disposal"
 msgstr "Elden Çıkarmada Zarar"
 
@@ -13292,6 +13289,9 @@ msgstr "Veri Yok"
 
 msgid "No data exists"
 msgstr "Veri mevcut değil"
+
+msgid "No data yet"
+msgstr "Henüz veri yok"
 
 msgid "No days off scheduled"
 msgstr "Planlanmış izin yok"
@@ -24045,6 +24045,9 @@ msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Verileriniz değiştirilmedi — geri yükleme, tamamlayamayacak olursa hiçbir şeye dokunmadan durur."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "İlk kayıtlarınızı oluşturduğunuzda veya içe aktardığınızda verileriniz burada görünecek"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."

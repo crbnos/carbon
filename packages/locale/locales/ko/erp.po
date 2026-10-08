@@ -11764,9 +11764,6 @@ msgstr "향후 조회 (주)"
 msgid "Look back (weeks)"
 msgstr "이전 조회 (주)"
 
-msgid "Looks empty here"
-msgstr "이곳은 비어 있는 것 같습니다"
-
 msgid "Loss on Disposal"
 msgstr "처분 손실"
 
@@ -13292,6 +13289,9 @@ msgstr "데이터 없음"
 
 msgid "No data exists"
 msgstr "존재하는 데이터가 없습니다"
+
+msgid "No data yet"
+msgstr "아직 데이터가 없습니다"
 
 msgid "No days off scheduled"
 msgstr "예정된 휴무가 없습니다"
@@ -24045,6 +24045,9 @@ msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "귀하의 데이터는 변경되지 않았습니다 — 복원이 완료될 수 없으면 아무것도 변경하기 전에 중단됩니다."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "첫 레코드를 만들거나 가져오면 여기에 데이터가 표시됩니다"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS 공급자가 레코드 이름에 도메인을 자동으로 추가할 수 있습니다 — 그렇다면 그 앞 부분만 입력하세요 (예: _carbon-challenge 및 모든 하위 도메인)."

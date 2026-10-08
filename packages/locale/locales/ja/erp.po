@@ -11764,9 +11764,6 @@ msgstr "先を見る(週)"
 msgid "Look back (weeks)"
 msgstr "遡る(週)"
 
-msgid "Looks empty here"
-msgstr "ここは空のようです"
-
 msgid "Loss on Disposal"
 msgstr "除却損"
 
@@ -13292,6 +13289,9 @@ msgstr "データなし"
 
 msgid "No data exists"
 msgstr "データが存在しません"
+
+msgid "No data yet"
+msgstr "データはまだありません"
 
 msgid "No days off scheduled"
 msgstr "休暇の予定がありません"
@@ -24045,6 +24045,9 @@ msgstr "あなたのデータはアクセス可能で、適切にクリーンで
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "データは変更されませんでした — 復元が完了できない場合、復元は何も変更する前に停止します。"
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "最初のレコードを作成またはインポートすると、ここにデータが表示されます"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS プロバイダーはレコード名にドメインを自動的に追加する場合があります。その場合は、その前の部分のみを入力してください（例：_carbon-challenge または任意のサブドメイン付き）。"

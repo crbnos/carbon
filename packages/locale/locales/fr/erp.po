@@ -11764,9 +11764,6 @@ msgstr "Horizon prévisionnel (semaines)"
 msgid "Look back (weeks)"
 msgstr "Historique (semaines)"
 
-msgid "Looks empty here"
-msgstr "Ça semble vide ici"
-
 msgid "Loss on Disposal"
 msgstr "Perte à la cession"
 
@@ -13292,6 +13289,9 @@ msgstr "Aucune donnée"
 
 msgid "No data exists"
 msgstr "Aucune donnée n'existe"
+
+msgid "No data yet"
+msgstr "Aucune donnée pour le moment"
 
 msgid "No days off scheduled"
 msgstr "Aucun jour de congé prévu"
@@ -24045,6 +24045,9 @@ msgstr "Vos données sont accessibles et raisonnablement propres"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Vos données n'ont pas été modifiées — la restauration s'arrête avant de modifier quoi que ce soit si elle ne peut pas se terminer."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Vos données apparaîtront ici dès que vous aurez créé ou importé vos premiers enregistrements"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Votre fournisseur DNS peut ajouter automatiquement votre domaine au nom de l'enregistrement — le cas échéant, entrez uniquement la partie qui précède (par exemple, _carbon-challenge plus tout sous-domaine)."

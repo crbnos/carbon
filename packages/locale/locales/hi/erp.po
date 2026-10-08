@@ -11764,9 +11764,6 @@ msgstr "आगे देखें (सप्ताह)"
 msgid "Look back (weeks)"
 msgstr "पीछे देखें (सप्ताह)"
 
-msgid "Looks empty here"
-msgstr "यहाँ खाली लगता है"
-
 msgid "Loss on Disposal"
 msgstr "निपटान पर हानि"
 
@@ -13292,6 +13289,9 @@ msgstr "कोई डेटा नहीं"
 
 msgid "No data exists"
 msgstr "कोई डेटा मौजूद नहीं है"
+
+msgid "No data yet"
+msgstr "अभी तक कोई डेटा नहीं"
 
 msgid "No days off scheduled"
 msgstr "कोई दिन बंद निर्धारित नहीं है"
@@ -24048,6 +24048,9 @@ msgstr "आपका डेटा सुलभ है और उचित रू
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "आपका डेटा परिवर्तित नहीं किया गया — पुनर्स्थापन पूरा न हो सके तो किसी भी चीज़ को छूने से पहले रुक जाता है।"
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "जैसे ही आप अपने पहले रिकॉर्ड बनाएँगे या आयात करेंगे, आपका डेटा यहाँ दिखाई देगा"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"

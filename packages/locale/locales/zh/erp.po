@@ -11764,9 +11764,6 @@ msgstr "前瞻（周）"
 msgid "Look back (weeks)"
 msgstr "回顾（周）"
 
-msgid "Looks empty here"
-msgstr "看起来这里是空的"
-
 msgid "Loss on Disposal"
 msgstr "处置亏损"
 
@@ -13292,6 +13289,9 @@ msgstr "无数据"
 
 msgid "No data exists"
 msgstr "没有数据存在"
+
+msgid "No data yet"
+msgstr "暂无数据"
 
 msgid "No days off scheduled"
 msgstr "未安排休息日"
@@ -24048,6 +24048,9 @@ msgstr "您的数据可访问且相对干净"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "您的数据未被更改——如果还原无法完成,它会在修改任何内容之前停止。"
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "创建或导入第一批记录后，数据将显示在此处"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"

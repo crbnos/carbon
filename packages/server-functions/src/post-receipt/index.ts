@@ -51,6 +51,7 @@ import {
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
 import { postRentalReceipt } from "./rental-agreement";
+import { planReceiptVoidCostLedger } from "./void-cost-ledger";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -914,6 +915,72 @@ const postReceipt = defineServerFn({
         );
 
         await db.transaction().execute(async (trx) => {
+          // The cost layers this receipt wrote. Without this, a voided
+          // receipt's layer stayed open and later issues consumed stock that
+          // was never there.
+          const receiptCostLedger = await trx
+            .selectFrom("costLedger")
+            .select([
+              "id",
+              "itemId",
+              "quantity",
+              "remainingQuantity",
+              "cost",
+              "supplierId",
+              "trackedEntityId"
+            ])
+            .where("documentId", "=", receiptId)
+            .where("documentType", "=", "Purchase Receipt")
+            .where("adjustment", "=", false)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+          const costLedgerPlan = planReceiptVoidCostLedger(
+            receiptCostLedger.map((row) => ({
+              ...row,
+              quantity: Number(row.quantity),
+              remainingQuantity: Number(row.remainingQuantity),
+              cost: Number(row.cost)
+            }))
+          );
+          if (costLedgerPlan.consumed) {
+            throw new Error(
+              "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
+            );
+          }
+          if (costLedgerPlan.layerIdsToClose.length > 0) {
+            await trx
+              .updateTable("costLedger")
+              .set({ remainingQuantity: 0 })
+              .where("id", "in", costLedgerPlan.layerIdsToClose)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+          if (costLedgerPlan.restoringLayers.length > 0) {
+            await trx
+              .insertInto("costLedger")
+              .values(
+                costLedgerPlan.restoringLayers.map((layer) => ({
+                  itemLedgerType: "Purchase" as const,
+                  costLedgerType: "Direct Cost" as const,
+                  adjustment: false,
+                  documentType: "Purchase Receipt" as const,
+                  documentId: receiptId,
+                  externalDocumentId:
+                    receiptHeader.externalDocumentId ?? undefined,
+                  itemId: layer.itemId,
+                  trackedEntityId: layer.trackedEntityId,
+                  quantity: layer.quantity,
+                  cost: layer.cost,
+                  remainingQuantity: layer.quantity,
+                  supplierId: layer.supplierId,
+                  companyId,
+                  postingDate: today
+                }))
+              )
+              .execute();
+          }
+
           await fixedAssetWrites.apply(trx, companyId);
           for await (const [purchaseOrderLineId, update] of Object.entries(
             purchaseOrderLineUpdatesVoid

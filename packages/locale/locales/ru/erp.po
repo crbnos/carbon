@@ -11764,9 +11764,6 @@ msgstr "Смотреть вперед (недели)"
 msgid "Look back (weeks)"
 msgstr "Смотреть назад (недели)"
 
-msgid "Looks empty here"
-msgstr "Здесь пусто"
-
 msgid "Loss on Disposal"
 msgstr "Убыток от выбытия"
 
@@ -13292,6 +13289,9 @@ msgstr "Нет данных"
 
 msgid "No data exists"
 msgstr "Данные не существуют"
+
+msgid "No data yet"
+msgstr "Данных пока нет"
 
 msgid "No days off scheduled"
 msgstr "Нет запланированных выходных"
@@ -24045,6 +24045,9 @@ msgstr "Ваши данные доступны и находятся в отно
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Ваши данные не были изменены — восстановление останавливается перед внесением изменений, если оно не может быть завершено."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Ваши данные появятся здесь, как только вы создадите или импортируете первые записи"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Ваш поставщик DNS может автоматически добавить ваш домен к имени записи — если это так, введите только часть перед ней (например, _carbon-challenge плюс любой поддомен)."

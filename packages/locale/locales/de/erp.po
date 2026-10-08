@@ -11764,9 +11764,6 @@ msgstr "Vorausschau (Wochen)"
 msgid "Look back (weeks)"
 msgstr "Rückblick (Wochen)"
 
-msgid "Looks empty here"
-msgstr "Sieht hier leer aus"
-
 msgid "Loss on Disposal"
 msgstr "Verlust bei Abgang"
 
@@ -13292,6 +13289,9 @@ msgstr "Keine Daten"
 
 msgid "No data exists"
 msgstr "Es existieren keine Daten"
+
+msgid "No data yet"
+msgstr "Noch keine Daten"
 
 msgid "No days off scheduled"
 msgstr "Keine Tage frei geplant"
@@ -24045,6 +24045,9 @@ msgstr "Ihre Daten sind zugänglich und angemessen bereinigt"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Ihre Daten wurden nicht geändert – die Wiederherstellung wird angehalten, bevor etwas verändert wird, falls sie nicht vollständig abgeschlossen werden kann."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Ihre Daten werden hier angezeigt, sobald Sie Ihre ersten Datensätze erstellen oder importieren"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Ihr DNS-Anbieter kann Ihre Domäne möglicherweise automatisch an den Eintragsnamen anhängen – geben Sie in diesem Fall nur den Teil davor ein (z. B. _carbon-challenge plus eine beliebige Subdomain)."
