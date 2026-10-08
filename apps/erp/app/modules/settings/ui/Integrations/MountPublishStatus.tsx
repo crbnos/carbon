@@ -111,8 +111,11 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
     });
   }, [now, records, started, t]);
 
-  // Say when a run this page started has ended.
+  // Say when a run this page started has ended, then stop tracking it: a
+  // later run (another person's Push, the daily sweep) replaces the record,
+  // and a kept entry would read as this Push starting again.
   useEffect(() => {
+    const ended: string[] = [];
     for (const [entityType, actionId] of ACTIONS) {
       const requestId = started[actionId]?.requestId;
       const record = records[entityType];
@@ -125,6 +128,7 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
         continue;
       }
       announced.current.add(requestId);
+      ended.push(actionId);
       if (record.status === "failed") {
         toast.error(t`The push to Mount failed`);
       } else if (publishNeedsAttention(record)) {
@@ -135,6 +139,12 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
         toast.success(t`The push to Mount finished`);
       }
     }
+    if (ended.length === 0) return;
+    setStarted((current) => {
+      const next = { ...current };
+      for (const actionId of ended) delete next[actionId];
+      return next;
+    });
   }, [records, started, t]);
 
   const onActionStarted = useCallback(
