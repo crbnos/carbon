@@ -250,6 +250,7 @@ export default function ItemInventoryRoute() {
         }}
         quantities={quantities}
         storageUnits={storageUnits.options}
+        variant="quantity"
       />
     </VStack>
   );

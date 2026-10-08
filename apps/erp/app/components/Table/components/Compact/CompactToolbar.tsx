@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton
 } from "@carbon/react";
@@ -23,6 +24,7 @@ import {
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
+import { createValueSlot } from "~/components/Layout/Mobile/slots";
 import { RecordFrameContext } from "~/components/Layout/Panels";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import { type DownloadProps, useCsvDownload } from "../Download";
@@ -54,6 +56,8 @@ type CompactToolbarProps = {
   csvExport?: DownloadProps;
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   onSelect?: () => void;
+  /** Extra items first in the ⋯ (a page's own phone actions). */
+  menuItems?: ReactNode;
   hideControls?: boolean;
 };
 
@@ -63,6 +67,13 @@ type CompactToolbarProps = {
  * ⋯ for Export CSV, Import and Select. Column and density controls stay on
  * desktop.
  */
+/**
+ * Phones: a page shown over its list (a `compactFocus` detail pane) takes
+ * over the app bar; while it is mounted the hidden list's ⋯ stays out of it.
+ */
+const listMenuHiddenSlot = createValueSlot<true>();
+export const useHideListAppBarMenu = () => listMenuHiddenSlot.useProvide(true);
+
 export function CompactToolbar({
   title,
   tableName,
@@ -76,6 +87,7 @@ export function CompactToolbar({
   csvExport,
   importCSV,
   onSelect,
+  menuItems,
   hideControls = false
 }: CompactToolbarProps) {
   const { t } = useLingui();
@@ -90,11 +102,13 @@ export function CompactToolbar({
     filters.length > 0 || (withSort && Object.keys(sortKeyToLabel).length > 0);
   const activeCount = urlFiltersParams.filter(Boolean).length;
   const canExport = Boolean(csvExport?.data.length);
-  const hasMenu = canExport || Boolean(importCSV?.length || onSelect);
+  const hasBuiltIns = canExport || Boolean(importCSV?.length || onSelect);
+  const hasMenu = hasBuiltIns || Boolean(menuItems);
 
   // Inside a record frame the app bar ⋯ is the record's: the table's own
   // ⋯ sits in its search row instead, so the bar never shows two.
   const inRecord = useContext(RecordFrameContext);
+  const listMenuHidden = listMenuHiddenSlot.useValue() === true;
   const menu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -108,6 +122,8 @@ export function CompactToolbar({
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {menuItems}
+        {menuItems && hasBuiltIns ? <DropdownMenuSeparator /> : null}
         {canExport ? (
           <DropdownMenuItem onClick={exportCsv}>
             <DropdownMenuIcon icon={<LuDownload />} />
@@ -132,7 +148,9 @@ export function CompactToolbar({
 
   return (
     <>
-      {hasMenu && !inRecord ? <AppBarActions>{menu}</AppBarActions> : null}
+      {hasMenu && !inRecord && !listMenuHidden ? (
+        <AppBarActions>{menu}</AppBarActions>
+      ) : null}
 
       {titleBadge ? (
         <div className="shrink-0 flex items-center gap-2 bg-card px-4 pt-3">

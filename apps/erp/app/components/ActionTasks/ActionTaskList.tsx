@@ -4,11 +4,13 @@
 
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
   HStack,
   useDebounce,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -56,6 +58,7 @@ export function ActionTaskList<T extends ActionTaskRow>({
   title?: ReactNode;
 }) {
   const orderFetcher = useFetcher<{ success: boolean }>();
+  const { isPhone } = useViewport();
 
   const [sortOrder, setSortOrder] = useState<string[]>(() =>
     [...tasks]
@@ -97,7 +100,28 @@ export function ActionTaskList<T extends ActionTaskRow>({
         <CardHeader>
           <CardTitle>{title ?? <Trans>Actions</Trans>}</CardTitle>
         </CardHeader>
-        {tasks.length > 0 && <ActionTaskProgress tasks={tasks} />}
+        {isPhone ? (
+          // Phones: the add sits in the header; the progress bar keeps the
+          // space for the collapse button after it.
+          <HStack spacing={0} className="pr-14">
+            {tasks.length > 0 && (
+              <ActionTaskProgress tasks={tasks} className="pr-2" />
+            )}
+            {!isDisabled && onAdd && (
+              <CardAction className="px-0">
+                <ActionTaskAddModal
+                  templates={templates ?? []}
+                  onAdd={onAdd}
+                  isSubmitting={isAddSubmitting}
+                  emptyMessage={addEmptyMessage}
+                  trigger="button"
+                />
+              </CardAction>
+            )}
+          </HStack>
+        ) : (
+          tasks.length > 0 && <ActionTaskProgress tasks={tasks} />
+        )}
       </HStack>
       <CardContent>
         <VStack spacing={3}>
@@ -122,7 +146,13 @@ export function ActionTaskList<T extends ActionTaskRow>({
             </Reorder.Group>
           )}
 
-          {!isDisabled && onAdd && (
+          {isPhone && tasks.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No actions yet.</Trans>
+            </p>
+          )}
+
+          {!isPhone && !isDisabled && onAdd && (
             <ActionTaskAddModal
               templates={templates ?? []}
               onAdd={onAdd}

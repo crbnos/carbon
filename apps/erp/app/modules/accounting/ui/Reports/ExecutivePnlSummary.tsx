@@ -12,12 +12,11 @@ import { useLocale } from "@react-aria/i18n";
 import { memo, useEffect, useMemo, useRef } from "react";
 import { useRealtime } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
+import { ColumnStepper, useColumnStep } from "./ColumnStepper";
 import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
 import { getPeriodColumnLabel } from "./MultiPeriodStatementTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
-/** Phones: the pinned first column is capped at 150pt. */
-const COMPACT_ACCOUNT_COLUMN_WIDTH = 150;
 const PERIOD_COLUMN_WIDTH = 128;
 
 type ExecutivePnlSummaryProps = {
@@ -47,9 +46,13 @@ const ExecutivePnlSummary = memo(
   }: ExecutivePnlSummaryProps) => {
     const { t } = useLingui();
     const { isPhone } = useViewport();
-    const accountColumnWidth = isPhone
-      ? COMPACT_ACCOUNT_COLUMN_WIDTH
-      : ACCOUNT_COLUMN_WIDTH;
+    // Phones: one period at a time (the latest first), so the labels and
+    // margins get the width the other periods took.
+    const [periodIndex, setPeriodIndex] = useColumnStep(periods.length);
+    const visiblePeriods = isPhone
+      ? periods.slice(periodIndex, periodIndex + 1)
+      : periods;
+    const currentPeriod = periods[periodIndex];
     const { locale } = useLocale();
     useRealtime("journal");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -99,20 +102,33 @@ const ExecutivePnlSummary = memo(
       [locale]
     );
 
-    const rowWidth =
-      accountColumnWidth + periods.length * PERIOD_COLUMN_WIDTH + 16;
+    const rowWidth = isPhone
+      ? undefined
+      : ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col">
+      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col max-md:h-auto max-md:min-h-0 max-md:flex-1">
+        {isPhone && currentPeriod ? (
+          <ColumnStepper
+            index={periodIndex}
+            count={periods.length}
+            onChange={setPeriodIndex}
+            label={getPeriodColumnLabel(currentPeriod, columns, locale)}
+            detail={currentPeriod.isPartial ? t`To Date` : undefined}
+          />
+        ) : null}
         {/* Header viewport — scrollLeft is mirrored from the body below */}
-        <div ref={headerRef} className="shrink-0 overflow-x-hidden">
+        <div
+          ref={headerRef}
+          className="shrink-0 overflow-x-hidden max-md:hidden"
+        >
           <div
             className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
             style={{ minWidth: rowWidth }}
           >
             <div
               className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: accountColumnWidth }}
+              style={{ width: ACCOUNT_COLUMN_WIDTH }}
             >
               <Trans>Executive P&amp;L</Trans>
             </div>
@@ -144,7 +160,7 @@ const ExecutivePnlSummary = memo(
               <div
                 key={row.key}
                 className={cn(
-                  "flex h-9 items-center pr-4 text-sm",
+                  "flex h-9 items-center pr-4 text-sm max-md:h-12",
                   row.isSubtotal && "font-semibold",
                   row.isSubtotal &&
                     !row.isBottomLine &&
@@ -158,15 +174,16 @@ const ExecutivePnlSummary = memo(
                 <div
                   className={cn(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center px-4",
+                    "max-md:static max-md:min-w-0 max-md:flex-1",
                     row.isBottomLine ? "bg-muted/40" : "bg-card"
                   )}
-                  style={{ width: accountColumnWidth }}
+                  style={isPhone ? undefined : { width: ACCOUNT_COLUMN_WIDTH }}
                 >
                   <span className="truncate">{labels[row.key]}</span>
                 </div>
 
                 {/* One cell per period bucket */}
-                {periods.map((bucket) => {
+                {visiblePeriods.map((bucket) => {
                   const value = row.values[bucket.key] ?? 0;
                   const margin = row.margins?.[bucket.key];
                   return (

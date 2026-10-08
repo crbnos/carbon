@@ -24,7 +24,8 @@ import {
   ModalHeader,
   ModalTitle,
   toast,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -77,6 +78,7 @@ const QuoteHeader = () => {
     quote: Quotation;
     lines: QuotationLine[];
     opportunity: Opportunity;
+    customer: { name: string | null } | null;
     prices: QuotationPrice[];
     shipment: QuotationShipment;
   }>(path.to.quote(quoteId));
@@ -111,6 +113,22 @@ const QuoteHeader = () => {
   const wonSlot = isWinnable ? "primary" : "overflow";
   const lostSlot =
     routeData?.quote?.status === "Sent" ? "secondary" : "overflow";
+  const isExpired = routeData?.quote?.status === "Expired";
+  const { isPhone } = useViewport();
+  const isReopenDisabled =
+    isDraft ||
+    (routeData?.opportunity?.salesOrders.length ?? 0) > 0 ||
+    statusFetcher.state !== "idle" ||
+    !permissions.can("update", "sales");
+  const reopen = () => {
+    statusFetcher.submit(
+      { status: "Draft" },
+      {
+        method: "post",
+        action: path.to.quoteStatus(quoteId)
+      }
+    );
+  };
   const menuItems = (
     <>
       {auditLogTrigger}
@@ -134,23 +152,7 @@ const QuoteHeader = () => {
         <DropdownMenuIcon icon={<LuGitBranchPlus />} />
         <Trans>Create Quote Revision</Trans>
       </DropdownMenuItem>
-      <DropdownMenuItem
-        disabled={
-          isDraft ||
-          (routeData?.opportunity?.salesOrders.length ?? 0) > 0 ||
-          statusFetcher.state !== "idle" ||
-          !permissions.can("update", "sales")
-        }
-        onClick={() => {
-          statusFetcher.submit(
-            { status: "Draft" },
-            {
-              method: "post",
-              action: path.to.quoteStatus(quoteId)
-            }
-          );
-        }}
-      >
+      <DropdownMenuItem disabled={isReopenDisabled} onClick={reopen}>
         <DropdownMenuIcon icon={<LuLoaderCircle />} />
         <Trans>Reopen</Trans>
       </DropdownMenuItem>
@@ -170,21 +172,25 @@ const QuoteHeader = () => {
     </>
   );
   const statusBadge = <QuoteStatus status={routeData?.quote?.status} />;
-  // The ID with its revision; phones show it under the app bar title,
-  // which names the record without the revision.
+  // The ID with its revision (desktop title).
   const titleNode = (
     <span className="flex items-center gap-0">
       <span>{routeData?.quote?.quoteId}</span>
       <RevisionSuffix revisionId={routeData?.quote?.revisionId} />
     </span>
   );
+  // Phones: the customer under the hero, then the revision the app bar
+  // title (the ID alone) does not show.
+  const revisionId = routeData?.quote?.revisionId ?? 0;
+  const heroSubtitle =
+    [routeData?.customer?.name, revisionId > 0 ? t`Rev ${revisionId}` : null]
+      .filter(Boolean)
+      .join(" · ") || undefined;
   return (
     <>
       <RecordHeader
         title={titleNode}
-        subtitle={
-          (routeData?.quote?.revisionId ?? 0) > 0 ? titleNode : undefined
-        }
+        subtitle={heroSubtitle}
         titleTo={path.to.quoteDetails(quoteId)}
         copyValue={getQuoteDisplayId(routeData?.quote)}
         menu={menuItems}
@@ -205,7 +211,7 @@ const QuoteHeader = () => {
                 </Button>
               </RecordAction>
             ) : (
-              <RecordAction slot="overflow">
+              <RecordAction slot="icon">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -327,6 +333,24 @@ const QuoteHeader = () => {
                     <Trans>Cancel</Trans>
                   </Button>
                 </statusFetcher.Form>
+              </RecordAction>
+            )}
+
+            {/* Phones: an Expired quote has no other step, so Reopen (also
+                in the ⋯ menu) leads the action bar. */}
+            {isPhone && isExpired && (
+              <RecordAction slot="primary">
+                <Button
+                  leftIcon={<LuLoaderCircle />}
+                  isDisabled={isReopenDisabled}
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Draft"
+                  }
+                  onClick={reopen}
+                >
+                  <Trans>Reopen</Trans>
+                </Button>
               </RecordAction>
             )}
           </>

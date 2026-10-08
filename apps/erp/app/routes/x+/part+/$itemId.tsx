@@ -64,6 +64,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Part`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Parts`, to: path.to.parts },
     (data) => data?.partSummary?.readableIdWithRevision

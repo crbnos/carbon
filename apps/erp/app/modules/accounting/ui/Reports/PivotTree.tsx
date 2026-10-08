@@ -18,6 +18,7 @@ import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { PivotMeasure, PivotState } from "../../accounting.models";
 import type { DimensionPivot } from "../../types";
+import { ColumnStepper, useColumnStep } from "./ColumnStepper";
 import type { PivotCellValue, PivotRowNode } from "./pivotData";
 import {
   applyPercentOfTotal,
@@ -29,8 +30,6 @@ import {
 } from "./pivotData";
 
 const ROW_COLUMN_WIDTH = 360;
-/** Phones: the pinned first column is capped at 150pt. */
-const COMPACT_ROW_COLUMN_WIDTH = 150;
 const VALUE_COLUMN_WIDTH = 128;
 
 /**
@@ -85,9 +84,7 @@ const PivotTree = memo(
   ({ pivot, state, columnLabels, onCellClick }: PivotTreeProps) => {
     const { t } = useLingui();
     const { isPhone } = useViewport();
-    const rowColumnWidth = isPhone
-      ? COMPACT_ROW_COLUMN_WIDTH
-      : ROW_COLUMN_WIDTH;
+    const rowColumnWidth = ROW_COLUMN_WIDTH;
     const { locale } = useLocale();
     const [, setParams] = useUrlParams();
     useRealtime("journal");
@@ -131,6 +128,17 @@ const PivotTree = memo(
     );
 
     const { flatTree, columnKeys, columnTotals, grandTotal } = pivotTree;
+    // Phones: one value column at a time; the last step is the row total,
+    // shown first.
+    const [columnIndex, setColumnIndex] = useColumnStep(columnKeys.length + 1);
+    const phoneColumnKey: string | null =
+      columnIndex < columnKeys.length
+        ? (columnKeys[columnIndex] ?? null)
+        : null;
+    const columnLabel = (columnKey: string) =>
+      columnKey === UNASSIGNED_COLUMN_KEY
+        ? t`Unassigned`
+        : (columnLabels[columnKey] ?? columnKey);
 
     const percentFormatter = useMemo(
       () =>
@@ -192,7 +200,7 @@ const PivotTree = memo(
     } = useTree<PivotRowNode, undefined>({
       tree: flatTree,
       parentRef,
-      estimatedRowHeight: () => 36,
+      estimatedRowHeight: () => (isPhone ? 44 : 36),
       isEager: true
     });
 
@@ -252,14 +260,27 @@ const PivotTree = memo(
     }
 
     return (
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col">
+      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col max-md:h-auto max-md:min-h-0 max-md:flex-1">
         {pivot.hasMore && (
           <div className="shrink-0 border-b border-border bg-card px-4 py-1.5 text-xs text-muted-foreground">
             <p>{t`Showing the top 1,000 groups by amount`}</p>
           </div>
         )}
+        {isPhone ? (
+          <ColumnStepper
+            index={columnIndex}
+            count={columnKeys.length + 1}
+            onChange={setColumnIndex}
+            label={
+              phoneColumnKey === null ? t`Total` : columnLabel(phoneColumnKey)
+            }
+          />
+        ) : null}
         {/* Header viewport — scrollLeft is mirrored from the tree below */}
-        <div ref={headerRef} className="shrink-0 overflow-x-hidden">
+        <div
+          ref={headerRef}
+          className="shrink-0 overflow-x-hidden max-md:hidden"
+        >
           <div
             className="relative flex h-12 items-center border-b border-border bg-card text-sm font-medium text-foreground/80"
             style={{ minWidth: rowWidth }}
@@ -330,13 +351,77 @@ const PivotTree = memo(
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
-          parentClassName="flex-1 overflow-x-auto max-md:scroll-fade-x"
-          contentMinWidth={rowWidth}
+          parentClassName="flex-1 overflow-x-auto"
+          contentMinWidth={isPhone ? undefined : rowWidth}
           renderNode={({ node, state: nodeState }) => {
             const row = node.data;
             const percents = state.percentOfTotal
               ? applyPercentOfTotal(row.cells, columnTotals, state.measure)
               : undefined;
+
+            if (isPhone) {
+              const isTotal = phoneColumnKey === null;
+              return (
+                <div
+                  className={cn(
+                    "flex h-11 cursor-pointer items-center pr-2 text-sm",
+                    nodeState.selected ? "bg-muted" : "bg-transparent",
+                    node.hasChildren && "font-semibold"
+                  )}
+                  onClick={() => {
+                    selectNode(node.id, false);
+                    if (node.hasChildren) toggleExpandNode(node.id);
+                  }}
+                >
+                  <div className="flex h-9 shrink-0 items-center">
+                    {Array.from({ length: node.level }).map((_, index) => (
+                      <LevelLine key={index} isSelected={nodeState.selected} />
+                    ))}
+                    <div className="flex h-9 w-5 items-center justify-center">
+                      {node.hasChildren ? (
+                        nodeState.expanded ? (
+                          <LuChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        ) : (
+                          <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        )
+                      ) : null}
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 truncate pl-2 pr-2",
+                      row.isUnassigned && "italic text-muted-foreground"
+                    )}
+                  >
+                    {row.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 px-2 text-right tabular-nums text-muted-foreground",
+                      isTotal && "font-medium"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCellClick(
+                        cellCoordinates(
+                          row,
+                          node.level,
+                          phoneColumnKey,
+                          isTotal
+                        )
+                      );
+                    }}
+                  >
+                    {phoneColumnKey === null
+                      ? formatRowTotal(row.total)
+                      : formatCell(
+                          row.cells[phoneColumnKey],
+                          percents?.[phoneColumnKey]
+                        )}
+                  </span>
+                </div>
+              );
+            }
 
             return (
               <div
@@ -447,8 +532,38 @@ const PivotTree = memo(
             );
           }}
         />
+        {isPhone ? (
+          <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-4 text-sm font-semibold">
+            <Trans>Total</Trans>
+            <span className="tabular-nums">
+              {phoneColumnKey === null
+                ? state.percentOfTotal
+                  ? percentFormatter.format(grandTotalValue === 0 ? 0 : 1)
+                  : formatMeasureValue(grandTotalValue, state.measure)
+                : state.percentOfTotal
+                  ? percentFormatter.format(
+                      getPivotMeasureValue(
+                        columnTotals[phoneColumnKey],
+                        state.measure
+                      ) === 0
+                        ? 0
+                        : 1
+                    )
+                  : formatMeasureValue(
+                      getPivotMeasureValue(
+                        columnTotals[phoneColumnKey],
+                        state.measure
+                      ),
+                      state.measure
+                    )}
+            </span>
+          </div>
+        ) : null}
         {/* Column totals footer — scrollLeft mirrored from the tree above */}
-        <div ref={footerRef} className="shrink-0 overflow-x-hidden">
+        <div
+          ref={footerRef}
+          className="shrink-0 overflow-x-hidden max-md:hidden"
+        >
           <div
             className="relative flex h-9 items-center border-t border-border bg-card text-sm font-semibold"
             style={{ minWidth: rowWidth }}

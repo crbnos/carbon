@@ -11,6 +11,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -85,7 +86,7 @@ const SupplierInteractionDocuments = ({
               <Trans>Files</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>
+          <CardAction className="max-md:hidden">
             {!isReadOnly && (
               <SupplierInteractionDocumentForm
                 interactionId={interactionId}
@@ -97,7 +98,7 @@ const SupplierInteractionDocuments = ({
         </HStack>
         <CardContent>
           <Table>
-            <Thead>
+            <Thead className={cn(attachments.length === 0 && "max-md:hidden")}>
               <Tr>
                 <Th>Name</Th>
                 <Th>Size</Th>

@@ -95,6 +95,7 @@ const PartHeader = () => {
         copyValue={routeData?.partSummary?.readableIdWithRevision ?? ""}
         menu={menuItems}
         status={statusPill}
+        subtitle={routeData?.partSummary?.name}
         aside={<DetailsTopbar links={links} />}
       />
       {deleteModal.isOpen && (

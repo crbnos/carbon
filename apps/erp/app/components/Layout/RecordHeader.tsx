@@ -4,11 +4,6 @@
 
 import {
   ActionPresentationProvider,
-  BottomSheet,
-  BottomSheetBody,
-  BottomSheetContent,
-  BottomSheetHeader,
-  BottomSheetTitle,
   Copy,
   cn,
   copyToClipboard,
@@ -16,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -42,14 +38,18 @@ import {
 } from "./Mobile/ChromeSlots";
 import { createPortalSlot } from "./Mobile/slots";
 
-/** Where record actions go on phones: the bottom bar's cells, the ⋯ sheet. */
+/**
+ * Where record actions go on phones: the bottom bar's cells (an icon cell,
+ * then the primary and secondary), and the app-bar ⋯.
+ */
+const iconSlot = createPortalSlot();
 const primarySlot = createPortalSlot();
 const secondarySlot = createPortalSlot();
 const overflowSlot = createPortalSlot();
 /** A card form's hero: DocumentHeader fills it, the page places it. */
 export const recordHeroSlot = createPortalSlot();
 
-/** The ⋯ action sheet; one record frame shows at a time, like its slot. */
+/** The app-bar ⋯ menu; one record frame shows at a time, like its slot. */
 const useOverflowSheet = create<{
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -57,11 +57,13 @@ const useOverflowSheet = create<{
 const closeOverflow = () => useOverflowSheet.getState().setOpen(false);
 
 const presentations = {
+  icon: { kind: "bar", emphasis: "secondary", iconOnly: true },
   primary: { kind: "bar", emphasis: "primary" },
   secondary: { kind: "bar", emphasis: "secondary" },
   overflow: { kind: "row", onSelect: closeOverflow }
 } as const;
 const slots = {
+  icon: iconSlot,
   primary: primarySlot,
   secondary: secondarySlot,
   overflow: overflowSlot
@@ -69,25 +71,44 @@ const slots = {
 
 /**
  * A record header action. Desktop renders it in place; phones move it to
- * the bottom bar (`primary` filled, `secondary` outline) or the ⋯ sheet
- * (`overflow`), and its Button renders to match (see ActionPresentation).
+ * the bottom bar (`icon` a square outline cell, `primary` filled, `secondary`
+ * outline) or the app-bar ⋯ (`overflow`), and its Button renders to match
+ * (see ActionPresentation).
  */
 export function RecordAction({
   slot,
   children
 }: {
-  slot: "primary" | "secondary" | "overflow";
+  slot: "icon" | "primary" | "secondary" | "overflow";
   children: ReactNode;
 }) {
   const { isPhone } = useViewport();
   if (!isPhone) return <>{children}</>;
   const { Fill } = slots[slot];
+  const presentation = presentations[slot];
   return (
     <Fill>
-      <ActionPresentationProvider value={presentations[slot]}>
+      <ActionPresentationProvider
+        value={
+          presentation.kind === "bar"
+            ? { ...presentation, overflow: renderOverflow }
+            : presentation
+        }
+      >
         {children}
       </ActionPresentationProvider>
     </Fill>
+  );
+}
+
+/** A bar action's extra buttons (a split button's items) as ⋯ menu rows. */
+function renderOverflow(buttons: ReactNode) {
+  return (
+    <overflowSlot.Fill>
+      <ActionPresentationProvider value={presentations.overflow}>
+        {buttons}
+      </ActionPresentationProvider>
+    </overflowSlot.Fill>
   );
 }
 
@@ -159,9 +180,9 @@ const cellClassName =
   "flex min-w-0 flex-1 empty:hidden [&>*]:w-full [&>*]:min-w-0";
 
 /**
- * Phones: the record's app-bar ⋯ (Copy ID and its menu) and the bottom
- * action bar with the ⋯ sheet that its RecordActions fill. Renders nothing
- * at md and above.
+ * Phones: the record's one ⋯, in the app bar (Copy ID, the header menu, then
+ * the overflow actions), and the bottom action bar its
+ * RecordActions fill. Renders nothing at md and above.
  */
 export function RecordPhoneChrome({
   menu,
@@ -172,6 +193,7 @@ export function RecordPhoneChrome({
 }) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
+  const hasIcon = iconSlot.useFilled();
   const hasPrimary = primarySlot.useFilled();
   const hasSecondary = secondarySlot.useFilled();
   const hasOverflow = overflowSlot.useFilled();
@@ -184,11 +206,13 @@ export function RecordPhoneChrome({
     }
   };
 
+  const hasMenu = Boolean(menu || copyValue || hasOverflow);
+
   return (
     <>
-      {menu || copyValue ? (
+      {hasMenu ? (
         <AppBarActions>
-          <DropdownMenu>
+          <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
               <IconButton
                 className="order-last"
@@ -206,42 +230,28 @@ export function RecordPhoneChrome({
                 </DropdownMenuItem>
               ) : null}
               {menu}
+              {hasOverflow ? (
+                <>
+                  <DropdownMenuSeparator />
+                  {/* Overflow actions render as menu rows here; choosing
+                      one closes the menu (closeOverflow). */}
+                  <overflowSlot.Target className="flex flex-col [&>*]:w-full" />
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </AppBarActions>
       ) : null}
 
-      {hasPrimary || hasSecondary || hasOverflow ? (
+      {hasIcon || hasPrimary || hasSecondary ? (
         <BottomBar>
           <div className="flex items-center gap-2 border-t border-border bg-card px-4 pt-2 pb-safe-4 [&>*]:min-w-0">
+            <iconSlot.Target className="flex shrink-0 empty:hidden" />
             <primarySlot.Target className={cellClassName} />
             <secondarySlot.Target className={cellClassName} />
-            {hasOverflow ? (
-              <IconButton
-                aria-label={t`More actions`}
-                icon={<LuEllipsis />}
-                variant="secondary"
-                size="lg"
-                className="ml-auto shrink-0"
-                onClick={() => setOpen(true)}
-              />
-            ) : null}
           </div>
         </BottomBar>
       ) : null}
-
-      <BottomSheet open={open} onOpenChange={setOpen}>
-        <BottomSheetContent>
-          <BottomSheetHeader>
-            <BottomSheetTitle>
-              <Trans>Actions</Trans>
-            </BottomSheetTitle>
-          </BottomSheetHeader>
-          <BottomSheetBody>
-            <overflowSlot.Target className="flex flex-col [&>*]:w-full" />
-          </BottomSheetBody>
-        </BottomSheetContent>
-      </BottomSheet>
     </>
   );
 }

@@ -36,6 +36,16 @@ describe("resolveSlots", () => {
     expect(slots?.pills).toEqual([state]);
   });
 
+  it("puts an action column in the action slot only", () => {
+    const id = col("id", { mobile: "P1" });
+    const order = col("order", { mobile: "action" });
+    const slots = resolveSlots([id, order]);
+    expect(slots?.action).toBe(order);
+    expect(slots?.p2).toBeUndefined();
+    expect(slots?.p3).toBeUndefined();
+    expect(slots?.pills).toEqual([]);
+  });
+
   it("falls back to the first data column and warns", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const name = col("name");

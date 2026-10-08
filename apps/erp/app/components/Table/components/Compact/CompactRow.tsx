@@ -52,6 +52,8 @@ export function CompactRow<T>({
   const { t } = useLingui();
   const p2 = renderCell(row, slots.p2);
   const p3 = renderCell(row, slots.p3);
+  // In selection mode a tap selects the row, so the row action hides.
+  const action = selection ? null : renderCell(row, slots.action);
   const pills = slots.pills
     .map((column) => ({ id: column.id, node: renderCell(row, column) }))
     .filter((pill) => pill.node !== null);
@@ -138,6 +140,11 @@ export function CompactRow<T>({
           </div>
         ) : null}
       </div>
+      {action !== null ? (
+        <div className="relative z-10 shrink-0 self-center [&_button]:h-11 [&_button]:min-w-11">
+          {action}
+        </div>
+      ) : null}
       {expansion ? (
         <button
           type="button"

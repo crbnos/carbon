@@ -290,6 +290,7 @@ interface SortableListProps<T extends Item> {
   onReorder: (items: T[]) => void;
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
   isReadOnly?: boolean;
+  emptyState?: React.ReactNode;
 }
 
 function SortableList<T extends Item>({
@@ -298,7 +299,8 @@ function SortableList<T extends Item>({
   onToggleItem,
   onReorder,
   renderItem,
-  isReadOnly = false
+  isReadOnly = false,
+  emptyState
 }: SortableListProps<T>) {
   if (items && Array.isArray(items) && items.length > 0) {
     return (
@@ -323,7 +325,7 @@ function SortableList<T extends Item>({
       </LayoutGroup>
     );
   } else {
-    return <Empty />;
+    return <>{emptyState ?? <Empty />}</>;
   }
 }
 

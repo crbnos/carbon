@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
   Copy,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -40,6 +41,7 @@ import {
   Tr,
   toast,
   useDisclosure,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { groupBy } from "@carbon/utils";
@@ -64,6 +66,7 @@ import { Input, Location, Select, TextArea } from "~/components/Form";
 import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { usePermissions, usePrinting } from "~/hooks";
 import type {
   ItemStorageUnitQuantities,
@@ -84,6 +87,8 @@ type InventoryStorageUnitsProps = {
   } | null;
   trackedEntityExpirations: Record<string, string | null>;
   storageUnits: { value: string; label: string }[];
+  /** The inventory quantities page: phones show rows and a bottom bar. */
+  variant?: "quantity";
 };
 
 const InventoryStorageUnits = ({
@@ -93,10 +98,14 @@ const InventoryStorageUnits = ({
   itemShelfLife,
   trackedEntityExpirations,
   pickMethod,
-  storageUnits
+  storageUnits,
+  variant
 }: InventoryStorageUnitsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const isQuantity = variant === "quantity";
+  const showPhoneRows = isQuantity && isPhone;
   const adjustmentModal = useDisclosure();
   const ruleViolations = useRuleViolations({
     action: path.to.inventoryItemAdjustment(pickMethod.itemId),
@@ -154,6 +163,22 @@ const InventoryStorageUnits = ({
       }
       return next;
     });
+  };
+
+  const summarizeGroup = (members: ItemStorageUnitQuantities[]) => {
+    // Batch quantities are decimals — clamp float noise on the sum.
+    const summedQuantity =
+      Math.round(members.reduce((sum, m) => sum + m.quantity, 0) * 1e6) / 1e6;
+    const expirations = members
+      .map((m) =>
+        m.trackedEntityId ? trackedEntityExpirations[m.trackedEntityId] : null
+      )
+      .filter((d): d is string => Boolean(d));
+    const earliestExpiration =
+      expirations.length > 0
+        ? expirations.reduce((min, d) => (d < min ? d : min))
+        : null;
+    return { summedQuantity, earliestExpiration };
   };
 
   const showExpirationColumn = useMemo(
@@ -268,6 +293,41 @@ const InventoryStorageUnits = ({
     setPendingPrintEntityId(null);
   };
 
+  const renderRowMenu = (item: ItemStorageUnitQuantities) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <IconButton
+          aria-label={t`Actions`}
+          variant="ghost"
+          icon={<LuEllipsisVertical />}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuItem
+          onClick={() =>
+            openAdjustmentModal(
+              item.storageUnitId,
+              item.trackedEntityId,
+              item.readableId,
+              item.quantity
+            )
+          }
+        >
+          <DropdownMenuIcon icon={<LuPencil />} />
+          <Trans>Update Quantity</Trans>
+        </DropdownMenuItem>
+        {item.trackedEntityId && (
+          <DropdownMenuItem
+            onClick={() => handlePrintLabel(item.trackedEntityId!)}
+          >
+            <DropdownMenuIcon icon={<LuPrinter />} />
+            <Trans>Print Label</Trans>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const renderStorageUnitRow = (
     item: ItemStorageUnitQuantities,
     key: string
@@ -308,41 +368,130 @@ const InventoryStorageUnits = ({
         </Td>
       )}
       <Td className="flex flex-shrink-0 justify-end items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton
-              aria-label={t`Actions`}
-              variant="ghost"
-              icon={<LuEllipsisVertical />}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuItem
-              onClick={() =>
-                openAdjustmentModal(
-                  item.storageUnitId,
-                  item.trackedEntityId,
-                  item.readableId,
-                  item.quantity
-                )
-              }
-            >
-              <DropdownMenuIcon icon={<LuPencil />} />
-              <Trans>Update Quantity</Trans>
-            </DropdownMenuItem>
-            {item.trackedEntityId && (
-              <DropdownMenuItem
-                onClick={() => handlePrintLabel(item.trackedEntityId!)}
-              >
-                <DropdownMenuIcon icon={<LuPrinter />} />
-                <Trans>Print Label</Trans>
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {renderRowMenu(item)}
       </Td>
     </Tr>
   );
+
+  const storageUnitLabel = (item: ItemStorageUnitQuantities) =>
+    storageUnits.find((s) => s.value === item.storageUnitId)?.label ||
+    item.storageUnitName ||
+    item.storageUnitId;
+
+  // Quantities page, phones: list rows (unit and quantity, then tracking ID
+  // and expiry) in place of the table, with the same per-row ⋯.
+  const phoneRowClassName =
+    "relative flex min-h-14 items-center gap-3 bg-card px-4 py-3 after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-border last:after:hidden";
+
+  const renderPhoneRow = (
+    item: ItemStorageUnitQuantities,
+    key: string,
+    isGroupMember = false
+  ) => {
+    const expiration = item.trackedEntityId
+      ? trackedEntityExpirations[item.trackedEntityId]
+      : null;
+    return (
+      <div
+        key={key}
+        className={cn(phoneRowClassName, isGroupMember && "pl-12")}
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-foreground">
+              {storageUnitLabel(item)}
+            </span>
+            <span className="max-w-[45%] shrink-0 truncate text-right text-[15px] tabular-nums text-foreground">
+              {item.quantity}
+            </span>
+          </div>
+          {item.trackedEntityId ? (
+            <div className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+              {item.readableId ? (
+                <span className="min-w-0 truncate">{item.readableId}</span>
+              ) : null}
+              <Copy
+                icon={<LuQrCode />}
+                text={item.trackedEntityId}
+                withTextInTooltip
+              />
+              {expiration ? (
+                <span className="shrink-0">
+                  <Trans>
+                    Expires <DateTime value={expiration} variant="date" />
+                  </Trans>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <div className="shrink-0 [&_button]:size-11">{renderRowMenu(item)}</div>
+      </div>
+    );
+  };
+
+  const phoneRows =
+    storageUnitGroups.length === 0 ? (
+      <p className="px-4 py-3 text-sm text-muted-foreground">
+        <Trans>No storage unit holds this item.</Trans>
+      </p>
+    ) : (
+      <div className="flex flex-col">
+        {storageUnitGroups.map((group) => {
+          if (group.members.length === 1) {
+            return renderPhoneRow(group.members[0], group.key);
+          }
+          const isExpanded = expandedGroupKeys.has(group.key);
+          const first = group.members[0];
+          const { summedQuantity, earliestExpiration } = summarizeGroup(
+            group.members
+          );
+          return (
+            <Fragment key={group.key}>
+              <div className={cn(phoneRowClassName, "pl-1")}>
+                <IconButton
+                  aria-label={isExpanded ? t`Collapse` : t`Expand`}
+                  variant="ghost"
+                  className="size-11 shrink-0"
+                  icon={isExpanded ? <LuChevronDown /> : <LuChevronRight />}
+                  onClick={() => toggleGroup(group.key)}
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-foreground">
+                      {storageUnitLabel(first)}
+                    </span>
+                    <span className="max-w-[45%] shrink-0 truncate text-right text-[15px] tabular-nums text-foreground">
+                      {summedQuantity}
+                    </span>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+                    {first.readableId ? (
+                      <span className="min-w-0 truncate">
+                        {first.readableId}
+                      </span>
+                    ) : null}
+                    <span className="shrink-0">×{group.members.length}</span>
+                    {earliestExpiration ? (
+                      <span className="shrink-0">
+                        <Trans>
+                          Expires{" "}
+                          <DateTime value={earliestExpiration} variant="date" />
+                        </Trans>
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+              {isExpanded &&
+                group.members.map((item, index) =>
+                  renderPhoneRow(item, `${group.key}:${index}`, true)
+                )}
+            </Fragment>
+          );
+        })}
+      </div>
+    );
 
   return (
     <>
@@ -362,119 +511,128 @@ const InventoryStorageUnits = ({
               </HStack>
             </CardTitle>
           </CardHeader>
-          <CardAction>
+          {/* Quantities page, phones: the action is in the bottom bar. */}
+          <CardAction className={isQuantity ? "max-md:hidden" : undefined}>
             <Button onClick={() => openAdjustmentModal()}>
               <Trans>Update Inventory</Trans>
             </Button>
           </CardAction>
         </HStack>
-        <CardContent>
-          <Table className="table-fixed">
-            <Thead>
-              <Tr>
-                <Th>
-                  <Trans>Storage Unit</Trans>
-                </Th>
-
-                <Th>
-                  <Trans>Quantity</Trans>
-                </Th>
-                <Th>
-                  <Trans>Tracking ID</Trans>
-                </Th>
-                {showExpirationColumn && (
+        <CardContent
+          className={showPhoneRows ? "overflow-hidden max-md:p-0" : undefined}
+        >
+          {showPhoneRows ? (
+            phoneRows
+          ) : (
+            <Table className="table-fixed">
+              <Thead>
+                <Tr>
                   <Th>
-                    <Trans>Expiration Date</Trans>
+                    <Trans>Storage Unit</Trans>
                   </Th>
-                )}
-                <Th className="flex flex-shrink-0 justify-end" />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {storageUnitGroups.map((group) => {
-                if (group.members.length === 1) {
-                  return renderStorageUnitRow(group.members[0], group.key);
-                }
-                const isExpanded = expandedGroupKeys.has(group.key);
-                const first = group.members[0];
-                // Batch quantities are decimals — clamp float noise on the sum.
-                const summedQuantity =
-                  Math.round(
-                    group.members.reduce((sum, m) => sum + m.quantity, 0) * 1e6
-                  ) / 1e6;
-                const expirations = group.members
-                  .map((m) =>
-                    m.trackedEntityId
-                      ? trackedEntityExpirations[m.trackedEntityId]
-                      : null
-                  )
-                  .filter((d): d is string => Boolean(d));
-                const earliestExpiration =
-                  expirations.length > 0
-                    ? expirations.reduce((min, d) => (d < min ? d : min))
-                    : null;
-                return (
-                  <Fragment key={group.key}>
-                    <Tr>
-                      <Td>
-                        <HStack className="gap-1">
-                          <IconButton
-                            aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                            variant="ghost"
-                            icon={
-                              isExpanded ? (
-                                <LuChevronDown />
-                              ) : (
-                                <LuChevronRight />
-                              )
-                            }
-                            onClick={() => toggleGroup(group.key)}
-                          />
-                          <span>
-                            {storageUnits.find(
-                              (s) => s.value === first.storageUnitId
-                            )?.label ||
-                              first.storageUnitName ||
-                              first.storageUnitId}
-                          </span>
-                        </HStack>
-                      </Td>
-                      <Td>
-                        <span>{summedQuantity}</span>
-                      </Td>
-                      <Td>
-                        <HStack>
-                          {first.readableId && <span>{first.readableId}</span>}
-                          <span className="text-xs text-muted-foreground">
-                            ×{group.members.length}
-                          </span>
-                        </HStack>
-                      </Td>
-                      {showExpirationColumn && (
+
+                  <Th>
+                    <Trans>Quantity</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Tracking ID</Trans>
+                  </Th>
+                  {showExpirationColumn && (
+                    <Th>
+                      <Trans>Expiration Date</Trans>
+                    </Th>
+                  )}
+                  <Th className="flex flex-shrink-0 justify-end" />
+                </Tr>
+              </Thead>
+              <Tbody>
+                {storageUnitGroups.map((group) => {
+                  if (group.members.length === 1) {
+                    return renderStorageUnitRow(group.members[0], group.key);
+                  }
+                  const isExpanded = expandedGroupKeys.has(group.key);
+                  const first = group.members[0];
+                  const { summedQuantity, earliestExpiration } = summarizeGroup(
+                    group.members
+                  );
+                  return (
+                    <Fragment key={group.key}>
+                      <Tr>
                         <Td>
-                          {earliestExpiration && (
+                          <HStack className="gap-1">
+                            <IconButton
+                              aria-label={isExpanded ? t`Collapse` : t`Expand`}
+                              variant="ghost"
+                              icon={
+                                isExpanded ? (
+                                  <LuChevronDown />
+                                ) : (
+                                  <LuChevronRight />
+                                )
+                              }
+                              onClick={() => toggleGroup(group.key)}
+                            />
                             <span>
-                              <DateTime
-                                value={earliestExpiration}
-                                variant="date"
-                              />
+                              {storageUnits.find(
+                                (s) => s.value === first.storageUnitId
+                              )?.label ||
+                                first.storageUnitName ||
+                                first.storageUnitId}
                             </span>
-                          )}
+                          </HStack>
                         </Td>
-                      )}
-                      <Td className="flex flex-shrink-0 justify-end items-center" />
-                    </Tr>
-                    {isExpanded &&
-                      group.members.map((item, index) =>
-                        renderStorageUnitRow(item, `${group.key}:${index}`)
-                      )}
-                  </Fragment>
-                );
-              })}
-            </Tbody>
-          </Table>
+                        <Td>
+                          <span>{summedQuantity}</span>
+                        </Td>
+                        <Td>
+                          <HStack>
+                            {first.readableId && (
+                              <span>{first.readableId}</span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              ×{group.members.length}
+                            </span>
+                          </HStack>
+                        </Td>
+                        {showExpirationColumn && (
+                          <Td>
+                            {earliestExpiration && (
+                              <span>
+                                <DateTime
+                                  value={earliestExpiration}
+                                  variant="date"
+                                />
+                              </span>
+                            )}
+                          </Td>
+                        )}
+                        <Td className="flex flex-shrink-0 justify-end items-center" />
+                      </Tr>
+                      {isExpanded &&
+                        group.members.map((item, index) =>
+                          renderStorageUnitRow(item, `${group.key}:${index}`)
+                        )}
+                    </Fragment>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+      {isQuantity ? (
+        <BottomBar>
+          <div className="flex items-center gap-2 border-t border-border bg-card px-4 pt-2 pb-safe-4">
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => openAdjustmentModal()}
+            >
+              <Trans>Update Inventory</Trans>
+            </Button>
+          </div>
+        </BottomBar>
+      ) : null}
       {adjustmentModal.isOpen && (
         <Modal
           open

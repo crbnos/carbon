@@ -42,6 +42,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "issue-detail");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Issue`,
   realtime: [
     { table: "nonConformance", column: "id", param: "id" },
     {

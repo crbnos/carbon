@@ -10,6 +10,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement
@@ -24,6 +25,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
+import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
 import { useUrlParams } from "~/hooks";
 import { financialReportColumns } from "../../accounting.models";
 import CompanySelector from "./CompanySelector";
@@ -87,101 +89,119 @@ const ReportFilters = ({
   };
 
   return (
-    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:flex-wrap max-md:gap-y-1 max-md:space-x-0 max-md:px-0 max-md:py-1.5">
-      {/* Phones: search, company, period and columns form one
-          sideways-scrolling chip row; Download sits on the line below. */}
-      <HStack className="max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
+    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:flex-col max-md:items-stretch max-md:space-x-0 max-md:px-0 max-md:py-0">
+      {/* Phones: search on its own row, then company, period and columns as
+          one sideways-scrolling chip row; Download moves to the app bar. */}
+      <div className="flex min-w-0 items-center gap-2 max-md:flex-col max-md:items-stretch max-md:gap-0">
         {showSearch && (
-          <InputGroup size="sm" className="w-64 max-md:w-48">
-            <InputLeftElement>
-              <LuSearch className="h-4 w-4 text-muted-foreground" />
-            </InputLeftElement>
-            <Input
-              placeholder={t`Search accounts...`}
-              value={search}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-            />
-          </InputGroup>
+          <div className="max-md:px-4 max-md:pt-2">
+            <InputGroup size="sm" className="w-64 max-md:w-full">
+              <InputLeftElement>
+                <LuSearch className="h-4 w-4 text-muted-foreground" />
+              </InputLeftElement>
+              <Input
+                placeholder={t`Search accounts...`}
+                value={search}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+              />
+            </InputGroup>
+          </div>
         )}
-        <CompanySelector
-          companies={companies}
-          selectedCompanyIds={selectedCompanyIds}
-        />
-        <PeriodSelector
-          variant={periodVariant}
-          fiscalStartMonth={fiscalStartMonth}
-          defaultPresetId={defaultPeriodId}
-        />
-        {showColumns && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" leftIcon={<LuColumns3 />}>
-                {columnLabels[columns]}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuRadioGroup
-                value={columns}
-                onValueChange={(value) =>
-                  setParams({
-                    columns: value === "month" ? undefined : value
-                  })
-                }
-              >
-                {financialReportColumns.map((granularity) => (
-                  <DropdownMenuRadioItem key={granularity} value={granularity}>
-                    {columnLabels[granularity]}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        {!isMultiCompany && isForeignCurrency && parentCurrency && (
-          <Button
-            variant={showTranslated ? "primary" : "secondary"}
-            leftIcon={<LuLanguages />}
-            onClick={() =>
-              setParams({
-                showTranslated: showTranslated ? undefined : "true"
-              })
-            }
-          >
-            Show in {parentCurrency}
-          </Button>
-        )}
-        {isMultiCompany && parentCurrency && (
-          <span className="text-sm text-muted-foreground">
-            Showing in {parentCurrency}
-          </span>
-        )}
-        {[...params.entries()].length > 0 && (
+        <HStack className="max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-2 max-md:[&>*]:shrink-0">
+          <CompanySelector
+            companies={companies}
+            selectedCompanyIds={selectedCompanyIds}
+          />
+          <PeriodSelector
+            variant={periodVariant}
+            fiscalStartMonth={fiscalStartMonth}
+            defaultPresetId={defaultPeriodId}
+          />
+          {showColumns && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" leftIcon={<LuColumns3 />}>
+                  {columnLabels[columns]}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuRadioGroup
+                  value={columns}
+                  onValueChange={(value) =>
+                    setParams({
+                      columns: value === "month" ? undefined : value
+                    })
+                  }
+                >
+                  {financialReportColumns.map((granularity) => (
+                    <DropdownMenuRadioItem
+                      key={granularity}
+                      value={granularity}
+                    >
+                      {columnLabels[granularity]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {!isMultiCompany && isForeignCurrency && parentCurrency && (
+            <Button
+              variant={showTranslated ? "primary" : "secondary"}
+              leftIcon={<LuLanguages />}
+              onClick={() =>
+                setParams({
+                  showTranslated: showTranslated ? undefined : "true"
+                })
+              }
+            >
+              Show in {parentCurrency}
+            </Button>
+          )}
+          {isMultiCompany && parentCurrency && (
+            <span className="text-sm text-muted-foreground">
+              Showing in {parentCurrency}
+            </span>
+          )}
+          {[...params.entries()].length > 0 && (
+            <Button
+              variant="secondary"
+              rightIcon={<LuX />}
+              onClick={() =>
+                setParams({
+                  companies: undefined,
+                  startDate: undefined,
+                  endDate: undefined,
+                  columns: undefined,
+                  showTranslated: undefined
+                })
+              }
+            >
+              {t`Reset`}
+            </Button>
+          )}
+        </HStack>
+      </div>
+      {onDownload && (
+        <>
           <Button
             variant="secondary"
-            rightIcon={<LuX />}
-            onClick={() =>
-              setParams({
-                companies: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                columns: undefined,
-                showTranslated: undefined
-              })
-            }
+            leftIcon={<LuDownload />}
+            onClick={onDownload}
+            className="max-md:hidden"
           >
-            {t`Reset`}
+            {t`Download`}
           </Button>
-        )}
-      </HStack>
-      {onDownload && (
-        <Button
-          variant="secondary"
-          leftIcon={<LuDownload />}
-          onClick={onDownload}
-          className="max-md:ml-auto max-md:mr-4"
-        >
-          {t`Download`}
-        </Button>
+          <AppBarActions>
+            <IconButton
+              aria-label={t`Download`}
+              variant="ghost"
+              size="lg"
+              icon={<LuDownload />}
+              onClick={onDownload}
+            />
+          </AppBarActions>
+        </>
       )}
     </div>
   );

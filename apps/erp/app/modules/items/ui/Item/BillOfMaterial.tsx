@@ -29,6 +29,7 @@ import {
   toast,
   useDisclosure,
   useThrottle,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
@@ -47,6 +48,7 @@ import {
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
   LuLock,
+  LuPackage,
   LuRedoDot,
   LuSquareFunction,
   LuTruck
@@ -91,6 +93,7 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
   MethodItemType,
@@ -195,6 +198,7 @@ const BillOfMaterial = ({
     revisionStatus,
     releaseControl
   });
+  const { isPhone } = useViewport();
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
@@ -549,6 +553,25 @@ const BillOfMaterial = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuPackage />}
+                heading={<Trans>No materials yet</Trans>}
+                description={<Trans>Add the materials this item uses.</Trans>}
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={isReadOnly}
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Item</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
           isReadOnly={isReadOnly}
           items={materials}
           onReorder={onReorder}

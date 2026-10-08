@@ -310,14 +310,14 @@ const JobEstimatesVsActuals = ({
   return (
     <Tabs defaultValue="processes" className="w-full">
       <Card>
-        <HStack className="justify-between items-start">
+        <HStack className="justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0">
           <CardHeader>
             <CardTitle>
               <Trans>Estimates vs Actual</Trans>
             </CardTitle>
           </CardHeader>
           <CardAction className="flex flex-col gap-2">
-            <TabsList className="grid grid-cols-2">
+            <TabsList className="grid grid-cols-2 max-md:w-full">
               <TabsTrigger value="processes">
                 <Trans>Processes</Trans>
               </TabsTrigger>

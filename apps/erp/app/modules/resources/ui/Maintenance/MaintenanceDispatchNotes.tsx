@@ -21,10 +21,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   File,
-  generateHTML,
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  RichTextView,
   Skeleton,
   Table,
   Tbody,
@@ -110,11 +110,9 @@ export function MaintenanceDispatchNotes({
             }}
           />
         ) : (
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(content as JSONContent)
-            }}
+          <RichTextView
+            content={content as JSONContent}
+            empty={<Trans>No notes</Trans>}
           />
         )}
       </CardContent>

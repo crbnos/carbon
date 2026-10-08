@@ -9,7 +9,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
+  RichTextView,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -76,11 +76,9 @@ const JobNotes = ({
               }}
             />
           ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(notes as JSONContent)
-              }}
+            <RichTextView
+              content={notes as JSONContent}
+              empty={<Trans>No notes</Trans>}
             />
           )}
         </CardContent>

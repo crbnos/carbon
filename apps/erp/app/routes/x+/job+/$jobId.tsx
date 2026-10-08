@@ -71,6 +71,7 @@ async function getJobOrderStatus(
 }
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Job`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId

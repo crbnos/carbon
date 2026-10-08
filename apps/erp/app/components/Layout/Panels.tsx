@@ -106,6 +106,17 @@ interface ResizablePanelsProps {
 /** True inside a compact record frame's tab panel (see CompactToolbar). */
 export const RecordFrameContext = createContext(false);
 
+type RecordPanel = "content" | "explorer" | "properties";
+const RecordPanelContext = createContext<(panel: RecordPanel) => void>(
+  () => {}
+);
+
+/**
+ * Phones: switch the record frame's tab, e.g. "See all 30" opening Lines.
+ * A no-op outside a compact record frame.
+ */
+export const useShowRecordPanel = () => useContext(RecordPanelContext);
+
 /**
  * Phones: one sticky underline tab row instead of side panels: the record's
  * content (or its sub-route tabs), the explorer and the properties. Content
@@ -121,9 +132,7 @@ function CompactRecordTabs({
   const location = useOptimisticLocation();
   const recordTabs = recordTabsSlot.useValue();
   recordFrameSlot.useProvide(true);
-  const [panel, setPanel] = useState<"content" | "explorer" | "properties">(
-    "content"
-  );
+  const [panel, setPanel] = useState<RecordPanel>("content");
 
   // A tapped line (or any navigation) shows its content.
   // biome-ignore lint/correctness/useExhaustiveDependencies: switch back on navigation only
@@ -184,11 +193,13 @@ function CompactRecordTabs({
         )}
       >
         <RecordFrameContext.Provider value>
-          {panel === "content"
-            ? content
-            : panel === "explorer"
-              ? explorer
-              : properties}
+          <RecordPanelContext.Provider value={setPanel}>
+            {panel === "content"
+              ? content
+              : panel === "explorer"
+                ? explorer
+                : properties}
+          </RecordPanelContext.Provider>
         </RecordFrameContext.Provider>
       </div>
     </div>

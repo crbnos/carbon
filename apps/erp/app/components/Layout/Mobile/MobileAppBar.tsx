@@ -81,10 +81,19 @@ export function MobileAppBar() {
           type="button"
           onClick={() => setSwitcherOpen(true)}
           aria-haspopup="dialog"
-          className="flex min-h-11 min-w-0 items-center gap-1 rounded-lg px-1 text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="flex min-h-11 min-w-0 flex-col items-start justify-center rounded-lg px-1 text-left text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
-          {titleText}
-          <LuChevronDown className="size-5 shrink-0 text-muted-foreground" />
+          <span className="flex min-w-0 max-w-full items-center gap-1">
+            {titleText}
+            <LuChevronDown className="size-5 shrink-0 text-muted-foreground" />
+          </span>
+          {/* A root screen with two siblings under one sidebar label
+              (Material Planning) names itself here. */}
+          {subtitle ? (
+            <span className="min-w-0 max-w-full truncate text-xs text-muted-foreground">
+              {subtitle}
+            </span>
+          ) : null}
         </button>
       ) : (
         <button

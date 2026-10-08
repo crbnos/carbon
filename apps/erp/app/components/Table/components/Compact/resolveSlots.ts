@@ -18,6 +18,8 @@ export type CompactSlots<T> = {
   p3?: Column<T, unknown>;
   /** Line 3: status pills (enumerated P2 columns), at most two. */
   pills: Column<T, unknown>[];
+  /** Trailing: the row's one action button. */
+  action?: Column<T, unknown>;
 };
 
 /**
@@ -42,7 +44,7 @@ export function resolveSlots<T>(
   const data = columns.filter((c) => !STRUCTURAL_COLUMN_IDS.has(c.id));
   if (data.length === 0) return null;
 
-  const byPriority = (p: "P1" | "P2" | "P3") =>
+  const byPriority = (p: "P1" | "P2" | "P3" | "action") =>
     data.filter((c) => c.columnDef.meta?.mobile === p);
 
   let p1 = byPriority("P1")[0];
@@ -60,6 +62,7 @@ export function resolveSlots<T>(
   const p2 = p2Columns.find((c) => !isStatusColumn(c));
   const pills = p2Columns.filter(isStatusColumn).slice(0, MAX_PILLS);
   const p3 = byPriority("P3").find((c) => c !== p1);
+  const action = byPriority("action").find((c) => c !== p1);
 
-  return { p1, p2, p3, pills };
+  return { p1, p2, p3, pills, action };
 }

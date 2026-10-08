@@ -104,6 +104,7 @@ const IssueHeader = () => {
         copyValue={routeData?.nonConformance?.nonConformanceId ?? ""}
         menu={menuItems}
         status={statusBadge}
+        subtitle={routeData?.nonConformance?.name}
         actions={
           <>
             <RecordAction slot="overflow">

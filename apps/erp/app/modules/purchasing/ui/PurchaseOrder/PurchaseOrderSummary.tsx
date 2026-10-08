@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Heading,
   HStack,
   Table,
@@ -17,10 +18,11 @@ import {
   Td,
   Tr,
   TruncatedTooltipText,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -34,6 +36,8 @@ import {
 } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useShowRecordPanel } from "~/components/Layout/Panels";
+import { SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
@@ -65,6 +69,9 @@ const LineItems = ({
   lines: PurchaseOrderLine[];
   shouldConvertCurrency: boolean;
 }) => {
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const showRecordPanel = useShowRecordPanel();
   const [items] = useItems();
   const accounts = useAccounts();
   const { orderId } = useParams();
@@ -80,9 +87,20 @@ const LineItems = ({
     );
   };
 
+  // Phones: the first lines as rows that open the line page; the Lines tab
+  // lists them all.
+  const phoneLineLimit = 3;
+  const shownLines = isPhone ? lines.slice(0, phoneLineLimit) : lines;
+
   return (
-    <VStack spacing={8} className="w-full overflow-hidden">
-      {lines.map((line) => {
+    <VStack
+      spacing={8}
+      className={cn(
+        "w-full overflow-hidden",
+        isPhone && "space-y-0 divide-y divide-border"
+      )}
+    >
+      {shownLines.map((line) => {
         if (!line.id) return null;
 
         const isGlAccount = line.purchaseOrderLineType === "G/L Account";
@@ -111,6 +129,29 @@ const LineItems = ({
           supplierLineTotal +
           (line.supplierTaxAmount ?? 0) +
           (line.supplierShippingCost ?? 0);
+        const unitOfMeasureLabel = unitOfMeasures.find(
+          (uom) => uom.value === line.purchaseUnitOfMeasureCode
+        )?.label;
+
+        // Phones: one row that opens the line page (its Edit link, the
+        // badges and the breakdown stay on desktop).
+        if (isPhone) {
+          return (
+            <SummaryLineRow
+              key={line.id}
+              to={path.to.purchaseOrderLine(orderId, line.id)}
+              title={itemReadableId}
+              value={formatter.format(total)}
+              description={lineDescription}
+              meta={
+                <>
+                  {line.purchaseQuantity} ×{" "}
+                  {formatter.format(line.unitPrice ?? 0)} {unitOfMeasureLabel}
+                </>
+              }
+            />
+          );
+        }
 
         return (
           <motion.div
@@ -409,6 +450,17 @@ const LineItems = ({
           </motion.div>
         );
       })}
+      {isPhone && lines.length > phoneLineLimit ? (
+        <div className="w-full pt-3">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => showRecordPanel("explorer")}
+          >
+            {t`See all ${lines.length}`}
+          </Button>
+        </div>
+      ) : null}
     </VStack>
   );
 };
@@ -487,8 +539,8 @@ const PurchaseOrderSummary = ({
   return (
     <Card>
       <CardHeader>
-        <HStack className="justify-between items-center">
-          <div className="flex flex-col gap-1">
+        <HStack className="justify-between items-center max-md:min-w-0">
+          <div className="flex flex-col gap-1 max-md:hidden">
             <CardTitle className="flex items-center gap-0">
               <span>{routeData?.purchaseOrder.purchaseOrderId}</span>
               <RevisionSuffix
@@ -499,7 +551,7 @@ const PurchaseOrderSummary = ({
               <Trans>Purchase Order</Trans>
             </CardDescription>
           </div>
-          <div className="flex flex-col gap-1 items-end">
+          <div className="flex flex-col gap-1 items-end max-md:w-full max-md:min-w-0 max-md:items-start max-md:[&>*]:max-w-full max-md:[&_span]:truncate">
             <SupplierAvatar
               supplierId={routeData?.purchaseOrder.supplierId ?? null}
             />

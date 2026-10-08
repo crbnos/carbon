@@ -15,6 +15,7 @@ import { useNavigate } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { Chart } from "../../types";
+import { ColumnStepper, useColumnStep } from "./ColumnStepper";
 import {
   accountsToFlatTree,
   filterAccounts,
@@ -61,6 +62,18 @@ const TrialBalanceTree = memo(
   }: TrialBalanceTreeProps) => {
     const { t } = useLingui();
     const { isPhone } = useViewport();
+    // Phones: one value column at a time, starting on Ending.
+    const columnLabels = [
+      t`Beginning`,
+      t`Debits`,
+      t`Credits`,
+      t`Ending`,
+      ...(showTranslated
+        ? [t`Ending (${parentCurrency ?? "Translated"})`]
+        : []),
+      t`Ratio`
+    ];
+    const [columnIndex, setColumnIndex] = useColumnStep(columnLabels.length, 3);
     useRealtime("journal");
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -99,7 +112,7 @@ const TrialBalanceTree = memo(
     } = useTree<TrialBalanceChart, undefined>({
       tree,
       parentRef,
-      estimatedRowHeight: () => 36,
+      estimatedRowHeight: () => (isPhone ? 44 : 36),
       isEager: true
     });
 
@@ -107,36 +120,46 @@ const TrialBalanceTree = memo(
       <ScrollArea
         className={cn(
           "h-[calc(100dvh-var(--header-height)-61px)] w-full",
-          // Phones: the viewport also scrolls sideways, with an
-          // edge fade, behind a sticky 150pt account column.
-          "max-md:[&>[data-radix-scroll-area-viewport]]:!overflow-x-auto max-md:[&>[data-radix-scroll-area-viewport]]:scroll-fade-x"
+          // Phones: the tree fills what the filter rows leave.
+          "max-md:h-auto max-md:min-h-0 max-md:flex-1"
         )}
       >
-        <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card max-md:w-max max-md:min-w-full">
-          <div className="flex-1 px-4 max-md:sticky max-md:left-0 max-md:z-[2] max-md:w-[150px] max-md:flex-none max-md:truncate max-md:bg-card">
-            <Trans>Account</Trans>
+        {isPhone ? (
+          <div className="sticky top-0 z-10">
+            <ColumnStepper
+              index={columnIndex}
+              count={columnLabels.length}
+              onChange={setColumnIndex}
+              label={columnLabels[columnIndex]}
+            />
           </div>
-          <span className="w-28 text-right px-2">
-            <Trans>Beginning</Trans>
-          </span>
-          <span className="w-28 text-right px-2">
-            <Trans>Debits</Trans>
-          </span>
-          <span className="w-28 text-right px-2">
-            <Trans>Credits</Trans>
-          </span>
-          <span className="w-28 text-right px-2">
-            <Trans>Ending</Trans>
-          </span>
-          {showTranslated && (
+        ) : (
+          <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card max-md:w-max max-md:min-w-full">
+            <div className="flex-1 px-4 max-md:sticky max-md:left-0 max-md:z-[2] max-md:w-[150px] max-md:flex-none max-md:truncate max-md:bg-card">
+              <Trans>Account</Trans>
+            </div>
             <span className="w-28 text-right px-2">
-              {t`Ending (${parentCurrency ?? "Translated"})`}
+              <Trans>Beginning</Trans>
             </span>
-          )}
-          <span className="w-20 text-right px-2">
-            <Trans>Ratio</Trans>
-          </span>
-        </div>
+            <span className="w-28 text-right px-2">
+              <Trans>Debits</Trans>
+            </span>
+            <span className="w-28 text-right px-2">
+              <Trans>Credits</Trans>
+            </span>
+            <span className="w-28 text-right px-2">
+              <Trans>Ending</Trans>
+            </span>
+            {showTranslated && (
+              <span className="w-28 text-right px-2">
+                {t`Ending (${parentCurrency ?? "Translated"})`}
+              </span>
+            )}
+            <span className="w-20 text-right px-2">
+              <Trans>Ratio</Trans>
+            </span>
+          </div>
+        )}
         <TreeView<TrialBalanceChart>
           tree={tree}
           nodes={nodes}
@@ -144,12 +167,7 @@ const TrialBalanceTree = memo(
           getNodeProps={getNodeProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
-          parentClassName={cn(
-            "h-full",
-            // The viewport is the sideways scroller, so sticky cells pin to it.
-            "max-md:overflow-visible",
-            showTranslated ? "max-md:min-w-[806px]" : "max-md:min-w-[694px]"
-          )}
+          parentClassName="h-full"
           renderNode={({ node, state }) => {
             const account = node.data;
             const isGroup = account.isGroup;
@@ -229,10 +247,50 @@ const TrialBalanceTree = memo(
               </>
             );
 
+            // Same order as the header; the translated cell only when shown.
+            const cellClass =
+              "w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground";
+            const valueCells = [
+              <span key="beginning" className={cellClass}>
+                {formatCurrency(beginningBalance)}
+              </span>,
+              <span key="debit" className={cellClass}>
+                {formatCurrency(debit)}
+              </span>,
+              <span key="credit" className={cellClass}>
+                {formatCurrency(credit)}
+              </span>,
+              <span
+                key="ending"
+                className={cn(
+                  cellClass,
+                  isDrillable &&
+                    "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
+                )}
+              >
+                {formatCurrency(endingBalance)}
+              </span>,
+              ...(showTranslated
+                ? [
+                    <span key="translated" className={cellClass}>
+                      {account.translatedBalance != null
+                        ? formatCurrency(account.translatedBalance)
+                        : "-"}
+                    </span>
+                  ]
+                : []),
+              <span
+                key="ratio"
+                className="w-20 text-right tabular-nums shrink-0 px-2 text-muted-foreground"
+              >
+                {node.parentId ? formatPercent(ratio) : ""}
+              </span>
+            ];
+
             return (
               <div
                 className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:overflow-visible",
+                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
@@ -247,62 +305,16 @@ const TrialBalanceTree = memo(
                   }
                 }}
               >
-                {/* Compact: one sticky cell, so the name stays beside the
-                    amounts while they scroll sideways. */}
+                {/* Phones: the name takes the width; one value shows. */}
                 {isPhone ? (
-                  <div
-                    className={cn(
-                      "sticky left-0 z-[1] flex h-full w-[150px] shrink-0 items-center overflow-hidden",
-                      state.selected
-                        ? "bg-muted group-hover/row:bg-accent"
-                        : "bg-card group-hover/row:bg-accent"
-                    )}
-                  >
+                  <div className="flex h-full min-w-0 flex-1 items-center overflow-hidden">
                     {accountCell}
                   </div>
                 ) : (
                   accountCell
                 )}
 
-                {/* Beginning Balance */}
-                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {formatCurrency(beginningBalance)}
-                </span>
-
-                {/* Debits */}
-                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {formatCurrency(debit)}
-                </span>
-
-                {/* Credits */}
-                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {formatCurrency(credit)}
-                </span>
-
-                {/* Ending Balance */}
-                <span
-                  className={cn(
-                    "w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground",
-                    isDrillable &&
-                      "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
-                  )}
-                >
-                  {formatCurrency(endingBalance)}
-                </span>
-
-                {/* Translated Ending Balance */}
-                {showTranslated && (
-                  <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                    {account.translatedBalance != null
-                      ? formatCurrency(account.translatedBalance)
-                      : "-"}
-                  </span>
-                )}
-
-                {/* Ratio */}
-                <span className="w-20 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {node.parentId ? formatPercent(ratio) : ""}
-                </span>
+                {isPhone ? valueCells[columnIndex] : valueCells}
               </div>
             );
           }}

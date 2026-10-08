@@ -10,8 +10,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
   HStack,
+  RichTextView,
   Tabs,
   TabsContent,
   TabsList,
@@ -123,11 +123,9 @@ const SupplierInteractionNotes = ({
                   }}
                 />
               ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(internalNotes as JSONContent)
-                  }}
+                <RichTextView
+                  content={internalNotes as JSONContent}
+                  empty={<Trans>No internal notes</Trans>}
                 />
               )}
             </TabsContent>
@@ -143,11 +141,9 @@ const SupplierInteractionNotes = ({
                     }}
                   />
                 ) : (
-                  <div
-                    className="prose dark:prose-invert"
-                    dangerouslySetInnerHTML={{
-                      __html: generateHTML(externalNotes as JSONContent)
-                    }}
+                  <RichTextView
+                    content={externalNotes as JSONContent}
+                    empty={<Trans>No external notes</Trans>}
                   />
                 )}
               </TabsContent>

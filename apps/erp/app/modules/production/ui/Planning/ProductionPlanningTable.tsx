@@ -435,6 +435,8 @@ const ProductionPlanningTable = ({
         header: t`On Hand`,
         cell: ({ row }) => numberFormatter.format(row.original.quantityOnHand),
         meta: {
+          mobile: "P3",
+          mobileLabel: true,
           icon: <LuBlocks />,
           renderTotal: true
         }
@@ -451,8 +453,8 @@ const ProductionPlanningTable = ({
           );
         },
         meta: {
-          mobile: "P2",
-          mobileLabel: true,
+          // Phones: the row's "Make N" button already shows this quantity.
+          mobile: "P4",
           icon: <LuCirclePlay />
         }
       },
@@ -509,18 +511,23 @@ const ProductionPlanningTable = ({
                 }}
               >
                 {isBlocked ? (
-                  "Blocked"
+                  <Trans>Blocked</Trans>
                 ) : hasOrders ? (
                   <HStack>
                     <PulsingDot />
-                    <span>Make {orderQuantity}</span>
+                    <span>
+                      <Trans>Make {orderQuantity}</Trans>
+                    </span>
                   </HStack>
                 ) : (
-                  "Make"
+                  <Trans>Make</Trans>
                 )}
               </Button>
             </div>
           );
+        },
+        meta: {
+          mobile: "action"
         }
       }
     ];
@@ -584,7 +591,11 @@ const ProductionPlanningTable = ({
                 window.location.href = getLocationPath(selected);
               }}
             />
-            <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
+            <mrpFetcher.Form
+              method="post"
+              action={path.to.api.mrp(locationId)}
+              className="max-md:hidden"
+            >
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -605,7 +616,26 @@ const ProductionPlanningTable = ({
                 </TooltipContent>
               </Tooltip>
             </mrpFetcher.Form>
+            <p className="basis-full text-xs text-muted-foreground md:hidden">
+              <Trans>
+                MRP runs every 3 hours. To run it now, use ⋯ › Recalculate.
+              </Trans>
+            </p>
           </div>
+        }
+        mobileMenuItems={
+          <DropdownMenuItem
+            disabled={mrpFetcher.state !== "idle"}
+            onSelect={() =>
+              mrpFetcher.submit(
+                {},
+                { method: "post", action: path.to.api.mrp(locationId) }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCirclePlay />} />
+            <Trans>Recalculate</Trans>
+          </DropdownMenuItem>
         }
         renderActions={renderActions}
         title={t`Material Planning`}

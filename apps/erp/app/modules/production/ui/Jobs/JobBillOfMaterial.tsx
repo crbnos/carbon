@@ -28,6 +28,7 @@ import {
   toast,
   useDebounce,
   useDisclosure,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
@@ -44,6 +45,7 @@ import {
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
+  LuPackage,
   LuRedoDot
 } from "react-icons/lu";
 import { Link, useFetcher, useFetchers, useParams } from "react-router";
@@ -77,6 +79,7 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
   usePermissions,
@@ -307,6 +310,7 @@ const JobBillOfMaterial = ({
   const permissions = usePermissions();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
+  const { isPhone } = useViewport();
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
@@ -583,6 +587,27 @@ const JobBillOfMaterial = ({
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuPackage />}
+                heading={<Trans>No materials yet</Trans>}
+                description={<Trans>Add the materials this job uses.</Trans>}
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={
+                      isDisabled || !permissions.can("update", "production")
+                    }
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Item</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
         />
       </CardContent>
     </Card>

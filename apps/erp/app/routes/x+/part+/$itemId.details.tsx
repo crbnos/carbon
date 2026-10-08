@@ -51,6 +51,7 @@ import {
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
+import { methodVersionSlot } from "~/modules/items/ui/Item/MakeMethodTools";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
@@ -293,6 +294,7 @@ export default function PartDetailsRoute() {
                   makeMethods={makeMethods?.data ?? []}
                   type="Part"
                   currentMethodId={methodData.makeMethod.id}
+                  versionInSlot
                 />
               )}
             </Await>
@@ -334,6 +336,8 @@ export default function PartDetailsRoute() {
             partData.partSummary?.replenishmentSystem ?? ""
           ) && (
             <>
+              {/* Phones: the method version chip, right above the method. */}
+              <methodVersionSlot.Target className="flex md:hidden [&_button]:h-9 [&_button]:rounded-full [&_button]:border [&_button]:border-border [&_button]:bg-card [&_button]:px-3" />
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}

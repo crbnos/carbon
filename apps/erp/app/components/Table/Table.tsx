@@ -168,6 +168,8 @@ interface TableProps<T extends object> {
   // `meta.mobile` priorities; "table" keeps the grid, scrolling sideways with
   // a sticky first column (inline-editing grids, comparison tables).
   mobileLayout?: "list" | "table";
+  /** Phones: extra items first in the list toolbar ⋯ (e.g. Recalculate). */
+  mobileMenuItems?: ReactNode;
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -318,7 +320,8 @@ const Table = <T extends object>({
   renderExpandedRow,
   canExpandRow,
   groupRowsBy,
-  mobileLayout = "list"
+  mobileLayout = "list",
+  mobileMenuItems
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -1123,6 +1126,7 @@ const Table = <T extends object>({
         withSelectableRows={withSelectableRows}
         headerActions={headerActions}
         primaryAction={primaryAction}
+        mobileMenuItems={mobileMenuItems}
         emptyState={emptyState}
         isLoading={isLoading}
         isTableEmpty={isTableEmpty}

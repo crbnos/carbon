@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, Skeleton } from "@carbon/react";
+import { Button, cn, Skeleton } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuInbox, LuSearchX } from "react-icons/lu";
@@ -19,23 +19,40 @@ function IconTile({ children }: { children: ReactNode }) {
 /** A list with no records yet: neutral tile, title, the create action. */
 export function CompactEmpty({
   title,
-  primaryAction
+  heading,
+  description,
+  icon = <LuInbox />,
+  primaryAction,
+  className
 }: {
+  /** The records' name, for "No {title} yet". */
   title?: string;
+  /** A full heading instead of "No {title} yet". */
+  heading?: ReactNode;
+  description?: ReactNode;
+  icon?: ReactNode;
   primaryAction?: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-      <IconTile>
-        <LuInbox />
-      </IconTile>
+    <div
+      className={cn(
+        "flex flex-col items-center gap-3 px-6 py-16 text-center",
+        className
+      )}
+    >
+      <IconTile>{icon}</IconTile>
       <h3 className="text-[17px] font-semibold text-foreground">
-        {title ? (
-          <Trans>No {title} yet</Trans>
-        ) : (
-          <Trans>Nothing here yet</Trans>
-        )}
+        {heading ??
+          (title ? (
+            <Trans>No {title} yet</Trans>
+          ) : (
+            <Trans>Nothing here yet</Trans>
+          ))}
       </h3>
+      {description ? (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      ) : null}
       {primaryAction ? (
         <NewPlacementContext.Provider value="inline">
           {/* Several actions (an HStack of buttons) stack full width, primary first. */}

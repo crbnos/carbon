@@ -53,6 +53,7 @@ import {
   useDebounce,
   useDisclosure,
   useMount,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -87,7 +88,8 @@ import {
   LuRefreshCcw,
   LuSend,
   LuShieldX,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuWorkflow
 } from "react-icons/lu";
 import {
   Link,
@@ -141,6 +143,7 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
   useImageUpload,
@@ -740,6 +743,7 @@ const JobBillOfProcess = ({
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const addOperationButtonRef = useRef<HTMLButtonElement>(null);
+  const { isPhone } = useViewport();
 
   useChangedRows<Database["public"]["Tables"]["productionEvent"]["Row"]>({
     companyId,
@@ -1076,6 +1080,31 @@ const JobBillOfProcess = ({
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuWorkflow />}
+                heading={<Trans>No operations yet</Trans>}
+                description={
+                  <Trans>Add the operations that make this item.</Trans>
+                }
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={
+                      !permissions.can("update", "production") ||
+                      selectedItemId !== null ||
+                      isDisabled
+                    }
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Operation</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
         />
       </CardContent>
     </Card>

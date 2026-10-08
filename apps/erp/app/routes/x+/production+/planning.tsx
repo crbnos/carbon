@@ -26,6 +26,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 const WEEKS_TO_PLAN = 12 * 4;
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Production`,
   realtime: ["job"],
   breadcrumb: msg`Material Planning`,
   to: path.to.productionPlanning

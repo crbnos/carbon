@@ -43,6 +43,7 @@ import {
   useDebounce,
   useDisclosure,
   useThrottle,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -71,7 +72,8 @@ import {
   LuMaximize2,
   LuMinimize2,
   LuSquareFunction,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuWorkflow
 } from "react-icons/lu";
 import {
   useFetcher,
@@ -128,6 +130,7 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
   useImageUpload,
@@ -269,6 +272,7 @@ const BillOfProcess = ({
     revisionStatus,
     releaseControl
   });
+  const { isPhone } = useViewport();
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
@@ -891,6 +895,27 @@ const BillOfProcess = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuWorkflow />}
+                heading={<Trans>No operations yet</Trans>}
+                description={
+                  <Trans>Add the operations that make this item.</Trans>
+                }
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={isReadOnly || selectedItemId !== null}
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Operation</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}

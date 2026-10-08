@@ -31,6 +31,7 @@ import {
   Status,
   useDisclosure,
   useMount,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -119,6 +120,7 @@ const JobHeader = () => {
     }
   };
   const permissions = usePermissions();
+  const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
@@ -300,6 +302,16 @@ const JobHeader = () => {
     </>
   );
 
+  // Phones: the hero line under the app bar, "item · Qty N".
+  const jobQuantity = routeData?.job?.quantity;
+  const heroSubtitle =
+    [
+      routeData?.job?.itemReadableIdWithRevision,
+      jobQuantity != null ? t`Qty ${jobQuantity}` : null
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+
   return (
     <>
       <RecordHeader
@@ -308,6 +320,7 @@ const JobHeader = () => {
         copyValue={routeData?.job?.jobId ?? ""}
         menu={menuItems}
         status={statusBadges}
+        subtitle={heroSubtitle}
         onToggleExplorer={toggleExplorer}
         onToggleProperties={toggleProperties}
         actions={
@@ -391,30 +404,34 @@ const JobHeader = () => {
             </RecordAction>
 
             {status !== "Paused" ? (
-              <RecordAction slot="secondary">
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.jobStatus(jobId)}
-                >
-                  <input type="hidden" name="status" value="Paused" />
-                  <Button
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Paused"
-                    }
-                    isDisabled={
-                      !["Ready", "In Progress"].includes(status ?? "") ||
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "production")
-                    }
-                    leftIcon={<LuCirclePause />}
-                    type="submit"
-                    variant="secondary"
+              // Phones: Pause shows only while it can act (Ready or In Progress).
+              isPhone &&
+              !["Ready", "In Progress"].includes(status ?? "") ? null : (
+                <RecordAction slot="secondary">
+                  <statusFetcher.Form
+                    method="post"
+                    action={path.to.jobStatus(jobId)}
                   >
-                    <Trans>Pause</Trans>
-                  </Button>
-                </statusFetcher.Form>
-              </RecordAction>
+                    <input type="hidden" name="status" value="Paused" />
+                    <Button
+                      isLoading={
+                        statusFetcher.state !== "idle" &&
+                        statusFetcher.formData?.get("status") === "Paused"
+                      }
+                      isDisabled={
+                        !["Ready", "In Progress"].includes(status ?? "") ||
+                        statusFetcher.state !== "idle" ||
+                        !permissions.can("update", "production")
+                      }
+                      leftIcon={<LuCirclePause />}
+                      type="submit"
+                      variant="secondary"
+                    >
+                      <Trans>Pause</Trans>
+                    </Button>
+                  </statusFetcher.Form>
+                </RecordAction>
+              )
             ) : (
               <RecordAction slot="secondary">
                 <statusFetcher.Form

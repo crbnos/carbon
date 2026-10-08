@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
+  IconButton,
   Switch
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,6 +27,7 @@ import {
 } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
+import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
 import { useUrlParams } from "~/hooks";
 import type { PivotMeasure, PivotState } from "../../accounting.models";
 import {
@@ -326,10 +328,20 @@ const PurchasesControlBar = ({
         variant="secondary"
         leftIcon={<LuDownload />}
         onClick={onDownload}
-        className="max-md:ml-auto max-md:mr-4"
+        className="max-md:hidden"
       >
         {t`Download`}
       </Button>
+      {/* Phones: Download sits in the app bar, not on a row of its own. */}
+      <AppBarActions>
+        <IconButton
+          aria-label={t`Download`}
+          variant="ghost"
+          size="lg"
+          icon={<LuDownload />}
+          onClick={onDownload}
+        />
+      </AppBarActions>
     </div>
   );
 };

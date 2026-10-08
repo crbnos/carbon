@@ -113,7 +113,7 @@ const PurchaseOrderHeader = () => {
     canReopen: boolean;
     canDelete: boolean;
     defaultCc: string[];
-    supplier: { status: string | null } | null;
+    supplier: { status: string | null; name: string | null } | null;
     resolvedAttachments: Promise<ResolvedAttachmentItem[]>;
   }>(path.to.purchaseOrder(orderId));
   const resolvedAttachments = useResolved(
@@ -200,6 +200,10 @@ const PurchaseOrderHeader = () => {
     [routeData?.lines]
   );
 
+  const isMarkAsPlannedDisabled =
+    !["Draft"].includes(routeData?.purchaseOrder?.status ?? "") ||
+    routeData?.lines.length === 0 ||
+    !isSupplierApproved;
   const markAsPlanned = () => {
     statusFetcher.submit(
       { status: "Planned" },
@@ -301,23 +305,25 @@ const PurchaseOrderHeader = () => {
       )}
     </>
   );
-  // The ID with its revision; phones show it under the app bar title,
-  // which names the record without the revision.
+  // The ID with its revision (desktop title).
   const titleNode = (
     <span className="flex items-center gap-0">
       <span>{routeData?.purchaseOrder?.purchaseOrderId}</span>
       <RevisionSuffix revisionId={routeData?.purchaseOrder?.revisionId} />
     </span>
   );
+  // Phones: the supplier under the hero, then the revision the app bar
+  // title (the ID alone) does not show.
+  const revisionId = routeData?.purchaseOrder?.revisionId ?? 0;
+  const heroSubtitle =
+    [routeData?.supplier?.name, revisionId > 0 ? t`Rev ${revisionId}` : null]
+      .filter(Boolean)
+      .join(" · ") || undefined;
   return (
     <>
       <RecordHeader
         title={titleNode}
-        subtitle={
-          (routeData?.purchaseOrder?.revisionId ?? 0) > 0
-            ? titleNode
-            : undefined
-        }
+        subtitle={heroSubtitle}
         titleTo={path.to.purchaseOrderDetails(orderId)}
         copyValue={getPurchaseOrderDisplayId(routeData?.purchaseOrder)}
         menu={menuItems}
@@ -326,7 +332,7 @@ const PurchaseOrderHeader = () => {
         onToggleProperties={toggleProperties}
         actions={
           <>
-            <RecordAction slot="overflow">
+            <RecordAction slot="icon">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -371,12 +377,7 @@ const PurchaseOrderHeader = () => {
                     label: t`Mark as Planned`,
                     icon: <LuCheckCheck />,
                     onClick: markAsPlanned,
-                    disabled:
-                      !["Draft"].includes(
-                        routeData?.purchaseOrder?.status ?? ""
-                      ) ||
-                      routeData?.lines.length === 0 ||
-                      !isSupplierApproved
+                    disabled: isMarkAsPlannedDisabled
                   }
                 ]}
               >

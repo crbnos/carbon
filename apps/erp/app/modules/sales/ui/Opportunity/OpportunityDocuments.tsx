@@ -12,6 +12,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -107,7 +108,7 @@ const OpportunityDocuments = ({
               <Trans>Files</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>
+          <CardAction className="max-md:hidden">
             {!isReadOnlyProp && (
               <OpportunityDocumentForm
                 opportunityId={opportunity.id}
@@ -119,7 +120,11 @@ const OpportunityDocuments = ({
         </HStack>
         <CardContent>
           <Table>
-            <Thead>
+            <Thead
+              className={cn(
+                attachmentsToRender.length === 0 && "max-md:hidden"
+              )}
+            >
               <Tr>
                 <Th>
                   <Trans>Name</Trans>

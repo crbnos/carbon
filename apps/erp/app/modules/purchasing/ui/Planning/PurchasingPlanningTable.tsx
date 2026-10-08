@@ -442,9 +442,23 @@ const PlanningTable = memo(
           header: t`Supplier`,
           cell: ({ row }) => {
             const supplierId = suppliersMap[row.original.id];
-            if (!supplierId) return <Status color="red">No Supplier</Status>;
+            const onHand = numberFormatter.format(row.original.quantityOnHand);
 
-            return <SupplierAvatar supplierId={supplierId} />;
+            // Phones: on hand follows the supplier on the row's second line.
+            return (
+              <div className="contents max-md:flex max-md:min-w-0 max-md:items-center max-md:gap-1.5">
+                {supplierId ? (
+                  <SupplierAvatar supplierId={supplierId} />
+                ) : (
+                  <Status color="red">
+                    <Trans>No Supplier</Trans>
+                  </Status>
+                )}
+                <span className="shrink-0 md:hidden">
+                  · <Trans>{onHand} on hand</Trans>
+                </span>
+              </div>
+            );
           },
           meta: {
             mobile: "P3",
@@ -528,7 +542,8 @@ const PlanningTable = memo(
             );
           },
           meta: {
-            mobile: "P2",
+            // Phones: the row's "Order N" button already shows this quantity.
+            mobile: "P4",
             icon: <LuCirclePlay />
           }
         },
@@ -585,18 +600,23 @@ const PlanningTable = memo(
                   }}
                 >
                   {isBlocked ? (
-                    "Blocked"
+                    <Trans>Blocked</Trans>
                   ) : hasOrders ? (
                     <HStack>
                       <PulsingDot />
-                      <span>Order {orderQuantity}</span>
+                      <span>
+                        <Trans>Order {orderQuantity}</Trans>
+                      </span>
                     </HStack>
                   ) : (
-                    "Order"
+                    <Trans>Order</Trans>
                   )}
                 </Button>
               </div>
             );
+          },
+          meta: {
+            mobile: "action"
           }
         }
       ];
@@ -663,6 +683,7 @@ const PlanningTable = memo(
               <mrpFetcher.Form
                 method="post"
                 action={path.to.api.mrp(locationId)}
+                className="max-md:hidden"
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -677,12 +698,33 @@ const PlanningTable = memo(
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    MRP runs automatically every 3 hours, but you can run it
-                    manually here.
+                    <Trans>
+                      MRP runs automatically every 3 hours, but you can run it
+                      manually here.
+                    </Trans>
                   </TooltipContent>
                 </Tooltip>
               </mrpFetcher.Form>
+              <p className="basis-full text-xs text-muted-foreground md:hidden">
+                <Trans>
+                  MRP runs every 3 hours. To run it now, use ⋯ › Recalculate.
+                </Trans>
+              </p>
             </div>
+          }
+          mobileMenuItems={
+            <DropdownMenuItem
+              disabled={mrpFetcher.state !== "idle"}
+              onSelect={() =>
+                mrpFetcher.submit(
+                  {},
+                  { method: "post", action: path.to.api.mrp(locationId) }
+                )
+              }
+            >
+              <DropdownMenuIcon icon={<LuCirclePlay />} />
+              <Trans>Recalculate</Trans>
+            </DropdownMenuItem>
           }
           renderActions={renderActions}
           title={t`Material Planning`}

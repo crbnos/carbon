@@ -202,6 +202,7 @@ const SalesOrderHeader = () => {
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
     opportunity: Opportunity;
+    customer: { name: string | null } | null;
     relatedItems: Promise<{
       jobs: Job[];
       shipments: Shipment[];
@@ -384,11 +385,12 @@ const SalesOrderHeader = () => {
         copyValue={routeData?.salesOrder?.salesOrderId ?? ""}
         menu={menuItems}
         status={statusBadges}
+        subtitle={routeData?.customer?.name ?? undefined}
         onToggleExplorer={toggleExplorer}
         onToggleProperties={toggleProperties}
         actions={
           <>
-            <RecordAction slot="overflow">
+            <RecordAction slot="icon">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

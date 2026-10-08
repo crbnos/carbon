@@ -15,7 +15,8 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -25,7 +26,8 @@ import {
   LuCircleStop,
   LuLoaderCircle,
   LuTrash,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuUser
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
@@ -38,6 +40,7 @@ import type {
   UnresolvedPickingListLine
 } from "~/modules/inventory";
 import { isPickingListLocked } from "~/modules/inventory";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import PickingListStatus from "./PickingListStatus";
 
@@ -62,8 +65,11 @@ const PickingListHeader = () => {
   const status = pickingList.status;
 
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
+  const [people] = usePeople();
+  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
   const statusFetcher = useFetcher<{
     needsAcknowledgement?: boolean;
     unresolvedLines?: UnresolvedPickingListLine[];
@@ -94,6 +100,26 @@ const PickingListHeader = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : pickingList.assignee;
+  const canAssign =
+    permissions.can("update", "inventory") && permissions.is("employee");
+
+  // Phones: the hero line. The list has no job column, so the jobs come
+  // from its lines: the first one, then "+N" for the others.
+  const jobIds = Array.from(
+    new Set(
+      (routeData.pickingListLines ?? [])
+        .map((line) => line.job?.jobId)
+        .filter((jobId): jobId is string => Boolean(jobId))
+    )
+  );
+  const jobLabel =
+    jobIds.length > 1 ? `${jobIds[0]} +${jobIds.length - 1}` : jobIds[0];
+  const assigneeName =
+    optimisticAssignment !== undefined
+      ? people.find((person) => person.id === optimisticAssignment)?.name
+      : pickingList.assigneeUser?.fullName;
+  const subtitle =
+    [jobLabel, assigneeName].filter(Boolean).join(" · ") || undefined;
 
   const submitStatus = (next: string, acknowledged?: boolean) => {
     if (acknowledged !== true) setAcknowledgeLines(null);
@@ -143,16 +169,29 @@ const PickingListHeader = () => {
         copyValue={pickingList.pickingListId ?? ""}
         menu={menuItems}
         status={statusBadge}
+        subtitle={subtitle}
         actions={
           <>
             <RecordAction slot="overflow">
-              <Assignee
-                size="md"
-                id={pickingListId}
-                value={assignee ?? ""}
-                table="pickingList"
-                isReadOnly={!permissions.can("update", "inventory")}
-              />
+              {isPhone ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  leftIcon={<LuUser />}
+                  isDisabled={!canAssign}
+                  onClick={() => setIsAssigneeOpen(true)}
+                >
+                  <Trans>Assign</Trans>
+                </Button>
+              ) : (
+                <Assignee
+                  size="md"
+                  id={pickingListId}
+                  value={assignee ?? ""}
+                  table="pickingList"
+                  isReadOnly={!permissions.can("update", "inventory")}
+                />
+              )}
             </RecordAction>
             <RecordAction slot={status === "Draft" ? "primary" : "overflow"}>
               <Button
@@ -216,6 +255,22 @@ const PickingListHeader = () => {
           </>
         }
       />
+
+      {/* Phones: the ⋯ "Assign" row opens the picker as a sheet; its own
+          trigger stays hidden. */}
+      {isPhone && (
+        <div className="hidden">
+          <Assignee
+            size="md"
+            id={pickingListId}
+            value={assignee ?? ""}
+            table="pickingList"
+            isReadOnly={!permissions.can("update", "inventory")}
+            open={isAssigneeOpen}
+            onOpenChange={setIsAssigneeOpen}
+          />
+        </div>
+      )}
 
       {acknowledgeLines && (
         <Modal

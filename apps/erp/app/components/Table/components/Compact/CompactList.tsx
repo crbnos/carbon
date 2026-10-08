@@ -7,6 +7,7 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
+  cn,
   DropdownMenu,
   DropdownMenuTrigger,
   Menu
@@ -16,6 +17,7 @@ import { useNumberFormatter } from "@react-aria/i18n";
 import type { Table } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { LuChevronDown } from "react-icons/lu";
 import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile/useAppBarOverride";
 import { useUrlParams } from "~/hooks";
@@ -46,6 +48,8 @@ export type CompactListProps<T> = {
   withSelectableRows: boolean;
   headerActions?: ReactNode;
   primaryAction?: ReactNode;
+  /** Extra items first in the toolbar ⋯. */
+  mobileMenuItems?: ReactNode;
   emptyState?: ReactNode;
   isLoading: boolean;
   isTableEmpty: boolean;
@@ -86,6 +90,7 @@ export function CompactList<T>({
   withSelectableRows,
   headerActions,
   primaryAction,
+  mobileMenuItems,
   emptyState,
   isLoading,
   isTableEmpty,
@@ -202,6 +207,7 @@ export function CompactList<T>({
       headerActions={headerActions}
       csvExport={csvExport}
       importCSV={importCSV}
+      menuItems={mobileMenuItems}
       onSelect={
         withSelectableRows && rows.length > 0 && !selecting
           ? () => setSelecting(true)
@@ -248,6 +254,12 @@ export function CompactList<T>({
     <div className="flex min-h-full w-full min-w-0 flex-col bg-card">
       {toolbar}
       {primaryActionRow}
+      {totals.length > 0 ? (
+        <CompactTotals
+          totals={totals}
+          format={(value) => numberFormatter.format(value)}
+        />
+      ) : null}
       <div className="flex flex-col border-t border-border">
         {rows.slice(0, shown).map((row) => {
           const rowExpandable =
@@ -317,29 +329,6 @@ export function CompactList<T>({
         })}
       </div>
 
-      {totals.length > 0 ? (
-        <div className="mx-4 mt-4 rounded-xl border border-border bg-card p-3">
-          <div className="pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
-            <Trans>Totals</Trans>
-          </div>
-          {totals.map((total) => (
-            <div
-              key={total.id}
-              className="flex min-h-9 items-center justify-between gap-3 text-sm"
-            >
-              <span className="min-w-0 truncate text-muted-foreground">
-                {total.label}
-              </span>
-              <span className="shrink-0 font-medium tabular-nums">
-                {total.formatter
-                  ? total.formatter(total.value)
-                  : numberFormatter.format(total.value)}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
       {offset > 0 || shown < total ? (
         <div className="flex flex-col items-center gap-2 px-4 py-4">
           {canLoadMore ? (
@@ -402,6 +391,73 @@ export function CompactList<T>({
             </DropdownMenu>
           </div>
         </BottomBar>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The table's footer totals, above the rows: collapsed to its first total so
+ * the list starts right under it, expanded on a tap.
+ */
+function CompactTotals({
+  totals,
+  format
+}: {
+  totals: CompactListProps<unknown>["totals"];
+  format: (value: number) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const formatTotal = (total: (typeof totals)[number]) =>
+    total.formatter ? total.formatter(total.value) : format(total.value);
+  const first = totals[0]!;
+
+  return (
+    <div className="mx-4 mb-2 rounded-xl border border-border bg-card">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      >
+        <span className="shrink-0 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
+          <Trans>Totals</Trans>
+        </span>
+        {open ? (
+          <span className="flex-1" />
+        ) : (
+          <span className="flex min-w-0 flex-1 items-center justify-end gap-2 text-sm">
+            <span className="min-w-0 truncate text-muted-foreground">
+              {first.label}
+            </span>
+            <span className="shrink-0 font-medium tabular-nums">
+              {formatTotal(first)}
+            </span>
+          </span>
+        )}
+        <LuChevronDown
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+      {open ? (
+        <div className="border-t border-border px-3 py-1">
+          {totals.map((total) => (
+            <div
+              key={total.id}
+              className="flex min-h-9 items-center justify-between gap-3 text-sm"
+            >
+              <span className="min-w-0 truncate text-muted-foreground">
+                {total.label}
+              </span>
+              <span className="shrink-0 font-medium tabular-nums">
+                {formatTotal(total)}
+              </span>
+            </div>
+          ))}
+        </div>
       ) : null}
     </div>
   );
