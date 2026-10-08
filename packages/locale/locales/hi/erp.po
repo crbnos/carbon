@@ -6958,6 +6958,9 @@ msgstr "डिलीवर करें {label}"
 msgid "Delivered"
 msgstr "डिलीवर किया गया"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
 
@@ -12272,6 +12275,9 @@ msgstr "संदेश"
 msgid "Metadata"
 msgstr "मेटाडेटा"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "मीटर रीडिंग"
 
@@ -16900,6 +16906,9 @@ msgstr "किराया दरें"
 
 msgid "Rental Site"
 msgstr "किराया स्थल"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "किराया उपयोग"

@@ -6958,6 +6958,9 @@ msgstr "Teslim Et {label}"
 msgid "Delivered"
 msgstr "Teslim Edildi"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "Teslimat Tarihi"
 
@@ -12272,6 +12275,9 @@ msgstr "Mesaj"
 msgid "Metadata"
 msgstr "Meta Veri"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "Sayaç Okuması"
 
@@ -16900,6 +16906,9 @@ msgstr "Kiralama Oranları"
 
 msgid "Rental Site"
 msgstr "Kiralama Alanı"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "Kiralama Kullanım Oranı"

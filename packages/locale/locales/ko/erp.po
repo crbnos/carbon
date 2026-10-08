@@ -6958,6 +6958,9 @@ msgstr "{label} 배달"
 msgid "Delivered"
 msgstr "배송됨"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "납기일"
 
@@ -12272,6 +12275,9 @@ msgstr "메시지"
 msgid "Metadata"
 msgstr "메타데이터"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "미터 측정"
 
@@ -16900,6 +16906,9 @@ msgstr "임차료율"
 
 msgid "Rental Site"
 msgstr "임차 현장"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "임차 자산 이용률"

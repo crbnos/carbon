@@ -6958,6 +6958,9 @@ msgstr "Entregar {label}"
 msgid "Delivered"
 msgstr "Entregue"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "Data de Entrega"
 
@@ -12272,6 +12275,9 @@ msgstr "Mensagem"
 msgid "Metadata"
 msgstr "Metadados"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "Leitura de Medidor"
 
@@ -16900,6 +16906,9 @@ msgstr "Taxas de Aluguel"
 
 msgid "Rental Site"
 msgstr "Local de Aluguel"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "Utilização de Aluguel"

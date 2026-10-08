@@ -6958,6 +6958,9 @@ msgstr "交付 {label}"
 msgid "Delivered"
 msgstr "已交付"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "交货日期"
 
@@ -12272,6 +12275,9 @@ msgstr "消息"
 msgid "Metadata"
 msgstr "元数据"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "计量读数"
 
@@ -16900,6 +16906,9 @@ msgstr "租赁费率"
 
 msgid "Rental Site"
 msgstr "租赁场所"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "租赁设备利用率"

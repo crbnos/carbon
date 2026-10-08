@@ -6958,6 +6958,9 @@ msgstr "Доставить {label}"
 msgid "Delivered"
 msgstr "Доставлено"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "Дата поставки"
 
@@ -12272,6 +12275,9 @@ msgstr "Сообщение"
 msgid "Metadata"
 msgstr "Метаданные"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "Показание счетчика"
 
@@ -16900,6 +16906,9 @@ msgstr "Ставки аренды"
 
 msgid "Rental Site"
 msgstr "Объект аренды"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "Использование арендованного оборудования"

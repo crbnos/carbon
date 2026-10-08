@@ -6958,6 +6958,9 @@ msgstr "{label}を配送"
 msgid "Delivered"
 msgstr "配送済"
 
+msgid "Delivered on"
+msgstr ""
+
 msgid "Delivery Date"
 msgstr "納期"
 
@@ -12272,6 +12275,9 @@ msgstr "メッセージ"
 msgid "Metadata"
 msgstr "メタデータ"
 
+msgid "Meter"
+msgstr ""
+
 msgid "Meter Reading"
 msgstr "メーター読取値"
 
@@ -16900,6 +16906,9 @@ msgstr "レンタル料率"
 
 msgid "Rental Site"
 msgstr "レンタル拠点"
+
+msgid "Rental Units"
+msgstr ""
 
 msgid "Rental Utilization"
 msgstr "レンタル資産利用率"

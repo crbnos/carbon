@@ -38,7 +38,7 @@ in spec → Open Questions.
 - [x] Task 14: Load the rental lines and save their fields
 - [x] Task 15: Pass the posting date from the post routes
 - [x] Task 16: Turn the per-unit Deliver and Return routes into shortcuts
-- [ ] Task 17: Show the rental units on the shipment page
+- [x] Task 17: Show the rental units on the shipment page
 - [ ] Task 18: Show the rental units on the receipt page
 - [ ] Task 19: Add the source to tables, forms, document panels and traceability
 - [ ] Task 20: Print a Delivery Ticket
