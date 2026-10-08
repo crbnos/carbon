@@ -22,8 +22,8 @@ in spec → Open Questions.
 
 ## Progress
 
-- [ ] Task 1: Add the enum migration
-- [ ] Task 2: Add the fixed-asset line migration
+- [x] Task 1: Add the enum migration
+- [x] Task 2: Add the fixed-asset line migration
 - [ ] Task 3: Apply the migrations, regenerate types and fix the nullable readers
 - [ ] Task 4: Build the rental test fixture and pin today's return
 - [ ] Task 5: Move the return body into `returnRentalUnit`
