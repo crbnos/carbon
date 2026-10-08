@@ -177,17 +177,18 @@ export default function AccountNotifications() {
             <HStack className="justify-between">
               <div>
                 <CardTitle>
-                  <Trans>This device</Trans>
+                  <Trans>Browser notifications</Trans>
                 </CardTitle>
                 <CardDescription>
                   {device.state === "off" && (
                     <Trans>
-                      Get notifications on this device, even when Carbon is
-                      closed.
+                      Get your Carbon notifications in this browser.
                     </Trans>
                   )}
                   {device.state === "on" && (
-                    <Trans>Push notifications are on for this device.</Trans>
+                    <Trans>
+                      Browser notifications are on for this browser.
+                    </Trans>
                   )}
                   {device.state === "denied" && (
                     <Trans>
@@ -211,7 +212,7 @@ export default function AccountNotifications() {
                   isDisabled={device.busy}
                   isLoading={device.busy}
                 >
-                  <Trans>Turn on</Trans>
+                  <Trans>Enable</Trans>
                 </Button>
               )}
               {device.state === "on" && (
@@ -230,7 +231,7 @@ export default function AccountNotifications() {
                     onClick={device.turnOff}
                     isDisabled={device.busy}
                   >
-                    <Trans>Turn off</Trans>
+                    <Trans>Disable</Trans>
                   </Button>
                 </HStack>
               )}

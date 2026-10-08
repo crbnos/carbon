@@ -3796,6 +3796,12 @@ msgstr "tarayıcı"
 msgid "Browser"
 msgstr "Tarayıcı"
 
+msgid "Browser notifications"
+msgstr "Tarayıcı Bildirimleri"
+
+msgid "Browser notifications are on for this browser."
+msgstr "Tarayıcı bildirimleri bu tarayıcı için açık."
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7159,6 +7165,9 @@ msgstr "Yön"
 msgid "Directions"
 msgstr "Yönler"
 
+msgid "Disable"
+msgstr "Devre Dışı Bırak"
+
 msgid "Disabled"
 msgstr "Devre Dışı"
 
@@ -8116,8 +8125,14 @@ msgstr "Boş liste"
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
 
+msgid "Enable"
+msgstr "Etkinleştir"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Verilerinizi izlemeye başlamak için ayarlar'dan denetim günlüklemesini etkinleştirin."
+
+msgid "Enable browser notifications"
+msgstr "Tarayıcı bildirimlerini etkinleştir"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Şirketiniz için dijital teklifleri etkinleştirin. Bu, müşterilerinize dijital teklifler göndermenizi ve onların bunları çevrimiçi olarak kabul etmesine olanak tanır."
@@ -8953,8 +8968,14 @@ msgstr "İş merkezi oluşturulamadı: {0}"
 msgid "Failed to delete file from old location"
 msgstr "Eski konumdan dosya silinemedi"
 
+msgid "Failed to disable browser notifications"
+msgstr "Tarayıcı bildirimleri devre dışı bırakılamadı"
+
 msgid "Failed to download file for moving"
 msgstr "Taşınacak dosya indirilemedi"
+
+msgid "Failed to enable browser notifications"
+msgstr "Tarayıcı bildirimleri etkinleştirilemedi"
 
 msgid "Failed to fetch item costs"
 msgstr "Ürün maliyetleri alınamadı"
@@ -9115,12 +9136,6 @@ msgstr "Araç kaydedilemedi"
 
 msgid "Failed to send a test notification"
 msgstr "Test bildirimini göndermek başarısız oldu"
-
-msgid "Failed to turn off push notifications"
-msgstr "Push bildirimlerini kapatmak başarısız oldu"
-
-msgid "Failed to turn on push notifications"
-msgstr "Push bildirimlerini açmak başarısız oldu"
 
 msgid "Failed to update batch property"
 msgstr "Toplu özelliği güncelleme başarısız oldu"
@@ -9670,14 +9685,17 @@ msgstr "Carbon'da canlı yayına geçin: alıntı alma, satın alma, atölye tab
 msgid "Get Method"
 msgstr "Yöntemi getir"
 
-msgid "Get notifications on this device, even when Carbon is closed."
-msgstr "Bu cihazda bildirim alın, Carbon kapalı olsa da."
-
 msgid "Get started"
 msgstr "Başlayın"
 
 msgid "Get Started"
 msgstr "Başlayın"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Carbon bildirimlerinizi gerçekleştikleri anda alın."
+
+msgid "Get your Carbon notifications in this browser."
+msgstr "Bu tarayıcıda Carbon bildirimlerinizi alın."
 
 msgid "Gets the summary for every agreement"
 msgstr "Her anlaşmanın özetini alır"
@@ -13818,6 +13836,9 @@ msgstr "Yetersiz adet verisi"
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
 
+msgid "Not now"
+msgstr "Şimdi değil"
+
 msgid "Not reached"
 msgstr "Ulaşılmadı"
 
@@ -15993,9 +16014,6 @@ msgstr "Gönder"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "İlk açık güne yeniden tarihlendir, orijinal tarihi açıklamada tut."
-
-msgid "Push notifications are on for this device."
-msgstr "Bu cihaz için push bildirimler açık."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Kayıt değişikliklerini gerçekleştiği anda harici sistemlere gönderin."
@@ -21400,9 +21418,6 @@ msgstr "Bu müşteri türü'nün oranı"
 msgid "This customer's rate"
 msgstr "Bu müşteri'nin oranı"
 
-msgid "This device"
-msgstr "Bu cihaz"
-
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."
 
@@ -22180,12 +22195,6 @@ msgstr "Tetikleyiciler"
 
 msgid "Tuesday"
 msgstr "Salı"
-
-msgid "Turn off"
-msgstr "Kapat"
-
-msgid "Turn on"
-msgstr "Aç"
 
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"

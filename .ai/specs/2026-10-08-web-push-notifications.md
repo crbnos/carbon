@@ -325,3 +325,7 @@ No change to MES, to the bell, or to `useNotifications`.
 - 2026-10-08: Implemented on `naveenkash/carbon-browser-notifications`. The code follows the spec, with 2 small differences:
   1. The test POST route sets `tag` to `carbon-test`, so a second test replaces the first.
   2. The Sign Out handler waits at most 1 000 ms for the unsubscribe (`SIGN_OUT_UNSUBSCRIBE_MS`).
+- 2026-10-08: Two changes after testing:
+  1. `push-worker.js` no longer passes `tag` to `showNotification`. Edge gives the tag to macOS as the notification's identifier, and macOS replaces a notification with the same identifier silently, so no banner appears. The worker closes older notifications with the same `data.tag` itself, then shows the new notification under a fresh identifier.
+  2. The bell's inbox tab shows an "Enable browser notifications" row (`EnableBrowserNotifications.tsx`). It is the soft ask: the native prompt opens only from its **Enable** click. The row shows only when push is configured and `Notification.permission` is `default`. **Not now** hides it for 30 days in this browser, and a second **Not now** hides it for good. The app shell loader sends `pushPublicKey` for it. The settings card is now titled "Browser notifications", with **Enable** and **Disable** buttons.
+

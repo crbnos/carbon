@@ -137,11 +137,11 @@ export function usePushSubscription({
         if (!response.ok) {
           await subscription.unsubscribe();
           setState("off");
-          toast.error(t`Failed to turn on push notifications`);
+          toast.error(t`Failed to enable browser notifications`);
           return;
         }
         setState("on");
-      }, t`Failed to turn on push notifications`),
+      }, t`Failed to enable browser notifications`),
     [publicKey, run, t]
   );
 
@@ -156,7 +156,7 @@ export function usePushSubscription({
           await subscription.unsubscribe();
         }
         setState("off");
-      }, t`Failed to turn off push notifications`),
+      }, t`Failed to disable browser notifications`),
     [run, t]
   );
 

@@ -3796,6 +3796,12 @@ msgstr "browser"
 msgid "Browser"
 msgstr "Browser"
 
+msgid "Browser notifications"
+msgstr "Notifiche del browser"
+
+msgid "Browser notifications are on for this browser."
+msgstr "Le notifiche del browser sono attive per questo browser."
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7159,6 +7165,9 @@ msgstr "Direzione"
 msgid "Directions"
 msgstr "Direzioni"
 
+msgid "Disable"
+msgstr "Disattiva"
+
 msgid "Disabled"
 msgstr "Disabilitato"
 
@@ -8116,8 +8125,14 @@ msgstr "Elenco vuoto"
 msgid "Empty work centers"
 msgstr "Centri di lavoro vuoti"
 
+msgid "Enable"
+msgstr "Attiva"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Abilita la registrazione di audit nelle impostazioni per iniziare a tracciare le modifiche ai tuoi dati."
+
+msgid "Enable browser notifications"
+msgstr "Attiva notifiche del browser"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Abilita le quotazioni digitali per la tua azienda. Questo ti permetterà di inviare quotazioni digitali ai tuoi clienti e consentire loro di accettarle online."
@@ -8953,8 +8968,14 @@ msgstr "Impossibile creare il centro di lavoro: {0}"
 msgid "Failed to delete file from old location"
 msgstr "Impossibile eliminare il file dalla posizione precedente"
 
+msgid "Failed to disable browser notifications"
+msgstr "Impossibile disattivare le notifiche del browser"
+
 msgid "Failed to download file for moving"
 msgstr "Impossibile scaricare il file per lo spostamento"
+
+msgid "Failed to enable browser notifications"
+msgstr "Impossibile attivare le notifiche del browser"
 
 msgid "Failed to fetch item costs"
 msgstr "Impossibile recuperare i costi degli articoli"
@@ -9115,12 +9136,6 @@ msgstr "Errore nel salvataggio degli strumenti"
 
 msgid "Failed to send a test notification"
 msgstr "Impossibile inviare una notifica di prova"
-
-msgid "Failed to turn off push notifications"
-msgstr "Impossibile disattivare le notifiche push"
-
-msgid "Failed to turn on push notifications"
-msgstr "Impossibile attivare le notifiche push"
 
 msgid "Failed to update batch property"
 msgstr "Impossibile aggiornare la proprietà batch"
@@ -9670,14 +9685,17 @@ msgstr "Passa a Carbon: un unico sistema per quotazioni, acquisti, officina, mag
 msgid "Get Method"
 msgstr "Recupera metodo"
 
-msgid "Get notifications on this device, even when Carbon is closed."
-msgstr "Ricevi notifiche su questo dispositivo, anche quando Carbon è chiuso."
-
 msgid "Get started"
 msgstr "Inizia"
 
 msgid "Get Started"
 msgstr "Inizia"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Ricevi le tue notifiche di Carbon quando si verificano."
+
+msgid "Get your Carbon notifications in this browser."
+msgstr "Ricevi le tue notifiche di Carbon in questo browser."
 
 msgid "Gets the summary for every agreement"
 msgstr "Ottiene il riepilogo per ogni accordo"
@@ -13818,6 +13836,9 @@ msgstr "Non ci sono dati sufficienti sull'unità"
 msgid "Not feasible"
 msgstr "Non fattibile"
 
+msgid "Not now"
+msgstr "Non ora"
+
 msgid "Not reached"
 msgstr "Non raggiunto"
 
@@ -15993,9 +16014,6 @@ msgstr "Invia"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Spingerlo ri-datato al primo giorno aperto, mantenendo la data originale nella narrazione."
-
-msgid "Push notifications are on for this device."
-msgstr "Le notifiche push sono attivate per questo dispositivo."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Invia le modifiche dei record ai sistemi esterni nel momento in cui si verificano."
@@ -21400,9 +21418,6 @@ msgstr "La tariffa di questo tipo di cliente"
 msgid "This customer's rate"
 msgstr "La tariffa di questo cliente"
 
-msgid "This device"
-msgstr "Questo dispositivo"
-
 msgid "This download link is invalid or has been tampered with."
 msgstr "Questo link di scaricamento non è valido o è stato manomesso."
 
@@ -22180,12 +22195,6 @@ msgstr "Trigger"
 
 msgid "Tuesday"
 msgstr "Martedì"
-
-msgid "Turn off"
-msgstr "Disattiva"
-
-msgid "Turn on"
-msgstr "Attiva"
 
 msgid "Turn on the built-in pieces"
 msgstr "Attiva i componenti integrati"

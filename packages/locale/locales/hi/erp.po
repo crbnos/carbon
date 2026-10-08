@@ -3796,6 +3796,12 @@ msgstr "ब्राउज़र"
 msgid "Browser"
 msgstr "ब्राउज़र"
 
+msgid "Browser notifications"
+msgstr "ब्राउज़र सूचनाएँ"
+
+msgid "Browser notifications are on for this browser."
+msgstr "इस ब्राउज़र के लिए ब्राउज़र सूचनाएँ चालू हैं।"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7159,6 +7165,9 @@ msgstr "दिशा"
 msgid "Directions"
 msgstr "दिशाएं"
 
+msgid "Disable"
+msgstr "अक्षम करें"
+
 msgid "Disabled"
 msgstr "अक्षम"
 
@@ -8116,8 +8125,14 @@ msgstr "खाली सूची"
 msgid "Empty work centers"
 msgstr "खाली वर्क सेंटर"
 
+msgid "Enable"
+msgstr "सक्षम करें"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "अपने डेटा में परिवर्तनों को ट्रैक करना शुरू करने के लिए सेटिंग्स में ऑडिट लॉगिंग सक्षम करें।"
+
+msgid "Enable browser notifications"
+msgstr "ब्राउज़र सूचनाएँ सक्षम करें"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "अपनी कंपनी के लिए डिजिटल उद्धरण सक्षम करें। यह आपको अपने ग्राहकों को डिजिटल उद्धरण भेजने की अनुमति देगा, और उन्हें ऑनलाइन स्वीकार करने की अनुमति देगा।"
@@ -8953,8 +8968,14 @@ msgstr "वर्क सेंटर बनाने में विफल: {0}
 msgid "Failed to delete file from old location"
 msgstr "पुराने स्थान से फ़ाइल हटाने में विफल"
 
+msgid "Failed to disable browser notifications"
+msgstr "ब्राउज़र सूचनाओं को अक्षम करने में विफल रहा"
+
 msgid "Failed to download file for moving"
 msgstr "स्थानांतरण के लिए फ़ाइल डाउनलोड करने में विफल"
+
+msgid "Failed to enable browser notifications"
+msgstr "ब्राउज़र सूचनाओं को सक्षम करने में विफल रहा"
 
 msgid "Failed to fetch item costs"
 msgstr "आइटम लागत प्राप्त करने में विफल"
@@ -9115,12 +9136,6 @@ msgstr "उपकरणों को सहेजने में विफल"
 
 msgid "Failed to send a test notification"
 msgstr "परीक्षण सूचना भेजने में विफल"
-
-msgid "Failed to turn off push notifications"
-msgstr "पुश सूचनाएं बंद करने में विफल"
-
-msgid "Failed to turn on push notifications"
-msgstr "पुश सूचनाएं चालू करने में विफल"
 
 msgid "Failed to update batch property"
 msgstr "बैच गुण अपडेट करने में विफल"
@@ -9670,14 +9685,17 @@ msgstr "Carbon पर लाइव जाएं: एक प्रणाली �
 msgid "Get Method"
 msgstr "विधि प्राप्त करें"
 
-msgid "Get notifications on this device, even when Carbon is closed."
-msgstr "इस डिवाइस पर सूचनाएं प्राप्त करें, भले ही Carbon बंद हो।"
-
 msgid "Get started"
 msgstr "शुरुआत करें"
 
 msgid "Get Started"
 msgstr "शुरुआत करें"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "अपनी Carbon सूचनाएँ तुरंत प्राप्त करें।"
+
+msgid "Get your Carbon notifications in this browser."
+msgstr "इस ब्राउज़र में अपनी Carbon सूचनाएँ प्राप्त करें।"
 
 msgid "Gets the summary for every agreement"
 msgstr "प्रत्येक समझौते के लिए सारांश प्राप्त करता है"
@@ -13818,6 +13836,9 @@ msgstr "पर्याप्त यूनिट डेटा नहीं"
 msgid "Not feasible"
 msgstr "संभव नहीं"
 
+msgid "Not now"
+msgstr "अभी नहीं"
+
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -15993,9 +16014,6 @@ msgstr "धकेलें"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "इसे पहले खुले दिन तक पुनः-तारीखित करें, मूल तारीख को विवरण में रखते हुए।"
-
-msgid "Push notifications are on for this device."
-msgstr "इस डिवाइस के लिए पुश सूचनाएं चालू हैं।"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "रिकॉर्ड परिवर्तनों को बाहरी सिस्टम में तुरंत भेजें जब वे होते हैं।"
@@ -21400,9 +21418,6 @@ msgstr "इस ग्राहक प्रकार की दर"
 msgid "This customer's rate"
 msgstr "इस ग्राहक की दर"
 
-msgid "This device"
-msgstr "यह डिवाइस"
-
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
 
@@ -22180,12 +22195,6 @@ msgstr "ट्रिगर"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
-
-msgid "Turn off"
-msgstr "बंद करें"
-
-msgid "Turn on"
-msgstr "चालू करें"
 
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"

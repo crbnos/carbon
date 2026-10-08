@@ -23,6 +23,7 @@ import {
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
+import { isPushConfigured, VAPID_PUBLIC_KEY } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
@@ -325,6 +326,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,
+    // Null hides the bell's "Enable browser notifications" row: the
+    // deployment has no VAPID keys.
+    pushPublicKey: isPushConfigured() ? (VAPID_PUBLIC_KEY ?? null) : null,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],

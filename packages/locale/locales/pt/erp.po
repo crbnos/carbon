@@ -3796,6 +3796,12 @@ msgstr "navegador"
 msgid "Browser"
 msgstr "Navegador"
 
+msgid "Browser notifications"
+msgstr "Notificações do navegador"
+
+msgid "Browser notifications are on for this browser."
+msgstr "As notificações do navegador estão ativadas para este navegador."
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7159,6 +7165,9 @@ msgstr "Direção"
 msgid "Directions"
 msgstr "Direções"
 
+msgid "Disable"
+msgstr "Desativar"
+
 msgid "Disabled"
 msgstr "Desativado"
 
@@ -8116,8 +8125,14 @@ msgstr "Lista vazia"
 msgid "Empty work centers"
 msgstr "Centros de trabalho vazios"
 
+msgid "Enable"
+msgstr "Ativar"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Ative o registro de auditoria nas configurações para começar a rastrear alterações nos seus dados."
+
+msgid "Enable browser notifications"
+msgstr "Ativar notificações do navegador"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Ative cotações digitais para sua empresa. Isso permitirá que você envie cotações digitais para seus clientes e permita que eles as aceitem online."
@@ -8953,8 +8968,14 @@ msgstr "Falha ao criar centro de trabalho: {0}"
 msgid "Failed to delete file from old location"
 msgstr "Falha ao excluir arquivo do local anterior"
 
+msgid "Failed to disable browser notifications"
+msgstr "Falha ao desativar notificações do navegador"
+
 msgid "Failed to download file for moving"
 msgstr "Falha ao baixar arquivo para mover"
+
+msgid "Failed to enable browser notifications"
+msgstr "Falha ao ativar notificações do navegador"
 
 msgid "Failed to fetch item costs"
 msgstr "Falha ao buscar custos de itens"
@@ -9115,12 +9136,6 @@ msgstr "Falha ao salvar ferramentas"
 
 msgid "Failed to send a test notification"
 msgstr "Falha ao enviar uma notificação de teste"
-
-msgid "Failed to turn off push notifications"
-msgstr "Falha ao desativar notificações push"
-
-msgid "Failed to turn on push notifications"
-msgstr "Falha ao ativar notificações push"
 
 msgid "Failed to update batch property"
 msgstr "Falha ao atualizar propriedade de lote"
@@ -9670,14 +9685,17 @@ msgstr "Ativar no Carbon: um sistema executando cotações, compras, chão de f�
 msgid "Get Method"
 msgstr "Obter Método"
 
-msgid "Get notifications on this device, even when Carbon is closed."
-msgstr "Receba notificações neste dispositivo, mesmo quando o Carbon está fechado."
-
 msgid "Get started"
 msgstr "Começar"
 
 msgid "Get Started"
 msgstr "Começar"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Receba suas notificações do Carbon assim que acontecerem."
+
+msgid "Get your Carbon notifications in this browser."
+msgstr "Receba suas notificações do Carbon neste navegador."
 
 msgid "Gets the summary for every agreement"
 msgstr "Obtém o resumo de cada acordo"
@@ -13818,6 +13836,9 @@ msgstr "Dados de unidade insuficientes"
 msgid "Not feasible"
 msgstr "Não é viável"
 
+msgid "Not now"
+msgstr "Não agora"
+
 msgid "Not reached"
 msgstr "Não atingido"
 
@@ -15993,9 +16014,6 @@ msgstr "Empurrar"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Redatá-lo para o primeiro dia aberto, mantendo a data original na narração."
-
-msgid "Push notifications are on for this device."
-msgstr "As notificações push estão ativadas para este dispositivo."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Envie alterações de registros para sistemas externos no momento em que ocorrem."
@@ -21400,9 +21418,6 @@ msgstr "A taxa deste tipo de cliente"
 msgid "This customer's rate"
 msgstr "A taxa deste cliente"
 
-msgid "This device"
-msgstr "Este dispositivo"
-
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este link de download é inválido ou foi adulterado."
 
@@ -22180,12 +22195,6 @@ msgstr "Acionadores"
 
 msgid "Tuesday"
 msgstr "Terça-feira"
-
-msgid "Turn off"
-msgstr "Desativar"
-
-msgid "Turn on"
-msgstr "Ativar"
 
 msgid "Turn on the built-in pieces"
 msgstr "Ativar os componentes integrados"

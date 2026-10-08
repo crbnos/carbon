@@ -3796,6 +3796,12 @@ msgstr "浏览器"
 msgid "Browser"
 msgstr "浏览器"
 
+msgid "Browser notifications"
+msgstr "浏览器通知"
+
+msgid "Browser notifications are on for this browser."
+msgstr "此浏览器的浏览器通知已启用。"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7159,6 +7165,9 @@ msgstr "方向"
 msgid "Directions"
 msgstr "方向"
 
+msgid "Disable"
+msgstr "禁用"
+
 msgid "Disabled"
 msgstr "已禁用"
 
@@ -8116,8 +8125,14 @@ msgstr "空列表"
 msgid "Empty work centers"
 msgstr "空的工作中心"
 
+msgid "Enable"
+msgstr "启用"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "在设置中启用审计日志以开始跟踪数据的更改。"
+
+msgid "Enable browser notifications"
+msgstr "启用浏览器通知"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "为您的公司启用数字报价。这将允许您向客户发送数字报价，并允许他们在线接受。"
@@ -8953,8 +8968,14 @@ msgstr "创建工作中心失败：{0}"
 msgid "Failed to delete file from old location"
 msgstr "删除旧位置的文件失败"
 
+msgid "Failed to disable browser notifications"
+msgstr "禁用浏览器通知失败"
+
 msgid "Failed to download file for moving"
 msgstr "无法下载文件以进行移动"
+
+msgid "Failed to enable browser notifications"
+msgstr "启用浏览器通知失败"
 
 msgid "Failed to fetch item costs"
 msgstr "获取物料成本失败"
@@ -9115,12 +9136,6 @@ msgstr "保存工具失败"
 
 msgid "Failed to send a test notification"
 msgstr "发送测试通知失败"
-
-msgid "Failed to turn off push notifications"
-msgstr "关闭推送通知失败"
-
-msgid "Failed to turn on push notifications"
-msgstr "开启推送通知失败"
 
 msgid "Failed to update batch property"
 msgstr "批处理属性更新失败"
@@ -9670,14 +9685,17 @@ msgstr "在Carbon上线：一套系统运行报价、采购、车间、库存管
 msgid "Get Method"
 msgstr "获取方法"
 
-msgid "Get notifications on this device, even when Carbon is closed."
-msgstr "在此设备上接收通知,即使 Carbon 已关闭。"
-
 msgid "Get started"
 msgstr "开始使用"
 
 msgid "Get Started"
 msgstr "开始使用"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "实时获取您的 Carbon 通知。"
+
+msgid "Get your Carbon notifications in this browser."
+msgstr "在此浏览器中获取您的 Carbon 通知。"
 
 msgid "Gets the summary for every agreement"
 msgstr "获取每个协议的汇总"
@@ -13818,6 +13836,9 @@ msgstr "单位数据不足"
 msgid "Not feasible"
 msgstr "不可行"
 
+msgid "Not now"
+msgstr "暂不"
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -15993,9 +16014,6 @@ msgstr "推送"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "将其重新日期设置为第一个开放日，在叙述中保留原始日期。"
-
-msgid "Push notifications are on for this device."
-msgstr "此设备已启用推送通知。"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "将记录更改实时推送到外部系统。"
@@ -21400,9 +21418,6 @@ msgstr "此客户类型的费率"
 msgid "This customer's rate"
 msgstr "此客户的费率"
 
-msgid "This device"
-msgstr "此设备"
-
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
 
@@ -22180,12 +22195,6 @@ msgstr "触发器"
 
 msgid "Tuesday"
 msgstr "星期二"
-
-msgid "Turn off"
-msgstr "关闭"
-
-msgid "Turn on"
-msgstr "开启"
 
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
