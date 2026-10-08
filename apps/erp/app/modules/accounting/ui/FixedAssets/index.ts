@@ -8,6 +8,7 @@ import DepreciationRunDocuments from "./DepreciationRunDocuments";
 import DepreciationRunHeader from "./DepreciationRunHeader";
 import DepreciationRunStatus from "./DepreciationRunStatus";
 import DepreciationRunTable from "./DepreciationRunTable";
+import FixedAssetAdjustCostForm from "./FixedAssetAdjustCostForm";
 import FixedAssetAttachJobForm from "./FixedAssetAttachJobForm";
 import FixedAssetCapitalizeCipForm from "./FixedAssetCapitalizeCipForm";
 import FixedAssetCapitalizeForm from "./FixedAssetCapitalizeForm";
@@ -32,6 +33,7 @@ export {
   DepreciationRunHeader,
   DepreciationRunStatus,
   DepreciationRunTable,
+  FixedAssetAdjustCostForm,
   FixedAssetAttachJobForm,
   FixedAssetCapitalizeCipForm,
   FixedAssetCapitalizeForm,

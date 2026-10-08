@@ -1986,6 +1986,15 @@ msgstr "주소 라인1"
 msgid "Address line2"
 msgstr "주소 라인2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "자산이 청구되지 않은 원가를 추가합니다. 예를 들어, 비용을 기록하지 않은 작업 지시의 노무와 자재입니다."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "자산이 청구되지 않은 원가를 추가합니다. 예를 들어, 비용을 기록하지 않은 작업 지시의 노무와 자재입니다. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
+
+msgid "Adjust Cost"
+msgstr "원가 조정"
+
 msgid "Adjustment"
 msgstr "조정"
 
@@ -5163,6 +5172,9 @@ msgstr "변환 중…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
+msgid "Copied ID to clipboard"
+msgstr "ID를 클립보드에 복사했습니다"
+
 msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
 
@@ -8312,6 +8324,12 @@ msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 �
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
 
+msgid "Enter what it cost to make."
+msgstr "사내 생산 원가를 입력하십시오."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "사내 생산 원가를 입력하십시오. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
+
 msgid "Entered At Receipt"
 msgstr "입고 시 입력됨"
 
@@ -10270,6 +10288,9 @@ msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
 msgid "If"
 msgstr "만약"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "감가상각이 이미 실행된 경우, 다음 실행 시 정액법 자산이 이전 원가로 소요한 개월 수의 감가상각을 보정합니다."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "다음 통화까지 기다릴 수 없는 경우, 양측 담당자가 결정합니다."
@@ -13229,6 +13250,9 @@ msgstr "조건이 하나도 일치하지 않을 수 있습니다"
 msgid "No conversion is required"
 msgstr "변환이 필요하지 않습니다"
 
+msgid "No cost"
+msgstr "원가 없음"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "이 자산에 대해 아직 기록된 원가가 없습니다."
 
@@ -13945,6 +13969,9 @@ msgstr "끔 — 동기화 외부에서 처리됨"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
+
+msgid "Offset Account"
+msgstr "상계 계정"
 
 msgid "ok"
 msgstr "확인"
@@ -16550,6 +16577,13 @@ msgstr "레코드"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "기록 및 전기된 전표가 이 공급자에게 송수신되고 있습니다."
 
+msgid "Recost"
+msgstr "원가 재계산"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "원가 재계산 {0}"
+
 msgid "Recovery Period"
 msgstr "회수 기간"
 
@@ -18709,6 +18743,12 @@ msgstr "버전 {0}을(를) 활성 버전으로 설정하시겠습니까?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "프로필 설정에서 기본 사업장을 설정하여 보관 단위를 선택하세요."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "이 자산의 재고 계상 금액을 설정합니다."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "이 자산의 재고 계상 금액을 설정합니다. 차이는 재고와 비용이 지출된 계정 간에 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
+
 msgid "Settings"
 msgstr "설정"
 
@@ -19204,6 +19244,9 @@ msgstr "일부 레코드는 돌아오지 않습니다. 계속하려면 <0>{CONFI
 
 msgid "Some Shifts"
 msgstr "일부 교대조"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "회계를 업데이트할 수 있는 사용자가 자산을 자본화하기 전에 사내 생산 원가를 입력해야 합니다."
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."
@@ -20327,9 +20370,6 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "자산이 사용 중인 분류로 이동하고 사용 개시 일자부터 감가상각을 시작합니다."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "자산의 가치가 0이 될 것입니다. 품목에 단위 원가를 설정한 후 자산화하세요."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape에서 인증이 거부되었습니다. 연동 설정을 저장하여 다시 시도하세요."

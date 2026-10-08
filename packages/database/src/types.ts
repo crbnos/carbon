@@ -92442,7 +92442,11 @@ export type Database = {
         | "Inventory"
         | "Job"
         | "Construction in Progress"
-      fixedAssetTransferType: "Capitalization" | "Return to Inventory"
+        | "Manual"
+      fixedAssetTransferType:
+        | "Capitalization"
+        | "Return to Inventory"
+        | "Cost Adjustment"
       fulfillmentType: "Inventory" | "Job"
       gaugeCalibrationStatus:
         | "Pending"
@@ -93933,8 +93937,13 @@ export const Constants = {
         "Inventory",
         "Job",
         "Construction in Progress",
+        "Manual",
       ],
-      fixedAssetTransferType: ["Capitalization", "Return to Inventory"],
+      fixedAssetTransferType: [
+        "Capitalization",
+        "Return to Inventory",
+        "Cost Adjustment",
+      ],
       fulfillmentType: ["Inventory", "Job"],
       gaugeCalibrationStatus: [
         "Pending",

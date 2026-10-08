@@ -1986,6 +1986,15 @@ msgstr "Linia adresu 1"
 msgid "Address line2"
 msgstr "Linia adresu 2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Dodaje koszt, którym składnik majątku nigdy nie został obciążony, taki jak robocizna i materiały ze zlecenia produkcyjnego, które nic nie zarejestrowały."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Dodaje koszt, którym składnik majątku nigdy nie został obciążony, taki jak robocizna i materiały ze zlecenia produkcyjnego, które nic nie zarejestrowały. Wartość jest księgowana na składnik majątku z konta, z którego została wydatkowana: Zyski zatrzymane za wcześniejszy rok, lub wydatek na robocizę lub materiały za ten rok."
+
+msgid "Adjust Cost"
+msgstr "Dostosuj koszt"
+
 msgid "Adjustment"
 msgstr "Korekta"
 
@@ -5163,6 +5172,9 @@ msgstr "Konwertowanie…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Konwertuje jednostkę zakupu dostawcy na Twoją jednostkę zapasów na pozycji zamówienia zakupu, przyjęcia lub faktury — zakup w kartonach po 12 sztuk, zapasy w sztukach."
 
+msgid "Copied ID to clipboard"
+msgstr "Skopiowano ID do schowka"
+
 msgid "Copied link to clipboard"
 msgstr "Skopiowano link do schowka"
 
@@ -8312,6 +8324,12 @@ msgstr "Podaj URL Onshape, identyfikator klienta i klucz tajny prywatnej aplikac
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Wprowadź ilość, która powinna być dla tego ruchu. Przeciwny ruch dla różnicy jest publikowany obok oryginału w okresie czasowym oryginału."
 
+msgid "Enter what it cost to make."
+msgstr "Wpisz, ile kosztowało to wytworzenie."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Wpisz, ile kosztowało to wytworzenie. Wartość jest księgowana na składnik majątku z konta, z którego została wydatkowana: Zyski zatrzymane za wcześniejszy rok, lub wydatek na robocizę lub materiały za ten rok."
+
 msgid "Entered At Receipt"
 msgstr "Wprowadzono przy odbiorze"
 
@@ -10270,6 +10288,9 @@ msgstr "Identyfikatory i opisy są generowane dla surowców."
 
 msgid "If"
 msgstr "Jeśli"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "Jeśli amortyzacja już się uruchomiła, następny przebieg uwzględni wyrównanie za miesiące, w których ta pozycja została amortyzowana metodą liniową przy starym koszcie."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Jeśli nie może czekać do następnego spotkania, decydują liderzy z obu stron."
@@ -13229,6 +13250,9 @@ msgstr "Żaden warunek nie może się zgadzać"
 msgid "No conversion is required"
 msgstr "Konwersja nie jest wymagana"
 
+msgid "No cost"
+msgstr "Bez kosztu"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "Jeszcze nie zaksięgowano kosztu dla tego zasobu."
 
@@ -13945,6 +13969,9 @@ msgstr "Wyłączone — obsługiwane poza synchronizacją"
 
 msgid "Off — released revisions stay editable"
 msgstr "Wyłączone — zwolnione rewizje pozostają edytowalne"
+
+msgid "Offset Account"
+msgstr "Konto równoważące"
 
 msgid "ok"
 msgstr "ok"
@@ -16550,6 +16577,13 @@ msgstr "Rekordy"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Rekordy i zaksięgowane dowody księgowe są wysyłane do i odbierane z tego dostawcy."
 
+msgid "Recost"
+msgstr "Przelicz koszt"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "Przelicz koszt {0}"
+
 msgid "Recovery Period"
 msgstr "Zarejestruj"
 
@@ -18709,6 +18743,12 @@ msgstr "Ustawić wersję {0} jako aktywną wersję?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Ustaw swoją domyślną lokalizację w ustawieniach profilu, aby wybrać jednostkę magazynową."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Ustawia, za ile ta sztuka jest wyceniana w zapasach."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Ustawia, za ile ta sztuka jest wyceniana w zapasach. Różnica jest księgowana między zapasami a kontem, z którego wydatkowano koszt: Zyski zatrzymane za wcześniejszy rok, lub wydatek na robocizę lub materiały za ten rok."
+
 msgid "Settings"
 msgstr "Ustawienia"
 
@@ -19204,6 +19244,9 @@ msgstr "Niektóre rekordy nie wrócą. Wpisz <0>{CONFIRM_WORD}</0> aby kontynuow
 
 msgid "Some Shifts"
 msgstr "Niektóre zmiany"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Osoba, która może aktualizować księgowość, musi wpisać, ile kosztowało to wytworzenie, zanim będzie można to skapitalizować."
 
 msgid "Something went wrong. Please try again."
 msgstr "Coś poszło nie tak. Spróbuj ponownie."
@@ -20327,9 +20370,6 @@ msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna iloś�
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Zasób przechodzi do swojej klasy w użytku i zaczyna się amortyzować od daty wprowadzenia do użytku."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "Zasób miałby zerową wartość. Ustaw koszt jednostkowy artykułu, a następnie go skapitalizuj."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Autoryzacja została odmówiona w Onshape. Zapisz ustawienia integracji i spróbuj ponownie."

@@ -1986,6 +1986,15 @@ msgstr "Ligne d'adresse 1"
 msgid "Address line2"
 msgstr "Ligne d'adresse 2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Ajoute un coût que l'actif n'a jamais enregistré, comme la main-d'œuvre et les matériaux d'un ordre de fabrication qui n'en a enregistré aucun."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Ajoute un coût que l'actif n'a jamais enregistré, comme la main-d'œuvre et les matériaux d'un ordre de fabrication qui n'en a enregistré aucun. La valeur est imputée à l'actif à partir du compte où elle a été dépensée : Report à nouveau pour un exercice antérieur, ou charge de main-d'œuvre ou de matière de cet exercice."
+
+msgid "Adjust Cost"
+msgstr "Ajuster le coût"
+
 msgid "Adjustment"
 msgstr "Ajustement"
 
@@ -5163,6 +5172,9 @@ msgstr "Conversion en cours…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire sur une ligne de commande, reçu ou facture — acheter en cartons de 12, stocker en unités."
 
+msgid "Copied ID to clipboard"
+msgstr "ID copié dans le presse-papiers"
+
 msgid "Copied link to clipboard"
 msgstr "Lien copié dans le presse-papiers"
 
@@ -8312,6 +8324,12 @@ msgstr "Entrez l'URL Onshape, l'ID client et le secret client de votre applicati
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Entrez la quantité que ce mouvement aurait dû avoir. Un mouvement opposé pour la différence est posté à côté de l'original, dans la période de l'original."
 
+msgid "Enter what it cost to make."
+msgstr "Entrez le coût de fabrication."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Entrez le coût de fabrication. La valeur est imputée à l'actif à partir du compte où elle a été dépensée : Report à nouveau pour un exercice antérieur, ou charge de main-d'œuvre ou de matière de cet exercice."
+
 msgid "Entered At Receipt"
 msgstr "Saisi à la réception"
 
@@ -10270,6 +10288,9 @@ msgstr "Les IDs et descriptions sont générés pour les matières premières."
 
 msgid "If"
 msgstr "Si"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "Si l'amortissement a déjà été exécuté, le prochain calcul rattrape les mois qu'un actif linéaire a amortis à l'ancien coût."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Si cela ne peut pas attendre le prochain appel, les responsables des deux côtés décident."
@@ -13229,6 +13250,9 @@ msgstr "Aucune condition ne doit correspondre"
 msgid "No conversion is required"
 msgstr "Aucune conversion n'est requise"
 
+msgid "No cost"
+msgstr "Aucun coût"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "Aucun coût n'a été enregistré pour cet actif pour le moment."
 
@@ -13945,6 +13969,9 @@ msgstr "Off — géré en dehors de la synchronisation"
 
 msgid "Off — released revisions stay editable"
 msgstr "Désactivé — les révisions publiées restent modifiables"
+
+msgid "Offset Account"
+msgstr "Compte de contrepartie"
 
 msgid "ok"
 msgstr "ok"
@@ -16550,6 +16577,13 @@ msgstr "Enregistrements"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Les enregistrements et les écritures comptabilisées sont envoyés à et reçus de ce fournisseur."
 
+msgid "Recost"
+msgstr "Réévaluer le coût"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "Réévaluer le coût {0}"
+
 msgid "Recovery Period"
 msgstr "Enregistrer"
 
@@ -18709,6 +18743,12 @@ msgstr "Définir la version {0} comme version active ?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Définissez votre emplacement par défaut dans les paramètres de profil pour sélectionner une unité de stockage."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Définit le coût auquel cette unité est portée en stocks."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Définit le coût auquel cette unité est portée en stocks. La différence est imputée entre les stocks et le compte dont le coût a été prélevé : Report à nouveau pour un exercice antérieur, ou charge de main-d'œuvre ou de matière de cet exercice."
+
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -19204,6 +19244,9 @@ msgstr "Certains enregistrements ne reviendront pas. Tapez <0>{CONFIRM_WORD}</0>
 
 msgid "Some Shifts"
 msgstr "Certaines équipes"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Quelqu'un qui peut mettre à jour la comptabilité doit entrer le coût de fabrication avant qu'il puisse être capitalisé."
 
 msgid "Something went wrong. Please try again."
 msgstr "Quelque chose s'est mal passé. Veuillez réessayer."
@@ -20327,9 +20370,6 @@ msgstr "L'enregistrement d'ajout seul de tout mouvement de stock; le stock dispo
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "L'actif passe dans sa classe en service et commence à se déprécier à partir de la date de mise en service."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "L'immobilisation n'aurait aucune valeur. Définissez un coût unitaire sur l'article, puis capitalisez-la."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "L'autorisation a été refusée dans Onshape. Enregistrez les paramètres d'intégration pour réessayer."

@@ -1986,6 +1986,15 @@ msgstr "Address line1"
 msgid "Address line2"
 msgstr "Address line2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+
+msgid "Adjust Cost"
+msgstr "Adjust Cost"
+
 msgid "Adjustment"
 msgstr "Adjustment"
 
@@ -5163,6 +5172,9 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
+msgid "Copied ID to clipboard"
+msgstr "Copied ID to clipboard"
+
 msgid "Copied link to clipboard"
 msgstr "Copied link to clipboard"
 
@@ -8312,6 +8324,12 @@ msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 
+msgid "Enter what it cost to make."
+msgstr "Enter what it cost to make."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+
 msgid "Entered At Receipt"
 msgstr "Entered At Receipt"
 
@@ -10270,6 +10288,9 @@ msgstr "IDs and descriptions are generated for raw materials."
 
 msgid "If"
 msgstr "If"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "If it can't wait for the next call, the leads on both sides decide."
@@ -13229,6 +13250,9 @@ msgstr "No condition may match"
 msgid "No conversion is required"
 msgstr "No conversion is required"
 
+msgid "No cost"
+msgstr "No cost"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "No cost has been recorded against this asset yet."
 
@@ -13945,6 +13969,9 @@ msgstr "Off — handled outside the sync"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
+
+msgid "Offset Account"
+msgstr "Offset Account"
 
 msgid "ok"
 msgstr "ok"
@@ -16550,6 +16577,13 @@ msgstr "Records"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Records and posted journals are being sent to and received from this provider."
 
+msgid "Recost"
+msgstr "Recost"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "Recost {0}"
+
 msgid "Recovery Period"
 msgstr "Recovery Period"
 
@@ -18709,6 +18743,12 @@ msgstr "Set Version {0} as Active Version?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Set your default location in profile settings to pick a storage unit."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Sets what this unit is carried at in inventory."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+
 msgid "Settings"
 msgstr "Settings"
 
@@ -19204,6 +19244,9 @@ msgstr "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 
 msgid "Some Shifts"
 msgstr "Some Shifts"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
@@ -20327,9 +20370,6 @@ msgstr "The append-only record of every stock movement; on-hand is the sum of it
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "The asset moves into its in-service class and starts depreciating from the in-service date."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "The authorization was refused in Onshape. Save the integration settings to try again."
