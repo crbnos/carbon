@@ -174,6 +174,16 @@ export const inventoryCountLineValidator = z.object({
   )
 });
 
+// Put a cost of the user's own on one serial unit in stock (FIFO / LIFO).
+export const serialUnitRecostValidator = z.object({
+  trackedEntityId: z.string().min(1, { message: "Unit is required" }),
+  unitCost: zfd.numeric(
+    z.number().min(0, { message: "Unit cost cannot be negative" })
+  ),
+  offsetAccountId: zfd.text(z.string().optional()),
+  postingDate: z.string().min(1, { message: "Posting date is required" })
+});
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),

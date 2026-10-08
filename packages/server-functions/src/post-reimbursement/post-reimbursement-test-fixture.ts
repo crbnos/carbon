@@ -11,7 +11,7 @@ import { connectLocalTestDatabase } from "../local-database-test-fixture";
 // suite actually exercises. They are pointed at one filler posting account so
 // the row can exist at all — the payable resolution only ever reads
 // `employeeReimbursementsPayableAccount` and `payablesAccount`.
-const FILLER_ACCOUNT_DEFAULTS = [
+export const FILLER_ACCOUNT_DEFAULTS = [
   "salesAccount",
   "salesDiscountAccount",
   "costOfGoodsSoldAccount",

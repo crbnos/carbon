@@ -1986,6 +1986,15 @@ msgstr "Adres satırı 1"
 msgid "Address line2"
 msgstr "Adres satırı 2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Varlığın hiçbir zaman yüklenmediği, örneğin maliyeti kaydedilmemiş bir iş emrinin İşçiliği ve malzemeleri gibi maliyetleri ekler."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Varlığın hiçbir zaman yüklenmediği, örneğin maliyeti kaydedilmemiş bir iş emrinin İşçiliği ve malzemeleri gibi maliyetleri ekler. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
+
+msgid "Adjust Cost"
+msgstr "Maliyeti Ayarla"
+
 msgid "Adjustment"
 msgstr "Düzeltme"
 
@@ -4399,9 +4408,6 @@ msgstr "Bir parti numarası seçin"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebilir bir işlem seçin."
 
-msgid "Choose a company"
-msgstr "Bir şirket seçin"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
@@ -5184,6 +5190,9 @@ msgstr "Dönüştürülüyor…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
+
+msgid "Copied ID to clipboard"
+msgstr "ID panoya kopyalandı"
 
 msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
@@ -8334,6 +8343,12 @@ msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
 
+msgid "Enter what it cost to make."
+msgstr "Üretim maliyetini girin."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Üretim maliyetini girin. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
+
 msgid "Entered At Receipt"
 msgstr "Alındığında Girildi"
 
@@ -9068,6 +9083,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
+
+msgid "Failed to plan job"
+msgstr "İş emrini planlama başarısız"
 
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
@@ -10289,6 +10307,9 @@ msgstr "Kimlikler ve açıklamalar hammadde için oluşturulur."
 
 msgid "If"
 msgstr "Eğer"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "Amortisman zaten çalıştıysa, sonraki çalıştırma Doğrusal bir varlığın eski maliyette harcadığı ayları yakalama yapar."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Eğer bir sonraki çağrıyı bekleyemezse, her iki tarafın da liderler karar verir."
@@ -13227,6 +13248,9 @@ msgstr "Çarpışmasız bir yol yok"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu ekleyin."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Aralıkta tamamlanmış İş emri yok"
 
@@ -13244,6 +13268,9 @@ msgstr "Hiçbir koşul eşleşemez"
 
 msgid "No conversion is required"
 msgstr "Dönüşüm gerekmiyor"
+
+msgid "No cost"
+msgstr "Maliyet yok"
 
 msgid "No cost has been recorded against this asset yet."
 msgstr "Bu varlık için henüz maliyet kaydı yapılmamıştır."
@@ -13852,9 +13879,6 @@ msgstr "Bugün çalışmıyor"
 msgid "Not yet"
 msgstr "Henüz değil"
 
-msgid "Not you?"
-msgstr "Sen siz misiniz?"
-
 msgid "Note"
 msgstr "Not"
 
@@ -13964,6 +13988,9 @@ msgstr "Kapalı — senkronizasyon dışında işlenir"
 
 msgid "Off — released revisions stay editable"
 msgstr "Kapalı — yayınlanan revizyonlar düzenlenebilir kalır"
+
+msgid "Offset Account"
+msgstr "Karşı Hesap"
 
 msgid "ok"
 msgstr "tamam"
@@ -14494,6 +14521,9 @@ msgstr "Sipariş Tarihi"
 
 msgid "Order Multiple"
 msgstr "Sipariş katı"
+
+msgid "Order Multiple:"
+msgstr "Sipariş katı:"
 
 msgid "Order Parts"
 msgstr "Parça Sipariş Et"
@@ -16566,6 +16596,13 @@ msgstr "Kayıtlar"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Kayıtlar ve muhasebeleştirilmiş muhasebe fişleri bu sağlayıcı ile gönderiliyor ve alınıyor."
 
+msgid "Recost"
+msgstr "Maliyeti Yeniden Hesapla"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "{0} için Maliyeti Yeniden Hesapla"
+
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
 
@@ -18167,6 +18204,9 @@ msgstr "Olayları ara…"
 msgid "Search fields..."
 msgstr "Alanları ara..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
 
@@ -18722,6 +18762,12 @@ msgstr "Sürüm {0}\"ü Aktif Sürüm Olarak Ayarla?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Bir depolama birimi seçmek için varsayılan konumunuzu profil ayarlarınızda belirleyin."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Bu öğenin envanterde muhasebeleştirildiği değeri ayarlar."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Bu öğenin envanterde muhasebeleştirildiği değeri ayarlar. Fark, envanter ile maliyetin harcandığı hesap arasında kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
+
 msgid "Settings"
 msgstr "Ayarlar"
 
@@ -19220,6 +19266,9 @@ msgstr "Bazı kayıtlar geri gelmeyecek. Devam etmek için <0>{CONFIRM_WORD}</0>
 
 msgid "Some Shifts"
 msgstr "Bazı Vardiyalar"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
@@ -20346,9 +20395,6 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Varlık, hizmet sınıfına geçer ve hizmet tarihinden itibaren amortismana tabi olmaya başlar."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "Varlık hiçbir değer taşımayacaktır. Stok kartında adet maliyeti belirleyin, ardından aktifleştirin."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Tekrar denemek için entegrasyon ayarlarını kaydedin."
@@ -22160,6 +22206,9 @@ msgstr "Tarafından tetiklendi"
 
 msgid "Triggers"
 msgstr "Tetikleyiciler"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Salı"

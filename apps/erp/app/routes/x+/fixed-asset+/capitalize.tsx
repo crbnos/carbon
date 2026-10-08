@@ -13,11 +13,13 @@ import { data, useLoaderData, useNavigate } from "react-router";
 import {
   fixedAssetCapitalizeValidator,
   getCapitalizationCost,
+  getDefaultAccounts,
   invokeAssetTransfer
 } from "~/modules/accounting";
 import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
 import { getTrackedEntity } from "~/modules/inventory";
 import { getItem } from "~/modules/items";
+import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -52,26 +54,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const [entity, item, capitalization, assetClasses, timeZone] =
-    await Promise.all([
-      getTrackedEntity(client, trackedEntityId),
-      getItem(client, itemId),
-      getCapitalizationCost(client, getDatabaseClient(), {
-        companyId,
-        userId,
-        trackedEntityId
-      }),
-      // A CIP class is a holding account, never a capitalization target.
-      // `getFixedAssetClassesList` does not select `isConstructionInProgress`,
-      // so the filter is applied here (same select as `x+/job+/new.tsx`).
-      client
-        .from("fixedAssetClass")
-        .select("id, name")
-        .eq("companyId", companyId)
-        .eq("isConstructionInProgress", false)
-        .order("name"),
-      getCompanyTimeZone(client, companyId)
-    ]);
+  const [
+    entity,
+    item,
+    capitalization,
+    assetClasses,
+    timeZone,
+    companySettings,
+    accountDefaults
+  ] = await Promise.all([
+    getTrackedEntity(client, trackedEntityId),
+    getItem(client, itemId),
+    getCapitalizationCost(client, getDatabaseClient(), {
+      companyId,
+      userId,
+      trackedEntityId
+    }),
+    // A CIP class is a holding account, never a capitalization target.
+    // `getFixedAssetClassesList` does not select `isConstructionInProgress`,
+    // so the filter is applied here (same select as `x+/job+/new.tsx`).
+    client
+      .from("fixedAssetClass")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("isConstructionInProgress", false)
+      .order("name"),
+    getCompanyTimeZone(client, companyId),
+    getCompanySettings(client, companyId),
+    getDefaultAccounts(client, companyId)
+  ]);
 
   if (
     entity.error ||
@@ -99,6 +110,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
+  const accountingEnabled =
+    (companySettings.data as { accountingEnabled?: boolean } | null)
+      ?.accountingEnabled ?? false;
+
   const classes = assetClasses.data ?? [];
   const rentalFleetClassId =
     classes.find((c) => c.name === RENTAL_FLEET_CLASS_NAME)?.id ?? "";
@@ -112,8 +127,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       locationId,
       storageUnitId: storageUnitId ?? "",
       transferDate: datetime.today(timeZone).toString(),
-      name: [item.data.name, serialNumber].filter(Boolean).join(" ")
+      name: [item.data.name, serialNumber].filter(Boolean).join(" "),
+      // Used only when the unit carries no cost: the value is booked from
+      // Retained Earnings unless the accountant picks the account it was
+      // spent from this year.
+      offsetAccountId: accountDefaults.data?.retainedEarningsAccount ?? ""
     },
+    accountingEnabled,
     assetClasses: classes,
     item: {
       readableId: item.data.readableIdWithRevision ?? item.data.readableId,
@@ -141,7 +161,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { storageUnitId, name, ...transfer } = validation.data;
+  const { storageUnitId, name, cost, offsetAccountId, ...transfer } =
+    validation.data;
 
   const result = await invokeAssetTransfer(client, getDatabaseClient(), {
     type: "capitalize",
@@ -149,7 +170,9 @@ export async function action({ request }: ActionFunctionArgs) {
     userId,
     ...transfer,
     storageUnitId: storageUnitId || null,
-    name: name || null
+    name: name || null,
+    cost: cost ?? null,
+    offsetAccountId: cost ? offsetAccountId || null : null
   });
 
   if (result.error) {
@@ -181,8 +204,14 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function CapitalizeFixedAssetRoute() {
-  const { initialValues, assetClasses, item, serialNumber, cost } =
-    useLoaderData<typeof loader>();
+  const {
+    initialValues,
+    assetClasses,
+    item,
+    serialNumber,
+    cost,
+    accountingEnabled
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
@@ -192,6 +221,7 @@ export default function CapitalizeFixedAssetRoute() {
       item={item}
       serialNumber={serialNumber}
       cost={cost}
+      accountingEnabled={accountingEnabled}
       onClose={() => navigate(-1)}
     />
   );

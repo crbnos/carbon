@@ -1986,6 +1986,15 @@ msgstr "地址行1"
 msgid "Address line2"
 msgstr "地址行2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "为资产添加未曾计入的成本，例如未记录任何成本的工单的人工和材料。"
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "为资产添加未曾计入的成本，例如未记录任何成本的工单的人工和材料。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
+
+msgid "Adjust Cost"
+msgstr "调整成本"
+
 msgid "Adjustment"
 msgstr "调整"
 
@@ -4399,9 +4408,6 @@ msgstr "选择批号"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
-msgid "Choose a company"
-msgstr "选择公司"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -5184,6 +5190,9 @@ msgstr "转换中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
+
+msgid "Copied ID to clipboard"
+msgstr "已复制ID到剪贴板"
 
 msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
@@ -8334,6 +8343,12 @@ msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和�
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
 
+msgid "Enter what it cost to make."
+msgstr "输入该资产的制造成本。"
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "输入该资产的制造成本。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
+
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
 
@@ -9068,6 +9083,9 @@ msgstr "加载跟踪实体失败"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
+
+msgid "Failed to plan job"
+msgstr "规划工单失败"
 
 msgid "Failed to record gauge"
 msgstr "未能记录量具"
@@ -10289,6 +10307,9 @@ msgstr "ID 和描述是为原材料生成的。"
 
 msgid "If"
 msgstr "如果"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "如果已执行过折旧，下次运行将补算直线法资产按原成本计提的折旧。"
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "如果不能等到下次通话，双方的负责人会做出决定。"
@@ -13227,6 +13248,9 @@ msgstr "没有无碰撞路径"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工单"
 
@@ -13244,6 +13268,9 @@ msgstr "没有条件可以匹配"
 
 msgid "No conversion is required"
 msgstr "不需要转换"
+
+msgid "No cost"
+msgstr "无成本"
 
 msgid "No cost has been recorded against this asset yet."
 msgstr "尚未针对此资产记录任何成本。"
@@ -13852,9 +13879,6 @@ msgstr "今天不工作"
 msgid "Not yet"
 msgstr "还未"
 
-msgid "Not you?"
-msgstr "不是你？"
-
 msgid "Note"
 msgstr "备注"
 
@@ -13964,6 +13988,9 @@ msgstr "关闭 — 在同步外处理"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已下达修订版保持可编辑"
+
+msgid "Offset Account"
+msgstr "抵消账户"
 
 msgid "ok"
 msgstr "确定"
@@ -14494,6 +14521,9 @@ msgstr "订单日期"
 
 msgid "Order Multiple"
 msgstr "订购倍数"
+
+msgid "Order Multiple:"
+msgstr "订购倍数："
 
 msgid "Order Parts"
 msgstr "订购零件"
@@ -16566,6 +16596,13 @@ msgstr "记录"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "记录和已过账凭证正在从此提供商发送和接收。"
 
+msgid "Recost"
+msgstr "重新核算成本"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "重新核算{0}的成本"
+
 msgid "Recovery Period"
 msgstr "注册"
 
@@ -18167,6 +18204,9 @@ msgstr "搜索事件…"
 msgid "Search fields..."
 msgstr "搜索字段..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
 
@@ -18722,6 +18762,12 @@ msgstr "将版本 {0} 设置为启用版本？"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "在个人资料设置中设置默认地点以选择存储单元。"
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "设置此项在库存中的账面价值。"
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "设置此项在库存中的账面价值。差异将在库存和原支出账户之间记账：上年度的未分配利润或本年度的人工、材料费用。"
+
 msgid "Settings"
 msgstr "设置"
 
@@ -19220,6 +19266,9 @@ msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
 
 msgid "Some Shifts"
 msgstr "某些班次"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "能够更新会计的人员必须先输入该资产的制造成本，才能将其资本化。"
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
@@ -20346,9 +20395,6 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "资产进入其在用资产类别，并从在用日期开始折旧。"
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "该资产价值为零。在该物料上设置件成本，然后将其资本化。"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "授权在 Onshape 中被拒绝。保存集成设置以重试。"
@@ -22160,6 +22206,9 @@ msgstr "触发者"
 
 msgid "Triggers"
 msgstr "触发器"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "星期二"

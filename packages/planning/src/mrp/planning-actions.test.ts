@@ -19,6 +19,7 @@ import {
   firstNeedPeriodByOrder,
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
+  isOrderFrozen,
   keyPeriodFor,
   naturalKey,
   projectionsWithExpedites,
@@ -631,6 +632,166 @@ describe("deriveChangeActions", () => {
   });
 });
 
+describe("order-quantity rules on change actions", () => {
+  const jobDecrease = (
+    need: number,
+    quantity: number,
+    orderRules: { minimum: number; multiples: number[] }
+  ) =>
+    deriveChangeActions({
+      ...base,
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p2", startDate: "2026-10-12", quantity: need }
+      ],
+      openOrders: [
+        {
+          jobId: "job-1",
+          quantity,
+          dueDate: "2026-10-12", // on time → no date action
+          requiresManualAction: false
+        }
+      ],
+      orderRules
+    });
+
+  it("decreases a job to a whole order multiple, not the bare requirement", () => {
+    const actions = jobDecrease(37, 50, { minimum: 0, multiples: [10] });
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      type: "Decrease",
+      suggestedQuantity: 40
+    });
+  });
+
+  it("raises nothing when the order is already the smallest multiple that covers", () => {
+    expect(jobDecrease(37, 40, { minimum: 0, multiples: [10] })).toEqual([]);
+  });
+
+  it("keeps a Fixed Reorder Quantity order on whole reorder quantities", () => {
+    const actions = jobDecrease(150, 300, { minimum: 0, multiples: [100] });
+    expect(actions[0]).toMatchObject({
+      type: "Decrease",
+      suggestedQuantity: 200
+    });
+  });
+
+  it("never decreases below the minimum order quantity", () => {
+    const actions = jobDecrease(12, 50, { minimum: 25, multiples: [] });
+    expect(actions[0]).toMatchObject({
+      type: "Decrease",
+      suggestedQuantity: 25
+    });
+  });
+});
+
+// An order whose due date less lead time is before today is already being
+// made or shipped. HR-TORSO: an overdue job J000438 (111) got "Increase to
+// 131" beside a Make for the same week, and the planner read the two as
+// ordering twice. Nothing can change such an order in time.
+describe("frozen orders (due date less lead time before today)", () => {
+  // TODAY is 2026-09-11
+  it("is frozen when overdue, or due sooner than a lead time away", () => {
+    expect(isOrderFrozen({ dueDate: "2026-09-04" }, TODAY)).toBe(true);
+    expect(isOrderFrozen({ dueDate: "2026-09-11" }, TODAY)).toBe(false);
+    expect(isOrderFrozen({ dueDate: "2026-09-15" }, TODAY, 7)).toBe(true);
+    expect(isOrderFrozen({ dueDate: "2026-09-18" }, TODAY, 7)).toBe(false);
+  });
+
+  const overdueJob = {
+    jobId: "job-1",
+    quantity: 111,
+    dueDate: "2026-09-04",
+    requiresManualAction: true
+  };
+
+  it("never increases an overdue order — the shortfall stays a new order", () => {
+    const make = {
+      type: "Make" as const,
+      periodId: "p1",
+      suggestedQuantity: 20,
+      suggestedDate: "2026-09-11",
+      horizonDate: "2026-09-11",
+      latestOrderDate: "2026-09-04",
+      isASAP: true,
+      purchaseOrderLineId: null,
+      jobId: null,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: "Demand-Based Reorder",
+      reason: null,
+      triggerValues: null
+    };
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [make],
+      openOrders: [overdueJob],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      leadTimeDays: 7
+    });
+    expect(action).toMatchObject({ type: "Make", suggestedQuantity: 20 });
+  });
+
+  it("never decreases a frozen order", () => {
+    expect(
+      deriveChangeActions({
+        ...base,
+        onHand: 0,
+        demandPeriods: [
+          { periodId: "p1", startDate: "2026-10-05", quantity: 30 }
+        ],
+        openOrders: [overdueJob],
+        leadTimeDays: 7
+      }).filter((action) => action.type === "Decrease")
+    ).toEqual([]);
+  });
+
+  it("never expedites a frozen order, and the projection leaves it where it lands", () => {
+    // needed in p1 (Oct 5), lands in p3 (Oct 19); a 60-day lead time means
+    // it is already in flight
+    const late = {
+      purchaseOrderLineId: "pol-1",
+      quantity: 10,
+      dueDate: "2026-10-19",
+      requiresManualAction: false
+    };
+    const coverage = {
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p1", startDate: "2026-10-05", quantity: 10 }
+      ],
+      openOrders: [late],
+      periods: PERIODS,
+      policyFloor: 0
+    };
+    expect(
+      deriveChangeActions({
+        ...coverage,
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY,
+        leadTimeDays: 60
+      })
+    ).toEqual([]);
+    expect(
+      firstNeedPeriodByOrder(coverage, {
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY,
+        leadTimeDays: 60
+      }).has("pol-1")
+    ).toBe(false);
+    // with time to change it, it is expedited as before
+    expect(
+      deriveChangeActions({
+        ...coverage,
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY,
+        leadTimeDays: 7
+      })[0]
+    ).toMatchObject({ type: "Expedite" });
+  });
+});
+
 describe("convertOrdersToIncreases", () => {
   const orderCandidate = {
     type: "Order" as const,
@@ -726,6 +887,79 @@ describe("convertOrdersToIncreases", () => {
       todayDate: TODAY
     });
     expect(action?.type).toBe("Order");
+  });
+
+  it("never grows a job past the batch size — the batch stays a new job", () => {
+    const make = {
+      ...orderCandidate,
+      type: "Make" as const,
+      supplierId: null,
+      suggestedQuantity: 50
+    };
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [make],
+      openOrders: [
+        {
+          jobId: "job-1",
+          quantity: 50,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      maximumPerOrder: 50
+    });
+    expect(action).toMatchObject({ type: "Make", suggestedQuantity: 50 });
+  });
+
+  it("still folds a suggestion the open order has room for", () => {
+    const make = {
+      ...orderCandidate,
+      type: "Make" as const,
+      supplierId: null,
+      suggestedQuantity: 20
+    };
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [make],
+      openOrders: [
+        {
+          jobId: "job-1",
+          quantity: 30,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      maximumPerOrder: 50
+    });
+    expect(action).toMatchObject({
+      type: "Increase",
+      jobId: "job-1",
+      suggestedQuantity: 50
+    });
+  });
+
+  it("never grows a PO line past the maximum order quantity", () => {
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [orderCandidate],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      maximumPerOrder: 12
+    });
+    expect(action).toMatchObject({ type: "Order", suggestedQuantity: 5 });
   });
 
   it("never folds a Make suggestion into a purchase order", () => {

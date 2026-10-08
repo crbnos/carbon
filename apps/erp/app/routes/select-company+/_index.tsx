@@ -5,14 +5,28 @@
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Avatar, cn, ScrollArea, useMode } from "@carbon/react";
+import {
+  Avatar,
+  Badge,
+  Button,
+  cn,
+  Heading,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  useMode
+} from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
-import { LuChevronRight, LuLoaderCircle } from "react-icons/lu";
+import { useMemo, useState } from "react";
+import {
+  LuArrowRight,
+  LuLoaderCircle,
+  LuLogOut,
+  LuSearch
+} from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Form, useLoaderData, useNavigation } from "react-router";
-import type { Company } from "~/modules/settings";
 import { getEmployeeCompanies } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -47,43 +61,41 @@ export default function SelectCompany() {
   const navigation = useNavigation();
   const { companies, redirectTo } = useLoaderData<typeof loader>();
   const isBusy = navigation.state !== "idle";
+  const [query, setQuery] = useState("");
 
-  const companiesLabel = t`Companies`;
-
-  const groups = useMemo(() => {
-    // Group by company group, then fold any single-company group into the
-    // generic "Companies" bucket — mirrors the top-bar CompanySwitcher.
-    const byGroup = new Map<string, { name: string; companies: Company[] }>();
+  // A group name only tells the companies apart when more than one of the
+  // user's companies shares it — mirrors the top-bar CompanySwitcher.
+  const sharedGroupNames = useMemo(() => {
+    const counts = new Map<string, number>();
     for (const c of companies) {
-      const name = c.companyGroupName ?? companiesLabel;
-      const existing = byGroup.get(name);
-      if (existing) existing.companies.push(c);
-      else byGroup.set(name, { name, companies: [c] });
+      if (!c.companyGroupName) continue;
+      counts.set(c.companyGroupName, (counts.get(c.companyGroupName) ?? 0) + 1);
     }
+    return new Set(
+      Array.from(counts)
+        .filter(([, count]) => count > 1)
+        .map(([name]) => name)
+    );
+  }, [companies]);
 
-    const result = new Map<string, { name: string; companies: Company[] }>();
-    for (const [name, group] of byGroup) {
-      const target =
-        group.companies.length === 1 && name !== companiesLabel
-          ? companiesLabel
-          : name;
-      const existing = result.get(target);
-      if (existing) existing.companies.push(...group.companies);
-      else
-        result.set(target, { name: target, companies: [...group.companies] });
-    }
-
-    return Array.from(result.values());
-  }, [companies, companiesLabel]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((c) =>
+      [c.name, c.companyGroupName, c.employeeType].some((value) =>
+        value?.toLowerCase().includes(q)
+      )
+    );
+  }, [companies, query]);
 
   return (
-    <div className="w-full max-w-[26rem] overflow-hidden rounded-lg bg-card text-card-foreground shadow-lg ring-1 ring-black/5 antialiased dark:ring-white/10">
-      <div className="flex flex-col items-center gap-4 px-8 pb-6 pt-9">
+    <div className="flex min-h-screen w-full flex-col">
+      <header className="flex h-[49px] shrink-0 items-center justify-between border-b border-border px-4">
         <img
           src={CONTROLLED_ENVIRONMENT ? "/flag.png" : "/carbon-mark-light.svg"}
           alt="Carbon Logo"
           className={cn(
-            "w-10 dark:hidden",
+            "w-6 dark:hidden",
             CONTROLLED_ENVIRONMENT && "grayscale"
           )}
         />
@@ -91,101 +103,111 @@ export default function SelectCompany() {
           src={CONTROLLED_ENVIRONMENT ? "/flag.png" : "/carbon-mark-dark.svg"}
           alt="Carbon Logo"
           className={cn(
-            "hidden w-10 dark:block",
+            "hidden w-6 dark:block",
             CONTROLLED_ENVIRONMENT && "grayscale"
           )}
         />
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-lg font-semibold tracking-tight">
-            <Trans>Choose a company</Trans>
-          </h1>
+        <Form method="post" action={path.to.logout}>
+          <Button
+            type="submit"
+            variant="ghost"
+            leftIcon={<LuLogOut />}
+            isDisabled={navigation.state !== "idle"}
+            isLoading={navigation.formAction === path.to.logout}
+          >
+            <Trans>Sign Out</Trans>
+          </Button>
+        </Form>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10 sm:py-14">
+        <div className="flex flex-col gap-1">
+          <Heading as="h1" size="h3">
+            <Trans>Companies</Trans>
+          </Heading>
           <p className="text-pretty text-sm text-muted-foreground">
             <Trans>
               You belong to more than one company. Pick where to work.
             </Trans>
           </p>
         </div>
-      </div>
 
-      <ScrollArea className="max-h-[24rem] px-3">
-        <div className="flex flex-col gap-1 pb-2">
-          {groups.map((group, index) => {
-            const showLabel =
-              group.name !== companiesLabel && group.companies.length > 1;
-            return (
-              <div
-                key={group.name}
-                className={cn("flex flex-col", index > 0 && "pt-2")}
-              >
-                {showLabel && (
-                  <div className="px-3 pb-1 pt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    {group.name}
-                  </div>
-                )}
-                {group.companies.map((c) => {
-                  const logo =
-                    mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                  const switchAction = path.to.companySwitch(c.companyId!);
-                  const isSubmitting =
-                    isBusy && navigation.formAction === switchAction;
-                  return (
-                    <Form key={c.companyId} method="post" action={switchAction}>
-                      {redirectTo && (
-                        <input
-                          type="hidden"
-                          name="redirectTo"
-                          value={redirectTo}
-                        />
+        <InputGroup className="w-full sm:w-72">
+          <InputLeftElement>
+            <LuSearch className="h-3.5 w-3.5 text-muted-foreground" />
+          </InputLeftElement>
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t`Search for a company`}
+            aria-label={t`Search for a company`}
+            className="text-sm"
+          />
+        </InputGroup>
+
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-border px-6 py-12 text-center">
+            <p className="text-sm font-medium">
+              <Trans>No companies match "{query}"</Trans>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <Trans>Try a different name.</Trans>
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((c) => {
+              const logo = mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+              const switchAction = path.to.companySwitch(c.companyId!);
+              const isSubmitting =
+                isBusy && navigation.formAction === switchAction;
+              const groupName =
+                c.companyGroupName && sharedGroupNames.has(c.companyGroupName)
+                  ? c.companyGroupName
+                  : null;
+              return (
+                <Form key={c.companyId} method="post" action={switchAction}>
+                  {redirectTo && (
+                    <input type="hidden" name="redirectTo" value={redirectTo} />
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isBusy}
+                    className="group flex h-full min-h-40 w-full flex-col gap-4 rounded-lg border border-border bg-card p-5 text-left text-card-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60"
+                  >
+                    <div className="flex w-full items-start justify-between gap-3">
+                      <Avatar
+                        size="md"
+                        name={c.name ?? undefined}
+                        src={logo ?? undefined}
+                        className="shrink-0 outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10"
+                      />
+                      {isSubmitting ? (
+                        <LuLoaderCircle className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                      ) : (
+                        <LuArrowRight className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
                       )}
-                      <button
-                        type="submit"
-                        disabled={isBusy}
-                        className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
-                      >
-                        <Avatar
-                          size="md"
-                          name={c.name ?? undefined}
-                          src={logo ?? undefined}
-                          className="shrink-0 outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10"
-                        />
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <p className="truncate text-sm font-medium">
-                            {c.name}
-                          </p>
-                          {c.employeeType && (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {c.employeeType}
-                            </p>
-                          )}
-                        </div>
-                        {isSubmitting ? (
-                          <LuLoaderCircle className="size-4 shrink-0 animate-spin text-muted-foreground" />
-                        ) : (
-                          <LuChevronRight className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
-                        )}
-                      </button>
-                    </Form>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
-
-      <div className="border-t border-black/5 px-8 py-4 dark:border-white/10">
-        <Form method="post" action={path.to.logout}>
-          <p className="text-center text-xs text-muted-foreground">
-            <Trans>Not you?</Trans>{" "}
-            <button
-              type="submit"
-              className="font-medium text-foreground hover:underline"
-            >
-              <Trans>Sign Out</Trans>
-            </button>
-          </p>
-        </Form>
-      </div>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <p className="truncate text-sm font-medium">{c.name}</p>
+                      {c.employeeType && (
+                        <p className="truncate text-sm text-muted-foreground">
+                          {c.employeeType}
+                        </p>
+                      )}
+                    </div>
+                    {groupName && (
+                      <div className="mt-auto flex">
+                        <Badge variant="secondary">{groupName}</Badge>
+                      </div>
+                    )}
+                  </button>
+                </Form>
+              );
+            })}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

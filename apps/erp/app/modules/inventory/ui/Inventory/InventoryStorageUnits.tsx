@@ -11,6 +11,7 @@ import {
   ValidatedForm
 } from "@carbon/form";
 import { LabelDownloadModal } from "@carbon/printing/ui";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   Card,
@@ -18,8 +19,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Copy,
   cn,
+  copyToClipboard,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   InputGroup,
@@ -35,7 +41,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { groupBy, round } from "@carbon/utils";
+import { groupBy, INPUT_FORMAT, round } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -45,6 +51,8 @@ import {
   LuCheck,
   LuChevronDown,
   LuChevronRight,
+  LuCoins,
+  LuEllipsisVertical,
   LuPencil,
   LuPrinter,
   LuQrCode,
@@ -53,18 +61,37 @@ import {
 import { Link, Outlet, useFetcher } from "react-router";
 import type { z } from "zod";
 import { DateTime } from "~/components";
-import { Input, Location, Select, TextArea } from "~/components/Form";
+import {
+  Account,
+  Input,
+  Location,
+  Number as NumberInput,
+  Select,
+  TextArea
+} from "~/components/Form";
 import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, usePrinting, useQuantityFormatter } from "~/hooks";
+import {
+  useCompanyToday,
+  useCurrencyDecimals,
+  usePermissions,
+  usePrinting,
+  useQuantityFormatter,
+  useSettings,
+  useUser
+} from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type {
   ItemStorageUnitQuantities,
   itemTrackingTypes,
   pickMethodValidator
 } from "~/modules/items";
 import { path } from "~/utils/path";
-import { inventoryAdjustmentValidator } from "../../inventory.models";
+import {
+  inventoryAdjustmentValidator,
+  serialUnitRecostValidator
+} from "../../inventory.models";
 
 type InventoryStorageUnitsProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
@@ -290,6 +317,41 @@ const InventoryStorageUnits = ({
   // Goods at its carrying cost). The capitalize route reads the unit from the
   // search params; the posting itself needs `create: accounting`.
   const canCapitalize = permissions.can("create", "accounting");
+
+  // What each serial unit would leave stock at — the cost a shipment or a
+  // capitalization would relieve. Inventory value is accounting data, so it
+  // is only read for someone who can view accounting.
+  const canViewCost = isSerial && permissions.can("view", "accounting");
+  const { data: serialCosts } = useLoaderQuery<{
+    costs: Record<string, number>;
+    costingMethod: string | null;
+    retainedEarningsAccountId: string | null;
+  }>(
+    canViewCost
+      ? path.to.api.itemSerialCosts(pickMethod.itemId, locationId)
+      : null
+  );
+  const costFormatter = useCurrencyFormatter({ rate: true });
+
+  // Recosting one unit puts a number of the user's own on the books, so it
+  // takes accounting update; only a FIFO / LIFO unit carries its own layer.
+  const canRecost =
+    canViewCost &&
+    permissions.can("update", "accounting") &&
+    (serialCosts?.costingMethod === "FIFO" ||
+      serialCosts?.costingMethod === "LIFO");
+  const { accountingEnabled } = useSettings();
+  const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
+  const companyToday = useCompanyToday();
+  const retainedEarningsAccountId = serialCosts?.retainedEarningsAccountId;
+  const [recostItem, setRecostItem] =
+    useState<ItemStorageUnitQuantities | null>(null);
+  const recostFetcher = useAction({
+    onSuccess: () => setRecostItem(null)
+  });
+  const unitCostOf = (item: ItemStorageUnitQuantities) =>
+    item.trackedEntityId ? serialCosts?.costs[item.trackedEntityId] : undefined;
   const capitalizeHref = (item: ItemStorageUnitQuantities) => {
     const params = new URLSearchParams({
       itemId: pickMethod.itemId,
@@ -350,6 +412,22 @@ const InventoryStorageUnits = ({
     </span>
   );
 
+  // A unit carried at nothing is the one to recost before it ships or is
+  // capitalized, so it reads amber.
+  const renderUnitCost = (item: ItemStorageUnitQuantities) => {
+    const cost = unitCostOf(item);
+    if (cost === undefined) return null;
+    return cost > 0 ? (
+      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+        {costFormatter.format(cost)}
+      </span>
+    ) : (
+      <span className="shrink-0 text-xs text-amber-600 dark:text-amber-400">
+        <Trans>No cost</Trans>
+      </span>
+    );
+  };
+
   const renderTracking = (
     item: ItemStorageUnitQuantities,
     expiration: string | null | undefined
@@ -364,6 +442,7 @@ const InventoryStorageUnits = ({
           <Trans>Untracked</Trans>
         </span>
       )}
+      {renderUnitCost(item)}
       {expiration && (
         <span
           className={cn("shrink-0 text-xs", expirationClassName(expiration))}
@@ -376,55 +455,73 @@ const InventoryStorageUnits = ({
     </span>
   );
 
+  // One trigger per row; the actions live in its menu.
   const renderActions = (item: ItemStorageUnitQuantities) => (
     <HStack
       spacing={0}
-      className="justify-end opacity-0 transition-opacity duration-150 ease-out group-hover/row:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+      className="justify-end opacity-0 transition-opacity duration-150 ease-out group-hover/row:opacity-100 focus-within:opacity-100 has-[[data-state=open]]:opacity-100 [@media(hover:none)]:opacity-100"
     >
-      {item.trackedEntityId && (
-        <Copy
-          icon={<LuQrCode />}
-          text={item.trackedEntityId}
-          withTextInTooltip
-        />
-      )}
-      {item.trackedEntityId && (
-        <IconButton
-          aria-label={t`Print Label`}
-          title={t`Print Label`}
-          variant="ghost"
-          size="sm"
-          icon={<LuPrinter />}
-          onClick={() => handlePrintLabel(item.trackedEntityId!)}
-        />
-      )}
-      {/* A fixed asset is one serialized unit; a batch row is many. */}
-      {item.trackedEntityId && isSerial && canCapitalize && (
-        <Link to={capitalizeHref(item)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <IconButton
-            aria-label={t`Capitalize as Fixed Asset`}
-            title={t`Capitalize as Fixed Asset`}
+            aria-label={t`Actions`}
             variant="ghost"
             size="sm"
-            icon={<LuBuilding2 />}
+            icon={<LuEllipsisVertical />}
           />
-        </Link>
-      )}
-      <IconButton
-        aria-label={t`Update Quantity`}
-        title={t`Update Quantity`}
-        variant="ghost"
-        size="sm"
-        icon={<LuPencil />}
-        onClick={() =>
-          openAdjustmentModal(
-            item.storageUnitId,
-            item.trackedEntityId,
-            item.readableId,
-            item.quantity
-          )
-        }
-      />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {item.trackedEntityId && (
+            <DropdownMenuItem
+              onSelect={async () => {
+                // Only confirm a copy that happened.
+                if (await copyToClipboard(item.trackedEntityId!)) {
+                  toast.success(t`Copied ID to clipboard`);
+                }
+              }}
+            >
+              <DropdownMenuIcon icon={<LuQrCode />} />
+              <Trans>Copy ID</Trans>
+            </DropdownMenuItem>
+          )}
+          {item.trackedEntityId && (
+            <DropdownMenuItem
+              onSelect={() => handlePrintLabel(item.trackedEntityId!)}
+            >
+              <DropdownMenuIcon icon={<LuPrinter />} />
+              <Trans>Print Label</Trans>
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onSelect={() =>
+              openAdjustmentModal(
+                item.storageUnitId,
+                item.trackedEntityId,
+                item.readableId,
+                item.quantity
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuPencil />} />
+            <Trans>Update Quantity</Trans>
+          </DropdownMenuItem>
+          {item.trackedEntityId && canRecost && (
+            <DropdownMenuItem onSelect={() => setRecostItem(item)}>
+              <DropdownMenuIcon icon={<LuCoins />} />
+              <Trans>Recost</Trans>
+            </DropdownMenuItem>
+          )}
+          {/* A fixed asset is one serialized unit; a batch row is many. */}
+          {item.trackedEntityId && isSerial && canCapitalize && (
+            <DropdownMenuItem asChild>
+              <Link to={capitalizeHref(item)}>
+                <DropdownMenuIcon icon={<LuBuilding2 />} />
+                <Trans>Capitalize as Fixed Asset</Trans>
+              </Link>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </HStack>
   );
 
@@ -586,6 +683,75 @@ const InventoryStorageUnits = ({
           </div>
         </CardContent>
       </Card>
+      {recostItem?.trackedEntityId && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setRecostItem(null);
+          }}
+        >
+          <ModalContent>
+            <ValidatedForm
+              method="post"
+              validator={serialUnitRecostValidator}
+              action={path.to.inventoryItemRecost(pickMethod.itemId)}
+              fetcher={recostFetcher}
+              defaultValues={{
+                trackedEntityId: recostItem.trackedEntityId,
+                unitCost: unitCostOf(recostItem) ?? 0,
+                offsetAccountId: retainedEarningsAccountId ?? "",
+                postingDate: companyToday
+              }}
+            >
+              <ModalHeader>
+                <ModalTitle>
+                  <Trans>Recost {recostItem.readableId ?? ""}</Trans>
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <Hidden name="trackedEntityId" />
+                <VStack spacing={4}>
+                  <p className="text-sm text-muted-foreground">
+                    {accountingEnabled ? (
+                      <Trans>
+                        Sets what this unit is carried at in inventory. The
+                        difference is booked between inventory and the account
+                        the cost was spent from: Retained Earnings for an
+                        earlier year, or this year's labor or material expense.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Sets what this unit is carried at in inventory.
+                      </Trans>
+                    )}
+                  </p>
+                  <NumberInput
+                    name="unitCost"
+                    label={t`Unit Cost`}
+                    minValue={0}
+                    formatOptions={INPUT_FORMAT.rate(
+                      company.baseCurrencyCode,
+                      currencyDecimals
+                    )}
+                  />
+                  {accountingEnabled && (
+                    <Account name="offsetAccountId" label={t`Offset Account`} />
+                  )}
+                  <DatePicker name="postingDate" label={t`Posting Date`} />
+                </VStack>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" onClick={() => setRecostItem(null)}>
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Submit>
+                  <Trans>Recost</Trans>
+                </Submit>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
       {adjustmentModal.isOpen && (
         <Modal
           open

@@ -1098,7 +1098,22 @@ export const fixedAssetCapitalizeValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   storageUnitId: zfd.text(z.string().optional()),
   transferDate: z.string().min(1, { message: "Transfer date is required" }),
-  name: zfd.text(z.string().optional())
+  name: zfd.text(z.string().optional()),
+  // Only for a unit inventory carries at nothing: what it cost, and the
+  // account that value was booked to when it was spent.
+  cost: zfd.numeric(
+    z.number().positive({ message: "Cost must be more than zero" }).optional()
+  ),
+  offsetAccountId: zfd.text(z.string().optional())
+});
+
+export const fixedAssetAdjustCostValidator = z.object({
+  amount: zfd.numeric(
+    z.number().positive({ message: "The increase must be more than zero" })
+  ),
+  offsetAccountId: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  transferDate: z.string().min(1, { message: "Transfer date is required" })
 });
 
 export const fixedAssetReturnToInventoryValidator = z.object({

@@ -6,6 +6,7 @@ import { expect, it } from "vitest";
 
 import {
   buildCapitalizationLines,
+  buildOffsetLines,
   buildReturnToInventoryLines
 } from "./asset-transfer.ts";
 
@@ -130,4 +131,62 @@ it("return to inventory rejects negative or non-finite inputs", () => {
       returnToInventory(42_000, Number.NEGATIVE_INFINITY)
     )
   ).toThrow("finite");
+});
+
+it("an entered cost credits an Equity offset as a positive natural balance", () => {
+  // Retained Earnings is Equity: a credit there is stored +x, not −x.
+  expect(
+    buildCapitalizationLines({
+      ...capitalization(4200),
+      creditAccountId: "acct_retained_earnings",
+      creditDescription: "Capitalized Cost",
+      creditAccountType: "equity"
+    })
+  ).toEqual([
+    {
+      accountId: "acct_fixed_asset",
+      description: "Fixed Asset Acquisition",
+      amount: 4200
+    },
+    {
+      accountId: "acct_retained_earnings",
+      description: "Capitalized Cost",
+      amount: 4200
+    }
+  ]);
+});
+
+it("an Expense offset is credited as a negative natural balance", () => {
+  const [, offset] = buildCapitalizationLines({
+    ...capitalization(4200),
+    creditAccountId: "acct_labor",
+    creditDescription: "Capitalized Cost",
+    creditAccountType: "expense"
+  });
+  expect(offset?.amount).toEqual(-4200);
+});
+
+it("a negative offset amount lowers the asset and debits the offset", () => {
+  expect(
+    buildOffsetLines({
+      amount: -25,
+      accountId: "acct_finished_goods",
+      description: "Finished Goods",
+      offsetAccountId: "acct_retained_earnings",
+      offsetDescription: "Recost",
+      offsetAccountType: "equity",
+      label: "Recost journal"
+    }).map((line) => line.amount)
+  ).toEqual([-25, -25]);
+  expect(() =>
+    buildOffsetLines({
+      amount: 0,
+      accountId: "a",
+      description: "a",
+      offsetAccountId: "b",
+      offsetDescription: "b",
+      offsetAccountType: "equity",
+      label: "Recost journal"
+    })
+  ).toThrow("nothing to post");
 });
