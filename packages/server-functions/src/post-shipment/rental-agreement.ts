@@ -8,6 +8,7 @@
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
+import type { Transaction } from "kysely";
 import { InvalidInputError, NotFoundError } from "../errors";
 import {
   insertUnitActivity,
@@ -15,6 +16,7 @@ import {
 } from "../post-rental-agreement/agreement";
 import {
   futureDeliveryError,
+  rentalShipmentVoidBlocker,
   unitLabel
 } from "../post-rental-agreement/validators";
 
@@ -72,41 +74,11 @@ export async function postRentalShipment(
       );
     }
 
-    const lineIds = assetLines.map((line) => line.rentalAgreementLineId!);
-    const lines = await trx
-      .selectFrom("rentalAgreementLine")
-      .select([
-        "id",
-        "rentalAgreementId",
-        "status",
-        "fixedAssetId",
-        "trackedEntityId"
-      ])
-      .where("id", "in", lineIds)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .execute();
-    const linesById = new Map(lines.map((line) => [line.id, line]));
-
-    const assetIds = lines
-      .map((line) => line.fixedAssetId)
-      .filter((id): id is string => id !== null);
-    const assets =
-      assetIds.length === 0
-        ? []
-        : await trx
-            .selectFrom("fixedAsset")
-            .select([
-              "id",
-              "fixedAssetId",
-              "name",
-              "outOfServiceSince",
-              "outOfServiceReason"
-            ])
-            .where("id", "in", assetIds)
-            .where("companyId", "=", companyId)
-            .execute();
-    const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+    const { linesById, assetsById } = await lockRentalUnits(
+      trx,
+      companyId,
+      assetLines.map((line) => line.rentalAgreementLineId!)
+    );
 
     const units = assetLines.map((assetLine) => {
       const lineId = assetLine.rentalAgreementLineId!;
@@ -172,4 +144,192 @@ export async function postRentalShipment(
       .where("companyId", "=", companyId)
       .execute();
   });
+}
+
+/** Voids a Posted rental shipment: its units go back to Pending, as if never
+ *  delivered. Refused once a unit has moved on or its accrued rent is in a
+ *  posted or draft recognition run. */
+export async function voidRentalShipment(
+  db: Kysely<KyselyDatabase>,
+  args: { shipmentId: string; companyId: string; userId: string }
+): Promise<void> {
+  const { shipmentId, companyId, userId } = args;
+
+  await db.transaction().execute(async (trx) => {
+    const shipment = await trx
+      .selectFrom("shipment")
+      .select(["id", "shipmentId", "sourceDocumentId"])
+      .where("id", "=", shipmentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!shipment) throw new NotFoundError("Shipment not found");
+
+    const assetLines = await trx
+      .selectFrom("shipmentFixedAssetLine")
+      .select(["id", "rentalAgreementLineId"])
+      .where("shipmentId", "=", shipmentId)
+      .where("companyId", "=", companyId)
+      .where("shipped", "=", true)
+      .where("rentalAgreementLineId", "is not", null)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+
+    if (!shipment.sourceDocumentId) {
+      throw new NotFoundError("Rental agreement not found");
+    }
+    const agreement = await lockAgreement(
+      trx,
+      companyId,
+      shipment.sourceDocumentId
+    );
+
+    const lineIds = assetLines.map((line) => line.rentalAgreementLineId!);
+    const { linesById, assetsById } = await lockRentalUnits(
+      trx,
+      companyId,
+      lineIds
+    );
+
+    const accruals =
+      lineIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("revenueRecognitionSchedule")
+            .select(["rentalAgreementLineId", "status", "runLineId"])
+            .where("type", "=", "Accrual")
+            .where("companyId", "=", companyId)
+            .where("rentalAgreementLineId", "in", lineIds)
+            .execute();
+
+    const units = assetLines.map((assetLine) => {
+      const lineId = assetLine.rentalAgreementLineId!;
+      const line = linesById.get(lineId);
+      const asset = line?.fixedAssetId
+        ? assetsById.get(line.fixedAssetId)
+        : undefined;
+      if (!line || line.rentalAgreementId !== agreement.id) {
+        throw new NotFoundError("Rental agreement line not found");
+      }
+      const rows = accruals.filter(
+        (row) => row.rentalAgreementLineId === lineId
+      );
+      const accrual: "Posted" | "Draft run" | null = rows.some(
+        (row) => row.status === "Posted"
+      )
+        ? "Posted"
+        : rows.some((row) => row.status === "Planned" && row.runLineId)
+          ? "Draft run"
+          : null;
+      return {
+        line,
+        label: unitLabel(asset, lineId),
+        status: line.status,
+        accrual
+      };
+    });
+
+    const blocker = rentalShipmentVoidBlocker(units);
+    if (blocker) throw new InvalidInputError(blocker);
+
+    if (lineIds.length > 0) {
+      await trx
+        .deleteFrom("revenueRecognitionSchedule")
+        .where("type", "=", "Accrual")
+        .where("status", "=", "Planned")
+        .where("runLineId", "is", null)
+        .where("companyId", "=", companyId)
+        .where("rentalAgreementLineId", "in", lineIds)
+        .execute();
+    }
+
+    for (const { line } of units) {
+      await trx
+        .updateTable("rentalAgreementLine")
+        .set({
+          status: "Pending",
+          deliveredAt: null,
+          meterOut: null,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", line.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    for (const { line } of units) {
+      if (!line.trackedEntityId) continue;
+      await insertUnitActivity(trx, {
+        type: "Void Shipment",
+        direction: "input",
+        sourceDocument: "Shipment",
+        sourceDocumentId: shipment.id,
+        sourceDocumentReadableId: shipment.shipmentId,
+        attributes: { Shipment: shipment.id, "Rental Agreement": agreement.id },
+        trackedEntityId: line.trackedEntityId,
+        companyId,
+        userId
+      });
+    }
+
+    await trx
+      .updateTable("shipment")
+      .set({
+        status: "Voided",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", shipmentId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+// Locks the agreement lines a rental document names and reads their assets,
+// whose numbers name the units in a refusal.
+async function lockRentalUnits(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  lineIds: string[]
+) {
+  const lines =
+    lineIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("rentalAgreementLine")
+          .select([
+            "id",
+            "rentalAgreementId",
+            "status",
+            "fixedAssetId",
+            "trackedEntityId"
+          ])
+          .where("id", "in", lineIds)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .execute();
+  const linesById = new Map(lines.map((line) => [line.id, line]));
+
+  const assetIds = lines
+    .map((line) => line.fixedAssetId)
+    .filter((id): id is string => id !== null);
+  const assets =
+    assetIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("fixedAsset")
+          .select([
+            "id",
+            "fixedAssetId",
+            "name",
+            "outOfServiceSince",
+            "outOfServiceReason"
+          ])
+          .where("id", "in", assetIds)
+          .where("companyId", "=", companyId)
+          .execute();
+  const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+  return { linesById, assetsById };
 }

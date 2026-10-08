@@ -287,3 +287,101 @@ databaseTest(
     }
   }
 );
+
+function voidShipment(f: Fixture, shipmentId: string) {
+  return postShipment(f.ctx, { type: "void", shipmentId });
+}
+
+databaseTest(
+  "a voided rental shipment puts its units back to Pending",
+  async () => {
+    const f = await rentalFixture({ units: 5 });
+    try {
+      const shipmentId = await draftShipment(f);
+      expect((await post(f, shipmentId)).error).toBeNull();
+
+      const result = await voidShipment(f, shipmentId);
+      expect(result.error).toBeNull();
+
+      const lines = await f.db
+        .selectFrom("rentalAgreementLine")
+        .select(["status", "deliveredAt", "meterOut"])
+        .where("rentalAgreementId", "=", f.agreementId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(lines).toHaveLength(5);
+      for (const line of lines) {
+        expect(line).toEqual({
+          status: "Pending",
+          deliveredAt: null,
+          meterOut: null
+        });
+      }
+      expect((await shipmentStatus(f, shipmentId)).status).toEqual("Voided");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a rental shipment does not void over a posted accrual",
+  async () => {
+    const f = await rentalFixture({ units: 5 });
+    try {
+      const shipmentId = await draftShipment(f);
+      expect((await post(f, shipmentId)).error).toBeNull();
+      const assetClass = await f.db
+        .selectFrom("fixedAssetClass")
+        .select("assetAccountId")
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("revenueRecognitionSchedule")
+        .values({
+          companyId: f.companyId,
+          type: "Accrual",
+          status: "Posted",
+          rentalAgreementLineId: f.lineIds[0]!,
+          periodStart: "2026-09-01",
+          periodEnd: "2026-09-30",
+          scheduledDate: "2026-09-30",
+          amount: 300,
+          debitAccountId: assetClass.assetAccountId,
+          creditAccountId: assetClass.assetAccountId,
+          createdBy: "system"
+        })
+        .execute();
+
+      const result = await voidShipment(f, shipmentId);
+      expect(result.error?.message).toContain(
+        "A posted revenue recognition run holds accrued rent for FA-"
+      );
+      expect((await shipmentStatus(f, shipmentId)).status).toEqual("Posted");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a rental shipment does not void once a unit is returned",
+  async () => {
+    const f = await rentalFixture({ units: 5 });
+    try {
+      const shipmentId = await draftShipment(f);
+      expect((await post(f, shipmentId)).error).toBeNull();
+      await f.db
+        .updateTable("rentalAgreementLine")
+        .set({ status: "Returned" })
+        .where("id", "=", f.lineIds[0]!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const result = await voidShipment(f, shipmentId);
+      expect(result.error?.message).toContain("is Returned");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

@@ -48,7 +48,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
-import { postRentalShipment } from "./rental-agreement";
+import { postRentalShipment, voidRentalShipment } from "./rental-agreement";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -4707,6 +4707,11 @@ const postShipment = defineServerFn({
                   .execute();
               });
 
+              break;
+            }
+
+            case "Rental Agreement": {
+              await voidRentalShipment(db, { shipmentId, companyId, userId });
               break;
             }
 
