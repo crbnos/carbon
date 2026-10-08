@@ -1768,6 +1768,9 @@ msgstr "Mitarbeiter hinzufügen"
 msgid "Add Entry"
 msgstr "Eintrag hinzufügen"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "Aus Bibliothek hinzufügen…"
 

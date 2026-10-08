@@ -10,7 +10,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton,
   Input,
   InputGroup,
   InputLeftElement
@@ -25,7 +24,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
-import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
+import { AppBarAction } from "~/components/New";
 import { useUrlParams } from "~/hooks";
 import { financialReportColumns } from "../../accounting.models";
 import CompanySelector from "./CompanySelector";
@@ -183,25 +182,19 @@ const ReportFilters = ({
         </HStack>
       </div>
       {onDownload && (
-        <>
+        <AppBarAction
+          icon={<LuDownload />}
+          label={t`Download`}
+          onClick={onDownload}
+        >
           <Button
             variant="secondary"
             leftIcon={<LuDownload />}
             onClick={onDownload}
-            className="max-md:hidden"
           >
             {t`Download`}
           </Button>
-          <AppBarActions>
-            <IconButton
-              aria-label={t`Download`}
-              variant="ghost"
-              size="lg"
-              icon={<LuDownload />}
-              onClick={onDownload}
-            />
-          </AppBarActions>
-        </>
+        </AppBarAction>
       )}
     </div>
   );

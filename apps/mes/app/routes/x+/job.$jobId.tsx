@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { Heading, SidebarTrigger } from "@carbon/react";
+import { Heading, SidebarTrigger, useViewport } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuArrowLeft } from "react-icons/lu";
@@ -68,28 +68,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function JobDagRoute() {
   const { readableId, operations, dependencies } =
     useLoaderData<typeof loader>();
+  const { isPhone } = useViewport();
 
   return (
     <div className="flex flex-col flex-1">
       <MesAppBar
-        kind="pushed"
         title={readableId}
         subtitle={<Trans>Jobs</Trans>}
         back={{ to: path.to.jobs }}
-        desktop={null}
       />
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Link
-            to={path.to.jobs}
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <LuArrowLeft className="w-4 h-4" />
-          </Link>
-          <Heading size="h4">{readableId}</Heading>
-        </div>
-      </header>
+      {!isPhone && (
+        <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
+          <div className="flex items-center gap-2 px-2">
+            <SidebarTrigger />
+            <Link
+              to={path.to.jobs}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LuArrowLeft className="w-4 h-4" />
+            </Link>
+            <Heading size="h4">{readableId}</Heading>
+          </div>
+        </header>
+      )}
 
       <main className="flex-1 overflow-hidden">
         <JobDag operations={operations} dependencies={dependencies} />

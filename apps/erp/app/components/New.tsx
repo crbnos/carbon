@@ -3,9 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ButtonProps } from "@carbon/react";
-import { Button, IconButton, useViewport } from "@carbon/react";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  IconButton,
+  useViewport
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import {
   createContext,
   useContext,
@@ -39,33 +45,38 @@ const getCount = () => mountedCount;
 const getServerCount = () => 1;
 
 type NewActionProps = {
-  /** Accessible name of the phone "+". */
+  /** Accessible name of the phone icon. */
   label: string;
   isDisabled?: boolean;
   /** The desktop control, rendered unchanged everywhere but the app bar. */
   children: ReactNode;
-} & ({ to: string; onClick?: never } | { onClick: () => void; to?: never });
+} & (
+  | { to: string; onClick?: never; menu?: never }
+  | { onClick: () => void; to?: never; menu?: never }
+  | { menu: ReactNode; to?: never; onClick?: never }
+);
+
+type AppBarActionProps =
+  | (NewActionProps & { icon: ReactElement })
+  | { icon?: never; children: ReactNode };
 
 /**
- * A page's create action. On phones it becomes the app bar "+" (a link to
- * `to`, or a button calling `onClick`) unless an ancestor places it inline,
- * e.g. as an empty state's primary action. Elsewhere it renders `children`.
+ * A page action that moves to the app bar on phones, as `icon`: a link to
+ * `to`, a button calling `onClick`, or a trigger opening `menu` (a
+ * `DropdownMenuContent`). Without `icon`, `children` move there unchanged.
+ * Elsewhere it renders `children`.
  */
-export function NewAction({
-  label,
-  isDisabled,
-  to,
-  onClick,
-  children
-}: NewActionProps) {
+export function AppBarAction(props: AppBarActionProps) {
   const { isPhone } = useViewport();
-  const placement = useContext(NewPlacementContext);
-  if (!isPhone || placement !== "appBar") return <>{children}</>;
+  if (!isPhone) return <>{props.children}</>;
+  if (props.icon === undefined) {
+    return <AppBarActions>{props.children}</AppBarActions>;
+  }
 
-  const icon = <LuPlus className="size-6" />;
-  return (
-    <AppBarActions>
-      {to ? (
+  const { icon, label, isDisabled, to, onClick, menu } = props;
+  if (to) {
+    return (
+      <AppBarActions>
         <Button
           asChild
           isIcon
@@ -76,18 +87,42 @@ export function NewAction({
         >
           <Link to={to}>{icon}</Link>
         </Button>
+      </AppBarActions>
+    );
+  }
+
+  const button = (
+    <IconButton
+      icon={icon}
+      variant="ghost"
+      size="lg"
+      aria-label={label}
+      isDisabled={isDisabled}
+      onClick={onClick}
+    />
+  );
+  return (
+    <AppBarActions>
+      {menu ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
+          {menu}
+        </DropdownMenu>
       ) : (
-        <IconButton
-          icon={icon}
-          variant="ghost"
-          size="lg"
-          aria-label={label}
-          isDisabled={isDisabled}
-          onClick={onClick}
-        />
+        button
       )}
     </AppBarActions>
   );
+}
+
+/**
+ * A page's create action. On phones it becomes the app bar "+" unless an
+ * ancestor places it inline, e.g. as an empty state's primary action.
+ */
+export function NewAction(props: NewActionProps) {
+  const placement = useContext(NewPlacementContext);
+  if (placement !== "appBar") return <>{props.children}</>;
+  return <AppBarAction icon={<LuPlus className="size-6" />} {...props} />;
 }
 
 type NewProps = {

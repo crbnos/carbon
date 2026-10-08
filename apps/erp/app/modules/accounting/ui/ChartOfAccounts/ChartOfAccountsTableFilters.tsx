@@ -4,22 +4,18 @@
 
 import {
   Button,
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   HStack,
-  IconButton,
   Input,
   InputGroup,
-  InputLeftElement,
-  useViewport
+  InputLeftElement
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheckCheck, LuPlus, LuSearch, LuWallet, LuX } from "react-icons/lu";
 import { Link } from "react-router";
 import { New, PeriodSelector } from "~/components";
-import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
+import { AppBarAction } from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 
 type ChartOfAccountsTableFiltersProps = {
@@ -48,7 +44,6 @@ const ChartOfAccountsTableFilters = ({
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const permissions = usePermissions();
-  const { isPhone } = useViewport();
   const newGroupTo = `new-group?${params.toString()}`;
   const newAccountTo = `new?${params.toString()}`;
 
@@ -100,36 +95,27 @@ const ChartOfAccountsTableFilters = ({
           </>
         ) : (
           <>
-            {permissions.can("create", "accounting") &&
-              (isPhone ? (
-                // Phones: one app bar "+" opens both Add actions, instead of
-                // two identical "+" icons.
-                <AppBarActions>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <IconButton
-                        aria-label={t`Add`}
-                        icon={<LuPlus />}
-                        variant="ghost"
-                        size="lg"
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link to={newGroupTo}>{t`Add Group`}</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={newAccountTo}>{t`Add Account`}</Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </AppBarActions>
-              ) : (
-                <>
-                  <New label={t`Group`} to={newGroupTo} />
-                  <New label={t`Account`} to={newAccountTo} />
-                </>
-              ))}
+            {permissions.can("create", "accounting") && (
+              // Phones: one app bar "+" opens both Add actions, instead of
+              // two identical "+" icons.
+              <AppBarAction
+                icon={<LuPlus />}
+                label={t`Add`}
+                menu={
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to={newGroupTo}>{t`Add Group`}</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={newAccountTo}>{t`Add Account`}</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                }
+              >
+                <New label={t`Group`} to={newGroupTo} />
+                <New label={t`Account`} to={newAccountTo} />
+              </AppBarAction>
+            )}
             {canEnterOpeningBalances && (
               <Button
                 variant="secondary"

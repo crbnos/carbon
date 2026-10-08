@@ -1768,6 +1768,9 @@ msgstr "Aggiungi Dipendente"
 msgid "Add Entry"
 msgstr "Aggiungi Voce"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "Aggiungi dalla libreria…"
 

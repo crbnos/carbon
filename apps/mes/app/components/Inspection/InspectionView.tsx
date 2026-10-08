@@ -623,11 +623,9 @@ export function InspectionView({
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
       <MesAppBar
-        kind="pushed"
         title={inspection.inspectionId}
         subtitle={origin.label}
         back={{ to: origin.to }}
-        desktop={null}
         actions={
           <>
             {workTypes.map((wt) => (
@@ -934,60 +932,62 @@ export function InspectionView({
       </div>
 
       {/* Phones: the lot actions as labelled 48px buttons in thumb reach. */}
-      <div
-        ref={bottomBarRef}
-        data-mes-bottom-bar
-        className="flex shrink-0 flex-wrap gap-2 border-t border-border bg-card px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden [&>button]:min-w-0 [&>button]:flex-1"
-      >
-        {/* Its label carries a count, so it takes a row of its own. */}
-        {showCompletePassed ? (
-          <div className="basis-full [&>*]:w-full">
-            <CompletePassedButton
-              inspectionId={inspection.id}
-              operationId={operationId}
-              count={completablePassed}
-              eventIds={eventIds}
-              variant="bar"
-            />
-          </div>
-        ) : null}
-        <Button
-          size="lg"
-          variant="secondary"
-          leftIcon={<LuX />}
-          isDisabled={!canReject}
-          onClick={rejectDisclosure.onOpen}
-          className="h-12 text-red-600 dark:text-red-400"
+      {isPhone && (
+        <div
+          ref={bottomBarRef}
+          data-mes-bottom-bar
+          className="flex shrink-0 flex-wrap gap-2 border-t border-border bg-card px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden [&>button]:min-w-0 [&>button]:flex-1"
         >
-          <span className="truncate">
-            <Trans>Reject</Trans>
-          </span>
-        </Button>
-        {canPartial ? (
+          {/* Its label carries a count, so it takes a row of its own. */}
+          {showCompletePassed ? (
+            <div className="basis-full [&>*]:w-full">
+              <CompletePassedButton
+                inspectionId={inspection.id}
+                operationId={operationId}
+                count={completablePassed}
+                eventIds={eventIds}
+                variant="bar"
+              />
+            </div>
+          ) : null}
           <Button
             size="lg"
             variant="secondary"
-            leftIcon={<LuContrast />}
-            onClick={partialDisclosure.onOpen}
-            className="h-12 text-amber-600 dark:text-amber-400"
+            leftIcon={<LuX />}
+            isDisabled={!canReject}
+            onClick={rejectDisclosure.onOpen}
+            className="h-12 text-red-600 dark:text-red-400"
           >
             <span className="truncate">
-              <Trans>Partial</Trans>
+              <Trans>Reject</Trans>
             </span>
           </Button>
-        ) : null}
-        <Button
-          size="lg"
-          leftIcon={<LuCheck />}
-          isDisabled={!canAccept}
-          onClick={acceptDisclosure.onOpen}
-          className="h-12"
-        >
-          <span className="truncate">
-            <Trans>Accept</Trans>
-          </span>
-        </Button>
-      </div>
+          {canPartial ? (
+            <Button
+              size="lg"
+              variant="secondary"
+              leftIcon={<LuContrast />}
+              onClick={partialDisclosure.onOpen}
+              className="h-12 text-amber-600 dark:text-amber-400"
+            >
+              <span className="truncate">
+                <Trans>Partial</Trans>
+              </span>
+            </Button>
+          ) : null}
+          <Button
+            size="lg"
+            leftIcon={<LuCheck />}
+            isDisabled={!canAccept}
+            onClick={acceptDisclosure.onOpen}
+            className="h-12"
+          >
+            <span className="truncate">
+              <Trans>Accept</Trans>
+            </span>
+          </Button>
+        </div>
+      )}
 
       {/* ── MODALS ── */}
       {scannerDisclosure.isOpen && (

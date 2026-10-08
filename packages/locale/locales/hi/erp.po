@@ -1768,6 +1768,9 @@ msgstr "कर्मचारी जोड़ें"
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "लाइब्रेरी से जोड़ें…"
 

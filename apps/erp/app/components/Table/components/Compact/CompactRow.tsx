@@ -16,8 +16,11 @@ function renderCell<T>(row: Row<T>, column: Column<T, unknown> | undefined) {
     | Cell<T, unknown>
     | undefined;
   if (!cell) return null;
-  const value = flexRender(cell.column.columnDef.cell, cell.getContext());
   const { header, meta } = cell.column.columnDef;
+  const value = flexRender(
+    meta?.mobileCell ?? cell.column.columnDef.cell,
+    cell.getContext()
+  );
   if (!meta?.mobileLabel || typeof header !== "string") return value;
   return (
     <>
@@ -38,7 +41,8 @@ type CompactRowProps<T> = {
 /**
  * One list row: line 1 = identity (P1) with the metric (P2) trailing,
  * line 2 = context (P3), line 3 = status pills. Each slot renders the
- * column's own cell, so links, pills and money formats are the desktop ones.
+ * column's own cell (or its `meta.mobileCell`), so links, pills and money
+ * formats are the desktop ones.
  * The P1 link is stretched over the row, so a tap anywhere opens the record
  * at the desktop href; other controls sit above it.
  */

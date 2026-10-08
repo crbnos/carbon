@@ -1768,6 +1768,9 @@ msgstr "Çalışan Ekle"
 msgid "Add Entry"
 msgstr "Giri Ekle"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "Kütüphaneden ekle…"
 

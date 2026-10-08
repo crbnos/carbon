@@ -15,7 +15,7 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
-import { MesAppBar } from "~/components/MesAppBar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
@@ -43,7 +43,8 @@ export default function PickingIndexRoute() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <MesAppBar kind="root" title={<Trans>Picking</Trans>} />
+      <MesAppBar title={<Trans>Picking</Trans>} />
+      <MesQueueHeader title={<Trans>Picking</Trans>} />
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         {pickingLists.length > 0 ? (

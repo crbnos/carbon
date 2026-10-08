@@ -16,117 +16,105 @@ import { LuChevronDown, LuChevronLeft } from "react-icons/lu";
 import { Link } from "react-router";
 
 type MesAppBarProps = {
-  kind: "root" | "pushed";
   title: ReactNode;
   /** Pushed pages: the parent page name, under the title. */
   subtitle?: ReactNode;
-  /** Pushed pages: where Back goes. */
-  back?: { to: string };
-  /** Phones: at most 2 icon actions, each 44×44. */
-  actions?: ReactNode;
-  /** The default md+ header's title when it differs from the phone one. */
-  desktopTitle?: ReactNode;
   /**
-   * The md+ header. Omit it for today's queue header (trigger + h4 title).
-   * Pass `null` when the page renders its own md+ header, or none.
+   * Pushed pages: where Back goes. Without it the page is a root page and
+   * the title ▾ opens the queue list.
    */
-  desktop?: ReactNode;
-  /** Extra classes for the default md+ header. */
-  desktopClassName?: string;
+  back?: { to: string };
+  /** At most 2 icon actions, each 44×44. */
+  actions?: ReactNode;
 };
 
 /**
- * The MES page header. Below md: one 52px bar with Back (pushed pages), a
+ * The MES page header on phones: one 52px bar with Back (pushed pages), a
  * 17px title and up to 2 actions; on root pages the title ▾ opens the queue
- * list, like the ERP's section switcher. From md: the header each page had
- * before.
+ * list, like the ERP's section switcher. From md it renders nothing: pages
+ * render their own md+ header, or `MesQueueHeader`.
  */
-export function MesAppBar({
-  kind,
-  title,
-  subtitle,
-  back,
-  actions,
-  desktopTitle,
-  desktop,
-  desktopClassName
-}: MesAppBarProps) {
+export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
   const { openMobile, setOpenMobile } = useSidebar();
 
-  const desktopHeader =
-    desktop === undefined ? (
-      <header
-        className={cn(
-          "sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden",
-          desktopClassName
-        )}
-      >
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">{desktopTitle ?? title}</Heading>
-        </div>
-      </header>
-    ) : (
-      desktop
-    );
-
-  // One header mounts at a time, so page actions (timers, menus) mount once.
-  if (!isPhone) return <>{desktopHeader}</>;
+  if (!isPhone) return null;
 
   return (
-    <>
-      <header className="md:hidden sticky top-0 z-20 flex h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center gap-1 border-b border-border bg-card px-1 pt-safe">
-        {kind === "pushed" && back ? (
-          <Button
-            asChild
-            isIcon
-            variant="ghost"
-            size="lg"
-            aria-label={t`Back`}
-            className="shrink-0"
+    <header className="md:hidden sticky top-0 z-20 flex h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center gap-1 border-b border-border bg-card px-1 pt-safe">
+      {back ? (
+        <Button
+          asChild
+          isIcon
+          variant="ghost"
+          size="lg"
+          aria-label={t`Back`}
+          className="shrink-0"
+        >
+          <Link to={back.to}>
+            <LuChevronLeft className="size-6" />
+          </Link>
+        </Button>
+      ) : (
+        <span className="w-2 shrink-0" />
+      )}
+      {back ? (
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          <span className="truncate text-[17px] font-semibold leading-tight text-foreground">
+            {title}
+          </span>
+          {subtitle ? (
+            <span className="truncate text-xs text-muted-foreground">
+              {subtitle}
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center">
+          <button
+            type="button"
+            onClick={() => setOpenMobile(true)}
+            aria-haspopup="dialog"
+            aria-expanded={openMobile}
+            className="flex min-h-11 min-w-0 items-center gap-1 rounded-lg px-1 text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
-            <Link to={back.to}>
-              <LuChevronLeft className="size-6" />
-            </Link>
-          </Button>
-        ) : (
-          <span className="w-2 shrink-0" />
-        )}
-        {kind === "root" ? (
-          <div className="flex min-w-0 flex-1 items-center">
-            <button
-              type="button"
-              onClick={() => setOpenMobile(true)}
-              aria-haspopup="dialog"
-              aria-expanded={openMobile}
-              className="flex min-h-11 min-w-0 items-center gap-1 rounded-lg px-1 text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              <span className="min-w-0 truncate text-[17px] font-semibold leading-tight">
-                {title}
-              </span>
-              <LuChevronDown className="size-5 shrink-0 text-muted-foreground" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <span className="truncate text-[17px] font-semibold leading-tight text-foreground">
+            <span className="min-w-0 truncate text-[17px] font-semibold leading-tight">
               {title}
             </span>
-            {subtitle ? (
-              <span className="truncate text-xs text-muted-foreground">
-                {subtitle}
-              </span>
-            ) : null}
-          </div>
-        )}
-        {actions ? (
-          <div className="flex shrink-0 items-center self-stretch">
-            {actions}
-          </div>
-        ) : null}
-      </header>
-    </>
+            <LuChevronDown className="size-5 shrink-0 text-muted-foreground" />
+          </button>
+        </div>
+      )}
+      {actions ? (
+        <div className="flex shrink-0 items-center self-stretch">{actions}</div>
+      ) : null}
+    </header>
+  );
+}
+
+/** A root (queue) page's md+ header: the sidebar trigger and an h4 title. */
+export function MesQueueHeader({
+  title,
+  className
+}: {
+  title: ReactNode;
+  className?: string;
+}) {
+  const { isPhone } = useViewport();
+  if (isPhone) return null;
+
+  return (
+    <header
+      className={cn(
+        "sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden",
+        className
+      )}
+    >
+      <div className="flex items-center gap-2 px-2">
+        <SidebarTrigger />
+        <Heading size="h4">{title}</Heading>
+      </div>
+    </header>
   );
 }

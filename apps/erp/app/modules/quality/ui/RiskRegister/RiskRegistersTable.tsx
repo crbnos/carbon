@@ -6,8 +6,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useDisclosure,
-  useViewport
+  useDisclosure
 } from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -69,7 +68,6 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
   const [people] = usePeople();
 
   const { t } = useLingui();
-  const { isPhone } = useViewport();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
@@ -151,17 +149,15 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
       {
         accessorKey: "source",
         header: t`Source`,
-        // Phones: line 2 is muted context, not a second row of pills.
-        cell: (item) =>
-          isPhone ? (
+        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        meta: {
+          mobile: "P3",
+          // Phones: line 2 is muted context, not a second row of pills.
+          mobileCell: (item) => (
             <span className="text-muted-foreground">
               {item.getValue<string>()}
             </span>
-          ) : (
-            <Enumerable value={item.getValue<string>()} />
           ),
-        meta: {
-          mobile: "P3",
           icon: <LuDna />,
           filter: {
             type: "static",
@@ -256,7 +252,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
       }
     ];
     return defaultColumns;
-  }, [people, items, workCenters.options.map, t, isPhone]);
+  }, [people, items, workCenters.options.map, t]);
 
   const renderContextMenu = useCallback<(row: Risk) => JSX.Element>(
     (row) => (

@@ -1768,6 +1768,9 @@ msgstr "직원 추가"
 msgid "Add Entry"
 msgstr "항목 추가"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "라이브러리에서 추가…"
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { IconButton } from "@carbon/react";
+import { IconButton, useViewport } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -13,7 +13,7 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
  * (default: the last, i.e. the latest period) and stays in range when the
  * column count changes.
  */
-export function useColumnStep(count: number, initial = count - 1) {
+function useColumnStep(count: number, initial = count - 1) {
   const [index, setIndex] = useState(Math.max(0, initial));
   // A new period range or column set starts again on its default column.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset per column count only
@@ -30,7 +30,7 @@ export function useColumnStep(count: number, initial = count - 1) {
  * Phones: the report's column header, one column at a time, with ‹ › to step
  * to the neighbouring column.
  */
-export function ColumnStepper({
+function ColumnStepper({
   index,
   count,
   onChange,
@@ -79,4 +79,42 @@ export function ColumnStepper({
       />
     </div>
   );
+}
+
+/** A report's frame; on phones it fills what the filter rows above it leave. */
+export const reportFrameClassName =
+  "h-[calc(100dvh-var(--header-height)-61px)] w-full max-md:h-auto max-md:min-h-0 max-md:flex-1";
+
+/**
+ * Phones: one value column at a time, with `stepper` in place of the desktop
+ * header. Desktop: no stepper, and the caller renders every column.
+ */
+export function useReportColumnStep({
+  count,
+  initial,
+  label,
+  detail
+}: {
+  count: number;
+  initial?: number;
+  label: (index: number) => ReactNode;
+  detail?: (index: number) => ReactNode;
+}) {
+  const { isPhone } = useViewport();
+  const [index, setIndex] = useColumnStep(count, initial);
+  return {
+    isPhone,
+    index,
+    estimatedRowHeight: () => (isPhone ? 44 : 36),
+    stepper:
+      isPhone && count > 0 ? (
+        <ColumnStepper
+          index={index}
+          count={count}
+          onChange={setIndex}
+          label={label(index)}
+          detail={detail?.(index)}
+        />
+      ) : null
+  };
 }

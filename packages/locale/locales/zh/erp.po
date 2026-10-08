@@ -1768,6 +1768,9 @@ msgstr "添加员工"
 msgid "Add Entry"
 msgstr "添加条目"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "从库中添加…"
 

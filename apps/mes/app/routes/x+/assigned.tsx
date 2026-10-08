@@ -35,7 +35,7 @@ import { useLoaderData } from "react-router";
 import { OperationsList } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
-import { MesAppBar } from "~/components/MesAppBar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { userContext } from "~/context";
 import {
   getJobOperationsAssignedToEmployee,
@@ -296,12 +296,9 @@ export default function AssignedRoute() {
   return (
     // Phones: the page takes the screen above the tab bar, so the list and
     // the board scroll inside it (see Schedule).
-    <div className="flex flex-col flex-1 min-h-0 min-w-0 max-md:h-[calc(100dvh-54px-env(safe-area-inset-bottom))] max-md:flex-none">
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 max-md:h-[calc(100dvh-var(--mes-tab-bar-h))] max-md:flex-none">
       <MesAppBar
-        kind="root"
         title={<Trans>Assigned</Trans>}
-        desktopTitle={<Trans>Assigned to Me</Trans>}
-        desktopClassName="overflow-y-scroll scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
         actions={
           <>
             {view === "board" && (
@@ -326,6 +323,10 @@ export default function AssignedRoute() {
             />
           </>
         }
+      />
+      <MesQueueHeader
+        title={<Trans>Assigned to Me</Trans>}
+        className="overflow-y-scroll scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
       />
 
       {/* Phones: a column so the board fills what the toolbar leaves and

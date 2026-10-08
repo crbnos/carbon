@@ -7,8 +7,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useDisclosure,
-  useViewport
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -68,7 +67,6 @@ const JournalEntriesTable = memo(
     const [selectedEntry, setSelectedEntry] =
       useState<JournalEntryListItem | null>(null);
     const deleteModal = useDisclosure();
-    const { isPhone } = useViewport();
 
     const columns = useMemo<ColumnDef<JournalEntryListItem>[]>(() => {
       const defaultColumns: ColumnDef<JournalEntryListItem>[] = [
@@ -103,31 +101,29 @@ const JournalEntriesTable = memo(
         {
           accessorKey: "description",
           header: t`Description`,
-          cell: ({ row }) =>
-            // Phones: plain text on the row's context line (P3).
-            isPhone ? (
-              row.original.description || "—"
-            ) : (
-              <HStack className="py-1" spacing={2}>
-                <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 p-1">
-                  <JournalEntrySourceTypeIcon
-                    sourceType={row.original.sourceType ?? "Manual"}
-                    className="w-4 h-4 text-[#AAAAAA] dark:text-[#444]"
-                  />
-                </div>
+          cell: ({ row }) => (
+            <HStack className="py-1" spacing={2}>
+              <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 p-1">
+                <JournalEntrySourceTypeIcon
+                  sourceType={row.original.sourceType ?? "Manual"}
+                  className="w-4 h-4 text-[#AAAAAA] dark:text-[#444]"
+                />
+              </div>
 
-                <div className="flex flex-col max-w-[300px] truncate">
-                  <div className="text-sm line-clamp-1">
-                    {row.original.description || "—"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {row.original.sourceType || "—"}
-                  </div>
+              <div className="flex flex-col max-w-[300px] truncate">
+                <div className="text-sm line-clamp-1">
+                  {row.original.description || "—"}
                 </div>
-              </HStack>
-            ),
+                <div className="text-xs text-muted-foreground">
+                  {row.original.sourceType || "—"}
+                </div>
+              </div>
+            </HStack>
+          ),
           meta: {
             mobile: "P3",
+            // Phones: plain text on the row's context line.
+            mobileCell: ({ row }) => row.original.description || "—",
             icon: <LuFileText />
           }
         },
@@ -243,7 +239,7 @@ const JournalEntriesTable = memo(
         }
       ];
       return defaultColumns;
-    }, [currencyFormatter, isPhone, people, t]);
+    }, [currencyFormatter, people, t]);
 
     const renderContextMenu = useCallback(
       (row: JournalEntryListItem) => {

@@ -540,8 +540,7 @@ export default function AuthenticatedRoute() {
                   <div
                     className={cn(
                       "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
-                      showTabBar &&
-                        "max-md:pb-[calc(54px+env(safe-area-inset-bottom))]"
+                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
                     )}
                   >
                     {/* A company switch stays on the same page. Without the key the page

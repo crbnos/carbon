@@ -24,6 +24,8 @@
 
   :root {
     --header-height: 50px;
+    /* Phones: the MES tab bar, safe area included. */
+    --mes-tab-bar-h: calc(54px + env(safe-area-inset-bottom));
     --filters-height: 38px;
     /* Side control panel; only in play at lg+ (below that it stacks inline). */
     --controls-width: 220px;
@@ -170,7 +172,7 @@ p.is-editor-empty:first-child:before {
       :has([data-mes-bottom-bar])
     )
     [data-sonner-toaster][data-y-position="bottom"] {
-    bottom: calc(54px + env(safe-area-inset-bottom) + 16px);
+    bottom: calc(var(--mes-tab-bar-h) + 16px);
   }
 
   body:has([data-mes-bottom-bar])

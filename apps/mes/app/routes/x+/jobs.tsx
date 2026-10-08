@@ -25,7 +25,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
-import { MesAppBar } from "~/components/MesAppBar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { userContext } from "~/context";
 import {
@@ -124,11 +124,8 @@ export default function JobsRoute() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <MesAppBar
-        kind="root"
-        title={<Trans>Jobs</Trans>}
-        desktopTitle={<Trans>Open Jobs</Trans>}
-      />
+      <MesAppBar title={<Trans>Jobs</Trans>} />
+      <MesQueueHeader title={<Trans>Open Jobs</Trans>} />
 
       <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="p-4">

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, ScrollArea, useViewport } from "@carbon/react";
+import { cn, ScrollArea } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
@@ -15,7 +15,7 @@ import { useNavigate } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { Chart } from "../../types";
-import { ColumnStepper, useColumnStep } from "./ColumnStepper";
+import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import {
   accountsToFlatTree,
   filterAccounts,
@@ -61,8 +61,6 @@ const TrialBalanceTree = memo(
     ledgerPath
   }: TrialBalanceTreeProps) => {
     const { t } = useLingui();
-    const { isPhone } = useViewport();
-    // Phones: one value column at a time, starting on Ending.
     const columnLabels = [
       t`Beginning`,
       t`Debits`,
@@ -73,7 +71,17 @@ const TrialBalanceTree = memo(
         : []),
       t`Ratio`
     ];
-    const [columnIndex, setColumnIndex] = useColumnStep(columnLabels.length, 3);
+    // Phones: one value column at a time, starting on Ending.
+    const {
+      isPhone,
+      index: columnIndex,
+      estimatedRowHeight,
+      stepper
+    } = useReportColumnStep({
+      count: columnLabels.length,
+      initial: 3,
+      label: (index) => columnLabels[index]
+    });
     useRealtime("journal");
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -112,52 +120,30 @@ const TrialBalanceTree = memo(
     } = useTree<TrialBalanceChart, undefined>({
       tree,
       parentRef,
-      estimatedRowHeight: () => (isPhone ? 44 : 36),
+      estimatedRowHeight,
       isEager: true
     });
 
     return (
-      <ScrollArea
-        className={cn(
-          "h-[calc(100dvh-var(--header-height)-61px)] w-full",
-          // Phones: the tree fills what the filter rows leave.
-          "max-md:h-auto max-md:min-h-0 max-md:flex-1"
-        )}
-      >
+      <ScrollArea className={reportFrameClassName}>
         {isPhone ? (
-          <div className="sticky top-0 z-10">
-            <ColumnStepper
-              index={columnIndex}
-              count={columnLabels.length}
-              onChange={setColumnIndex}
-              label={columnLabels[columnIndex]}
-            />
-          </div>
+          <div className="sticky top-0 z-10">{stepper}</div>
         ) : (
-          <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card max-md:w-max max-md:min-w-full">
-            <div className="flex-1 px-4 max-md:sticky max-md:left-0 max-md:z-[2] max-md:w-[150px] max-md:flex-none max-md:truncate max-md:bg-card">
+          <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card">
+            <div className="flex-1 px-4">
               <Trans>Account</Trans>
             </div>
-            <span className="w-28 text-right px-2">
-              <Trans>Beginning</Trans>
-            </span>
-            <span className="w-28 text-right px-2">
-              <Trans>Debits</Trans>
-            </span>
-            <span className="w-28 text-right px-2">
-              <Trans>Credits</Trans>
-            </span>
-            <span className="w-28 text-right px-2">
-              <Trans>Ending</Trans>
-            </span>
-            {showTranslated && (
-              <span className="w-28 text-right px-2">
-                {t`Ending (${parentCurrency ?? "Translated"})`}
+            {columnLabels.map((label, index) => (
+              <span
+                key={label}
+                className={cn(
+                  index === columnLabels.length - 1 ? "w-20" : "w-28",
+                  "text-right px-2"
+                )}
+              >
+                {label}
               </span>
-            )}
-            <span className="w-20 text-right px-2">
-              <Trans>Ratio</Trans>
-            </span>
+            ))}
           </div>
         )}
         <TreeView<TrialBalanceChart>

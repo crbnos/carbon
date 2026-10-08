@@ -9,8 +9,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useInterval,
-  useViewport
+  useInterval
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -69,7 +68,6 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
 const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  const { isPhone } = useViewport();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -115,31 +113,37 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         header: t`Date`,
         cell: ({ row }) =>
           row.original.clockIn ? (
-            <>
-              <DateTime
-                value={row.original.clockIn}
-                variant="date"
-                dateOptions={{ dateStyle: "medium" }}
-              />
-              {/* Phones: line 2 also carries the clock-in – clock-out span. */}
-              {isPhone ? (
-                <>
-                  {" · "}
-                  <DateTime value={row.original.clockIn} variant="time" />
-                  {" – "}
-                  <DateTime
-                    value={row.original.clockOut}
-                    variant="time"
-                    fallback="—"
-                  />
-                </>
-              ) : null}
-            </>
+            <DateTime
+              value={row.original.clockIn}
+              variant="date"
+              dateOptions={{ dateStyle: "medium" }}
+            />
           ) : (
             "—"
           ),
         meta: {
           mobile: "P3",
+          // Phones: line 2 also carries the clock-in – clock-out span.
+          mobileCell: ({ row }) =>
+            row.original.clockIn ? (
+              <>
+                <DateTime
+                  value={row.original.clockIn}
+                  variant="date"
+                  dateOptions={{ dateStyle: "medium" }}
+                />
+                {" · "}
+                <DateTime value={row.original.clockIn} variant="time" />
+                {" – "}
+                <DateTime
+                  value={row.original.clockOut}
+                  variant="time"
+                  fallback="—"
+                />
+              </>
+            ) : (
+              "—"
+            ),
           icon: <LuCalendar />
         }
       },
@@ -224,7 +228,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         }
       }
     ];
-  }, [locations, t, locale, isPhone]);
+  }, [locations, t, locale]);
 
   const renderContextMenu = useCallback(
     (row: TimeCardEntry) => {

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useViewport } from "@carbon/react";
+import { cn } from "@carbon/react";
 import type {
   ReportColumnGranularity,
   ReportPeriodBucket
@@ -23,7 +23,7 @@ import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
 import { NET_INCOME_ACCOUNT_ID } from "../../types";
-import { ColumnStepper, useColumnStep } from "./ColumnStepper";
+import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import { accountsToFlatTree, filterAccounts } from "./reportTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
@@ -75,6 +75,32 @@ export function getPeriodColumnLabel(
   }
 }
 
+/**
+ * Phones: one period at a time (the latest first), so the row labels get the
+ * width the other periods took.
+ */
+export function usePeriodStep(
+  periods: ReportPeriodBucket[],
+  columns: ReportColumnGranularity
+) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const step = useReportColumnStep({
+    count: periods.length,
+    label: (index) => {
+      const bucket = periods[index];
+      return bucket ? getPeriodColumnLabel(bucket, columns, locale) : null;
+    },
+    detail: (index) => (periods[index]?.isPartial ? t`To Date` : undefined)
+  });
+  return {
+    ...step,
+    visiblePeriods: step.isPhone
+      ? periods.slice(step.index, step.index + 1)
+      : periods
+  };
+}
+
 const MultiPeriodStatementTree = memo(
   ({
     data,
@@ -87,14 +113,8 @@ const MultiPeriodStatementTree = memo(
     ledgerPath
   }: MultiPeriodStatementTreeProps) => {
     const { t } = useLingui();
-    const { isPhone } = useViewport();
-    // Phones: one period at a time (the latest first), so the account name
-    // gets the width the other periods took.
-    const [periodIndex, setPeriodIndex] = useColumnStep(periods.length);
-    const visiblePeriods = isPhone
-      ? periods.slice(periodIndex, periodIndex + 1)
-      : periods;
-    const currentPeriod = periods[periodIndex];
+    const { isPhone, estimatedRowHeight, stepper, visiblePeriods } =
+      usePeriodStep(periods, columns);
     const { locale } = useLocale();
     useRealtime("journal");
     const navigate = useNavigate();
@@ -141,7 +161,7 @@ const MultiPeriodStatementTree = memo(
     } = useTree<ChartPeriodSeries, undefined>({
       tree,
       parentRef,
-      estimatedRowHeight: () => (isPhone ? 44 : 36),
+      estimatedRowHeight,
       isEager: true
     });
 
@@ -150,18 +170,9 @@ const MultiPeriodStatementTree = memo(
       : ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
-      // Phones: the filter rows differ in height, so the tree fills what is left.
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col max-md:h-auto max-md:min-h-0 max-md:flex-1">
+      <div className={cn("flex flex-col", reportFrameClassName)}>
         {isPhone ? (
-          currentPeriod ? (
-            <ColumnStepper
-              index={periodIndex}
-              count={periods.length}
-              onChange={setPeriodIndex}
-              label={getPeriodColumnLabel(currentPeriod, columns, locale)}
-              detail={currentPeriod.isPartial ? t`To Date` : undefined}
-            />
-          ) : null
+          stepper
         ) : (
           <>
             {/* Header viewport — scrollLeft is mirrored from the tree below */}

@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
   TrackedEntityPicker,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -125,6 +126,7 @@ type RecommendationsPromise = Promise<
 
 export default function PickingExecutionRoute() {
   const bottomBarRef = useMesBottomBar();
+  const { isPhone } = useViewport();
   const { pickingList, recommendations } = useLoaderData<typeof loader>();
 
   const lines = pickingList.lines ?? [];
@@ -161,28 +163,28 @@ export default function PickingExecutionRoute() {
   return (
     <div className="flex flex-col flex-1">
       <MesAppBar
-        kind="pushed"
         title={pickingList.pickingListId}
         subtitle={<Trans>Picking</Trans>}
         back={{ to: path.to.picking }}
-        desktop={null}
       />
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card max-md:hidden">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">{pickingList.pickingListId}</Heading>
-          <PickingListStatus status={pickingList.status} />
-        </div>
-        <div className="flex items-center gap-3 px-3">
-          <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">
-            {completedCount}/{lines.length} <Trans>lines</Trans>
-          </span>
-          <PickingListControls
-            pickingListId={pickingList.id}
-            status={pickingList.status}
-          />
-        </div>
-      </header>
+      {!isPhone && (
+        <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card max-md:hidden">
+          <div className="flex items-center gap-2 px-2">
+            <SidebarTrigger />
+            <Heading size="h4">{pickingList.pickingListId}</Heading>
+            <PickingListStatus status={pickingList.status} />
+          </div>
+          <div className="flex items-center gap-3 px-3">
+            <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">
+              {completedCount}/{lines.length} <Trans>lines</Trans>
+            </span>
+            <PickingListControls
+              pickingListId={pickingList.id}
+              status={pickingList.status}
+            />
+          </div>
+        </header>
+      )}
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
         <div className="w-full max-w-5xl mx-auto pb-16">
@@ -200,22 +202,24 @@ export default function PickingExecutionRoute() {
           </VStack>
         </div>
       </main>
-      <div
-        ref={bottomBarRef}
-        data-mes-bottom-bar
-        className="fixed inset-x-0 bottom-0 z-20 flex items-center gap-3 border-t border-border bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden"
-      >
-        <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground tabular-nums">
-          {completedCount}/{lines.length} <Trans>lines</Trans>
-        </span>
-        <PickingListControls
-          pickingListId={pickingList.id}
-          status={pickingList.status}
-          size="lg"
-          finishVariant="primary"
-          className="min-w-0 flex-1 [&_button]:w-full [&_button]:h-12"
-        />
-      </div>
+      {isPhone && (
+        <div
+          ref={bottomBarRef}
+          data-mes-bottom-bar
+          className="fixed inset-x-0 bottom-0 z-20 flex items-center gap-3 border-t border-border bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden"
+        >
+          <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground tabular-nums">
+            {completedCount}/{lines.length} <Trans>lines</Trans>
+          </span>
+          <PickingListControls
+            pickingListId={pickingList.id}
+            status={pickingList.status}
+            size="lg"
+            finishVariant="primary"
+            className="min-w-0 flex-1 [&_button]:w-full [&_button]:h-12"
+          />
+        </div>
+      )}
     </div>
   );
 }

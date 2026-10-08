@@ -91,7 +91,7 @@ export function MesTabBar({
       data-mes-tab-bar=""
       data-visible={isTyping ? "false" : "true"}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-30 min-h-[calc(54px+env(safe-area-inset-bottom))]",
+        "fixed inset-x-0 bottom-0 z-30 min-h-[var(--mes-tab-bar-h)]",
         isTyping && "hidden"
       )}
     >

@@ -2,13 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  Badge,
-  MENU_ITEM_SHORTCUTS,
-  MenuIcon,
-  MenuItem,
-  useViewport
-} from "@carbon/react";
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { formatTimeOfDay } from "@carbon/utils";
 import {
   parseTime,
@@ -46,7 +40,6 @@ type ShiftsTableProps = {
 const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  const { isPhone } = useViewport();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -125,18 +118,23 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         accessorKey: "startTime",
         header: t`Start Time`,
         cell: ({ row }) =>
-          // Phones: line 2 shows the whole span, start – end.
-          isPhone && row.original.endTime ? (
-            <>
-              {renderShiftTime(row.original.startTime, row.original.locationId)}
-              {" – "}
-              {renderShiftTime(row.original.endTime, row.original.locationId)}
-            </>
-          ) : (
-            renderShiftTime(row.original.startTime, row.original.locationId)
-          ),
+          renderShiftTime(row.original.startTime, row.original.locationId),
         meta: {
           mobile: "P3",
+          // Phones: line 2 shows the whole span, start – end.
+          mobileCell: ({ row }) =>
+            row.original.endTime ? (
+              <>
+                {renderShiftTime(
+                  row.original.startTime,
+                  row.original.locationId
+                )}
+                {" – "}
+                {renderShiftTime(row.original.endTime, row.original.locationId)}
+              </>
+            ) : (
+              renderShiftTime(row.original.startTime, row.original.locationId)
+            ),
           icon: <LuClock />
         }
       },
@@ -191,7 +189,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [locations, renderDays, renderShiftTime, customColumns, isPhone, t]);
+  }, [locations, renderDays, renderShiftTime, customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: Shift) => {

@@ -18,7 +18,6 @@ import {
   MenuItem,
   toast,
   useDisclosure,
-  useViewport,
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
@@ -164,11 +163,33 @@ function useReleasedJobsMessage() {
     t`${plural(count, { one: "Released # job", other: "Released # jobs" })}`;
 }
 
+function renderQuantity(job: Job, unit?: string | null) {
+  const quantity = job.quantity;
+  const quantityComplete = job.quantityComplete ?? 0;
+
+  if (["In Progress", "Released", "Paused"].includes(job.status ?? "")) {
+    return (
+      <BarProgress
+        progress={(quantityComplete / (quantity ?? 0)) * 100}
+        value={`${quantityComplete}/${quantity}`}
+      />
+    );
+  }
+  if (unit) {
+    return (
+      <>
+        {quantity}
+        <span className="ml-1 text-[13px] text-muted-foreground">{unit}</span>
+      </>
+    );
+  }
+  return quantity;
+}
+
 const JobsTable = memo((props: JobsTableProps) => {
   const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
-  const { isPhone } = useViewport();
   const releasedJobsMessage = useReleasedJobsMessage();
   const [params] = useUrlParams();
   const parts = useParts();
@@ -360,37 +381,12 @@ const JobsTable = memo((props: JobsTableProps) => {
       {
         accessorKey: "quantity",
         header: t`Quantity`,
-        cell: ({ row }) => {
-          const quantity = row.original.quantity;
-          const quantityComplete = row.original.quantityComplete ?? 0;
-
-          if (
-            ["In Progress", "Released", "Paused"].includes(
-              row.original.status ?? ""
-            )
-          ) {
-            return (
-              <BarProgress
-                progress={(quantityComplete / (quantity ?? 0)) * 100}
-                value={`${quantityComplete}/${quantity}`}
-              />
-            );
-          }
-          // Phones: no column header, so the number carries its unit.
-          if (isPhone && row.original.unitOfMeasureCode) {
-            return (
-              <>
-                {quantity}
-                <span className="ml-1 text-[13px] text-muted-foreground">
-                  {row.original.unitOfMeasureCode}
-                </span>
-              </>
-            );
-          }
-          return quantity;
-        },
+        cell: ({ row }) => renderQuantity(row.original),
         meta: {
           mobile: "P2",
+          // Phones: no column header, so the number carries its unit.
+          mobileCell: ({ row }) =>
+            renderQuantity(row.original, row.original.unitOfMeasureCode),
           icon: <LuHash />,
           renderTotal: true
         }
@@ -697,7 +693,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, trackedEntities, batchesByJobId, isPhone]);
+  }, [params, customColumns, trackedEntities, batchesByJobId]);
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {

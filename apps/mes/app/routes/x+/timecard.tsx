@@ -317,7 +317,7 @@ export default function MESTimecardPage() {
 
   return (
     <>
-      <MesAppBar kind="root" title={<Trans>My Hours</Trans>} desktop={null} />
+      <MesAppBar title={<Trans>My Hours</Trans>} />
       <div className="flex flex-col h-full w-full overflow-y-auto p-4 md:p-6 max-md:h-auto max-md:overflow-visible max-md:pb-24">
         <div className="max-w-[60rem] mx-auto w-full">
           <Card className="overflow-hidden">
@@ -326,9 +326,11 @@ export default function MESTimecardPage() {
                 <CardTitle className="max-md:hidden">
                   <Trans>My Hours</Trans>
                 </CardTitle>
-                <HStack className="gap-1 max-md:hidden">
-                  {renderClockForm("md")}
-                </HStack>
+                {!isPhone && (
+                  <HStack className="gap-1 max-md:hidden">
+                    {renderClockForm("md")}
+                  </HStack>
+                )}
               </HStack>
               {openEntry && (
                 <Badge variant="green" className="w-fit">
@@ -656,13 +658,15 @@ export default function MESTimecardPage() {
           </Modal>
         )}
       </div>
-      <div
-        ref={bottomBarRef}
-        data-mes-bottom-bar
-        className="fixed inset-x-0 bottom-[calc(54px+env(safe-area-inset-bottom))] z-20 border-t border-border bg-card px-4 py-3 md:hidden"
-      >
-        {renderClockForm("lg", "w-full h-12")}
-      </div>
+      {isPhone && (
+        <div
+          ref={bottomBarRef}
+          data-mes-bottom-bar
+          className="fixed inset-x-0 bottom-[var(--mes-tab-bar-h)] z-20 border-t border-border bg-card px-4 py-3 md:hidden"
+        >
+          {renderClockForm("lg", "w-full h-12")}
+        </div>
+      )}
     </>
   );
 }

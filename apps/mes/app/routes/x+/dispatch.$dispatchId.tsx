@@ -29,6 +29,7 @@ import {
   SidebarTrigger,
   Status,
   useDisclosure,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { groupBy } from "@carbon/utils";
@@ -218,6 +219,7 @@ export default function MaintenanceDetailRoute() {
   const addPartModal = useDisclosure();
   const [confirmComplete, setConfirmComplete] = useState(false);
   const [allItems] = useItems();
+  const { isPhone } = useViewport();
 
   // Create item options for the combobox
   const itemOptions = useMemo(() => {
@@ -260,31 +262,31 @@ export default function MaintenanceDetailRoute() {
   return (
     <div className="flex flex-col flex-1">
       <MesAppBar
-        kind="pushed"
         title={dispatch.maintenanceDispatchId}
         subtitle={<Trans>Maintenance</Trans>}
         back={{ to: path.to.maintenance }}
-        desktop={null}
       />
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
-        <div className="flex items-center gap-2 px-2 w-full justify-between">
-          <HStack>
-            <SidebarTrigger />
-            <Link to={path.to.maintenance}>
-              <Button variant="ghost" size="sm">
-                <LuArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Heading size="h4">{dispatch.maintenanceDispatchId}</Heading>
-            <MaintenanceStatus status={dispatch.status} />
-          </HStack>
-          <HStack>
-            {getPriorityIcon(
-              dispatch.priority as (typeof maintenanceDispatchPriority)[number]
-            )}
-          </HStack>
-        </div>
-      </header>
+      {!isPhone && (
+        <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
+          <div className="flex items-center gap-2 px-2 w-full justify-between">
+            <HStack>
+              <SidebarTrigger />
+              <Link to={path.to.maintenance}>
+                <Button variant="ghost" size="sm">
+                  <LuArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Heading size="h4">{dispatch.maintenanceDispatchId}</Heading>
+              <MaintenanceStatus status={dispatch.status} />
+            </HStack>
+            <HStack>
+              {getPriorityIcon(
+                dispatch.priority as (typeof maintenanceDispatchPriority)[number]
+              )}
+            </HStack>
+          </div>
+        </header>
+      )}
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
         <VStack spacing={4} className="max-w-2xl mx-auto">

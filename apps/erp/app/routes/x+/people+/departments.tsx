@@ -20,8 +20,7 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
-  useViewport
+  TabsTrigger
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -33,7 +32,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
-import { AppBarActions } from "~/components/Layout/Mobile";
+import { AppBarAction } from "~/components/New";
 import { getDepartmentsTree } from "~/modules/people";
 import {
   DepartmentsListView,
@@ -75,7 +74,6 @@ export default function Route() {
   const { departments } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
-  const { isPhone } = useViewport();
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -149,22 +147,12 @@ export default function Route() {
             to={path.to.newDepartment}
             variant="primary"
           />
-          {isPhone ? (
-            // Phones: the content ⋮ moves to the app bar ⋯.
-            <AppBarActions>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    aria-label={t`Table actions`}
-                    variant="ghost"
-                    size="lg"
-                    icon={<LuEllipsis />}
-                  />
-                </DropdownMenuTrigger>
-                {actionsMenuContent}
-              </DropdownMenu>
-            </AppBarActions>
-          ) : (
+          {/* Phones: the content ⋮ moves to the app bar ⋯. */}
+          <AppBarAction
+            icon={<LuEllipsis />}
+            label={t`Table actions`}
+            menu={actionsMenuContent}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
@@ -175,7 +163,7 @@ export default function Route() {
               </DropdownMenuTrigger>
               {actionsMenuContent}
             </DropdownMenu>
-          )}
+          </AppBarAction>
         </HStack>
       </div>
 

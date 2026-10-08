@@ -1853,13 +1853,11 @@ export function AssemblyView({
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
       <MesAppBar
-        kind="pushed"
         title={
           operation?.jobReadableId ?? job?.itemReadableIdWithRevision ?? "—"
         }
         subtitle={origin.label}
         back={{ to: origin.to }}
-        desktop={null}
         actions={headerActions}
       />
       {/* Phones use the app bar above; one header mounts so its timers do too. */}

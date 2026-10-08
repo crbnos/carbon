@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
-  IconButton,
   Switch
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -27,7 +26,7 @@ import {
 } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
-import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
+import { AppBarAction } from "~/components/New";
 import { useUrlParams } from "~/hooks";
 import type { PivotMeasure, PivotState } from "../../accounting.models";
 import {
@@ -158,7 +157,7 @@ const PurchasesControlBar = ({
   return (
     <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full max-md:gap-1 max-md:px-0 max-md:py-1.5">
       {/* Phones: the scope controls form one sideways-scrolling chip
-          row; Download sits on the line below. */}
+          row; Download sits in the app bar. */}
       <HStack className="flex-wrap gap-y-2 max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
         <PeriodSelector variant="range" />
         <DropdownMenu>
@@ -324,24 +323,19 @@ const PurchasesControlBar = ({
           </Button>
         )}
       </HStack>
-      <Button
-        variant="secondary"
-        leftIcon={<LuDownload />}
+      <AppBarAction
+        icon={<LuDownload />}
+        label={t`Download`}
         onClick={onDownload}
-        className="max-md:hidden"
       >
-        {t`Download`}
-      </Button>
-      {/* Phones: Download sits in the app bar, not on a row of its own. */}
-      <AppBarActions>
-        <IconButton
-          aria-label={t`Download`}
-          variant="ghost"
-          size="lg"
-          icon={<LuDownload />}
+        <Button
+          variant="secondary"
+          leftIcon={<LuDownload />}
           onClick={onDownload}
-        />
-      </AppBarActions>
+        >
+          {t`Download`}
+        </Button>
+      </AppBarAction>
     </div>
   );
 };

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useViewport } from "@carbon/react";
+import { cn } from "@carbon/react";
 import type {
   ReportColumnGranularity,
   ReportPeriodBucket
@@ -12,9 +12,12 @@ import { useLocale } from "@react-aria/i18n";
 import { memo, useEffect, useMemo, useRef } from "react";
 import { useRealtime } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
-import { ColumnStepper, useColumnStep } from "./ColumnStepper";
+import { reportFrameClassName } from "./ColumnStepper";
 import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
-import { getPeriodColumnLabel } from "./MultiPeriodStatementTree";
+import {
+  getPeriodColumnLabel,
+  usePeriodStep
+} from "./MultiPeriodStatementTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
 const PERIOD_COLUMN_WIDTH = 128;
@@ -45,14 +48,10 @@ const ExecutivePnlSummary = memo(
     parentCurrency
   }: ExecutivePnlSummaryProps) => {
     const { t } = useLingui();
-    const { isPhone } = useViewport();
-    // Phones: one period at a time (the latest first), so the labels and
-    // margins get the width the other periods took.
-    const [periodIndex, setPeriodIndex] = useColumnStep(periods.length);
-    const visiblePeriods = isPhone
-      ? periods.slice(periodIndex, periodIndex + 1)
-      : periods;
-    const currentPeriod = periods[periodIndex];
+    const { isPhone, stepper, visiblePeriods } = usePeriodStep(
+      periods,
+      columns
+    );
     const { locale } = useLocale();
     useRealtime("journal");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -107,49 +106,41 @@ const ExecutivePnlSummary = memo(
       : ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col max-md:h-auto max-md:min-h-0 max-md:flex-1">
-        {isPhone && currentPeriod ? (
-          <ColumnStepper
-            index={periodIndex}
-            count={periods.length}
-            onChange={setPeriodIndex}
-            label={getPeriodColumnLabel(currentPeriod, columns, locale)}
-            detail={currentPeriod.isPartial ? t`To Date` : undefined}
-          />
-        ) : null}
-        {/* Header viewport — scrollLeft is mirrored from the body below */}
-        <div
-          ref={headerRef}
-          className="shrink-0 overflow-x-hidden max-md:hidden"
-        >
-          <div
-            className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
-            style={{ minWidth: rowWidth }}
-          >
+      <div className={cn("flex flex-col", reportFrameClassName)}>
+        {isPhone ? (
+          stepper
+        ) : (
+          // Header viewport — scrollLeft is mirrored from the body below
+          <div ref={headerRef} className="shrink-0 overflow-x-hidden">
             <div
-              className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: ACCOUNT_COLUMN_WIDTH }}
+              className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
+              style={{ minWidth: rowWidth }}
             >
-              <Trans>Executive P&amp;L</Trans>
-            </div>
-            {periods.map((bucket) => (
               <div
-                key={bucket.key}
-                className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
-                style={{ width: PERIOD_COLUMN_WIDTH }}
+                className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
+                style={{ width: ACCOUNT_COLUMN_WIDTH }}
               >
-                <span className="whitespace-nowrap">
-                  {getPeriodColumnLabel(bucket, columns, locale)}
-                </span>
-                {bucket.isPartial && (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {t`To Date`}
-                  </span>
-                )}
+                <Trans>Executive P&amp;L</Trans>
               </div>
-            ))}
+              {periods.map((bucket) => (
+                <div
+                  key={bucket.key}
+                  className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
+                  style={{ width: PERIOD_COLUMN_WIDTH }}
+                >
+                  <span className="whitespace-nowrap">
+                    {getPeriodColumnLabel(bucket, columns, locale)}
+                  </span>
+                  {bucket.isPartial && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {t`To Date`}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           ref={scrollRef}

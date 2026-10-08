@@ -511,6 +511,8 @@ export const JobOperation = ({
   // Chat is one job's thread, so a Chat tab left open in the job scope falls
   // back to Details on the batch.
   const tab = scope === "batch" && activeTab === "chat" ? "details" : activeTab;
+  // Phones on Details show the context row and meters in the scrolling pane.
+  const contextInPane = isPhone && tab === "details";
   const showControls = !["chat", "procedure"].includes(tab);
   // Read after mount (never during render) so SSR and the first client
   // render agree; storage can throw in private/locked-down browsers.
@@ -1145,7 +1147,6 @@ export const JobOperation = ({
       >
         <div className="[grid-area:header] flex min-w-0 flex-col">
           <MesAppBar
-            kind="pushed"
             title={
               scope === "batch" && batch
                 ? batch.readableId
@@ -1154,7 +1155,6 @@ export const JobOperation = ({
             subtitle={origin.label}
             back={{ to: origin.to }}
             actions={renderJobMenu({ size: "lg", align: "end" })}
-            desktop={null}
           />
           <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b px-2 max-md:h-auto max-md:py-0">
             <HStack className="w-full justify-between max-md:flex-wrap max-md:gap-y-1">
@@ -1195,25 +1195,24 @@ export const JobOperation = ({
           </header>
         </div>
 
-        {renderContextRow(
-          cn("[grid-area:context]", tab === "details" && "max-md:hidden")
+        {!contextInPane && (
+          <>
+            {renderContextRow("[grid-area:context]")}
+            <Separator className="[grid-area:sep]" />
+          </>
         )}
-        <Separator
-          className={cn(
-            "[grid-area:sep]",
-            tab === "details" && "max-md:hidden"
-          )}
-        />
 
         <TabsContent
           value="details"
           className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
           <div className="w-full min-w-0">
-            {renderContextRow("md:hidden border-b border-border")}
-            <div className="border-b border-border px-4 py-3 md:hidden">
-              {meters}
-            </div>
+            {contextInPane && (
+              <>
+                {renderContextRow("border-b border-border")}
+                <div className="border-b border-border px-4 py-3">{meters}</div>
+              </>
+            )}
             {isCompleting && (
               <div className="px-4 pt-4 lg:px-6">
                 <Card>
@@ -2724,15 +2723,8 @@ export const JobOperation = ({
             </div>
           </Controls>
         )}
-        {!["chat"].includes(activeTab) && (
-          <Times
-            className={cn(
-              "[grid-area:status]",
-              tab === "details" && "max-md:hidden"
-            )}
-          >
-            {meters}
-          </Times>
+        {!["chat"].includes(activeTab) && !contextInPane && (
+          <Times className="[grid-area:status]">{meters}</Times>
         )}
       </Tabs>
       <BottomSheet

@@ -29,7 +29,7 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
-import { MesAppBar } from "~/components/MesAppBar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
@@ -425,7 +425,8 @@ export default function MaintenanceRoute() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <MesAppBar kind="root" title={<Trans>Maintenance</Trans>} />
+      <MesAppBar title={<Trans>Maintenance</Trans>} />
+      <MesQueueHeader title={<Trans>Maintenance</Trans>} />
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="w-full p-4">

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useViewport } from "@carbon/react";
+import { cn } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -18,7 +18,7 @@ import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { PivotMeasure, PivotState } from "../../accounting.models";
 import type { DimensionPivot } from "../../types";
-import { ColumnStepper, useColumnStep } from "./ColumnStepper";
+import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import type { PivotCellValue, PivotRowNode } from "./pivotData";
 import {
   applyPercentOfTotal,
@@ -83,7 +83,6 @@ function formatMeasureValue(value: number, measure: PivotMeasure): string {
 const PivotTree = memo(
   ({ pivot, state, columnLabels, onCellClick }: PivotTreeProps) => {
     const { t } = useLingui();
-    const { isPhone } = useViewport();
     const rowColumnWidth = ROW_COLUMN_WIDTH;
     const { locale } = useLocale();
     const [, setParams] = useUrlParams();
@@ -128,17 +127,28 @@ const PivotTree = memo(
     );
 
     const { flatTree, columnKeys, columnTotals, grandTotal } = pivotTree;
-    // Phones: one value column at a time; the last step is the row total,
-    // shown first.
-    const [columnIndex, setColumnIndex] = useColumnStep(columnKeys.length + 1);
-    const phoneColumnKey: string | null =
-      columnIndex < columnKeys.length
-        ? (columnKeys[columnIndex] ?? null)
-        : null;
     const columnLabel = (columnKey: string) =>
       columnKey === UNASSIGNED_COLUMN_KEY
         ? t`Unassigned`
         : (columnLabels[columnKey] ?? columnKey);
+    // Phones: one value column at a time; the last step is the row total,
+    // shown first.
+    const {
+      isPhone,
+      index: columnIndex,
+      estimatedRowHeight,
+      stepper
+    } = useReportColumnStep({
+      count: columnKeys.length + 1,
+      label: (index) => {
+        const columnKey = columnKeys[index];
+        return columnKey === undefined ? t`Total` : columnLabel(columnKey);
+      }
+    });
+    const phoneColumnKey: string | null =
+      columnIndex < columnKeys.length
+        ? (columnKeys[columnIndex] ?? null)
+        : null;
 
     const percentFormatter = useMemo(
       () =>
@@ -200,7 +210,7 @@ const PivotTree = memo(
     } = useTree<PivotRowNode, undefined>({
       tree: flatTree,
       parentRef,
-      estimatedRowHeight: () => (isPhone ? 44 : 36),
+      estimatedRowHeight,
       isEager: true
     });
 
@@ -260,89 +270,80 @@ const PivotTree = memo(
     }
 
     return (
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col max-md:h-auto max-md:min-h-0 max-md:flex-1">
+      <div className={cn("flex flex-col", reportFrameClassName)}>
         {pivot.hasMore && (
           <div className="shrink-0 border-b border-border bg-card px-4 py-1.5 text-xs text-muted-foreground">
             <p>{t`Showing the top 1,000 groups by amount`}</p>
           </div>
         )}
         {isPhone ? (
-          <ColumnStepper
-            index={columnIndex}
-            count={columnKeys.length + 1}
-            onChange={setColumnIndex}
-            label={
-              phoneColumnKey === null ? t`Total` : columnLabel(phoneColumnKey)
-            }
-          />
-        ) : null}
-        {/* Header viewport — scrollLeft is mirrored from the tree below */}
-        <div
-          ref={headerRef}
-          className="shrink-0 overflow-x-hidden max-md:hidden"
-        >
-          <div
-            className="relative flex h-12 items-center border-b border-border bg-card text-sm font-medium text-foreground/80"
-            style={{ minWidth: rowWidth }}
-          >
-            {/* Row-label header — sorts rows alphabetically by label */}
-            <button
-              type="button"
-              className={cn(
-                "group/header sticky left-0 z-[2] flex h-full shrink-0 items-center gap-1 bg-card px-4 text-muted-foreground hover:text-foreground",
-                state.sort?.key === LABEL_SORT_KEY && "text-foreground"
-              )}
-              style={{ width: rowColumnWidth }}
-              onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
+          stepper
+        ) : (
+          // Header viewport — scrollLeft is mirrored from the tree below
+          <div ref={headerRef} className="shrink-0 overflow-x-hidden">
+            <div
+              className="relative flex h-12 items-center border-b border-border bg-card text-sm font-medium text-foreground/80"
+              style={{ minWidth: rowWidth }}
             >
-              {renderSortIndicator(LABEL_SORT_KEY)}
-            </button>
-            {virtualColumns.map((virtualColumn) => {
-              const columnKey = columnKeys[virtualColumn.index];
-              if (columnKey === undefined) return null;
-              return (
-                <button
-                  type="button"
-                  key={columnKey}
-                  className={cn(
-                    "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
-                    columnKey === UNASSIGNED_COLUMN_KEY &&
-                      "italic text-muted-foreground",
-                    state.sort?.key === columnKey && "text-foreground"
-                  )}
-                  style={{
-                    left: rowColumnWidth + virtualColumn.start,
-                    width: VALUE_COLUMN_WIDTH
-                  }}
-                  onClick={() => cycleSort(columnKey, "desc")}
-                >
-                  <span className="truncate">
-                    {columnKey === UNASSIGNED_COLUMN_KEY
-                      ? t`Unassigned`
-                      : (columnLabels[columnKey] ?? columnKey)}
-                  </span>
-                  {renderSortIndicator(columnKey)}
-                </button>
-              );
-            })}
-            {/* Total header — sorts rows by their total */}
-            <button
-              type="button"
-              className={cn(
-                "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
-                state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
-              )}
-              style={{
-                left: rowColumnWidth + totalColumnsWidth,
-                width: VALUE_COLUMN_WIDTH
-              }}
-              onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
-            >
-              <Trans>Total</Trans>
-              {renderSortIndicator(TOTAL_SORT_KEY)}
-            </button>
+              {/* Row-label header — sorts rows alphabetically by label */}
+              <button
+                type="button"
+                className={cn(
+                  "group/header sticky left-0 z-[2] flex h-full shrink-0 items-center gap-1 bg-card px-4 text-muted-foreground hover:text-foreground",
+                  state.sort?.key === LABEL_SORT_KEY && "text-foreground"
+                )}
+                style={{ width: rowColumnWidth }}
+                onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
+              >
+                {renderSortIndicator(LABEL_SORT_KEY)}
+              </button>
+              {virtualColumns.map((virtualColumn) => {
+                const columnKey = columnKeys[virtualColumn.index];
+                if (columnKey === undefined) return null;
+                return (
+                  <button
+                    type="button"
+                    key={columnKey}
+                    className={cn(
+                      "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
+                      columnKey === UNASSIGNED_COLUMN_KEY &&
+                        "italic text-muted-foreground",
+                      state.sort?.key === columnKey && "text-foreground"
+                    )}
+                    style={{
+                      left: rowColumnWidth + virtualColumn.start,
+                      width: VALUE_COLUMN_WIDTH
+                    }}
+                    onClick={() => cycleSort(columnKey, "desc")}
+                  >
+                    <span className="truncate">
+                      {columnKey === UNASSIGNED_COLUMN_KEY
+                        ? t`Unassigned`
+                        : (columnLabels[columnKey] ?? columnKey)}
+                    </span>
+                    {renderSortIndicator(columnKey)}
+                  </button>
+                );
+              })}
+              {/* Total header — sorts rows by their total */}
+              <button
+                type="button"
+                className={cn(
+                  "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
+                  state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
+                )}
+                style={{
+                  left: rowColumnWidth + totalColumnsWidth,
+                  width: VALUE_COLUMN_WIDTH
+                }}
+                onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
+              >
+                <Trans>Total</Trans>
+                {renderSortIndicator(TOTAL_SORT_KEY)}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <TreeView<PivotRowNode>
           tree={flatTree}
           nodes={nodes}
@@ -558,66 +559,64 @@ const PivotTree = memo(
                     )}
             </span>
           </div>
-        ) : null}
-        {/* Column totals footer — scrollLeft mirrored from the tree above */}
-        <div
-          ref={footerRef}
-          className="shrink-0 overflow-x-hidden max-md:hidden"
-        >
-          <div
-            className="relative flex h-9 items-center border-t border-border bg-card text-sm font-semibold"
-            style={{ minWidth: rowWidth }}
-          >
+        ) : (
+          // Column totals footer — scrollLeft mirrored from the tree above
+          <div ref={footerRef} className="shrink-0 overflow-x-hidden">
             <div
-              className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: rowColumnWidth }}
+              className="relative flex h-9 items-center border-t border-border bg-card text-sm font-semibold"
+              style={{ minWidth: rowWidth }}
             >
-              <Trans>Total</Trans>
+              <div
+                className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
+                style={{ width: rowColumnWidth }}
+              >
+                <Trans>Total</Trans>
+              </div>
+              {virtualColumns.map((virtualColumn) => {
+                const columnKey = columnKeys[virtualColumn.index];
+                if (columnKey === undefined) return null;
+                return (
+                  <span
+                    key={columnKey}
+                    className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
+                    style={{
+                      left: rowColumnWidth + virtualColumn.start,
+                      width: VALUE_COLUMN_WIDTH
+                    }}
+                  >
+                    {state.percentOfTotal
+                      ? percentFormatter.format(
+                          getPivotMeasureValue(
+                            columnTotals[columnKey],
+                            state.measure
+                          ) === 0
+                            ? 0
+                            : 1
+                        )
+                      : formatMeasureValue(
+                          getPivotMeasureValue(
+                            columnTotals[columnKey],
+                            state.measure
+                          ),
+                          state.measure
+                        )}
+                  </span>
+                );
+              })}
+              <span
+                className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
+                style={{
+                  left: rowColumnWidth + totalColumnsWidth,
+                  width: VALUE_COLUMN_WIDTH
+                }}
+              >
+                {state.percentOfTotal
+                  ? percentFormatter.format(grandTotalValue === 0 ? 0 : 1)
+                  : formatMeasureValue(grandTotalValue, state.measure)}
+              </span>
             </div>
-            {virtualColumns.map((virtualColumn) => {
-              const columnKey = columnKeys[virtualColumn.index];
-              if (columnKey === undefined) return null;
-              return (
-                <span
-                  key={columnKey}
-                  className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
-                  style={{
-                    left: rowColumnWidth + virtualColumn.start,
-                    width: VALUE_COLUMN_WIDTH
-                  }}
-                >
-                  {state.percentOfTotal
-                    ? percentFormatter.format(
-                        getPivotMeasureValue(
-                          columnTotals[columnKey],
-                          state.measure
-                        ) === 0
-                          ? 0
-                          : 1
-                      )
-                    : formatMeasureValue(
-                        getPivotMeasureValue(
-                          columnTotals[columnKey],
-                          state.measure
-                        ),
-                        state.measure
-                      )}
-                </span>
-              );
-            })}
-            <span
-              className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
-              style={{
-                left: rowColumnWidth + totalColumnsWidth,
-                width: VALUE_COLUMN_WIDTH
-              }}
-            >
-              {state.percentOfTotal
-                ? percentFormatter.format(grandTotalValue === 0 ? 0 : 1)
-                : formatMeasureValue(grandTotalValue, state.measure)}
-            </span>
           </div>
-        </div>
+        )}
       </div>
     );
   }

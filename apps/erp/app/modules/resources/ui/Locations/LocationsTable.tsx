@@ -2,12 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  MENU_ITEM_SHORTCUTS,
-  MenuIcon,
-  MenuItem,
-  useViewport
-} from "@carbon/react";
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -38,7 +33,6 @@ type LocationsTableProps = {
 
 const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
   const { t } = useLingui();
-  const { isPhone } = useViewport();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -67,19 +61,18 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       {
         accessorKey: "addressLine1",
         header: t`Address`,
-        cell: (item) =>
-          // Phones: line 2 is the joined address (street, city, state).
-          isPhone
-            ? [
-                item.row.original.addressLine1,
-                item.row.original.city,
-                item.row.original.stateProvince
-              ]
-                .filter(Boolean)
-                .join(", ")
-            : item.getValue(),
+        cell: (item) => item.getValue(),
         meta: {
           mobile: "P3",
+          // Phones: line 2 is the joined address (street, city, state).
+          mobileCell: (item) =>
+            [
+              item.row.original.addressLine1,
+              item.row.original.city,
+              item.row.original.stateProvince
+            ]
+              .filter(Boolean)
+              .join(", "),
           icon: <LuHouse />
         }
       },
@@ -148,7 +141,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [people, customColumns, isPhone, t]);
+  }, [people, customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

@@ -43,7 +43,7 @@ import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
-import { MesAppBar } from "~/components/MesAppBar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
@@ -686,9 +686,8 @@ function KanbanSchedule() {
   return (
     // Phones: the shell grows with its content, so the page takes the screen
     // above the tab bar itself; each column then scrolls under its header.
-    <div className="flex flex-col flex-1 min-h-0 w-full max-md:h-[calc(100dvh-54px-env(safe-area-inset-bottom))] max-md:flex-none">
+    <div className="flex flex-col flex-1 min-h-0 w-full max-md:h-[calc(100dvh-var(--mes-tab-bar-h))] max-md:flex-none">
       <MesAppBar
-        kind="root"
         title={<Trans>Schedule</Trans>}
         actions={
           <Popover>
@@ -704,6 +703,7 @@ function KanbanSchedule() {
           </Popover>
         }
       />
+      <MesQueueHeader title={<Trans>Schedule</Trans>} />
       <div className="flex flex-col flex-1 min-h-0 overflow-auto relative">
         <HStack className="px-4 py-2 justify-between bg-card border-b border-border max-md:gap-2 max-md:space-x-0 max-md:pt-3">
           <HStack className="max-md:min-w-0 max-md:flex-1 max-md:space-x-0 max-md:gap-2">

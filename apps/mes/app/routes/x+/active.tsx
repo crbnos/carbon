@@ -11,7 +11,7 @@ import type { ImperativePanelHandle } from "react-resizable-panels";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
-import { MesAppBar } from "~/components/MesAppBar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
@@ -67,7 +67,8 @@ export default function ActiveRoute() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <MesAppBar kind="root" title={<Trans>Active</Trans>} />
+      <MesAppBar title={<Trans>Active</Trans>} />
+      <MesQueueHeader title={<Trans>Active</Trans>} />
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="w-full p-4 h-[var(--header-height)] max-md:h-auto max-md:pb-0">

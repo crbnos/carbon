@@ -3,13 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, RecordOutlet, useViewport, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { New } from "~/components";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { getFixedAssetClassesList, getFixedAssets } from "~/modules/accounting";
 import { FixedAssetsTable } from "~/modules/accounting/ui/FixedAssets";
@@ -64,7 +64,6 @@ export default function FixedAssetsRoute() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { isPhone } = useViewport();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -73,19 +72,17 @@ export default function FixedAssetsRoute() {
         count={count}
         assetClasses={assetClasses}
         primaryAction={
-          permissions.can("create", "accounting") &&
-          // Phones: Add becomes the app bar "+" like the other lists.
-          (isPhone ? (
-            <New label={t`Fixed Asset`} to={path.to.newFixedAsset} />
-          ) : (
-            <Button
-              leftIcon={<LuCirclePlus />}
-              variant="primary"
-              onClick={() => navigate(path.to.newFixedAsset)}
-            >
-              Add Fixed Asset
-            </Button>
-          ))
+          permissions.can("create", "accounting") && (
+            <NewAction label={t`Add Fixed Asset`} to={path.to.newFixedAsset}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                variant="primary"
+                onClick={() => navigate(path.to.newFixedAsset)}
+              >
+                <Trans>Add Fixed Asset</Trans>
+              </Button>
+            </NewAction>
+          )
         }
       />
       <RecordOutlet />

@@ -3,13 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, RecordOutlet, useViewport, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { New } from "~/components";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { getFixedAssetClasses } from "~/modules/accounting";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
@@ -60,7 +60,6 @@ export default function AssetClassesRoute() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { isPhone } = useViewport();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -69,19 +68,17 @@ export default function AssetClassesRoute() {
         count={count}
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
-          permissions.can("create", "accounting") &&
-          // Phones: Add becomes the app bar "+" like the other lists.
-          (isPhone ? (
-            <New label={t`Asset Class`} to={path.to.newAssetClass} />
-          ) : (
-            <Button
-              leftIcon={<LuCirclePlus />}
-              variant="primary"
-              onClick={() => navigate(path.to.newAssetClass)}
-            >
-              <Trans>Add Asset Class</Trans>
-            </Button>
-          ))
+          permissions.can("create", "accounting") && (
+            <NewAction label={t`Add Asset Class`} to={path.to.newAssetClass}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                variant="primary"
+                onClick={() => navigate(path.to.newAssetClass)}
+              >
+                <Trans>Add Asset Class</Trans>
+              </Button>
+            </NewAction>
+          )
         }
       />
       <RecordOutlet />

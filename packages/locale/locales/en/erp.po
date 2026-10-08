@@ -1768,6 +1768,9 @@ msgstr "Add Employee"
 msgid "Add Entry"
 msgstr "Add Entry"
 
+msgid "Add Fixed Asset"
+msgstr "Add Fixed Asset"
+
 msgid "Add from library…"
 msgstr "Add from library…"
 

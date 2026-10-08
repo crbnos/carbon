@@ -1768,6 +1768,9 @@ msgstr "従業員を追加"
 msgid "Add Entry"
 msgstr "エントリを追加"
 
+msgid "Add Fixed Asset"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "ライブラリから追加…"
 
