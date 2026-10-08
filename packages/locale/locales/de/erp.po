@@ -3790,6 +3790,12 @@ msgstr "Bibliothek durchsuchen"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Durchsuchen Sie die veröffentlichte Version schreibgeschützt. Sie können die Schritte weiterhin neu anordnen, um das Layout zu ordnen."
 
+msgid "browser"
+msgstr "Browser"
+
+msgid "Browser"
+msgstr "Browser"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "Fehler beim Speichern der Änderung"
 msgid "Failed to save tools"
 msgstr "Werkzeuge konnten nicht gespeichert werden"
 
+msgid "Failed to send a test notification"
+msgstr "Fehler beim Senden einer Test-Benachrichtigung"
+
+msgid "Failed to turn off push notifications"
+msgstr "Fehler beim Deaktivieren von Push-Benachrichtigungen"
+
+msgid "Failed to turn on push notifications"
+msgstr "Fehler beim Aktivieren von Push-Benachrichtigungen"
+
 msgid "Failed to update batch property"
 msgstr "Fehler beim Aktualisieren der Batch-Eigenschaft"
 
@@ -9654,6 +9669,9 @@ msgstr "Starten Sie mit Carbon: ein System für Angebote, Einkauf, Werkstatt, Be
 
 msgid "Get Method"
 msgstr "Methode übernehmen"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Erhalten Sie Benachrichtigungen auf diesem Gerät, auch wenn Carbon geschlossen ist."
 
 msgid "Get started"
 msgstr "Erste Schritte"
@@ -10404,8 +10422,14 @@ msgstr "Bearbeiten Sie in Ihren Enterprise-Einstellungen unter Developer die Ber
 msgid "In-app"
 msgstr "In-App"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail oder auf Ihren Geräten erreichen."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail oder Slack erreichen."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail, Slack oder auf Ihren Geräten erreichen."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail erreichen."
@@ -13897,6 +13921,9 @@ msgstr "Benachrichtigungstyp"
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Benachrichtigungen sind für Carbon in den Site-Einstellungen dieses Browsers blockiert."
+
 msgid "Notify"
 msgstr "Benachrichtigen"
 
@@ -15966,6 +15993,9 @@ msgstr "Senden"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Es mit neuem Datum zum ersten offenen Tag verschieben und das ursprüngliche Datum in der Erzählung behalten."
+
+msgid "Push notifications are on for this device."
+msgstr "Push-Benachrichtigungen sind auf diesem Gerät aktiviert."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Übertragen Sie Datensatzänderungen in dem Moment an externe Systeme, in dem sie auftreten."
@@ -18495,6 +18525,9 @@ msgstr "Verkaufsgewinn: <0/>"
 msgid "Send"
 msgstr "Senden"
 
+msgid "Send a test notification"
+msgstr "Test-Benachrichtigung senden"
+
 msgid "Send error"
 msgstr "Fehler beim Senden"
 
@@ -20264,6 +20297,9 @@ msgstr "Nutzungsbedingungen"
 msgid "Test"
 msgstr "Testen"
 
+msgid "Test notification sent"
+msgstr "Test-Benachrichtigung gesendet"
+
 msgid "Test run"
 msgstr "Testlauf"
 
@@ -21328,6 +21364,9 @@ msgstr "Diese Sicherung konnte nicht abgeschlossen werden."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Diese Sicherung wurde noch nicht überprüft. Alle Unterschiede werden beim Ausführen der Wiederherstellung gefunden."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Dieser Browser unterstützt keine Push-Benachrichtigungen. Fügen Sie Carbon zuerst auf dem iPhone oder iPad zum Startbildschirm hinzu."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Dies kann später nicht mehr geändert werden — {integrationName} erlaubt nur ein verbundenes Buchhaltungssystem, daher bestimmt die Wahl, was Carbon tun darf. Um zu wechseln, müssten Sie die Anwendung deinstallieren und erneut verbinden."
 
@@ -21360,6 +21399,9 @@ msgstr "Der Mietpreis dieses Kundentyps"
 
 msgid "This customer's rate"
 msgstr "Der Mietpreis dieses Kunden"
+
+msgid "This device"
+msgstr "Dieses Gerät"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Dieser Herunterlade-Link ist ungültig oder wurde manipuliert."
@@ -22138,6 +22180,12 @@ msgstr "Auslöser"
 
 msgid "Tuesday"
 msgstr "Dienstag"
+
+msgid "Turn off"
+msgstr "Deaktivieren"
+
+msgid "Turn on"
+msgstr "Aktivieren"
 
 msgid "Turn on the built-in pieces"
 msgstr "Aktivieren Sie die integrierten Komponenten"

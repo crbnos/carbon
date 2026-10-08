@@ -3790,6 +3790,12 @@ msgstr "ライブラリを参照"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "公開済バージョンを読み取り専用で閲覧できます。レイアウトを整理するためにステップを並び替えることもできます。"
 
+msgid "browser"
+msgstr "ブラウザ"
+
+msgid "Browser"
+msgstr "ブラウザ"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "変更の保存に失敗しました。"
 msgid "Failed to save tools"
 msgstr "ツールの保存に失敗しました"
 
+msgid "Failed to send a test notification"
+msgstr "テスト通知の送信に失敗しました"
+
+msgid "Failed to turn off push notifications"
+msgstr "プッシュ通知をオフにできませんでした"
+
+msgid "Failed to turn on push notifications"
+msgstr "プッシュ通知をオンにできませんでした"
+
 msgid "Failed to update batch property"
 msgstr "バッチプロパティの更新に失敗しました"
 
@@ -9654,6 +9669,9 @@ msgstr "Carbonで稼働開始：見積、購買、製造現場、在庫、財務
 
 msgid "Get Method"
 msgstr "製法を取得"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Carbonが閉じていても、このデバイスで通知を受け取ります。"
 
 msgid "Get started"
 msgstr "始めましょう"
@@ -10404,8 +10422,14 @@ msgstr "Enterprise設定の開発者セクションで、プライベートOAuth
 msgid "In-app"
 msgstr "アプリ内"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "アプリ内通知は常に配信されます。メールまたはデバイスで受け取る通知をお選びください。"
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "アプリ内通知は常に配信されます。メール、Slack、またはデバイスで受け取る通知をお選びください。"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールでも届くかを選択してください。"
@@ -13897,6 +13921,9 @@ msgstr "通知タイプ"
 msgid "Notifications"
 msgstr "通知"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "このブラウザのサイト設定でCarbonの通知がブロックされています。"
+
 msgid "Notify"
 msgstr "通知"
 
@@ -15966,6 +15993,9 @@ msgstr "プッシュ"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "元の日付を説明に保持しながら、最初の開いている日に再日付してプッシュする"
+
+msgid "Push notifications are on for this device."
+msgstr "このデバイスではプッシュ通知がオンになっています。"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "レコードの変更が発生した直後に社外システムにプッシュします。"
@@ -18495,6 +18525,9 @@ msgstr "売却利益: <0/>"
 msgid "Send"
 msgstr "送信"
 
+msgid "Send a test notification"
+msgstr "テスト通知を送信"
+
 msgid "Send error"
 msgstr "送信エラー"
 
@@ -20264,6 +20297,9 @@ msgstr "利用規約"
 msgid "Test"
 msgstr "テスト"
 
+msgid "Test notification sent"
+msgstr "テスト通知を送信しました"
+
 msgid "Test run"
 msgstr "テストラン"
 
@@ -21328,6 +21364,9 @@ msgstr "このバックアップを完了できませんでした。"
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "このブラウザはプッシュ通知に対応していません。iPhoneまたはiPadの場合は、まずCarbonをホーム画面に追加してください。"
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "これは後で変更することはできません — {integrationName}は接続できる会計システムが1つだけに限定されているため、この選択はCarbonが実行できることを決定します。切り替えるには、アンインストールして再度接続する必要があります。"
 
@@ -21360,6 +21399,9 @@ msgstr "この得意先タイプのレート"
 
 msgid "This customer's rate"
 msgstr "この得意先のレート"
+
+msgid "This device"
+msgstr "このデバイス"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
@@ -22138,6 +22180,12 @@ msgstr "トリガー"
 
 msgid "Tuesday"
 msgstr "火曜日"
+
+msgid "Turn off"
+msgstr "オフにする"
+
+msgid "Turn on"
+msgstr "オンにする"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"

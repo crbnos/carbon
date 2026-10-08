@@ -3790,6 +3790,12 @@ msgstr "Обзор библиотеки"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для очистки макета."
 
+msgid "browser"
+msgstr "браузер"
+
+msgid "Browser"
+msgstr "Браузер"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "Не удалось сохранить изменение"
 msgid "Failed to save tools"
 msgstr "Ошибка при сохранении инструментов"
 
+msgid "Failed to send a test notification"
+msgstr "Ошибка отправки тестового уведомления"
+
+msgid "Failed to turn off push notifications"
+msgstr "Ошибка отключения push-уведомлений"
+
+msgid "Failed to turn on push notifications"
+msgstr "Ошибка включения push-уведомлений"
+
 msgid "Failed to update batch property"
 msgstr "Не удалось обновить свойство партии"
 
@@ -9654,6 +9669,9 @@ msgstr "Запустить Carbon: одна система для котиров
 
 msgid "Get Method"
 msgstr "Получить метод"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Получайте уведомления на этом устройстве, даже когда Carbon закрыта."
 
 msgid "Get started"
 msgstr "Начать"
@@ -10404,8 +10422,14 @@ msgstr "В настройках Enterprise под разделом Developer о�
 msgid "In-app"
 msgstr "В приложении"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны доходить вам по электронной почте или на ваши устройства."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте или Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны доходить вам по электронной почте, Slack или на ваши устройства."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте."
@@ -13897,6 +13921,9 @@ msgstr "Тип уведомления"
 msgid "Notifications"
 msgstr "Уведомления"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Уведомления заблокированы для Carbon в параметрах этого браузера."
+
 msgid "Notify"
 msgstr "Уведомить"
 
@@ -15966,6 +15993,9 @@ msgstr "Отправить"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Переместить его с переустановленной датой на первый открытый день, сохраняя исходную дату в примечании."
+
+msgid "Push notifications are on for this device."
+msgstr "Push-уведомления включены для этого устройства."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Отправляйте изменения записей во внешние системы в момент их возникновения."
@@ -18495,6 +18525,9 @@ msgstr "Прибыль от продажи: <0/>"
 msgid "Send"
 msgstr "Отправить"
 
+msgid "Send a test notification"
+msgstr "Отправить тестовое уведомление"
+
 msgid "Send error"
 msgstr "Ошибка отправки"
 
@@ -20264,6 +20297,9 @@ msgstr "Условия обслуживания"
 msgid "Test"
 msgstr "Тест"
 
+msgid "Test notification sent"
+msgstr "Тестовое уведомление отправлено"
+
 msgid "Test run"
 msgstr "Тестовый запуск"
 
@@ -21328,6 +21364,9 @@ msgstr "Эта резервная копия не может быть завер
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Эта резервная копия еще не была проверена. Любые различия будут обнаружены при запуске восстановления."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Этот браузер не поддерживает push-уведомления. На iPhone или iPad сначала добавьте Carbon на главный экран."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Это нельзя изменить позже — {integrationName} позволяет подключить только одну систему учета, поэтому выбор определяет, что Carbon может делать. Чтобы переключиться, вам нужно удалить и переподключить интеграцию."
 
@@ -21360,6 +21399,9 @@ msgstr "Ставка этого типа покупателя"
 
 msgid "This customer's rate"
 msgstr "Ставка этого покупателя"
+
+msgid "This device"
+msgstr "Это устройство"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."
@@ -22138,6 +22180,12 @@ msgstr "Триггеры"
 
 msgid "Tuesday"
 msgstr "Вторник"
+
+msgid "Turn off"
+msgstr "Отключить"
+
+msgid "Turn on"
+msgstr "Включить"
 
 msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"

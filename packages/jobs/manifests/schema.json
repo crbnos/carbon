@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261007171726",
+  "schemaVersion": "20261008002814",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-07T18:06:45.508Z",
+  "exportedAt": "2026-10-08T00:55:34.616Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1939,6 +1939,21 @@
       "name": "purchasingRfqFavorite",
       "rows": 0,
       "columns": ["rfqId", "userId"]
+    },
+    {
+      "name": "pushSubscription",
+      "rows": 0,
+      "columns": [
+        "id",
+        "userId",
+        "companyId",
+        "endpoint",
+        "p256dh",
+        "auth",
+        "userAgent",
+        "createdAt",
+        "updatedAt"
+      ]
     },
     {
       "name": "qualityDocument",

@@ -10,6 +10,7 @@ export type Group =
   | "email"
   | "stripe"
   | "slack"
+  | "push"
   | "xero"
   | "quickbooks"
   | "jira"
@@ -26,6 +27,7 @@ export const FEATURES = {
   email: "Email",
   stripe: "Stripe",
   slack: "Slack",
+  push: "Push notifications",
   xero: "Xero",
   quickbooks: "QuickBooks",
   jira: "Jira",
@@ -335,6 +337,25 @@ export const schema = define({
     group: "slack",
     description: "Bot token for Carbon's own Slack workspace",
     secret: true
+  },
+
+  // ── push ──────────────────────────────────────────────────────────────────
+  VAPID_PUBLIC_KEY: {
+    group: "push",
+    description:
+      "Web Push public key (pnpm dlx web-push generate-vapid-keys). Generate once: a new pair makes every user turn push on again",
+    needed: true
+  },
+  VAPID_PRIVATE_KEY: {
+    group: "push",
+    description: "Web Push private key, paired with VAPID_PUBLIC_KEY",
+    secret: true,
+    needed: true
+  },
+  VAPID_SUBJECT: {
+    group: "push",
+    description: "Contact for push services: a mailto: or https: URL",
+    needed: true
   },
 
   // ── xero ──────────────────────────────────────────────────────────────────

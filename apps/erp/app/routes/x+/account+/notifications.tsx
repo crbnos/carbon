@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
+import { isPushConfigured, VAPID_PUBLIC_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import {
   getNotificationTopicChannels,
@@ -16,11 +17,13 @@ import {
   USER_FACING_NOTIFICATION_TOPICS
 } from "@carbon/notifications";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  HStack,
   Switch,
   VStack
 } from "@carbon/react";
@@ -28,6 +31,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetchers, useLoaderData, useSubmit } from "react-router";
+import { usePushSubscription } from "~/hooks/usePushSubscription";
 import {
   getNotificationPreferences,
   notificationPreferenceValidator,
@@ -62,7 +66,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     preferences: preferences.data ?? [],
     slackActive: slackIntegration.data?.active ?? false,
-    emailPlanEnabled
+    emailPlanEnabled,
+    // Null hides every push control: the deployment has no VAPID keys.
+    push: isPushConfigured() ? { publicKey: VAPID_PUBLIC_KEY as string } : null
   };
 }
 
@@ -100,8 +106,9 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AccountNotifications() {
-  const { preferences, slackActive, emailPlanEnabled } =
+  const { preferences, slackActive, emailPlanEnabled, push } =
     useLoaderData<typeof loader>();
+  const device = usePushSubscription({ publicKey: push?.publicKey ?? null });
   const submit = useSubmit();
   const fetchers = useFetchers();
   const { t } = useLingui();
@@ -164,13 +171,90 @@ export default function AccountNotifications() {
 
   return (
     <VStack spacing={4} className="pb-6">
+      {push && (
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between">
+              <div>
+                <CardTitle>
+                  <Trans>This device</Trans>
+                </CardTitle>
+                <CardDescription>
+                  {device.state === "off" && (
+                    <Trans>
+                      Get notifications on this device, even when Carbon is
+                      closed.
+                    </Trans>
+                  )}
+                  {device.state === "on" && (
+                    <Trans>Push notifications are on for this device.</Trans>
+                  )}
+                  {device.state === "denied" && (
+                    <Trans>
+                      Notifications are blocked for Carbon in this
+                      browser&apos;s site settings.
+                    </Trans>
+                  )}
+                  {device.state === "unsupported" && (
+                    <Trans>
+                      This browser does not support push notifications. On
+                      iPhone or iPad, add Carbon to the Home Screen first.
+                    </Trans>
+                  )}
+                </CardDescription>
+              </div>
+              {device.state === "off" && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={device.turnOn}
+                  isDisabled={device.busy}
+                  isLoading={device.busy}
+                >
+                  <Trans>Turn on</Trans>
+                </Button>
+              )}
+              {device.state === "on" && (
+                <HStack>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={device.sendTest}
+                    isDisabled={device.busy}
+                  >
+                    <Trans>Send a test notification</Trans>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={device.turnOff}
+                    isDisabled={device.busy}
+                  >
+                    <Trans>Turn off</Trans>
+                  </Button>
+                </HStack>
+              )}
+            </HStack>
+          </CardHeader>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>
             <Trans>Notifications</Trans>
           </CardTitle>
           <CardDescription>
-            {slackActive ? (
+            {push && slackActive ? (
+              <Trans>
+                In-app notifications are always delivered. Choose which topics
+                also reach you by email, Slack or on your devices.
+              </Trans>
+            ) : push ? (
+              <Trans>
+                In-app notifications are always delivered. Choose which topics
+                also reach you by email or on your devices.
+              </Trans>
+            ) : slackActive ? (
               <Trans>
                 In-app notifications are always delivered. Choose which topics
                 also reach you by email or Slack.
@@ -206,6 +290,11 @@ export default function AccountNotifications() {
                     <Trans>Slack</Trans>
                   </th>
                 )}
+                {push && (
+                  <th className="text-center text-sm font-medium py-2 w-24">
+                    <Trans>Browser</Trans>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -235,6 +324,7 @@ export default function AccountNotifications() {
                     <td className="text-sm py-3">{topicLabels[topic]}</td>
                     {cell("email", t`email`)}
                     {slackActive && cell("slack", t`Slack`)}
+                    {push && cell("push", t`browser`)}
                   </tr>
                 );
               })}

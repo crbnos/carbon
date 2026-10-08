@@ -52,6 +52,18 @@ export type Events = {
     };
   };
 
+  // Web Push events: one per pushSubscription row
+  "carbon/send-push": {
+    data: {
+      subscriptionId: string;
+      companyId: string;
+      title: string;
+      body: string;
+      url: string;
+      tag: string;
+    };
+  };
+
   // Email events
   "carbon/send-email": {
     data: {

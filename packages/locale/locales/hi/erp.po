@@ -3790,6 +3790,12 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "प्रकाशित संस्करण को केवल पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 
+msgid "browser"
+msgstr "ब्राउज़र"
+
+msgid "Browser"
+msgstr "ब्राउज़र"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "परिवर्तन को सहेजने में विफ�
 msgid "Failed to save tools"
 msgstr "उपकरणों को सहेजने में विफल"
 
+msgid "Failed to send a test notification"
+msgstr "परीक्षण सूचना भेजने में विफल"
+
+msgid "Failed to turn off push notifications"
+msgstr "पुश सूचनाएं बंद करने में विफल"
+
+msgid "Failed to turn on push notifications"
+msgstr "पुश सूचनाएं चालू करने में विफल"
+
 msgid "Failed to update batch property"
 msgstr "बैच गुण अपडेट करने में विफल"
 
@@ -9654,6 +9669,9 @@ msgstr "Carbon पर लाइव जाएं: एक प्रणाली �
 
 msgid "Get Method"
 msgstr "विधि प्राप्त करें"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "इस डिवाइस पर सूचनाएं प्राप्त करें, भले ही Carbon बंद हो।"
 
 msgid "Get started"
 msgstr "शुरुआत करें"
@@ -10404,8 +10422,14 @@ msgstr "अपनी Enterprise सेटिंग्स में Developer क
 msgid "In-app"
 msgstr "ऐप में"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "ऐप्लिकेशन के अंदर की सूचनाएं हमेशा पहुंचाई जाती हैं। चुनें कि कौन से विषय आपको ईमेल या आपके डिवाइस पर भी पहुंचें।"
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप सूचनाएं हमेशा दी जाती हैं। चुनें कि कौन से विषय आपको ईमेल या Slack द्वारा भी पहुंचें।"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "ऐप्लिकेशन के अंदर की सूचनाएं हमेशा पहुंचाई जाती हैं। चुनें कि कौन से विषय आपको ईमेल, Slack या आपके डिवाइस पर भी पहुंचें।"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "इन-ऐप सूचनाएं हमेशा दी जाती हैं। चुनें कि कौन से विषय आपको ईमेल द्वारा भी पहुंचें।"
@@ -13897,6 +13921,9 @@ msgstr "सूचना प्रकार"
 msgid "Notifications"
 msgstr "सूचनाएं"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "इस ब्राउज़र की साइट सेटिंग्स में Carbon के लिए सूचनाएं अवरुद्ध हैं।"
+
 msgid "Notify"
 msgstr "सूचित करें"
 
@@ -15966,6 +15993,9 @@ msgstr "धकेलें"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "इसे पहले खुले दिन तक पुनः-तारीखित करें, मूल तारीख को विवरण में रखते हुए।"
+
+msgid "Push notifications are on for this device."
+msgstr "इस डिवाइस के लिए पुश सूचनाएं चालू हैं।"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "रिकॉर्ड परिवर्तनों को बाहरी सिस्टम में तुरंत भेजें जब वे होते हैं।"
@@ -18495,6 +18525,9 @@ msgstr "विक्रय लाभ: <0/>"
 msgid "Send"
 msgstr "भेजें"
 
+msgid "Send a test notification"
+msgstr "परीक्षण सूचना भेजें"
+
 msgid "Send error"
 msgstr "त्रुटि भेजें"
 
@@ -20264,6 +20297,9 @@ msgstr "सेवा की शर्तें"
 msgid "Test"
 msgstr "परीक्षण"
 
+msgid "Test notification sent"
+msgstr "परीक्षण सूचना भेजी गई"
+
 msgid "Test run"
 msgstr "परीक्षण चलाएं"
 
@@ -21328,6 +21364,9 @@ msgstr "यह बैकअप पूर्ण नहीं किया जा 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "इस बैकअप की अभी जांच नहीं की गई है। कोई भी अंतर पुनः स्थापित करने के समय पाया जाता है।"
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "यह ब्राउज़र पुश सूचनाओं का समर्थन नहीं करता। iPhone या iPad पर, पहले Carbon को होम स्क्रीन में जोड़ें।"
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "यह बाद में नहीं बदला जा सकता — {integrationName} केवल एक जुड़े हुए लेखांकन प्रणाली की अनुमति देता है, इसलिए यह विकल्प तय करता है कि Carbon क्या करने के लिए अनुमत है। स्विच करने के लिए, आप अनइंस्टॉल करेंगे और फिर से कनेक्ट करेंगे।"
 
@@ -21360,6 +21399,9 @@ msgstr "इस ग्राहक प्रकार की दर"
 
 msgid "This customer's rate"
 msgstr "इस ग्राहक की दर"
+
+msgid "This device"
+msgstr "यह डिवाइस"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
@@ -22138,6 +22180,12 @@ msgstr "ट्रिगर"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
+
+msgid "Turn off"
+msgstr "बंद करें"
+
+msgid "Turn on"
+msgstr "चालू करें"
 
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"

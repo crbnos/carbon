@@ -1,9 +1,9 @@
 ---
 title: Notifications
-description: Assignments, approvals, expirations, and reminders reach the right people over in-app, email, and Slack, with per-user channel opt-outs by topic.
+description: Assignments, approvals, expirations, and reminders reach the right people over in-app, email, Slack, and browser push, with per-user channel opt-outs by topic.
 ---
 
-A <Term>notification</Term> alerts one person to an assignment, approval, expiration, or other event. Carbon can deliver it through the **in-app inbox** (the bell in the top bar), **email**, and **Slack**. In-app delivery is always enabled; users can mute email and Slack by topic. Carbon does not notify users about their own actions.
+A <Term>notification</Term> alerts one person to an assignment, approval, expiration, or other event. Carbon can deliver it through the **in-app inbox** (the bell in the top bar), **email**, **Slack**, and **browser push**. In-app delivery is always enabled; users can mute the other channels by topic. Carbon does not notify users about their own actions.
 
 ## What raises a notification
 
@@ -28,19 +28,24 @@ The channels differ in what they require:
   <Field name="In-app">The bell in the top bar. **Always written**, for every recipient, on every event — it cannot be turned off.</Field>
   <Field name="Email">A per-notification email with a **View** button. Sent only when the company's plan includes email notifications.</Field>
   <Field name="Slack">A DM in the connected workspace. Needs an active Slack integration *and* a matching Slack account for the recipient.</Field>
+  <Field name="Browser">An operating-system notification on each device where the user turned push on, even when Carbon is closed. Clicking it opens the record. Sent for every event that also goes to email or Slack. Needs the deployment's Web Push keys (`VAPID_*`); without them the channel does not exist.</Field>
 </FieldTable>
 
 <Callout type="warn">
-Email is **plan-gated**: companies without the `EMAIL_NOTIFICATIONS` plan feature skip the email channel entirely, regardless of the per-user switch. Slack has no plan gate — it only needs the integration. See [licensing](/docs/platform/licensing).
+Email is **plan-gated**: companies without the `EMAIL_NOTIFICATIONS` plan feature skip the email channel entirely, regardless of the per-user switch. Slack and browser push have no plan gate. See [licensing](/docs/platform/licensing).
 </Callout>
 
 ## Muting a topic
 
-Each user controls their own email and Slack delivery under **Account → Notifications**: a grid with one row per topic, a column per channel, a switch in each cell. In-app has no switch.
+Each user controls their own email, Slack and browser delivery under **Account → Notifications**: a grid with one row per topic, a column per channel, a switch in each cell. In-app has no switch.
 
 <Screenshot label="Account → Notifications preferences grid: topic rows, Email and Slack columns, switches per cell" caption="Muting is per topic, per channel, per company. The in-app inbox always gets everything." />
 
-Each channel is enabled by default. Turning off a switch mutes only that topic and channel for the current company. For example, muting Purchasing in Slack does not mute Purchasing email, other Slack topics, or notifications in another company. The Slack column appears only when Slack is connected. The email column always appears and indicates when the plan does not support delivery.
+Each channel is enabled by default. Turning off a switch mutes only that topic and channel for the current company. For example, muting Purchasing in Slack does not mute Purchasing email, other Slack topics, or notifications in another company. The Slack column appears only when Slack is connected. The Browser column appears only when the deployment has Web Push keys. The email column always appears and indicates when the plan does not support delivery.
+
+## Push notifications on a device
+
+Above the grid, the **This device** card turns push on for the browser you are using. Click **Turn on** and allow the browser's prompt; **Send a test notification** checks the whole path. Push is per browser and per company: turn it on again on each computer or phone, and after switching company. **Sign Out** turns push off for that browser, so a shared computer does not keep receiving your notifications. On iPhone or iPad, add Carbon to the Home Screen first — Safari offers push only to Home Screen apps.
 
 ## Who receives an expiration or reminder
 
@@ -82,7 +87,10 @@ Slack needs an active integration and a matching Slack account for the recipient
 Expected: in-app is always written and cannot be turned off. Mutes affect only email and Slack.
 
 ### I turned a channel on but it still doesn't deliver
-Enabling a channel removes the mute but does not bypass its prerequisites: the plan feature for email, or the integration and account mapping for Slack.
+Enabling a channel removes the mute but does not bypass its prerequisites: the plan feature for email, the integration and account mapping for Slack, or push turned on for this device for Browser.
+
+### I turned push on but nothing arrives
+Use **Send a test notification**. If the card says notifications are blocked, allow them for Carbon in the browser's site settings. Push only goes to events that also go to email or Slack, so in-app-only events such as accounting sync alerts never push.
 
 ### I did something myself and got no notification
 The sender is filtered out of the recipient list. Self-assignments notify nobody.

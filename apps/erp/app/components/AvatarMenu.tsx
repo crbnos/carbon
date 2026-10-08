@@ -46,16 +46,21 @@ import {
   LuSun,
   LuUser
 } from "react-icons/lu";
-import { Form, Link, useFetcher } from "react-router";
+import { Form, Link, useFetcher, useSubmit } from "react-router";
 import { Avatar } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
+import { unsubscribeThisDevice } from "~/hooks/usePushSubscription";
 import { useTheme } from "~/hooks/useTheme";
 import type { action } from "~/root";
 import { startModeTransition } from "~/utils/dom";
 import { path } from "~/utils/path";
 
+// Sign Out waits at most this long for the push unsubscribe.
+const SIGN_OUT_UNSUBSCRIBE_MS = 1000;
+
 const AvatarMenu = () => {
   const { t } = useLingui();
+  const submit = useSubmit();
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
   const { isOwner } = usePermissions();
@@ -296,7 +301,23 @@ const AvatarMenu = () => {
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
-            <Form method="post" action={path.to.logout}>
+            <Form
+              method="post"
+              action={path.to.logout}
+              onSubmit={async (event) => {
+                // Stop this browser receiving the user's pushes once they
+                // leave. Never let it hold up the sign out.
+                event.preventDefault();
+                const form = event.currentTarget;
+                await Promise.race([
+                  unsubscribeThisDevice(),
+                  new Promise((resolve) =>
+                    setTimeout(resolve, SIGN_OUT_UNSUBSCRIBE_MS)
+                  )
+                ]);
+                submit(form);
+              }}
+            >
               <button type="submit" className="w-full h-full flex items-center">
                 <DropdownMenuIcon icon={<LuLogOut />} />
                 <span>

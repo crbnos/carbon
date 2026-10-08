@@ -3790,6 +3790,12 @@ msgstr "浏览库"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
+msgid "browser"
+msgstr "浏览器"
+
+msgid "Browser"
+msgstr "浏览器"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "保存更改失败"
 msgid "Failed to save tools"
 msgstr "保存工具失败"
 
+msgid "Failed to send a test notification"
+msgstr "发送测试通知失败"
+
+msgid "Failed to turn off push notifications"
+msgstr "关闭推送通知失败"
+
+msgid "Failed to turn on push notifications"
+msgstr "开启推送通知失败"
+
 msgid "Failed to update batch property"
 msgstr "批处理属性更新失败"
 
@@ -9654,6 +9669,9 @@ msgstr "在Carbon上线：一套系统运行报价、采购、车间、库存管
 
 msgid "Get Method"
 msgstr "获取方法"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "在此设备上接收通知,即使 Carbon 已关闭。"
 
 msgid "Get started"
 msgstr "开始使用"
@@ -10404,8 +10422,14 @@ msgstr "在您的企业设置的开发者下，编辑私有 OAuth 应用程序�
 msgid "In-app"
 msgstr "应用内"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "应用内通知始终会送达。选择哪些主题也通过电子邮件或设备上的通知向您发送。"
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "应用内通知始终会送达。选择哪些主题也通过电子邮件、Slack 或设备上的通知向您发送。"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件发送给您。"
@@ -13897,6 +13921,9 @@ msgstr "通知类型"
 msgid "Notifications"
 msgstr "通知"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "在此浏览器的网站设置中,Carbon 的通知被阻止。"
+
 msgid "Notify"
 msgstr "通知"
 
@@ -15966,6 +15993,9 @@ msgstr "推送"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "将其重新日期设置为第一个开放日，在叙述中保留原始日期。"
+
+msgid "Push notifications are on for this device."
+msgstr "此设备已启用推送通知。"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "将记录更改实时推送到外部系统。"
@@ -18495,6 +18525,9 @@ msgstr "销售利润：<0/>"
 msgid "Send"
 msgstr "发送"
 
+msgid "Send a test notification"
+msgstr "发送测试通知"
+
 msgid "Send error"
 msgstr "发送错误"
 
@@ -20264,6 +20297,9 @@ msgstr "服务条款"
 msgid "Test"
 msgstr "测试"
 
+msgid "Test notification sent"
+msgstr "测试通知已发送"
+
 msgid "Test run"
 msgstr "测试运行"
 
@@ -21328,6 +21364,9 @@ msgstr "无法完成此备份。"
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "此浏览器不支持推送通知。在 iPhone 或 iPad 上,请先将 Carbon 添加到主屏幕。"
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "这无法在之后更改 — {integrationName} 仅允许一个连接的会计系统，因此您的选择决定了 Carbon 被允许执行的操作。要切换，您需要卸载并重新连接。"
 
@@ -21360,6 +21399,9 @@ msgstr "此客户类型的费率"
 
 msgid "This customer's rate"
 msgstr "此客户的费率"
+
+msgid "This device"
+msgstr "此设备"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
@@ -22138,6 +22180,12 @@ msgstr "触发器"
 
 msgid "Tuesday"
 msgstr "星期二"
+
+msgid "Turn off"
+msgstr "关闭"
+
+msgid "Turn on"
+msgstr "开启"
 
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"

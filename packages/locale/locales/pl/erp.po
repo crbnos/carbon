@@ -3790,6 +3790,12 @@ msgstr "Przeglądaj bibliotekę"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Przeglądaj opublikowaną wersję w trybie tylko do odczytu. Nadal możesz zmienić kolejność kroków, aby uporządkować układ."
 
+msgid "browser"
+msgstr "przeglądarka"
+
+msgid "Browser"
+msgstr "Przeglądarka"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "Nie udało się zapisać zmiany"
 msgid "Failed to save tools"
 msgstr "Nie udało się zapisać narzędzi"
 
+msgid "Failed to send a test notification"
+msgstr "Nie udało się wysłać powiadomienia testowego"
+
+msgid "Failed to turn off push notifications"
+msgstr "Nie udało się wyłączyć powiadomień push"
+
+msgid "Failed to turn on push notifications"
+msgstr "Nie udało się włączyć powiadomień push"
+
 msgid "Failed to update batch property"
 msgstr "Nie udało się zaktualizować właściwości partii"
 
@@ -9654,6 +9669,9 @@ msgstr "Przejdź na żywo w Carbon: jeden system zarządzający wycenami, zakupa
 
 msgid "Get Method"
 msgstr "Pobierz metodę"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Otrzymuj powiadomienia na tym urządzeniu, nawet gdy Carbon jest zamknięty."
 
 msgid "Get started"
 msgstr "Zacznij"
@@ -10404,8 +10422,14 @@ msgstr "W ustawieniach Enterprise w sekcji Developer edytuj uprawnienia prywatne
 msgid "In-app"
 msgstr "W aplikacji"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy także dotrą do Ciebie pocztą elektroniczną lub na Twoje urządzenia."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy mają do Ciebie dotrzeć również pocztą e-mail lub Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy także dotrą do Ciebie pocztą elektroniczną, Slack lub na Twoje urządzenia."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy mają do Ciebie dotrzeć również pocztą e-mail."
@@ -13897,6 +13921,9 @@ msgstr "Typ powiadomienia"
 msgid "Notifications"
 msgstr "Powiadomienia"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Powiadomienia są zablokowane dla Carbon w ustawieniach witryny tej przeglądarki."
+
 msgid "Notify"
 msgstr "Powiadom"
 
@@ -15966,6 +15993,9 @@ msgstr "Wyślij"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Przesuń go z nową datą na pierwszy otwarty dzień, zachowując oryginalną datę w naracji."
+
+msgid "Push notifications are on for this device."
+msgstr "Powiadomienia push są włączone na tym urządzeniu."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Wyślij zmiany rekordów do systemów zewnętrznych w momencie ich wystąpienia."
@@ -18495,6 +18525,9 @@ msgstr "Zysk ze sprzedaży: <0/>"
 msgid "Send"
 msgstr "Wyslij"
 
+msgid "Send a test notification"
+msgstr "Wyślij powiadomienie testowe"
+
 msgid "Send error"
 msgstr "Błąd wysyłania"
 
@@ -20264,6 +20297,9 @@ msgstr "Warunki korzystania"
 msgid "Test"
 msgstr "Testuj"
 
+msgid "Test notification sent"
+msgstr "Powiadomienie testowe wysłane"
+
 msgid "Test run"
 msgstr "Test uruchomienia"
 
@@ -21328,6 +21364,9 @@ msgstr "Nie można było ukończyć tej kopii zapasowej."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Ta kopia zapasowa nie została jeszcze sprawdzona. Wszelkie różnice są znaleziane po uruchomieniu przywracania."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Ta przeglądarka nie obsługuje powiadomień push. Na iPhone'ie lub iPad najpierw dodaj Carbon do ekranu głównego."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Nie można tego zmienić później — {integrationName} pozwala na połączenie tylko jednego systemu księgowego, więc wybór decyduje o tym, co Carbon może robić. Aby przełączyć się, musisz odinstalować i ponownie połączyć."
 
@@ -21360,6 +21399,9 @@ msgstr "Stawka tego typu klienta"
 
 msgid "This customer's rate"
 msgstr "Stawka tego klienta"
+
+msgid "This device"
+msgstr "To urządzenie"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Ten link pobierania jest nieprawidłowy lub został zmieniony."
@@ -22138,6 +22180,12 @@ msgstr "Wyzwalacze"
 
 msgid "Tuesday"
 msgstr "Wtorek"
+
+msgid "Turn off"
+msgstr "Wyłącz"
+
+msgid "Turn on"
+msgstr "Włącz"
 
 msgid "Turn on the built-in pieces"
 msgstr "Włącz wbudowane komponenty"

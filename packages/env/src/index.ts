@@ -94,6 +94,16 @@ export const INNGEST_EVENT_KEY = getEnv("INNGEST_EVENT_KEY");
 export const ERP_URL = getEnv("ERP_URL") ?? "https://app.carbon.ms";
 export const MES_URL = getEnv("MES_URL") ?? "https://mes.carbon.ms";
 
+// Web Push. All three or none: the notify job and the account page treat a
+// half-set pair as "push off" (validateEnv warns about it).
+export const VAPID_PUBLIC_KEY = getEnv("VAPID_PUBLIC_KEY");
+export const VAPID_PRIVATE_KEY = getEnv("VAPID_PRIVATE_KEY");
+export const VAPID_SUBJECT = getEnv("VAPID_SUBJECT");
+
+export function isPushConfigured(): boolean {
+  return Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY && VAPID_SUBJECT);
+}
+
 export const ASSEMBLER_SERVICE_URL = getEnv("ASSEMBLER_SERVICE_URL");
 // Dev-only (crbn-written): local kong port for the storage-URL rewrite in
 // internalizeStorageUrl. Unset in prod.

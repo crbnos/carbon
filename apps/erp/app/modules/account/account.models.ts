@@ -9,8 +9,23 @@ import { zfd } from "zod-form-data";
 
 export const notificationPreferenceValidator = z.object({
   topic: z.nativeEnum(NotificationTopic),
-  channel: z.enum(["email", "slack"]),
+  channel: z.enum(["email", "slack", "push"]),
   enabled: z.enum(["true", "false"])
+});
+
+// The browser's PushSubscription.toJSON(), plus the endpoint it replaces when
+// the service worker re-subscribes after a pushsubscriptionchange.
+export const pushSubscriptionValidator = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1)
+  }),
+  oldEndpoint: z.string().url().optional()
+});
+
+export const pushSubscriptionEndpointValidator = z.object({
+  endpoint: z.string().url()
 });
 
 export const onboardingUserValidator = z.object({

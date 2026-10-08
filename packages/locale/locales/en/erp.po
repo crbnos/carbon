@@ -3790,6 +3790,12 @@ msgstr "Browse library"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 
+msgid "browser"
+msgstr "browser"
+
+msgid "Browser"
+msgstr "Browser"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "Failed to save the change"
 msgid "Failed to save tools"
 msgstr "Failed to save tools"
 
+msgid "Failed to send a test notification"
+msgstr "Failed to send a test notification"
+
+msgid "Failed to turn off push notifications"
+msgstr "Failed to turn off push notifications"
+
+msgid "Failed to turn on push notifications"
+msgstr "Failed to turn on push notifications"
+
 msgid "Failed to update batch property"
 msgstr "Failed to update batch property"
 
@@ -9654,6 +9669,9 @@ msgstr "Get live on Carbon: one system running quoting, purchasing, the shop flo
 
 msgid "Get Method"
 msgstr "Get Method"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Get notifications on this device, even when Carbon is closed."
 
 msgid "Get started"
 msgstr "Get started"
@@ -10404,8 +10422,14 @@ msgstr "In your Enterprise settings under Developer, edit the private OAuth appl
 msgid "In-app"
 msgstr "In-app"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email."
@@ -13897,6 +13921,9 @@ msgstr "Notification Type"
 msgid "Notifications"
 msgstr "Notifications"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Notifications are blocked for Carbon in this browser's site settings."
+
 msgid "Notify"
 msgstr "Notify"
 
@@ -15966,6 +15993,9 @@ msgstr "Push"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Push it re-dated to the first open day, keeping the original date in the narration."
+
+msgid "Push notifications are on for this device."
+msgstr "Push notifications are on for this device."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Push record changes to external systems the moment they happen."
@@ -18495,6 +18525,9 @@ msgstr "Selling profit: <0/>"
 msgid "Send"
 msgstr "Send"
 
+msgid "Send a test notification"
+msgstr "Send a test notification"
+
 msgid "Send error"
 msgstr "Send error"
 
@@ -20264,6 +20297,9 @@ msgstr "Terms of Service"
 msgid "Test"
 msgstr "Test"
 
+msgid "Test notification sent"
+msgstr "Test notification sent"
+
 msgid "Test run"
 msgstr "Test run"
 
@@ -21328,6 +21364,9 @@ msgstr "This backup could not be completed."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "This backup hasn't been checked yet. Any differences are found when the restore runs."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 
@@ -21360,6 +21399,9 @@ msgstr "This customer type's rate"
 
 msgid "This customer's rate"
 msgstr "This customer's rate"
+
+msgid "This device"
+msgstr "This device"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
@@ -22138,6 +22180,12 @@ msgstr "Triggers"
 
 msgid "Tuesday"
 msgstr "Tuesday"
+
+msgid "Turn off"
+msgstr "Turn off"
+
+msgid "Turn on"
+msgstr "Turn on"
 
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"

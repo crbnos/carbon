@@ -3790,6 +3790,12 @@ msgstr "라이브러리 둘러보기"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "게시됨 버전을 읽기 전용으로 탐색합니다. 단계를 다시 정렬하여 레이아웃을 정리할 수 있습니다."
 
+msgid "browser"
+msgstr "브라우저"
+
+msgid "Browser"
+msgstr "브라우저"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "변경 사항을 저장하지 못했습니다."
 msgid "Failed to save tools"
 msgstr "도구 저장 실패"
 
+msgid "Failed to send a test notification"
+msgstr "테스트 알림 전송 실패"
+
+msgid "Failed to turn off push notifications"
+msgstr "푸시 알림 끄기 실패"
+
+msgid "Failed to turn on push notifications"
+msgstr "푸시 알림 켜기 실패"
+
 msgid "Failed to update batch property"
 msgstr "배치 속성을 업데이트하지 못했습니다"
 
@@ -9654,6 +9669,9 @@ msgstr "Carbon으로 전환하세요: 견적, 구매, 현장, 재고, 재무를 
 
 msgid "Get Method"
 msgstr "방법 가져오기"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Carbon이 닫혀 있을 때도 이 기기에서 알림을 받습니다."
 
 msgid "Get started"
 msgstr "시작하기"
@@ -10404,8 +10422,14 @@ msgstr "엔터프라이즈 설정의 개발자 아래에서 개인 OAuth 애플�
 msgid "In-app"
 msgstr "인앱"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 기기에서도 받을 주제를 선택하세요."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "앱 내 알림은 항상 전달됩니다. 이메일, Slack 또는 기기에서도 받을 주제를 선택하세요."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일로도 전달받을 주제를 선택하세요."
@@ -13897,6 +13921,9 @@ msgstr "알림 유형"
 msgid "Notifications"
 msgstr "알림"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "이 브라우저의 사이트 설정에서 Carbon의 알림이 차단되었습니다."
+
 msgid "Notify"
 msgstr "알림"
 
@@ -15966,6 +15993,9 @@ msgstr "푸시"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "원본 날짜를 설명에 유지하면서 첫 번째 개시 날짜로 재날짜를 지정합니다."
+
+msgid "Push notifications are on for this device."
+msgstr "이 기기에서 푸시 알림이 켜져 있습니다."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "레코드 변경 사항이 발생하는 즉시 외부 시스템으로 전송합니다."
@@ -18495,6 +18525,9 @@ msgstr "판매 이익: <0/>"
 msgid "Send"
 msgstr "전송"
 
+msgid "Send a test notification"
+msgstr "테스트 알림 전송"
+
 msgid "Send error"
 msgstr "전송 오류"
 
@@ -20264,6 +20297,9 @@ msgstr "이용약관"
 msgid "Test"
 msgstr "테스트"
 
+msgid "Test notification sent"
+msgstr "테스트 알림 전송됨"
+
 msgid "Test run"
 msgstr "테스트 실행"
 
@@ -21328,6 +21364,9 @@ msgstr "이 백업을 완료할 수 없습니다."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "이 브라우저는 푸시 알림을 지원하지 않습니다. iPhone 또는 iPad의 경우 먼저 Carbon을 홈 화면에 추가하세요."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "이후에는 변경할 수 없습니다 — {integrationName}은(는) 연결된 회계 시스템을 하나만 허용하므로, 선택에 따라 Carbon이 수행할 수 있는 작업이 결정됩니다. 전환하려면 제거한 후 다시 연결해야 합니다."
 
@@ -21360,6 +21399,9 @@ msgstr "이 고객 유형의 요금"
 
 msgid "This customer's rate"
 msgstr "이 고객의 요금"
+
+msgid "This device"
+msgstr "이 기기"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
@@ -22138,6 +22180,12 @@ msgstr "트리거"
 
 msgid "Tuesday"
 msgstr "화요일"
+
+msgid "Turn off"
+msgstr "끄기"
+
+msgid "Turn on"
+msgstr "켜기"
 
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"

@@ -3790,6 +3790,12 @@ msgstr "Kütüphaneyi göz at"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Yayınlanan sürümü salt okunur şekilde inceleyin. Düzeni düzenlemek için adımları yine de yeniden düzenleyebilirsiniz."
 
+msgid "browser"
+msgstr "tarayıcı"
+
+msgid "Browser"
+msgstr "Tarayıcı"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "Değişikliği kaydetme başarısız oldu"
 msgid "Failed to save tools"
 msgstr "Araç kaydedilemedi"
 
+msgid "Failed to send a test notification"
+msgstr "Test bildirimini göndermek başarısız oldu"
+
+msgid "Failed to turn off push notifications"
+msgstr "Push bildirimlerini kapatmak başarısız oldu"
+
+msgid "Failed to turn on push notifications"
+msgstr "Push bildirimlerini açmak başarısız oldu"
+
 msgid "Failed to update batch property"
 msgstr "Toplu özelliği güncelleme başarısız oldu"
 
@@ -9654,6 +9669,9 @@ msgstr "Carbon'da canlı yayına geçin: alıntı alma, satın alma, atölye tab
 
 msgid "Get Method"
 msgstr "Yöntemi getir"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Bu cihazda bildirim alın, Carbon kapalı olsa da."
 
 msgid "Get started"
 msgstr "Başlayın"
@@ -10404,8 +10422,14 @@ msgstr "Enterprise ayarlarınızın Geliştirici bölümünde, özel OAuth uygul
 msgid "In-app"
 msgstr "Uygulama içi"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "Uygulama içi bildirimler her zaman gönderilir. Hangi konuların e-posta veya cihazlarınız üzerinden size ulaşacağını seçin."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "Uygulama içi bildirimler her zaman gönderilir. Hangi konuların e-posta, Slack veya cihazlarınız üzerinden size ulaşacağını seçin."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta aracılığıyla sizi ulaştıracağını seçin."
@@ -13897,6 +13921,9 @@ msgstr "Bildirim Türü"
 msgid "Notifications"
 msgstr "Bildirimler"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Bu tarayıcının site ayarlarında Carbon için bildirimler engellendi."
+
 msgid "Notify"
 msgstr "Bildir"
 
@@ -15966,6 +15993,9 @@ msgstr "Gönder"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "İlk açık güne yeniden tarihlendir, orijinal tarihi açıklamada tut."
+
+msgid "Push notifications are on for this device."
+msgstr "Bu cihaz için push bildirimler açık."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Kayıt değişikliklerini gerçekleştiği anda harici sistemlere gönderin."
@@ -18495,6 +18525,9 @@ msgstr "Satış karı: <0/>"
 msgid "Send"
 msgstr "Gönder"
 
+msgid "Send a test notification"
+msgstr "Test bildirimi gönder"
+
 msgid "Send error"
 msgstr "Gönderme Hatası"
 
@@ -20264,6 +20297,9 @@ msgstr "Hizmet Şartları"
 msgid "Test"
 msgstr "Test"
 
+msgid "Test notification sent"
+msgstr "Test bildirimi gönderildi"
+
 msgid "Test run"
 msgstr "Test çalıştırması"
 
@@ -21328,6 +21364,9 @@ msgstr "Bu yedekleme tamamlanamadı."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Bu yedek henüz kontrol edilmedi. Herhangi bir fark, geri yükleme çalıştığında bulunur."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Bu tarayıcı push bildirimleri desteklemez. iPhone veya iPad'de, Carbon'u önce Ana Ekrana ekleyin."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Bu daha sonra değiştirilemez — {integrationName} yalnızca bir bağlı muhasebe sistemine izin verir, bu nedenle seçim Carbon'un ne yapmasına izin verildiğini belirler. Geçiş yapmak için kaldırıp yeniden bağlanmanız gerekir."
 
@@ -21360,6 +21399,9 @@ msgstr "Bu müşteri türü'nün oranı"
 
 msgid "This customer's rate"
 msgstr "Bu müşteri'nin oranı"
+
+msgid "This device"
+msgstr "Bu cihaz"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."
@@ -22138,6 +22180,12 @@ msgstr "Tetikleyiciler"
 
 msgid "Tuesday"
 msgstr "Salı"
+
+msgid "Turn off"
+msgstr "Kapat"
+
+msgid "Turn on"
+msgstr "Aç"
 
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"

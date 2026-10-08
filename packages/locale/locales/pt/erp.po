@@ -3790,6 +3790,12 @@ msgstr "Procurar biblioteca"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Navegue pela versão publicada somente leitura. Você ainda pode reorganizar etapas para limpar o layout."
 
+msgid "browser"
+msgstr "navegador"
+
+msgid "Browser"
+msgstr "Navegador"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -9107,6 +9113,15 @@ msgstr "Falha ao salvar a alteração"
 msgid "Failed to save tools"
 msgstr "Falha ao salvar ferramentas"
 
+msgid "Failed to send a test notification"
+msgstr "Falha ao enviar uma notificação de teste"
+
+msgid "Failed to turn off push notifications"
+msgstr "Falha ao desativar notificações push"
+
+msgid "Failed to turn on push notifications"
+msgstr "Falha ao ativar notificações push"
+
 msgid "Failed to update batch property"
 msgstr "Falha ao atualizar propriedade de lote"
 
@@ -9654,6 +9669,9 @@ msgstr "Ativar no Carbon: um sistema executando cotações, compras, chão de f�
 
 msgid "Get Method"
 msgstr "Obter Método"
+
+msgid "Get notifications on this device, even when Carbon is closed."
+msgstr "Receba notificações neste dispositivo, mesmo quando o Carbon está fechado."
 
 msgid "Get started"
 msgstr "Começar"
@@ -10404,8 +10422,14 @@ msgstr "Nas configurações da Empresa em Desenvolvedor, edite as permissões do
 msgid "In-app"
 msgstr "No aplicativo"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
+msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegam até você por e-mail ou em seus dispositivos."
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegarão a você por email ou Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
+msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegam até você por e-mail, Slack ou em seus dispositivos."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegarão a você por email."
@@ -13897,6 +13921,9 @@ msgstr "Tipo de Notificação"
 msgid "Notifications"
 msgstr "Notificações"
 
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "As notificações estão bloqueadas para Carbon nas configurações de site deste navegador."
+
 msgid "Notify"
 msgstr "Notificar"
 
@@ -15966,6 +15993,9 @@ msgstr "Empurrar"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Redatá-lo para o primeiro dia aberto, mantendo a data original na narração."
+
+msgid "Push notifications are on for this device."
+msgstr "As notificações push estão ativadas para este dispositivo."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Envie alterações de registros para sistemas externos no momento em que ocorrem."
@@ -18495,6 +18525,9 @@ msgstr "Lucro de vendas: <0/>"
 msgid "Send"
 msgstr "Enviar"
 
+msgid "Send a test notification"
+msgstr "Enviar uma notificação de teste"
+
 msgid "Send error"
 msgstr "Enviar erro"
 
@@ -20264,6 +20297,9 @@ msgstr "Termos de Serviço"
 msgid "Test"
 msgstr "Teste"
 
+msgid "Test notification sent"
+msgstr "Notificação de teste enviada"
+
 msgid "Test run"
 msgstr "Execução de teste"
 
@@ -21328,6 +21364,9 @@ msgstr "Este backup não pôde ser concluído."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Este backup ainda não foi verificado. As diferenças são encontradas quando a restauração é executada."
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Este navegador não suporta notificações push. No iPhone ou iPad, adicione o Carbon à Tela de Início primeiro."
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Isto não pode ser alterado depois — {integrationName} permite apenas um sistema contábil conectado, portanto a escolha decide o que o Carbon tem permissão para fazer. Para mudar, você desinstalaria e reconectaria."
 
@@ -21360,6 +21399,9 @@ msgstr "A taxa deste tipo de cliente"
 
 msgid "This customer's rate"
 msgstr "A taxa deste cliente"
+
+msgid "This device"
+msgstr "Este dispositivo"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este link de download é inválido ou foi adulterado."
@@ -22138,6 +22180,12 @@ msgstr "Acionadores"
 
 msgid "Tuesday"
 msgstr "Terça-feira"
+
+msgid "Turn off"
+msgstr "Desativar"
+
+msgid "Turn on"
+msgstr "Ativar"
 
 msgid "Turn on the built-in pieces"
 msgstr "Ativar os componentes integrados"

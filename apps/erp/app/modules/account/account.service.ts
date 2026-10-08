@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { NotificationPreferenceChannel } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
 
@@ -55,7 +57,7 @@ export async function upsertNotificationPreference(
     userId: string;
     companyId: string;
     topic: string;
-    channel: "email" | "slack";
+    channel: NotificationPreferenceChannel;
     enabled: boolean;
   }
 ) {
@@ -66,6 +68,55 @@ export async function upsertNotificationPreference(
     },
     { onConflict: "userId,companyId,channel,topic" }
   );
+}
+
+/** Reads this device's push subscription for the user and company. */
+export async function getPushSubscription(
+  client: SupabaseClient<Database>,
+  args: { userId: string; companyId: string; endpoint: string }
+) {
+  return client
+    .from("pushSubscription")
+    .select("id")
+    .eq("userId", args.userId)
+    .eq("companyId", args.companyId)
+    .eq("endpoint", args.endpoint)
+    .maybeSingle();
+}
+
+/** Saves this device's push subscription for the user and company. */
+export async function upsertPushSubscription(
+  client: SupabaseClient<Database>,
+  subscription: {
+    userId: string;
+    companyId: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    userAgent: string | null;
+  }
+) {
+  return client
+    .from("pushSubscription")
+    .upsert(
+      { ...subscription, updatedAt: datetime.timestamp() },
+      { onConflict: "endpoint,companyId" }
+    )
+    .select("id")
+    .single();
+}
+
+/** Removes this device's push subscription for the user and company. */
+export async function deletePushSubscription(
+  client: SupabaseClient<Database>,
+  args: { userId: string; companyId: string; endpoint: string }
+) {
+  return client
+    .from("pushSubscription")
+    .delete()
+    .eq("userId", args.userId)
+    .eq("companyId", args.companyId)
+    .eq("endpoint", args.endpoint);
 }
 
 /** @mcp delete */
