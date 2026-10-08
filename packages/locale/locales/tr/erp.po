@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle mevcut verilerinizin güvenli bir kopyası oluşturulamıyor.} other {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle mevcut verilerinizin güvenli bir kopyası oluşturulamıyor.}}"
@@ -400,6 +404,9 @@ msgstr "{count}/{total} adet"
 msgid "{count} units"
 msgstr "{count} adet"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} / {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} /{count} operasyon"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha: {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "Soyadı"
 msgid "Last Name"
 msgstr "Soyadı"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
 
 msgid "Last Run"
 msgstr "Son Çalıştırma"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Son senkronizasyon: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "Daha fazla seçenek"
 msgid "More overtime"
 msgstr "Daha fazla fazla mesai"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Sabah, {name}."
 
@@ -12535,6 +12558,9 @@ msgstr "Çoğu şey burada yakalanır ve çözülür. Açıkça adlandırın."
 
 msgid "Motion"
 msgstr "Hareket"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "Taşış"
@@ -19484,6 +19510,9 @@ msgstr "Başla"
 msgid "Started"
 msgstr "Başlangıç"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "Başlanıyor…"
 
@@ -21001,6 +21030,15 @@ msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etk
 
 msgid "The purchase order"
 msgstr "Satın alma siparişi"
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Bu Satırın fiyatlandırıldığı Miktar kırılım noktaları; her sütun Satın almacı–Tedarikçi müzakereleri ve aşağı yönlü belgelere dönüştürme için kendi birim başına Fiyatını taşır."

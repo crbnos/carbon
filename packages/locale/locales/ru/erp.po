@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# день недостатка} few {# дня недо
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.} other {# строк связаны с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.}}"
@@ -400,6 +404,9 @@ msgstr "{count} из {total} единиц"
 msgid "{count} units"
 msgstr "{count} единиц"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}д"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} из {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "Фамилия"
 msgid "Last Name"
 msgstr "Фамилия"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Последний квартал"
 
 msgid "Last Run"
 msgstr "Последний запуск"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "Ещё опции"
 msgid "More overtime"
 msgstr "Больше переработки"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
 
@@ -12535,6 +12558,9 @@ msgstr "Большинство проблем выявляются и решаю
 
 msgid "Motion"
 msgstr "Движение"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "Переместить"
@@ -19484,6 +19510,9 @@ msgstr "Начните с"
 msgid "Started"
 msgstr "Начал"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "Начинаю…"
 
@@ -21001,6 +21030,15 @@ msgstr "Поставщик не предлагает целевые показа
 
 msgid "The purchase order"
 msgstr "Заказ поставщику"
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва по количеству, при которых рассчитывается цена этой строки; каждый столбец содержит свою цену за единицу для переговоров между закупщиком и поставщиком и для преобразования в последующие документы."

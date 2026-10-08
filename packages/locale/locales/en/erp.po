@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# day short} other {# days short}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr "{0, plural, one {# record needs attention} other {# records need attention}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -400,6 +404,9 @@ msgstr "{count} of {total} units"
 msgid "{count} units"
 msgstr "{count} units"
 
+msgid "{created} created, {updated} updated."
+msgstr "{created} created, {updated} updated."
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} of {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} of {count} operations"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr "{hidden, plural, one {And # more record.} other {And # more records.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} more: {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "Last name"
 msgid "Last Name"
 msgstr "Last Name"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr "Last push {when} failed: {0}"
+
+msgid "Last push {when}:"
+msgstr "Last push {when}:"
+
 msgid "Last Quarter"
 msgstr "Last Quarter"
 
 msgid "Last Run"
 msgstr "Last Run"
+
+msgid "Last scheduled push {when}:"
+msgstr "Last scheduled push {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Last synced: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "More options"
 msgid "More overtime"
 msgstr "More overtime"
 
+msgid "More records are waiting. Push again to continue."
+msgstr "More records are waiting. Push again to continue."
+
 msgid "Morning, {name}."
 msgstr "Morning, {name}."
 
@@ -12535,6 +12558,9 @@ msgstr "Most things get caught and resolved here. Name it plainly."
 
 msgid "Motion"
 msgstr "Motion"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 
 msgid "Move"
 msgstr "Move"
@@ -19484,6 +19510,9 @@ msgstr "Start with"
 msgid "Started"
 msgstr "Started"
 
+msgid "Starting"
+msgstr "Starting"
+
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -21001,6 +21030,15 @@ msgstr "The provider offers no dimension targets. Enable the feature in the prov
 
 msgid "The purchase order"
 msgstr "The purchase order"
+
+msgid "The push to Mount failed"
+msgstr "The push to Mount failed"
+
+msgid "The push to Mount finished"
+msgstr "The push to Mount finished"
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr "The push to Mount finished. Some records need attention"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."

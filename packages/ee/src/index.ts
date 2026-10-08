@@ -25,6 +25,7 @@ export type {
   IntegrationAction,
   IntegrationClientHooks,
   IntegrationConfig,
+  IntegrationHealthcheckResult,
   IntegrationOptions,
   IntegrationServerHooks,
   IntegrationSetting,

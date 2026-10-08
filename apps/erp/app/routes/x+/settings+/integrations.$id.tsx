@@ -130,6 +130,7 @@ import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/Accoun
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
+import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
@@ -2158,6 +2159,7 @@ export default function IntegrationRoute() {
   const { id: integrationId } = useParams();
 
   const collapseSettings = integrationId === "mount" && installed;
+  const mountActions = useMountActionStates(metadata);
 
   // Accounting-category integrations get Account Mapping, Posting, Dimensions
   // and Sync Activity tabs next to the Settings form (deep-linkable via
@@ -2271,6 +2273,12 @@ export default function IntegrationRoute() {
           />
         ) : undefined
       }
+      {...(integrationId === "mount" && installed
+        ? {
+            actionStates: mountActions.actionStates,
+            onActionStarted: mountActions.onActionStarted
+          }
+        : {})}
       onClose={() => navigate(path.to.integrations)}
     />
   );

@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type MountPublishSource,
+  matchCompanyType,
   type PublishablePart,
   publishEntityType
 } from "./publish";
@@ -111,7 +112,32 @@ describe("publishEntityType", () => {
     );
 
     expect(summary.failed).toHaveLength(1);
-    expect(summary.failed[0]?.reason).toContain("part object definition");
+    expect(summary.failed[0]?.reason).toContain("Part definition slug");
+    expect(objects).toHaveLength(0);
+  });
+
+  it("names the slug when Mount has no definition for it", async () => {
+    const { api, objects } = createFakeMount();
+    const { mappings } = createFakeMappings();
+
+    const summary = await publishEntityType(
+      partSource([{ id: "i1", readableId: "P-1", name: "Bracket" }]),
+      mappings,
+      api,
+      COMPANY_ID,
+      "item",
+      {
+        partDefinitionSlug: "partz",
+        partDefinitionId: null,
+        availablePartDefinitionSlugs: ["parts", "equipment"]
+      }
+    );
+
+    expect(summary.failed).toHaveLength(1);
+    expect(summary.failed[0]?.reason).toBe(
+      'Part definition slug "partz" isn\'t in Mount. Mount has: parts, equipment.'
+    );
+    expect(summary.more).toBe(false);
     expect(objects).toHaveLength(0);
   });
 
@@ -164,7 +190,7 @@ describe("publishEntityType", () => {
 
     expect(summary.created).toBe(2);
     expect(summary.failed).toEqual([
-      { entityId: "i2", reason: "Mount said no" }
+      { entityId: "i2", identifier: "P-2", reason: "Mount said no" }
     ]);
     expect(objects).toHaveLength(0); // the overridden create does not record
   });
@@ -277,7 +303,9 @@ describe("publishEntityType", () => {
       );
 
       expect(summary.created).toBe(3);
-      expect(summary.failed).toEqual([{ entityId: "i0", reason: "rejected" }]);
+      expect(summary.failed).toEqual([
+        { entityId: "i0", identifier: "P-0", reason: "rejected" }
+      ]);
       expect(summary.more).toBe(false);
       expect(summary.deferred.sort()).toEqual(["i0", "i1"]);
     });
@@ -300,5 +328,24 @@ describe("publishEntityType", () => {
       expect(summary.created).toBe(5);
       expect(summary.deferred).toEqual([]);
     });
+  });
+});
+
+describe("matchCompanyType", () => {
+  const types = [
+    { id: "t1", title: "Kunde", identifier: "Customer" },
+    { id: "t2", title: "Supplier", identifier: "vendor" }
+  ];
+
+  it("prefers the identifier, which survives a renamed title", () => {
+    expect(matchCompanyType(types, "customer")?.id).toBe("t1");
+  });
+
+  it("falls back to the title", () => {
+    expect(matchCompanyType(types, "Supplier")?.id).toBe("t2");
+  });
+
+  it("finds nothing when neither matches", () => {
+    expect(matchCompanyType(types, "Partner")).toBeNull();
   });
 });

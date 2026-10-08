@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# दिन की कमी} other {# दिन की
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।}}"
@@ -400,6 +404,9 @@ msgstr "{count} का {total} इकाइयों में से"
 msgid "{count} units"
 msgstr "{count} इकाइयाँ"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} में से {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{count} ऑपरेशन में से {from}–{to}"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "अंतिम नाम"
 msgid "Last Name"
 msgstr "अंतिम नाम"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
 
 msgid "Last Run"
 msgstr "अंतिम रन"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "अधिक विकल्प"
 msgid "More overtime"
 msgstr "अधिक ओवरटाइम"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "सुबह, {name}।"
 
@@ -12535,6 +12558,9 @@ msgstr "अधिकांश चीजें यहां पकड़ी ज�
 
 msgid "Motion"
 msgstr "गति"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "स्थानांतरित करें"
@@ -19484,6 +19510,9 @@ msgstr "शुरुआत करें"
 msgid "Started"
 msgstr "शुरू किया गया"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
 
@@ -21001,6 +21030,15 @@ msgstr "प्रदाता कोई आयाम लक्ष्य प्�
 
 msgid "The purchase order"
 msgstr "क्रय आदेश"
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "मात्रा विभाजन बिंदु जिन पर इस पंक्ति की कीमत है; प्रत्येक कॉलम क्रेता-आपूर्तिकर्ता बातचीत और डाउनस्ट्रीम दस्तावेजों में परिवर्तित करने के लिए अपनी स्वयं की प्रति-यूनिट कीमत रखता है।"
