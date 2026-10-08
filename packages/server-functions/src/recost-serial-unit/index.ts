@@ -14,6 +14,7 @@
 // item's one cost, so a single unit cannot have its own.
 
 import type { KyselyDatabase as DB, Kysely } from "@carbon/database/client";
+import { inOrder } from "@carbon/database/rows";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -56,78 +57,85 @@ const recostSerialUnit = defineServerFn({
   // Recosting puts a number of the user's own on the books.
   permissions: { update: "accounting" },
   async run({ db, companyId, userId }, input): Promise<RecostResult> {
-    const entity = await db
-      .selectFrom("trackedEntity")
-      .select(["id", "itemId", "readableId", "status"])
-      .where("id", "=", input.trackedEntityId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (!entity?.itemId) throw new NotFoundError("Tracked entity not found");
-    const itemId = entity.itemId;
-    const serial = entity.readableId ?? entity.id;
-
-    const [item, itemCost] = await Promise.all([
-      db
-        .selectFrom("item")
-        .select(["readableId", "itemTrackingType", "replenishmentSystem"])
-        .where("id", "=", itemId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst(),
-      db
-        .selectFrom("itemCost")
-        .select(["costingMethod", "itemPostingGroupId"])
-        .where("itemId", "=", itemId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst()
-    ]);
-    if (!item || !itemCost) throw new NotFoundError("Item not found");
-    if (item.itemTrackingType !== "Serial") {
-      throw new InvalidInputError("Only a serialized unit can be recosted");
-    }
-    if (
-      itemCost.costingMethod !== "FIFO" &&
-      itemCost.costingMethod !== "LIFO"
-    ) {
-      throw new InvalidInputError(
-        `${item.readableId} uses ${itemCost.costingMethod} costing, so every unit carries the item's cost; one unit cannot have its own`
-      );
-    }
-
-    // Where the unit is: exactly one on hand, at one location.
-    const stock = await db
-      .selectFrom("itemLedger")
-      .select([
-        "locationId",
-        (eb) => eb.fn.sum<number>("quantity").as("onHand")
-      ])
-      .where("trackedEntityId", "=", entity.id)
-      .where("itemId", "=", itemId)
-      .where("companyId", "=", companyId)
-      .groupBy("locationId")
-      .having(sql<number>`SUM("quantity")`, ">", 0)
-      .execute();
-    const onHand = stock.reduce((sum, row) => sum + Number(row.onHand), 0);
-    if (round(onHand) !== 1 || stock.length !== 1) {
-      throw new InvalidInputError(
-        `${serial} must have exactly one unit on hand to be recosted`
-      );
-    }
-    const locationId = stock[0]?.locationId ?? null;
-
-    const settings = await db
-      .selectFrom("companySettings")
-      .select("accountingEnabled")
-      .where("id", "=", companyId)
-      .executeTakeFirst();
-    // Fail closed: a failed settings read must not silently skip the GL.
-    if (!settings) throw new Error("Failed to fetch company settings");
-    const accounting = settings.accountingEnabled
-      ? await loadAccounting(db, companyId, input)
-      : null;
-
     const unitCost = round(input.unitCost);
 
     return db.transaction().execute(async (trx): Promise<RecostResult> => {
+      // Lock the unit before reading where it is: a second recost, or an
+      // issue, pick, transfer or adjustment of it (they lock it too), waits,
+      // so the on-hand check below still holds when calculateCOGS relieves
+      // its layer (which locks the layers it reads).
+      const entity = await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "itemId", "readableId", "status"])
+        .where("id", "=", input.trackedEntityId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!entity?.itemId) throw new NotFoundError("Tracked entity not found");
+      const itemId = entity.itemId;
+      const serial = entity.readableId ?? entity.id;
+
+      const [item, itemCost] = await inOrder([
+        () =>
+          trx
+            .selectFrom("item")
+            .select(["readableId", "itemTrackingType", "replenishmentSystem"])
+            .where("id", "=", itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst(),
+        () =>
+          trx
+            .selectFrom("itemCost")
+            .select(["costingMethod", "itemPostingGroupId"])
+            .where("itemId", "=", itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+      ]);
+      if (!item || !itemCost) throw new NotFoundError("Item not found");
+      if (item.itemTrackingType !== "Serial") {
+        throw new InvalidInputError("Only a serialized unit can be recosted");
+      }
+      if (
+        itemCost.costingMethod !== "FIFO" &&
+        itemCost.costingMethod !== "LIFO"
+      ) {
+        throw new InvalidInputError(
+          `${item.readableId} uses ${itemCost.costingMethod} costing, so every unit carries the item's cost; one unit cannot have its own`
+        );
+      }
+
+      // Where the unit is: exactly one on hand, at one location.
+      const stock = await trx
+        .selectFrom("itemLedger")
+        .select([
+          "locationId",
+          (eb) => eb.fn.sum<number>("quantity").as("onHand")
+        ])
+        .where("trackedEntityId", "=", entity.id)
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .groupBy("locationId")
+        .having(sql<number>`SUM("quantity")`, ">", 0)
+        .execute();
+      const onHand = stock.reduce((sum, row) => sum + Number(row.onHand), 0);
+      if (round(onHand) !== 1 || stock.length !== 1) {
+        throw new InvalidInputError(
+          `${serial} must have exactly one unit on hand to be recosted`
+        );
+      }
+      const locationId = stock[0]?.locationId ?? null;
+
+      const settings = await trx
+        .selectFrom("companySettings")
+        .select("accountingEnabled")
+        .where("id", "=", companyId)
+        .executeTakeFirst();
+      // Fail closed: a failed settings read must not silently skip the GL.
+      if (!settings) throw new Error("Failed to fetch company settings");
+      const accounting = settings.accountingEnabled
+        ? await loadAccounting(trx, companyId, input)
+        : null;
+
       // Relieve what the unit carries today, exactly as a shipment would.
       const relieved = await calculateCOGS(trx, {
         itemId,
@@ -237,20 +245,21 @@ const recostSerialUnit = defineServerFn({
   }
 });
 
-// Everything the journal needs that is known before the transaction opens.
+// Everything the journal needs, read on the recost's transaction.
 async function loadAccounting(
   db: Kysely<DB>,
   companyId: string,
   input: z.output<typeof recostSerialUnitInput>
 ) {
-  const [defaults, offsetAccount, company] = await Promise.all([
-    getDefaultPostingGroup(db, companyId),
-    getOffsetAccount(db, companyId, input.offsetAccountId),
-    db
-      .selectFrom("company")
-      .select("companyGroupId")
-      .where("id", "=", companyId)
-      .executeTakeFirst()
+  const [defaults, offsetAccount, company] = await inOrder([
+    () => getDefaultPostingGroup(db, companyId),
+    () => getOffsetAccount(db, companyId, input.offsetAccountId),
+    () =>
+      db
+        .selectFrom("company")
+        .select("companyGroupId")
+        .where("id", "=", companyId)
+        .executeTakeFirst()
   ]);
   if (defaults.error || !defaults.data) {
     throw new Error("Error getting account defaults");

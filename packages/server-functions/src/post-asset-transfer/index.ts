@@ -1521,7 +1521,7 @@ async function adjustCost(
 
     // Depreciation already taken stays; the next run catches a Straight Line
     // asset up on the months it took at the old cost (buildDepreciationLines).
-    await trx
+    const adjusted = await trx
       .updateTable("fixedAsset")
       .set({
         acquisitionCost,
@@ -1537,7 +1537,13 @@ async function adjustCost(
       })
       .where("id", "=", asset.id)
       .where("companyId", "=", companyId)
-      .execute();
+      .where("status", "in", [...ADJUSTABLE_ASSET_STATUSES])
+      .executeTakeFirst();
+    if (!adjusted.numUpdatedRows) {
+      throw new InvalidInputError(
+        `Asset ${asset.fixedAssetId} changed status while its cost was being adjusted`
+      );
+    }
 
     await postTransfer(trx, {
       id: transfer.id,

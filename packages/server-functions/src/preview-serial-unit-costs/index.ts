@@ -9,6 +9,7 @@
 // one read of the item's open layers.
 
 import type { Database } from "@carbon/database";
+import { inOrder } from "@carbon/database/rows";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
@@ -60,14 +61,15 @@ const previewSerialUnitCosts = defineServerFn({
     if (locationId)
       onHandQuery = onHandQuery.where("locationId", "=", locationId);
 
-    const [onHand, itemCost] = await Promise.all([
-      onHandQuery.execute(),
-      db
-        .selectFrom("itemCost")
-        .select(["costingMethod", "unitCost", "standardCost"])
-        .where("itemId", "=", itemId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst()
+    const [onHand, itemCost] = await inOrder([
+      () => onHandQuery.execute(),
+      () =>
+        db
+          .selectFrom("itemCost")
+          .select(["costingMethod", "unitCost", "standardCost"])
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
     ]);
     if (!itemCost) throw new NotFoundError("Item cost not found");
     const units = onHand.flatMap((row) =>
