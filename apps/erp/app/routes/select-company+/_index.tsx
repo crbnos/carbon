@@ -108,7 +108,13 @@ export default function SelectCompany() {
           )}
         />
         <Form method="post" action={path.to.logout}>
-          <Button type="submit" variant="ghost" leftIcon={<LuLogOut />}>
+          <Button
+            type="submit"
+            variant="ghost"
+            leftIcon={<LuLogOut />}
+            isDisabled={navigation.state !== "idle"}
+            isLoading={navigation.formAction === path.to.logout}
+          >
             <Trans>Sign Out</Trans>
           </Button>
         </Form>
