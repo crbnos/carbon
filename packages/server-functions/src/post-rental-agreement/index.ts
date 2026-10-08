@@ -45,6 +45,7 @@ import {
   closeBlocker,
   futureReturnError,
   LIVE_LINE_STATUSES,
+  openRentalDocumentBlocker,
   payloadValidator,
   RENTABLE_ASSET_STATUSES,
   type RentalAgreementPayload,
@@ -841,6 +842,41 @@ async function close(
         `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; only an Active agreement can be closed`
       );
     }
+
+    // A rental document still open holds units the close would strand.
+    const openShipment = await trx
+      .selectFrom("shipment as s")
+      .innerJoin("shipmentFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.shipmentId", "=", "s.id")
+          .onRef("l.companyId", "=", "s.companyId")
+      )
+      .select("s.shipmentId")
+      .where("s.companyId", "=", companyId)
+      .where("s.sourceDocument", "=", "Rental Agreement")
+      .where("s.sourceDocumentId", "=", agreement.id)
+      .where("s.status", "in", ["Draft", "Pending"])
+      .orderBy("s.createdAt")
+      .executeTakeFirst();
+    const openReceipt = await trx
+      .selectFrom("receipt as r")
+      .innerJoin("receiptFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.receiptId", "=", "r.id")
+          .onRef("l.companyId", "=", "r.companyId")
+      )
+      .select("r.receiptId")
+      .where("r.companyId", "=", companyId)
+      .where("r.sourceDocument", "=", "Rental Agreement")
+      .where("r.sourceDocumentId", "=", agreement.id)
+      .where("r.status", "in", ["Draft", "Pending"])
+      .orderBy("r.createdAt")
+      .executeTakeFirst();
+    const openDocument = openRentalDocumentBlocker({
+      shipmentId: openShipment?.shipmentId ?? null,
+      receiptId: openReceipt?.receiptId ?? null
+    });
+    if (openDocument) throw new InvalidInputError(openDocument);
 
     const state = await loadSettlementState(trx, companyId, agreement.id);
     const blocker = closeBlocker({
