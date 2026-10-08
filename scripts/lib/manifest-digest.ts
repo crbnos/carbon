@@ -144,7 +144,8 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
           : {}),
         ...(describeContext(t) ? { context: describeContext(t) } : {}),
         ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {}),
-        ...(t.defaults ? { defaults: t.defaults } : {})
+        ...(t.defaults ? { defaults: t.defaults } : {}),
+        ...(t.addUpdatedByToRows ? { addUpdatedByToRows: true } : {})
       }))
   };
 }

@@ -20,6 +20,7 @@ import {
   declarationOf,
   describeUntypedArguments,
   upsertRule,
+  fieldsStampedOnPayload,
   withoutAbsentAuditColumns,
   withPayloadCompanyGroup
 } from "../../../scripts/lib/service-metadata";
@@ -390,6 +391,15 @@ describe("audit fields the table does not have", () => {
       await client.from("item").select("id");
       return client.from("customerPartToItem").insert([row]);
     }
+    export async function renameUser(client: any, account: any) {
+      return client.from("user").update(account).eq("id", account.id);
+    }
+    export async function touchCost(client: any, row: any) {
+      return client.from("itemCost").update(row).eq("itemId", row.itemId);
+    }
+    export async function addCost(client: any, row: any) {
+      return client.from("itemCost").insert([row]);
+    }
   `);
   const fields = ["companyId", "createdBy", "updatedBy"] as const;
   const drop = (name: string) =>
@@ -402,6 +412,20 @@ describe("audit fields the table does not have", () => {
   it("keeps them when the table has the columns, or the table is ambiguous", () => {
     expect(drop("audited")).toEqual([...fields]);
     expect(drop("twoTables")).toEqual([...fields]);
+  });
+
+  it("drops companyId when the written table has no such column", () => {
+    expect(fieldsStampedOnPayload([...fields], fns.renameUser!)).toEqual([]);
+  });
+
+  it("does not stamp createdBy onto an update-only write", () => {
+    expect(fieldsStampedOnPayload([...fields], fns.touchCost!)).toEqual([
+      "companyId",
+      "updatedBy"
+    ]);
+    expect(fieldsStampedOnPayload([...fields], fns.addCost!)).toEqual([
+      ...fields
+    ]);
   });
 });
 

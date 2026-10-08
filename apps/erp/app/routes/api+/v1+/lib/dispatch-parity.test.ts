@@ -720,6 +720,9 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         { updates: [{ id: "a", order: 1 }] }
       );
       expect(passed.dispatch).toEqual({ data: [ok, ok] });
+      expect(passed.calls).toEqual([
+        [spies.FAKE_CLIENT, [{ id: "a", order: 1, updatedBy: "u1" }]]
+      ]);
     });
 
     it("a { success: false } flag", async () => {
@@ -748,7 +751,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     });
   });
 
-  it("b. _operation create at top level: stripped, createdBy + companyId stamped, updatedBy NOT stamped (matches the create-variant service type / UI insert path)", async () => {
+  it("b. _operation create at top level: stripped, createdBy stamped, updatedBy not. account has no companyId column", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
@@ -764,13 +767,13 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          companyId: "c1",
           companyGroupId: "g1"
         }
       ]
     ]);
     const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("updatedBy" in payload).toBe(false);
+    expect("companyId" in payload).toBe(false);
   });
 
   it("c. _operation update nested in the payload: stripped, createdBy suppressed", async () => {
@@ -786,9 +789,9 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       id: "a1",
       name: "Cash",
       updatedBy: "u1",
-      companyId: "c1",
       companyGroupId: "g1"
     });
+    expect("companyId" in payload).toBe(false);
     expect("createdBy" in payload).toBe(false);
   });
 
@@ -940,8 +943,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         ]
       }
     );
-    // The parent quote id is the caller's (the service scopes every row to it);
-    // the identity fields never are.
     expect(r.calls).toEqual([
       [
         spies.FAKE_DB,
@@ -1167,7 +1168,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          companyId: "c1",
           companyGroupId: "g1"
         }
       ]

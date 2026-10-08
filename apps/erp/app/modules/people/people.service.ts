@@ -828,7 +828,10 @@ export async function upsertShift(
   return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
 }
 
-/** @mcp action */
+/**
+ * @mcp action
+ * @mcp audit createdBy
+ */
 export async function clockIn(
   client: SupabaseClient<Database>,
   args: {
@@ -853,7 +856,10 @@ export async function clockIn(
   });
 }
 
-/** @mcp action */
+/**
+ * @mcp action
+ * @mcp audit updatedBy
+ */
 export async function clockOut(
   client: SupabaseClient<Database>,
   args: {

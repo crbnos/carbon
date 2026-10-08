@@ -5867,7 +5867,10 @@ export async function deletePeopleAssignment(
     .single();
 }
 
-/** @mcp update */
+/**
+ * @mcp update
+ * @mcp audit createdBy, updatedBy
+ */
 export async function setPeopleAbsence(
   client: SupabaseClient<Database>,
   absence: {

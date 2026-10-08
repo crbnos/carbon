@@ -66,6 +66,7 @@ export interface ManifestEntry {
    *  fetchAll read — pagination args are inert in the service, and the MCP
    *  layer pages the response at its own boundary instead. */
   paginates: boolean;
+  addUpdatedByToRows?: boolean;
   /** Present when the service picks insert-vs-update by testing for an audit
    *  field on the payload (`"createdBy" in payload`), so the dispatcher has to
    *  stamp exactly one of them. `keys` are the payload fields that identify the

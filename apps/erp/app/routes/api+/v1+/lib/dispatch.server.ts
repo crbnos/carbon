@@ -43,7 +43,8 @@ export function enrichWithAuthContext(
   value: unknown,
   context: AuthStampContext,
   fields: AuthField[],
-  operation?: McpOperation
+  operation?: McpOperation,
+  addUpdatedByToRows = false
 ): unknown {
   if (!value || typeof value !== "object") return value;
   if (fields.length === 0) return value;
@@ -71,7 +72,8 @@ export function enrichWithAuthContext(
         ...(element as Record<string, unknown>)
       };
       if (addCreatedBy || "createdBy" in row) row.createdBy = context.userId;
-      if ("updatedBy" in row) row.updatedBy = context.userId;
+      if (addUpdatedByToRows || "updatedBy" in row)
+        row.updatedBy = context.userId;
       if ("companyId" in row) row.companyId = context.companyId;
       if ("companyGroupId" in row) row.companyGroupId = context.companyGroupId;
       return row;
@@ -533,7 +535,8 @@ export async function dispatchOperation(
           filled(declared?.args ?? meta.schema, value),
           context,
           meta.injectAuth,
-          operation
+          operation,
+          meta.addUpdatedByToRows === true
         )
       );
     } else if (
@@ -551,7 +554,8 @@ export async function dispatchOperation(
           ),
           context,
           meta.injectAuth,
-          operation
+          operation,
+          meta.addUpdatedByToRows === true
         )
       );
     } else if (
@@ -589,7 +593,8 @@ export async function dispatchOperation(
           filled(meta.schema, Object.values(normalizedArgs)[0]),
           context,
           meta.injectAuth,
-          operation
+          operation,
+          meta.addUpdatedByToRows === true
         )
       );
     } else if (normalizedArgs && Object.keys(normalizedArgs).length > 0) {
@@ -600,7 +605,8 @@ export async function dispatchOperation(
           filled(meta.schema, { ...normalizedArgs }),
           context,
           meta.injectAuth,
-          operation
+          operation,
+          meta.addUpdatedByToRows === true
         )
       );
     }

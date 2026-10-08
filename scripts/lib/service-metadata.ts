@@ -1000,6 +1000,65 @@ export function withoutAbsentAuditColumns(
   return fields.filter((f) => !dropped.includes(f));
 }
 
+function dropCompanyIdWhenWrittenTableLacksIt(
+  fields: AuthField[],
+  fn: ServiceFunction,
+  onDrop?: (table: string, dropped: AuthField[]) => void
+): AuthField[] {
+  if (!fields.includes("companyId")) return fields;
+  const tables = [
+    ...new Set(
+      dbWrites(fn.node)
+        .map((write) => write.table)
+        .filter((table): table is string => Boolean(table))
+    )
+  ];
+  if (tables.length !== 1) return fields;
+  const columns = getDbTableTypeFields(tables[0], "Row");
+  if (!columns || columns.some((column) => column.name === "companyId")) {
+    return fields;
+  }
+  onDrop?.(tables[0], ["companyId"]);
+  return fields.filter((field) => field !== "companyId");
+}
+
+function dropCreatedByWhenEveryWriteIsUpdate(
+  fields: AuthField[],
+  fn: ServiceFunction
+): AuthField[] {
+  const writes = dbWrites(fn.node);
+  if (
+    fields.includes("createdBy") &&
+    writes.length > 0 &&
+    writes.every((write) => write.kind === "update")
+  ) {
+    return fields.filter((field) => field !== "createdBy");
+  }
+  return fields;
+}
+
+export function fieldsStampedOnPayload(
+  fields: AuthField[],
+  fn: ServiceFunction,
+  onDrop?: (table: string, dropped: AuthField[]) => void
+): AuthField[] {
+  return dropCreatedByWhenEveryWriteIsUpdate(
+    dropCompanyIdWhenWrittenTableLacksIt(
+      withoutAbsentAuditColumns(fields, fn, onDrop),
+      fn,
+      onDrop
+    ),
+    fn
+  );
+}
+
+function rowDeclaresUpdatedBy(fn: ServiceFunction): boolean {
+  return fn.params.some((param) => {
+    const type = param.typeStr.replace(/\s+/g, "");
+    return type.endsWith("[]") && /updatedBy\??:/.test(type);
+  });
+}
+
 /**
  * The positional params the dispatcher fills from the authenticated context,
  * and with what.
@@ -1848,7 +1907,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const injectAuth = withPayloadCompanyGroup(
         withPayloadUserId(
           declaredAudit(func) ??
-            withoutAbsentAuditColumns(
+            fieldsStampedOnPayload(
               ["companyId", ...verb.audit],
               func,
               (table, dropped) =>
@@ -1920,6 +1979,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         // that does not ignores pagination args entirely (the fetchAll
         // `get*List` reads), so the MCP layer pages the response instead.
         paginates: bodyPaginates(func.node),
+        ...(rowDeclaresUpdatedBy(func) ? { addUpdatedByToRows: true } : {}),
         ...(upsert ? { upsert } : {}),
         ...(defaults && publishesDefaults ? { defaults } : {}),
         schema,
