@@ -99,7 +99,8 @@ export const receiptSourceDocumentType = [
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
-  "Inbound Transfer"
+  "Inbound Transfer",
+  "Rental Agreement"
   // "Outbound Transfer",
   // "Manufacturing Consumption",
   // "Manufacturing Output",
@@ -368,7 +369,8 @@ export const shipmentSourceDocumentType = [
   // "Purchase Invoice",
   "Purchase Return Order",
   // "Inbound Transfer",
-  "Outbound Transfer"
+  "Outbound Transfer",
+  "Rental Agreement"
 ] as const;
 
 export const shippingCarrierType = [
@@ -392,6 +394,70 @@ export const shipmentValidator = z.object({
   sourceDocumentReadableId: zfd.text(z.string().optional()),
   customerId: zfd.text(z.string().optional())
 });
+
+const meterValue = z
+  .string()
+  .refine((v) => v === "" || (Number.isFinite(Number(v)) && Number(v) >= 0), {
+    message: "Enter a meter reading of 0 or more"
+  });
+
+export const shipmentFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("shipped"),
+      value: z.enum(["true", "false"])
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    })
+  ]
+);
+
+export const receiptFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("received"),
+      value: z.enum(["true", "false"])
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("notes"),
+      value: z.string()
+    }),
+    // "" takes the unit off the out-of-service list; any other text is the reason.
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("outOfService"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("residualDestination"),
+      value: z.enum(["", "Fleet", "Inventory"])
+    })
+  ]
+);
 
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),

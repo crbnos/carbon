@@ -70,6 +70,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       "receiptFromPurchaseOrder": {
         "create": "inventory",
       },
+      "receiptFromRentalAgreement": {
+        "create": "inventory",
+      },
       "receiptFromSalesReturnOrder": {
         "create": "inventory",
       },
@@ -86,6 +89,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
         "create": "inventory",
       },
       "shipmentFromPurchaseReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromRentalAgreement": {
         "create": "inventory",
       },
       "shipmentFromSalesOrder": {

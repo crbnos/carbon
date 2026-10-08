@@ -3,14 +3,14 @@ title: Shipments
 description: Goods going out — one posting model serving sales orders, returns, and transfers.
 ---
 
-A **shipment** records goods leaving the company against a <Term id="sales-order">sales order</Term>, purchase order, or outbound transfer. Its source type selects the corresponding posting behavior.
+A **shipment** records goods leaving the company against a <Term id="sales-order">sales order</Term>, purchase order, outbound transfer, or [rental agreement](/docs/reference/rental-agreements). Its source type selects the corresponding posting behavior.
 
 Creating a shipment does not affect inventory. **<Term id="posting">Posting</Term>** relieves inventory, updates the source document, and records cost when accounting is enabled. Partial shipments allow one order to be fulfilled in multiple deliveries.
 
 ## Fields
 
 <FieldTable>
-  <Field name="Source document" type="reference">The order, return, or transfer being shipped.</Field>
+  <Field name="Source document" type="reference">The order, return, transfer, or rental agreement being shipped. A rental shipment keeps its agreement: create it from the agreement's **"Deliver"** button, not by changing the source.</Field>
   <Field name="Shipped quantity" type="number">Units on this shipment, per line.</Field>
   <Field name="Fulfillment" type="enum">Where a line is sourced: *Inventory* (from stock) or *Job* (from a production job).</Field>
 </FieldTable>
@@ -28,6 +28,12 @@ Creating a shipment does not affect inventory. **<Term id="posting">Posting</Ter
 Posting decrements inventory and bumps the source line's sent quantity; a sales order line's *sent complete* flag flips only once the cumulative shipped quantity reaches the ordered quantity. Posting a shipment does **not** create the <Term id="invoice">invoice</Term> — billing is a separate step.
 </Callout>
 
+## Rental shipments
+
+A shipment from a rental agreement delivers fleet units. It lists one row per unit with a tick box and a **"Meter"** reading, and its post dialog asks for **"Delivered on"**, which cannot be later than today. Posting puts the ticked units on rent, and the rows, meter readings included, become read-only. A rental unit stays a fixed asset, so posting writes no inventory movement and no journal entry. Its PDF prints as a **Delivery Ticket** that lists each unit with its serial number.
+
+<Screenshot label="Draft rental shipment listing fleet units with tick boxes and Meter fields" caption="A rental shipment from an agreement: untick the units that stay, then post." />
+
 ## Related
 
 <Cards>
@@ -36,6 +42,9 @@ Posting decrements inventory and bumps the source line's sent quantity; a sales 
   </Card>
   <Card title="Sales orders" href="/docs/reference/sales-orders">
     The document a sales shipment advances.
+  </Card>
+  <Card title="Rental agreements" href="/docs/reference/rental-agreements">
+    Units delivered on a rental shipment.
   </Card>
 </Cards>
 
@@ -67,6 +76,9 @@ Voiding applies only to a shipment at **"Posted"**. A Draft or Pending shipment 
 
 ### "Cannot delete a posted shipment"
 A posted shipment can't be deleted — void it instead, which writes reversing entries.
+
+### "A posted shipment can no longer be changed"
+A unit row on a rental shipment was edited after the shipment left Draft. The meter reading out is a record once posted; correct the unit on its agreement or asset instead.
 
 ### "Failed to post shipment"
 Generic wrapper when the posting function fails. Common underlying causes: the [accounting period](/docs/reference/accounting) for the posting date is closed or locked, or default accounts are missing ("Error getting account defaults"). Ask the user for the full error text if available.

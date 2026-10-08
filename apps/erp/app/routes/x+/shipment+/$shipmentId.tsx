@@ -13,10 +13,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
+  getRentalShipmentLines,
   getShipment,
   getShipmentLines,
   getShipmentRelatedItems,
-  getShipmentTracking
+  getShipmentTracking,
+  type RentalShipmentLine
 } from "~/modules/inventory";
 import {
   ShipmentDocuments,
@@ -81,7 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         "id, salesOrderLineId, shipped, serialNumber, salesOrderLine:salesOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
       )
       .eq("shipmentId", shipmentId)
-      .eq("companyId", companyId);
+      .eq("companyId", companyId)
+      .not("salesOrderLineId", "is", null);
 
     fixedAssetLines = (faLineRecords.data ?? [])
       .filter((row) => {
@@ -103,10 +106,58 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
+  let rentalLines: RentalShipmentLine[] = [];
+
+  if (shipment.data.sourceDocument === "Rental Agreement") {
+    // Service role: rentalAgreementLine needs sales_view, which an inventory
+    // user may not hold.
+    const rentalLineRecords = await getRentalShipmentLines(
+      getCarbonServiceRole(),
+      shipmentId,
+      companyId
+    );
+    if (rentalLineRecords.error) {
+      throw redirect(
+        path.to.shipments,
+        await flash(
+          request,
+          error(rentalLineRecords.error, "Failed to load the rental units")
+        )
+      );
+    }
+
+    rentalLines = (rentalLineRecords.data ?? []).map((row) => {
+      // The read filters out rows with no rental line.
+      const line = row.rentalAgreementLine!;
+      return {
+        id: row.id,
+        rentalAgreementLineId: row.rentalAgreementLineId!,
+        shipped: row.shipped,
+        meter: row.meter === null ? null : Number(row.meter),
+        unitName: line.fixedAsset?.name ?? line.item?.name ?? "Rental unit",
+        thumbnailPath: line.item?.thumbnailPath ?? null,
+        itemType: line.item?.type ?? null,
+        assetReadableId: line.fixedAsset?.fixedAssetId ?? null,
+        serialNumber:
+          line.fixedAsset?.serialNumber ??
+          line.trackedEntity?.readableId ??
+          null,
+        lineStatus: line.status
+      };
+    });
+    // By unit, like ordinary lines by part number, so the list holds still.
+    rentalLines.sort((a, b) =>
+      (a.assetReadableId ?? a.unitName).localeCompare(
+        b.assetReadableId ?? b.unitName
+      )
+    );
+  }
+
   return {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
     fixedAssetLines,
+    rentalLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],
     relatedItems: getShipmentRelatedItems(
       client,

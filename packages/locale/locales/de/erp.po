@@ -4430,6 +4430,9 @@ msgstr "Avatar auswählen"
 msgid "Choose how to add lines to this return."
 msgstr "Wählen Sie, wie Sie Positionen zu dieser Rückgabe hinzufügen möchten."
 
+msgid "Choose Return To for {unitName}"
+msgstr "Wählen Sie Rückgabeziel für {unitName}"
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Wählen Sie die Flotteneinheiten, die diese Vereinbarung mietet. Jede beginnt mit ihrem Satz in der Datei für die Häufigkeit; ändern Sie ihn im Raster."
 
@@ -6980,11 +6983,11 @@ msgstr "Workflow löschen"
 msgid "Deliver"
 msgstr "Liefern"
 
-msgid "Deliver {label}"
-msgstr "{label} liefern"
-
 msgid "Delivered"
 msgstr "Geliefert"
+
+msgid "Delivered on"
+msgstr "Geliefert am"
 
 msgid "Delivery Date"
 msgstr "Liefertermin"
@@ -8312,6 +8315,9 @@ msgstr "Geben Sie eine Losnummer ein, bevor Sie das Verfallsdatum festlegen"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr "Geben Sie einen Grund an, um die Einheit außer Betrieb zu nehmen"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Geben Sie einen Artikel und eine Menge selbst ein."
@@ -12062,9 +12068,6 @@ msgstr "Umfang als vereinbart markieren"
 msgid "Mark Short"
 msgstr "Als kurz markieren"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "Markieren Sie die Einheit heute als an den Kunden geliefert. Sie wird heute vermietet; die Abrechnung richtet sich nach dem Startdatum und dem Zyklus des Vertrags."
-
 msgid "Mark to delete"
 msgstr "Zum Löschen markieren"
 
@@ -12312,7 +12315,7 @@ msgstr "Nachricht"
 msgid "Metadata"
 msgstr "Metadaten"
 
-msgid "Meter Reading"
+msgid "Meter"
 msgstr "Zählerstand"
 
 msgid "Method"
@@ -13831,6 +13834,9 @@ msgstr "Nicht konfiguriert"
 msgid "Not Configured"
 msgstr "Nicht konfiguriert"
 
+msgid "Not delivered"
+msgstr "Nicht geliefert"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
 
@@ -14810,6 +14816,12 @@ msgstr "Teil-Ablösung"
 
 msgid "Partial"
 msgstr "Teilweise"
+
+msgid "Partially Delivered"
+msgstr "Teilweise geliefert"
+
+msgid "Partially Returned"
+msgstr "Teilweise zurückgegeben"
 
 msgid "Partly Recognized"
 msgstr "Teilweise erfasst"
@@ -16726,6 +16738,9 @@ msgstr "Relative Zeitleiste · Daten müssen noch bestätigt werden"
 msgid "Release"
 msgstr "Freigeben"
 
+msgid "Release {unitLabel}"
+msgstr "Freigeben {unitLabel}"
+
 msgid "Release Batch"
 msgstr "Los freigeben"
 
@@ -16743,6 +16758,9 @@ msgstr "Freigabenkontrolle"
 msgid "Release Control"
 msgstr "Freigabenkontrolle"
 
+msgid "Release date"
+msgstr "Freigabedatum"
+
 msgid "Release Job"
 msgstr "Auftrag freigeben"
 
@@ -16754,6 +16772,9 @@ msgstr "Fertigungsaufträge freigeben"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "Bestellung {target} bis {date} freigeben"
+
+msgid "Release unit"
+msgstr "Einheit freigeben"
 
 msgid "Released"
 msgstr "Freigegeben"
@@ -16956,6 +16977,9 @@ msgstr "Leihsätze"
 
 msgid "Rental Site"
 msgstr "Vermietungsstandort"
+
+msgid "Rental Units"
+msgstr "Mieteinheiten"
 
 msgid "Rental Utilization"
 msgstr "Leihauslastung"
@@ -17320,12 +17344,6 @@ msgstr "Zurücksetzen erneut versuchen"
 msgid "Return"
 msgstr "Rückgabe"
 
-msgid "Return {unitLabel}"
-msgstr "Rückgabe {unitLabel}"
-
-msgid "Return Date"
-msgstr "Rückgabedatum"
-
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
 
@@ -17334,9 +17352,6 @@ msgstr "Rückgabe-ID"
 
 msgid "Return Location"
 msgstr "Rückgabeort"
-
-msgid "Return Notes"
-msgstr "Rückgabenotizen"
 
 msgid "Return Number"
 msgstr "Rückgabenummer"
@@ -17365,9 +17380,6 @@ msgstr "Zurück in Bestände"
 msgid "Return to Service"
 msgstr "Wieder in Betrieb nehmen"
 
-msgid "Return Unit"
-msgstr "Rückgabeeinheit"
-
 msgid "returnable"
 msgstr "rückgabefähig"
 
@@ -17379,6 +17391,9 @@ msgstr "Zurückgegebene Charge"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "Zurückgegebene Waren treten mit Nullwert wieder in den Bestand"
+
+msgid "Returned on"
+msgstr "Zurückgegeben am"
 
 msgid "Returned serial numbers"
 msgstr "Zurückgegebene Seriennummern"
@@ -20637,9 +20652,6 @@ msgstr "Das Aufwandskonto, auf das diese indirekte Ausgabenzeile gebucht wird; e
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Die hochgeladene Datei und die vorgenommenen Zuordnungen gehen verloren."
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "Die letzte Abrechnungsperiode wird auf das Rückgabedatum angepasst. Ein bereits im Voraus abgerechneter Zeitraum erhält eine Korrektur für die ungenutzten Tage."
-
 msgid "the first 3 to 4 weeks"
 msgstr "die ersten 3 bis 4 Wochen"
 
@@ -21234,15 +21246,8 @@ msgstr "Die Einheit, in der eine Arbeitsplanzeit ausgedrückt wird, z. B. Stunde
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "Die Einheit und ihre Sätze werden festgelegt, sobald die Vereinbarung aktiviert ist."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "Die Einheit kann am oder nach dem Enddatum {0} zurückgegeben werden. Eine frühzeitig als Verkauf behandelte Miete wird manuell gebucht."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "Die Einheit wird zum Restbuchwert wieder in den Bestand aufgenommen und der Vermögenswert wird ohne Gewinn oder Verlust abgeschlossen."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "Die Einheit geht zur Instandhaltung statt in den verfügbaren Bestand zurück."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "Die Einheit hat für Sie keine weitere Verwendung, wenn die Vertragslaufzeit endet."
@@ -21252,6 +21257,9 @@ msgstr "Die Einheit wird aus der Verfügbarkeit entfernt, bis sie wieder in Betr
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "Die Einheit verlässt den Bestand und wird zu einem Anlagevermögen mit den Kosten, zu denen sie im Bestand erfasst ist."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr "Die Einheit hat das Gelände nie verlassen. Die Abrechnung endet am Freigabedatum, und die Einheit ist wieder frei."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Der Einzelpreis des Artikels zum Zeitpunkt des Kaufs"
@@ -21577,9 +21585,6 @@ msgstr "Dieses Quartal"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Dies entfernt ihre Authentifizierungs-App, daher benötigt ihre nächste Anmeldung nur einen Magic Link. Verwenden Sie dies, wenn sie den Zugriff auf ihre Authentifizierungs-App verloren haben. Dies wirkt sich auf ihre Anmeldung bei jedem Unternehmen aus, zu dem sie gehören."
 
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "Diese Miete wird als Verkauf behandelt. Die Nettoinvestition am Ende kommt mit der Einheit zurück auf die Bilanz, und die ungebuchte Zinsplanung wird entfernt."
-
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "Dies setzt {resets} bearbeitete Rechnungen ab {effectiveDate} zurück"
 
@@ -21848,6 +21853,9 @@ msgstr "Stichtag"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Um zu deaktivieren, verwenden Sie das Zeilenmenü und wählen Sie Konto deaktivieren."
+
+msgid "To Deliver"
+msgstr "Zu liefern"
 
 msgid "To Location"
 msgstr "Zielort"

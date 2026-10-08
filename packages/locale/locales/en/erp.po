@@ -4430,6 +4430,9 @@ msgstr "Choose avatar"
 msgid "Choose how to add lines to this return."
 msgstr "Choose how to add lines to this return."
 
+msgid "Choose Return To for {unitName}"
+msgstr "Choose Return To for {unitName}"
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 
@@ -6980,11 +6983,11 @@ msgstr "Delete Workflow"
 msgid "Deliver"
 msgstr "Deliver"
 
-msgid "Deliver {label}"
-msgstr "Deliver {label}"
-
 msgid "Delivered"
 msgstr "Delivered"
+
+msgid "Delivered on"
+msgstr "Delivered on"
 
 msgid "Delivery Date"
 msgstr "Delivery Date"
@@ -8312,6 +8315,9 @@ msgstr "Enter a batch number before setting the expiration date"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Enter a quantity between 1 and {0}."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr "Enter a reason to take the unit out of service"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Enter an item and quantity yourself."
@@ -12062,9 +12068,6 @@ msgstr "Mark scope as agreed"
 msgid "Mark Short"
 msgstr "Mark Short"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-
 msgid "Mark to delete"
 msgstr "Mark to delete"
 
@@ -12312,8 +12315,8 @@ msgstr "Message"
 msgid "Metadata"
 msgstr "Metadata"
 
-msgid "Meter Reading"
-msgstr "Meter Reading"
+msgid "Meter"
+msgstr "Meter"
 
 msgid "Method"
 msgstr "Method"
@@ -13831,6 +13834,9 @@ msgstr "Not configured"
 msgid "Not Configured"
 msgstr "Not Configured"
 
+msgid "Not delivered"
+msgstr "Not delivered"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
@@ -14810,6 +14816,12 @@ msgstr "Part Supersession"
 
 msgid "Partial"
 msgstr "Partial"
+
+msgid "Partially Delivered"
+msgstr "Partially Delivered"
+
+msgid "Partially Returned"
+msgstr "Partially Returned"
 
 msgid "Partly Recognized"
 msgstr "Partly Recognized"
@@ -16726,6 +16738,9 @@ msgstr "Relative timeline · dates to be confirmed"
 msgid "Release"
 msgstr "Release"
 
+msgid "Release {unitLabel}"
+msgstr "Release {unitLabel}"
+
 msgid "Release Batch"
 msgstr "Release Batch"
 
@@ -16743,6 +16758,9 @@ msgstr "Release control"
 msgid "Release Control"
 msgstr "Release Control"
 
+msgid "Release date"
+msgstr "Release date"
+
 msgid "Release Job"
 msgstr "Release Job"
 
@@ -16754,6 +16772,9 @@ msgstr "Release Jobs"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "Release purchase order {target} by {date}"
+
+msgid "Release unit"
+msgstr "Release unit"
 
 msgid "Released"
 msgstr "Released"
@@ -16956,6 +16977,9 @@ msgstr "Rental Rates"
 
 msgid "Rental Site"
 msgstr "Rental Site"
+
+msgid "Rental Units"
+msgstr "Rental Units"
 
 msgid "Rental Utilization"
 msgstr "Rental Utilization"
@@ -17320,12 +17344,6 @@ msgstr "Retry revert"
 msgid "Return"
 msgstr "Return"
 
-msgid "Return {unitLabel}"
-msgstr "Return {unitLabel}"
-
-msgid "Return Date"
-msgstr "Return Date"
-
 msgid "Return Home"
 msgstr "Return Home"
 
@@ -17334,9 +17352,6 @@ msgstr "Return ID"
 
 msgid "Return Location"
 msgstr "Return Location"
-
-msgid "Return Notes"
-msgstr "Return Notes"
 
 msgid "Return Number"
 msgstr "Return Number"
@@ -17365,9 +17380,6 @@ msgstr "Return to Inventory"
 msgid "Return to Service"
 msgstr "Return to Service"
 
-msgid "Return Unit"
-msgstr "Return Unit"
-
 msgid "returnable"
 msgstr "returnable"
 
@@ -17379,6 +17391,9 @@ msgstr "Returned batch"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "Returned goods re-enter inventory at zero value"
+
+msgid "Returned on"
+msgstr "Returned on"
 
 msgid "Returned serial numbers"
 msgstr "Returned serial numbers"
@@ -20637,9 +20652,6 @@ msgstr "The expense account this indirect-spend line posts to; required because 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "The file you uploaded and the mappings you've made will be lost."
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-
 msgid "the first 3 to 4 weeks"
 msgstr "the first 3 to 4 weeks"
 
@@ -21234,15 +21246,8 @@ msgstr "The unit a routing time is expressed in, such as Hours/Piece or Total Ho
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "The unit and its rates are fixed once the agreement is activated."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "The unit goes to maintenance instead of back to available."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "The unit has no other use to you once the term ends."
@@ -21252,6 +21257,9 @@ msgstr "The unit is removed from availability until it is returned to service. D
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "The unit leaves stock and becomes an asset at the cost inventory carries it at."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr "The unit never left the yard. Billing stops on the release date, and the unit is free again."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "The unit price of the item at the time of the purchase"
@@ -21577,9 +21585,6 @@ msgstr "This Quarter"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "This resets {resets} edited invoices from {effectiveDate}"
 
@@ -21848,6 +21853,9 @@ msgstr "To Date"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "To deactivate, use the row menu and choose Deactivate Account."
+
+msgid "To Deliver"
+msgstr "To Deliver"
 
 msgid "To Location"
 msgstr "To Location"

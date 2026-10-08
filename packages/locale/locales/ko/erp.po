@@ -4430,6 +4430,9 @@ msgstr "아바타 선택"
 msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
+msgid "Choose Return To for {unitName}"
+msgstr "{unitName}을(를) 반환할 위치 선택"
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위는 빈도에 따라 파일에 저장된 요율부터 시작됩니다. 그리드에서 변경할 수 있습니다."
 
@@ -6980,11 +6983,11 @@ msgstr "워크플로우 삭제"
 msgid "Deliver"
 msgstr "배송"
 
-msgid "Deliver {label}"
-msgstr "{label} 배달"
-
 msgid "Delivered"
 msgstr "배송됨"
+
+msgid "Delivered on"
+msgstr "배송일"
 
 msgid "Delivery Date"
 msgstr "납기일"
@@ -8312,6 +8315,9 @@ msgstr "만료일을 설정하기 전에 배치 번호를 입력하세요."
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1과 {0} 사이의 수량을 입력하세요."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr "장비를 운영 중단하는 이유를 입력하세요"
 
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
@@ -12062,9 +12068,6 @@ msgstr "범위를 합의됨으로 표시"
 msgid "Mark Short"
 msgstr "부족으로 표시"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "단위를 오늘 고객에게 인도된 것으로 표시합니다. 오늘부터 임차됩니다. 청구는 계약의 시작일 및 주기를 따릅니다."
-
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
@@ -12312,8 +12315,8 @@ msgstr "메시지"
 msgid "Metadata"
 msgstr "메타데이터"
 
-msgid "Meter Reading"
-msgstr "미터 측정"
+msgid "Meter"
+msgstr "계량기"
 
 msgid "Method"
 msgstr "제조방법"
@@ -13831,6 +13834,9 @@ msgstr "구성되지 않음"
 msgid "Not Configured"
 msgstr "미설정"
 
+msgid "Not delivered"
+msgstr "배송되지 않음"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
@@ -14810,6 +14816,12 @@ msgstr "부품 대체"
 
 msgid "Partial"
 msgstr "부분"
+
+msgid "Partially Delivered"
+msgstr "부분 배송"
+
+msgid "Partially Returned"
+msgstr "부분 반품"
 
 msgid "Partly Recognized"
 msgstr "부분 인식됨"
@@ -16726,6 +16738,9 @@ msgstr "상대적 타임라인 · 확정 예정 날짜"
 msgid "Release"
 msgstr "릴리스"
 
+msgid "Release {unitLabel}"
+msgstr "{unitLabel} 릴리스"
+
 msgid "Release Batch"
 msgstr "배치 릴리스"
 
@@ -16743,6 +16758,9 @@ msgstr "릴리스 제어"
 msgid "Release Control"
 msgstr "릴리스 제어"
 
+msgid "Release date"
+msgstr "릴리스 날짜"
+
 msgid "Release Job"
 msgstr "작업 지시 릴리스"
 
@@ -16754,6 +16772,9 @@ msgstr "작업 지시 릴리스"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "발주서 {target}을(를) {date}까지 릴리스"
+
+msgid "Release unit"
+msgstr "장비 릴리스"
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -16956,6 +16977,9 @@ msgstr "임차료율"
 
 msgid "Rental Site"
 msgstr "임차 현장"
+
+msgid "Rental Units"
+msgstr "렌탈 장비"
 
 msgid "Rental Utilization"
 msgstr "임차 자산 이용률"
@@ -17320,12 +17344,6 @@ msgstr "복원 재시도"
 msgid "Return"
 msgstr "반납"
 
-msgid "Return {unitLabel}"
-msgstr "{unitLabel} 반납"
-
-msgid "Return Date"
-msgstr "반납 날짜"
-
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
 
@@ -17334,9 +17352,6 @@ msgstr "반품 ID"
 
 msgid "Return Location"
 msgstr "반품 위치"
-
-msgid "Return Notes"
-msgstr "반납 메모"
 
 msgid "Return Number"
 msgstr "반품 번호"
@@ -17365,9 +17380,6 @@ msgstr "재고로 반환"
 msgid "Return to Service"
 msgstr "서비스 재개"
 
-msgid "Return Unit"
-msgstr "반납 개"
-
 msgid "returnable"
 msgstr "반품 가능"
 
@@ -17379,6 +17391,9 @@ msgstr "반품된 배치"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "반품된 상품은 0 가치로 재입고됩니다"
+
+msgid "Returned on"
+msgstr "반환일"
 
 msgid "Returned serial numbers"
 msgstr "반환된 시리얼 번호"
@@ -20637,9 +20652,6 @@ msgstr "이 간접비 지출 라인이 계상되는 비용 계정입니다. 간�
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "업로드한 파일과 설정한 매핑이 손실됩니다."
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "최종 청구 기간은 반납 날짜로 재조정됩니다. 미리 청구된 기간은 미사용 일수에 대한 조정을 받습니다."
-
 msgid "the first 3 to 4 weeks"
 msgstr "처음 3~4주"
 
@@ -21234,15 +21246,8 @@ msgstr "라우팅 시간이 표현되는 단위(예: 시간/개 또는 총 시�
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "계약이 활성화되면 개와 요금이 고정됩니다."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "개는 종료일 {0} 이후에 반환할 수 있습니다. 임차 계약을 판매로 취급하여 조기 종료하는 것은 수동 전표입니다."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "개 수량이 순장부가액으로 재고로 반환되고 자산은 이익 또는 손실 없이 마감됩니다."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "개가 가용 상태로 돌아가는 대신 유지보수로 이동합니다."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "약관 기간이 종료되면 개는 귀사에게 더 이상 사용 가치가 없습니다."
@@ -21252,6 +21257,9 @@ msgstr "개 수량은 서비스로 복귀할 때까지 사용 불가능으로 �
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "개가 재고에서 떠나 재고에 기록된 원가로 자산이 됩니다."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr "장비가 사업소를 떠나지 않았습니다. 릴리스 날짜에 청구가 중단되며, 장비는 다시 대여 가능합니다."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "구매 시점의 품목 단가"
@@ -21577,9 +21585,6 @@ msgstr "이번 분기"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
 
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "이 임차는 판매로 취급됩니다. 종료 순투자가 개와 함께 재무상태표로 돌아오고, 전기되지 않은 이자 일정은 제거됩니다."
-
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "이것은 {effectiveDate}부터 {resets}개의 편집된 송장을 재설정합니다."
 
@@ -21848,6 +21853,9 @@ msgstr "마감일"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "비활성화하려면 행 메뉴를 사용하여 계정 비활성화를 선택하세요."
+
+msgid "To Deliver"
+msgstr "배송 예정"
 
 msgid "To Location"
 msgstr "대상 위치"

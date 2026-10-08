@@ -2179,6 +2179,8 @@ export const path = {
       generatePath(`${x}/rental-agreement/${id}/${lineId}/classification`),
     rentalAgreementLineDeliver: (id: string, lineId: string) =>
       generatePath(`${x}/rental-agreement/${id}/${lineId}/deliver`),
+    rentalAgreementLineRelease: (id: string, lineId: string) =>
+      generatePath(`${x}/rental-agreement/${id}/${lineId}/release`),
     rentalAgreementLineReturn: (id: string, lineId: string) =>
       generatePath(`${x}/rental-agreement/${id}/${lineId}/return`),
     rentalAgreementLineSell: (id: string, lineId: string) =>

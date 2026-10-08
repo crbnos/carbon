@@ -493,14 +493,19 @@ line's accounting treatment (`lessorClassification`) is set at activation:
 `Rental` / `Sale` / `Financing` (ASC 842 operating / sales-type / direct
 financing lease; `Financing` has no input). A **`Rental`** line posts no journal at activation, the asset stays `Active` and keeps
 depreciating, and only the derived fleet status changes (Reserved → On Rent →
-Available again, or In Maintenance when the return form's out-of-service box is
-ticked — `post-rental-agreement` `return` sets `outOfServiceSince =
-returnedAt` and the reason). `post-rental-agreement` `activate` accepts a unit
+Available again, or In Maintenance when the rental receipt line's **Take out of
+service** box is ticked — `returnRentalUnit`, `post-rental-agreement/return-unit.ts`,
+sets `outOfServiceSince = returnedAt` and the reason). A unit goes On Rent when a
+rental shipment posts (`post-shipment`, source `'Rental Agreement'`) and comes back
+when a rental receipt posts (`post-receipt`); neither writes an `itemLedger` row or a
+journal for a `Rental` line. Posting the receipt sets `fixedAsset.locationId` to the
+receipt's location. **Release unit** (`post-rental-agreement` `release`) ends a
+Pending unit that never left the yard and does not move it. See
+`apps/erp/app/modules/sales/AGENTS.md` → Rentals → Deliver and return. `post-rental-agreement` `activate` accepts a unit
 whose `fleetStatus` is `Available`, or `Reserved` by the same agreement, and
 whose asset status is `Active` / `Fully Depreciated`; `In Maintenance` is
-refused with "<unit> is out of service: <reason>". Deliver
-(`x+/rental-agreement+/$id.$lineId.deliver.tsx`) is refused while the unit
-reads In Maintenance. **Return to Inventory is refused while the unit is on a
+refused with "<unit> is out of service: <reason>". Posting a rental shipment
+refuses an out-of-service unit with the same message. **Return to Inventory is refused while the unit is on a
 live rental line**: `post-asset-transfer` `returnToInventory` checks for a
 `rentalAgreementLine` with `status IN ('Pending','On Rent')` inside its
 transaction and throws "Asset <id> is on rent|reserved on rental agreement
@@ -530,8 +535,8 @@ refuses a line without a fleet unit, so the spec's from-stock commencement has
 no entry point in v1.
 
 **Residual return capitalizes a NEW Rental Fleet asset.** Returning a
-`Sale` line at or after `endDate` with `residualDestination: "Fleet"`
-(`returnResidual`) inserts a new `fixedAsset` (new `fixedAssetId` from the
+`Sale` line on a rental receipt at or after `endDate` with `residualDestination: "Fleet"`
+(`returnResidual`) inserts a new `fixedAsset` at the receipt's location (new `fixedAssetId` from the
 sequence) in the non-CIP class named "Rental Fleet" (else the class the unit
 left at commencement; neither → "No Rental Fleet asset class to return the
 unit into; create one or return the unit to inventory") with `acquisitionCost`
@@ -549,7 +554,7 @@ Cr Net Investment in Leases (skipped when accounting is off or closing is 0);
 the entity stays `Consumed` with `Fixed Asset` = the new asset and a
 `Capitalize` activity. The disposed original is untouched (the live-serial
 unique index ignores Disposed rows). `residualDestination: "Inventory"`
-instead books `bookAdjustment` +1 at `fixedUnitCost` = closing and Dr the
+instead books `bookAdjustment` +1 at the receipt's location at `fixedUnitCost` = closing and Dr the
 item's inventory account. Schedule lines and Planned Interest rows dated on or
 before the return STAY and post through later recognition runs (that is what
 brings Net Investment in Leases to zero: initial NI + Σ interest − Σ rent −
@@ -681,7 +686,9 @@ two-step (ship → invoice) flow.
 - `Reserved` means "named on a live Pending line", which includes every line of
   a DRAFT agreement. Cancelling an agreement deletes its Pending lines (the
   line status enum has no Cancelled), which is what frees the unit.
-- A `Rental` line (operating lease) never changes `fixedAsset.status` or `locationId`:
-  custody is the agreement's `customerLocationId`, exposed on `fleetAssets`. A
+- A `Rental` line (operating lease) never changes `fixedAsset.status`. Its
+  `locationId` changes only when a rental receipt posts: the unit is then at the
+  receipt's location. While it is out, custody is the agreement's
+  `customerLocationId`, exposed on `fleetAssets`. A
   `Sale` line (sales-type lease) disposes the asset at activation (above), and a residual
   return creates a different asset row rather than reviving the old one.

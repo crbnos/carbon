@@ -9,10 +9,18 @@ import {
   cancelBlocker,
   closeBlocker,
   type FleetUnit,
+  futureDeliveryError,
+  futureReleaseError,
   futureReturnError,
+  openRentalDocumentBlocker,
   payloadValidator,
+  receiptReturnError,
+  releaseBlocker,
+  rentalShipmentVoidBlocker,
   toRate,
   unitAvailabilityError,
+  unitLabel,
+  unitReturnValidator,
   unpricedUnitError
 } from "./validators";
 
@@ -31,28 +39,27 @@ it("activate, close and cancel need only the agreement", () => {
   }
 });
 
-it("return needs the line and a YYYY-MM-DD return date", () => {
+it("release needs the line and a YYYY-MM-DD date", () => {
   const parsed = payloadValidator.parse({
-    type: "return",
+    type: "release",
     rentalAgreementLineId: "ragl_1",
     returnedAt: "2026-10-14",
     ...scope
   });
-  if (parsed.type !== "return") throw new Error("wrong variant");
+  if (parsed.type !== "release") throw new Error("wrong variant");
+  expect(parsed.rentalAgreementLineId).toEqual("ragl_1");
   expect(parsed.returnedAt).toEqual("2026-10-14");
-  expect(parsed.meterIn).toEqual(undefined);
-  expect(parsed.takeOutOfService).toEqual(undefined);
 
   expect(() =>
     payloadValidator.parse({
-      type: "return",
+      type: "release",
       returnedAt: "2026-10-14",
       ...scope
     })
   ).toThrow();
   expect(() =>
     payloadValidator.parse({
-      type: "return",
+      type: "release",
       rentalAgreementLineId: "ragl_1",
       returnedAt: "2026-10-14T00:00:00.000Z",
       ...scope
@@ -60,57 +67,15 @@ it("return needs the line and a YYYY-MM-DD return date", () => {
   ).toThrow();
 });
 
-it("return carries the meter, notes and the out-of-service reason", () => {
+it("release strips a meter reading", () => {
   const parsed = payloadValidator.parse({
-    type: "return",
+    type: "release",
     rentalAgreementLineId: "ragl_1",
     returnedAt: "2026-10-14",
     meterIn: 1250.5,
-    returnNotes: "Scratched boom",
-    takeOutOfService: true,
-    outOfServiceReason: "Hydraulic leak",
     ...scope
   });
-  if (parsed.type !== "return") throw new Error("wrong variant");
-  expect(parsed.meterIn).toEqual(1250.5);
-  expect(parsed.outOfServiceReason).toEqual("Hydraulic leak");
-});
-
-it("taking a unit out of service at return needs a reason", () => {
-  for (const outOfServiceReason of [undefined, null, "", "   "]) {
-    expect(() =>
-      payloadValidator.parse({
-        type: "return",
-        rentalAgreementLineId: "ragl_1",
-        returnedAt: "2026-10-14",
-        takeOutOfService: true,
-        outOfServiceReason,
-        ...scope
-      })
-    ).toThrow();
-  }
-  expect(
-    payloadValidator.parse({
-      type: "return",
-      rentalAgreementLineId: "ragl_1",
-      returnedAt: "2026-10-14",
-      takeOutOfService: false,
-      ...scope
-    }).type
-  ).toEqual("return");
-});
-
-it("a negative meter reading and an unknown type are refused", () => {
-  expect(() =>
-    payloadValidator.parse({
-      type: "return",
-      rentalAgreementLineId: "ragl_1",
-      returnedAt: "2026-10-14",
-      meterIn: -1,
-      ...scope
-    })
-  ).toThrow();
-  expect(() => payloadValidator.parse({ type: "deliver", ...scope })).toThrow();
+  expect("meterIn" in parsed).toEqual(false);
 });
 
 it("activation generates through one cycle past today", () => {
@@ -354,28 +319,6 @@ it("a commenced sales-type line cannot be cancelled: early termination is a manu
   ).toEqual(null);
 });
 
-it("return accepts a residual destination of Fleet or Inventory, or none", () => {
-  const base = {
-    type: "return",
-    rentalAgreementLineId: "ragl_1",
-    returnedAt: "2029-12-31",
-    ...scope
-  };
-  for (const residualDestination of ["Fleet", "Inventory"] as const) {
-    const parsed = payloadValidator.parse({ ...base, residualDestination });
-    expect(
-      parsed.type === "return" ? parsed.residualDestination : undefined
-    ).toEqual(residualDestination);
-  }
-  const none = payloadValidator.parse(base);
-  expect(none.type === "return" ? none.residualDestination : "unset").toEqual(
-    undefined
-  );
-  expect(() =>
-    payloadValidator.parse({ ...base, residualDestination: "Scrap" })
-  ).toThrow();
-});
-
 it("a return is never dated after the company's today", () => {
   expect(futureReturnError("2027-03-01", "2027-03-01")).toEqual(null);
   expect(futureReturnError("2027-02-28", "2027-03-01")).toEqual(null);
@@ -394,4 +337,204 @@ it("a unit at no rate cannot be activated", () => {
   );
   expect(unpricedUnitError("FA000001", Number.NaN)).not.toEqual(null);
   expect(unpricedUnitError("FA000001", 0.01)).toEqual(null);
+});
+
+it("a unit return needs the line and a YYYY-MM-DD return date", () => {
+  const parsed = unitReturnValidator.parse({
+    rentalAgreementLineId: "ragl_1",
+    returnedAt: "2026-10-14"
+  });
+  expect(parsed.returnedAt).toEqual("2026-10-14");
+  expect(parsed.meterIn).toEqual(undefined);
+  expect(parsed.takeOutOfService).toEqual(undefined);
+
+  expect(() =>
+    unitReturnValidator.parse({ returnedAt: "2026-10-14" })
+  ).toThrow();
+  expect(() =>
+    unitReturnValidator.parse({
+      rentalAgreementLineId: "ragl_1",
+      returnedAt: "2026-10-14T00:00:00.000Z"
+    })
+  ).toThrow();
+});
+
+it("a unit return carries the meter, notes and the out-of-service reason", () => {
+  const parsed = unitReturnValidator.parse({
+    rentalAgreementLineId: "ragl_1",
+    returnedAt: "2026-10-14",
+    meterIn: 1250.5,
+    returnNotes: "Scratched boom",
+    takeOutOfService: true,
+    outOfServiceReason: "Hydraulic leak",
+    residualDestination: "Fleet"
+  });
+  expect(parsed.meterIn).toEqual(1250.5);
+  expect(parsed.outOfServiceReason).toEqual("Hydraulic leak");
+  expect(parsed.residualDestination).toEqual("Fleet");
+});
+
+it("taking a unit out of service on a unit return needs a reason", () => {
+  for (const outOfServiceReason of [undefined, null, "", "   "]) {
+    expect(() =>
+      unitReturnValidator.parse({
+        rentalAgreementLineId: "ragl_1",
+        returnedAt: "2026-10-14",
+        takeOutOfService: true,
+        outOfServiceReason
+      })
+    ).toThrow();
+  }
+  expect(
+    unitReturnValidator.parse({
+      rentalAgreementLineId: "ragl_1",
+      returnedAt: "2026-10-14",
+      takeOutOfService: false
+    }).takeOutOfService
+  ).toEqual(false);
+});
+
+it("a unit is named by its asset number, else its asset name, else its line", () => {
+  expect(unitLabel({ fixedAssetId: "FA-1", name: "Lift" }, "ragl_1")).toEqual(
+    "FA-1"
+  );
+  expect(unitLabel({ fixedAssetId: null, name: "Lift" }, "ragl_1")).toEqual(
+    "Lift"
+  );
+  expect(unitLabel(undefined, "ragl_1")).toEqual("ragl_1");
+});
+
+it("a delivery is never dated after today", () => {
+  expect(futureDeliveryError("2026-10-15", "2026-10-14")).toEqual(
+    "The delivery date cannot be in the future"
+  );
+  expect(futureDeliveryError("2026-10-14", "2026-10-14")).toBeNull();
+});
+
+it("a release is never dated after today", () => {
+  expect(futureReleaseError("2026-10-15", "2026-10-14")).toEqual(
+    "The release date cannot be in the future"
+  );
+  expect(futureReleaseError("2026-10-14", "2026-10-14")).toBeNull();
+});
+
+it("a rental shipment voids only while every unit is On Rent", () => {
+  expect(
+    rentalShipmentVoidBlocker([
+      { label: "FA-1", status: "On Rent", accrual: "Posted" },
+      { label: "FA-2", status: "Returned", accrual: null }
+    ])
+  ).toEqual(
+    "FA-2 is Returned; a rental shipment can be voided only while every unit is On Rent"
+  );
+});
+
+it("a rental shipment does not void over a posted accrual", () => {
+  expect(
+    rentalShipmentVoidBlocker([
+      { label: "FA-1", status: "On Rent", accrual: null },
+      { label: "FA-2", status: "On Rent", accrual: "Posted" }
+    ])
+  ).toEqual(
+    "A posted revenue recognition run holds accrued rent for FA-2; the shipment cannot be voided"
+  );
+});
+
+it("a rental shipment does not void over a draft run's accrual", () => {
+  expect(
+    rentalShipmentVoidBlocker([
+      { label: "FA-1", status: "On Rent", accrual: "Draft run" },
+      { label: "FA-2", status: "On Rent", accrual: "Posted" }
+    ])
+  ).toEqual(
+    "A draft revenue recognition run holds accrued rent for FA-1; delete the run before voiding the shipment"
+  );
+});
+
+it("a rental shipment with every unit On Rent and no accrual voids", () => {
+  expect(
+    rentalShipmentVoidBlocker([
+      { label: "FA-1", status: "On Rent", accrual: null },
+      { label: "FA-2", status: "On Rent", accrual: null }
+    ])
+  ).toBeNull();
+});
+
+it("an open rental shipment blocks the close first", () => {
+  expect(
+    openRentalDocumentBlocker({
+      shipmentId: "SHP-000004",
+      receiptId: "RCV-000002"
+    })
+  ).toEqual(
+    "Shipment SHP-000004 is still open; post or delete it before closing the agreement"
+  );
+});
+
+it("an open rental receipt blocks the close", () => {
+  expect(
+    openRentalDocumentBlocker({ shipmentId: null, receiptId: "RCV-000002" })
+  ).toEqual(
+    "Receipt RCV-000002 is still open; post or delete it before closing the agreement"
+  );
+});
+
+it("no open rental document leaves the close alone", () => {
+  expect(
+    openRentalDocumentBlocker({ shipmentId: null, receiptId: null })
+  ).toBeNull();
+});
+
+it("a rental receipt returns a Pending or On Rent unit only", () => {
+  expect(receiptReturnError("FA-1", "Returned")).toEqual(
+    "FA-1 is Returned; only a Pending or On Rent unit can be returned"
+  );
+  expect(receiptReturnError("FA-1", "Pending")).toBeNull();
+  expect(receiptReturnError("FA-1", "On Rent")).toBeNull();
+});
+
+it("only a Pending unit can be released", () => {
+  expect(
+    releaseBlocker({
+      label: "FA-1",
+      status: "On Rent",
+      classification: "Sale",
+      openDocument: "shipment SHP-000004"
+    })
+  ).toEqual("FA-1 is On Rent; only a Pending unit can be released");
+});
+
+it("a unit treated as a sale is not released", () => {
+  expect(
+    releaseBlocker({
+      label: "FA-1",
+      status: "Pending",
+      classification: "Sale",
+      openDocument: "shipment SHP-000004"
+    })
+  ).toEqual("FA-1 is treated as a sale; return it on a rental receipt instead");
+});
+
+it("a unit on an open rental document is not released", () => {
+  expect(
+    releaseBlocker({
+      label: "FA-1",
+      status: "Pending",
+      classification: "Rental",
+      openDocument: "receipt RCV-000002"
+    })
+  ).toEqual(
+    "FA-1 is on receipt RCV-000002; remove it there before releasing the unit"
+  );
+});
+
+it("a Pending rental unit on no open document is released", () => {
+  expect(
+    releaseBlocker({
+      label: "FA-1",
+      status: "Pending",
+      classification: null,
+      openDocument: null
+    })
+  ).toBeNull();
 });
