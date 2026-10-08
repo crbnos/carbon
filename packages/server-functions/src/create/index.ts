@@ -147,6 +147,16 @@ export const createInput = z.discriminatedUnion("type", [
     shipmentLineId: z.string()
   }),
   z.object({
+    type: z.literal("shipmentFromRentalAgreement"),
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string().optional()
+  }),
+  z.object({
+    type: z.literal("receiptFromRentalAgreement"),
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string().optional()
+  }),
+  z.object({
     type: z.literal("journalEntry")
   })
 ]);
@@ -192,6 +202,8 @@ const create = defineServerFn({
       shipmentFromSalesReturnOrder: { create: "inventory" },
       shipmentFromSalesOrderLine: { create: "inventory" },
       shipmentLineSplit: { create: "inventory" },
+      shipmentFromRentalAgreement: { create: "inventory" },
+      receiptFromRentalAgreement: { create: "inventory" },
       journalEntry: { create: "accounting" }
     }
   },
@@ -3368,6 +3380,326 @@ const create = defineServerFn({
         });
 
         return { id: shipmentLineId };
+      }
+      case "shipmentFromRentalAgreement": {
+        // A rental delivery: one Draft shipment per agreement holds the
+        // Pending units. A per-unit shortcut adds (or ticks) its unit on it.
+        const { rentalAgreementId, rentalAgreementLineId } = payload;
+
+        logger.info({
+          function: "create",
+          type,
+          companyId,
+          rentalAgreementId,
+          rentalAgreementLineId,
+          userId
+        });
+
+        return db.transaction().execute(async (trx) => {
+          const agreement = await trx
+            .selectFrom("rentalAgreement")
+            .select([
+              "id",
+              "rentalAgreementId",
+              "status",
+              "customerId",
+              "locationId"
+            ])
+            .where("id", "=", rentalAgreementId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!agreement) throw new NotFoundError("Rental agreement not found");
+          if (agreement.status !== "Active") {
+            throw new InvalidInputError(
+              `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are delivered from an Active agreement`
+            );
+          }
+
+          const draft = await trx
+            .selectFrom("shipment")
+            .select("id")
+            .where("sourceDocument", "=", "Rental Agreement")
+            .where("sourceDocumentId", "=", agreement.id)
+            .where("status", "=", "Draft")
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+
+          const onOpenShipments = await trx
+            .selectFrom("shipmentFixedAssetLine as sfl")
+            .innerJoin("shipment as s", (join) =>
+              join
+                .onRef("s.id", "=", "sfl.shipmentId")
+                .onRef("s.companyId", "=", "sfl.companyId")
+            )
+            .select([
+              "sfl.id",
+              "sfl.shipmentId",
+              "sfl.rentalAgreementLineId",
+              "sfl.shipped"
+            ])
+            .where("s.sourceDocument", "=", "Rental Agreement")
+            .where("s.sourceDocumentId", "=", agreement.id)
+            .where("s.status", "in", ["Draft", "Pending"])
+            .where("sfl.companyId", "=", companyId)
+            .execute();
+
+          let candidatesQuery = trx
+            .selectFrom("rentalAgreementLine")
+            .select(["id", "status"])
+            .where("rentalAgreementId", "=", agreement.id)
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Pending");
+          if (rentalAgreementLineId) {
+            candidatesQuery = candidatesQuery.where(
+              "id",
+              "=",
+              rentalAgreementLineId
+            );
+          }
+          const candidates = await candidatesQuery.orderBy("id").execute();
+          if (rentalAgreementLineId && candidates.length === 0) {
+            throw new InvalidInputError("Only a Pending unit can be delivered");
+          }
+
+          if (draft) {
+            if (!rentalAgreementLineId) return { id: draft.id };
+            const onDocument = onOpenShipments.find(
+              (row) => row.rentalAgreementLineId === rentalAgreementLineId
+            );
+            if (onDocument && onDocument.shipmentId !== draft.id) {
+              throw new InvalidInputError(
+                "The unit is already on an open shipment"
+              );
+            }
+            if (onDocument) {
+              if (!onDocument.shipped) {
+                await trx
+                  .updateTable("shipmentFixedAssetLine")
+                  .set({ shipped: true, updatedBy: userId })
+                  .where("id", "=", onDocument.id)
+                  .where("companyId", "=", companyId)
+                  .execute();
+              }
+              return { id: draft.id };
+            }
+            await trx
+              .insertInto("shipmentFixedAssetLine")
+              .values({
+                shipmentId: draft.id,
+                rentalAgreementLineId,
+                shipped: true,
+                companyId,
+                createdBy: userId
+              })
+              .execute();
+            return { id: draft.id };
+          }
+
+          const onOpenDocument = new Set(
+            onOpenShipments.map((row) => row.rentalAgreementLineId)
+          );
+          const units = candidates.filter(
+            (line) => !onOpenDocument.has(line.id)
+          );
+          if (units.length === 0) {
+            throw new InvalidInputError("No units to deliver");
+          }
+
+          const header = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId: await getNextSequence(trx, "shipment", companyId),
+              sourceDocument: "Rental Agreement",
+              sourceDocumentId: agreement.id,
+              sourceDocumentReadableId: agreement.rentalAgreementId,
+              customerId: agreement.customerId,
+              locationId: agreement.locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+          await trx
+            .insertInto("shipmentFixedAssetLine")
+            .values(
+              units.map((line) => ({
+                shipmentId: header.id,
+                rentalAgreementLineId: line.id,
+                shipped: true,
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+          return { id: header.id };
+        });
+      }
+      case "receiptFromRentalAgreement": {
+        // A rental return: one Draft receipt per agreement holds the units
+        // that can come back — On Rent ticked, Pending unticked (spec Q8). A
+        // per-unit shortcut adds (or ticks) its unit on it.
+        const { rentalAgreementId, rentalAgreementLineId } = payload;
+
+        logger.info({
+          function: "create",
+          type,
+          companyId,
+          rentalAgreementId,
+          rentalAgreementLineId,
+          userId
+        });
+
+        return db.transaction().execute(async (trx) => {
+          const agreement = await trx
+            .selectFrom("rentalAgreement")
+            .select([
+              "id",
+              "rentalAgreementId",
+              "status",
+              "customerId",
+              "locationId"
+            ])
+            .where("id", "=", rentalAgreementId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!agreement) throw new NotFoundError("Rental agreement not found");
+          if (agreement.status !== "Active") {
+            throw new InvalidInputError(
+              `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are returned from an Active agreement`
+            );
+          }
+
+          const draft = await trx
+            .selectFrom("receipt")
+            .select("id")
+            .where("sourceDocument", "=", "Rental Agreement")
+            .where("sourceDocumentId", "=", agreement.id)
+            .where("status", "=", "Draft")
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+
+          // Only another open RECEIPT keeps a unit off this one: a Pending
+          // unit may sit on an open shipment too, and the first to post wins.
+          const onOpenReceipts = await trx
+            .selectFrom("receiptFixedAssetLine as rfl")
+            .innerJoin("receipt as r", (join) =>
+              join
+                .onRef("r.id", "=", "rfl.receiptId")
+                .onRef("r.companyId", "=", "rfl.companyId")
+            )
+            .select([
+              "rfl.id",
+              "rfl.receiptId",
+              "rfl.rentalAgreementLineId",
+              "rfl.received"
+            ])
+            .where("r.sourceDocument", "=", "Rental Agreement")
+            .where("r.sourceDocumentId", "=", agreement.id)
+            .where("r.status", "in", ["Draft", "Pending"])
+            .where("rfl.companyId", "=", companyId)
+            .execute();
+
+          let candidatesQuery = trx
+            .selectFrom("rentalAgreementLine")
+            .select(["id", "status"])
+            .where("rentalAgreementId", "=", agreement.id)
+            .where("companyId", "=", companyId)
+            .where("status", "in", ["Pending", "On Rent"]);
+          if (rentalAgreementLineId) {
+            candidatesQuery = candidatesQuery.where(
+              "id",
+              "=",
+              rentalAgreementLineId
+            );
+          }
+          const candidates = await candidatesQuery.orderBy("id").execute();
+          if (rentalAgreementLineId && candidates.length === 0) {
+            throw new InvalidInputError(
+              "Only a Pending or On Rent unit can be returned"
+            );
+          }
+
+          if (draft) {
+            if (!rentalAgreementLineId) return { id: draft.id };
+            const onDocument = onOpenReceipts.find(
+              (row) => row.rentalAgreementLineId === rentalAgreementLineId
+            );
+            if (onDocument && onDocument.receiptId !== draft.id) {
+              throw new InvalidInputError(
+                "The unit is already on an open receipt"
+              );
+            }
+            if (onDocument) {
+              if (!onDocument.received) {
+                await trx
+                  .updateTable("receiptFixedAssetLine")
+                  .set({ received: true, updatedBy: userId })
+                  .where("id", "=", onDocument.id)
+                  .where("companyId", "=", companyId)
+                  .execute();
+              }
+              return { id: draft.id };
+            }
+            await trx
+              .insertInto("receiptFixedAssetLine")
+              .values({
+                receiptId: draft.id,
+                rentalAgreementLineId,
+                received: true,
+                companyId,
+                createdBy: userId
+              })
+              .execute();
+            return { id: draft.id };
+          }
+
+          const onOpenDocument = new Set(
+            onOpenReceipts.map((row) => row.rentalAgreementLineId)
+          );
+          const units = candidates.filter(
+            (line) => !onOpenDocument.has(line.id)
+          );
+          if (units.length === 0) {
+            throw new InvalidInputError("No units to return");
+          }
+
+          const header = await trx
+            .insertInto("receipt")
+            .values({
+              receiptId: await getNextSequence(trx, "receipt", companyId),
+              sourceDocument: "Rental Agreement",
+              sourceDocumentId: agreement.id,
+              sourceDocumentReadableId: agreement.rentalAgreementId,
+              locationId: agreement.locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+          await trx
+            .insertInto("receiptFixedAssetLine")
+            .values(
+              units.map((line) => ({
+                receiptId: header.id,
+                rentalAgreementLineId: line.id,
+                // The shortcut names its unit, so it comes back ticked; a
+                // whole-agreement receipt ticks only what is out on rent.
+                received: rentalAgreementLineId
+                  ? true
+                  : line.status === "On Rent",
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+          return { id: header.id };
+        });
       }
       case "journalEntry": {
         let createdDocumentId;
