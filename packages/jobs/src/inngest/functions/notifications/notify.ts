@@ -30,7 +30,7 @@ import {
   renderInlineLinks,
   renderSlackMrkdwn
 } from "@carbon/notifications";
-import { datetime } from "@carbon/utils";
+import { chunkArray, datetime } from "@carbon/utils";
 import { now } from "@internationalized/date";
 import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
@@ -41,6 +41,14 @@ import {
   getNotificationEmailComponent
 } from "./content";
 import { pushSessionMaxAgeMs, pushSubscriptionCutoff } from "./push-outcome";
+
+// A group notification can have hundreds of recipients. One request, insert
+// or send that carries all of them fails the whole notification, so each is
+// split into chunks of these sizes.
+
+// Ids per `.in()` write: the filter rides in the URL, and the gateway rejects
+// a request line it cannot buffer (HTTP 431). Reads use fetchAllByIds.
+const IN_FILTER_CHUNK = 100;
 
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
@@ -446,32 +454,35 @@ export const notifyFunction = inngest.createFunction(
         if (content.digest) {
           const supersededAt = datetime.timestamp();
 
-          const [supersededDigests, supersededFlat] = await Promise.all([
-            client
-              .from("notification")
-              .update({ readAt: supersededAt, seenAt: supersededAt })
-              .eq("companyId", payload.companyId)
-              .eq("event", NotificationEvent.Digest)
-              .eq("payload->>sourceEvent", payload.event)
-              .is("readAt", null)
-              .in("userId", userIds),
-            client
-              .from("notification")
-              .update({ readAt: supersededAt, seenAt: supersededAt })
-              .eq("companyId", payload.companyId)
-              .eq("event", payload.event)
-              .is("digestedInto", null)
-              .is("readAt", null)
-              .in("userId", userIds)
-          ]);
-          const supersedeError =
-            supersededDigests.error ?? supersededFlat.error;
-          if (supersedeError) {
-            console.error(
-              "Failed to supersede prior reminder rows",
-              supersedeError
-            );
-            throw supersedeError;
+          // One chunk of recipients at a time: the ids ride in the URL.
+          for (const chunk of chunkArray(userIds, IN_FILTER_CHUNK)) {
+            const [supersededDigests, supersededFlat] = await Promise.all([
+              client
+                .from("notification")
+                .update({ readAt: supersededAt, seenAt: supersededAt })
+                .eq("companyId", payload.companyId)
+                .eq("event", NotificationEvent.Digest)
+                .eq("payload->>sourceEvent", payload.event)
+                .is("readAt", null)
+                .in("userId", chunk),
+              client
+                .from("notification")
+                .update({ readAt: supersededAt, seenAt: supersededAt })
+                .eq("companyId", payload.companyId)
+                .eq("event", payload.event)
+                .is("digestedInto", null)
+                .is("readAt", null)
+                .in("userId", chunk)
+            ]);
+            const supersedeError =
+              supersededDigests.error ?? supersededFlat.error;
+            if (supersedeError) {
+              console.error(
+                "Failed to supersede prior reminder rows",
+                supersedeError
+              );
+              throw supersedeError;
+            }
           }
         }
 

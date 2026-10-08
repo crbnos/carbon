@@ -2,7 +2,7 @@
 
 **Spec:** none. The input is the user's request on PR #1867: make `notify` work for a large group, not only the read limit.
 **Research:** none. The limits come from the code, `.claude/skills/inngest/SKILL.md` and a measurement on 2026-10-09.
-**Branch:** a new branch from `main`, after PR #1867 merges. This plan needs `fetchAllByIds` from that PR.
+**Branch:** `naveenkash/carbon-browser-notifications` (PR #1867). The user chose this branch on 2026-10-09, so the work does not wait for the merge. The plan needs `fetchAllByIds` from that PR.
 
 ## Why
 
@@ -22,8 +22,8 @@ PR #1867 fixed the reads: `fetchAllByIds` (`@carbon/database`) sends 100 ids per
 The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one detail row (`render(getNotificationEmailComponent(…))`, measured in a temporary vitest file).
 
 ## Progress
-- [ ] Task 1: Add the pure batching helpers and their tests
-- [ ] Task 2: Chunk the in-app supersede updates
+- [x] Task 1: Add the chunk sizes to `notify.ts`
+- [x] Task 2: Chunk the in-app supersede updates
 - [ ] Task 3: Insert digest rows in batches, and chunk the flat insert
 - [ ] Task 4: Render and send emails in chunks
 - [ ] Task 5: Send the Slack and push events in chunks
@@ -34,7 +34,7 @@ The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one 
 
 ## Dependencies
 
-- Task 1 comes first. Tasks 2, 3, 4 and 5 use its helpers.
+- Task 1 comes first. Tasks 2, 3, 4 and 5 use its chunk sizes.
 - Tasks 2 and 3 change the same step. Do them in order.
 - Tasks 4, 5 and 6 are independent of each other after Task 1.
 - Task 7 is independent of every other task.
@@ -51,36 +51,31 @@ Inngest replays a completed step from its stored output. It finds that output by
 
 ---
 
-## Task 1: Add the pure batching helpers and their tests
+## Task 1: Add the chunk sizes to `notify.ts`
 
 **Depends on:** none
 **Files:**
-- Create: `packages/jobs/src/inngest/functions/notifications/batching.ts`
-- Create: `packages/jobs/src/inngest/functions/notifications/batching.test.ts`
-- Copy from (precedent): `packages/jobs/src/inngest/functions/notifications/push-outcome.ts` and its test
+- Modify: `packages/jobs/src/inngest/functions/notifications/notify.ts` — 4 constants after the imports
+- Copy from (precedent): `for (const [index, batch] of chunkArray(…).entries())` in `packages/jobs/src/inngest/functions/integrations/accounting-master-sync.ts:222`
+
+The splitting helper already exists: `chunkArray` in `@carbon/utils`. A chunk's step id is a template string with its index, as in `scheduled/weekly.ts:294`. Do not add a wrapper for either (decision of the user, 2026-10-09).
 
 **Steps:**
-1. Create `batching.ts` with the SPDX header from `pnpm --filter @carbon/checks license-headers`.
-2. Export `IN_FILTER_CHUNK = 100`. Comment: ids per `.in()` request, so the URL fits (HTTP 431).
-3. Export `INSERT_CHUNK = 500`. Comment: rows per `notification` insert.
-4. Export `EMAIL_CHUNK = 20`. Comment: 20 × 16.9 KB stays under the 512 KB send limit.
-5. Export `EVENT_CHUNK = 500`. Comment: Slack and push events are under 1 KB each.
-6. Export `function stepChunks<T>(items: T[], size: number): { index: number; items: T[] }[]`.
-7. Build it on `chunkArray` from `@carbon/utils`. Keep `index` stable, from 0.
-8. Export `function chunkStepId(base: string, index: number): string`. Return `${base}-${index}`.
-9. In `batching.test.ts`, test that `stepChunks` keeps every item in order.
-10. Test that each chunk has at most `size` items.
-11. Test that an empty list gives no chunks.
-12. Test that `chunkStepId("fan-out-emails", 0)` is `"fan-out-emails-0"`.
-13. Test that `EMAIL_CHUNK * 16_900` is less than `512 * 1024`.
+1. Add `chunkArray` to the existing `import { datetime } from "@carbon/utils"` line.
+2. Add `IN_FILTER_CHUNK = 100`. Comment: ids per `.in()` request, so the URL fits (HTTP 431).
+3. Add `INSERT_CHUNK = 500`. Comment: rows per `notification` insert.
+4. Add `EMAIL_CHUNK = 20`. Comment: 20 × 16.9 KB stays under the 512 KB send limit.
+5. Add `EVENT_CHUNK = 500`. Comment: Slack and push events are under 1 KB each.
 
 **Verify:**
 ```bash
-pnpm --filter @carbon/jobs exec vitest run src/inngest/functions/notifications/batching.test.ts
-# Expected: all tests pass
+pnpm exec turbo run typecheck --filter=@carbon/jobs
+# Expected: Tasks: 1 successful
 ```
 
-**Out of scope:** any change to `notify.ts` in this task.
+**Out of scope:** a new helper module. Tasks 2–5 use `chunkArray(…).entries()` directly.
+
+Add each constant in the task that first uses it. Biome rejects an unused constant as an error, and the commit hook runs Biome. So Task 1 commits together with Task 2.
 
 ## Task 2: Chunk the in-app supersede updates
 
@@ -145,10 +140,10 @@ If PostgREST does not return the inserted rows in input order, do not rely on or
 **Steps:**
 1. Add a step `load-email-recipients` that returns `{ id, email, fullName }[]` from the `fetchAllByIds` read.
 2. Remove the `resolve-email-recipients` step. Its stored output has the old shape.
-3. Loop over `stepChunks(recipients, EMAIL_CHUNK)`.
-4. For each chunk, run `step.run(chunkStepId("render-emails", index), …)` with the render code that exists now.
+3. Loop over `chunkArray(recipients, EMAIL_CHUNK).entries()`.
+4. For each chunk, run ``step.run(`render-emails-${index}`, …)`` with the render code that exists now.
 5. Return the events of that chunk only.
-6. Send them with `step.sendEvent(chunkStepId("fan-out-emails", index), events)`.
+6. Send them with ``step.sendEvent(`fan-out-emails-${index}`, events)``.
 7. Keep the subject, text, tracking and `to` fields exactly as now.
 
 **Verify:**
@@ -170,8 +165,8 @@ Read the caution about step ids before you deploy. Inngest allows 1000 steps in 
 - Modify: `packages/jobs/src/inngest/functions/notifications/notify.ts` — `fan-out-slack` and `fan-out-push`
 
 **Steps:**
-1. Replace `step.sendEvent("fan-out-slack", slackEvents)` with a loop over `stepChunks(slackEvents, EVENT_CHUNK)`.
-2. Send each chunk with `step.sendEvent(chunkStepId("fan-out-slack", index), chunk.items)`.
+1. Replace `step.sendEvent("fan-out-slack", slackEvents)` with a loop over `chunkArray(slackEvents, EVENT_CHUNK).entries()`.
+2. Send each chunk with ``step.sendEvent(`fan-out-slack-${index}`, chunk)``.
 3. Do the same for `fan-out-push` with `pushEvents`.
 4. Keep the `resolve-…` steps that build the events. Their return shapes do not change.
 
@@ -244,13 +239,13 @@ grep -n "async function fetchAllByIds" apps/erp/app/modules/production/productio
 - Modify: `.ai/lessons.md` — a new lesson
 
 **Steps:**
-1. In the `notify` row, say that it chunks writes, renders and sends (`batching.ts`).
+1. Add a `notify` row. Say that it chunks its writes, renders and sends (`EMAIL_CHUNK` and the other sizes).
 2. Add a lesson about the 512 KB send limit and the 16.9 KB email.
 3. Use the format Context → Problem → Rule → Applies to.
 
 **Verify:**
 ```bash
-grep -n "batching.ts" packages/jobs/AGENTS.md
+grep -n "EMAIL_CHUNK" packages/jobs/AGENTS.md
 # Expected: 1 line
 ```
 
