@@ -4,39 +4,35 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { data } from "react-router";
+import { shipmentFixedAssetLineUpdateValidator } from "~/modules/inventory";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
-  const formData = await request.formData();
-  const id = formData.get("id") as string;
-  const field = formData.get("field") as string;
-  const value = formData.get("value") as string | null;
-
-  if (!id || !field) {
-    return { error: { message: "Invalid form data" }, data: null };
+  const parsed = shipmentFixedAssetLineUpdateValidator.safeParse(
+    Object.fromEntries(await request.formData())
+  );
+  if (!parsed.success) {
+    return data({ error: parsed.error.issues[0]?.message }, { status: 400 });
   }
 
-  if (field !== "shipped" && field !== "serialNumber") {
-    return { error: { message: `Invalid field: ${field}` }, data: null };
-  }
+  const { id, ...change } = parsed.data;
+  const updateData =
+    change.field === "shipped"
+      ? { shipped: change.value === "true" }
+      : change.field === "serialNumber"
+        ? { serialNumber: change.value || null }
+        : { meter: change.value === "" ? null : Number(change.value) };
 
   const serviceRole = getCarbonServiceRole();
 
-  const updateData: Record<string, unknown> = {};
-  if (field === "shipped") {
-    updateData.shipped = value === "true";
-  } else if (field === "serialNumber") {
-    updateData.serialNumber = value || null;
-  }
-
   const update = await serviceRole
     .from("shipmentFixedAssetLine")
-    .update(unchecked(updateData))
+    .update({ ...updateData, updatedBy: userId })
     .eq("id", id)
     .eq("companyId", companyId);
 
