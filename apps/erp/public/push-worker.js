@@ -6,6 +6,13 @@
 // re-registers a subscription the browser rotated. No fetch handler — this
 // worker caches nothing.
 
+// Nothing is cached, so a new version can take over at once instead of
+// waiting for every Carbon tab to close.
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("push", (event) => {
   let payload = {};
   try {
@@ -15,12 +22,24 @@ self.addEventListener("push", (event) => {
   }
   const title = payload.title || "Carbon";
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: payload.body || "",
-      tag: payload.tag,
-      icon: "/carbon-mark-dark.png",
-      data: { url: payload.url || "/" }
-    })
+    (async () => {
+      // The browser hands `tag` to the OS as the notification's identifier,
+      // and macOS replaces a notification with the same identifier silently —
+      // no banner, `renotify` notwithstanding. So the tag never reaches
+      // showNotification: older notifications about the same thing are
+      // closed here, and the new one gets a fresh identifier and alerts.
+      if (payload.tag) {
+        const shown = await self.registration.getNotifications();
+        for (const notification of shown) {
+          if (notification.data?.tag === payload.tag) notification.close();
+        }
+      }
+      await self.registration.showNotification(title, {
+        body: payload.body || "",
+        icon: "/carbon-mark-dark.png",
+        data: { url: payload.url || "/", tag: payload.tag }
+      });
+    })()
   );
 });
 
