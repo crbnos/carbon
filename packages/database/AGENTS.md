@@ -12,6 +12,13 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
   composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
   `ci/src/migrations.ts` runs after `supabase db push` — see `scripts/one-off/README.md`.
+- **User-owned preference rows** are the other deliberate exception: `notificationPreference`,
+  `userModulePreference` and `pushSubscription` use an `xid()` id, a single-column
+  `PRIMARY KEY ("id")` and no `createdBy`/`updatedBy`. A row belongs to one user and only that
+  user writes it, so the audit columns would always repeat `userId`. They keep `companyId`
+  (FK, `ON DELETE CASCADE`) for tenant attribution and the RLS rule `owner("userId")` +
+  `member("companyId")`. `pushSubscription` is unique per browser `endpoint`, not per company
+  (one browser, one owner); see `.ai/specs/2026-10-08-web-push-notifications.md`.
   It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
   select it and a company restore cannot erase it. A migration landing in this package is
   also what triggers those scripts to deploy (`.github/workflows/supabase.yml` only fires on

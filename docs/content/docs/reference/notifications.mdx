@@ -75,7 +75,7 @@ The bell opens the inbox: recent notifications newest-first with an unread count
 <AgentContext>
 ## Internals and troubleshooting
 
-Every notification starts as a `carbon/notify` event with a specific type; the full set is `NotificationEvent` (`packages/notifications/src/index.ts:7`), destinations are `NotificationDestination` (`index.ts:108`), and the fixed event→topic mapping is `getNotificationTopic` (`index.ts:114`). The topic string is stored on every row (`notification.topic`) and is what a user's opt-out row matches on. Preferences are opt-out rows, one per `(user, company, channel, topic)` in `notificationPreference`; no row means enabled. The fan-out always adds the in-app destination (`notify.ts:210`), drops muted recipients from email/Slack lists (`notify.ts:302`), and skips email entirely without the `EMAIL_NOTIFICATIONS` plan feature (`notify.ts:509`). Most assignments default to email + Slack; callers can override channels per dispatch.
+Every notification starts as a `carbon/notify` event with a specific type; the full set is `NotificationEvent`, destinations are `NotificationDestination`, and the fixed event→topic mapping is `getNotificationTopic` (all in `packages/notifications/src/index.ts`). The topic string is stored on every row (`notification.topic`) and is what a user's opt-out row matches on. Preferences are opt-out rows, one per `(user, company, channel, topic)` in `notificationPreference`; no row means enabled. The fan-out (`packages/jobs/src/inngest/functions/notifications/notify.ts`) always adds the in-app destination, drops muted recipients from the email, Slack and browser push lists (step `filter-recipients-by-preference`), and skips email entirely without the `EMAIL_NOTIFICATIONS` plan feature. Browser push goes to every event that also goes to email or Slack (`wantsPushDelivery`), one `carbon/send-push` per browser. Most assignments default to email + Slack; callers can override channels per dispatch.
 
 ### Why am I not getting email notifications?
 Email is plan-gated — check the company's plan first. Then confirm the topic isn't muted for email and that the specific event defaults to the email channel.
@@ -84,7 +84,7 @@ Email is plan-gated — check the company's plan first. Then confirm the topic i
 Slack needs an active integration and a matching Slack account for the recipient; users without one are silently skipped. Also check the topic's Slack mute.
 
 ### I muted a topic but still get in-app notifications
-Expected: in-app is always written and cannot be turned off. Mutes affect only email and Slack.
+Expected: in-app is always written and cannot be turned off. Mutes affect only email, Slack and browser push.
 
 ### I turned a channel on but it still doesn't deliver
 Enabling a channel removes the mute but does not bypass its prerequisites: the plan feature for email, the integration and account mapping for Slack, or push turned on for this device for Browser.

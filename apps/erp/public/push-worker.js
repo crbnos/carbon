@@ -68,20 +68,30 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(
     (async () => {
+      // Both subscriptions are nullable (Push API): Chromium can hand over a
+      // usable newSubscription with no oldSubscription. Save whatever
+      // replacement exists; subscribe only when there is none and the old
+      // key is known.
       const old = event.oldSubscription;
       const key = old?.options?.applicationServerKey;
-      if (!key) return;
       const next =
         event.newSubscription ||
-        (await self.registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: key
-        }));
+        (await self.registration.pushManager.getSubscription()) ||
+        (key
+          ? await self.registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: key
+            })
+          : null);
+      if (!next) return;
       await fetch("/api/push-subscription", {
         method: "PUT",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...next.toJSON(), oldEndpoint: old.endpoint })
+        body: JSON.stringify({
+          ...next.toJSON(),
+          ...(old ? { oldEndpoint: old.endpoint } : {})
+        })
       });
     })()
   );

@@ -21,6 +21,7 @@ import {
   NotificationDestination,
   NotificationEvent,
   type NotificationPreferenceChannel,
+  renderInlineLinks,
   renderSlackMrkdwn,
   wantsPushDelivery
 } from "@carbon/notifications";
@@ -776,10 +777,22 @@ export const notifyFunction = inngest.createFunction(
             payload.companyId,
             payload.documentType
           );
-          const title = getNotificationEmailHeading(payload.event);
+          // A workflow notification carries its author's subject as the
+          // description and their message as the "Message" detail; the
+          // generic heading would title every one "Workflow". A system
+          // notification shows no links, so [label](url) keeps its label.
+          const isWorkflow = payload.event === NotificationEvent.Workflow;
+          const title = isWorkflow
+            ? description
+            : getNotificationEmailHeading(payload.event);
+          const body = isWorkflow
+            ? renderInlineLinks(details[0]?.value ?? "", ERP_URL)
+                .map((segment) => segment.text)
+                .join("")
+            : description;
           return (subscriptions ?? []).map((subscription) => ({
             data: {
-              body: description,
+              body,
               companyId: payload.companyId,
               subscriptionId: subscription.id,
               userId: subscription.userId,

@@ -90,18 +90,24 @@ async function endBrowserPush(request: Request) {
     request.headers.get("Cookie")
   );
   if (typeof endpoint !== "string" || !endpoint) return null;
-  // Loaded here, not at module load: importing the session module must not
-  // build a Supabase client.
-  const { getCarbonServiceRole } = await import(
-    "../lib/supabase/client.server"
-  );
-  // Every user's row for this browser: after sign-out nobody is signed in.
-  const { error } = await getCarbonServiceRole()
-    .from("pushSubscription")
-    .delete()
-    .eq("endpoint", endpoint);
-  if (error) {
-    // Signing out must still succeed; the next 404/410 cleans the row up.
+  // Best effort: signing out must still succeed and clear its cookies, even
+  // when the client cannot be built (missing Supabase URL) or the delete
+  // fails. The next 404/410 from the push service cleans the row up.
+  try {
+    // Loaded here, not at module load: importing the session module must not
+    // build a Supabase client.
+    const { getCarbonServiceRole } = await import(
+      "../lib/supabase/client.server"
+    );
+    // Every user's row for this browser: after sign-out nobody is signed in.
+    const { error } = await getCarbonServiceRole()
+      .from("pushSubscription")
+      .delete()
+      .eq("endpoint", endpoint);
+    if (error) {
+      log.error("Failed to delete push subscriptions on sign-out", { error });
+    }
+  } catch (error) {
     log.error("Failed to delete push subscriptions on sign-out", { error });
   }
   return pushEndpointCookie.serialize("", { maxAge: 0 });
