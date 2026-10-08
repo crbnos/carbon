@@ -42,7 +42,7 @@ The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one 
 
 ## Caution: step ids and runs in flight
 
-Inngest replays a completed step from its stored output, keyed by the step id (`.ai/lessons.md`, "A new key in an Inngest step's return breaks runs in flight at deploy").
+Inngest replays a completed step from its stored output. It finds that output by the step id. See `.ai/lessons.md`, "A new key in an Inngest step's return breaks runs in flight at deploy".
 
 - If you keep a step id, keep the shape of its return value.
 - If you change the shape, give the step a new id.
