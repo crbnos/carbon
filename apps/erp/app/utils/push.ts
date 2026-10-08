@@ -113,3 +113,23 @@ export function areBrowserNotificationsEnabled() {
     return false;
   }
 }
+
+// What a page load does about this browser's notifications for the user
+// signed in now (useRestoreBrowserNotifications):
+// - "remember": the user already owns the row — mark the browser enabled, so
+//   the next user to sign in gets theirs too.
+// - "save": the browser is enabled but this user has no row (sign-out
+//   deleted the previous one) — save it for them, with no prompt.
+// - "skip": nobody enabled notifications here; the bell row asks.
+export type RestoreStep = "remember" | "save" | "skip";
+
+export function restoreStep({
+  ownedBySignedInUser,
+  browserEnabled
+}: {
+  ownedBySignedInUser: boolean;
+  browserEnabled: boolean;
+}): RestoreStep {
+  if (ownedBySignedInUser) return "remember";
+  return browserEnabled ? "save" : "skip";
+}

@@ -10,6 +10,7 @@ import { path } from "~/utils/path";
 import {
   areBrowserNotificationsEnabled,
   rememberBrowserNotifications,
+  restoreStep,
   urlBase64ToUint8Array
 } from "~/utils/push";
 
@@ -90,12 +91,14 @@ export function useRestoreBrowserNotifications({
     (async () => {
       try {
         const existing = await currentSubscription();
-        if (existing && (await isEnabledOnServer(existing.endpoint))) {
-          // On already — remember it, so the next sign-in keeps it on.
-          rememberBrowserNotifications(true);
-          return;
-        }
-        if (!areBrowserNotificationsEnabled()) return;
+        const step = restoreStep({
+          ownedBySignedInUser: existing
+            ? await isEnabledOnServer(existing.endpoint)
+            : false,
+          browserEnabled: areBrowserNotificationsEnabled()
+        });
+        if (step === "remember") rememberBrowserNotifications(true);
+        if (step !== "save") return;
         const subscription = existing ?? (await subscribe(publicKey));
         const response = await sendSubscription(
           "PUT",

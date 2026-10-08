@@ -355,6 +355,10 @@ export const schema = define({
   VAPID_SUBJECT: {
     group: "push",
     description: "Contact for push services: a mailto: or https: URL",
+    // web-push refuses any other subject on every send; catch it at startup.
+    type: z
+      .string()
+      .regex(/^(mailto:|https:\/\/)/, "Must start with mailto: or https://"),
     needed: true
   },
 

@@ -9,6 +9,7 @@ import {
   nextPromptDismissal,
   PROMPT_SNOOZE_DAYS,
   parsePromptDismissal,
+  restoreStep,
   urlBase64ToUint8Array
 } from "./push";
 
@@ -59,5 +60,25 @@ describe("browser notifications prompt", () => {
       count: 0,
       until: null
     });
+  });
+});
+
+describe("restoreStep", () => {
+  it("remembers a browser the signed-in user already owns", () => {
+    expect(
+      restoreStep({ ownedBySignedInUser: true, browserEnabled: false })
+    ).toBe("remember");
+  });
+
+  it("saves an enabled browser for the next user to sign in", () => {
+    expect(
+      restoreStep({ ownedBySignedInUser: false, browserEnabled: true })
+    ).toBe("save");
+  });
+
+  it("leaves a browser nobody enabled to the bell's prompt", () => {
+    expect(
+      restoreStep({ ownedBySignedInUser: false, browserEnabled: false })
+    ).toBe("skip");
   });
 });

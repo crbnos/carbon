@@ -3333,3 +3333,24 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
 
 **Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.
+
+## macOS silently replaces a web notification that reuses a tag
+
+**Context:** Browser push notifications (`apps/erp/public/push-worker.js`) passed each notification's `tag` (`job-assignment:<id>`, `carbon-test`) to `showNotification`, so a second push about the same thing would replace the first instead of stacking.
+
+**Problem:** On macOS the browser hands the tag to the OS as the notification's identifier, and the OS replaces a notification with the same identifier silently: no banner, only an updated entry in Notification Center. The first test arrived while banners were still off, and every later test replaced it without a sound, so push looked broken although every send returned `201` (2026-10-08). `renotify: true` did not change it. The cause was only visible in the macOS log (`log show --predicate 'process == "usernoted"'`): `updatedExisting: true`.
+
+**Rule:** Never pass a reused `tag` to `showNotification` when the user must see the repeat. Close the older notifications yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`, so it gets a fresh identifier. To debug a push that "does not arrive", read the send's status code first, then the OS notification log, before changing code.
+
+**Applies to:** `apps/erp/public/push-worker.js`; any future service worker or Notification API caller.
+
+## A new key in an Inngest step's return breaks runs in flight at deploy
+
+**Context:** The `notify` function's step `filter-recipients-by-preference` returned `{ emailRecipientIds, slackRecipientIds }`. Browser notifications added `pushRecipientIds` to the same step, under the same step id, and the code after it read `pushRecipientIds.length` (2026-10-08).
+
+**Problem:** Inngest replays a completed step from its memoized output. A run that started before the deploy and resumes after it gets the OLD output, with no `pushRecipientIds`, so `.length` throws and the notification fails. Typecheck cannot see it: the type describes the new code, not the stored output. Self-review caught it before merge.
+
+**Rule:** When a step's return grows a key, read that key with a default (`pushRecipientIds = []`) and comment why, or rename the step id so old runs re-execute it (only when the step is idempotent). Never assume a memoized step output has the current shape.
+
+**Applies to:** every `step.run` in `packages/jobs/src/inngest/functions/**` whose return shape changes.
+

@@ -206,7 +206,7 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 
 ### `@carbon/env`
 
-1. Add `VAPID_PUBLIC_KEY` (`needed`), `VAPID_PRIVATE_KEY` (`secret`, `needed`) and `VAPID_SUBJECT` (`needed`, a `mailto:` or `https:` URL) in the new group `push`.
+1. Add `VAPID_PUBLIC_KEY` (`needed`), `VAPID_PRIVATE_KEY` (`secret`, `needed`) and `VAPID_SUBJECT` (`needed`; its `type` requires `mailto:` or `https://`) in the new group `push`.
 2. Export the 3 values and `isPushConfigured()`. It returns true only when all 3 are set.
 
 ### `@carbon/lib`
@@ -271,7 +271,8 @@ The icon is `/carbon-mark-dark.png`, the file that the ERP's `site.webmanifest` 
 1. `urlBase64ToUint8Array`: converts the base64url public key for `pushManager.subscribe()`.
 2. The bell row's snooze: `parsePromptDismissal`, `isPromptSnoozed`, `nextPromptDismissal`, `readPromptDismissal` and `dismissBrowserNotificationsPrompt`. They keep `browserNotificationsPrompt` in localStorage, per browser.
 3. The browser setting: `rememberBrowserNotifications(on)` and `areBrowserNotificationsEnabled()` keep `browserNotificationsEnabled` in localStorage.
-4. `push.test.ts` covers the key conversion and the snooze rules.
+4. `restoreStep` decides what a page load does: `remember`, `save` or `skip`.
+5. `push.test.ts` covers the key conversion, the snooze rules and `restoreStep`.
 
 ### `apps/erp/app/hooks/usePushSubscription.ts` (new)
 
@@ -390,3 +391,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   4. Opening a page never claims the browser: the hook reads `GET /api/push-subscription?endpoint=`.
 - 2026-10-08: Browser notifications became a setting of the browser (`browserNotificationsEnabled`). `useRestoreBrowserNotifications` saves the browser for each user who signs in. **Not now** and **Disable** snooze the bell row per browser.
 - 2026-10-08: The spec body was rewritten to match the shipped design. The earlier sections described the per-company rows, the "This device" card and the AvatarMenu unsubscribe.
+- 2026-10-08: Two changes from self-review:
+  1. `VAPID_SUBJECT` now has a `type` in `packages/env/src/schema.ts`. `validateEnv` reports a subject that does not start with `mailto:` or `https://` at startup, not on each send.
+  2. `restoreStep` (`apps/erp/app/utils/push.ts`) holds the decision of `useRestoreBrowserNotifications`: `remember`, `save` or `skip`. `push.test.ts` covers the 3 cases.
+
