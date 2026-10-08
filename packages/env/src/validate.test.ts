@@ -36,22 +36,6 @@ describe("validateEnv", () => {
     expect(text).toMatch(/REDIS_URL\s+Invalid URL/);
   });
 
-  it("rejects a push subject that is not mailto: or https:", () => {
-    const push = {
-      VAPID_PUBLIC_KEY: "public",
-      VAPID_PRIVATE_KEY: "private"
-    };
-    expect(
-      formatReport(
-        validateEnv({ ...base, ...push, VAPID_SUBJECT: "ops@example.com" })
-      )
-    ).toMatch(/VAPID_SUBJECT\s+Must start with mailto: or https:\/\//);
-    expect(
-      validateEnv({ ...base, ...push, VAPID_SUBJECT: "mailto:ops@example.com" })
-        .problems
-    ).toEqual([]);
-  });
-
   it("flags a half-configured feature", () => {
     const report = validateEnv({ ...base, STRIPE_SECRET_KEY: "sk_live_abc" });
     expect(formatReport(report)).toMatch(

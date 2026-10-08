@@ -10,7 +10,7 @@ Carbon shows a notification only in the ERP bell, by email or by Slack. If no Ca
 
 Push uses the Web Push standard to show an operating-system notification, even when every Carbon tab is closed. Browser notifications are a setting of the **browser**, not of a user. Once someone enables them in a browser, whoever is signed in there gets their own notifications, from every company they belong to. Signing out stops them at once. Like the in-app bell, push has no per-topic switch: every notification pushes.
 
-The `notify` job sends one push for each notification it creates. The job uses the `web-push` package and one VAPID key pair for each deployment. If the deployment has no VAPID keys, Carbon hides the controls and sends no push.
+The `notify` job sends one push for each notification it creates. The job uses the `web-push` package and one VAPID key pair for each deployment. The pair is derived from `SESSION_SECRET`, so push needs no setup.
 
 ## Overview diagram
 
@@ -48,7 +48,7 @@ Before this change, no code in `apps/` or `packages/` called the Notification AP
 
 ### How Web Push works in Carbon
 
-1. Each deployment has one VAPID key pair in 3 env vars: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`.
+1. Each deployment has one VAPID key pair. `getVapidDetails()` (`@carbon/env/push.server`) derives it from `SESSION_SECRET`. There are no push env vars.
 2. The user clicks **Enable** on the bell's "Enable browser notifications" row or on the **Browser notifications** card at Account → Notifications.
 3. The browser asks for permission to show notifications.
 4. The page registers the service worker `/push-worker.js` and calls `pushManager.subscribe()` with the VAPID public key.
@@ -73,7 +73,7 @@ Before this change, no code in `apps/` or `packages/` called the Notification AP
 
 ### Which notifications push
 
-Push mirrors in-app. If the VAPID env vars are set (`isPushConfigured()`), every recipient of the in-app row gets a push in each browser where notifications are on. There is no topic filter and no event filter. So `IntegrationSync`, which fires again on each sync sweep while failures last, also pushes each time.
+Push mirrors in-app. If the deployment has push keys (`isPushConfigured()`, true wherever `SESSION_SECRET` is set), every recipient of the in-app row gets a push in each browser where notifications are on. There is no topic filter and no event filter. So `IntegrationSync`, which fires again on each sync sweep while failures last, also pushes each time.
 
 `notify` reads subscriptions by `userId` only. The step `resolve-recipients` already limits the recipients to members of the notification's company. So a user gets the push of every company they belong to, and a company switch does not silence the browser.
 
@@ -113,7 +113,7 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | Disable | Off for this browser, for everyone who uses it | The setting belongs to the browser. |
 | Which events push | Every notification, like in-app | Agreed with the user. In-app-only events push too, including the repeated `IntegrationSync` alert. |
 | Digests | One push per `notify` call; no push from the digest cron | Agreed with the user. The cron only regroups delivered rows. |
-| Missing VAPID keys | No push channel, no card, no bell row | Agreed with the user. A self-hosted install without keys keeps working. |
+| Where the VAPID keys come from | Derived from `SESSION_SECRET` with HKDF-SHA256. The subject is the app URL when it is https, else `mailto:` + `SUPPORT_EMAIL`. | Agreed with the user: env vars were too much to manage. A pair generated at build time was rejected: images are published per commit, so it would rotate on each build and ship the private key. Without `SESSION_SECRET` (a `SKIP_ENV_VALIDATION` script) there is no push channel. |
 | Dead subscription | `send-push` deletes the row on HTTP 404 or 410 | Agreed with the user. Both codes mean that the subscription is gone for good. |
 | Retries | Retry on 429 and 5xx; no retry on other 4xx | A 4xx other than 404, 410 and 429 is a bad request, and a retry fails again. |
 | Delivery options | `TTL` = 86 400 s (1 day), `urgency` = `normal` | A notification older than 1 day is old news. The bell still has it. |
@@ -123,7 +123,7 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | Repeated pushes | The worker never passes `tag` to `showNotification`. It closes older notifications with the same `data.tag`, then shows the new one under a fresh identifier. | The browser gives the tag to macOS as the identifier, and macOS replaces a notification with the same identifier silently. `renotify` does not help. |
 | Rotated subscription | The worker handles `pushsubscriptionchange`. It subscribes again and sends the new subscription with the old endpoint. | A browser can rotate the subscription at any time. Without this step, push stops with no signal. |
 | Focused tab | The worker always shows the notification | Chrome requires a visible notification for each push (`userVisibleOnly: true`). |
-| VAPID public key in the browser | The settings loader and the app shell loader (`pushPublicKey`) return it. It is not in `window.env`. | The server already knows if all 3 vars are set, and returns `null` when they are not. |
+| VAPID public key in the browser | The settings loader and the app shell loader (`pushPublicKey`) return it. It is not in `window.env`. | The server derives the pair, and returns `null` when it has none. |
 | MCP exposure | The new service functions have no `@mcp` tag | A browser subscription is meaningless to an API caller (`conventions-services.md`). |
 | Env group | New group `push` in `FEATURES`, with all 3 vars `needed` | `validateEnv` then warns when push is half-configured. |
 
@@ -198,8 +198,8 @@ No change to the destinations or the preference channels. Push is neither a `Not
 
 ### `@carbon/env`
 
-1. Add `VAPID_PUBLIC_KEY` (`needed`), `VAPID_PRIVATE_KEY` (`secret`, `needed`) and `VAPID_SUBJECT` (`needed`; its `type` requires `mailto:` or `https://`) in the new group `push`.
-2. Export the 3 values and `isPushConfigured()`. It returns true only when all 3 are set.
+1. Add `packages/env/src/push.server.ts` (export `@carbon/env/push.server`, server-only because it imports `node:crypto`). `deriveVapidDetails(secret, appUrl)` is the pure derivation; `getVapidDetails()` memoizes it for `SESSION_SECRET`.
+2. `isPushConfigured()` returns true when `getVapidDetails()` is not null.
 
 ### `@carbon/lib`
 
@@ -224,6 +224,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
    1. Read the row by `subscriptionId` and `userId` with the service role. If no row matches, return: the browser was disabled, signed out or handed to another user since the fan-out.
    2. Call `webpush.sendNotification` with the VAPID details, `TTL: 86400` and `urgency: "normal"`.
    3. If the status is 404 or 410, delete the row and return.
+   4. If the status is 401 or 403, log a warning with the push service's body and keep the row. WNS (401) and FCM (403) send these for a subscription made with another VAPID key. Apple sends 403 when it refuses our token, which hits every Safari row, so the row is never deleted on these codes.
    4. If the status is 429 or 5xx, throw, so that Inngest retries.
    5. For any other error, throw `NonRetriableError`.
    6. Put the status code on the step output, so the run record shows it.
@@ -240,7 +241,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
    3. `deletePushSubscription(client, { userId, endpoint })`
 3. The resource route `apps/erp/app/routes/api+/push-subscription.ts`, gated by `requirePermissions(request, {})`. If push is not configured, `GET` returns `{ enabled: false }` and every write returns 404.
    1. `GET ?endpoint=`: return `{ enabled }` for the signed-in user. If the row exists, set the `carbon-push` cookie again, so a row saved before the cookie existed still ends at sign-out.
-   2. `PUT`: validate the body. If `oldEndpoint` is set, delete that row. Delete the rows of other users with the same endpoint (service role). Upsert the row. Set the `carbon-push` cookie.
+   2. `PUT`: validate the body. If `oldEndpoint` is set, delete that row. If the `carbon-push` cookie names a different endpoint, delete that endpoint's rows (service role): it is this browser's previous subscription. Delete the rows of other users with the same endpoint (service role). Upsert the row. Set the `carbon-push` cookie.
    3. `DELETE`: delete the row of this user and endpoint. Clear the cookie.
 4. The app shell loader (`x+/_layout.tsx`) returns `pushPublicKey`, which is `null` when push is not configured.
 
@@ -250,7 +251,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
 
 1. `install`: `skipWaiting()`. `activate`: `clients.claim()`.
 2. `push`: parse the JSON payload. If it has a `tag`, close the shown notifications whose `data.tag` matches. Call `showNotification(title, { body, icon: "/carbon-mark-dark.png", data: { url, tag } })`.
-3. `notificationclick`: close the notification. Find a window client on the same origin, then focus it and navigate it to `data.url`. If no client exists, call `clients.openWindow(data.url)`.
+3. `notificationclick`: close the notification. Find a window client on the same origin that the worker controls, then focus it and navigate it to `data.url`. If no client exists, or the focus or the navigation fails, call `clients.openWindow(data.url)`. `navigate()` rejects for a client the worker does not control.
 4. `pushsubscriptionchange`: take `event.newSubscription`, else the registration's current subscription, else subscribe again with the old subscription's key. If none exists, stop. `PUT /api/push-subscription` the result, with `oldEndpoint` only when an old subscription exists.
 
 The icon is `/carbon-mark-dark.png`, the file that the ERP's `site.webmanifest` names.
@@ -315,7 +316,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 
 ## Acceptance Criteria
 
-- [ ] With the 3 VAPID env vars set, a user clicks **Enable** at Account → Notifications and allows the prompt. The card says "Browser notifications are on for this browser".
+- [ ] A user clicks **Enable** at Account → Notifications and allows the prompt. The card says "Browser notifications are on for this browser".
 - [ ] After **Enable**, the database has exactly 1 `pushSubscription` row for that endpoint, owned by the user. The browser has the `carbon-push` cookie.
 - [ ] A second notification about the same job shows a second banner, not a silent replacement.
 - [ ] With every Carbon tab closed and the browser still running, assigning a job to the user shows "Job assigned to you". A click opens the job.
@@ -326,7 +327,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 - [ ] Another user signs in to that browser. The browser gets that user's notifications with no prompt, and none of the previous user's.
 - [ ] **Disable** deletes the row and clears `browserNotificationsEnabled`. The next user to sign in gets no push and no bell row.
 - [ ] The bell shows "Enable browser notifications" only while nobody has enabled them in this browser. **Not now** hides it for 30 days.
-- [ ] With no VAPID env vars, Account → Notifications shows no card, and the bell shows no row. `notify` sends no `carbon/send-push` event and does not fail.
+- [ ] With no `SESSION_SECRET` (`getVapidDetails()` is null), Account → Notifications shows no card, and the bell shows no row. `notify` sends no `carbon/send-push` event and does not fail.
 - [ ] `pushDeliveryOutcome` has unit tests for 201, 404, 410, 413, 429 and 503. `push.test.ts` covers the snooze rules.
 - [ ] `notificationPreferenceValidator` accepts only `email` and `slack`.
 - [ ] Scoped typecheck passes for `@carbon/auth`, `@carbon/jobs`, `@carbon/notifications`, `@carbon/env`, `@carbon/lib`, `erp` and `docs`. Biome passes. `migration.test.ts` passes.
@@ -337,7 +338,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 |------|----------|------------|
 | A session that ends without any sign-out path keeps its row | Low | Bounded: every page load saves the row again, and `notify` skips rows older than a session's lifetime (12 h in a controlled environment, the 7-day session cookie elsewhere). The next visit's login page or sign-in also replaces it. |
 | The login loader runs the push cleanup on a GET | Low | A cross-site navigation skips it, which is what the GET-write rule guards against; such rows lapse through the `updatedAt` cutoff. |
-| Changing the VAPID key pair breaks every subscription | Low | The next page load replaces a subscription made with an older key (`hasApplicationServerKey`), and the settings card shows it as off until then. Pushes to an old-key row fail with 403 meanwhile. |
+| Changing the VAPID key pair (rotating `SESSION_SECRET`) breaks every subscription | Low | The next page load replaces a subscription made with an older key (`hasApplicationServerKey`), and the settings card shows it as off until then. A push to an old-key row gets 401 or 403, and `send-push` logs a warning and keeps the row. The browser's next page load replaces it, or it ages out after a session's lifetime. |
 | If the user revokes the permission in the browser, the browser-wide flag would stay set | Low | Fixed: the restore clears `browserNotificationsEnabled` whenever permission is not `granted`, so the bell can ask again. |
 | Safari can refuse `pushManager.subscribe()` without a user click, which the restore needs only when the browser lost its subscription | Low | The restore logs the error. **Enable** still works. |
 | Safari on iPhone or iPad supports push only for a Home Screen web app | Low | The `unsupported` text says so. The manifest already has `display: standalone`. |
@@ -355,7 +356,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 - [x] Which apps get push? — **Answer (user):** ERP only.
 - [x] How does a user opt in? — **Answer (user):** At Account → Notifications. A "Browser" switch per topic came first; the user later removed it, so push mirrors in-app. Later the user also added the bell's "Enable browser notifications" row, with the copy of option A.
 - [x] Do digests push? — **Answer (user):** One push per notification at creation. No digest for push.
-- [x] What happens without VAPID keys? — **Answer (user):** Carbon skips the channel and hides the controls.
+- [x] What happens without VAPID keys? — **Answer (user):** Carbon skips the channel and hides the controls. **Superseded 2026-10-09:** the keys are derived from `SESSION_SECRET`, so only a process without one has no channel.
 - [x] What happens to a dead subscription? — **Answer (user):** Carbon deletes it on 404 or 410.
 - [x] Is a subscription per user or per user and company? — **Answer (user, replaces the first autonomous answer "per user and company"):** The signed-in user gets the notifications of every company they belong to. One row per browser endpoint.
 - [x] What happens on sign-out? — **Answer (user):** Signing out stops the notifications in that browser, on every sign-out path.
@@ -400,4 +401,9 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   4. The restore clears `browserNotificationsEnabled` when permission is no longer `granted`.
   5. `pushSubscription` joined `SECRET_TABLES`, so backups never carry it.
   6. The migration no longer widens the `notificationPreference.channel` CHECK.
-
+- 2026-10-09: The VAPID env vars are gone, at the user's request. `getVapidDetails()` (`@carbon/env/push.server`) derives the pair from `SESSION_SECRET` with HKDF-SHA256, so push works on every deployment with no setup. `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` and the `push` env group are removed. Rotating `SESSION_SECRET` rotates the pair; each browser re-subscribes on its next visit. `deriveVapidDetails` is pinned by `packages/env/src/push.server.test.ts`.
+- 2026-10-09: Two fixes from a manual test:
+  1. `pushDeliveryOutcome` maps 401 and 403 to `rejected`. WNS answered 401 for a subscription made with the old env-var key, and `send-push` failed on it for each notification. Now `send-push` logs a warning and completes. It keeps the row, at the user's request: Apple sends 403 for a token it refuses, and a delete would remove every Safari row.
+  2. `notificationclick` uses only the tabs the worker controls, and opens a new window when the focus or the navigation fails. Before, `navigate()` rejected on an uncontrolled tab and the click opened nothing.
+  3. `PUT /api/push-subscription` deletes the endpoint that the `carbon-push` cookie remembers when it differs from the new one. A browser that lost its subscription makes a new one with no `oldEndpoint`, and its old row waited for a failed push.
+  4. `deriveVapidDetails` has a known-answer test, cross-checked with OpenSSL. A change to the hash, the salt or the info label changes every deployment's key, so the test fails.

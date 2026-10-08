@@ -35,7 +35,7 @@ Carbon's single Postgres database. The first four are required and crash boot if
 ## Auth & sessions
 
 <EnvVars>
-<EnvVar name="SESSION_SECRET" type="string" required>Signs the session cookie.</EnvVar>
+<EnvVar name="SESSION_SECRET" type="string" required>Signs the session cookie. Carbon also derives its Web Push keys from it, so changing it makes each user's browser notifications re-subscribe on their next visit.</EnvVar>
 <EnvVar name="SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID" type="string">Google OAuth client id, when `google` is in `AUTH_PROVIDERS`.</EnvVar>
 <EnvVar name="SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET" type="string">Google OAuth client secret.</EnvVar>
 <EnvVar name="SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID" type="string">Azure OAuth client id, when `azure` is enabled.</EnvVar>
@@ -83,9 +83,6 @@ The ERP keeps the address you set and only refreshes the event key in it, so a r
 <EnvVar name="SMTP_USER" type="string">SMTP username.</EnvVar>
 <EnvVar name="SMTP_PASSWORD" type="string">SMTP password.</EnvVar>
 <EnvVar name="SMTP_FROM" type="string">From-address for outgoing email, e.g. `Carbon <no-reply@example.com>`.</EnvVar>
-<EnvVar name="VAPID_PUBLIC_KEY" type="string">Web Push public key for browser notifications. Generate the pair once with `pnpm dlx web-push generate-vapid-keys`; a new pair makes every user turn push on again. Unset disables push.</EnvVar>
-<EnvVar name="VAPID_PRIVATE_KEY" type="string">Web Push private key, paired with `VAPID_PUBLIC_KEY`.</EnvVar>
-<EnvVar name="VAPID_SUBJECT" type="string">Contact for push services, a `mailto:` or `https:` URL.</EnvVar>
 <EnvVar name="RESEND_API_KEY" type="string">Optional. Resend marketing-contacts API; also a legacy SMTP fallback when `SMTP_*` is unset.</EnvVar>
 <EnvVar name="STRIPE_SECRET_KEY" type="string">Stripe secret key, Cloud / Enterprise billing.</EnvVar>
 <EnvVar name="STRIPE_WEBHOOK_SECRET" type="string">Verifies inbound Stripe webhooks.</EnvVar>

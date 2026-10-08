@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { pushEndpointCookie } from "@carbon/auth/session.server";
-import { isPushConfigured } from "@carbon/env";
+import { isPushConfigured } from "@carbon/env/push.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -80,13 +80,35 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const { endpoint, keys, oldEndpoint } = parsed.data;
 
+      // This browser's previous endpoint, from the signed cookie. A browser
+      // that lost its subscription (permission reset, worker removed) makes a
+      // new one with no oldEndpoint to send, and its old row would otherwise
+      // wait for a failed push. Signed, so it only ever names this browser.
+      const remembered = await pushEndpointCookie.parse(
+        request.headers.get("Cookie")
+      );
+      const previousEndpoint =
+        typeof remembered === "string" &&
+        remembered &&
+        remembered !== endpoint &&
+        remembered !== oldEndpoint
+          ? remembered
+          : null;
+
       // Independent of each other, so they run together: the endpoint this
-      // browser rotated away from, and other users' rows for this browser.
-      // One browser has one endpoint, and only the user signed in may own it;
-      // a previous user's row would otherwise block the upsert.
-      const [removed, handedOver] = await Promise.all([
+      // browser rotated away from, the one the cookie remembers, and other
+      // users' rows for this browser. One browser has one endpoint, and only
+      // the user signed in may own it; a previous user's row would otherwise
+      // block the upsert.
+      const [removed, forgotten, handedOver] = await Promise.all([
         oldEndpoint
           ? deletePushSubscription(client, { userId, endpoint: oldEndpoint })
+          : Promise.resolve({ error: null }),
+        previousEndpoint
+          ? getCarbonServiceRole()
+              .from("pushSubscription")
+              .delete()
+              .eq("endpoint", previousEndpoint)
           : Promise.resolve({ error: null }),
         getCarbonServiceRole()
           .from("pushSubscription")
@@ -94,6 +116,16 @@ export async function action({ request }: ActionFunctionArgs) {
           .eq("endpoint", endpoint)
           .neq("userId", userId)
       ]);
+      // Best effort: the first push to a dead row (404 / 410) removes it too.
+      if (forgotten.error) {
+        logger.error(
+          "Failed to remove this browser's previous push subscription",
+          {
+            companyId,
+            error: forgotten.error
+          }
+        );
+      }
       if (removed.error) {
         logger.error("Failed to remove the rotated push subscription", {
           companyId,

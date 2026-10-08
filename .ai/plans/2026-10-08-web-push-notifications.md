@@ -178,6 +178,8 @@ pnpm exec turbo run typecheck --filter=@carbon/notifications
 
 ## Task 3: Add the VAPID env vars to `@carbon/env`
 
+> **Superseded 2026-10-09:** the env vars were removed. `getVapidDetails()` in `packages/env/src/push.server.ts` (`@carbon/env/push.server`) derives the pair from `SESSION_SECRET`. See the spec's changelog.
+
 **Depends on:** none
 **Files:**
 - Modify: `packages/env/src/schema.ts` — new group `push`, 3 vars
@@ -860,7 +862,7 @@ pnpm --filter docs typecheck
 1. Run each command below. Fix each failure before you continue.
 2. Update the spec status to `in-progress` and add a changelog line for each divergence from the spec.
 3. Write the manual browser checklist into the run record (the run skipped `/test`):
-   1. Set the 3 VAPID vars in `.env.local` (generate with `pnpm dlx web-push generate-vapid-keys`). Restart the ERP and the Inngest dev server.
+   1. Restart the ERP and the Inngest dev server. (Originally: set the 3 VAPID vars. Since 2026-10-09 the pair is derived from `SESSION_SECRET`.)
    2. Open Account → Notifications, click **Turn on**, and allow the prompt.
    3. Click **Send a test notification**. Expect an OS notification. Click it and expect Account → Notifications.
    4. Close every Carbon tab. Assign a job to the user from a second account. Expect "Job assigned to you".

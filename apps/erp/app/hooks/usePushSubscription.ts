@@ -146,11 +146,14 @@ export function useRestoreBrowserNotifications({
         const { subscription, replacedEndpoint } = await subscribe(publicKey);
         const response = await saveSubscription(subscription, replacedEndpoint);
         if (!response.ok) {
+          // Not restored: a later mount in this tab may try again.
+          restoredFor.delete(userId);
           logger.error("Failed to restore browser notifications", {
             status: response.status
           });
         }
       } catch (error) {
+        restoredFor.delete(userId);
         logger.error("Failed to restore browser notifications", { error });
       }
     })();
@@ -209,14 +212,17 @@ export function usePushSubscription({
     };
   }, [publicKey]);
 
+  // Resolves false when the work threw (the failure is already toasted).
   const run = useCallback(
     async (work: () => Promise<void>, failure: string) => {
       setBusy(true);
       try {
         await work();
+        return true;
       } catch (error) {
         logger.error(failure, { error });
         toast.error(failure);
+        return false;
       } finally {
         setBusy(false);
       }
@@ -254,9 +260,13 @@ export function usePushSubscription({
       run(async () => {
         const subscription = await currentSubscription();
         if (subscription) {
-          await sendSubscription("DELETE", {
+          const response = await sendSubscription("DELETE", {
             endpoint: subscription.endpoint
           });
+          // Keep the browser on when its row could not be deleted.
+          if (!response.ok) {
+            throw new Error(`DELETE returned ${response.status}`);
+          }
           await subscription.unsubscribe();
         }
         rememberBrowserNotifications(false);

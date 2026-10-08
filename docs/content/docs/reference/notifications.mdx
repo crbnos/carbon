@@ -28,7 +28,7 @@ The channels differ in what they require:
   <Field name="In-app">The bell in the top bar. **Always written**, for every recipient, on every event — it cannot be turned off.</Field>
   <Field name="Email">A per-notification email with a **View** button. Sent only when the company's plan includes email notifications.</Field>
   <Field name="Slack">A DM in the connected workspace. Needs an active Slack integration *and* a matching Slack account for the recipient.</Field>
-  <Field name="Browser">An operating-system notification on each browser where the user enabled browser notifications, even when Carbon is closed. Clicking it opens the record. Sent for every notification, like the in-app inbox: browser push has no per-topic switch. Needs the deployment's Web Push keys (`VAPID_*`); without them the channel does not exist.</Field>
+  <Field name="Browser">An operating-system notification on each browser where the user enabled browser notifications, even when Carbon is closed. Clicking it opens the record. Sent for every notification, like the in-app inbox: browser push has no per-topic switch. Needs no setup: the Web Push keys are derived from the deployment's `SESSION_SECRET`.</Field>
 </FieldTable>
 
 <Callout type="warn">

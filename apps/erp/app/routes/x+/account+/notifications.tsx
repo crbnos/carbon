@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
-import { isPushConfigured, VAPID_PUBLIC_KEY } from "@carbon/env";
+import { getVapidDetails } from "@carbon/env/push.server";
 import { validationError, validator } from "@carbon/form";
 import {
   getNotificationTopicChannels,
@@ -64,12 +64,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyHasFeature(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
   ]);
 
+  const pushKeys = getVapidDetails();
+
   return {
     preferences: preferences.data ?? [],
     slackActive: slackIntegration.data?.active ?? false,
     emailPlanEnabled,
-    // Null hides every push control: the deployment has no VAPID keys.
-    push: isPushConfigured() ? { publicKey: VAPID_PUBLIC_KEY as string } : null
+    // Null hides every push control: the deployment has no push keys (no
+    // SESSION_SECRET).
+    push: pushKeys ? { publicKey: pushKeys.publicKey } : null
   };
 }
 
@@ -218,11 +221,12 @@ export default function AccountNotifications() {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => {
+                  onClick={async () => {
                     // Off for this browser, for everyone: the bell stops
-                    // offering it too.
-                    dismissBrowserNotificationsPrompt({ permanently: true });
-                    device.turnOff();
+                    // offering it too — but only once it is really off.
+                    if (await device.turnOff()) {
+                      dismissBrowserNotificationsPrompt({ permanently: true });
+                    }
                   }}
                   isDisabled={device.busy}
                 >

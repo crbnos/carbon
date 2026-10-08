@@ -13,10 +13,10 @@ import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
 import {
   CONTROLLED_ENVIRONMENT,
   ERP_URL,
-  isPushConfigured,
   SESSION_ABSOLUTE_MAX_MS,
   SESSION_MAX_AGE
 } from "@carbon/env";
+import { isPushConfigured } from "@carbon/env/push.server";
 import type { Events } from "@carbon/lib/events";
 import {
   escapeSlackText,
@@ -343,8 +343,8 @@ export const notifyFunction = inngest.createFunction(
     const wantsEmail = destinations.includes(NotificationDestination.Email);
     const wantsSlack = destinations.includes(NotificationDestination.Slack);
     // Push mirrors in-app: every notification goes to every browser with
-    // notifications enabled, with no per-topic switch. A deployment without
-    // VAPID keys has no push channel at all.
+    // notifications enabled, with no per-topic switch. The push keys come from
+    // SESSION_SECRET, so only a deployment without one has no push channel.
     const wantsPush = isPushConfigured();
 
     // Per-user channel opt-outs: absence of a row = enabled; enabled=false

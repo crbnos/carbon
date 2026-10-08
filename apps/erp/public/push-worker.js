@@ -48,16 +48,22 @@ self.addEventListener("notificationclick", (event) => {
   const url = event.notification.data?.url || "/";
   event.waitUntil(
     (async () => {
-      const windows = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true
-      });
+      // Only tabs this worker controls: navigate() rejects for any other (one
+      // opened before the worker was installed, or hard-reloaded), and the
+      // rejection would end the click with nothing opened.
+      const windows = await self.clients.matchAll({ type: "window" });
       const target = new URL(url, self.location.origin);
-      for (const client of windows) {
-        if (new URL(client.url).origin === target.origin && "focus" in client) {
-          await client.focus();
-          if ("navigate" in client) await client.navigate(target.href);
+      const tab = windows.find(
+        (client) => new URL(client.url).origin === target.origin
+      );
+      if (tab) {
+        try {
+          // Focus first: the click allows focusing a window only briefly.
+          await tab.focus();
+          await tab.navigate(target.href);
           return;
+        } catch {
+          // fall through to a new window
         }
       }
       await self.clients.openWindow(target.href);

@@ -13,6 +13,10 @@ import {
 describe("pushDeliveryOutcome", () => {
   it.each([
     [201, "delivered"],
+    // Refused signature: kept and logged, never deleted (Apple's 403 can mean
+    // our own token, for every Safari row).
+    [401, "rejected"],
+    [403, "rejected"],
     [404, "gone"],
     [410, "gone"],
     [413, "fail"],
