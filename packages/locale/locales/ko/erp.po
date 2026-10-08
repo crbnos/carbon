@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.}}"
@@ -400,6 +404,9 @@ msgstr "{count}/{total} 개"
 msgid "{count} units"
 msgstr "{count}개"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}일"
 
@@ -423,6 +430,9 @@ msgstr "{count}개 중 {from}–{to}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to}/{count} 공정"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount}개 추가: {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "성"
 msgid "Last Name"
 msgstr "성"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "지난 분기"
 
 msgid "Last Run"
 msgstr "마지막 실행"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "추가 옵션"
 msgid "More overtime"
 msgstr "초과 근무 증가"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "{name}님, 아침이군요."
 
@@ -12535,6 +12558,9 @@ msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하
 
 msgid "Motion"
 msgstr "모션"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "이동"
@@ -19484,6 +19510,9 @@ msgstr "…부터 시작"
 msgid "Started"
 msgstr "시작됨"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "시작 중…"
 
@@ -21001,6 +21030,18 @@ msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공�
 
 msgid "The purchase order"
 msgstr "발주서"
+
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격 책정 수량 구간점; 각 열은 구매자-공급업체 협상 및 다운스트림 문서로 변환하기 위한 자체 단가를 포함합니다."

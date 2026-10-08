@@ -67,6 +67,10 @@ msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
@@ -400,6 +404,9 @@ msgstr "{count} / {total} 件"
 msgid "{count} units"
 msgstr "{count} 件"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} 共 {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "第{from}–{to}个工序（共{count}个）"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "姓氏"
 msgid "Last Name"
 msgstr "姓氏"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "上一季度"
 
 msgid "Last Run"
 msgstr "最后运行"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "更多选项"
 msgid "More overtime"
 msgstr "更多加班"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
 
@@ -12535,6 +12558,9 @@ msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出
 
 msgid "Motion"
 msgstr "运动"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "移动"
@@ -19484,6 +19510,9 @@ msgstr "从以下开始"
 msgid "Started"
 msgstr "开始于"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "正在启动…"
 
@@ -21001,6 +21030,18 @@ msgstr "提供商不提供维度目标。首先在提供商中启用该功能（
 
 msgid "The purchase order"
 msgstr "采购订单"
+
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点;每一列都有自己的单位价格,用于采购方–供应商谈判和转换为下游文件。"

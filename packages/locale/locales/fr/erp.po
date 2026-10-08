@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# jour de retard} other {# jours de retard}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# opération n'a pas de normes de temps} other {# opérations n'ont pas de normes de temps}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# ligne se connecte à des données en dehors de cette Société, donc une copie de sécurité de vos données actuelles ne peut pas être créée.} other {# lignes se connectent à des données en dehors de cette Société, donc une copie de sécurité de vos données actuelles ne peut pas être créée.}}"
@@ -400,6 +404,9 @@ msgstr "{count} sur {total} unités"
 msgid "{count} units"
 msgstr "{count} unités"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}j"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} sur {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} sur {count} opérations"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} autres : {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "Nom"
 msgid "Last Name"
 msgstr "Nom de famille"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
 
 msgid "Last Run"
 msgstr "Dernière exécution"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Dernière synchronisation : <0/>"
@@ -12524,6 +12544,9 @@ msgstr "Plus d'options"
 msgid "More overtime"
 msgstr "Plus d'heures supplémentaires"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Bon matin, {name}."
 
@@ -12535,6 +12558,9 @@ msgstr "La plupart des choses sont détectées et résolues ici. Nommez-les clai
 
 msgid "Motion"
 msgstr "Motion"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "Déplacer"
@@ -19484,6 +19510,9 @@ msgstr "Commencez par"
 msgid "Started"
 msgstr "Commencé"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "Démarrage…"
 
@@ -21001,6 +21030,18 @@ msgstr "Le fournisseur n'offre pas de cibles de dimension. Activez d'abord la fo
 
 msgid "The purchase order"
 msgstr "Le bon de commande"
+
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Les points d'arrêt de quantité à laquelle cette ligne est tarifée; chaque colonne porte son propre prix par unité pour la négociation acheteur-fournisseur et la conversion en documents aval."

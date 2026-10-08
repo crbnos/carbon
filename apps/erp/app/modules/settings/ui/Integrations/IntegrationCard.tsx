@@ -13,6 +13,9 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -34,6 +37,8 @@ export type IntegrationHealth = {
   id: string;
   active: boolean;
   health: IntegrationHealthStatus;
+  /** Why the last check failed, when the integration says. */
+  healthReason?: string | null;
   /**
    * Which install mode this one is in, resolved SERVER-side.
    *
@@ -237,7 +242,10 @@ export function IntegrationCard({
           </span>
         )}
         {installed && integration.active && (
-          <StatusBadge status={installed.health} />
+          <StatusBadge
+            status={installed.health}
+            reason={installed.healthReason}
+          />
         )}
       </CardFooter>
       {showModeDialog && (
@@ -252,7 +260,13 @@ export function IntegrationCard({
   );
 }
 
-const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
+const StatusBadge = ({
+  status,
+  reason
+}: {
+  status: IntegrationHealthStatus;
+  reason?: string | null;
+}) => {
   const { t } = useLingui();
 
   const colors = {
@@ -279,7 +293,7 @@ const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
   } as const;
 
   const ping = colors[status] || "text-gray-400";
-  return (
+  const badge = (
     <Badge
       variant={badgeVariants[status]}
       className="flex items-center mr-auto gap-x-2 py-0.5"
@@ -300,5 +314,13 @@ const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
       </span>
       {labels[status]}
     </Badge>
+  );
+
+  if (!reason) return badge;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+    </Tooltip>
   );
 };

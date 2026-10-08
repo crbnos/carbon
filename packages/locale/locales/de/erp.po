@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# Tag zu kurz} other {# Tage zu kurz}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# Arbeitsgang hat keine Zeitstandards} other {# Arbeitsgänge haben keine Zeitstandards}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.}}"
@@ -400,6 +404,9 @@ msgstr "{count} von {total} Einheiten"
 msgid "{count} units"
 msgstr "{count} Einheiten"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}T"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} von {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} von {count} Arbeitsgängen"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} weitere: {hiddenNames}"
@@ -11371,11 +11381,21 @@ msgstr "Nachname"
 msgid "Last Name"
 msgstr "Nachname"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Letztes Quartal"
 
 msgid "Last Run"
 msgstr "Letzte Ausführung"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Zuletzt synchronisiert: <0/>"
@@ -12524,6 +12544,9 @@ msgstr "Weitere Optionen"
 msgid "More overtime"
 msgstr "Mehr Überstunden"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Morgen, {name}."
 
@@ -12535,6 +12558,9 @@ msgstr "Die meisten Dinge werden hier erkannt und gelöst. Benennen Sie es deutl
 
 msgid "Motion"
 msgstr "Bewegung"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "Verschieben"
@@ -19484,6 +19510,9 @@ msgstr "Beginnen Sie mit"
 msgid "Started"
 msgstr "Gestartet"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "Wird gestartet…"
 
@@ -21001,6 +21030,18 @@ msgstr "Der Provider bietet keine Dimensionsziele. Aktivieren Sie die Funktion z
 
 msgid "The purchase order"
 msgstr "Die Bestellung"
+
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Die Mengenestaffeln, zu denen diese Position bewertet ist; jede Spalte hat seinen eigenen Stückpreis für Käufer–Lieferant-Verhandlungen und für die Umwandlung in nachgelagerte Dokumente."

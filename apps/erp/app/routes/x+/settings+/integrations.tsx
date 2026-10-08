@@ -53,6 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       id: i.id!,
       active: i.active!,
       health: i.health,
+      healthReason: i.healthReason,
       installMode: i.active
         ? config?.resolveInstallMode?.(i.metadata)?.id
         : undefined
