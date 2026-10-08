@@ -16,7 +16,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Children, useEffect, useRef, useState } from "react";
 import { LuEllipsisVertical, LuPanelRight } from "react-icons/lu";
-import { BottomBar } from "../Layout/Mobile/ChromeSlots";
+import { PhoneActionBar } from "../Layout/Mobile/ChromeSlots";
 import { RecordPhoneChrome } from "../Layout/RecordHeader";
 import { useDocumentPage } from "./DocumentPage";
 
@@ -110,11 +110,9 @@ export function DocumentPageHeader({
           </header>
         ) : null}
         {actions ? (
-          <BottomBar>
-            <div className="flex items-center gap-2 border-t border-border bg-card px-4 pt-2 pb-safe-4 [&>*]:min-w-0 [&>*]:flex-1">
-              {actions}
-            </div>
-          </BottomBar>
+          <PhoneActionBar className="[&>*]:min-w-0 [&>*]:flex-1">
+            {actions}
+          </PhoneActionBar>
         ) : null}
       </>
     );

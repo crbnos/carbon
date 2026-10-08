@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useViewport } from "@carbon/react";
+import { cn, useViewport } from "@carbon/react";
 import type { ReactNode } from "react";
 import { Children, useEffect, useState } from "react";
 import { createPortalSlot } from "./slots";
@@ -36,6 +36,28 @@ export function AppBarActions({ children }: { children: ReactNode }) {
 
 /** A compact bottom bar (action bar or bulk bar) that replaces the tab bar. */
 export const BottomBar = bottomBarSlot.Fill;
+
+/** A page's phone action bar: its buttons in one row over the tab bar. */
+export function PhoneActionBar({
+  children,
+  className
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <BottomBar>
+      <div
+        className={cn(
+          "flex items-center gap-2 border-t border-border bg-card px-4 pt-2 pb-safe-4",
+          className
+        )}
+      >
+        {children}
+      </div>
+    </BottomBar>
+  );
+}
 
 /**
  * Publish an element's height as a CSS variable on <html> while compact, so

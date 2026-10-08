@@ -57,7 +57,7 @@ import { Input, Location, Select, TextArea } from "~/components/Form";
 import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
+import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { usePermissions, usePrinting, useQuantityFormatter } from "~/hooks";
 import type {
   ItemStorageUnitQuantities,
@@ -596,17 +596,15 @@ const InventoryStorageUnits = ({
         </CardContent>
       </Card>
       {isQuantity ? (
-        <BottomBar>
-          <div className="flex items-center gap-2 border-t border-border bg-card px-4 pt-2 pb-safe-4">
-            <Button
-              size="lg"
-              className="w-full"
-              onClick={() => openAdjustmentModal()}
-            >
-              <Trans>Update Inventory</Trans>
-            </Button>
-          </div>
-        </BottomBar>
+        <PhoneActionBar>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => openAdjustmentModal()}
+          >
+            <Trans>Update Inventory</Trans>
+          </Button>
+        </PhoneActionBar>
       ) : null}
       {adjustmentModal.isOpen && (
         <Modal

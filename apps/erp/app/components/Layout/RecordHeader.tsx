@@ -33,7 +33,7 @@ import { Link } from "react-router";
 import { create } from "zustand";
 import {
   AppBarActions,
-  BottomBar,
+  PhoneActionBar,
   useCompactCssVar
 } from "./Mobile/ChromeSlots";
 import { createPortalSlot } from "./Mobile/slots";
@@ -244,13 +244,11 @@ export function RecordPhoneChrome({
       ) : null}
 
       {hasIcon || hasPrimary || hasSecondary ? (
-        <BottomBar>
-          <div className="flex items-center gap-2 border-t border-border bg-card px-4 pt-2 pb-safe-4 [&>*]:min-w-0">
-            <iconSlot.Target className="flex shrink-0 empty:hidden" />
-            <primarySlot.Target className={cellClassName} />
-            <secondarySlot.Target className={cellClassName} />
-          </div>
-        </BottomBar>
+        <PhoneActionBar className="[&>*]:min-w-0">
+          <iconSlot.Target className="flex shrink-0 empty:hidden" />
+          <primarySlot.Target className={cellClassName} />
+          <secondarySlot.Target className={cellClassName} />
+        </PhoneActionBar>
       ) : null}
     </>
   );
