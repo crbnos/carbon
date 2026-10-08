@@ -416,6 +416,56 @@ export function leaseCommencementPreview(
   };
 }
 
+/** The last Posted shipment that delivered the unit and the last Posted receipt that returned it. */
+export function rentalLineDocuments(
+  lineId: string,
+  shipments: {
+    id: string;
+    shipmentId: string;
+    status: string;
+    shipmentFixedAssetLine: {
+      rentalAgreementLineId: string | null;
+      shipped: boolean;
+    }[];
+  }[],
+  receipts: {
+    id: string;
+    receiptId: string;
+    status: string;
+    receiptFixedAssetLine: {
+      rentalAgreementLineId: string | null;
+      received: boolean;
+    }[];
+  }[]
+): {
+  shipment: { id: string; shipmentId: string } | null;
+  receipt: { id: string; receiptId: string } | null;
+} {
+  let shipment: { id: string; shipmentId: string } | null = null;
+  for (const s of shipments) {
+    if (s.status !== "Posted") continue;
+    if (
+      s.shipmentFixedAssetLine.some(
+        (l) => l.rentalAgreementLineId === lineId && l.shipped
+      )
+    ) {
+      shipment = { id: s.id, shipmentId: s.shipmentId };
+    }
+  }
+  let receipt: { id: string; receiptId: string } | null = null;
+  for (const r of receipts) {
+    if (r.status !== "Posted") continue;
+    if (
+      r.receiptFixedAssetLine.some(
+        (l) => l.rentalAgreementLineId === lineId && l.received
+      )
+    ) {
+      receipt = { id: r.id, receiptId: r.receiptId };
+    }
+  }
+  return { shipment, receipt };
+}
+
 // The surcharge one configuration price adds for a line's configuration: the
 // amount per unit of a numeric value (`value` null), else the amount when the
 // chosen value equals `value` (a list option, or "true" for a boolean).

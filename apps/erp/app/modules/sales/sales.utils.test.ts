@@ -14,6 +14,7 @@ import {
   previewLeaseClassification,
   readLeaseClassification,
   reconcileQuantityBreaks,
+  rentalLineDocuments,
   repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
@@ -677,5 +678,46 @@ describe("repricedUnitPrice", () => {
   it("is today's price at the line's precision when it differs", () => {
     expect(repricedUnitPrice(current(104.5678), 110, 2)).toBe(104.57);
     expect(repricedUnitPrice(current(104.5678), 110, 4)).toBe(104.5678);
+  });
+});
+
+describe("rentalLineDocuments", () => {
+  const shipment = (
+    status: string,
+    lines: { rentalAgreementLineId: string | null; shipped: boolean }[]
+  ) => ({
+    id: `shp-${status}`,
+    shipmentId: `SHP-${status}`,
+    status,
+    shipmentFixedAssetLine: lines
+  });
+
+  it("finds nothing when the agreement has no documents", () => {
+    expect(rentalLineDocuments("ral1", [], [])).toEqual({
+      shipment: null,
+      receipt: null
+    });
+  });
+
+  it("finds the Posted shipment that delivered the unit", () => {
+    const result = rentalLineDocuments(
+      "ral1",
+      [shipment("Posted", [{ rentalAgreementLineId: "ral1", shipped: true }])],
+      []
+    );
+    expect(result.shipment).toEqual({
+      id: "shp-Posted",
+      shipmentId: "SHP-Posted"
+    });
+    expect(result.receipt).toBeNull();
+  });
+
+  it("ignores a Draft shipment", () => {
+    const result = rentalLineDocuments(
+      "ral1",
+      [shipment("Draft", [{ rentalAgreementLineId: "ral1", shipped: true }])],
+      []
+    );
+    expect(result.shipment).toBeNull();
   });
 });

@@ -104,6 +104,28 @@ export type ShippingMethod = NonNullable<
 export type ShipmentSourceDocument =
   Database["public"]["Enums"]["shipmentSourceDocument"];
 
+export type RentalShipmentLine = {
+  id: string;
+  rentalAgreementLineId: string;
+  shipped: boolean;
+  meter: number | null;
+  unitName: string;
+  assetReadableId: string | null;
+  serialNumber: string | null;
+  lineStatus: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+};
+
+export type RentalReceiptLine = Omit<RentalShipmentLine, "shipped"> & {
+  received: boolean;
+  notes: string | null;
+  takeOutOfService: boolean;
+  outOfServiceReason: string | null;
+  residualDestination: "Fleet" | "Inventory" | null;
+  lessorClassification:
+    | Database["public"]["Enums"]["lessorClassification"]
+    | null;
+};
+
 export type StockTransfer = NonNullable<
   Awaited<ReturnType<typeof getStockTransfers>>["data"]
 >[number];

@@ -33,7 +33,7 @@ in spec → Open Questions.
 - [x] Task 9: Void a rental shipment
 - [x] Task 10: Post a rental receipt and refuse its void
 - [x] Task 11: Add the Close guard
-- [ ] Task 12: Add the ERP models, service reads and the line-documents helper
+- [x] Task 12: Add the ERP models, service reads and the line-documents helper
 - [ ] Task 13: Add the rental branches to the inventory `new` and `details` routes
 - [ ] Task 14: Load the rental lines and save their fields
 - [ ] Task 15: Pass the posting date from the post routes
