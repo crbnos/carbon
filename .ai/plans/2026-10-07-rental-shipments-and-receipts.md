@@ -25,7 +25,7 @@ in spec → Open Questions.
 - [x] Task 1: Add the enum migration
 - [x] Task 2: Add the fixed-asset line migration
 - [x] Task 3: Apply the migrations, regenerate types and fix the nullable readers
-- [ ] Task 4: Build the rental test fixture and pin today's return
+- [x] Task 4: Build the rental test fixture and pin today's return
 - [ ] Task 5: Move the return body into `returnRentalUnit`
 - [ ] Task 6: Add the pure rental document rules
 - [ ] Task 7: Add the two `create` cases
