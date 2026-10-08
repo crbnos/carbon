@@ -6,17 +6,19 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { Avatar } from "../Avatar";
+import { GENERATED_AVATAR_RENDER_VERSION } from "../utils/generatedAvatarImage";
 
 describe("Avatar", () => {
-  it("renders a generated avatar as a plain placeholder on the server", () => {
-    // The style loads in the browser; the server render (and hydration) shows
-    // a neutral circle, never the initials, so nothing flashes.
-    const html = renderToStaticMarkup(
-      <Avatar name="Jane Doe" src="dicebear:croodles-neutral:seed-one" />
+  it("renders a generated avatar as an image of its server-drawn SVG", () => {
+    // In the first HTML, before any JavaScript runs: the browser fetches the
+    // avatar while the page loads, and caches it for the next refresh.
+    const value = "dicebear:croodles-neutral:seed-one:1e3a8a";
+    const html = renderToStaticMarkup(<Avatar name="Jane Doe" src={value} />);
+    expect(html).toContain(
+      `src="/file/avatar/${encodeURIComponent(value)}?v=${GENERATED_AVATAR_RENDER_VERSION}"`
     );
-    expect(html).not.toContain("<img");
+    expect(html).toContain("bg-white");
     expect(html).not.toContain("JD");
-    expect(html).toContain("bg-muted");
   });
 
   it("renders a URL as it is, without the generated-avatar styling", () => {

@@ -10,10 +10,14 @@ import { useEffect, useSyncExternalStore } from "react";
 
 const log = getLogger("react", "generated-avatar");
 
-// One loader per style. A style definition is 10–370 KB of JSON and the Avatar
-// renders on every page, so each style is its own chunk, fetched the first time
-// an avatar in that style is shown. `Record` makes a style in
-// GENERATED_AVATAR_STYLES without a loader a type error.
+// One loader per style. A style definition is 10–370 KB of JSON, so each
+// style is its own chunk, fetched the first time something renders it.
+// No `json` import attribute: Vite passes it through to the browser, which then
+// rejects the style (Vite serves it as JavaScript) — the picker stayed grey.
+// The server side instead bundles @dicebear/styles (`ssrNoExternal` in each
+// app's vite.config.ts), because Node refuses a package's JSON without one.
+// `Record` makes a style in GENERATED_AVATAR_STYLES without a loader a type
+// error.
 const STYLE_LOADERS: Record<GeneratedAvatarStyle, () => Promise<unknown>> = {
   "croodles-neutral": () => import("@dicebear/styles/croodles-neutral.json"),
   notionists: () => import("@dicebear/styles/notionists.json"),
@@ -27,33 +31,6 @@ const STYLE_LOADERS: Record<GeneratedAvatarStyle, () => Promise<unknown>> = {
   "voxel-bot": () => import("@dicebear/styles/voxel-bot.json"),
   planets: () => import("@dicebear/styles/planets.json")
 };
-
-/**
- * Styles drawn as black lines on a transparent background. `Avatar` puts them
- * on white in both themes. The rest are full color with their own background.
- */
-const LINE_ART_STYLES: ReadonlySet<GeneratedAvatarStyle> = new Set([
-  "croodles-neutral",
-  "notionists",
-  "notionists-neutral",
-  "lorelei",
-  "lorelei-neutral"
-]);
-
-function isLineArtStyle(style: GeneratedAvatarStyle) {
-  return LINE_ART_STYLES.has(style);
-}
-
-/**
- * The classes `Avatar` puts on a generated avatar's image. Line-art styles are
- * black lines on transparent, so they sit on white in both themes; color
- * styles keep their own colors. A chosen background paints over either.
- */
-export function generatedAvatarClassName(style: GeneratedAvatarStyle) {
-  return isLineArtStyle(style)
-    ? "bg-white border-black/10"
-    : "bg-muted border-transparent";
-}
 
 /**
  * The line-color options of the styles that draw lines straight onto the
@@ -129,6 +106,32 @@ function remember(value: string, state: ReadyState) {
   }
 }
 
+function drawAvatar(
+  dicebear: DiceBearCore,
+  style: Style,
+  avatar: NonNullable<ReturnType<typeof parseGeneratedAvatar>>
+) {
+  return new dicebear.Avatar(style, {
+    seed: avatar.seed,
+    ...backgroundOptions(avatar.style, avatar.background)
+  });
+}
+
+/**
+ * The SVG markup for a generated-avatar value, or `null` when the value is not
+ * one or its style cannot load. Used on the server by `generatedAvatarLoader`.
+ */
+export async function renderGeneratedAvatarSvg(
+  value: string
+): Promise<string | null> {
+  const parsed = parseGeneratedAvatar(value);
+  if (!parsed) return null;
+  await loadGeneratedAvatarStyle(parsed.style);
+  const style = styles.get(parsed.style);
+  if (!style || !core) return null;
+  return drawAvatar(core, style, parsed).toString();
+}
+
 function renderReadyState(value: string): ReadyState | undefined {
   const cached = rendered.get(value);
   if (cached) {
@@ -144,10 +147,7 @@ function renderReadyState(value: string): ReadyState | undefined {
 
   const state: ReadyState = {
     status: "ready",
-    src: new core.Avatar(style, {
-      seed: parsed.seed,
-      ...backgroundOptions(parsed.style, parsed.background)
-    }).toDataUri()
+    src: drawAvatar(core, style, parsed).toDataUri()
   };
   remember(value, state);
   return state;

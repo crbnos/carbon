@@ -25,8 +25,8 @@ import {
 import { cn } from "./utils/cn";
 import {
   generatedAvatarClassName,
-  useGeneratedAvatar
-} from "./utils/generatedAvatar";
+  generatedAvatarUrl
+} from "./utils/generatedAvatarImage";
 
 export const avatarVariants = cva(
   "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-medium transition-transform duration-200 ease-in-out",
@@ -63,14 +63,11 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
   ({ className, name, src, size, children, ...props }, ref) => {
     const isGroup = !!useAvatarGroupContext()?.limit;
     const avatarInitials = getInitials(name ?? "");
-    // `src` may be a generated-avatar value from `user.avatarUrl` rather than a URL.
+    // `src` may be a generated-avatar value from `user.avatarUrl` rather than a
+    // URL. The app draws that on the server (`/file/avatar/:value`), so it is a
+    // plain image in the first HTML, cached by the browser after one load.
     const generated = useMemo(() => parseGeneratedAvatar(src), [src]);
-    const generatedState = useGeneratedAvatar(generated ? src : undefined);
-    const imageSrc = !generated
-      ? src
-      : generatedState.status === "ready"
-        ? generatedState.src
-        : undefined;
+    const imageSrc = generated && src ? generatedAvatarUrl(src) : src;
     // Remember which source failed, so a new `src` (a changed avatar) is tried.
     const [failedSrc, setFailedSrc] = useState<string>();
     const error = imageSrc !== undefined && imageSrc === failedSrc;
@@ -78,23 +75,6 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
     const colorValue = getColorByValue(name ?? "", "light");
     const background = colorValue?.background;
     const color = colorValue?.color;
-
-    // A generated avatar whose style is still loading (or the server render):
-    // a plain circle, so the initials do not flash before the avatar. A style
-    // that failed to load falls through to the initials.
-    if (generated && generatedState.status === "loading") {
-      return (
-        <span
-          className={cn(
-            avatarVariants({ size, isGroup }),
-            "bg-muted",
-            className
-          )}
-          {...props}
-          ref={ref}
-        />
-      );
-    }
 
     return imageSrc && !error ? (
       <img

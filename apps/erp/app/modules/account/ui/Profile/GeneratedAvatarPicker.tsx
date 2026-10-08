@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Avatar,
   Button,
   cn,
   HStack,
@@ -20,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
+import { GeneratedAvatarPreview } from "@carbon/react/GeneratedAvatar";
 import type { GeneratedAvatarStyle } from "@carbon/utils";
 import {
   DEFAULT_GENERATED_AVATAR_STYLE,
@@ -260,7 +260,9 @@ const GeneratedAvatarPicker = ({
                     isSelected ? "ring-primary" : "hover:ring-border"
                   )}
                 >
-                  <Avatar size="lg" src={valueOf(seed)} />
+                  {/* Drawn in the browser: a color drag makes a new value per
+                      step, too fast to fetch each one from the server. */}
+                  <GeneratedAvatarPreview size="lg" value={valueOf(seed)} />
                 </button>
               );
             })}

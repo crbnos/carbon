@@ -72,9 +72,12 @@ A storage path never contains `:`, because the upload names the file
 | Unit | Location | Job |
 |------|----------|-----|
 | `GENERATED_AVATAR_STYLES`, `parseGeneratedAvatar`, `isGeneratedAvatar`, `newGeneratedAvatar(style?)`, `isAllowedAvatarValue` | `packages/utils/src/avatar.ts` (exported from `@carbon/utils`) | Pure string helpers. Server and client code use them. No DiceBear import |
-| `STYLE_LOADERS`, `loadGeneratedAvatarStyle`, `generatedAvatarDataUri`, `useGeneratedAvatar`, `generatedAvatarClassName` | `packages/react/src/utils/generatedAvatar.ts` | Loads the DiceBear core and each style's JSON definition as separate chunks on first use. Renders `new Avatar(style, { seed }).toDataUri()` and caches the result per value. Picks the image classes per style |
-| `Avatar` | `packages/react/src/Avatar.tsx` | If `src` is a generated-avatar value, renders the data URI. Shows a plain circle while the style loads |
-| `GeneratedAvatarPicker` | `apps/erp/app/modules/account/ui/Profile/GeneratedAvatarPicker.tsx` | Modal with a style `Select`, a grid of generated options, a Shuffle button and the credit for the selected style. Each option is an `Avatar` with the value as `src`, so the `@carbon/react` barrel does not change |
+| `GENERATED_AVATAR_RENDER_VERSION`, `generatedAvatarUrl`, `generatedAvatarClassName` | `packages/react/src/utils/generatedAvatarImage.ts` | What `Avatar` needs: the URL of the server-drawn SVG and the classes of the image. No DiceBear import, so `Avatar` stays small |
+| `STYLE_LOADERS`, `loadGeneratedAvatarStyle`, `renderGeneratedAvatarSvg`, `generatedAvatarDataUri`, `useGeneratedAvatar` | `packages/react/src/utils/generatedAvatar.ts` | The renderer. Loads the DiceBear core and each style's JSON as separate chunks on first use. Draws an SVG string for the route, or a cached data URI for the picker |
+| `generatedAvatarLoader`, `GeneratedAvatarPreview` | `packages/react/src/GeneratedAvatar.tsx` (subpath `@carbon/react/GeneratedAvatar`) | The route loader, and the browser-drawn preview the picker uses |
+| `/file/avatar/:value` route | `apps/{erp,mes,academy}/app/routes/file+/avatar.$value.ts` | One line each: re-exports `generatedAvatarLoader` as the route's `loader`. Public: the route reads no data |
+| `Avatar` | `packages/react/src/Avatar.tsx` | If `src` is a generated-avatar value, renders `<img src={generatedAvatarUrl(value)}>`. The image is in the first HTML |
+| `GeneratedAvatarPicker` | `apps/erp/app/modules/account/ui/Profile/GeneratedAvatarPicker.tsx` | Modal with a style `Select`, a Background row, a grid of `GeneratedAvatarPreview` options, a Shuffle button and the credit for the selected style |
 | `avatarSrc` + app `Avatar` wrappers | `packages/utils/src/avatar.ts`, `apps/{erp,mes,academy}/app/components/Avatar.tsx` | `avatarSrc` passes a generated-avatar value through as `src` and turns a storage path into a URL. The 3 wrappers call it |
 
 ### Rendering options
@@ -88,20 +91,33 @@ first and need no change. A background never changes the face. Rendered
 avatars sit in one cache, capped at 300 and evicted least recently used,
 because a drag in the color picker makes a new value at each step.
 
-A style definition is 10 KB to 370 KB of JSON, and `Avatar` renders on every
-page. So `STYLE_LOADERS` imports each style with a dynamic `import()`, and the
-bundler makes each one a separate chunk. The browser fetches a style the first
-time it shows an avatar in that style. The DiceBear core (about 25 KB gzipped)
-loads the same way, with the first style, so a page with no generated avatar
-downloads none of it.
+`Avatar` and the picker draw in different places:
 
-`useGeneratedAvatar` reads the state through `useSyncExternalStore`:
+| Where | Draws on | Why |
+|-------|----------|-----|
+| `Avatar` (every page) | The server. `<img src="/file/avatar/:value?v=1">`; the route answers `Cache-Control: public, max-age=31536000, immutable` | The image is in the first HTML, so the browser fetches it while the page loads. A refresh reads it from the browser cache. No DiceBear code reaches the page |
+| `GeneratedAvatarPreview` (the picker) | The browser | A color drag or a shuffle makes a new value per step, too fast to fetch from the server |
 
-| State | When | `Avatar` shows |
-|-------|------|----------------|
-| `loading` | The server render, and the browser until the style arrives | A plain `bg-muted` circle. The initials do not flash |
+`GENERATED_AVATAR_RENDER_VERSION` is the `v` in every URL. Bump it when the
+same value would draw a different picture: a DiceBear upgrade, or a change to
+the rendering options. Without a bump, browsers keep the old image.
+
+In the browser, a style definition is 10 KB to 370 KB of JSON. `STYLE_LOADERS`
+imports each style with a dynamic `import()`, and the bundler makes each one a
+separate chunk. The DiceBear core (about 25 KB gzipped) loads with the first
+style. The imports have no `json` import attribute: the browser rejects one,
+because Vite serves the JSON as JavaScript. The server instead bundles
+`@dicebear/styles` (`ssrNoExternal` in each app's `vite.config.ts`), because
+Node refuses a package's JSON without the attribute.
+
+`useGeneratedAvatar` reads the picker preview's state through
+`useSyncExternalStore`:
+
+| State | When | `GeneratedAvatarPreview` shows |
+|-------|------|--------------------------------|
+| `loading` | The server render, and the browser until the style arrives | A plain `bg-muted` circle |
 | `ready` | The style is loaded | The data URI |
-| `failed` | The style chunk did not load | The initials. The next avatar that mounts tries the load again |
+| `failed` | The style chunk did not load | The plain circle. The next preview that mounts tries the load again |
 
 The 10 styles fall into 2 groups. `generatedAvatarClassName` picks the classes:
 
@@ -199,7 +215,9 @@ style is under the grid.
 |------|----------|------------|
 | A list with many avatars generates many SVGs | Low | A module-level cache keys each data URI by value, so each value generates once per page load |
 | A large style definition slows the first page | Low | Each style is its own chunk, fetched only when an avatar in that style shows. Notionists is the largest at 370 KB of JSON |
-| The DiceBear core enlarges every page | Med | `Avatar` is in every app shell, and the core is about 25 KB gzipped. It is never imported statically: it loads with the first style (`import()`). A split bundle shows the renderer entry at 2.5 KB |
+| DiceBear code enlarges every page | Med | `Avatar` imports only `generatedAvatarImage.ts`. A split bundle of `Avatar.tsx` is one 3.4 KB file with no DiceBear reference; the core and the 10 styles are chunks behind the picker only |
+| A CDN does not cache the avatar route | Low | `Cache-Control` has `max-age`, so browsers cache it. A CDN may also need `s-maxage` to serve it without running the function. Not yet checked on a deployed preview |
+| A JSON import attribute is added back | Med | The browser rejects it and the picker goes grey. A unit test fails if any style `import()` has a second argument |
 | Non-React code reads `avatarUrl` as a storage path | Low | A repo search finds no non-React reader. The Jira type and the workflow catalog list only the column name |
 | An invite of an existing user overwrites the avatar | Low | `createUser` runs only on the new-user branch, and no longer sends `avatarUrl` |
 | CC BY 4.0 credit missing | Med | The picker shows the credit. Self-review checks it |
@@ -223,4 +241,7 @@ style is under the grid.
 - 2026-10-08: Line-art avatars no longer invert on the light theme (user request). They are black lines on white in both themes.
 - 2026-10-08: Background color picker added (user request). The value gains an optional `:<rrggbb>` segment; old values still parse. The avatar cache is now a capped LRU.
 - 2026-10-08: Self-review 3 fixes. The DiceBear core loads with the first style, not on every page. `generatedAvatarClassName` and `avatarSrc` replace inline logic and have tests. The profile action has a test for the save-then-delete order. Two lessons added to `.ai/lessons.md`.
+- 2026-10-08: Server-drawn avatars (user request, refresh was slow). `Avatar` renders a generated value as `<img src="/file/avatar/:value?v=1">`; each app serves that route with `generatedAvatarLoader` (`@carbon/react/GeneratedAvatar`), which draws the SVG on the server and caches it for a year as immutable. The avatar is in the first HTML instead of waiting for hydration and two client downloads. The picker keeps drawing previews in the browser (`GeneratedAvatarPreview`). `GENERATED_AVATAR_RENDER_VERSION` is in every URL; bump it when the drawing changes.
+- 2026-10-08: Fix: picker previews stayed grey. The style imports had a JSON import attribute for the server, which the browser rejected. The attribute is gone; each app's `vite.config.ts` bundles `@dicebear/styles` into the server build instead.
+- 2026-10-08: Self-review 4. `generatedAvatarUrl` and `generatedAvatarClassName` moved to `generatedAvatarImage.ts`, so `Avatar` no longer bundles the renderer. A test guards against JSON import attributes. The spec now describes the route.
 - 2026-10-08: Implemented (uncommitted). The picker lives in the ERP account module. The account reference doc (`docs/content/docs/reference/account.mdx`) describes the new Photo behavior.

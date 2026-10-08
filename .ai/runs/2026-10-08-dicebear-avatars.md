@@ -18,6 +18,7 @@
 - Avatar styles: a style select with 10 styles (user request). DiceBear moves from 9 to 10, because Loops, Voxel Art, Voxel Bot and Planets exist only in version 10. New users keep Croodles Neutral — 2026-10-08
 - Line-art avatars: black lines on white in both themes, no invert — user request — 2026-10-08
 - Background color: user picks one per avatar with the ERP `ColorPicker`; stored as an optional `:<rrggbb>` value segment; dark backgrounds switch the neutral line styles to white ink — user request — 2026-10-08
+- Server-drawn avatars: a public `/file/avatar/:value` route in each app renders the SVG with DiceBear and caches it as immutable; `Avatar` uses it, the picker still draws in the browser — user approved the route after a slow-refresh report — 2026-10-08
 
 ## Phase log
 - spec: written at `.ai/specs/2026-10-08-dicebear-avatars.md`. All 4 questions answered by the user before writing. STE-80 pass done.
@@ -31,6 +32,8 @@
 - background color: done. Gates: Biome clean on changed files; typecheck passes for 6 tasks; tests `@carbon/utils` 620/620, `@carbon/react` 74/74; 2 new strings translated in 12 locales.
 
 - self-review 3 (user asked to fix the must-fix and suggestions): the DiceBear core loads lazily (renderer entry 2.5 KB in a split bundle); `generatedAvatarClassName` and `avatarSrc` extracted with tests; the order-dependent test isolated with `vi.resetModules`; the profile action has 6 tests (a delete-before-save mutation fails 4 of them). Docs: 2 lessons, both AGENTS notes, the spec.
+
+- self-review 4: image helpers split into `generatedAvatarImage.ts` (Avatar bundle 3.4 KB, no DiceBear); version constant in tests; regression test against JSON import attributes (mutation fails it); spec updated for the route.
 
 ## Outcome
 - Uncommitted on `naveenkash/75pu7`. The migration is not applied. The user commits and applies it.
