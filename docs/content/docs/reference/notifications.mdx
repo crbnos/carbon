@@ -90,7 +90,7 @@ Expected: in-app is always written and cannot be turned off. Mutes affect only e
 Enabling a channel removes the mute but does not bypass its prerequisites: the plan feature for email, the integration and account mapping for Slack, or push turned on for this device for Browser.
 
 ### I enabled browser notifications but nothing arrives
-Use **Send a test notification**. If the card says notifications are blocked, allow them for Carbon in the browser's site settings. Push only goes to events that also go to email or Slack, so in-app-only events such as accounting sync alerts never push.
+Use **Send a test notification**. If the card says notifications are blocked, allow them for Carbon in the browser's site settings. If the test reports success but no banner appears, the operating system is holding it: on macOS, open **System Settings → Notifications**, set your browser's alert style to **Banners** or **Alerts**, and turn off any Focus mode (Do Not Disturb, Work). Held notifications still wait in Notification Center. Push only goes to events that also go to email or Slack, so in-app-only events such as accounting sync alerts never push.
 
 ### I did something myself and got no notification
 The sender is filtered out of the recipient list. Self-assignments notify nobody.

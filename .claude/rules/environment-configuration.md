@@ -106,11 +106,13 @@ smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
 **Push** — `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secret), `VAPID_SUBJECT`
 (group `push`, all three `needed`). Optional — `isPushConfigured()` is false
 unless all three are set, and then the `notify` job sends no push and the
-account page hides its push controls. Generate the pair once
+account page and the bell hide their push controls. `VAPID_SUBJECT` has a
+`type`: `validateEnv` reports a value that does not start with `mailto:` or
+`https://` at startup (web-push would refuse every send). Generate the pair once
 (`pnpm dlx web-push generate-vapid-keys`): every browser subscription is bound to
 the public key, so a new pair makes each user turn push on again. The public
-key reaches the browser through the account notifications loader, not
-`getBrowserEnv()`.
+key reaches the browser through the account notifications loader and the app
+shell loader (`pushPublicKey`), not `getBrowserEnv()`.
 
 **Integrations (all optional)** — Ramp (`RAMP_CLIENT_ID`, public and exposed by
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code

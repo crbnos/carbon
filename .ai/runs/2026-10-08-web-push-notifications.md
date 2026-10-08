@@ -32,17 +32,25 @@
   - `pnpm db:check:backups` skipped: the local stack was not running.
   - `/test` skipped by the user. The manual checklist is below.
 - self-review: 1 must-fix item, fixed (above). 5 risks and 4 suggestions go to the user. The `@carbon/jobs` typecheck passes after the fix.
+- After the run, with the user testing in Edge on macOS:
+  1. `push-worker.js`: macOS replaced a notification with the same tag silently, so the worker now shows each push under a fresh identifier.
+  2. The bell offers "Enable browser notifications" (a soft ask), with **Not now** snoozing it per browser.
+  3. Browser notifications became a setting of the browser. One row per endpoint, pushes from every company the user belongs to, and a stop on every sign-out path (`clearAuthCookies` and the `carbon-push` cookie). The next user to sign in gets their own notifications with no prompt.
+  4. Three more self-reviews. They added `restoreStep` with tests, the `VAPID_SUBJECT` check, the `userId` match in `send-push`, the folded migration, and the doc and lesson updates. The spec records each change in its changelog.
 
 ## Manual browser checklist
 
 1. Run `pnpm dlx web-push generate-vapid-keys`.
 2. Put `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` in `.env.local`.
 3. Restart the ERP and the Inngest dev server.
-4. Open Account → Notifications. Click **Turn on** and allow the prompt.
+4. Open Account → Notifications. Click **Enable** and allow the prompt.
 5. Click **Send a test notification**. Expect an OS notification. Click it and expect Account → Notifications.
 6. Close every Carbon tab. Assign a job to the user from a second account. Expect "Job assigned to you".
 7. Turn off the Jobs **Browser** switch. Assign another job. Expect no push and a new bell row.
-8. Click **Turn off**. Expect 0 `pushSubscription` rows for the user.
+8. Click **Disable**. Expect 0 `pushSubscription` rows for the endpoint.
+9. Enable again, sign out, and sign in as another user. Expect that user's notifications with no prompt, and none of the first user's.
+10. If no banner appears although `send-push` returns `201`, check macOS: System Settings → Notifications → Microsoft Edge allows banners, and no Focus mode is on.
 
 ## Outcome
-- Built, verified, not committed. The run waits for the user to review it and ask for a commit.
+- Built and verified. The user committed each round on `naveenkash/carbon-browser-notifications` and pushed the first 4 commits. Push works end to end in Edge on macOS.
+- Open: run the local migration repair for the folded migration, push the branch, and open the PR with the `Tracking spec:` line.

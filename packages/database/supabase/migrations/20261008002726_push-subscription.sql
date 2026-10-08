@@ -1,5 +1,8 @@
--- One browser push subscription per (user, company, endpoint). A user-owned
--- device row, shaped like "notificationPreference": xid() id, no audit columns.
+-- One browser push subscription per endpoint, owned by the user signed into
+-- that browser. A user-owned row, shaped like "notificationPreference": xid()
+-- id, no audit columns. "companyId" is the company the user enabled it from
+-- (tenant attribution and the RLS check); the user gets the push of every
+-- company they belong to.
 CREATE TABLE IF NOT EXISTS "pushSubscription" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "userId" TEXT NOT NULL,
@@ -14,7 +17,7 @@ CREATE TABLE IF NOT EXISTS "pushSubscription" (
   CONSTRAINT "pushSubscription_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "pushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "pushSubscription_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "pushSubscription_endpoint_companyId_key" UNIQUE ("endpoint", "companyId")
+  CONSTRAINT "pushSubscription_endpoint_key" UNIQUE ("endpoint")
 );
 
 ALTER TABLE "pushSubscription" ENABLE ROW LEVEL SECURITY;

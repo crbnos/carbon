@@ -188,6 +188,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       await trigger("send-push", {
         subscriptionId: subscription.data.id,
+        userId,
         companyId,
         title: "Carbon",
         body: "Browser notifications work in this browser.",

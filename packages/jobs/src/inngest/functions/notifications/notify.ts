@@ -764,7 +764,7 @@ export const notifyFunction = inngest.createFunction(
         async () => {
           const { data: subscriptions, error } = await client
             .from("pushSubscription")
-            .select("id")
+            .select("id, userId")
             .in("userId", pushRecipientIds);
           if (error) {
             console.error("Failed to load push subscriptions", error);
@@ -782,6 +782,7 @@ export const notifyFunction = inngest.createFunction(
               body: description,
               companyId: payload.companyId,
               subscriptionId: subscription.id,
+              userId: subscription.userId,
               tag: `${payload.event}:${primaryDocumentId}`,
               title,
               url

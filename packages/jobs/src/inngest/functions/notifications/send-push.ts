@@ -24,7 +24,7 @@ export const sendPushFunction = inngest.createFunction(
   },
   { event: "carbon/send-push" },
   async ({ event, step }) => {
-    const { subscriptionId, title, body, url, tag } = event.data;
+    const { subscriptionId, userId, title, body, url, tag } = event.data;
 
     if (!isPushConfigured()) {
       return { skipped: "push not configured" };
@@ -35,6 +35,9 @@ export const sendPushFunction = inngest.createFunction(
         .from("pushSubscription")
         .select("id, endpoint, p256dh, auth")
         .eq("id", subscriptionId)
+        // Only the recipient's browser: a row that changed hands since the
+        // fan-out (sign-out, another user enabled it) is skipped.
+        .eq("userId", userId)
         .maybeSingle();
       if (error) {
         console.error("Failed to load push subscription", error);
@@ -43,9 +46,9 @@ export const sendPushFunction = inngest.createFunction(
       return data;
     });
 
-    // Disabled or signed out between the fan-out and this run. The row is
-    // read by id alone: it belongs to the user and browser, and companyId on
-    // the event is the notification's company, not the row's.
+    // Disabled, signed out or handed to another user between the fan-out and
+    // this run. companyId on the event is the notification's company, not the
+    // row's, so the row is matched on id and recipient only.
     if (!subscription) {
       return { skipped: "subscription not found" };
     }

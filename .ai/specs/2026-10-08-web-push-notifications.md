@@ -133,7 +133,7 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 
 ## Data Model Changes
 
-1. A new table, `pushSubscription` (migration `20261008002726`), made one row per endpoint by migration `20261008104657`.
+1. A new table, `pushSubscription`, one row per endpoint (migration `20261008002726`).
 2. A wider CHECK on `notificationPreference.channel`: `('email', 'slack', 'push')`.
 3. A new rule in `packages/database/src/authz/manifest.ts`, and the generated authz migration `20261008002814`. No migration holds a `CREATE POLICY`.
 
@@ -154,7 +154,7 @@ erDiagram
     }
 ```
 
-The table after both migrations:
+The table:
 
 ```sql
 CREATE TABLE "pushSubscription" (
@@ -211,7 +211,7 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 
 ### `@carbon/lib`
 
-1. Add the event `"carbon/send-push"` to `Events` with `data: { subscriptionId, companyId, title, body, url, tag }`. `companyId` is the notification's company.
+1. Add the event `"carbon/send-push"` to `Events` with `data: { subscriptionId, userId, companyId, title, body, url, tag }`. `userId` is the recipient, and `companyId` is the notification's company.
 2. Add `"send-push": "carbon/send-push"` to the `trigger` map.
 
 ### `@carbon/auth`
@@ -227,10 +227,10 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 2. Change `notify.ts`:
    1. Compute `wantsPush`: `isPushConfigured()` and `wantsPushDelivery(destinations)`.
    2. Add `push` to the step `filter-recipients-by-preference`. It returns `pushRecipientIds`, which defaults to `[]` when a run in flight replays the step's output from before push existed.
-   3. Add the step `resolve-push-subscriptions`. It reads the `pushSubscription` rows with `userId` in `pushRecipientIds`, and builds one `carbon/send-push` event per row.
+   3. Add the step `resolve-push-subscriptions`. It reads the `pushSubscription` rows with `userId` in `pushRecipientIds`, and builds one `carbon/send-push` event per row, with the row's `userId`.
    4. Send the events with `step.sendEvent("fan-out-push", …)`.
 3. Add `send-push.ts` (function id `send-push`, 3 retries):
-   1. Read the row by `subscriptionId` alone with the service role. If no row exists, return.
+   1. Read the row by `subscriptionId` and `userId` with the service role. If no row matches, return: the browser was disabled, signed out or handed to another user since the fan-out.
    2. Call `webpush.sendNotification` with the VAPID details, `TTL: 86400` and `urgency: "normal"`.
    3. If the status is 404 or 410, delete the row and return.
    4. If the status is 429 or 5xx, throw, so that Inngest retries.
@@ -385,7 +385,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   1. `push-worker.js` no longer passes `tag` to `showNotification`. Edge gives the tag to macOS as the notification's identifier, and macOS replaces a notification with the same identifier silently, so no banner appears. The worker closes older notifications with the same `data.tag` itself, then shows the new notification under a fresh identifier.
   2. The bell's inbox tab shows an "Enable browser notifications" row (`EnableBrowserNotifications.tsx`). It is the soft ask: the native prompt opens only from its **Enable** click. The settings card is now titled "Browser notifications", with **Enable** and **Disable** buttons.
 - 2026-10-08: A subscription now belongs to the browser and the user signed into it, not to one company.
-  1. Migration `20261008104657` keeps one row per endpoint and makes `endpoint` unique.
+  1. `endpoint` became unique: one row per browser. A second migration did this at first; before release it was folded into `20261008002726`.
   2. `notify` reads subscriptions by `userId` only, so a user gets the push of every company they belong to.
   3. Signing out stops pushes on every path, through the `carbon-push` cookie and `clearAuthCookies` (`@carbon/auth`). The change removes the client-side unsubscribe from `AvatarMenu`.
   4. Opening a page never claims the browser: the hook reads `GET /api/push-subscription?endpoint=`.
@@ -394,4 +394,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 - 2026-10-08: Two changes from self-review:
   1. `VAPID_SUBJECT` now has a `type` in `packages/env/src/schema.ts`. `validateEnv` reports a subject that does not start with `mailto:` or `https://` at startup, not on each send.
   2. `restoreStep` (`apps/erp/app/utils/push.ts`) holds the decision of `useRestoreBrowserNotifications`: `remember`, `save` or `skip`. `push.test.ts` covers the 3 cases.
+- 2026-10-08: From the third self-review:
+  1. `carbon/send-push` carries the recipient's `userId`, and `send-push` sends only when the row still belongs to that user. The guarantee "only the recipient's browser" is now a check, not a result of how ids are assigned.
+  2. The 2 unreleased migrations are one: `20261008002726` creates `pushSubscription` with `UNIQUE ("endpoint")`.
 
