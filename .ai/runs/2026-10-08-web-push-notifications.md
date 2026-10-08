@@ -50,5 +50,7 @@
 8. If no banner appears although `send-push` returns `201`, check macOS: System Settings → Notifications → Microsoft Edge allows banners, and no Focus mode is on.
 
 ## Outcome
-- Built and verified. The user committed each round on `naveenkash/carbon-browser-notifications` and pushed the first 4 commits. Push works end to end in Edge on macOS.
-- Open: run the local migration repair for the folded migration, push the branch, and open the PR with the `Tracking spec:` line.
+- Built and verified. Push works end to end in Edge on macOS. The user committed each round on `naveenkash/carbon-browser-notifications`, and every commit is pushed.
+- Done: the local migration repair for the folded migration, and PR #1867 with the `Tracking spec:` line.
+- Later changes at the user's request: push mirrors in-app (no per-topic switch, no event filter), and the "Send a test notification" button is removed.
+- Open: screenshots for the PR, and moving the spec to `implemented/` after merge.

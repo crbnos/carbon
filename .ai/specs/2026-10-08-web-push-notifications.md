@@ -341,6 +341,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 | If the user revokes the permission in the browser, `browserNotificationsEnabled` stays set and the bell row stays hidden | Low | Account → Notifications still offers **Enable**. |
 | Safari can refuse `pushManager.subscribe()` without a user click, which the restore needs only when the browser lost its subscription | Low | The restore logs the error. **Enable** still works. |
 | Safari on iPhone or iPad supports push only for a Home Screen web app | Low | The `unsupported` text says so. The manifest already has `display: standalone`. |
+| `IntegrationSync` pushes every sweep: the outbound sweep runs every 30 minutes (`15,45 * * * *`) and, while failures remain, notifies the integration's last editor (`updatedBy`) | Low | Accepted by the user: push mirrors in-app exactly. `notify.ts` documents it on the `IntegrationSync` default. |
 | A recurring reminder (weekly training) pushes every cycle; email has a delivery cap, push does not | Low | The same notification is also in the bell each week. |
 | Company backups include `pushSubscription` rows | Low | A restored row with a dead endpoint returns 404 or 410, and `send-push` deletes it. |
 | A strict CSP later blocks the worker | Low | The strict policy already allows `worker-src 'self'` (`packages/auth/src/lib/security.ts`). |

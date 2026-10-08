@@ -197,7 +197,9 @@ const defaultDestinations: Partial<
     NotificationDestination.Email
   ],
   // In-app only: the outbound sweep re-fires while failures persist, and an
-  // email per sweep cycle would be noise.
+  // email per sweep cycle would be noise. Browser push still follows in-app,
+  // so the integration's last editor gets a push every sweep (30 min) until
+  // the failures clear — deliberate: push mirrors the bell exactly.
   [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
 };
 
