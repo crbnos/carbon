@@ -6955,9 +6955,6 @@ msgstr "ワークフローを削除"
 msgid "Deliver"
 msgstr "配送"
 
-msgid "Deliver {label}"
-msgstr "{label}を配送"
-
 msgid "Delivered"
 msgstr "配送済"
 
@@ -12031,9 +12028,6 @@ msgstr "スコープを合意済みとしてマーク"
 msgid "Mark Short"
 msgstr "短い数量をマーク"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "本日、機器を得意先に配送済とマークしてください。本日からレンタル開始となり、請求は契約の開始日およびサイクルに従います。"
-
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
@@ -12283,9 +12277,6 @@ msgstr "メタデータ"
 
 msgid "Meter"
 msgstr ""
-
-msgid "Meter Reading"
-msgstr "メーター読取値"
 
 msgid "Method"
 msgstr "方法"
@@ -16685,6 +16676,9 @@ msgstr "相対的なタイムライン・確認待ちの日付"
 msgid "Release"
 msgstr "リリース"
 
+msgid "Release {unitLabel}"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "バッチをリリース"
 
@@ -16702,6 +16696,9 @@ msgstr "リリース管理"
 msgid "Release Control"
 msgstr "リリース管理"
 
+msgid "Release date"
+msgstr ""
+
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
@@ -16713,6 +16710,9 @@ msgstr "製造指図をリリース"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "発注書{target}を{date}までにリリース"
+
+msgid "Release unit"
+msgstr ""
 
 msgid "Released"
 msgstr "リリース済み"
@@ -17282,12 +17282,6 @@ msgstr "リバートを再試行"
 msgid "Return"
 msgstr "返却"
 
-msgid "Return {unitLabel}"
-msgstr "{unitLabel}を返却"
-
-msgid "Return Date"
-msgstr "返却日"
-
 msgid "Return Home"
 msgstr "ホームに戻る"
 
@@ -17296,9 +17290,6 @@ msgstr "返品ID"
 
 msgid "Return Location"
 msgstr "返品場所"
-
-msgid "Return Notes"
-msgstr "返却メモ"
 
 msgid "Return Number"
 msgstr "返品番号"
@@ -17326,9 +17317,6 @@ msgstr "在庫に返却"
 
 msgid "Return to Service"
 msgstr "使用再開"
-
-msgid "Return Unit"
-msgstr "返却資産"
 
 msgid "returnable"
 msgstr "返品可能"
@@ -20587,9 +20575,6 @@ msgstr "この間接支出明細が転記される費用勘定。間接明細に
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "アップロードしたファイルと設定したマッピングは失われます。"
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "最終請求期間は返却日で再設定されます。事前請求済みの期間には未使用日数に対する調整が反映されます。"
-
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
 
@@ -21184,15 +21169,8 @@ msgstr "工順時間が表現される単位で、例えば「時間/個」ま�
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "契約が有効化されるとユニットと料率は確定します。"
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "単位は終了日{0}以降に返却できます。レンタルを販売として早期に終了することは、手動仕訳です。"
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "この品目は未償却残高で在庫に戻り、資産はゲインまたはロスなくクローズされます。"
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "ユニットは利用可能に戻すのではなく保全に移行します。"
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "契約期間が終了すると、その単位はあなたにとって他に用途がありません。"
@@ -21202,6 +21180,9 @@ msgstr "この品目は使用再開までの間、利用不可となります。
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "当該品目は在庫から出庫され、在庫で計上していた原価で固定資産化されます。"
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "購入時のアイテムの単価"
@@ -21526,9 +21507,6 @@ msgstr "今四半期"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
-
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "このレンタルは販売として扱われます。期末純投資が単位とともに貸借対照表に戻り、転記されていない利息スケジュールが削除されます。"
 
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "これは{effectiveDate}から{resets}件の編集済請求書をリセットします"

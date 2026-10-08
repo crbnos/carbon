@@ -6955,9 +6955,6 @@ msgstr "Excluir Fluxo de trabalho"
 msgid "Deliver"
 msgstr "Entregar"
 
-msgid "Deliver {label}"
-msgstr "Entregar {label}"
-
 msgid "Delivered"
 msgstr "Entregue"
 
@@ -12031,9 +12028,6 @@ msgstr "Marcar escopo como acordado"
 msgid "Mark Short"
 msgstr "Marcar como Falta"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "Marque a unidade como entregue ao cliente hoje. Ela vai para aluguel hoje; o faturamento segue a data de início e o ciclo do contrato."
-
 msgid "Mark to delete"
 msgstr "Marcar para exclusão"
 
@@ -12283,9 +12277,6 @@ msgstr "Metadados"
 
 msgid "Meter"
 msgstr ""
-
-msgid "Meter Reading"
-msgstr "Leitura de Medidor"
 
 msgid "Method"
 msgstr "Método"
@@ -16685,6 +16676,9 @@ msgstr "Cronograma relativo · datas a confirmar"
 msgid "Release"
 msgstr "Liberação"
 
+msgid "Release {unitLabel}"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Liberar lote de produção"
 
@@ -16702,6 +16696,9 @@ msgstr "Liberar controle"
 msgid "Release Control"
 msgstr "Liberar Controle"
 
+msgid "Release date"
+msgstr ""
+
 msgid "Release Job"
 msgstr "Liberar Trabalho"
 
@@ -16713,6 +16710,9 @@ msgstr "Liberar Ordens de produção"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "Liberar pedido de compra {target} até {date}"
+
+msgid "Release unit"
+msgstr ""
 
 msgid "Released"
 msgstr "Liberado"
@@ -17282,12 +17282,6 @@ msgstr "Tentar reverter novamente"
 msgid "Return"
 msgstr "Devolução"
 
-msgid "Return {unitLabel}"
-msgstr "Devolver {unitLabel}"
-
-msgid "Return Date"
-msgstr "Data de Devolução"
-
 msgid "Return Home"
 msgstr "Voltar para Início"
 
@@ -17296,9 +17290,6 @@ msgstr "ID de Devolução"
 
 msgid "Return Location"
 msgstr "Local de Devolução"
-
-msgid "Return Notes"
-msgstr "Observações de Devolução"
 
 msgid "Return Number"
 msgstr "Número de Devolução"
@@ -17326,9 +17317,6 @@ msgstr "Retornar ao Estoque"
 
 msgid "Return to Service"
 msgstr "Retornar à Operação"
-
-msgid "Return Unit"
-msgstr "Unidade de Devolução"
 
 msgid "returnable"
 msgstr "devolvível"
@@ -20587,9 +20575,6 @@ msgstr "A conta de despesas em que essa linha de despesa indireta é lançada; o
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "O arquivo enviado e os mapeamentos feitos serão perdidos."
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "O período final de faturamento é reajustado para a data de devolução. Um período já faturado antecipadamente recebe um ajuste pelos dias não utilizados."
-
 msgid "the first 3 to 4 weeks"
 msgstr "as primeiras 3 a 4 semanas"
 
@@ -21184,15 +21169,8 @@ msgstr "A unidade em que o tempo de roteiro de produção é expresso, como Hora
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "A unidade e suas taxas são fixas uma vez que o contrato é ativado."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "A unidade pode ser devolvida na data final ou depois dela, {0}. Terminar um aluguel tratado como venda antecipadamente é um diário manual."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "A unidade retorna ao estoque com seu valor contábil líquido e o ativo é fechado sem ganho ou perda."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "A unidade vai para Manutenção em vez de voltar para Disponível."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "A unidade não tem outro uso para você após o término do prazo."
@@ -21202,6 +21180,9 @@ msgstr "A unidade é removida da disponibilidade até ser retornada à operaçã
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "A unidade sai do estoque e se torna um ativo ao custo nele registrado."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "O preço unitário do item no momento da compra"
@@ -21526,9 +21507,6 @@ msgstr "Este Trimestre"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Isso remove seu aplicativo autenticador, portanto seu próximo login só precisa de um link mágico. Use isso quando eles tiverem perdido acesso ao seu autenticador. Afeta seu login para cada empresa a que pertencem."
-
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "Este aluguel é tratado como uma venda. O investimento líquido de fechamento volta ao balanço patrimonial com a unidade, e o cronograma de juros não contabilizado é removido."
 
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "Isso redefine {resets} faturas editadas de {effectiveDate}"

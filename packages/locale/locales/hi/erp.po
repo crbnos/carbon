@@ -6955,9 +6955,6 @@ msgstr "वर्कफ़्लो हटाएँ"
 msgid "Deliver"
 msgstr "डिलीवर करें"
 
-msgid "Deliver {label}"
-msgstr "डिलीवर करें {label}"
-
 msgid "Delivered"
 msgstr "डिलीवर किया गया"
 
@@ -12031,9 +12028,6 @@ msgstr "स्कोप को सहमत के रूप में चिह
 msgid "Mark Short"
 msgstr "कम चिह्नित करें"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "इकाई को आज ग्राहक को डिलीवर किए गए के रूप में चिह्नित करें। यह आज किराये पर जाता है; बिलिंग समझौते की प्रारंभ तिथि और चक्र का पालन करता है।"
-
 msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
 
@@ -12283,9 +12277,6 @@ msgstr "मेटाडेटा"
 
 msgid "Meter"
 msgstr ""
-
-msgid "Meter Reading"
-msgstr "मीटर रीडिंग"
 
 msgid "Method"
 msgstr "तरीका"
@@ -16685,6 +16676,9 @@ msgstr "सापेक्ष समयरेखा · तारीखें प
 msgid "Release"
 msgstr "जारी करें"
 
+msgid "Release {unitLabel}"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "बैच जारी करें"
 
@@ -16702,6 +16696,9 @@ msgstr "नियंत्रण जारी करें"
 msgid "Release Control"
 msgstr "नियंत्रण जारी करें"
 
+msgid "Release date"
+msgstr ""
+
 msgid "Release Job"
 msgstr "जॉब जारी करें"
 
@@ -16713,6 +16710,9 @@ msgstr "जॉब को जारी करें"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "क्रय आदेश {target} को {date} तक जारी करें"
+
+msgid "Release unit"
+msgstr ""
 
 msgid "Released"
 msgstr "जारी किया गया"
@@ -17282,12 +17282,6 @@ msgstr "पूर्ववत् करने का पुन: प्रया�
 msgid "Return"
 msgstr "वापसी"
 
-msgid "Return {unitLabel}"
-msgstr "वापस करें {unitLabel}"
-
-msgid "Return Date"
-msgstr "वापसी की तारीख"
-
 msgid "Return Home"
 msgstr "घर लौटें"
 
@@ -17296,9 +17290,6 @@ msgstr "रिटर्न ID"
 
 msgid "Return Location"
 msgstr "रिटर्न स्थान"
-
-msgid "Return Notes"
-msgstr "वापसी नोट्स"
 
 msgid "Return Number"
 msgstr "रिटर्न संख्या"
@@ -17326,9 +17317,6 @@ msgstr "इन्वेंटरी में वापसी"
 
 msgid "Return to Service"
 msgstr "सेवा में वापसी"
-
-msgid "Return Unit"
-msgstr "रिटर्न इकाई"
 
 msgid "returnable"
 msgstr "रिटर्न योग्य"
@@ -20587,9 +20575,6 @@ msgstr "व्यय खाता जिस पर यह अप्रत्य�
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "आपके द्वारा अपलोड की गई फ़ाइल और की गई मैपिंग खो जाएँगी।"
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "अंतिम बिलिंग अवधि वापसी की तारीख तक पुनः काट दी जाती है। पहले से बिल की गई अवधि को अप्रयुक्त दिनों के लिए समायोजन मिलता है।"
-
 msgid "the first 3 to 4 weeks"
 msgstr "पहले 3 से 4 सप्ताह"
 
@@ -21184,15 +21169,8 @@ msgstr "वह इकाई जिसमें रूटिंग समय व�
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "समझौता सक्रिय होने के बाद इकाई और इसकी दरें तय हो जाती हैं।"
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "इकाई को समाप्ति तिथि {0} के बाद या उसके बाद वापस किया जा सकता है। किराये को जल्दी बिक्री के रूप में समाप्त करना एक मैनुअल जर्नल है।"
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "इकाई अपने शुद्ध बही मूल्य पर स्टॉक में वापस जाती है और संपत्ति बिना लाभ या हानि के बंद कर दी जाती है।"
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "इकाई उपलब्ध स्थिति में लौटने के बजाय रखरखाव में जाती है।"
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "अवधि समाप्त होने के बाद इकाई का आपके लिए कोई अन्य उपयोग नहीं है।"
@@ -21202,6 +21180,9 @@ msgstr "इकाई उपलब्धता से हटा दी जात�
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "इकाई स्टॉक से निकलती है और इन्वेंटरी में दर्ज लागत पर संपत्ति बन जाती है।"
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "खरीद के समय आइटम की इकाई मूल्य"
@@ -21526,9 +21507,6 @@ msgstr "इस त्रैमासिक"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
-
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "इस किराये को बिक्री के रूप में माना जाता है। समाप्त करने वाली शुद्ध निवेश इकाई के साथ तुलन पत्र पर वापस आती है, और अनपोस्ट ब्याज शेड्यूल हटा दिया जाता है।"
 
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "यह {resets} संपादित चालान {effectiveDate} से रीसेट करता है।"

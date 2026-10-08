@@ -13,13 +13,25 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuBadgeDollarSign, LuTrash, LuTruck, LuUndo2 } from "react-icons/lu";
+import {
+  LuBadgeDollarSign,
+  LuCircleSlash,
+  LuTrash,
+  LuTruck,
+  LuUndo2
+} from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime } from "~/components";
+import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { rentalLineDocuments } from "../../sales.utils";
 import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalStatus from "./RentalStatus";
-import type { RentalAgreement, RentalAgreementLine } from "./types";
+import type {
+  RentalAgreement,
+  RentalAgreementLine,
+  RentalAgreementRouteData
+} from "./types";
 import { rentalUnitLabel, useRentalLineActions } from "./useRentalLineActions";
 
 type RentalAgreementLineSummaryProps = {
@@ -37,7 +49,19 @@ const RentalAgreementLineSummary = ({
   const actions = useRentalLineActions(rentalAgreement);
   const state = actions.stateOf(line);
   const hasActions =
-    state.canDeliver || state.canReturn || state.canSell || state.canDelete;
+    state.canDeliver ||
+    state.canReturn ||
+    state.canRelease ||
+    state.canSell ||
+    state.canDelete;
+  const routeData = useRouteData<RentalAgreementRouteData>(
+    path.to.rentalAgreement(rentalAgreement.id!)
+  );
+  const documents = rentalLineDocuments(
+    line.id,
+    routeData?.shipments ?? [],
+    routeData?.receipts ?? []
+  );
 
   return (
     <>
@@ -74,10 +98,34 @@ const RentalAgreementLineSummary = ({
               {line.fixedAsset?.serialNumber || "—"}
             </DetailRow>
             <DetailRow label={t`Delivered`}>
-              <DateTime value={line.deliveredAt} variant="date" fallback="—" />
+              <HStack spacing={2}>
+                <DateTime
+                  value={line.deliveredAt}
+                  variant="date"
+                  fallback="—"
+                />
+                {documents.shipment && (
+                  <Link
+                    to={path.to.shipment(documents.shipment.id)}
+                    className="hover:underline"
+                  >
+                    {documents.shipment.shipmentId}
+                  </Link>
+                )}
+              </HStack>
             </DetailRow>
             <DetailRow label={t`Returned`}>
-              <DateTime value={line.returnedAt} variant="date" fallback="—" />
+              <HStack spacing={2}>
+                <DateTime value={line.returnedAt} variant="date" fallback="—" />
+                {documents.receipt && (
+                  <Link
+                    to={path.to.receipt(documents.receipt.id)}
+                    className="hover:underline"
+                  >
+                    {documents.receipt.receiptId}
+                  </Link>
+                )}
+              </HStack>
             </DetailRow>
           </div>
         </CardContent>
@@ -102,6 +150,16 @@ const RentalAgreementLineSummary = ({
                   onClick={() => actions.open("return", line)}
                 >
                   <Trans>Return</Trans>
+                </Button>
+              )}
+              {state.canRelease && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuCircleSlash />}
+                  isDisabled={state.releaseDisabled}
+                  onClick={() => actions.open("release", line)}
+                >
+                  <Trans>Release unit</Trans>
                 </Button>
               )}
               {state.canSell && (

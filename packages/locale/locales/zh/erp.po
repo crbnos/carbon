@@ -6955,9 +6955,6 @@ msgstr "删除工作流"
 msgid "Deliver"
 msgstr "交付"
 
-msgid "Deliver {label}"
-msgstr "交付 {label}"
-
 msgid "Delivered"
 msgstr "已交付"
 
@@ -12031,9 +12028,6 @@ msgstr "将范围标记为已同意"
 msgid "Mark Short"
 msgstr "标记短缺"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "将单位标记为今天已交付给客户。它从今天开始出租；计费遵循协议的开始日期和周期。"
-
 msgid "Mark to delete"
 msgstr "标记删除"
 
@@ -12283,9 +12277,6 @@ msgstr "元数据"
 
 msgid "Meter"
 msgstr ""
-
-msgid "Meter Reading"
-msgstr "计量读数"
 
 msgid "Method"
 msgstr "方法"
@@ -16685,6 +16676,9 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
+msgid "Release {unitLabel}"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "下达生产批次"
 
@@ -16702,6 +16696,9 @@ msgstr "下达控制"
 msgid "Release Control"
 msgstr "下达控制"
 
+msgid "Release date"
+msgstr ""
+
 msgid "Release Job"
 msgstr "下达工单"
 
@@ -16713,6 +16710,9 @@ msgstr "下达工单"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "下达采购订单 {target} 至 {date}"
+
+msgid "Release unit"
+msgstr ""
 
 msgid "Released"
 msgstr "已下达"
@@ -17282,12 +17282,6 @@ msgstr "重试还原"
 msgid "Return"
 msgstr "退还"
 
-msgid "Return {unitLabel}"
-msgstr "退还 {unitLabel}"
-
-msgid "Return Date"
-msgstr "退还日期"
-
 msgid "Return Home"
 msgstr "返回首页"
 
@@ -17296,9 +17290,6 @@ msgstr "退货编号"
 
 msgid "Return Location"
 msgstr "退货地点"
-
-msgid "Return Notes"
-msgstr "退还备注"
 
 msgid "Return Number"
 msgstr "退货号"
@@ -17326,9 +17317,6 @@ msgstr "返回库存"
 
 msgid "Return to Service"
 msgstr "恢复服务"
-
-msgid "Return Unit"
-msgstr "退还单位"
 
 msgid "returnable"
 msgstr "可退货的"
@@ -20587,9 +20575,6 @@ msgstr "此间接支出行过账至的费用科目；因为间接行没有物料
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "您上传的文件和已完成的映射将会丢失。"
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "最后一个计费周期重新调整到退还日期。提前计费的周期将针对未使用的天数进行调整。"
-
 msgid "the first 3 to 4 weeks"
 msgstr "前3到4周"
 
@@ -21184,15 +21169,8 @@ msgstr "路线工时的表达单位,例如小时/件或总小时数,告诉Carbon
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "协议激活后，单位及其费率被固定。"
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "该单位可以在结束日期 {0} 或之后返回。将此租赁视为销售而提前结束需要手动凭证。"
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "该件按其账面净值返回库存，资产已关闭，无收益或损失。"
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "该单位进入维护而不是返回可用。"
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "期限结束后，该单位对您没有其他用途。"
@@ -21202,6 +21180,9 @@ msgstr "该件在返回服务前不可用。折旧继续，其会计处理保持
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "该件离开库存，并以库存的成本作为资产进行记账。"
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "购买时该商品的单价"
@@ -21526,9 +21507,6 @@ msgstr "本季度"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
-
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "此租赁被视为销售。结束净投资与该单位一起回到资产负债表上，未过账的利息计划被删除。"
 
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "这会重置来自{effectiveDate}的{resets}个已编辑发票"

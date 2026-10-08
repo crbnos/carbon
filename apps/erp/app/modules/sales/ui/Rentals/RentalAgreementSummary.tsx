@@ -17,13 +17,15 @@ import type { ReactNode } from "react";
 import { LuImage, LuTruck, LuUndo2 } from "react-icons/lu";
 import { Link } from "react-router";
 import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
-import { useCurrencyDecimals } from "~/hooks";
+import { useCurrencyDecimals, useRouteData } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
+import { rentalLineDocuments } from "../../sales.utils";
 import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalStatus from "./RentalStatus";
 import type {
   RentalAgreement,
   RentalAgreementLine,
+  RentalAgreementRouteData,
   RentalAgreementStatusType,
   RentalBillingPeriod
 } from "./types";
@@ -51,6 +53,11 @@ const RentalAgreementSummary = ({
   const currencyCode = rentalAgreement.currencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const actions = useRentalLineActions(rentalAgreement);
+  const routeData = useRouteData<RentalAgreementRouteData>(
+    path.to.rentalAgreement(rentalAgreement.id!)
+  );
+  const shipments = routeData?.shipments ?? [];
+  const receipts = routeData?.receipts ?? [];
 
   const billed = periods
     .filter((period) => period.status === "Invoiced")
@@ -111,6 +118,7 @@ const RentalAgreementSummary = ({
                   currencyCode={currencyCode}
                   line={line}
                   state={actions.stateOf(line)}
+                  documents={rentalLineDocuments(line.id, shipments, receipts)}
                   onDeliver={() => actions.open("deliver", line)}
                   onReturn={() => actions.open("return", line)}
                 />
@@ -192,6 +200,7 @@ function SummaryLine({
   currencyCode,
   line,
   state,
+  documents,
   onDeliver,
   onReturn
 }: {
@@ -199,6 +208,7 @@ function SummaryLine({
   currencyCode: string;
   line: RentalAgreementLine;
   state: RentalLineActionState;
+  documents: ReturnType<typeof rentalLineDocuments>;
   onDeliver: () => void;
   onReturn: () => void;
 }) {
@@ -254,6 +264,22 @@ function SummaryLine({
               <RentalStatus status={line.status} />
               {line.lessorClassification && (
                 <LeaseClassificationBadge value={line.lessorClassification} />
+              )}
+              {documents.shipment && (
+                <Link
+                  to={path.to.shipment(documents.shipment.id)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  {documents.shipment.shipmentId}
+                </Link>
+              )}
+              {documents.receipt && (
+                <Link
+                  to={path.to.receipt(documents.receipt.id)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  {documents.receipt.receiptId}
+                </Link>
               )}
             </HStack>
           </VStack>

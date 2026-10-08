@@ -6955,9 +6955,6 @@ msgstr "İş Akışını Sil"
 msgid "Deliver"
 msgstr "Teslim Et"
 
-msgid "Deliver {label}"
-msgstr "Teslim Et {label}"
-
 msgid "Delivered"
 msgstr "Teslim Edildi"
 
@@ -12031,9 +12028,6 @@ msgstr "Kapsamı kabul edildi olarak işaretle"
 msgid "Mark Short"
 msgstr "Az eksik olarak işaretle"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "Birimi müşteriye bugün teslim edildi olarak işaretleyin. Bugün kiralama başlar; faturalandırma sözleşmenin başlangıç tarihi ve döngüsünü izler."
-
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
@@ -12283,9 +12277,6 @@ msgstr "Meta Veri"
 
 msgid "Meter"
 msgstr ""
-
-msgid "Meter Reading"
-msgstr "Sayaç Okuması"
 
 msgid "Method"
 msgstr "Yöntem"
@@ -16685,6 +16676,9 @@ msgstr "Göreceli zaman çizelgesi · tarihler teyit edilecektir"
 msgid "Release"
 msgstr "Serbest Bırakma"
 
+msgid "Release {unitLabel}"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Partiyi Serbest Bırak"
 
@@ -16702,6 +16696,9 @@ msgstr "Serbest bırakma kontrolü"
 msgid "Release Control"
 msgstr "Serbest Bırakma Kontrolü"
 
+msgid "Release date"
+msgstr ""
+
 msgid "Release Job"
 msgstr "İş emrini serbest bırak"
 
@@ -16713,6 +16710,9 @@ msgstr "İş emirlerini Serbest Bırak"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "{target} satın alma siparişini {date}'ye kadar serbest bırak"
+
+msgid "Release unit"
+msgstr ""
 
 msgid "Released"
 msgstr "Yayınlandı"
@@ -17282,12 +17282,6 @@ msgstr "Geri alma'yı tekrar dene"
 msgid "Return"
 msgstr "İade"
 
-msgid "Return {unitLabel}"
-msgstr "İade Et {unitLabel}"
-
-msgid "Return Date"
-msgstr "İade Tarihi"
-
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
 
@@ -17296,9 +17290,6 @@ msgstr "İade Kimliği"
 
 msgid "Return Location"
 msgstr "İade Konumu"
-
-msgid "Return Notes"
-msgstr "İade Notları"
 
 msgid "Return Number"
 msgstr "İade Numarası"
@@ -17326,9 +17317,6 @@ msgstr "Envantera Döndür"
 
 msgid "Return to Service"
 msgstr "Hizmete Döndür"
-
-msgid "Return Unit"
-msgstr "İade Adetı"
 
 msgid "returnable"
 msgstr "iadesine uygun"
@@ -20587,9 +20575,6 @@ msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı s
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "Son faturalama dönemi iade tarihine göre yeniden ayarlanır. Önceden faturalanan bir dönem, kullanılmayan günler için bir düzeltme alır."
-
 msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"
 
@@ -21184,15 +21169,8 @@ msgstr "Rota zamanının ifade edildiği birim, örneğin Saatler/Parça veya To
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "Sözleşme etkinleştirildikten sonra adet ve oranları sabitlenir."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "Birim, {0} bitiş tarihinde veya sonrasında iade edilebilir. Bir kiralama'yı satış olarak ele almayı erkenden sonlandırmak manuel bir muhasebe fişi'dir."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "Birim, net defter değerindeki stoka geri gider ve varlık kar veya zarar olmaksızın kapatılır."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "Adet, kullanılabilir durumuna geri dönmek yerine bakıma gönderilir."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "Dönem sona erdikten sonra birim'in sizin için başka hiçbir kullanımı yoktur."
@@ -21202,6 +21180,9 @@ msgstr "Birim, hizmete döndürülünceye kadar kullanılabilirlikten kaldırıl
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "Adet stoktan çıkar ve envanter tarafından taşınan maliyette bir varlık haline gelir."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Satın alma zamanındaki birim fiyat"
@@ -21526,9 +21507,6 @@ msgstr "Bu Çeyrek"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Bu işlem onların kimlik doğrulayıcı uygulamasını kaldırır, bu nedenle sonraki oturum açışları yalnızca sihirli bir bağlantı gerektirir. Kimlik doğrulayıcılarına erişimini kaybettikleri zaman bunu kullanın. Ait oldukları her şirket için oturum açışlarını etkiler."
-
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "Bu kiralama satış olarak ele alınır. Kapanış net yatırım birim ile birlikte bilanço'ya geri gelir ve muhasebeleştirilmemiş faiz çizelgesi kaldırılır."
 
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "Bu, {effectiveDate} tarihinden {resets} düzenlenen faturayı sıfırlar"

@@ -6955,9 +6955,6 @@ msgstr "Удалить рабочий процесс"
 msgid "Deliver"
 msgstr "Доставить"
 
-msgid "Deliver {label}"
-msgstr "Доставить {label}"
-
 msgid "Delivered"
 msgstr "Доставлено"
 
@@ -12031,9 +12028,6 @@ msgstr "Отметить область как согласованную"
 msgid "Mark Short"
 msgstr "Отметить как недостача"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "Отметить Единицу как доставленную Покупателю сегодня. Она сдается в аренду сегодня; выставление счетов начинается с даты начала договора и следует установленному циклу."
-
 msgid "Mark to delete"
 msgstr "Отметить к удалению"
 
@@ -12283,9 +12277,6 @@ msgstr "Метаданные"
 
 msgid "Meter"
 msgstr ""
-
-msgid "Meter Reading"
-msgstr "Показание счетчика"
 
 msgid "Method"
 msgstr "Метод"
@@ -16685,6 +16676,9 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
+msgid "Release {unitLabel}"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
@@ -16702,6 +16696,9 @@ msgstr "Управление запуском в работу"
 msgid "Release Control"
 msgstr "Управление запуском в работу"
 
+msgid "Release date"
+msgstr ""
+
 msgid "Release Job"
 msgstr "Запустить производственный заказ в работу"
 
@@ -16713,6 +16710,9 @@ msgstr "Запустить в работу производственные за
 
 msgid "Release purchase order {target} by {date}"
 msgstr "Запустить заказ поставщику {target} к {date}"
+
+msgid "Release unit"
+msgstr ""
 
 msgid "Released"
 msgstr "Выпущено"
@@ -17282,12 +17282,6 @@ msgstr "Повторить восстановление"
 msgid "Return"
 msgstr "Возврат"
 
-msgid "Return {unitLabel}"
-msgstr "Вернуть {unitLabel}"
-
-msgid "Return Date"
-msgstr "Дата возврата"
-
 msgid "Return Home"
 msgstr "Вернуться на главную"
 
@@ -17296,9 +17290,6 @@ msgstr "ID возврата"
 
 msgid "Return Location"
 msgstr "Место возврата"
-
-msgid "Return Notes"
-msgstr "Примечания к возврату"
 
 msgid "Return Number"
 msgstr "Номер возврата"
@@ -17326,9 +17317,6 @@ msgstr "Вернуть в запасы"
 
 msgid "Return to Service"
 msgstr "Вернуть в эксплуатацию"
-
-msgid "Return Unit"
-msgstr "Возвращаемая единица"
 
 msgid "returnable"
 msgstr "возвратный"
@@ -20587,9 +20575,6 @@ msgstr "Счет расходов, на который относится эта
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Загруженный файл и созданные сопоставления будут потеряны."
 
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "Последний период выставления счетов переформируется по дате возврата. Период, уже выставленный авансом, получает корректировку за неиспользованные дни."
-
 msgid "the first 3 to 4 weeks"
 msgstr "первые 3–4 недели"
 
@@ -21184,15 +21169,8 @@ msgstr "Единица, в которой выражается время мар
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "Единица и ее ставки фиксируются при активации соглашения."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "Единица может быть возвращена на дату {0} или после нее. Досрочное завершение аренды, учитываемой как продажа, является ручной операцией."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "Единица возвращается в запас по остаточной стоимости, и актив закрывается без прибыли и убытка."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "Единица переходит на техническое обслуживание вместо возврата в доступные."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "Единица больше не имеет для вас другого применения по окончании срока."
@@ -21202,6 +21180,9 @@ msgstr "Единица удаляется из доступного до ее в
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "Единица выводится из запасов и переводится в активы по их балансовой стоимости."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr ""
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Цена за единицу товара на момент покупки"
@@ -21526,9 +21507,6 @@ msgstr "Этот квартал"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Это удаляет их приложение аутентификатора, поэтому их следующий вход требует только волшебной ссылки. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход для каждой организации, которой они принадлежат."
-
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "Эта аренда учитывается как продажа. Закрывающие чистые инвестиции возвращаются на бухгалтерский баланс вместе с единицей, и непроведенный график процентов удаляется."
 
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "Это сбрасывает {resets} отредактированные счета-фактуры с {effectiveDate}"

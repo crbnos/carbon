@@ -44,7 +44,7 @@ in spec → Open Questions.
 - [x] Task 20: Print a Delivery Ticket
 - [x] Task 21: Add Deliver and Return to the agreement header
 - [x] Task 22: Replace the `return` type with `release`
-- [ ] Task 23: Repoint the unit actions and add Release unit
+- [x] Task 23: Repoint the unit actions and add Release unit
 - [ ] Task 24: Run the full verification sweep
 - [ ] Task 25: Extract and translate the new strings
 - [ ] Task 26: Update the docs
