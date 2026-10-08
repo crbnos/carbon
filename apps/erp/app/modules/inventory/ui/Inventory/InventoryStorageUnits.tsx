@@ -31,6 +31,9 @@ import {
   ModalHeader,
   ModalTitle,
   Input as SearchInput,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   useDisclosure,
   VStack
@@ -400,15 +403,21 @@ const InventoryStorageUnits = ({
       )}
       {/* A fixed asset is one serialized unit; a batch row is many. */}
       {item.trackedEntityId && isSerial && canCapitalize && (
-        <Link to={capitalizeHref(item)}>
-          <IconButton
-            aria-label={t`Capitalize as Fixed Asset`}
-            title={t`Capitalize as Fixed Asset`}
-            variant="ghost"
-            size="sm"
-            icon={<LuBuilding2 />}
-          />
-        </Link>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link to={capitalizeHref(item)}>
+              <IconButton
+                aria-label={t`Capitalize as Fixed Asset`}
+                variant="ghost"
+                size="sm"
+                icon={<LuBuilding2 />}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>
+            <Trans>Capitalize as Fixed Asset</Trans>
+          </TooltipContent>
+        </Tooltip>
       )}
       <IconButton
         aria-label={t`Update Quantity`}
