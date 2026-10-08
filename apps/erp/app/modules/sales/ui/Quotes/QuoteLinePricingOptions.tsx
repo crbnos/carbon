@@ -65,18 +65,30 @@ export const deselectedLine: SelectedLine = {
   convertedUnitPrice: 0
 };
 
-/** A quote line's total for the chosen quantity: price, add-ons, shipping, tax. */
-export function getQuoteLineTotal(line: SelectedLine) {
-  const net = (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0);
+function lineNet(line: SelectedLine) {
+  return (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0);
+}
+
+export function getQuoteLineSubtotal(line: SelectedLine) {
   return (
-    net +
+    lineNet(line) +
     (line.convertedAddOn ?? 0) +
-    (line.convertedShippingCost ?? 0) +
-    (net +
+    (line.convertedShippingCost ?? 0)
+  );
+}
+
+/** Tax applies to the taxable add-ons only, not every add-on. */
+export function getQuoteLineTax(line: SelectedLine) {
+  return (
+    (lineNet(line) +
       (line.convertedTaxableAddOn ?? 0) +
       (line.convertedShippingCost ?? 0)) *
-      (line.taxPercent ?? 0)
+    (line.taxPercent ?? 0)
   );
+}
+
+export function getQuoteLineTotal(line: SelectedLine) {
+  return getQuoteLineSubtotal(line) + getQuoteLineTax(line);
 }
 
 type LinePricingOptionsProps = {
@@ -421,7 +433,20 @@ export const LinePricingOptions = ({
                 </Td>
                 <Td className="text-right">
                   <MotionMoney
-                    value={getQuoteLineTotal(selectedLine)}
+                    value={getQuoteLineSubtotal(selectedLine)}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
+                  />
+                </Td>
+              </Tr>
+
+              <Tr key="tax" className="border-b border-border">
+                <Td>
+                  Tax ({percentFormatter.format(selectedLine.taxPercent)})
+                </Td>
+                <Td className="text-right">
+                  <MotionMoney
+                    value={getQuoteLineTax(selectedLine)}
                     currency={quoteCurrency}
                     decimalPlaces={currencyDecimals}
                   />
@@ -434,17 +459,7 @@ export const LinePricingOptions = ({
                 </Td>
                 <Td className="text-right">
                   <MotionMoney
-                    value={
-                      (selectedLine.convertedNetUnitPrice ?? 0) *
-                        selectedLine.quantity +
-                      (selectedLine.convertedAddOn ?? 0) +
-                      (selectedLine.convertedShippingCost ?? 0) +
-                      ((selectedLine.convertedNetUnitPrice ?? 0) *
-                        selectedLine.quantity +
-                        (selectedLine.convertedTaxableAddOn ?? 0) +
-                        (selectedLine.convertedShippingCost ?? 0)) *
-                        (selectedLine.taxPercent ?? 0)
-                    }
+                    value={getQuoteLineTotal(selectedLine)}
                     currency={quoteCurrency}
                     decimalPlaces={currencyDecimals}
                   />
