@@ -19,7 +19,7 @@ type ViewportProviderProps = {
   children: ReactNode;
 };
 
-const Context = createContext<{ initialViewport: Viewport } | null>(null);
+const Context = createContext<Viewport | null>(null);
 
 const readViewport = (): Viewport => {
   if (window.matchMedia(PHONE_QUERY).matches) return "phone";
@@ -52,7 +52,7 @@ export const ViewportProvider = ({
   }, []);
 
   return (
-    <Context.Provider value={{ initialViewport }}>{children}</Context.Provider>
+    <Context.Provider value={initialViewport}>{children}</Context.Provider>
   );
 };
 
@@ -67,11 +67,11 @@ export function useViewport(): {
   isTablet: boolean;
   isDesktop: boolean;
 } {
-  const context = useContext(Context);
+  const initialViewport = useContext(Context);
   const viewport = useSyncExternalStore(
     subscribe,
     readViewport,
-    () => context?.initialViewport ?? "desktop"
+    () => initialViewport ?? "desktop"
   );
   return useMemo(
     () => ({

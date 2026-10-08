@@ -15,7 +15,7 @@ import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { mergeRefs } from "./utils/react";
-import { HitArea } from "./Viewport";
+import { HitArea, useViewport } from "./Viewport";
 
 export const buttonVariants = cva(
   [
@@ -171,6 +171,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button";
     const innerRef = useRef<HTMLButtonElement>(null);
     const presentation = useActionPresentation();
+    const { isPhone } = useViewport();
     // The badge shows the first binding; the rest are silent alternatives.
     const primaryShortcut = Array.isArray(shortcut) ? shortcut[0] : shortcut;
     const badgeShortcut =
@@ -256,7 +257,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         role={asChild ? undefined : "button"}
         ref={mergeRefs(ref, innerRef)}
       >
-        <HitArea />
+        {isPhone && <HitArea />}
         {isLoading && (
           <Spinner className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")} />
         )}

@@ -17,6 +17,7 @@ import {
   createContext,
   forwardRef,
   useContext,
+  useEffect,
   useId,
   useRef,
   useState
@@ -109,6 +110,8 @@ export function MenuSheetRoot({
 }
 
 const LONG_PRESS_MS = 500;
+/** A held finger drifts; only a move past this many pixels is a scroll. */
+const LONG_PRESS_SLOP_PX = 10;
 
 /**
  * A context menu's trigger: a right-click, or a touch held still for half a
@@ -117,33 +120,78 @@ const LONG_PRESS_MS = 500;
 export const MenuSheetContextTrigger = forwardRef<
   HTMLSpanElement,
   ComponentPropsWithoutRef<"span"> & { asChild?: boolean; disabled?: boolean }
->(({ asChild, disabled, onContextMenu, onPointerDown, ...props }, ref) => {
-  const { setOpen } = useMenuSheet();
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  const clear = () => clearTimeout(timer.current);
-  const Comp = asChild ? Slot : "span";
-  return (
-    <Comp
-      ref={ref}
-      {...props}
-      onContextMenu={(event: MouseEvent<HTMLSpanElement>) => {
-        onContextMenu?.(event);
-        if (disabled || event.defaultPrevented) return;
-        event.preventDefault();
-        setOpen(true);
-      }}
-      onPointerDown={(event: PointerEvent<HTMLSpanElement>) => {
-        onPointerDown?.(event);
-        if (disabled || event.pointerType !== "touch") return;
-        clear();
-        timer.current = setTimeout(() => setOpen(true), LONG_PRESS_MS);
-      }}
-      onPointerUp={clear}
-      onPointerMove={clear}
-      onPointerCancel={clear}
-    />
-  );
-});
+>(
+  (
+    {
+      asChild,
+      disabled,
+      className,
+      onClickCapture,
+      onContextMenu,
+      onPointerDown,
+      ...props
+    },
+    ref
+  ) => {
+    const { setOpen } = useMenuSheet();
+    const timer = useRef<ReturnType<typeof setTimeout>>();
+    const start = useRef<{ x: number; y: number } | null>(null);
+    // The click that follows a long-press release must not reach the row.
+    const fired = useRef(false);
+    const clear = () => {
+      clearTimeout(timer.current);
+      start.current = null;
+    };
+    useEffect(() => () => clearTimeout(timer.current), []);
+    const Comp = asChild ? Slot : "span";
+    return (
+      <Comp
+        ref={ref}
+        {...props}
+        className={cn("[-webkit-touch-callout:none] select-none", className)}
+        onContextMenu={(event: MouseEvent<HTMLSpanElement>) => {
+          onContextMenu?.(event);
+          if (disabled || event.defaultPrevented) return;
+          event.preventDefault();
+          setOpen(true);
+        }}
+        onPointerDown={(event: PointerEvent<HTMLSpanElement>) => {
+          onPointerDown?.(event);
+          fired.current = false;
+          if (disabled || event.pointerType !== "touch") return;
+          clear();
+          start.current = { x: event.clientX, y: event.clientY };
+          timer.current = setTimeout(() => {
+            fired.current = true;
+            start.current = null;
+            setOpen(true);
+          }, LONG_PRESS_MS);
+        }}
+        onPointerMove={(event: PointerEvent<HTMLSpanElement>) => {
+          const origin = start.current;
+          if (
+            origin &&
+            Math.hypot(event.clientX - origin.x, event.clientY - origin.y) >
+              LONG_PRESS_SLOP_PX
+          ) {
+            clear();
+          }
+        }}
+        onPointerUp={clear}
+        onPointerCancel={clear}
+        onClickCapture={(event: MouseEvent<HTMLSpanElement>) => {
+          if (fired.current) {
+            fired.current = false;
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          onClickCapture?.(event);
+        }}
+      />
+    );
+  }
+);
 MenuSheetContextTrigger.displayName = "MenuSheetContextTrigger";
 
 export const MenuSheetContent = forwardRef<

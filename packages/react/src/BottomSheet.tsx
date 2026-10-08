@@ -9,15 +9,17 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import type {
   ComponentPropsWithoutRef,
   ElementRef,
-  HTMLAttributes
+  HTMLAttributes,
+  PointerEvent
 } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useRef } from "react";
 import { LuChevronLeft, LuX } from "react-icons/lu";
 
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
+import { mergeRefs } from "./utils/react";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 /**
@@ -54,6 +56,10 @@ type BottomSheetContentProps = ComponentPropsWithoutRef<
   size?: "auto" | "full";
 };
 
+const SHEET_SPRING = "transform 200ms cubic-bezier(0.32, 0.72, 0, 1)";
+/** px per ms: a flick this fast dismisses whatever the distance. */
+const FLICK_VELOCITY = 0.5;
+
 const BottomSheetContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
   BottomSheetContentProps
@@ -62,16 +68,63 @@ const BottomSheetContent = forwardRef<
   const { isPhone } = useViewport();
   const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
   const dismissable = useDialogDismissable();
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const drag = useRef<{ startY: number; lastY: number; lastT: number } | null>(
+    null
+  );
+  const canDrag = isPhone && dismissable;
+
+  // Phones: drag the grabber down to dismiss, past a third of the sheet or
+  // with a flick; a shorter drag springs back.
+  const onDragStart = (event: PointerEvent<HTMLDivElement>) => {
+    if (!canDrag || !sheetRef.current) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = {
+      startY: event.clientY,
+      lastY: event.clientY,
+      lastT: event.timeStamp
+    };
+    sheetRef.current.style.transition = "none";
+  };
+  const onDragMove = (event: PointerEvent<HTMLDivElement>) => {
+    const state = drag.current;
+    const sheet = sheetRef.current;
+    if (!state || !sheet) return;
+    const offset = Math.max(0, event.clientY - state.startY);
+    sheet.style.transform = `translateY(${offset}px)`;
+    drag.current = { ...state, lastY: event.clientY, lastT: event.timeStamp };
+  };
+  const onDragEnd = (event: PointerEvent<HTMLDivElement>) => {
+    const state = drag.current;
+    const sheet = sheetRef.current;
+    drag.current = null;
+    if (!state || !sheet) return;
+    const offset = Math.max(0, event.clientY - state.startY);
+    const velocity =
+      (event.clientY - state.lastY) /
+      Math.max(1, event.timeStamp - state.lastT);
+    sheet.style.transition = SHEET_SPRING;
+    if (offset > sheet.offsetHeight / 3 || velocity > FLICK_VELOCITY) {
+      // The exit animation starts from where the finger left the sheet.
+      closeRef.current?.click();
+    } else {
+      sheet.style.transform = "";
+    }
+  };
+
   return (
     <ClientOnly fallback={null}>
       {() => (
         <DialogPrimitive.Portal>
           <BottomSheetOverlay />
           <DialogPrimitive.Content
-            ref={ref}
+            ref={mergeRefs(ref, sheetRef)}
             className={cn(
               "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg duration-300",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+              // Phones: a sheet settles in on the iOS curve and leaves faster.
+              "max-md:ease-[cubic-bezier(0.32,0.72,0,1)] max-md:data-[state=open]:[animation-duration:300ms] max-md:data-[state=closed]:[animation-duration:200ms]",
               "max-md:max-h-[88dvh] max-md:rounded-t-[14px] max-md:bg-popover max-md:pb-safe",
               size === "full" &&
                 "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none",
@@ -81,14 +134,22 @@ const BottomSheetContent = forwardRef<
             onOpenAutoFocus={onOpenAutoFocus}
           >
             <div
+              aria-hidden
               className={cn(
-                "mx-auto mt-3 mb-2 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20",
-                "max-md:mt-2 max-md:mb-1 max-md:h-[5px] max-md:w-9"
+                "flex shrink-0 justify-center pt-3 pb-2 max-md:pt-2 max-md:pb-1",
+                canDrag && "touch-none cursor-grab active:cursor-grabbing"
               )}
-            />
+              onPointerDown={onDragStart}
+              onPointerMove={onDragMove}
+              onPointerUp={onDragEnd}
+              onPointerCancel={onDragEnd}
+            >
+              <div className="h-1.5 w-12 rounded-full bg-muted-foreground/20 max-md:h-[5px] max-md:w-9" />
+            </div>
             <ActionPresentationBoundary>{children}</ActionPresentationBoundary>
             {isPhone && dismissable && (
               <DialogPrimitive.Close
+                ref={closeRef}
                 aria-label={t`Close`}
                 className="absolute top-3 right-1 flex size-11 items-center justify-center rounded-full text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
