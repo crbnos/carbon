@@ -507,8 +507,8 @@ msgstr "{orderLabel} will be reopened for editing as revision {0}. The document 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# part} other {# parts}}"
 
-msgid "{percent}% picked"
-msgstr "{percent}% picked"
+msgid "{percent} picked"
+msgstr "{percent} picked"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"

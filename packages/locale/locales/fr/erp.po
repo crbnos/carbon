@@ -507,7 +507,7 @@ msgstr "{orderLabel} sera rouvert pour modification en tant que révision {0}. L
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# pièce} other {# pièces}}"
 
-msgid "{percent}% picked"
+msgid "{percent} picked"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"

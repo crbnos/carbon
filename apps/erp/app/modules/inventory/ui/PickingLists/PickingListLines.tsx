@@ -47,7 +47,7 @@ import {
 import { Await, useFetcher } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions } from "~/hooks";
+import { usePercentFormatter, usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isPickingListLocked } from "../../inventory.models";
@@ -205,10 +205,11 @@ function PickingKitCard({
   const progress = totalToPick > 0 ? (totalPicked / totalToPick) * 100 : 0;
   const { t } = useLingui();
   const { isPhone } = useViewport();
+  const percentFormatter = usePercentFormatter();
 
   // Phones: an overline header for the kit, then each line as its own card.
   if (isPhone) {
-    const percent = Math.round(progress);
+    const percent = percentFormatter.format(progress / 100);
     return (
       <section className="flex w-full flex-col gap-3">
         <div className="flex items-center justify-between gap-3 px-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
@@ -218,7 +219,7 @@ function PickingKitCard({
             {kit.workCenterName ? ` · ${kit.workCenterName}` : ""}
           </div>
           <span className="shrink-0 tabular-nums">
-            <Trans>{percent}% picked</Trans>
+            <Trans>{percent} picked</Trans>
           </span>
         </div>
         {kit.lines.map((line) => (

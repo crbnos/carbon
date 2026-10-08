@@ -507,7 +507,7 @@ msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열�
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 부품} other {# 부품}}"
 
-msgid "{percent}% picked"
+msgid "{percent} picked"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"

@@ -507,7 +507,7 @@ msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 零件} other {# 零件}}"
 
-msgid "{percent}% picked"
+msgid "{percent} picked"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"

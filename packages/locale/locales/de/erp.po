@@ -507,7 +507,7 @@ msgstr "{orderLabel} wird zur Bearbeitung erneut geöffnet als Revision {0}. Das
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# Teil} other {# Teile}}"
 
-msgid "{percent}% picked"
+msgid "{percent} picked"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"

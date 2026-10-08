@@ -507,7 +507,7 @@ msgstr "{orderLabel} zostanie ponownie otwarty do edycji jako rewizja {0}. Dokum
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# Część} other {# Części}}"
 
-msgid "{percent}% picked"
+msgid "{percent} picked"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"

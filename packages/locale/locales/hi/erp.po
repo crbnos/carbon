@@ -507,7 +507,7 @@ msgstr "{orderLabel} को रिवीजन {0} के रूप में �
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# पार्ट} other {# पार्ट्स}}"
 
-msgid "{percent}% picked"
+msgid "{percent} picked"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
