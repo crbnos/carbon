@@ -93,29 +93,25 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
       lastBusyAt.current = now;
       return;
     }
-    const stalled = ACTIONS.filter(([entityType, actionId]) => {
+    const stalled = ACTIONS.flatMap(([entityType, actionId]) => {
       const entry = started[actionId];
-      return (
-        entry !== undefined &&
+      return entry !== undefined &&
         records[entityType]?.requestId !== entry.requestId &&
         now - Math.max(entry.at, lastBusyAt.current) > STARTING_TIMEOUT_MS
-      );
-    }).map(([, actionId]) => actionId);
+        ? [{ actionId, requestId: entry.requestId }]
+        : [];
+    });
     if (stalled.length === 0) return;
 
     toast.error(t`The push to Mount did not start. Try again.`);
-    setStarted((current) => {
-      const next = { ...current };
-      for (const actionId of stalled) delete next[actionId];
-      return next;
-    });
+    setStarted((current) => forget(current, stalled));
   }, [now, records, started, t]);
 
   // Say when a run this page started has ended, then stop tracking it: a
   // later run (another person's Push, the daily sweep) replaces the record,
   // and a kept entry would read as this Push starting again.
   useEffect(() => {
-    const ended: string[] = [];
+    const ended: Array<{ actionId: string; requestId: string }> = [];
     for (const [entityType, actionId] of ACTIONS) {
       const requestId = started[actionId]?.requestId;
       const record = records[entityType];
@@ -128,7 +124,7 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
         continue;
       }
       announced.current.add(requestId);
-      ended.push(actionId);
+      ended.push({ actionId, requestId });
       if (record.status === "failed") {
         toast.error(t`The push to Mount failed`);
       } else if (publishNeedsAttention(record)) {
@@ -139,12 +135,7 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
         toast.success(t`The push to Mount finished`);
       }
     }
-    if (ended.length === 0) return;
-    setStarted((current) => {
-      const next = { ...current };
-      for (const actionId of ended) delete next[actionId];
-      return next;
-    });
+    if (ended.length > 0) setStarted((current) => forget(current, ended));
   }, [records, started, t]);
 
   const onActionStarted = useCallback(
@@ -161,6 +152,21 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
   );
 
   return { actionStates, onActionStarted };
+}
+
+/**
+ * Drop the given Pushes from tracking. Matched by request id as well as
+ * action, so a newer Push on the same button is kept.
+ */
+function forget(
+  started: Record<string, { requestId: string; at: number }>,
+  pushes: Array<{ actionId: string; requestId: string }>
+) {
+  const next = { ...started };
+  for (const { actionId, requestId } of pushes) {
+    if (next[actionId]?.requestId === requestId) delete next[actionId];
+  }
+  return next;
 }
 
 type Issue = {
