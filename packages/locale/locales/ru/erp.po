@@ -308,6 +308,9 @@ msgstr "{arOverduePct}% дебиторской задолженности"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
+msgid "{completedLines} of {lines} lines complete"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# компонент} other {# компонентов}}"
 
@@ -385,12 +388,18 @@ msgstr "{name} возвращается!"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
 
+msgid "{onHand} on hand"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} будет переоткрыт для редактирования как ревизия {0}. Отправленный поставщику документ останется неизменным, пока вы не завершите и не переотправите заказ."
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# деталь} other {# деталей}}"
+
+msgid "{percent}% picked"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
@@ -1642,8 +1651,17 @@ msgstr "Добавить передачу запасов"
 msgid "Add Supplier"
 msgstr "Добавить поставщика"
 
+msgid "Add the materials this item uses."
+msgstr ""
+
+msgid "Add the materials this job uses."
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Добавьте следующую возможность в ту же систему вместо покупки другого инструмента."
+
+msgid "Add the operations that make this item."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Добавьте эту TXT запись на хосте DNS, затем нажмите Проверить. Изменения DNS могут занять несколько минут на распространение."
@@ -2815,6 +2833,9 @@ msgstr "Активы"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
+
+msgid "Assign"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
@@ -4038,6 +4059,10 @@ msgstr "Свернуть настройку"
 
 msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
+
+#. placeholder {0}: index + 1
+msgid "Column {0} of {count}"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Измерение столбца"
@@ -5515,6 +5540,9 @@ msgstr "Ежедневные встречи, пока ваша команда о
 
 msgid "Daily summary"
 msgstr "Ежедневный отчет"
+
+msgid "Daily usage"
+msgstr ""
 
 msgid "Daily Usage"
 msgstr "Ежедневное использование"
@@ -7619,6 +7647,9 @@ msgstr "Существующие отображения. Выберите дру
 
 msgid "Existing Stripe customer"
 msgstr "Существующий покупатель Stripe"
+
+msgid "Exp. <0/>"
+msgstr ""
 
 msgid "Expand"
 msgstr "Развернуть"
@@ -10455,6 +10486,9 @@ msgstr "Заблокировать период"
 msgid "Locked"
 msgstr "Заблокирован"
 
+msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
+msgstr ""
+
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Блокировка делает период доступным только для чтения для операционных документов (поступления, отгрузки, счета-фактуры), но всё ещё позволяет учетные корректировки, такие как амортизация и выбытие. Период должен быть заблокирован перед тем, как его можно закрыть."
 
@@ -10617,6 +10651,9 @@ msgstr "Тип техобслуживания"
 
 msgid "Make"
 msgstr "Производить"
+
+msgid "Make {orderQuantity}"
+msgstr ""
 
 msgid "Make Active"
 msgstr "Сделать активным"
@@ -11283,6 +11320,9 @@ msgstr "MRP (планирование)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
 
+msgid "MRP runs every 3 hours. To run it now, use ⋯ › Recalculate."
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Несколько производственных заказов могут выполняться на этом процессе одновременно — например, лазерный станок, печь или ванна для гальваники"
 
@@ -11706,6 +11746,9 @@ msgstr "Следующая калибровка"
 msgid "Next Calibration Date"
 msgstr "Дата следующей калибровки"
 
+msgid "Next column"
+msgstr ""
+
 msgid "Next Date"
 msgstr "Следующая дата"
 
@@ -11778,6 +11821,9 @@ msgstr "Действия не найдены."
 msgid "No actions selected"
 msgstr "Действия не выбраны"
 
+msgid "No actions yet."
+msgstr ""
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Не найдены текущие производственные заказы для этого заказа покупателя. Заказ будет отменен непосредственно."
 
@@ -11798,6 +11844,9 @@ msgstr "Нет затронутых элементов."
 
 msgid "No applications. Payment will be on-account."
 msgstr "Нет приложений. Платеж будет на счет."
+
+msgid "No approval requirements yet."
+msgstr ""
 
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
@@ -11923,6 +11972,9 @@ msgstr "Сотрудники не найдены"
 msgid "No events found."
 msgstr "События не найдены."
 
+msgid "No external notes"
+msgstr ""
+
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "Нет дополнительных переходных шагов. Добавьте что-либо специфичное для этого покупателя."
 
@@ -11970,6 +12022,9 @@ msgstr "Нет изображения"
 
 msgid "No inspection plans"
 msgstr "Нет планов контроля"
+
+msgid "No internal notes"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
@@ -12031,6 +12086,9 @@ msgstr "Нет совпадающих операций"
 msgid "No materials"
 msgstr "Нет материалов"
 
+msgid "No materials yet"
+msgstr ""
+
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
@@ -12076,6 +12134,9 @@ msgstr "Ни одна операция не требует отбора на э�
 
 msgid "No operations selected"
 msgstr "Операции не выбраны"
+
+msgid "No operations yet"
+msgstr ""
 
 msgid "No operators."
 msgstr "Нет операторов."
@@ -12253,6 +12314,12 @@ msgstr "Отсутствие дефицита запасов не прогноз
 
 msgid "No storage unit"
 msgstr "Нет единицы хранения"
+
+msgid "No storage unit holds this item."
+msgstr ""
+
+msgid "No Supplier"
+msgstr ""
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -12980,6 +13047,9 @@ msgstr "Заказать {0} × {substitute} для этого производ�
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
 msgstr "Заказать {0} для этого задания"
+
+msgid "Order {orderQuantity}"
+msgstr ""
 
 msgid "Order by"
 msgstr "Заказать до"
@@ -13810,6 +13880,9 @@ msgstr "Предпросмотр количества"
 msgid "Previous"
 msgstr "Назад"
 
+msgid "Previous column"
+msgstr ""
+
 msgid "Previous Date"
 msgstr "Предыдущая дата"
 
@@ -13892,6 +13965,9 @@ msgstr "Печать списка серий"
 
 msgid "Print Jobs"
 msgstr "Печать производственных заказов"
+
+msgid "Print label"
+msgstr ""
 
 msgid "Print Label"
 msgstr "Печать этикетки"
@@ -14337,6 +14413,9 @@ msgstr "QR-код для начала следующей операции для
 
 msgid "Qty"
 msgstr "Кол-во"
+
+msgid "Qty {jobQuantity}"
+msgstr ""
 
 msgid "Qty On Hand"
 msgstr "Кол-во в наличии"
@@ -15488,6 +15567,9 @@ msgstr "Возвращает:"
 msgid "Rev {revision}"
 msgstr "Ред. {revision}"
 
+msgid "Rev {revisionId}"
+msgstr ""
+
 msgid "Reveal account number"
 msgstr "Раскрыть номер счета"
 
@@ -16273,6 +16355,10 @@ msgstr "Безопасность"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "Просмотр динамического прогноза мощности каждого рабочего центра — когда запланирован запуск и завершение каждого производственного заказа в вашем цехе."
 
+#. placeholder {0}: lines.length
+msgid "See all {0}"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Сегменты, которые определяют ценообразование и условия для покупателей"
 
@@ -16710,6 +16796,9 @@ msgstr "Настройте ваши ресурсы и параметры"
 #. placeholder {0}: selectedVersion.version
 msgid "Set Version {0} as Active Version?"
 msgstr "Установить версию {0} как активную версию?"
+
+msgid "Set when the unit was created"
+msgstr ""
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Установите местоположение по умолчанию в настройках профиля, чтобы выбрать единицу хранения."
@@ -17924,6 +18013,9 @@ msgstr "Поставщики"
 
 msgid "Supply"
 msgstr "Обеспечение"
+
+msgid "Supply / demand"
+msgstr ""
 
 msgid "Supply & Demand"
 msgstr "Обеспечение и потребность"
@@ -19503,6 +19595,9 @@ msgstr "На локацию"
 msgid "To next week"
 msgstr "На следующую неделю"
 
+msgid "To pick"
+msgstr ""
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Чтобы переактивировать, используйте меню строки и выберите Отправить приглашение. Сотрудник становится активным после принятия приглашения."
 
@@ -20018,6 +20113,9 @@ msgstr "неизвестная ошибка"
 
 msgid "Unknown gauge"
 msgstr "Неизвестное средство измерения"
+
+msgid "Unknown Job"
+msgstr ""
 
 msgid "unknown location"
 msgstr "неизвестное местоположение"

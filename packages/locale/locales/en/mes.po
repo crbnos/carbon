@@ -366,6 +366,10 @@ msgstr "Company"
 msgid "Complete"
 msgstr "Complete"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr "Complete {0}?"
+
 msgid "Complete All"
 msgstr "Complete All"
 
@@ -515,8 +519,8 @@ msgid "Due"
 msgstr "Due"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -680,6 +684,9 @@ msgstr "Finish with material unpicked?"
 msgid "First due {0}"
 msgstr "First due {0}"
 
+msgid "Fit"
+msgstr "Fit"
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Fix the highlighted quantities before completing."
 
@@ -825,6 +832,9 @@ msgstr "Leave an operation at 0 to skip it — it returns to the schedule un-run
 msgid "Leave this page"
 msgstr "Leave this page"
 
+msgid "Left to Right"
+msgstr "Left to Right"
+
 msgid "Let's build something"
 msgstr "Let's build something"
 
@@ -894,6 +904,9 @@ msgstr "Machine"
 msgid "Machine down for maintenance now?"
 msgstr "Machine down for maintenance now?"
 
+msgid "Main"
+msgstr "Main"
+
 msgid "Maintenance"
 msgstr "Maintenance"
 
@@ -935,6 +948,9 @@ msgstr "Metric"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More"
+msgstr "More"
 
 msgid "More actions"
 msgstr "More actions"
@@ -1229,6 +1245,9 @@ msgstr "Passkey unlock failed"
 msgid "Pause"
 msgstr "Pause"
 
+msgid "Pause timer"
+msgstr "Pause timer"
+
 msgid "Pick"
 msgstr "Pick"
 
@@ -1326,6 +1345,7 @@ msgstr "Processes"
 msgid "Progress"
 msgstr "Progress"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
@@ -1658,6 +1678,9 @@ msgstr "Start {0}"
 msgid "Start or pause the operation"
 msgstr "Start or pause the operation"
 
+msgid "Start timer"
+msgstr "Start timer"
+
 msgid "Station User"
 msgstr "Station User"
 
@@ -1756,6 +1779,9 @@ msgstr "This batch has no work instructions."
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
 
+msgid "This marks the dispatch as completed."
+msgstr "This marks the dispatch as completed."
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 
@@ -1790,11 +1816,23 @@ msgstr "To run"
 msgid "Today"
 msgstr "Today"
 
+msgid "Toggle labor"
+msgstr "Toggle labor"
+
+msgid "Toggle machine"
+msgstr "Toggle machine"
+
+msgid "Toggle setup"
+msgstr "Toggle setup"
+
 msgid "Toggle the sidebar"
 msgstr "Toggle the sidebar"
 
 msgid "Tools"
 msgstr "Tools"
+
+msgid "Top to Bottom"
+msgstr "Top to Bottom"
 
 msgid "Total"
 msgstr "Total"

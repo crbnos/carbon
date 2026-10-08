@@ -308,6 +308,9 @@ msgstr "{arOverduePct}%の売掛金"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
+msgid "{completedLines} of {lines} lines complete"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# コンポーネント} other {# コンポーネント}}"
 
@@ -385,12 +388,18 @@ msgstr "{names}は一致する必要があります — 別ロード"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}個の部品はスキップ済 — 製造する必要がありません"
 
+msgid "{onHand} on hand"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 部品} other {# 部品}}"
+
+msgid "{percent}% picked"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
@@ -1642,8 +1651,17 @@ msgstr "在庫移動を追加"
 msgid "Add Supplier"
 msgstr "仕入先を追加"
 
+msgid "Add the materials this item uses."
+msgstr ""
+
+msgid "Add the materials this job uses."
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "同じシステム上に次の機能を追加して、別のツールを購入する代わりにします。"
+
+msgid "Add the operations that make this item."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
@@ -2815,6 +2833,9 @@ msgstr "資産"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
+
+msgid "Assign"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
@@ -4038,6 +4059,10 @@ msgstr "段取りを折りたたむ"
 
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
+
+#. placeholder {0}: index + 1
+msgid "Column {0} of {count}"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "列ディメンション"
@@ -5515,6 +5540,9 @@ msgstr "ライブシステムでチームが軌道に乗るまでの毎日のチ
 
 msgid "Daily summary"
 msgstr "毎日のサマリー"
+
+msgid "Daily usage"
+msgstr ""
 
 msgid "Daily Usage"
 msgstr "毎日の使用量"
@@ -7619,6 +7647,9 @@ msgstr "既存のマッピング。異なるプロバイダーオプションを
 
 msgid "Existing Stripe customer"
 msgstr "既存のStripe得意先"
+
+msgid "Exp. <0/>"
+msgstr ""
 
 msgid "Expand"
 msgstr "展開"
@@ -10455,6 +10486,9 @@ msgstr "期間をロック"
 msgid "Locked"
 msgstr "ロック中"
 
+msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
+msgstr ""
+
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "ロック中にすると期間が営業文書（入荷、出荷、請求書）に対して読み取り専用になりますが、減価償却や除却などの会計調整は引き続き許可されます。期間はクローズ済になる前にロック中にする必要があります。"
 
@@ -10617,6 +10651,9 @@ msgstr "保全タイプ"
 
 msgid "Make"
 msgstr "製造"
+
+msgid "Make {orderQuantity}"
+msgstr ""
 
 msgid "Make Active"
 msgstr "アクティブにする"
@@ -11283,6 +11320,9 @@ msgstr "MRP (計画)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
+msgid "MRP runs every 3 hours. To run it now, use ⋯ › Recalculate."
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "複数の製造指図がこの工法上で同時に実行できます—例：レーザーテーブル、炉、またはめっき槽"
 
@@ -11706,6 +11746,9 @@ msgstr "次の校正"
 msgid "Next Calibration Date"
 msgstr "次の校正日"
 
+msgid "Next column"
+msgstr ""
+
 msgid "Next Date"
 msgstr "次の日付"
 
@@ -11778,6 +11821,9 @@ msgstr "アクションが見つかりません。"
 msgid "No actions selected"
 msgstr "アクションが選択されていません"
 
+msgid "No actions yet."
+msgstr ""
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "この受注に対する稼働中の製造指図が見つかりません。その注文は直接キャンセル済になります。"
 
@@ -11798,6 +11844,9 @@ msgstr "影響を受けるアイテムがありません。"
 
 msgid "No applications. Payment will be on-account."
 msgstr "申請がありません。支払いはオンアカウントになります。"
+
+msgid "No approval requirements yet."
+msgstr ""
 
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
@@ -11923,6 +11972,9 @@ msgstr "従業員が見つかりません"
 msgid "No events found."
 msgstr "イベントが見つかりません。"
 
+msgid "No external notes"
+msgstr ""
+
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "追加のカットオーバーステップはまだありません。この得意先に固有のものを追加してください。"
 
@@ -11970,6 +12022,9 @@ msgstr "画像なし"
 
 msgid "No inspection plans"
 msgstr "検査計画がありません"
+
+msgid "No internal notes"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "問題タイプが設定されていません"
@@ -12031,6 +12086,9 @@ msgstr "一致する工程がありません"
 msgid "No materials"
 msgstr "物料がありません"
 
+msgid "No materials yet"
+msgstr ""
+
 msgid "No new notifications"
 msgstr "新しい通知はありません"
 
@@ -12076,6 +12134,9 @@ msgstr "この拠点でピッキングが必要な工程はありません"
 
 msgid "No operations selected"
 msgstr "工程が選択されていません"
+
+msgid "No operations yet"
+msgstr ""
 
 msgid "No operators."
 msgstr "作業者がいません。"
@@ -12253,6 +12314,12 @@ msgstr "今後48週間に欠品は予測されていません"
 
 msgid "No storage unit"
 msgstr "保管ユニットがありません"
+
+msgid "No storage unit holds this item."
+msgstr ""
+
+msgid "No Supplier"
+msgstr ""
 
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
@@ -12980,6 +13047,9 @@ msgstr "この製造指図に{0} × {substitute}を発注"
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
 msgstr "このジョブ用に{0}を発注"
+
+msgid "Order {orderQuantity}"
+msgstr ""
 
 msgid "Order by"
 msgstr "注文日"
@@ -13810,6 +13880,9 @@ msgstr "プレビュー数量"
 msgid "Previous"
 msgstr "前へ"
 
+msgid "Previous column"
+msgstr ""
+
 msgid "Previous Date"
 msgstr "前の日付"
 
@@ -13892,6 +13965,9 @@ msgstr "バッチリストを印刷"
 
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
+
+msgid "Print label"
+msgstr ""
 
 msgid "Print Label"
 msgstr "ラベルを印刷"
@@ -14337,6 +14413,9 @@ msgstr "このかんばんの次の工程を開始するためのQR Code"
 
 msgid "Qty"
 msgstr "数量"
+
+msgid "Qty {jobQuantity}"
+msgstr ""
 
 msgid "Qty On Hand"
 msgstr "手持数量"
@@ -15488,6 +15567,9 @@ msgstr "返す:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Rev {revisionId}"
+msgstr ""
+
 msgid "Reveal account number"
 msgstr "銀行口座番号を表示"
 
@@ -16273,6 +16355,10 @@ msgstr "セキュリティ"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "ショップ全体の各作業区のリアルタイム キャパシティ予測を表示してください — 各製造指図がいつ実行および完了するかを確認します。"
 
+#. placeholder {0}: lines.length
+msgid "See all {0}"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "得意先の価格設定と条件を決定するセグメント"
 
@@ -16710,6 +16796,9 @@ msgstr "リソースと設定をセットアップする"
 #. placeholder {0}: selectedVersion.version
 msgid "Set Version {0} as Active Version?"
 msgstr "バージョン {0} をアクティブバージョンとして設定しますか？"
+
+msgid "Set when the unit was created"
+msgstr ""
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
@@ -17924,6 +18013,9 @@ msgstr "仕入先"
 
 msgid "Supply"
 msgstr "供給"
+
+msgid "Supply / demand"
+msgstr ""
 
 msgid "Supply & Demand"
 msgstr "供給と所要量"
@@ -19503,6 +19595,9 @@ msgstr "到着地"
 msgid "To next week"
 msgstr "来週へ"
 
+msgid "To pick"
+msgstr ""
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "再度有効にするには、行メニューを使用して「招待を送信」を選択してください。従業員が承諾したら有効になります。"
 
@@ -20018,6 +20113,9 @@ msgstr "不明なエラー"
 
 msgid "Unknown gauge"
 msgstr "不明な測定器"
+
+msgid "Unknown Job"
+msgstr ""
 
 msgid "unknown location"
 msgstr "不明な場所"

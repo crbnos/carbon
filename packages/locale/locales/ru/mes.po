@@ -366,6 +366,10 @@ msgstr "Организация"
 msgid "Complete"
 msgstr "Завершить"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Завершить все"
 
@@ -515,8 +519,8 @@ msgid "Due"
 msgstr "Срок"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -680,6 +684,9 @@ msgstr "Завершить с неподобранным материалом?"
 msgid "First due {0}"
 msgstr "Первый срок {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Исправьте выделенные количества перед завершением."
 
@@ -825,6 +832,9 @@ msgstr "Оставьте операцию на 0, чтобы пропустит�
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
@@ -894,6 +904,9 @@ msgstr "Станок"
 msgid "Machine down for maintenance now?"
 msgstr "Станок на техобслуживание сейчас?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "Техобслуживание"
 
@@ -935,6 +948,9 @@ msgstr "Метрическая"
 
 msgid "Model"
 msgstr "Модель"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "Дополнительные действия"
@@ -1165,7 +1181,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
 
 msgid "Open Jobs"
-msgstr "Открытые производственные заказы"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1228,6 +1244,9 @@ msgstr "Не удалось разблокировать ключ доступа
 
 msgid "Pause"
 msgstr "Приостановить"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -1326,6 +1345,7 @@ msgstr "Процессы"
 msgid "Progress"
 msgstr "Прогресс"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
@@ -1658,6 +1678,9 @@ msgstr "Начать {0}"
 msgid "Start or pause the operation"
 msgstr "Запустить или приостановить операцию"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "Пользователь станции"
 
@@ -1756,6 +1779,9 @@ msgstr "Эта серия не имеет рабочих инструкций."
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."
 
@@ -1790,11 +1816,23 @@ msgstr "Для запуска"
 msgid "Today"
 msgstr "Сегодня"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "Открыть/закрыть боковую панель"
 
 msgid "Tools"
 msgstr "Инструменты"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "Итого"

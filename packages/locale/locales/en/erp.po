@@ -308,6 +308,9 @@ msgstr "{arOverduePct}% of receivables"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
+msgid "{completedLines} of {lines} lines complete"
+msgstr "{completedLines} of {lines} lines complete"
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# component} other {# components}}"
 
@@ -385,12 +388,18 @@ msgstr "{names} must match — separate load"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parts skipped — nothing to make"
 
+msgid "{onHand} on hand"
+msgstr "{onHand} on hand"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# part} other {# parts}}"
+
+msgid "{percent}% picked"
+msgstr "{percent}% picked"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -1642,8 +1651,17 @@ msgstr "Add Stock Transfer"
 msgid "Add Supplier"
 msgstr "Add Supplier"
 
+msgid "Add the materials this item uses."
+msgstr "Add the materials this item uses."
+
+msgid "Add the materials this job uses."
+msgstr "Add the materials this job uses."
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Add the next capability on the same system instead of buying another tool."
+
+msgid "Add the operations that make this item."
+msgstr "Add the operations that make this item."
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
@@ -2815,6 +2833,9 @@ msgstr "Assets"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
+
+msgid "Assign"
+msgstr "Assign"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
@@ -4038,6 +4059,10 @@ msgstr "Collapse Setup"
 
 msgid "Collapse subtree"
 msgstr "Collapse subtree"
+
+#. placeholder {0}: index + 1
+msgid "Column {0} of {count}"
+msgstr "Column {0} of {count}"
 
 msgid "Column dimension"
 msgstr "Column dimension"
@@ -5515,6 +5540,9 @@ msgstr "Daily check-ins while your team finds its feet on the live system"
 
 msgid "Daily summary"
 msgstr "Daily summary"
+
+msgid "Daily usage"
+msgstr "Daily usage"
 
 msgid "Daily Usage"
 msgstr "Daily Usage"
@@ -7619,6 +7647,9 @@ msgstr "Existing mappings. Pick a different provider option to re-map."
 
 msgid "Existing Stripe customer"
 msgstr "Existing Stripe customer"
+
+msgid "Exp. <0/>"
+msgstr "Exp. <0/>"
 
 msgid "Expand"
 msgstr "Expand"
@@ -10455,6 +10486,9 @@ msgstr "Lock Period"
 msgid "Locked"
 msgstr "Locked"
 
+msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
+msgstr "Locked while the quote is {quoteStatus}. Reopen it to edit."
+
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 
@@ -10617,6 +10651,9 @@ msgstr "Maintenance Type"
 
 msgid "Make"
 msgstr "Make"
+
+msgid "Make {orderQuantity}"
+msgstr "Make {orderQuantity}"
 
 msgid "Make Active"
 msgstr "Make Active"
@@ -11283,6 +11320,9 @@ msgstr "MRP (planning)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
+msgid "MRP runs every 3 hours. To run it now, use ⋯ › Recalculate."
+msgstr "MRP runs every 3 hours. To run it now, use ⋯ › Recalculate."
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 
@@ -11706,6 +11746,9 @@ msgstr "Next Calibration"
 msgid "Next Calibration Date"
 msgstr "Next Calibration Date"
 
+msgid "Next column"
+msgstr "Next column"
+
 msgid "Next Date"
 msgstr "Next Date"
 
@@ -11778,6 +11821,9 @@ msgstr "No actions found."
 msgid "No actions selected"
 msgstr "No actions selected"
 
+msgid "No actions yet."
+msgstr "No actions yet."
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "No active jobs found for this sales order. The order will be cancelled directly."
 
@@ -11798,6 +11844,9 @@ msgstr "No affected items."
 
 msgid "No applications. Payment will be on-account."
 msgstr "No applications. Payment will be on-account."
+
+msgid "No approval requirements yet."
+msgstr "No approval requirements yet."
 
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
@@ -11923,6 +11972,9 @@ msgstr "No employees found"
 msgid "No events found."
 msgstr "No events found."
 
+msgid "No external notes"
+msgstr "No external notes"
+
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "No extra cutover steps yet. Add anything specific to this customer."
 
@@ -11970,6 +12022,9 @@ msgstr "No image"
 
 msgid "No inspection plans"
 msgstr "No inspection plans"
+
+msgid "No internal notes"
+msgstr "No internal notes"
 
 msgid "No issue types configured"
 msgstr "No issue types configured"
@@ -12031,6 +12086,9 @@ msgstr "No matching operations"
 msgid "No materials"
 msgstr "No materials"
 
+msgid "No materials yet"
+msgstr "No materials yet"
+
 msgid "No new notifications"
 msgstr "No new notifications"
 
@@ -12076,6 +12134,9 @@ msgstr "No operations require picking at this location"
 
 msgid "No operations selected"
 msgstr "No operations selected"
+
+msgid "No operations yet"
+msgstr "No operations yet"
 
 msgid "No operators."
 msgstr "No operators."
@@ -12253,6 +12314,12 @@ msgstr "No stockout projected in the next 48 weeks"
 
 msgid "No storage unit"
 msgstr "No storage unit"
+
+msgid "No storage unit holds this item."
+msgstr "No storage unit holds this item."
+
+msgid "No Supplier"
+msgstr "No Supplier"
 
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
@@ -12980,6 +13047,9 @@ msgstr "Order {0} × {substitute} for this job"
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
 msgstr "Order {0} for this job"
+
+msgid "Order {orderQuantity}"
+msgstr "Order {orderQuantity}"
 
 msgid "Order by"
 msgstr "Order by"
@@ -13810,6 +13880,9 @@ msgstr "Preview Quantity"
 msgid "Previous"
 msgstr "Previous"
 
+msgid "Previous column"
+msgstr "Previous column"
+
 msgid "Previous Date"
 msgstr "Previous Date"
 
@@ -13892,6 +13965,9 @@ msgstr "Print batch list"
 
 msgid "Print Jobs"
 msgstr "Print Jobs"
+
+msgid "Print label"
+msgstr "Print label"
 
 msgid "Print Label"
 msgstr "Print Label"
@@ -14337,6 +14413,9 @@ msgstr "QR Code to start the next operation for this kanban"
 
 msgid "Qty"
 msgstr "Qty"
+
+msgid "Qty {jobQuantity}"
+msgstr "Qty {jobQuantity}"
 
 msgid "Qty On Hand"
 msgstr "Qty On Hand"
@@ -15488,6 +15567,9 @@ msgstr "Returns:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Rev {revisionId}"
+msgstr "Rev {revisionId}"
+
 msgid "Reveal account number"
 msgstr "Reveal account number"
 
@@ -16273,6 +16355,10 @@ msgstr "Security"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 
+#. placeholder {0}: lines.length
+msgid "See all {0}"
+msgstr "See all {0}"
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"
 
@@ -16710,6 +16796,9 @@ msgstr "Set up your resources and settings"
 #. placeholder {0}: selectedVersion.version
 msgid "Set Version {0} as Active Version?"
 msgstr "Set Version {0} as Active Version?"
+
+msgid "Set when the unit was created"
+msgstr "Set when the unit was created"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Set your default location in profile settings to pick a storage unit."
@@ -17924,6 +18013,9 @@ msgstr "Suppliers"
 
 msgid "Supply"
 msgstr "Supply"
+
+msgid "Supply / demand"
+msgstr "Supply / demand"
 
 msgid "Supply & Demand"
 msgstr "Supply & Demand"
@@ -19503,6 +19595,9 @@ msgstr "To Location"
 msgid "To next week"
 msgstr "To next week"
 
+msgid "To pick"
+msgstr "To pick"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 
@@ -20018,6 +20113,9 @@ msgstr "unknown error"
 
 msgid "Unknown gauge"
 msgstr "Unknown gauge"
+
+msgid "Unknown Job"
+msgstr "Unknown Job"
 
 msgid "unknown location"
 msgstr "unknown location"

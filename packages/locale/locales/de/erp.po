@@ -308,6 +308,9 @@ msgstr "{arOverduePct}% der Forderungen"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nachfolger zu verweisen."
 
+msgid "{completedLines} of {lines} lines complete"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# Komponente} other {# Komponenten}}"
 
@@ -385,12 +388,18 @@ msgstr "{names} muss übereinstimmen — separate Ladung"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} Teile übersprungen — es gibt nichts zu produzieren"
 
+msgid "{onHand} on hand"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} wird zur Bearbeitung erneut geöffnet als Revision {0}. Das bereits an den Lieferanten gesendete Dokument bleibt unverändert, bis Sie die Bestellung abschließen und erneut senden."
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# Teil} other {# Teile}}"
+
+msgid "{percent}% picked"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# Zeile dauerhaft löschen?} other {# Zeilen dauerhaft löschen?}}"
@@ -1642,8 +1651,17 @@ msgstr "Bestandsübertrag hinzufügen"
 msgid "Add Supplier"
 msgstr "Lieferant hinzufügen"
 
+msgid "Add the materials this item uses."
+msgstr ""
+
+msgid "Add the materials this job uses."
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Fügen Sie die nächste Funktionalität auf demselben System hinzu, anstatt ein weiteres System zu kaufen."
+
+msgid "Add the operations that make this item."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu und klicken Sie dann auf „Überprüfen\". DNS-Änderungen können einige Minuten dauern, bis sie sich verbreitet haben."
@@ -2815,6 +2833,9 @@ msgstr "Vermögenswerte"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
+
+msgid "Assign"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Weisen Sie Druckern Standorte zu. Versand, Wareneingang und Arbeitsplätze erben die Standort-Standardeinstellungen, sofern nicht manuell überschrieben."
@@ -4038,6 +4059,10 @@ msgstr "Rüsten einklappen"
 
 msgid "Collapse subtree"
 msgstr "Teilbaum einklappen"
+
+#. placeholder {0}: index + 1
+msgid "Column {0} of {count}"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Spaltendimension"
@@ -5515,6 +5540,9 @@ msgstr "Tägliche Check-ins, während sich Ihr Team im Live-System einarbeitet"
 
 msgid "Daily summary"
 msgstr "Tägliche Zusammenfassung"
+
+msgid "Daily usage"
+msgstr ""
 
 msgid "Daily Usage"
 msgstr "Tägliche Nutzung"
@@ -7619,6 +7647,9 @@ msgstr "Vorhandene Zuordnungen. Wählen Sie eine andere Provider-Option zum Neu-
 
 msgid "Existing Stripe customer"
 msgstr "Bestehender Stripe-Kunde"
+
+msgid "Exp. <0/>"
+msgstr ""
 
 msgid "Expand"
 msgstr "Erweitern"
@@ -10455,6 +10486,9 @@ msgstr "Periode sperren"
 msgid "Locked"
 msgstr "Gesperrt"
 
+msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
+msgstr ""
+
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Das Sperren macht die Periode für Betriebsdokumente (Wareneingänge, Lieferungen, Rechnungen) schreibgeschützt, während weiterhin Buchhaltungsanpassungen wie Abschreibungen und Abgänge zulässig sind. Eine Periode muss gesperrt werden, bevor sie abgeschlossen werden kann."
 
@@ -10617,6 +10651,9 @@ msgstr "Instandhaltungstyp"
 
 msgid "Make"
 msgstr "Herstellen"
+
+msgid "Make {orderQuantity}"
+msgstr ""
 
 msgid "Make Active"
 msgstr "Aktivieren"
@@ -11283,6 +11320,9 @@ msgstr "MRP (Planung)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP wird automatisch alle 3 Stunden ausgeführt, aber Sie können es hier manuell ausführen."
 
+msgid "MRP runs every 3 hours. To run it now, use ⋯ › Recalculate."
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Mehrere Fertigungsaufträge können auf diesem Verfahren gleichzeitig laufen — z. B. Lasertisch, Ofen oder Galvanikbad."
 
@@ -11706,6 +11746,9 @@ msgstr "Nächste Kalibrierung"
 msgid "Next Calibration Date"
 msgstr "Nächstes Kalibrierungsdatum"
 
+msgid "Next column"
+msgstr ""
+
 msgid "Next Date"
 msgstr "Nächstes Datum"
 
@@ -11778,6 +11821,9 @@ msgstr "Keine Aktionen gefunden."
 msgid "No actions selected"
 msgstr "Keine Aktionen ausgewählt"
 
+msgid "No actions yet."
+msgstr ""
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Keine aktiven Fertigungsaufträge für diesen Kundenauftrag gefunden. Der Auftrag wird direkt storniert."
 
@@ -11798,6 +11844,9 @@ msgstr "Keine betroffenen Elemente."
 
 msgid "No applications. Payment will be on-account."
 msgstr "Keine Anwendungen. Zahlung erfolgt auf Kontostand."
+
+msgid "No approval requirements yet."
+msgstr ""
 
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
@@ -11923,6 +11972,9 @@ msgstr "Keine Mitarbeiter gefunden"
 msgid "No events found."
 msgstr "Keine Ereignisse gefunden."
 
+msgid "No external notes"
+msgstr ""
+
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "Noch keine weiteren Umstiegsschritte. Fügen Sie alles hinzu, das spezifisch für diesen Kunden ist."
 
@@ -11970,6 +12022,9 @@ msgstr "Kein Bild"
 
 msgid "No inspection plans"
 msgstr "Keine Prüfpläne"
+
+msgid "No internal notes"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
@@ -12031,6 +12086,9 @@ msgstr "Keine entsprechenden Arbeitsgänge"
 msgid "No materials"
 msgstr "Keine Materialien"
 
+msgid "No materials yet"
+msgstr ""
+
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
@@ -12076,6 +12134,9 @@ msgstr "Keine Arbeitsgänge erfordern Kommissionierung an diesem Standort"
 
 msgid "No operations selected"
 msgstr "Keine Arbeitsgänge ausgewählt"
+
+msgid "No operations yet"
+msgstr ""
 
 msgid "No operators."
 msgstr "Keine Werker."
@@ -12253,6 +12314,12 @@ msgstr "Kein Fehlbestand für die nächsten 48 Wochen erwartet"
 
 msgid "No storage unit"
 msgstr "Keine Lagereinheit"
+
+msgid "No storage unit holds this item."
+msgstr ""
+
+msgid "No Supplier"
+msgstr ""
 
 msgid "No suppliers yet"
 msgstr "Noch keine Lieferanten"
@@ -12980,6 +13047,9 @@ msgstr "{0} × {substitute} für diesen Fertigungsauftrag bestellen"
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
 msgstr "{0} für diesen Auftrag bestellen"
+
+msgid "Order {orderQuantity}"
+msgstr ""
 
 msgid "Order by"
 msgstr "Bestellung bis"
@@ -13810,6 +13880,9 @@ msgstr "Vorschaumenge"
 msgid "Previous"
 msgstr "Zurück"
 
+msgid "Previous column"
+msgstr ""
+
 msgid "Previous Date"
 msgstr "Vorheriges Datum"
 
@@ -13892,6 +13965,9 @@ msgstr "Los-Liste drucken"
 
 msgid "Print Jobs"
 msgstr "Fertigungsaufträge drucken"
+
+msgid "Print label"
+msgstr ""
 
 msgid "Print Label"
 msgstr "Etikett drucken"
@@ -14337,6 +14413,9 @@ msgstr "QR-Code zum Starten des nächsten Vorgangs für diesen Kanban"
 
 msgid "Qty"
 msgstr "Menge"
+
+msgid "Qty {jobQuantity}"
+msgstr ""
 
 msgid "Qty On Hand"
 msgstr "Bestandsmenge"
@@ -15488,6 +15567,9 @@ msgstr "Gibt zurück:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Rev {revisionId}"
+msgstr ""
+
 msgid "Reveal account number"
 msgstr "Kontonummer anzeigen"
 
@@ -16273,6 +16355,10 @@ msgstr "Sicherheit"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "Zeigen Sie eine Live-Kapazitätsprognose für jeden Arbeitsplatz an - wann jeder Fertigungsauftrag voraussichtlich läuft und endet, über den gesamten Shop."
 
+#. placeholder {0}: lines.length
+msgid "See all {0}"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmente, die Kundenpreise und -bedingungen bestimmen"
 
@@ -16710,6 +16796,9 @@ msgstr "Richten Sie Ihre Ressourcen und Einstellungen ein"
 #. placeholder {0}: selectedVersion.version
 msgid "Set Version {0} as Active Version?"
 msgstr "Version {0} als aktive Version festlegen?"
+
+msgid "Set when the unit was created"
+msgstr ""
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Legen Sie Ihren Standardort in den Profileinstellungen fest, um eine Lagereinheit auszuwählen."
@@ -17924,6 +18013,9 @@ msgstr "Lieferanten"
 
 msgid "Supply"
 msgstr "Deckung"
+
+msgid "Supply / demand"
+msgstr ""
 
 msgid "Supply & Demand"
 msgstr "Deckung & Bedarf"
@@ -19503,6 +19595,9 @@ msgstr "Zielort"
 msgid "To next week"
 msgstr "In die nächste Woche"
 
+msgid "To pick"
+msgstr ""
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Verwenden Sie zum Reaktivieren das Zeilenmenü und wählen Sie „Einladung senden\". Der Mitarbeiter wird aktiv, sobald er annimmt."
 
@@ -20018,6 +20113,9 @@ msgstr "unbekannter Fehler"
 
 msgid "Unknown gauge"
 msgstr "Unbekanntes Prüfmittel"
+
+msgid "Unknown Job"
+msgstr ""
 
 msgid "unknown location"
 msgstr "unbekannter Ort"

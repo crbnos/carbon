@@ -366,6 +366,10 @@ msgstr "회사"
 msgid "Complete"
 msgstr "완료"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "모두 완료"
 
@@ -515,8 +519,8 @@ msgid "Due"
 msgstr "기한"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
 
@@ -680,6 +684,9 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 msgid "First due {0}"
 msgstr "첫 번째 기한 {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "완료하기 전에 강조된 수량을 수정하세요."
 
@@ -825,6 +832,9 @@ msgstr "공정의 수량을 0으로 남겨두면 스킵됩니다 — 일정으�
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
@@ -894,6 +904,9 @@ msgstr "기계"
 msgid "Machine down for maintenance now?"
 msgstr "기계가 지금 유지보수 중인가요?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "유지보수"
 
@@ -935,6 +948,9 @@ msgstr "미터법"
 
 msgid "Model"
 msgstr "모델"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "더 많은 작업"
@@ -1165,7 +1181,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 
 msgid "Open Jobs"
-msgstr "작업 지시 열기"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1228,6 +1244,9 @@ msgstr "패스키 잠금 해제 실패"
 
 msgid "Pause"
 msgstr "일시 중지"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "피킹"
@@ -1326,6 +1345,7 @@ msgstr "공정"
 msgid "Progress"
 msgstr "진행 상황"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
@@ -1658,6 +1678,9 @@ msgstr "{0} 시작"
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "스테이션 사용자"
 
@@ -1756,6 +1779,9 @@ msgstr "이 배치는 작업 표준서가 없습니다."
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."
 
@@ -1790,11 +1816,23 @@ msgstr "실행할"
 msgid "Today"
 msgstr "오늘"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "사이드바 전환"
 
 msgid "Tools"
 msgstr "공구"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "총계"

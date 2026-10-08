@@ -366,6 +366,10 @@ msgstr "Empresa"
 msgid "Complete"
 msgstr "Concluir"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Completar Tudo"
 
@@ -515,8 +519,8 @@ msgid "Due"
 msgstr "Prazo"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "Vencimento {0}"
 
@@ -680,6 +684,9 @@ msgstr "Finalizar com material não selecionado?"
 msgid "First due {0}"
 msgstr "Primeiro prazo {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Corrija as quantidades realçadas antes de concluir."
 
@@ -825,6 +832,9 @@ msgstr "Deixe uma operação em 0 para ignorá-la — ela retorna para a program
 msgid "Leave this page"
 msgstr "Sair desta página"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Vamos construir algo"
 
@@ -894,6 +904,9 @@ msgstr "Máquina"
 msgid "Machine down for maintenance now?"
 msgstr "Máquina inativa para manutenção agora?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "Manutenção"
 
@@ -935,6 +948,9 @@ msgstr "Métrico"
 
 msgid "Model"
 msgstr "Modelo"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "Mais ações"
@@ -1165,7 +1181,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Abrir um NCR para disposição MRB"
 
 msgid "Open Jobs"
-msgstr "Ordens de produção abertas"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1228,6 +1244,9 @@ msgstr "Falha ao desbloquear com chave de acesso"
 
 msgid "Pause"
 msgstr "Pausar"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "Apanhar"
@@ -1326,6 +1345,7 @@ msgstr "Processos"
 msgid "Progress"
 msgstr "Progresso"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
@@ -1658,6 +1678,9 @@ msgstr "Iniciar {0}"
 msgid "Start or pause the operation"
 msgstr "Iniciar ou pausar a operação"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "Usuário da Estação"
 
@@ -1756,6 +1779,9 @@ msgstr "Este lote de produção não possui instruções de trabalho."
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido e não pode ser separado."
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Esta peça foi fabricada sob encomenda. Refugá-la pode reabrir seu roteiro de produção para fazer uma substituição."
 
@@ -1790,11 +1816,23 @@ msgstr "Para executar"
 msgid "Today"
 msgstr "Hoje"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "Alternar barra lateral"
 
 msgid "Tools"
 msgstr "Ferramentas"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "Total"

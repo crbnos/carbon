@@ -366,6 +366,10 @@ msgstr "会社"
 msgid "Complete"
 msgstr "完了"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "すべて完了"
 
@@ -515,8 +519,8 @@ msgid "Due"
 msgstr "期日"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
 
@@ -680,6 +684,9 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 msgid "First due {0}"
 msgstr "最初の期日 {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "完了する前に、ハイライトされた数量を修正してください。"
 
@@ -825,6 +832,9 @@ msgstr "工程を 0 のままにするとスキップされます — スケジ�
 msgid "Leave this page"
 msgstr "このページを離れる"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "さあ、何かを作りましょう"
 
@@ -894,6 +904,9 @@ msgstr "機械"
 msgid "Machine down for maintenance now?"
 msgstr "機械が今保全中ですか？"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "保全"
 
@@ -935,6 +948,9 @@ msgstr "メートル法"
 
 msgid "Model"
 msgstr "モデル"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "その他のアクション"
@@ -1165,7 +1181,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを開く"
 
 msgid "Open Jobs"
-msgstr "オープンな製造指図"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1228,6 +1244,9 @@ msgstr "パスキーのロック解除に失敗しました"
 
 msgid "Pause"
 msgstr "一時停止"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "ピック"
@@ -1326,6 +1345,7 @@ msgstr "プロセス一覧"
 msgid "Progress"
 msgstr "進捗"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
@@ -1658,6 +1678,9 @@ msgstr "{0}を開始"
 msgid "Start or pause the operation"
 msgstr "工程を開始 / 一時停止"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "ステーションユーザー"
 
@@ -1756,6 +1779,9 @@ msgstr "このバッチには作業手順書がありません。"
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "この部品は受注生産で製造されました。スクラップすると、その工順を再オープンして交換部品を製造できます。"
 
@@ -1790,11 +1816,23 @@ msgstr "実行待ち"
 msgid "Today"
 msgstr "今日"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "サイドバーの表示/非表示を切り替える"
 
 msgid "Tools"
 msgstr "工具"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "合計"
