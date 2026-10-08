@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-08T12:28:37.327Z",
+  "exportedAt": "2026-10-08T16:55:33.998Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1939,21 +1939,6 @@
       "name": "purchasingRfqFavorite",
       "rows": 0,
       "columns": ["rfqId", "userId"]
-    },
-    {
-      "name": "pushSubscription",
-      "rows": 0,
-      "columns": [
-        "id",
-        "userId",
-        "companyId",
-        "endpoint",
-        "p256dh",
-        "auth",
-        "userAgent",
-        "createdAt",
-        "updatedAt"
-      ]
     },
     {
       "name": "qualityDocument",
@@ -7483,6 +7468,7 @@
     "oauthClient",
     "oauthCode",
     "oauthToken",
+    "pushSubscription",
     "ssoConnection",
     "ssoDomain",
     "tableChange",

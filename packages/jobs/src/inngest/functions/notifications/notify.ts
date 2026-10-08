@@ -10,7 +10,13 @@ import {
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
 import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
-import { ERP_URL, isPushConfigured } from "@carbon/env";
+import {
+  CONTROLLED_ENVIRONMENT,
+  ERP_URL,
+  isPushConfigured,
+  SESSION_ABSOLUTE_MAX_MS,
+  SESSION_MAX_AGE
+} from "@carbon/env";
 import type { Events } from "@carbon/lib/events";
 import {
   escapeSlackText,
@@ -24,6 +30,7 @@ import {
   renderSlackMrkdwn
 } from "@carbon/notifications";
 import { datetime } from "@carbon/utils";
+import { now } from "@internationalized/date";
 import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -32,6 +39,7 @@ import {
   getNotificationContent,
   getNotificationEmailComponent
 } from "./content";
+import { pushSessionMaxAgeMs, pushSubscriptionCutoff } from "./push-outcome";
 
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
@@ -752,10 +760,21 @@ export const notifyFunction = inngest.createFunction(
       const pushEvents = await step.run(
         "resolve-push-subscriptions",
         async () => {
+          // Skip browsers no session has saved within a session's lifetime:
+          // their session ended without a sign-out.
+          const liveSince = pushSubscriptionCutoff(
+            now("UTC"),
+            pushSessionMaxAgeMs({
+              controlledEnvironment: CONTROLLED_ENVIRONMENT,
+              absoluteMaxMs: SESSION_ABSOLUTE_MAX_MS,
+              cookieMaxAgeSeconds: SESSION_MAX_AGE
+            })
+          );
           const { data: subscriptions, error } = await client
             .from("pushSubscription")
             .select("id, userId")
-            .in("userId", userIds);
+            .in("userId", userIds)
+            .gte("updatedAt", liveSince);
           if (error) {
             console.error("Failed to load push subscriptions", error);
             throw error;

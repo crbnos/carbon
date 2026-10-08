@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { path } from "~/utils/path";
 import {
   areBrowserNotificationsEnabled,
+  hasApplicationServerKey,
   rememberBrowserNotifications,
   restoreStep,
   urlBase64ToUint8Array
@@ -57,14 +58,37 @@ function isEnabledOnServer(endpoint: string) {
   return request;
 }
 
-// Registers the worker and subscribes. Needs permission already granted;
-// returns the browser's existing subscription when there is one.
+// Registers the worker and subscribes. Needs permission already granted.
+// Returns the browser's existing subscription when it was made with the
+// current VAPID key; one made with an older key is unsubscribed and replaced
+// (subscribe() refuses a new key while it exists), and its endpoint comes
+// back as replacedEndpoint so the server drops that row.
 async function subscribe(publicKey: string) {
   await navigator.serviceWorker.register(WORKER_URL, { scope: "/" });
   const registration = await navigator.serviceWorker.ready;
-  return registration.pushManager.subscribe({
+  const existing = await registration.pushManager.getSubscription();
+  let replacedEndpoint: string | null = null;
+  if (
+    existing &&
+    !hasApplicationServerKey(existing.options.applicationServerKey, publicKey)
+  ) {
+    replacedEndpoint = existing.endpoint;
+    await existing.unsubscribe();
+  }
+  const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey)
+  });
+  return { subscription, replacedEndpoint };
+}
+
+function saveSubscription(
+  subscription: PushSubscription,
+  replacedEndpoint: string | null
+) {
+  return sendSubscription("PUT", {
+    ...(subscription.toJSON() as Record<string, unknown>),
+    ...(replacedEndpoint ? { oldEndpoint: replacedEndpoint } : {})
   });
 }
 
@@ -96,7 +120,12 @@ export function useRestoreBrowserNotifications({
 }) {
   useEffect(() => {
     if (!publicKey || !supportsPush()) return;
-    if (Notification.permission !== "granted") return;
+    if (Notification.permission !== "granted") {
+      // Revoked or reset in the browser's settings: the browser is no longer
+      // enabled, so the bell may ask again.
+      rememberBrowserNotifications(false);
+      return;
+    }
     if (restoredFor.has(userId)) return;
     restoredFor.add(userId);
 
@@ -109,13 +138,13 @@ export function useRestoreBrowserNotifications({
             : false,
           browserEnabled: areBrowserNotificationsEnabled()
         });
+        if (step === "skip") return;
         if (step === "remember") rememberBrowserNotifications(true);
-        if (step !== "save") return;
-        const subscription = existing ?? (await subscribe(publicKey));
-        const response = await sendSubscription(
-          "PUT",
-          subscription.toJSON() as Record<string, unknown>
-        );
+        // Save on every tab load, also when the row exists: the save refreshes
+        // the row's updatedAt, and notify skips rows no session has refreshed
+        // within a session's lifetime (a signed-out-by-expiry browser).
+        const { subscription, replacedEndpoint } = await subscribe(publicKey);
+        const response = await saveSubscription(subscription, replacedEndpoint);
         if (!response.ok) {
           logger.error("Failed to restore browser notifications", {
             status: response.status
@@ -151,6 +180,17 @@ export function usePushSubscription({
       try {
         const subscription = await currentSubscription();
         if (!subscription) {
+          if (!cancelled) setState("off");
+          return;
+        }
+        // A subscription made with an older VAPID key cannot receive pushes;
+        // Enable replaces it.
+        if (
+          !hasApplicationServerKey(
+            subscription.options.applicationServerKey,
+            publicKey
+          )
+        ) {
           if (!cancelled) setState("off");
           return;
         }
@@ -195,11 +235,8 @@ export function usePushSubscription({
         }
         if (permission !== "granted") return;
 
-        const subscription = await subscribe(publicKey);
-        const response = await sendSubscription(
-          "PUT",
-          subscription.toJSON() as Record<string, unknown>
-        );
+        const { subscription, replacedEndpoint } = await subscribe(publicKey);
+        const response = await saveSubscription(subscription, replacedEndpoint);
         if (!response.ok) {
           await subscription.unsubscribe();
           setState("off");

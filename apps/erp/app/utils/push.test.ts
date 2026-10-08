@@ -5,6 +5,7 @@
 import { parseAbsolute } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
+  hasApplicationServerKey,
   isPromptSnoozed,
   nextPromptDismissal,
   PROMPT_SNOOZE_DAYS,
@@ -80,5 +81,22 @@ describe("restoreStep", () => {
     expect(
       restoreStep({ ownedBySignedInUser: false, browserEnabled: false })
     ).toBe("skip");
+  });
+});
+
+describe("hasApplicationServerKey", () => {
+  const key = (bytes: number[]) => new Uint8Array(bytes).buffer;
+
+  it("matches a subscription made with the current key", () => {
+    expect(hasApplicationServerKey(key([1, 2, 3]), "AQID")).toBe(true);
+  });
+
+  it("rejects a subscription made with another key", () => {
+    expect(hasApplicationServerKey(key([1, 2, 4]), "AQID")).toBe(false);
+    expect(hasApplicationServerKey(key([1, 2]), "AQID")).toBe(false);
+  });
+
+  it("rejects a subscription with no key", () => {
+    expect(hasApplicationServerKey(null, "AQID")).toBe(false);
   });
 });

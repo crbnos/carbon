@@ -117,7 +117,8 @@ export function areBrowserNotificationsEnabled() {
 // What a page load does about this browser's notifications for the user
 // signed in now (useRestoreBrowserNotifications):
 // - "remember": the user already owns the row — mark the browser enabled, so
-//   the next user to sign in gets theirs too.
+//   the next user to sign in gets theirs too, and save the row again so its
+//   updatedAt shows a live session.
 // - "save": the browser is enabled but this user has no row (sign-out
 //   deleted the previous one) — save it for them, with no prompt.
 // - "skip": nobody enabled notifications here; the bell row asks.
@@ -132,4 +133,19 @@ export function restoreStep({
 }): RestoreStep {
   if (ownedBySignedInUser) return "remember";
   return browserEnabled ? "save" : "skip";
+}
+
+// Was this subscription made with the deployment's current VAPID key? A
+// subscription is bound to the key it was created with: after a key change
+// every push to it fails (403), and pushManager.subscribe() refuses a new key
+// while it exists. Such a subscription must be replaced, not re-saved.
+export function hasApplicationServerKey(
+  subscriptionKey: ArrayBuffer | null | undefined,
+  publicKey: string
+) {
+  if (!subscriptionKey) return false;
+  const current = urlBase64ToUint8Array(publicKey);
+  const stored = new Uint8Array(subscriptionKey);
+  if (stored.length !== current.length) return false;
+  return stored.every((byte, index) => byte === current[index]);
 }

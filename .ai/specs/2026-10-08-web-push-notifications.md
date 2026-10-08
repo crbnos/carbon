@@ -129,9 +129,8 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 
 ## Data Model Changes
 
-1. A new table, `pushSubscription`, one row per endpoint (migration `20261008002726`).
-2. A wider CHECK on `notificationPreference.channel`: `('email', 'slack', 'push')`. No code writes `push` since the per-topic switch was removed; the value stays allowed and unused.
-3. A new rule in `packages/database/src/authz/manifest.ts`, and the generated authz migration `20261008002814`. No migration holds a `CREATE POLICY`.
+1. A new table, `pushSubscription`, one row per endpoint (migration `20261008002726`). `notificationPreference` does not change: push is not a preference channel.
+2. A new rule in `packages/database/src/authz/manifest.ts`, and the generated authz migration `20261008002814`. No migration holds a `CREATE POLICY`.
 
 ```mermaid
 erDiagram
@@ -189,7 +188,7 @@ pushSubscription: policies({
 }),
 ```
 
-The table holds no business data, so the demo datasets need no change. `wipe.ts` finds tables by their `companyId` column. `pnpm db:check:backups` passes.
+The table holds no business data, so the demo datasets need no change. `wipe.ts` finds tables by their `companyId` column. `pushSubscription` is in `SECRET_TABLES` (`packages/jobs/src/backups/schema.ts`): a backup never carries a browser's endpoint and keys, and an in-place restore leaves the current browsers alone. `pnpm db:check:backups` passes.
 
 ## API / Service Changes
 
@@ -210,7 +209,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
 ### `@carbon/auth`
 
 1. `session.server.ts` exports `pushEndpointCookie`: the signed, `httpOnly` cookie `carbon-push`, on the session cookie's domain, with a 400-day `maxAge`.
-2. `clearAuthCookies` reads the cookie. If it holds an endpoint, it deletes every `pushSubscription` row of that endpoint with the service role, then clears the cookie.
+2. `clearAuthCookies` reads the cookie. If it holds an endpoint, it deletes every `pushSubscription` row of that endpoint with the service role, then clears the cookie. A cross-site navigation (`Sec-Fetch-Site: cross-site`) skips this, per the GET-write rule in `packages/auth/AGENTS.md`: the login loader runs it on a GET.
 3. The service-role client loads inside that cleanup, not at module load, so importing the session module builds no Supabase client.
 4. If the delete fails, sign-out still succeeds and the error goes to the log. The next 404 or 410 removes the row.
 
@@ -219,7 +218,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
 1. Add `web-push` (and `@types/web-push` as a dev dependency).
 2. Change `notify.ts`:
    1. Compute `wantsPush`: `isPushConfigured()`. The step `filter-recipients-by-preference` stays as it was: it filters email and Slack only.
-   2. Add the step `resolve-push-subscriptions`. It reads the `pushSubscription` rows of every recipient (`userIds`, the same list as the in-app rows), and builds one `carbon/send-push` event per row, with the row's `userId`.
+   2. Add the step `resolve-push-subscriptions`. It reads the `pushSubscription` rows of every recipient (`userIds`, the same list as the in-app rows) whose `updatedAt` is within a session's lifetime (`pushSessionMaxAgeMs`: 12 h in a controlled environment, the 7-day session cookie elsewhere), and builds one `carbon/send-push` event per row, with the row's `userId`.
    3. Send the events with `step.sendEvent("fan-out-push", …)`.
 3. Add `send-push.ts` (function id `send-push`, 3 retries):
    1. Read the row by `subscriptionId` and `userId` with the service role. If no row matches, return: the browser was disabled, signed out or handed to another user since the fan-out.
@@ -277,14 +276,15 @@ The icon is `/carbon-mark-dark.png`, the file that the ERP's `site.webmanifest` 
 
 Actions:
 
-1. `turnOn()`: request permission, register `/push-worker.js`, subscribe with `userVisibleOnly: true`, `PUT` the subscription, then set `browserNotificationsEnabled`.
+1. `turnOn()`: request permission, register `/push-worker.js`, subscribe with `userVisibleOnly: true`, `PUT` the subscription, then set `browserNotificationsEnabled`. If the browser's subscription was made with an older VAPID key, `subscribe` unsubscribes it first and the `PUT` carries its endpoint as `oldEndpoint`.
 2. `turnOff()`: `DELETE` the row, unsubscribe in the browser, then clear `browserNotificationsEnabled`.
 
-`useRestoreBrowserNotifications({ publicKey, userId })` runs once per tab and user, only when permission is `granted`:
+`useRestoreBrowserNotifications({ publicKey, userId })` runs once per tab and user:
 
-1. If the browser has a subscription and the user owns its row, set `browserNotificationsEnabled` and stop.
-2. If `browserNotificationsEnabled` is not set, stop.
-3. Otherwise subscribe if the browser has no subscription, then `PUT` it for the user signed in now.
+1. If permission is not `granted`, clear `browserNotificationsEnabled` and stop: the user revoked or reset it in the browser, so the bell may ask again.
+2. If the browser has a subscription and the user owns its row, set `browserNotificationsEnabled`.
+3. If neither the user owns the row nor `browserNotificationsEnabled` is set, stop.
+4. Subscribe (replacing a subscription made with an older VAPID key), then `PUT` it for the user signed in now. This runs on every tab load, also when the row exists: the save refreshes `updatedAt`, which `notify` reads to skip browsers whose session has ended.
 
 ### The bell (`Layout/Topbar/Notifications.tsx`, `EnableBrowserNotifications.tsx`)
 
@@ -335,15 +335,15 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| A session that ends without any sign-out path (nobody opens Carbon in that browser again) keeps the row, so pushes continue | Med | The user sees only their own notifications. The next visit reaches the login page, and `clearAuthCookies` deletes the row. |
-| The login loader now deletes push rows on a GET when the stored session is invalid, against the GET-write rule in `packages/auth/AGENTS.md` | Low | The write only cleans up a session that is already dead. |
-| Changing the VAPID key pair breaks every subscription, and the sign-in restore can re-save an old one | Med | Generate the pair once (env description). Pushes signed with the new key fail with 403. A later fix can compare `subscription.options.applicationServerKey` with the current key and subscribe again. |
-| If the user revokes the permission in the browser, `browserNotificationsEnabled` stays set and the bell row stays hidden | Low | Account → Notifications still offers **Enable**. |
+| A session that ends without any sign-out path keeps its row | Low | Bounded: every page load saves the row again, and `notify` skips rows older than a session's lifetime (12 h in a controlled environment, the 7-day session cookie elsewhere). The next visit's login page or sign-in also replaces it. |
+| The login loader runs the push cleanup on a GET | Low | A cross-site navigation skips it, which is what the GET-write rule guards against; such rows lapse through the `updatedAt` cutoff. |
+| Changing the VAPID key pair breaks every subscription | Low | The next page load replaces a subscription made with an older key (`hasApplicationServerKey`), and the settings card shows it as off until then. Pushes to an old-key row fail with 403 meanwhile. |
+| If the user revokes the permission in the browser, the browser-wide flag would stay set | Low | Fixed: the restore clears `browserNotificationsEnabled` whenever permission is not `granted`, so the bell can ask again. |
 | Safari can refuse `pushManager.subscribe()` without a user click, which the restore needs only when the browser lost its subscription | Low | The restore logs the error. **Enable** still works. |
 | Safari on iPhone or iPad supports push only for a Home Screen web app | Low | The `unsupported` text says so. The manifest already has `display: standalone`. |
 | `IntegrationSync` pushes every sweep: the outbound sweep runs every 30 minutes (`15,45 * * * *`) and, while failures remain, notifies the integration's last editor (`updatedBy`) | Low | Accepted by the user: push mirrors in-app exactly. `notify.ts` documents it on the `IntegrationSync` default. |
 | A recurring reminder (weekly training) pushes every cycle; email has a delivery cap, push does not | Low | The same notification is also in the bell each week. |
-| Company backups include `pushSubscription` rows | Low | A restored row with a dead endpoint returns 404 or 410, and `send-push` deletes it. |
+| Company backups would carry `pushSubscription` rows | Low | Fixed: the table is in `SECRET_TABLES`, so it is never exported and an in-place restore keeps the current rows. |
 | A strict CSP later blocks the worker | Low | The strict policy already allows `worker-src 'self'` (`packages/auth/src/lib/security.ts`). |
 | A large group notification sends many push events | Low | One event per browser, the same scale as the email fan-out. Inngest queues the events. |
 | `web-push` is a new production dependency | Low | The user approved it. It is the reference library of the Web Push standard. |
@@ -393,4 +393,11 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   4. `packages/database/AGENTS.md` documents the user-owned preference rows (`notificationPreference`, `userModulePreference`, `pushSubscription`) as an exception to the table template.
 - 2026-10-08: Push mirrors in-app, at the user's request. The per-topic **Browser** switch is gone. Push is no longer a `NotificationDestination` or a `NotificationPreferenceChannel`, and `wantsPushDelivery` is removed. `notify` pushes to every recipient of the in-app row, so in-app-only events such as `IntegrationSync` push too. The `notificationPreference` CHECK still allows `push`, unused.
 - 2026-10-08: The "Send a test notification" button is removed, at the user's request: the card's `on` state shows only **Disable**, `usePushSubscription` has no `sendTest`, and `/api/push-subscription` has no `POST` branch.
+- 2026-10-08: Risk fixes from the fourth self-review:
+  1. Every page load saves the browser's row again (`updatedAt`). `notify` skips rows older than a session's lifetime, so a session that ends without a sign-out stops getting pushes within that window.
+  2. `clearAuthCookies` skips the push cleanup on a cross-site navigation (the GET-write rule).
+  3. A subscription made with an older VAPID key is replaced on the next page load or **Enable**, and its old row is deleted.
+  4. The restore clears `browserNotificationsEnabled` when permission is no longer `granted`.
+  5. `pushSubscription` joined `SECRET_TABLES`, so backups never carry it.
+  6. The migration no longer widens the `notificationPreference.channel` CHECK.
 

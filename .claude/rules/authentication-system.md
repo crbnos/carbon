@@ -256,7 +256,10 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
   reads the signed `carbon-push` cookie (`pushEndpointCookie`, set by
   `api+/push-subscription` when browser notifications are enabled), deletes every
   `pushSubscription` row of that endpoint with the service role, and clears the
-  cookie. Every sign-out path therefore stops pushes in that browser. The
+  cookie. Every sign-out path therefore stops pushes in that browser. A cross-site
+  navigation (`Sec-Fetch-Site: cross-site`, the login GET from another site's
+  link) skips the cleanup, per the GET-write rule; such rows lapse anyway, because
+  `notify` skips rows no page load has refreshed within a session's lifetime. The
   service-role client is imported inside that cleanup, not at module load, so
   importing `session.server` builds no Supabase client (the session tests mock
   `config/env` without the Supabase keys).

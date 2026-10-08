@@ -19,6 +19,7 @@ import {
   SESSION_MAX_AGE,
   SESSION_SECRET
 } from "../config/env";
+import { isCrossSiteNavigation } from "../lib/security";
 import type { AuthSession, Result } from "../types";
 import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
@@ -90,6 +91,12 @@ async function endBrowserPush(request: Request) {
     request.headers.get("Cookie")
   );
   if (typeof endpoint !== "string" || !endpoint) return null;
+  // The login loader clears a dead session's cookies on a GET. A top-level
+  // navigation from another site must not write (packages/auth/AGENTS.md), so
+  // it leaves the rows and the cookie alone: they lapse once no session
+  // refreshes them (notify skips stale rows), or the next sign-in replaces
+  // them.
+  if (isCrossSiteNavigation(request.headers)) return null;
   // Best effort: signing out must still succeed and clear its cookies, even
   // when the client cannot be built (missing Supabase URL) or the delete
   // fails. The next 404/410 from the push service cleans the row up.

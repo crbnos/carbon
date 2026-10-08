@@ -27,10 +27,3 @@ CREATE INDEX IF NOT EXISTS "pushSubscription_userId_companyId_idx"
 
 CREATE INDEX IF NOT EXISTS "pushSubscription_companyId_idx"
   ON "pushSubscription" ("companyId");
-
-ALTER TABLE "notificationPreference"
-  DROP CONSTRAINT IF EXISTS "notificationPreference_channel_check";
-
-ALTER TABLE "notificationPreference"
-  ADD CONSTRAINT "notificationPreference_channel_check"
-  CHECK ("channel" IN ('email', 'slack', 'push'));
