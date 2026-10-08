@@ -630,11 +630,13 @@ const postShipment = defineServerFn({
               const { data: shipmentFaLines } = await many(
                 db,
                 "shipmentFixedAssetLine",
-                { shipmentId, shipped: true },
+                { shipmentId, shipped: true, companyId },
                 { columns: ["salesOrderLineId", "serialNumber"] }
               );
               const shippedFaSoLineIds = new Set(
-                (shipmentFaLines ?? []).map((r) => r.salesOrderLineId)
+                (shipmentFaLines ?? [])
+                  .filter((r) => r.salesOrderLineId !== null)
+                  .map((r) => r.salesOrderLineId)
               );
 
               const faSalesOrderLines = salesOrderLines.data.filter(

@@ -1891,20 +1891,21 @@ const postReceipt = defineServerFn({
           const { data: receiptFaLines } = await many(
             db,
             "receiptFixedAssetLine",
-            { receiptId, received: true },
+            { receiptId, received: true, companyId },
             { columns: ["id", "purchaseOrderLineId", "serialNumber"] }
           );
+          const poFaLines = (receiptFaLines ?? []).filter(
+            (r): r is typeof r & { purchaseOrderLineId: string } =>
+              r.purchaseOrderLineId !== null
+          );
           const receivedFaPoLineIds = new Set(
-            (receiptFaLines ?? []).map((r) => r.purchaseOrderLineId)
+            poFaLines.map((r) => r.purchaseOrderLineId)
           );
           const faSerialNumbers = new Map(
-            (receiptFaLines ?? []).map((r) => [
-              r.purchaseOrderLineId,
-              r.serialNumber
-            ])
+            poFaLines.map((r) => [r.purchaseOrderLineId, r.serialNumber])
           );
           const faReceiptLineIds = new Map<string, string>();
-          for (const r of receiptFaLines ?? []) {
+          for (const r of poFaLines) {
             faReceiptLineIds.set(r.purchaseOrderLineId, r.id);
           }
           // A Construction in Progress asset records every posting that adds to
