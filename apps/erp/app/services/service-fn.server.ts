@@ -39,8 +39,12 @@ export class CarbonError<
   readonly cause?: unknown;
 
   constructor(category: C, message: string, cause?: unknown) {
+    // A refusal is an expected outcome that is returned, not thrown: nobody
+    // reads its stack, and capturing one is most of what creating it costs.
+    const limit = Error.stackTraceLimit;
+    if (category !== "internal") Error.stackTraceLimit = 0;
     super(message);
-    this.name = "CarbonError";
+    Error.stackTraceLimit = limit;
     this.category = category;
     this.cause = cause;
   }
@@ -49,6 +53,7 @@ export class CarbonError<
     return ERROR_STATUS[this.category];
   }
 }
+CarbonError.prototype.name = "CarbonError";
 
 export type Result<T, E extends CarbonError = CarbonError> =
   | { data: T; error: null }
@@ -102,64 +107,101 @@ type Handles = {
 };
 
 class Rollback {
-  constructor(readonly error: CarbonError) {}
+  readonly error: CarbonError;
+  constructor(error: CarbonError) {
+    this.error = error;
+  }
+}
+
+function auditUserIdOf(actor: Actor): string {
+  if (actor.type === "user") return actor.userId;
+  if (actor.type === "apiKey") return actor.createdBy;
+  return actor.onBehalfOf;
+}
+
+function settle<R>(out: R) {
+  return (
+    out instanceof CarbonError
+      ? { data: null, error: out }
+      : { data: out, error: null }
+  ) as Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>;
+}
+
+// Classes, not object literals with getters: a context is built for every
+// request, and this way it costs a few field writes, with the accessors and
+// methods shared on the prototype instead of allocated per context.
+class SystemHandles {
+  private readonly handles: Handles;
+
+  constructor(handles: Handles) {
+    this.handles = handles;
+  }
+
+  get supabase() {
+    return this.handles.system();
+  }
+
+  get pg() {
+    return this.handles.pg();
+  }
+}
+
+class Context implements ServiceContext {
+  readonly actor: Actor;
+  readonly company: { id: string; groupId: string };
+  readonly asCaller: { supabase: SupabaseClient<Database> };
+  readonly asSystem: SystemHandles;
+  readonly auditUserId: string;
+  private readonly handles: Handles;
+
+  constructor(handles: Handles) {
+    this.actor = handles.actor;
+    this.company = handles.company;
+    this.asCaller = { supabase: handles.caller };
+    this.asSystem = new SystemHandles(handles);
+    this.auditUserId = auditUserIdOf(handles.actor);
+    this.handles = handles;
+  }
+
+  get kv() {
+    return this.handles.kv();
+  }
+
+  error<C extends ErrorCategory>(
+    category: C,
+    message: string,
+    cause?: unknown
+  ): CarbonError<C> {
+    return new CarbonError(category, message, cause);
+  }
+
+  async transaction<R>(
+    fn: (tx: TransactionContext) => Promise<R>
+  ): Promise<Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>> {
+    const pg = this.handles.pg();
+    if (pg.isTransaction) return settle(await fn(this));
+
+    try {
+      return settle(
+        await pg.transaction().execute(async (trx) => {
+          const out = await fn(new Context({ ...this.handles, pg: () => trx }));
+          if (out instanceof CarbonError) throw new Rollback(out);
+          return out;
+        })
+      );
+    } catch (err) {
+      if (err instanceof Rollback) return settle(err.error as R);
+      throw err;
+    }
+  }
 }
 
 export function createServiceContext(handles: Handles): ServiceContext {
-  const { actor } = handles;
-  const ctx: ServiceContext = {
-    actor,
-    company: handles.company,
-    asCaller: { supabase: handles.caller },
-    asSystem: {
-      get supabase() {
-        return handles.system();
-      },
-      get pg() {
-        return handles.pg();
-      }
-    },
-    get kv() {
-      return handles.kv();
-    },
-    auditUserId:
-      actor.type === "user"
-        ? actor.userId
-        : actor.type === "apiKey"
-          ? actor.createdBy
-          : actor.onBehalfOf,
-    error: (category, message, cause) =>
-      new CarbonError(category, message, cause),
-    async transaction(fn) {
-      type Out = Awaited<ReturnType<typeof fn>>;
-      const settle = (out: Out) =>
-        (out instanceof CarbonError
-          ? { data: null, error: out }
-          : { data: out, error: null }) as Result<
-          Exclude<Out, CarbonError>,
-          Extract<Out, CarbonError>
-        >;
+  return new Context(handles);
+}
 
-      const pg = handles.pg();
-      if (pg.isTransaction) return settle(await fn(ctx));
-
-      try {
-        return settle(
-          await pg.transaction().execute(async (trx) => {
-            const out = await fn(
-              createServiceContext({ ...handles, pg: () => trx })
-            );
-            if (out instanceof CarbonError) throw new Rollback(out);
-            return out;
-          })
-        );
-      } catch (err) {
-        if (err instanceof Rollback) return settle(err.error as Out);
-        throw err;
-      }
-    }
-  };
-  return ctx;
+function failed<R>(error: CarbonError) {
+  return { data: null, error } as Outcome<R>;
 }
 
 type Outcome<R> = Result<
@@ -185,17 +227,20 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
   permission: Permissions;
   run(ctx: ServiceContext, input: z.output<I>): Promise<R>;
 }): ServiceFn<I, R> {
-  const schema = z.compile(definition.input);
+  // Compiled on the first call, not at import: a module of service functions
+  // would otherwise pay for every schema at startup, used or not.
+  let schema: I | undefined;
 
   const call = async (
     ctx: ServiceContext,
     input: z.input<I>
   ): Promise<Outcome<R>> => {
-    const fail = (error: CarbonError) => ({ data: null, error }) as Outcome<R>;
-
+    schema ??= z.compile(definition.input);
     const parsed = schema.safeParse(input);
     if (!parsed.success) {
-      return fail(new CarbonError("validation", z.prettifyError(parsed.error)));
+      return failed(
+        new CarbonError("validation", z.prettifyError(parsed.error))
+      );
     }
 
     try {
@@ -211,14 +256,14 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
           error: out.cause
         });
       }
-      return fail(out);
+      return failed(out);
     } catch (err) {
       logger.error("Service function threw: {error}", {
         companyId: ctx.company.id,
         input,
         error: err
       });
-      return fail(new CarbonError("internal", "Something went wrong", err));
+      return failed(new CarbonError("internal", "Something went wrong", err));
     }
   };
 
