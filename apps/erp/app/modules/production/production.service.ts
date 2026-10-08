@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
+import {
+  fetchAllByIds,
+  fetchAllFromTable,
+  fetchAllRecords
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -2943,29 +2947,6 @@ export async function updateJobBatchNumber(
     .eq("id", trackedEntityId)
     .eq("companyId", companyId)
     .select("id, readableId");
-}
-
-// An `in` filter rides in the request URL and a response stops at PostgREST's
-// row cap, so a read keyed by an id list walks the ids in groups and pages each
-// group. A read cut short either way would say "nothing there" for the rest.
-const IN_FILTER_BATCH_SIZE = 100;
-
-async function fetchAllByIds<T extends object>(
-  ids: string[],
-  buildQuery: (batch: string[]) => {
-    range(
-      from: number,
-      to: number
-    ): PromiseLike<{ data: T[] | null; error: PostgrestError | null }>;
-  }
-): Promise<{ data: T[] | null; error: PostgrestError | null }> {
-  const rows: T[] = [];
-  for (const batch of chunkArray(ids, IN_FILTER_BATCH_SIZE)) {
-    const result = await fetchAllRecords(() => buildQuery(batch));
-    if (result.error) return { data: null, error: result.error };
-    rows.push(...result.data);
-  }
-  return { data: rows, error: null };
 }
 
 export type JobReleaseReadiness = {

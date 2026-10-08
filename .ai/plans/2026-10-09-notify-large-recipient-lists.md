@@ -16,8 +16,8 @@ PR #1867 fixed the reads: `fetchAllByIds` (`@carbon/database`) sends 100 ids per
 | One round trip per recipient | The multi-item digest loop: 1 parent insert and 1 child insert per user | A large digest is slow, and the step can time out |
 | Inngest keeps a step output up to 4 MB | `resolve-email-recipients` returns the rendered HTML of every recipient | About 240 recipients fill 4 MB (16.9 KB per email) |
 | Inngest accepts a send batch up to 512 KB | `fan-out-emails`, `fan-out-slack`, `fan-out-push` send all events at once | Email fails at about 30 recipients (30 × 16.9 KB) |
-| Slack rate-limits `users.lookupByEmail` | `resolve-slack-recipients` looks up every recipient at the same time | `getSlackUserIdByCarbonId` logs the error and returns nothing, so the user gets no DM and no error |
-| One `user` read per Slack recipient | `getSlackUserIdByCarbonId` (`packages/ee/src/slack/lib/service.ts:252`) reads the email by user id | An N+1 read |
+| Slack rate-limits `users.lookupByEmail` (Tier 3, 50+ calls a minute) | `resolve-slack-recipients` looks up every recipient at the same time | Not a lost DM: `@slack/web-api` waits for `Retry-After` and tries again, up to 10 times in about 30 minutes. A large first-time fan-out makes the step wait. |
+| One `user` read per Slack recipient | `getSlackUserIdByCarbonId` (`packages/ee/src/slack/lib/service.ts:252`) reads the email by user id | Only on a Redis cache miss (`slack-user:<id>`), so the first DM to a user only |
 
 The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one detail row (`render(getNotificationEmailComponent(…))`, measured in a temporary vitest file).
 
@@ -27,8 +27,8 @@ The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one 
 - [x] Task 3: Insert digest rows in batches, and chunk the flat insert
 - [x] Task 4: Render and send emails in chunks
 - [x] Task 5: Send the Slack and push events in chunks
-- [ ] Task 6: Look up Slack users with the email in hand and bounded concurrency
-- [ ] Task 7: Use the shared `fetchAllByIds` in the production module
+- [x] Task 6: Look up Slack users with the email in hand and bounded concurrency — skipped by the user, see the task
+- [x] Task 7: Use the shared `fetchAllByIds` in the production module
 - [ ] Task 8: Update the docs and the lessons
 - [ ] Task 9: Run the gates and a large-group check
 
@@ -181,6 +181,8 @@ grep -n 'sendEvent("fan-out-slack"\|sendEvent("fan-out-push"' packages/jobs/src/
 **Out of scope:** `send-slack.ts` and `send-push.ts`.
 
 ## Task 6: Look up Slack users with the email in hand and bounded concurrency
+
+> **Skipped (2026-10-09, the user's decision).** The premise was wrong. A rate-limited lookup does not drop the user: `@slack/web-api` 7.15 defaults to `rejectRateLimitedCalls = false` and `tenRetriesInAboutThirtyMinutes`, so it waits and tries again. The `user` read happens only on a Redis cache miss. `getSlackUserIdByCarbonId` also has 6 callers inside `service.ts`, which the escape hatch in step 2 guards. The steps below stay as a record; do not do them.
 
 **Depends on:** Task 1
 **Files:**
