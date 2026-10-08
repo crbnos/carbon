@@ -340,7 +340,7 @@ export const SearchModal = () => {
                         <button
                           type="button"
                           onClick={(e) => removeRecentSearch(result.to, e)}
-                          className="flex-shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100"
+                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <LuX className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -394,7 +394,7 @@ export const SearchModal = () => {
                           {item.name}
                         </span>
                       </span>
-                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100" />
+                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -447,7 +447,7 @@ export const SearchModal = () => {
                         </span>
                       )}
                     </VStack>
-                    <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100" />
+                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
                   </CommandItem>
                 ))}
               </CommandGroup>

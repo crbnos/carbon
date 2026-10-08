@@ -1421,7 +1421,7 @@ const Table = <T extends object>({
                                       ) : (
                                         <LuArrowUpDown
                                           aria-hidden="true"
-                                          className="text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-100"
+                                          className="text-muted-foreground/50 md:opacity-0 transition-opacity group-hover:opacity-100"
                                         />
                                       )}
                                     </span>

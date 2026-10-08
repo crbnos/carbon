@@ -374,7 +374,7 @@ function BlockRow({ id }: { id: string }) {
       >
         {/* Type icon normally; grip on hover to signal draggability. */}
         <span className="group-hover:opacity-0">{blockIcon(block.type)}</span>
-        <span className="absolute inset-0 opacity-0 group-hover:opacity-100 max-md:opacity-100">
+        <span className="absolute inset-0 md:opacity-0 group-hover:opacity-100">
           <LuGripVertical className="size-4" />
         </span>
       </button>
@@ -402,7 +402,7 @@ function BlockRow({ id }: { id: string }) {
             e.stopPropagation();
             removeBlock(id);
           }}
-          className="rounded p-1 text-muted-foreground opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100 max-md:opacity-100"
+          className="rounded p-1 text-muted-foreground md:opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
         >
           <LuTrash2 className="size-4" />
         </button>
@@ -491,7 +491,7 @@ function NestedBlockRow({ id }: { id: string }) {
               e.stopPropagation();
               removeBlock(id);
             }}
-            className="rounded p-1 text-muted-foreground opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100 max-md:opacity-100"
+            className="rounded p-1 text-muted-foreground md:opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
           >
             <LuTrash2 className="size-4" />
           </button>

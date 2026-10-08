@@ -148,7 +148,7 @@ function WorkflowTitle({
       }}
     >
       <Heading className={headingClassName}>{name}</Heading>
-      <LuPencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/title:opacity-100 max-md:size-4 max-md:opacity-100" />
+      <LuPencil className="size-3 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/title:opacity-100 max-md:size-4" />
     </button>
   );
 }

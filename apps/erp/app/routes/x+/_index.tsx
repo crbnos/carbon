@@ -377,7 +377,7 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
               size="sm"
               isRound
               onClick={dismiss}
-              className="ml-2 text-muted-foreground rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100"
+              className="ml-2 text-muted-foreground rounded-full md:opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
             />
           </TooltipTrigger>
           <TooltipContent>
@@ -495,7 +495,7 @@ const RecentDocumentRow = ({
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100"
+        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 transition-opacity"
       />
     </div>
   );

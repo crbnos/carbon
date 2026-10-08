@@ -175,7 +175,7 @@ function makeItem(
               onClick={(e) => e.stopPropagation()}
               className="max-md:hit-area"
             >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 max-md:opacity-100" />
+              <LuExternalLink className="h-4 w-4 md:opacity-0 group-hover:opacity-100" />
             </Link>
           )}
         </div>

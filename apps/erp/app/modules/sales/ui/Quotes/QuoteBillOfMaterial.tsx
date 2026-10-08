@@ -158,7 +158,7 @@ function makeItem(
               to={getLinkToItemDetails(material.itemType, material.itemId)}
               onClick={(e) => e.stopPropagation()}
             >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 max-md:opacity-100" />
+              <LuExternalLink className="h-4 w-4 md:opacity-0 group-hover:opacity-100" />
             </Link>
           )}
         </div>

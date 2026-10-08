@@ -377,7 +377,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                     icon={<LuX />}
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive max-md:opacity-100"
+                    className="md:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
                     onClick={() => setRemoving(m)}
                   />
                 )}

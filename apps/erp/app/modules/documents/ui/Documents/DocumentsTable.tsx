@@ -228,7 +228,7 @@ const DocumentsTable = memo(
                 className="group flex items-center gap-1"
               >
                 <Enumerable value={row.original.sourceDocument} />{" "}
-                <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground max-md:opacity-100">
+                <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
                   <LuExternalLink />
                 </span>
               </PrefetchLink>

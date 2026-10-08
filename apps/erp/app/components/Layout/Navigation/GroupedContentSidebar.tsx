@@ -332,7 +332,7 @@ const ViewsReorderGroup = ({
                 icon={<LuGripVertical />}
                 variant="ghost"
                 size="sm"
-                className="flex-shrink-0 opacity-0 group-hover/view:opacity-100 absolute left-1 max-md:opacity-100"
+                className="flex-shrink-0 md:opacity-0 group-hover/view:opacity-100 absolute left-1"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -341,7 +341,7 @@ const ViewsReorderGroup = ({
                     icon={<LuEllipsisVertical />}
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 flex-shrink-0 opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground max-md:opacity-100"
+                    className="absolute right-1 flex-shrink-0 md:opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
