@@ -1,6 +1,7 @@
 # ERP phone redesign of 12 screens — implementation plan
 
 **Spec:** `.ai/specs/2026-10-08-erp-phone-detail-redesign.md` (approved 2026-10-08)
+**Status:** approved
 **Research:** `.ai/research/2026-10-08-erp-phone-redesign-mapping.md` (file:line for every screen)
 **Designs:** `local-docs/mobile-design/review-2026-10-08/index.html` (after-*.json)
 **Branch:** `feat/mobile-redesign`

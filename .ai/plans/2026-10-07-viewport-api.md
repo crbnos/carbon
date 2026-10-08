@@ -1,6 +1,7 @@
 # Viewport API — implementation plan
 
 **Spec / source:** `.ai/specs/2026-10-07-viewport-api.md`
+**Status:** approved
 **Branch:** `feat/mobile-redesign`
 
 ## Progress

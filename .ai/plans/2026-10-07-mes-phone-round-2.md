@@ -1,6 +1,7 @@
 # MES phone layout, round 2 — implementation plan
 
 **Spec / source:** .ai/specs/2026-10-07-mes-phone-round-2.md
+**Status:** approved
 **Branch:** feat/mobile-redesign
 
 ## Progress

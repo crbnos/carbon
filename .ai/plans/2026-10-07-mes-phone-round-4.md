@@ -1,6 +1,7 @@
 # MES phone layout, round 4 — implementation plan
 
 **Spec / source:** `.ai/specs/2026-10-07-mes-phone-round-2.md`; round 3 is `.ai/plans/2026-10-07-mes-phone-round-3.md`
+**Status:** approved
 **Evidence:** round-3 reviews in the session scratch `mes-r3/`: `review-layout.md` 75, `review-nav.md` 78, `review-operator.md` 73
 **Branch:** `feat/mobile-redesign`
 

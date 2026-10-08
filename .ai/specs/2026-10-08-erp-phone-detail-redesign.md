@@ -1,6 +1,6 @@
 # ERP phone redesign: 12 screens that failed the phone review
 
-> Status: draft — waiting for owner approval
+> Status: approved
 > Author: Claude (with the branch owner)
 > Date: 2026-10-08
 > Branch: `feat/mobile-redesign`

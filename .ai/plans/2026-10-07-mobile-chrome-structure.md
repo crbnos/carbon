@@ -1,6 +1,7 @@
 # Mobile chrome structure — implementation plan
 
 **Spec / source:** `.ai/specs/2026-10-07-mobile-chrome-structure.md`
+**Status:** approved
 **Research:** `.ai/research/2026-10-07-record-header-catalogue.md`
 **Branch:** `feat/mobile-redesign` (uncommitted working tree, `/Users/aashu/work/carbon/carbon-feat-mobile-redesign`). Never commit.
 

@@ -1,6 +1,6 @@
 # Mobile chrome: one compact signal, one record header, one slot primitive
 
-> Status: in-progress
+> Status: approved
 > Author: Claude (with the branch owner)
 > Date: 2026-10-07
 

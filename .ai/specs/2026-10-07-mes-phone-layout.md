@@ -1,6 +1,6 @@
 # MES phone layout
 
-> Status: in-progress
+> Status: approved
 > Date: 2026-10-07
 > Extends: `.ai/specs/2026-10-07-viewport-api.md` (`max-md:`, `useViewport`)
 > Design source: the MES module of the mobile prototype (`local-docs/mobile-design/index.html`, specs

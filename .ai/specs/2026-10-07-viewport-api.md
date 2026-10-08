@@ -1,6 +1,6 @@
 # Viewport API: `max-md:` and `useViewport()`
 
-> Status: draft
+> Status: approved
 > Date: 2026-10-07
 > Extends: `.ai/specs/2026-10-07-mobile-chrome-structure.md` (B3, one compact signal)
 
