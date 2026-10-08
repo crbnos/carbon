@@ -4383,9 +4383,6 @@ msgstr "选择批号"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
-msgid "Choose a company"
-msgstr "选择公司"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -13211,6 +13208,9 @@ msgstr "没有无碰撞路径"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工单"
 
@@ -13835,9 +13835,6 @@ msgstr "今天不工作"
 
 msgid "Not yet"
 msgstr "还未"
-
-msgid "Not you?"
-msgstr "不是你？"
 
 msgid "Note"
 msgstr "备注"
@@ -18154,6 +18151,9 @@ msgstr "搜索事件…"
 msgid "Search fields..."
 msgstr "搜索字段..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
 
@@ -22141,6 +22141,9 @@ msgstr "触发者"
 
 msgid "Triggers"
 msgstr "触发器"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "星期二"

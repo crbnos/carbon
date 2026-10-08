@@ -60,20 +60,22 @@ export type Container = {
 // Every profile `bootStack` can enable. Compose treats profile-gated services
 // as "not enabled" rather than orphans, so a `down` missing one silently
 // leaves those containers running. `stopStack`'s sweep backstops drift here.
-const COMPOSE_PROFILES = ["full", "mail"] as const;
+const COMPOSE_PROFILES = ["full", "studio", "mail"] as const;
 
 // Which services a boot starts. Default: the stack the apps need plus Inbucket
 // (login emails). `full` adds Studio, Postgres-Meta, the edge runtime and
 // imgproxy — nothing in the apps calls the first three (~40% of a stack's
-// memory) and imgproxy only converts HEIC. `minimal` drops Inbucket too
-// (headless runs sign in by bypass).
-export type StackSize = { minimal?: boolean; full?: boolean };
+// memory) and imgproxy only converts HEIC. `studio` adds just Studio and the
+// Postgres-Meta it reads through (picked as an app in `crbn up`). `minimal`
+// drops Inbucket too (headless runs sign in by bypass).
+export type StackSize = { minimal?: boolean; full?: boolean; studio?: boolean };
 
 function profileArgs(opts?: StackSize): string[] {
-  if (opts?.minimal) return [];
-  return opts?.full
-    ? ["--profile", "full", "--profile", "mail"]
-    : ["--profile", "mail"];
+  const profiles: string[] = [];
+  if (opts?.full) profiles.push("full");
+  else if (opts?.studio) profiles.push("studio");
+  if (!opts?.minimal) profiles.push("mail");
+  return profiles.flatMap((profile) => ["--profile", profile]);
 }
 
 // Exported for tests: the `docker compose … up -d` argv.
