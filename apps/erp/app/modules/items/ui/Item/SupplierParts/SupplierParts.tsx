@@ -2,12 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Card, CardContent, CardHeader, CardTitle, cn } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn,
+  RecordOutlet
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { LuTrash } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { SupplierAvatar } from "~/components";
 import Grid from "~/components/Grid";
 import Hyperlink from "~/components/Hyperlink";
@@ -169,7 +176,7 @@ const SupplierParts = ({
           />
         </CardContent>
       </Card>
-      <Outlet />
+      <RecordOutlet />
       {deleteTarget && deleteSupplierPath && deleteTarget.id && (
         <ConfirmDelete
           action={deleteSupplierPath(deleteTarget.id)}
