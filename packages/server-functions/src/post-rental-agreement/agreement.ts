@@ -284,9 +284,15 @@ export async function postLeaseJournal(
 export async function insertUnitActivity(
   trx: Trx,
   args: {
-    type: "Lease Commencement" | "Return to Inventory" | "Capitalize";
+    type:
+      | "Lease Commencement"
+      | "Return to Inventory"
+      | "Capitalize"
+      | "Rental Delivery"
+      | "Rental Return"
+      | "Void Shipment";
     direction: "input" | "output";
-    sourceDocument: "Rental Agreement" | "Fixed Asset";
+    sourceDocument: "Rental Agreement" | "Fixed Asset" | "Shipment" | "Receipt";
     sourceDocumentId: string;
     sourceDocumentReadableId: string;
     attributes: Record<string, string>;

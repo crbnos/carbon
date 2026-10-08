@@ -29,7 +29,7 @@ in spec → Open Questions.
 - [x] Task 5: Move the return body into `returnRentalUnit`
 - [x] Task 6: Add the pure rental document rules
 - [x] Task 7: Add the two `create` cases
-- [ ] Task 8: Post a rental shipment
+- [x] Task 8: Post a rental shipment
 - [ ] Task 9: Void a rental shipment
 - [ ] Task 10: Post a rental receipt and refuse its void
 - [ ] Task 11: Add the Close guard

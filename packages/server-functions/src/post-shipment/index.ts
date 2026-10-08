@@ -48,12 +48,18 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { postRentalShipment } from "./rental-agreement";
 
 const logger = getLogger("server-functions", "post-shipment");
 
 export const postShipmentInput = z.object({
   type: z.enum(["post", "void"]),
-  shipmentId: z.string()
+  shipmentId: z.string(),
+  /** The delivery date of a rental shipment. Other sources ignore it. */
+  postingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
 });
 
 /** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
@@ -61,7 +67,7 @@ const postShipment = defineServerFn({
   name: "post-shipment",
   input: postShipmentInput,
   permissions: { update: "inventory" },
-  async run(ctx, { type, shipmentId }) {
+  async run(ctx, { type, shipmentId, postingDate }) {
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, shipmentId, userId, companyId });
@@ -3034,6 +3040,17 @@ const postShipment = defineServerFn({
                   .execute();
               });
 
+              break;
+            }
+
+            case "Rental Agreement": {
+              await postRentalShipment(db, {
+                shipmentId,
+                companyId,
+                userId,
+                today,
+                postingDate
+              });
               break;
             }
 
