@@ -3,22 +3,29 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Pins today's unit return against the live database, so moving the return
-// body into `returnRentalUnit` cannot change what it writes.
+// body into `returnRentalUnit` cannot change what it writes. It acts through
+// a rental receipt, which re-cuts the periods exactly as the old return did.
 
 import { sql } from "kysely";
 import { expect } from "vitest";
+import create from "../create";
 import { databaseTest } from "../local-database-test-fixture";
-import postRentalAgreement from "./index";
+import postReceipt from "../post-receipt";
 import { rentalFixture } from "./rental-test-fixture";
 
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
-function returnUnitOnSeptember20(f: Fixture) {
-  return postRentalAgreement(f.ctx, {
-    type: "return",
+async function returnUnitOnSeptember20(f: Fixture) {
+  const receipt = await create(f.ctx, {
+    type: "receiptFromRentalAgreement",
     rentalAgreementId: f.agreementId,
-    rentalAgreementLineId: f.lineIds[0]!,
-    returnedAt: "2026-09-20"
+    rentalAgreementLineId: f.lineIds[0]!
+  });
+  if (receipt.error) return receipt;
+  return postReceipt(f.ctx, {
+    type: "post",
+    receiptId: receipt.data.id,
+    postingDate: "2026-09-20"
   });
 }
 

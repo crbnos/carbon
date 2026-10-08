@@ -31,7 +31,7 @@ in spec → Open Questions.
 - [x] Task 7: Add the two `create` cases
 - [x] Task 8: Post a rental shipment
 - [x] Task 9: Void a rental shipment
-- [ ] Task 10: Post a rental receipt and refuse its void
+- [x] Task 10: Post a rental receipt and refuse its void
 - [ ] Task 11: Add the Close guard
 - [ ] Task 12: Add the ERP models, service reads and the line-documents helper
 - [ ] Task 13: Add the rental branches to the inventory `new` and `details` routes
