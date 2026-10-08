@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import { Edition, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
-import { createCookieSessionStorage } from "react-router";
+import { createCookie, createCookieSessionStorage } from "react-router";
 
 import {
   CarbonEdition,
@@ -66,6 +67,45 @@ const sessionStorage = createCookieSessionStorage({
     domain: cookieDomain
   }
 });
+
+const log = getLogger("auth", "session");
+
+// The Web Push endpoint of this browser, set when the user enables browser
+// notifications. Signing out (clearAuthCookies) deletes the endpoint's
+// subscription rows, so a browser nobody is signed into stops receiving
+// pushes — whichever path signed it out.
+export const pushEndpointCookie = createCookie("carbon-push", {
+  httpOnly: true,
+  path: "/",
+  sameSite: isTestEdition ? "none" : "lax",
+  secrets: [SESSION_SECRET!],
+  secure: isTestEdition || !!cookieDomain,
+  domain: cookieDomain,
+  // Browsers cap a cookie's lifetime at 400 days.
+  maxAge: 60 * 60 * 24 * 400
+});
+
+async function endBrowserPush(request: Request) {
+  const endpoint = await pushEndpointCookie.parse(
+    request.headers.get("Cookie")
+  );
+  if (typeof endpoint !== "string" || !endpoint) return null;
+  // Loaded here, not at module load: importing the session module must not
+  // build a Supabase client.
+  const { getCarbonServiceRole } = await import(
+    "../lib/supabase/client.server"
+  );
+  // Every user's row for this browser: after sign-out nobody is signed in.
+  const { error } = await getCarbonServiceRole()
+    .from("pushSubscription")
+    .delete()
+    .eq("endpoint", endpoint);
+  if (error) {
+    // Signing out must still succeed; the next 404/410 cleans the row up.
+    log.error("Failed to delete push subscriptions on sign-out", { error });
+  }
+  return pushEndpointCookie.serialize("", { maxAge: 0 });
+}
 
 export async function setAuthSession(
   request: Request,
@@ -212,9 +252,11 @@ export async function clearAuthCookies(request: Request) {
   const session = await getSession(request);
   const sessionCookie = await sessionStorage.destroySession(session);
   const companyIdCookie = setCompanyId(null);
+  const pushCookie = await endBrowserPush(request);
   return [
     ["Set-Cookie", sessionCookie] as [string, string],
-    ["Set-Cookie", companyIdCookie] as [string, string]
+    ["Set-Cookie", companyIdCookie] as [string, string],
+    ...(pushCookie ? [["Set-Cookie", pushCookie] as [string, string]] : [])
   ];
 }
 

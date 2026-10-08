@@ -754,7 +754,10 @@ export const notifyFunction = inngest.createFunction(
     }
 
     // ---- Push fan-out ----
-    // One carbon/send-push per device row, so each device retries on its own.
+    // One carbon/send-push per browser row, so each browser retries on its
+    // own. A row belongs to the user, not a company: recipients are already
+    // limited to members of this notification's company (resolve-recipients),
+    // so each user gets the push of every company they belong to.
     if (wantsPush && pushRecipientIds.length > 0) {
       const pushEvents = await step.run(
         "resolve-push-subscriptions",
@@ -762,7 +765,6 @@ export const notifyFunction = inngest.createFunction(
           const { data: subscriptions, error } = await client
             .from("pushSubscription")
             .select("id")
-            .eq("companyId", payload.companyId)
             .in("userId", pushRecipientIds);
           if (error) {
             console.error("Failed to load push subscriptions", error);

@@ -4,10 +4,11 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { pushEndpointCookie } from "@carbon/auth/session.server";
 import { getAppUrl, isPushConfigured } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
@@ -25,7 +26,48 @@ const testPushValidator = pushSubscriptionEndpointValidator.extend({
   intent: z.literal("test")
 });
 
-// This device's Web Push subscription for the signed-in user and company.
+// The carbon-push cookie names this browser's endpoint, so signing out
+// (clearAuthCookies in @carbon/auth) can delete its rows.
+const rememberEndpoint = async (endpoint: string) => ({
+  "Set-Cookie": await pushEndpointCookie.serialize(endpoint)
+});
+
+// GET ?endpoint= — are browser notifications on in this browser for the
+// signed-in user? Read-only: opening a page never claims the browser.
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId, userId } = await requirePermissions(request, {});
+
+  if (!isPushConfigured()) return { enabled: false };
+
+  const parsed = pushSubscriptionEndpointValidator.safeParse({
+    endpoint: new URL(request.url).searchParams.get("endpoint")
+  });
+  if (!parsed.success) {
+    return data({ error: "Invalid subscription" }, { status: 400 });
+  }
+
+  const subscription = await getPushSubscription(client, {
+    userId,
+    endpoint: parsed.data.endpoint
+  });
+  if (subscription.error) {
+    logger.error("Failed to read push subscription", {
+      companyId,
+      error: subscription.error
+    });
+    return data({ error: subscription.error.message }, { status: 500 });
+  }
+  if (!subscription.data) return { enabled: false };
+
+  // Re-set the cookie: a subscription saved before the cookie existed must
+  // still end at sign-out.
+  return data(
+    { enabled: true },
+    { headers: await rememberEndpoint(parsed.data.endpoint) }
+  );
+}
+
+// This browser's Web Push subscription for the signed-in user.
 // PUT saves it (also from push-worker.js after a pushsubscriptionchange),
 // DELETE removes it, POST { intent: "test" } sends a test push to it.
 export async function action({ request }: ActionFunctionArgs) {
@@ -48,7 +90,6 @@ export async function action({ request }: ActionFunctionArgs) {
       if (oldEndpoint) {
         const removed = await deletePushSubscription(client, {
           userId,
-          companyId,
           endpoint: oldEndpoint
         });
         if (removed.error) {
@@ -60,8 +101,8 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
 
-      // One browser has one endpoint. A previous user's rows for it would
-      // keep sending their notifications to whoever uses this browser now.
+      // One browser has one endpoint, and only the user signed into it gets
+      // its pushes. A previous user's row would otherwise block the upsert.
       const handedOver = await getCarbonServiceRole()
         .from("pushSubscription")
         .delete()
@@ -90,7 +131,10 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         return data({ error: saved.error.message }, { status: 500 });
       }
-      return { id: saved.data.id };
+      return data(
+        { id: saved.data.id },
+        { headers: await rememberEndpoint(endpoint) }
+      );
     }
 
     case "DELETE": {
@@ -100,7 +144,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const removed = await deletePushSubscription(client, {
         userId,
-        companyId,
         endpoint: parsed.data.endpoint
       });
       if (removed.error) {
@@ -110,7 +153,14 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         return data({ error: removed.error.message }, { status: 500 });
       }
-      return { ok: true };
+      return data(
+        { ok: true },
+        {
+          headers: {
+            "Set-Cookie": await pushEndpointCookie.serialize("", { maxAge: 0 })
+          }
+        }
+      );
     }
 
     case "POST": {
@@ -120,7 +170,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const subscription = await getPushSubscription(client, {
         userId,
-        companyId,
         endpoint: parsed.data.endpoint
       });
       if (subscription.error) {
@@ -132,7 +181,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       if (!subscription.data) {
         return data(
-          { error: "Push is not on for this device" },
+          { error: "Browser notifications are not on in this browser" },
           { status: 404 }
         );
       }
@@ -141,7 +190,7 @@ export async function action({ request }: ActionFunctionArgs) {
         subscriptionId: subscription.data.id,
         companyId,
         title: "Carbon",
-        body: "Push notifications work on this device.",
+        body: "Browser notifications work in this browser.",
         url: `${getAppUrl()}${path.to.notificationSettings}`,
         tag: "carbon-test"
       });

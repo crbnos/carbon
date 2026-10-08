@@ -5,9 +5,13 @@
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { path } from "~/utils/path";
-import { urlBase64ToUint8Array } from "~/utils/push";
+import {
+  areBrowserNotificationsEnabled,
+  rememberBrowserNotifications,
+  urlBase64ToUint8Array
+} from "~/utils/push";
 
 const logger = getLogger("erp", "usepushsubscription");
 
@@ -29,6 +33,29 @@ async function currentSubscription() {
   return (await registration?.pushManager.getSubscription()) ?? null;
 }
 
+// Is the subscription on for the user signed in now? Read-only.
+async function isEnabledOnServer(endpoint: string) {
+  const params = new URLSearchParams({ endpoint });
+  const response = await fetch(
+    `${path.to.api.pushSubscription}?${params.toString()}`,
+    { credentials: "same-origin" }
+  );
+  if (!response.ok) return false;
+  const status = (await response.json()) as { enabled?: boolean };
+  return status.enabled === true;
+}
+
+// Registers the worker and subscribes. Needs permission already granted;
+// returns the browser's existing subscription when there is one.
+async function subscribe(publicKey: string) {
+  await navigator.serviceWorker.register(WORKER_URL, { scope: "/" });
+  const registration = await navigator.serviceWorker.ready;
+  return registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey)
+  });
+}
+
 function sendSubscription(
   method: "PUT" | "DELETE" | "POST",
   body: Record<string, unknown>
@@ -41,18 +68,49 @@ function sendSubscription(
   });
 }
 
-// Stops this browser receiving pushes: drops the server row, then the
-// browser's own subscription. Never throws — Sign Out must not wait on it.
-export async function unsubscribeThisDevice() {
-  try {
-    if (!supportsPush()) return;
-    const subscription = await currentSubscription();
-    if (!subscription) return;
-    await sendSubscription("DELETE", { endpoint: subscription.endpoint });
-    await subscription.unsubscribe();
-  } catch (error) {
-    logger.error("Failed to unsubscribe this device from push", { error });
-  }
+// Browser notifications are a setting of this browser: once enabled, the
+// subscription is saved for whoever signs in. Sign-out deletes the row, so
+// this re-saves it for the user signed in now — without asking. Runs once per
+// tab and user.
+export function useRestoreBrowserNotifications({
+  publicKey,
+  userId
+}: {
+  publicKey: string | null;
+  userId: string;
+}) {
+  const ran = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!publicKey || !supportsPush()) return;
+    if (Notification.permission !== "granted") return;
+    if (ran.current === userId) return;
+    ran.current = userId;
+
+    (async () => {
+      try {
+        const existing = await currentSubscription();
+        if (existing && (await isEnabledOnServer(existing.endpoint))) {
+          // On already — remember it, so the next sign-in keeps it on.
+          rememberBrowserNotifications(true);
+          return;
+        }
+        if (!areBrowserNotificationsEnabled()) return;
+        const subscription = existing ?? (await subscribe(publicKey));
+        const response = await sendSubscription(
+          "PUT",
+          subscription.toJSON() as Record<string, unknown>
+        );
+        if (!response.ok) {
+          logger.error("Failed to restore browser notifications", {
+            status: response.status
+          });
+        }
+      } catch (error) {
+        logger.error("Failed to restore browser notifications", { error });
+      }
+    })();
+  }, [publicKey, userId]);
 }
 
 export function usePushSubscription({
@@ -81,13 +139,11 @@ export function usePushSubscription({
           if (!cancelled) setState("off");
           return;
         }
-        // Re-save the row for the current company: the browser keeps one
-        // subscription, the server keeps one row per company.
-        const response = await sendSubscription(
-          "PUT",
-          subscription.toJSON() as Record<string, unknown>
-        );
-        if (!cancelled) setState(response.ok ? "on" : "off");
+        // The browser keeps its subscription across sign-outs, but signing
+        // out deletes the row: ask the server whether it is on for the user
+        // signed in now. Read-only — only Enable claims the browser.
+        const enabled = await isEnabledOnServer(subscription.endpoint);
+        if (!cancelled) setState(enabled ? "on" : "off");
       } catch (error) {
         logger.error("Failed to read the push subscription", { error });
         if (!cancelled) setState("off");
@@ -124,12 +180,7 @@ export function usePushSubscription({
         }
         if (permission !== "granted") return;
 
-        await navigator.serviceWorker.register(WORKER_URL, { scope: "/" });
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey)
-        });
+        const subscription = await subscribe(publicKey);
         const response = await sendSubscription(
           "PUT",
           subscription.toJSON() as Record<string, unknown>
@@ -140,6 +191,7 @@ export function usePushSubscription({
           toast.error(t`Failed to enable browser notifications`);
           return;
         }
+        rememberBrowserNotifications(true);
         setState("on");
       }, t`Failed to enable browser notifications`),
     [publicKey, run, t]
@@ -155,6 +207,7 @@ export function usePushSubscription({
           });
           await subscription.unsubscribe();
         }
+        rememberBrowserNotifications(false);
         setState("off");
       }, t`Failed to disable browser notifications`),
     [run, t]

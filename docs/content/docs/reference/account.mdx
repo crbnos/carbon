@@ -62,5 +62,5 @@ The per-user language preference exists in the account model, but the picker isn
 Slack's column needs the integration connected. Email preferences are stored regardless but only take effect when the plan includes `EMAIL_NOTIFICATIONS`.
 
 ### The Browser column and Browser notifications card are missing
-Both need the deployment's Web Push keys (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`); `isPushConfigured()` gates them in the loader. The device subscription is one `pushSubscription` row per user, company and browser endpoint (`api+/push-subscription.ts`).
+Both need the deployment's Web Push keys (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`); `isPushConfigured()` gates them in the loader. The subscription is one `pushSubscription` row per browser endpoint, owned by the signed-in user (`api+/push-subscription.ts`); `clearAuthCookies` (`@carbon/auth`) deletes it on sign-out through the signed `carbon-push` cookie.
 </AgentContext>

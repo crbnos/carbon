@@ -70,21 +70,21 @@ export async function upsertNotificationPreference(
   );
 }
 
-/** Reads this device's push subscription for the user and company. */
+/** Reads this browser's push subscription for the user. */
 export async function getPushSubscription(
   client: SupabaseClient<Database>,
-  args: { userId: string; companyId: string; endpoint: string }
+  args: { userId: string; endpoint: string }
 ) {
   return client
     .from("pushSubscription")
     .select("id")
     .eq("userId", args.userId)
-    .eq("companyId", args.companyId)
     .eq("endpoint", args.endpoint)
     .maybeSingle();
 }
 
-/** Saves this device's push subscription for the user and company. */
+/** Saves this browser's push subscription for the user. One row per browser;
+ * companyId is the company it was enabled from. */
 export async function upsertPushSubscription(
   client: SupabaseClient<Database>,
   subscription: {
@@ -100,22 +100,21 @@ export async function upsertPushSubscription(
     .from("pushSubscription")
     .upsert(
       { ...subscription, updatedAt: datetime.timestamp() },
-      { onConflict: "endpoint,companyId" }
+      { onConflict: "endpoint" }
     )
     .select("id")
     .single();
 }
 
-/** Removes this device's push subscription for the user and company. */
+/** Removes this browser's push subscription for the user. */
 export async function deletePushSubscription(
   client: SupabaseClient<Database>,
-  args: { userId: string; companyId: string; endpoint: string }
+  args: { userId: string; endpoint: string }
 ) {
   return client
     .from("pushSubscription")
     .delete()
     .eq("userId", args.userId)
-    .eq("companyId", args.companyId)
     .eq("endpoint", args.endpoint);
 }
 

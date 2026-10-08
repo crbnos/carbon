@@ -24,7 +24,7 @@ export const sendPushFunction = inngest.createFunction(
   },
   { event: "carbon/send-push" },
   async ({ event, step }) => {
-    const { subscriptionId, companyId, title, body, url, tag } = event.data;
+    const { subscriptionId, title, body, url, tag } = event.data;
 
     if (!isPushConfigured()) {
       return { skipped: "push not configured" };
@@ -35,7 +35,6 @@ export const sendPushFunction = inngest.createFunction(
         .from("pushSubscription")
         .select("id, endpoint, p256dh, auth")
         .eq("id", subscriptionId)
-        .eq("companyId", companyId)
         .maybeSingle();
       if (error) {
         console.error("Failed to load push subscription", error);
@@ -44,7 +43,9 @@ export const sendPushFunction = inngest.createFunction(
       return data;
     });
 
-    // Turned off or signed out between the fan-out and this run.
+    // Disabled or signed out between the fan-out and this run. The row is
+    // read by id alone: it belongs to the user and browser, and companyId on
+    // the event is the notification's company, not the row's.
     if (!subscription) {
       return { skipped: "subscription not found" };
     }
@@ -93,8 +94,7 @@ export const sendPushFunction = inngest.createFunction(
         const { error } = await getCarbonServiceRole()
           .from("pushSubscription")
           .delete()
-          .eq("id", subscription.id)
-          .eq("companyId", companyId);
+          .eq("id", subscription.id);
         if (error) {
           console.error("Failed to delete a gone push subscription", error);
           throw error;

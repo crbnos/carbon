@@ -39,6 +39,7 @@ import {
 } from "~/modules/account";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { dismissBrowserNotificationsPrompt } from "~/utils/push";
 
 export const handle: Handle = {
   breadcrumb: msg`Notifications`,
@@ -226,7 +227,12 @@ export default function AccountNotifications() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={device.turnOff}
+                    onClick={() => {
+                      // Off for this browser, for everyone: the bell stops
+                      // offering it too.
+                      dismissBrowserNotificationsPrompt({ permanently: true });
+                      device.turnOff();
+                    }}
                     isDisabled={device.busy}
                   >
                     <Trans>Disable</Trans>
