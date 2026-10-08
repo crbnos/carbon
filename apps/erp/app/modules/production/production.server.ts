@@ -115,10 +115,14 @@ export async function replanAfterItemChange(
 /**
  * Promote a Draft make-to-stock job to Planned from the planning drawer. MRP
  * does not count a Draft job as supply, so a Draft job and a Make suggestion
- * for the same need sat side by side and could both be built. In order: the
- * guarded status flip (only from Draft), the requirements recalculation, then
- * MRP — which now counts the job, so the Make suggestion shrinks by it. The
- * caller has checked the job's location and that no sales order owns it.
+ * for the same need sat side by side and could both be built. In order, as
+ * `releaseJobs` does: the requirements recalculation (a failure stops here,
+ * with the job still Draft, so MRP never counts a job whose requirements are
+ * stale), the guarded status flip (only from Draft), then MRP — which now
+ * counts the job, so the Make suggestion shrinks by it. No scheduler notice:
+ * the scheduler places only released jobs (`activeJobStatuses`), and a Planned
+ * job's dates and priority are unchanged. The caller has checked the job's
+ * location and that no sales order owns it.
  */
 export async function planDraftJob({
   client,
@@ -133,6 +137,25 @@ export async function planDraftJob({
   companyId: string;
   userId: string;
 }): Promise<{ updated: boolean; error?: string; warning?: string }> {
+  const serviceRole = getCarbonServiceRole();
+  const recalc = await recalculateJobRequirements(serviceRole, db, {
+    id: jobId,
+    companyId,
+    userId
+  });
+  if (recalc.error) {
+    logger.error("Failed to recalculate a Draft job before planning it", {
+      companyId,
+      jobId,
+      error: recalc.error
+    });
+    return {
+      updated: false,
+      error:
+        "The job's materials and operations could not be recalculated, so it was not planned. Recalculate the job and try again."
+    };
+  }
+
   const flipped = await updateJobStatus(client, {
     id: jobId,
     companyId,
@@ -150,20 +173,6 @@ export async function planDraftJob({
   }
   if (!flipped.updated) return { updated: false };
 
-  const serviceRole = getCarbonServiceRole();
-  const recalc = await recalculateJobRequirements(serviceRole, db, {
-    id: jobId,
-    companyId,
-    userId
-  });
-  if (recalc.error) {
-    logger.error("Failed to recalculate a job planned from planning", {
-      companyId,
-      jobId,
-      error: recalc.error
-    });
-  }
-
   const mrp = await runMRP(serviceRole, db, {
     type: "job",
     id: jobId,
@@ -176,16 +185,6 @@ export async function planDraftJob({
       jobId,
       error: mrp.error
     });
-  }
-
-  if (recalc.error) {
-    return {
-      updated: true,
-      warning:
-        "The job is Planned, but its materials and operations were not recalculated. Recalculate the job."
-    };
-  }
-  if (mrp.error) {
     return {
       updated: true,
       warning:

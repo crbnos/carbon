@@ -722,10 +722,11 @@ never offered a Cancel, Defer or Expedite.
     A Draft job (listed, editable, charted as new supply, but NOT MRP supply)
     shows a **Plan** button when no action targets it (`renderRowCommand`):
     `planning.update` `planJob` checks the location, that no sales order owns
-    it and that it is Draft, then `planDraftJob` (`production.server.ts`) flips
-    it to Planned (`updateJobStatus` `fromStatuses: ["Draft"]`), recalculates
-    its requirements and runs MRP — after the flip, so the run counts it and
-    the Make suggestion shrinks by it. The drawer then drops the item's draft
+    it and that it is Draft, then `planDraftJob` (`production.server.ts`) recalculates
+    its requirements (a failure leaves it Draft, as `releaseJobs` does), flips
+    it to Planned (`updateJobStatus` `fromStatuses: ["Draft"]`) and runs MRP —
+    after the flip, so the run counts it and the Make suggestion shrinks by
+    it. No scheduler notice: only released jobs are scheduled. The drawer then drops the item's draft
     list to re-seed. Before this a Draft job and a Make for the same need sat
     side by side and could both be built (the pre-#1601 drawer promoted
     Drafts through `order`, which now refuses existing jobs).
