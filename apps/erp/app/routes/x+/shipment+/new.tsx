@@ -268,6 +268,58 @@ export async function action({ request }: ActionFunctionArgs) {
       throw redirect(
         path.to.shipmentDetails(warehouseTransferShipment.data.id)
       );
+    case "Rental Agreement":
+      // One open draft per agreement: Deliver or Return again goes to the
+      // existing draft instead of stacking up duplicates.
+      const existingRentalShipment = await client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Rental Agreement")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingRentalShipment.error) {
+        throw redirect(
+          path.to.rentalAgreementDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingRentalShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
+      if (existingRentalShipment.data) {
+        throw redirect(path.to.shipmentDetails(existingRentalShipment.data.id));
+      }
+
+      const rentalAgreementShipment = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
+          type: "shipmentFromRentalAgreement",
+          rentalAgreementId: sourceDocumentId
+        });
+      if (!rentalAgreementShipment.data || rentalAgreementShipment.error) {
+        throw redirect(
+          path.to.rentalAgreementDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              rentalAgreementShipment.error,
+              getErrorMessage(
+                rentalAgreementShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(rentalAgreementShipment.data.id));
     default:
       const defaultShipment = await serverFns
         .system({ db: getDatabaseClient(), companyId, userId })
