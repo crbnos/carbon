@@ -10,6 +10,7 @@ import * as ReactAria from "react-aria-components";
 
 import { cn } from "./utils/cn";
 import { getValidChildren } from "./utils/react";
+import { usePhoneAutoFocus } from "./Viewport";
 
 const InputGroupContext = createContext<boolean>(false);
 
@@ -206,6 +207,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const isInputGroup = useContext(InputGroupContext) ?? false;
     const disabled = isDisabled ?? props.disabled ?? false;
+    const autoFocus = usePhoneAutoFocus(props.autoFocus);
 
     return (
       <ReactAria.Input
@@ -223,6 +225,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         {...props}
+        autoFocus={autoFocus}
         // Explicit disabled must survive the spread; it was being overwritten.
         disabled={disabled}
         readOnly={isReadOnly}

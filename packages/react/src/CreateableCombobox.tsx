@@ -10,11 +10,12 @@ import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
-import { PickerList, usePickerOpenAutoFocus } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type CreatableComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -72,7 +73,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const openAutoFocus = usePickerOpenAutoFocus(options.length);
+    const openAutoFocus = usePhoneOpenAutoFocus();
 
     // Reset the search box whenever the dropdown closes.
     useEffect(() => {

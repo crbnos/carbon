@@ -7,6 +7,7 @@ import { cva } from "class-variance-authority";
 import type { TextareaHTMLAttributes } from "react";
 import { forwardRef } from "react";
 import { cn } from "./utils/cn";
+import { usePhoneAutoFocus } from "./Viewport";
 
 const textareaVariants = cva(
   "flex min-h-[2lh] max-h-[10lh] w-full border border-input bg-transparent shadow-xs transition-[color,box-shadow] placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 read-only:bg-muted read-only:cursor-not-allowed dark:aria-invalid:ring-destructive/40",
@@ -30,11 +31,13 @@ export interface TextareaProps
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, size, ...props }, ref) => {
+    const autoFocus = usePhoneAutoFocus(props.autoFocus);
     return (
       <textarea
         className={cn(textareaVariants({ size }), className)}
         ref={ref}
         {...props}
+        autoFocus={autoFocus}
       />
     );
   }

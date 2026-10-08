@@ -19,7 +19,7 @@ import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
-import { useViewport } from "./Viewport";
+import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 // A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
 // or a click outside, so it does not offer the X. Leave `onOpenChange` off to
@@ -157,6 +157,7 @@ const ModalContent = forwardRef<
   ) => {
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
+    const phoneOpenAutoFocus = usePhoneOpenAutoFocus(onOpenAutoFocus);
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -166,10 +167,7 @@ const ModalContent = forwardRef<
                 ref={ref}
                 className={cn(ModalContentVariants({ size }), className)}
                 onOpenAutoFocus={(event) => {
-                  // Phones: focusing the first field pops the keyboard over
-                  // the sheet before the user has done anything.
-                  if (isPhone) event.preventDefault();
-                  onOpenAutoFocus?.(event);
+                  phoneOpenAutoFocus(event);
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}

@@ -78,30 +78,12 @@ export type PickerListProps = {
   showCreateOptionOnEmpty?: boolean;
 };
 
-/** Phones: the search field takes focus on open only past this many options. */
-const SEARCH_AUTOFOCUS_MIN_OPTIONS = 7;
 const COMPACT_ITEM_HEIGHT = 44;
 
 const labelOf = (option: PickerListOption) =>
   typeof option.label === "string"
     ? option.label
     : reactNodeToString(option.label);
-
-const preventAutoFocus = (event: Event) => event.preventDefault();
-
-/**
- * `onOpenAutoFocus` for a picker's `PopoverContent`: on phones the search
- * field is focused (keyboard up) only when there are more than 7 options.
- * Desktop keeps Radix's default focus.
- */
-export function usePickerOpenAutoFocus(
-  optionCount: number
-): ((event: Event) => void) | undefined {
-  const { isPhone } = useViewport();
-  return isPhone && optionCount <= SEARCH_AUTOFOCUS_MIN_OPTIONS
-    ? preventAutoFocus
-    : undefined;
-}
 
 /**
  * The searchable, virtualized option list shared by Combobox,

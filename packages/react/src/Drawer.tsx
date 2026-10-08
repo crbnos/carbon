@@ -23,7 +23,7 @@ import {
   useDialogDismissable
 } from "./Modal";
 import { cn } from "./utils/cn";
-import { useViewport } from "./Viewport";
+import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 const Drawer = DialogRoot;
 
@@ -88,8 +88,10 @@ const DrawerBody = ({
 );
 DrawerBody.displayName = "DrawerBody";
 
+// Phones show every drawer as a bottom sheet, so it also slides up from the
+// bottom whatever its desktop side.
 const sheetVariants = cva(
-  "flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl max-md:max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:w-full max-md:max-w-none max-md:overflow-hidden max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:bg-card max-md:h-auto max-md:[&>form]:min-h-0",
+  "flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl max-md:max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:w-full max-md:max-w-none max-md:overflow-hidden max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:bg-card max-md:h-auto max-md:[&>form]:min-h-0 max-md:data-[state=open]:[--tw-enter-translate-x:0] max-md:data-[state=open]:[--tw-enter-translate-y:100%] max-md:data-[state=closed]:[--tw-exit-translate-x:0] max-md:data-[state=closed]:[--tw-exit-translate-y:100%]",
   {
     variants: {
       position: {
@@ -205,6 +207,7 @@ const DrawerContent = forwardRef<
   ) => {
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
+    const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -214,13 +217,7 @@ const DrawerContent = forwardRef<
               ref={ref}
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
-              onOpenAutoFocus={(event) => {
-                // Phones: focusing the first field pops the keyboard (or a
-                // picker that opens on focus) over the form; keep focus on
-                // the sheet itself.
-                if (isPhone) event.preventDefault();
-                props.onOpenAutoFocus?.(event);
-              }}
+              onOpenAutoFocus={onOpenAutoFocus}
             >
               {isPhone && (
                 <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />

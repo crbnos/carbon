@@ -18,7 +18,7 @@ import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
-import { useViewport } from "./Viewport";
+import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 /**
  * A sheet that slides up from the bottom. Every compact (phone) sheet shares
@@ -60,6 +60,7 @@ const BottomSheetContent = forwardRef<
 >(({ className, children, size = "auto", ...props }, ref) => {
   const { t } = useLingui();
   const { isPhone } = useViewport();
+  const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
   const dismissable = useDialogDismissable();
   return (
     <ClientOnly fallback={null}>
@@ -77,6 +78,7 @@ const BottomSheetContent = forwardRef<
               className
             )}
             {...props}
+            onOpenAutoFocus={onOpenAutoFocus}
           >
             <div
               className={cn(

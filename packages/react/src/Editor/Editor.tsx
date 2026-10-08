@@ -30,7 +30,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "../Separator";
 import { cn } from "../utils/cn";
-import { useViewport } from "../Viewport";
+import { usePhoneAutoFocus, useViewport } from "../Viewport";
 import { ColorSelector } from "./components/ColorSelector";
 import { LinkSelector } from "./components/LinkSelector";
 import { Toolbar } from "./components/Toolbar";
@@ -122,6 +122,7 @@ const Editor = ({
 }: EditorProp) => {
   const { t } = useLingui();
   const { isPhone } = useViewport();
+  const phoneAutoFocus = usePhoneAutoFocus(autoFocus);
   const titleMode = !!title;
   const titlePlaceholder = title?.placeholder ?? "Untitled";
   // The editor reads its extensions only once on mount, so the placeholder
@@ -288,7 +289,9 @@ const Editor = ({
           initialContent: initialContentRef.current
         })}
         extensions={extensions}
-        autofocus={autoFocus}
+        // tiptap focuses on mount when `autofocus` is undefined (desktop
+        // today); phones get `false`.
+        autofocus={phoneAutoFocus}
         editorProps={{
           handleDOMEvents: {
             keydown: (_view, event) => handleCommandNavigation(event)

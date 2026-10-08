@@ -83,6 +83,27 @@ export function useViewport(): {
   );
 }
 
+/*
+ * Phones never move focus on their own: focusing a text field pops the
+ * keyboard over the page. These two hooks are the one place that rule lives.
+ */
+
+export function usePhoneAutoFocus(autoFocus: boolean | undefined) {
+  return useViewport().isPhone ? false : autoFocus;
+}
+
+/**
+ * A Radix `onOpenAutoFocus` that skips the first focus on phones and then
+ * runs the caller's own handler.
+ */
+export function usePhoneOpenAutoFocus(handler?: (event: Event) => void) {
+  const { isPhone } = useViewport();
+  return (event: Event) => {
+    if (isPhone) event.preventDefault();
+    handler?.(event);
+  };
+}
+
 /**
  * Phones: a 44x44 tap target around a smaller control. A child element rather
  * than the control's ::after, which already draws the focus ring. Place it

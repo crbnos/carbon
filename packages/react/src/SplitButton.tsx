@@ -56,6 +56,9 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
     // render plainly (the boundary) so only these classes apply.
     const presentation = useActionPresentation();
     const presented = presentation !== null;
+    // A bar cell shows the main action only; the dropdown's items become
+    // rows of the record's ⋯, so the 44pt bar has one target.
+    const inBar = presentation?.kind === "bar";
     const mainVariant =
       presentation?.kind === "bar"
         ? presentation.emphasis
@@ -81,7 +84,8 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
             isLoading={isLoading}
             isDisabled={isDisabled}
             className={cn(
-              `rounded-r-none before:rounded-r-none hover:scale-100 focus-visible:scale-100`,
+              !inBar &&
+                `rounded-r-none before:rounded-r-none hover:scale-100 focus-visible:scale-100`,
               presented && "min-w-0 flex-1",
               presentation?.kind === "row" &&
                 "h-12 justify-start rounded-sm px-3 text-[15px] font-normal text-foreground shadow-none",
@@ -90,35 +94,51 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
           >
             {children}
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant={mainVariant}
-                size={presented ? "lg" : size}
-                isDisabled={isDisabled || isLoading}
-                className={cn(
-                  "rounded-l-none border-l px-1 before:rounded-l-none border-none shadow-none",
-                  mainVariant === "primary" &&
-                    "dark:shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)] dark:hover:shadow-button-primary hover:scale-100 focus-visible:scale-100",
-                  presented && "w-11 shrink-0 justify-center px-0"
-                )}
-              >
-                <LuChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {dropdownItems.map((item, index) => (
-                <DropdownMenuItem
+          {inBar ? (
+            presentation.overflow?.(
+              dropdownItems.map((item, index) => (
+                <Button
                   key={index}
+                  variant="secondary"
+                  leftIcon={item.icon}
+                  isDisabled={item.disabled}
                   onClick={item.onClick}
-                  disabled={item.disabled}
                 >
-                  {item.icon && <DropdownMenuIcon icon={item.icon} />}
                   {item.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </Button>
+              ))
+            )
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={mainVariant}
+                  size={presented ? "lg" : size}
+                  isDisabled={isDisabled || isLoading}
+                  className={cn(
+                    "rounded-l-none border-l px-1 before:rounded-l-none border-none shadow-none",
+                    mainVariant === "primary" &&
+                      "dark:shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)] dark:hover:shadow-button-primary hover:scale-100 focus-visible:scale-100",
+                    presented && "w-11 shrink-0 justify-center px-0"
+                  )}
+                >
+                  <LuChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {dropdownItems.map((item, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={item.onClick}
+                    disabled={item.disabled}
+                  >
+                    {item.icon && <DropdownMenuIcon icon={item.icon} />}
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </ActionPresentationBoundary>
     );

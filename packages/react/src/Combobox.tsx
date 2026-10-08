@@ -11,12 +11,13 @@ import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import type { PickerListOption } from "./PickerList";
-import { PickerList, usePickerOpenAutoFocus } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { Spinner } from "./Spinner";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type ComboboxOption = {
   label: string | JSX.Element;
@@ -82,7 +83,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     // it — honor it instead of silently overwriting it below.
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
-    const openAutoFocus = usePickerOpenAutoFocus(options.length);
+    const openAutoFocus = usePhoneOpenAutoFocus();
     const isInlinePreview = !!inline;
     const selectedOption = useMemo(
       () => options.find((option) => option.value === value),

@@ -167,7 +167,7 @@ import {
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
-import { generateHTML, HTML } from "./HTML";
+import { generateHTML, HTML, isRichTextEmpty, RichTextView } from "./HTML";
 import type {
   Modifier,
   Shortcut,
@@ -348,6 +348,7 @@ import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
 import type { MenuItemShortcut } from "./shortcuts";
 import { MENU_ITEM_SHORTCUTS, SHORTCUTS } from "./shortcuts";
+import { TabBar, TabBarItem } from "./TabBar";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import type { TextareaProps } from "./Textarea";
@@ -510,6 +511,7 @@ export {
   FormLabel,
   HStack,
   HTML,
+  RichTextView,
   Heading,
   HoverCard,
   HoverCardContent,
@@ -661,6 +663,8 @@ export {
   Status,
   Subheading,
   Switch,
+  TabBar,
+  TabBarItem,
   Table,
   TableCaption,
   Tabs,
@@ -694,6 +698,7 @@ export {
   cn,
   copyToClipboard,
   generateHTML,
+  isRichTextEmpty,
   getValidChildren,
   multiSelectTriggerVariants,
   reactNodeToString,
