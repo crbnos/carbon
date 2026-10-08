@@ -27,7 +27,7 @@ in spec → Open Questions.
 - [x] Task 3: Apply the migrations, regenerate types and fix the nullable readers
 - [x] Task 4: Build the rental test fixture and pin today's return
 - [x] Task 5: Move the return body into `returnRentalUnit`
-- [ ] Task 6: Add the pure rental document rules
+- [x] Task 6: Add the pure rental document rules
 - [ ] Task 7: Add the two `create` cases
 - [ ] Task 8: Post a rental shipment
 - [ ] Task 9: Void a rental shipment
