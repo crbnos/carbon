@@ -58,6 +58,9 @@ const INSERT_CHUNK = 500;
 // is about 338 KB, far under a step's 4 MB output limit too.
 const EMAIL_CHUNK = 20;
 
+// Slack and push events per send. Each event is under 1 KB.
+const EVENT_CHUNK = 500;
+
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
   companyId: string
@@ -808,8 +811,11 @@ export const notifyFunction = inngest.createFunction(
         }
       );
 
-      if (slackEvents.length > 0) {
-        await step.sendEvent("fan-out-slack", slackEvents);
+      for (const [index, chunk] of chunkArray(
+        slackEvents,
+        EVENT_CHUNK
+      ).entries()) {
+        await step.sendEvent(`fan-out-slack-${index}`, chunk);
       }
     }
 
@@ -880,8 +886,11 @@ export const notifyFunction = inngest.createFunction(
           }));
         }
       );
-      if (pushEvents.length > 0) {
-        await step.sendEvent("fan-out-push", pushEvents);
+      for (const [index, chunk] of chunkArray(
+        pushEvents,
+        EVENT_CHUNK
+      ).entries()) {
+        await step.sendEvent(`fan-out-push-${index}`, chunk);
       }
     }
   }
