@@ -14768,6 +14768,12 @@ msgstr "部品後継切替"
 msgid "Partial"
 msgstr "一部"
 
+msgid "Partially Delivered"
+msgstr "一部納入"
+
+msgid "Partially Returned"
+msgstr "一部返却"
+
 msgid "Partly Recognized"
 msgstr "部分認識済"
 
@@ -21776,6 +21782,9 @@ msgstr "終了日"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "無効化するには、行メニューを使用して、アカウント無効化を選択します。"
+
+msgid "To Deliver"
+msgstr "納入待ち"
 
 msgid "To Location"
 msgstr "到着地"

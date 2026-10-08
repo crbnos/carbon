@@ -4,10 +4,9 @@
 
 import { useCarbon } from "@carbon/auth";
 import { isPreviewableDocumentType, storage } from "@carbon/files";
-import { Number, Submit, ValidatedForm } from "@carbon/form";
+import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -46,7 +45,6 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -68,6 +66,7 @@ import {
   useParams,
   useSubmit
 } from "react-router";
+import { z } from "zod";
 import {
   DocumentPreview,
   Empty,
@@ -96,6 +95,7 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { RentalUnitRow } from "../Shipments/RentalUnitRow";
 import { ReturnEntityForm } from "./ReturnEntityForm";
 
 const ReceiptLines = () => {
@@ -453,6 +453,8 @@ function ReceiptRentalLineItem({
   const [outOfServiceReason, setOutOfServiceReason] = useState(
     line.outOfServiceReason ?? ""
   );
+  // Unique per line: the switch's id is its field name.
+  const outOfServiceField = `takeOutOfService-${line.id}`;
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -466,55 +468,16 @@ function ReceiptRentalLineItem({
   };
 
   return (
-    <VStack spacing={4} className={cn("p-6", className)}>
-      <div className="flex items-center gap-4 w-full">
-        <Checkbox
-          isChecked={line.received}
-          disabled={isReadOnly}
-          onCheckedChange={(checked) =>
-            updateField("received", String(checked === true))
-          }
-        />
-        <VStack spacing={0} className="flex-1 min-w-0">
-          <HStack spacing={2}>
-            <span className="text-sm font-medium">{line.unitName}</span>
-            {line.lineStatus === "Pending" && (
-              <Badge variant="secondary">
-                <Trans>Not delivered</Trans>
-              </Badge>
-            )}
-          </HStack>
-          {(line.assetReadableId || line.serialNumber) && (
-            <span className="text-xs text-muted-foreground">
-              {[line.assetReadableId, line.serialNumber]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
-          )}
-        </VStack>
-        <VStack spacing={1}>
-          <label className="text-xs text-muted-foreground">
-            <Trans>Meter</Trans>
-          </label>
-          {/* react-aria commits on blur (or Enter); an emptied field commits NaN. */}
-          <NumberField
-            aria-label={t`Meter`}
-            defaultValue={line.meter ?? undefined}
-            formatOptions={INPUT_FORMAT.quantity}
-            step={INPUT_STEP.quantity}
-            minValue={0}
-            isDisabled={isReadOnly}
-            onChange={(value) => {
-              const next = value == null || isNaN(value) ? null : value;
-              if (next === line.meter) return;
-              updateField("meter", next === null ? "" : String(next));
-            }}
-          >
-            <NumberInput size="sm" className="w-32" />
-          </NumberField>
-        </VStack>
-      </div>
-      <div className="grid grid-cols-1 @3xl:grid-cols-2 gap-4 w-full pl-8">
+    <div className={cn("@container flex flex-col gap-6 p-6", className)}>
+      <RentalUnitRow
+        line={line}
+        checked={line.received}
+        checkedLabel={t`Received`}
+        isReadOnly={isReadOnly}
+        onCheckedChange={(checked) => updateField("received", String(checked))}
+        onMeterChange={(meter) => updateField("meter", meter)}
+      />
+      <VStack spacing={4}>
         <VStack spacing={1}>
           <label className="text-xs text-muted-foreground">
             <Trans>Notes</Trans>
@@ -532,13 +495,20 @@ function ReceiptRentalLineItem({
           />
         </VStack>
         <VStack spacing={2}>
-          <HStack spacing={2}>
-            <Checkbox
-              id={`${line.id}:outOfService`}
-              isChecked={takeOutOfService}
-              disabled={isReadOnly}
-              onCheckedChange={(checked) => {
-                const isTicked = checked === true;
+          {/* A form only for the field's context: the switch saves through
+              updateField like every other field on the line. */}
+          <ValidatedForm
+            defaultValues={{ [outOfServiceField]: line.takeOutOfService }}
+            validator={z.object({ [outOfServiceField]: z.any() })}
+            className="w-full"
+          >
+            <Boolean
+              name={outOfServiceField}
+              label={t`Take out of service`}
+              bordered
+              value={takeOutOfService}
+              isDisabled={isReadOnly}
+              onChange={(isTicked) => {
                 setTakeOutOfService(isTicked);
                 if (!isTicked) {
                   setOutOfServiceReason("");
@@ -546,10 +516,7 @@ function ReceiptRentalLineItem({
                 }
               }}
             />
-            <label htmlFor={`${line.id}:outOfService`} className="text-sm">
-              <Trans>Take out of service</Trans>
-            </label>
-          </HStack>
+          </ValidatedForm>
           {takeOutOfService && (
             <>
               <Input
@@ -612,8 +579,8 @@ function ReceiptRentalLineItem({
             </VStack>
           )}
         </VStack>
-      </div>
-    </VStack>
+      </VStack>
+    </div>
   );
 }
 

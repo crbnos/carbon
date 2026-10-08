@@ -14768,6 +14768,12 @@ msgstr "Замещение деталей"
 msgid "Partial"
 msgstr "Частично"
 
+msgid "Partially Delivered"
+msgstr "Частично доставлено"
+
+msgid "Partially Returned"
+msgstr "Частично возвращено"
+
 msgid "Partly Recognized"
 msgstr "Частично признано"
 
@@ -21776,6 +21782,9 @@ msgstr "До даты"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Чтобы отключить, используйте меню строки и выберите Деактивировать учетную запись."
+
+msgid "To Deliver"
+msgstr "Требует доставки"
 
 msgid "To Location"
 msgstr "На локацию"

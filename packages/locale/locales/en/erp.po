@@ -14768,6 +14768,12 @@ msgstr "Part Supersession"
 msgid "Partial"
 msgstr "Partial"
 
+msgid "Partially Delivered"
+msgstr "Partially Delivered"
+
+msgid "Partially Returned"
+msgstr "Partially Returned"
+
 msgid "Partly Recognized"
 msgstr "Partly Recognized"
 
@@ -21776,6 +21782,9 @@ msgstr "To Date"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "To deactivate, use the row menu and choose Deactivate Account."
+
+msgid "To Deliver"
+msgstr "To Deliver"
 
 msgid "To Location"
 msgstr "To Location"

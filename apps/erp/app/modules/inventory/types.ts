@@ -110,6 +110,8 @@ export type RentalShipmentLine = {
   shipped: boolean;
   meter: number | null;
   unitName: string;
+  thumbnailPath: string | null;
+  itemType: Database["public"]["Enums"]["itemType"] | null;
   assetReadableId: string | null;
   serialNumber: string | null;
   lineStatus: Database["public"]["Enums"]["rentalAgreementLineStatus"];

@@ -54,6 +54,27 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
+  // A posted (or voided) receipt is a record: its lines, the meter included,
+  // no longer change.
+  const line = await serviceRole
+    .from("receiptFixedAssetLine")
+    .select("receipt!receiptFixedAssetLine_receiptId_fkey(status)")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error || !line.data?.receipt) {
+    return data(
+      { error: "The receipt line could not be found" },
+      { status: 404 }
+    );
+  }
+  if (line.data.receipt.status !== "Draft") {
+    return data(
+      { error: "A posted receipt can no longer be changed" },
+      { status: 400 }
+    );
+  }
+
   const update = await serviceRole
     .from("receiptFixedAssetLine")
     .update({ ...updateData, updatedBy: userId })

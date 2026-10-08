@@ -135,6 +135,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         shipped: row.shipped,
         meter: row.meter === null ? null : Number(row.meter),
         unitName: line.fixedAsset?.name ?? line.item?.name ?? "Rental unit",
+        thumbnailPath: line.item?.thumbnailPath ?? null,
+        itemType: line.item?.type ?? null,
         assetReadableId: line.fixedAsset?.fixedAssetId ?? null,
         serialNumber:
           line.fixedAsset?.serialNumber ??
@@ -143,6 +145,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         lineStatus: line.status
       };
     });
+    // By unit, like ordinary lines by part number, so the list holds still.
+    rentalLines.sort((a, b) =>
+      (a.assetReadableId ?? a.unitName).localeCompare(
+        b.assetReadableId ?? b.unitName
+      )
+    );
   }
 
   return {

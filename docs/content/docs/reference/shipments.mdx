@@ -30,7 +30,7 @@ Posting decrements inventory and bumps the source line's sent quantity; a sales 
 
 ## Rental shipments
 
-A shipment from a rental agreement delivers fleet units. It lists one row per unit with a tick box and a **"Meter"** reading, and its post dialog asks for **"Delivered on"**, which cannot be later than today. Posting puts the ticked units on rent. A rental unit stays a fixed asset, so posting writes no inventory movement and no journal entry. Its PDF prints as a **Delivery Ticket** that lists each unit with its serial number.
+A shipment from a rental agreement delivers fleet units. It lists one row per unit with a tick box and a **"Meter"** reading, and its post dialog asks for **"Delivered on"**, which cannot be later than today. Posting puts the ticked units on rent, and the rows, meter readings included, become read-only. A rental unit stays a fixed asset, so posting writes no inventory movement and no journal entry. Its PDF prints as a **Delivery Ticket** that lists each unit with its serial number.
 
 <Screenshot label="Draft rental shipment listing fleet units with tick boxes and Meter fields" caption="A rental shipment from an agreement: untick the units that stay, then post." />
 
@@ -76,6 +76,9 @@ Voiding applies only to a shipment at **"Posted"**. A Draft or Pending shipment 
 
 ### "Cannot delete a posted shipment"
 A posted shipment can't be deleted — void it instead, which writes reversing entries.
+
+### "A posted shipment can no longer be changed"
+A unit row on a rental shipment was edited after the shipment left Draft. The meter reading out is a record once posted; correct the unit on its agreement or asset instead.
 
 ### "Failed to post shipment"
 Generic wrapper when the posting function fails. Common underlying causes: the [accounting period](/docs/reference/accounting) for the posting date is closed or locked, or default accounts are missing ("Error getting account defaults"). Ask the user for the full error text if available.

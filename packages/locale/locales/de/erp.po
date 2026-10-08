@@ -14768,6 +14768,12 @@ msgstr "Teil-Ablösung"
 msgid "Partial"
 msgstr "Teilweise"
 
+msgid "Partially Delivered"
+msgstr "Teilweise geliefert"
+
+msgid "Partially Returned"
+msgstr "Teilweise zurückgegeben"
+
 msgid "Partly Recognized"
 msgstr "Teilweise erfasst"
 
@@ -21776,6 +21782,9 @@ msgstr "Stichtag"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Um zu deaktivieren, verwenden Sie das Zeilenmenü und wählen Sie Konto deaktivieren."
+
+msgid "To Deliver"
+msgstr "Zu liefern"
 
 msgid "To Location"
 msgstr "Zielort"

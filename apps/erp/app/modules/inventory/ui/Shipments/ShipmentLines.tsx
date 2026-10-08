@@ -42,12 +42,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import {
-  distinctItemText,
-  getItemReadableId,
-  INPUT_FORMAT,
-  INPUT_STEP
-} from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -86,6 +81,7 @@ import { splitValidator } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { RentalUnitRow } from "./RentalUnitRow";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -459,45 +455,15 @@ function ShipmentRentalLineItem({
   };
 
   return (
-    <div className={cn("flex items-center gap-4 p-6", className)}>
-      <Checkbox
-        isChecked={line.shipped}
-        disabled={isReadOnly}
-        onCheckedChange={(checked) =>
-          updateField("shipped", String(checked === true))
-        }
+    <div className={cn("@container p-6", className)}>
+      <RentalUnitRow
+        line={line}
+        checked={line.shipped}
+        checkedLabel={t`Shipped`}
+        isReadOnly={isReadOnly}
+        onCheckedChange={(checked) => updateField("shipped", String(checked))}
+        onMeterChange={(meter) => updateField("meter", meter)}
       />
-      <VStack spacing={0} className="flex-1 min-w-0">
-        <span className="text-sm font-medium">{line.unitName}</span>
-        {(line.assetReadableId || line.serialNumber) && (
-          <span className="text-xs text-muted-foreground">
-            {[line.assetReadableId, line.serialNumber]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-        )}
-      </VStack>
-      <VStack spacing={1}>
-        <label className="text-xs text-muted-foreground">
-          <Trans>Meter</Trans>
-        </label>
-        {/* react-aria commits on blur (or Enter); an emptied field commits NaN. */}
-        <NumberField
-          aria-label={t`Meter`}
-          defaultValue={line.meter ?? undefined}
-          formatOptions={INPUT_FORMAT.quantity}
-          step={INPUT_STEP.quantity}
-          minValue={0}
-          isDisabled={isReadOnly}
-          onChange={(value) => {
-            const next = value == null || isNaN(value) ? null : value;
-            if (next === line.meter) return;
-            updateField("meter", next === null ? "" : String(next));
-          }}
-        >
-          <NumberInput size="sm" className="w-32" />
-        </NumberField>
-      </VStack>
     </div>
   );
 }

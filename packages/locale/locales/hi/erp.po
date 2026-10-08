@@ -14768,6 +14768,12 @@ msgstr "भाग प्रतिस्थापन"
 msgid "Partial"
 msgstr "आंशिक"
 
+msgid "Partially Delivered"
+msgstr "आंशिक डिलीवरी"
+
+msgid "Partially Returned"
+msgstr "आंशिक रिटर्न"
+
 msgid "Partly Recognized"
 msgstr "आंशिक रूप से मान्य"
 
@@ -21776,6 +21782,9 @@ msgstr "दिनांक तक"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "निष्क्रिय करने के लिए, पंक्ति मेनू का उपयोग करें और खाता निष्क्रिय करें चुनें।"
+
+msgid "To Deliver"
+msgstr "डिलीवरी लंबित"
 
 msgid "To Location"
 msgstr "स्थान को"

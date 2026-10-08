@@ -1439,15 +1439,20 @@ export async function getRentalShipmentLines(
   shipmentId: string,
   companyId: string
 ) {
-  return client
-    .from("shipmentFixedAssetLine")
-    .select(
-      "id, shipped, meter, rentalAgreementLineId, rentalAgreementLine!shipmentFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision), trackedEntity(readableId))"
-    )
-    .eq("shipmentId", shipmentId)
-    .eq("companyId", companyId)
-    .not("rentalAgreementLineId", "is", null)
-    .order("createdAt");
+  return (
+    client
+      .from("shipmentFixedAssetLine")
+      .select(
+        "id, shipped, meter, rentalAgreementLineId, rentalAgreementLine!shipmentFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision, thumbnailPath, type), trackedEntity(readableId))"
+      )
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId)
+      .not("rentalAgreementLineId", "is", null)
+      // A document's units are inserted in one statement and share a createdAt;
+      // without a tie-breaker an update reorders them.
+      .order("createdAt")
+      .order("id")
+  );
 }
 
 /** @mcp read */
@@ -1456,15 +1461,20 @@ export async function getRentalReceiptLines(
   receiptId: string,
   companyId: string
 ) {
-  return client
-    .from("receiptFixedAssetLine")
-    .select(
-      "id, received, meter, notes, takeOutOfService, outOfServiceReason, residualDestination, rentalAgreementLineId, rentalAgreementLine!receiptFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision), trackedEntity(readableId))"
-    )
-    .eq("receiptId", receiptId)
-    .eq("companyId", companyId)
-    .not("rentalAgreementLineId", "is", null)
-    .order("createdAt");
+  return (
+    client
+      .from("receiptFixedAssetLine")
+      .select(
+        "id, received, meter, notes, takeOutOfService, outOfServiceReason, residualDestination, rentalAgreementLineId, rentalAgreementLine!receiptFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision, thumbnailPath, type), trackedEntity(readableId))"
+      )
+      .eq("receiptId", receiptId)
+      .eq("companyId", companyId)
+      .not("rentalAgreementLineId", "is", null)
+      // A document's units are inserted in one statement and share a createdAt;
+      // without a tie-breaker an update reorders them.
+      .order("createdAt")
+      .order("id")
+  );
 }
 
 /** @mcp read */

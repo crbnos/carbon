@@ -14768,6 +14768,12 @@ msgstr "Remplacement de pièce"
 msgid "Partial"
 msgstr "Partielle"
 
+msgid "Partially Delivered"
+msgstr "Partiellement livré"
+
+msgid "Partially Returned"
+msgstr "Partiellement retourné"
+
 msgid "Partly Recognized"
 msgstr "Partiellement Reconnu"
 
@@ -21776,6 +21782,9 @@ msgstr "À la date"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Pour désactiver, utilisez le menu de ligne et choisissez Désactiver le compte."
+
+msgid "To Deliver"
+msgstr "À livrer"
 
 msgid "To Location"
 msgstr "Vers l'emplacement"

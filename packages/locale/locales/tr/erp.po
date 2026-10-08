@@ -14768,6 +14768,12 @@ msgstr "Parça İkamesi"
 msgid "Partial"
 msgstr "Kısmi"
 
+msgid "Partially Delivered"
+msgstr "Kısmen Teslim Edildi"
+
+msgid "Partially Returned"
+msgstr "Kısmen İade Edildi"
+
 msgid "Partly Recognized"
 msgstr "Kısmen Tanındı"
 
@@ -21776,6 +21782,9 @@ msgstr "Bitiş Tarihi"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Devre dışı bırakmak için satır menüsünü kullanın ve Hesabı Devre Dışı Bırak'ı seçin."
+
+msgid "To Deliver"
+msgstr "Teslim Edilecek"
 
 msgid "To Location"
 msgstr "Varış Konumu"

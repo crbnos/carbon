@@ -14768,6 +14768,12 @@ msgstr "부품 대체"
 msgid "Partial"
 msgstr "부분"
 
+msgid "Partially Delivered"
+msgstr "부분 배송"
+
+msgid "Partially Returned"
+msgstr "부분 반품"
+
 msgid "Partly Recognized"
 msgstr "부분 인식됨"
 
@@ -21776,6 +21782,9 @@ msgstr "마감일"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "비활성화하려면 행 메뉴를 사용하여 계정 비활성화를 선택하세요."
+
+msgid "To Deliver"
+msgstr "배송 예정"
 
 msgid "To Location"
 msgstr "대상 위치"

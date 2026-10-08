@@ -48,7 +48,9 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   parsed by `shipmentFixedAssetLineUpdateValidator` / `receiptFixedAssetLineUpdateValidator`
   (`inventory.models.ts`): `shipped`/`received`, `serialNumber`, `meter`; the receipt also takes
   `notes`, `outOfService` ("" clears the tick, any other text is the reason, so tick and reason save
-  together) and `residualDestination`.
+  together) and `residualDestination`. It refuses a line whose document is not Draft ("A posted
+  shipment can no longer be changed" / "A posted receipt can no longer be changed"): a posted
+  document is a record, the meter included.
 - `_layout.tsx` — breadcrumb handle back to `path.to.inventory`.
 
 Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `shipmentPost`,
@@ -82,10 +84,15 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   shipment forms do not.
 - **Rental lines**: on a `'Rental Agreement'` document the loader reads `getRentalShipmentLines` /
   `getRentalReceiptLines` into `rentalLines`, rendered by the siblings `ShipmentRentalLineItem` /
-  `ReceiptRentalLineItem` (no storage unit picker, no serial tracking). Shipment: the shipped tick
-  and **Meter**. Receipt: the received tick, **Meter**, **Notes**, **Take out of service** with its
-  reason, and **Return To** (Fleet / Inventory) for a unit treated as a sale. The existing
-  fixed-asset components need an order line id, which a rental line does not have.
+  `ReceiptRentalLineItem` (no storage unit picker, no serial tracking). Both render the unit through
+  the shared `RentalUnitRow` (`ui/Shipments/RentalUnitRow.tsx`: tick, item thumbnail, unit name, asset
+  id and serial, and **Meter** — a `NumberField` while Draft, plain text once posted; laid out on the
+  row's own `@container`). Shipment: the shipped tick and **Meter**. Receipt adds **Notes**, the
+  **Take out of service** switch (a `@carbon/form` `Boolean` inside a field-context-only
+  `ValidatedForm`, saved through the same per-field update) with its reason, and **Return To**
+  (Fleet / Inventory) for a unit treated as a sale. The loaders sort `rentalLines` by asset id so the
+  list holds still across edits. The existing fixed-asset components need an order line id, which a
+  rental line does not have.
 - **Notes**: shipment uses `ShipmentNotes` (Card with **internal + external** tabbed editors).
   Receipt details reuses `SupplierInteractionNotes` (**internal notes only**) — there is no
   `ReceiptNotes` component.

@@ -14768,6 +14768,12 @@ msgstr "零件替代"
 msgid "Partial"
 msgstr "部分"
 
+msgid "Partially Delivered"
+msgstr "部分已交付"
+
+msgid "Partially Returned"
+msgstr "部分已退回"
+
 msgid "Partly Recognized"
 msgstr "部分已确认"
 
@@ -21776,6 +21782,9 @@ msgstr "截止日期"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "要停用，请使用行菜单并选择停用账户。"
+
+msgid "To Deliver"
+msgstr "待交付"
 
 msgid "To Location"
 msgstr "至位置"

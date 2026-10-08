@@ -30,6 +30,27 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
+  // A posted (or voided) shipment is a record: its lines, the meter included,
+  // no longer change.
+  const line = await serviceRole
+    .from("shipmentFixedAssetLine")
+    .select("shipment!shipmentFixedAssetLine_shipmentId_fkey(status)")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error || !line.data?.shipment) {
+    return data(
+      { error: "The shipment line could not be found" },
+      { status: 404 }
+    );
+  }
+  if (line.data.shipment.status !== "Draft") {
+    return data(
+      { error: "A posted shipment can no longer be changed" },
+      { status: 400 }
+    );
+  }
+
   const update = await serviceRole
     .from("shipmentFixedAssetLine")
     .update({ ...updateData, updatedBy: userId })
