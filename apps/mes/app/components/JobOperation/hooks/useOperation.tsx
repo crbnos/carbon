@@ -4,7 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { useChangedRows } from "@carbon/query";
-import { toast, useDisclosure, useInterval } from "@carbon/react";
+import { toast, useDisclosure, useInterval, useViewport } from "@carbon/react";
 import {
   getLocalTimeZone,
   now,
@@ -92,8 +92,9 @@ export function useOperation({
   );
 
   const [activeTab, setActiveTab] = useState("details");
-  // Opens on the timer that runs, so Pause shows for it. A Setup or Labor
-  // timer counts only when it is this user's; Machine counts for anyone
+  const { isPhone } = useViewport();
+  // Phones open on the timer that runs, so Pause shows for it. A Setup or
+  // Labor timer counts only when it is this user's; Machine counts for anyone
   // (the same rule as `activeEvents` below). Else: Setup, Machine, Labor.
   const [eventType, setEventType] = useState<string>(() => {
     const isRunning = (type: string) =>
@@ -103,7 +104,8 @@ export function useOperation({
           e.endTime === null &&
           (type === "Machine" || e.employeeId === user.id)
       );
-    const running = (["Setup", "Machine", "Labor"] as const).find(isRunning);
+    const running =
+      isPhone && (["Setup", "Machine", "Labor"] as const).find(isRunning);
     if (running) {
       return running;
     }

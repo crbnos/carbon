@@ -158,14 +158,13 @@ function computeLayout(
 }
 
 function JobDagInner({ operations, dependencies }: Props) {
-  const [direction, setDirection] = useState<LayoutDirection>("LR");
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  // MES has no server viewport hint, so the first render is desktop.
-  // Switch a phone to top-to-bottom once, after hydration. The toggle stays.
-  useEffect(() => {
-    if (isPhone) setDirection("TB");
-  }, [isPhone]);
+  // Phones read top to bottom until the operator picks a direction.
+  const [chosenDirection, setDirection] = useState<LayoutDirection | null>(
+    null
+  );
+  const direction = chosenDirection ?? (isPhone ? "TB" : "LR");
   const { fitView } = useReactFlow();
   // On a phone, fitting the whole graph shrinks nodes past reading size, so
   // fit no smaller than 0.6 and let the operator pan the rest.
@@ -189,8 +188,8 @@ function JobDagInner({ operations, dependencies }: Props) {
   }, [layoutNodes, layoutEdges, setNodes, setEdges, fitView, fitViewOptions]);
 
   const toggleDirection = useCallback(() => {
-    setDirection((d) => (d === "LR" ? "TB" : "LR"));
-  }, []);
+    setDirection(direction === "LR" ? "TB" : "LR");
+  }, [direction]);
 
   const handleFitView = useCallback(() => {
     fitView(fitViewOptions);

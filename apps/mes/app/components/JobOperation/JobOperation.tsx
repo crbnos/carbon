@@ -63,6 +63,7 @@ import {
   useKeyboardWedge,
   useMode,
   useRouteData,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
@@ -244,6 +245,7 @@ export const JobOperation = ({
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { formatRelativeTime } = useDateFormatter();
   const [params, setParams] = useUrlParams();
   const origin = useOrigin();
@@ -496,12 +498,16 @@ export const JobOperation = ({
     labor: t`Labor`,
     machine: t`Machine`
   } as const;
-  // The caption follows the toggle: the selected type's timer when it runs,
-  // else the first running one in the toggle's order (Setup, Machine, Labor).
+  // Phones: the caption follows the toggle, the selected type's timer when it
+  // runs, else the first running one in the toggle's order.
   const selectedType = eventType.toLowerCase() as keyof typeof workTypeLabels;
-  const runningType = active[selectedType]
-    ? selectedType
-    : (["setup", "machine", "labor"] as const).find((type) => active[type]);
+  const runningType =
+    isPhone && active[selectedType]
+      ? selectedType
+      : (isPhone
+          ? (["setup", "machine", "labor"] as const)
+          : (["setup", "labor", "machine"] as const)
+        ).find((type) => active[type]);
   // Chat is one job's thread, so a Chat tab left open in the job scope falls
   // back to Details on the batch.
   const tab = scope === "batch" && activeTab === "chat" ? "details" : activeTab;
@@ -2549,7 +2555,7 @@ export const JobOperation = ({
           >
             {/* Phones: the work-type picker on its own row, then the big
                 button with what is running beside it, then Log and More. */}
-            <div className="flex w-full min-w-0 items-center gap-2 lg:flex-col lg:py-2 max-lg:flex-wrap max-lg:gap-y-1 max-md:gap-y-2">
+            <div className="flex w-full min-w-0 items-center gap-2 lg:flex-col lg:py-2 max-md:flex-wrap max-md:gap-y-2">
               <dl className="hidden w-full gap-3 rounded-lg border bg-card p-3 lg:grid lg:group-data-[collapsed=true]/dock:hidden">
                 <div className="min-w-0">
                   <dt className="text-xs text-muted-foreground">
@@ -2615,12 +2621,9 @@ export const JobOperation = ({
                     only; the rail and the phone bar stay icon-sized. */}
                 <div
                   className={cn(
-                    "flex flex-col items-center gap-0.5 text-center lg:group-data-[collapsed=true]/dock:hidden",
-                    // Tablets: one centred line over the controls, while a timer runs.
-                    "md:max-lg:order-first md:max-lg:basis-full md:max-lg:flex-row md:max-lg:justify-center md:max-lg:gap-1",
+                    "flex flex-col items-center gap-0.5 text-center md:max-lg:hidden lg:group-data-[collapsed=true]/dock:hidden",
                     // Phones: the caption beside the button, the type over the time.
-                    "max-md:min-w-0 max-md:items-start max-md:gap-0 max-md:text-left max-md:whitespace-nowrap",
-                    !runningType && "md:max-lg:hidden"
+                    "max-md:min-w-0 max-md:items-start max-md:gap-0 max-md:text-left max-md:whitespace-nowrap"
                   )}
                 >
                   {runningType ? (
@@ -2629,13 +2632,7 @@ export const JobOperation = ({
                         <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
                         <span>{workTypeLabels[runningType]}</span>
                       </span>
-                      <span
-                        aria-hidden
-                        className="hidden text-xs text-muted-foreground md:max-lg:inline md:max-lg:text-sm"
-                      >
-                        ·
-                      </span>
-                      <span className="font-mono text-lg tabular-nums md:max-lg:text-sm max-md:text-base max-md:font-semibold max-md:leading-tight">
+                      <span className="font-mono text-lg tabular-nums max-md:text-base max-md:font-semibold max-md:leading-tight">
                         {formatDurationMilliseconds(progress[runningType], {
                           style: "short"
                         })}
@@ -2677,13 +2674,6 @@ export const JobOperation = ({
                         : completeModal.onOpen
                     }
                   />
-                  <span className="whitespace-nowrap text-xs text-muted-foreground lg:hidden max-md:hidden">
-                    {isBatched ? (
-                      <Trans>Complete batch</Trans>
-                    ) : (
-                      <Trans>Log completed</Trans>
-                    )}
-                  </span>
                 </div>
                 <div className="flex flex-col items-center gap-0.5">
                   <IconButtonWithTooltip
@@ -2693,9 +2683,6 @@ export const JobOperation = ({
                     tooltip={t`More Actions`}
                     onClick={actionsSheet.onOpen}
                   />
-                  <span className="whitespace-nowrap text-xs text-muted-foreground lg:hidden max-md:hidden">
-                    <Trans>More</Trans>
-                  </span>
                 </div>
               </div>
               <div className="hidden w-full flex-col gap-2 lg:flex lg:group-data-[collapsed=true]/dock:hidden">
@@ -2755,7 +2742,7 @@ export const JobOperation = ({
         }}
       >
         <BottomSheetContent className="max-w-md mx-auto">
-          <BottomSheetHeader>
+          <BottomSheetHeader className="md:sr-only">
             <BottomSheetTitle>
               <Trans>More actions</Trans>
             </BottomSheetTitle>

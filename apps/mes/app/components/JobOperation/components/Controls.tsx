@@ -212,11 +212,11 @@ export function WorkTypeToggle({
           aria-label={t`Toggle setup`}
         >
           <LuTimer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
-          <span className="text-xxs max-lg:text-xs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
+          <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Setup</Trans>
           </span>
           {active.setup && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 max-lg:size-3.5 max-lg:ring-2 max-lg:ring-background max-md:top-1.5 max-md:right-1.5 max-md:size-2 max-md:ring-0 bg-emerald-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
@@ -228,11 +228,11 @@ export function WorkTypeToggle({
           aria-label={t`Toggle labor`}
         >
           <LuHardHat className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
-          <span className="text-xxs max-lg:text-xs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
+          <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Labor</Trans>
           </span>
           {active.labor && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 max-lg:size-3.5 max-lg:ring-2 max-lg:ring-background max-md:top-1.5 max-md:right-1.5 max-md:size-2 max-md:ring-0 bg-emerald-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
@@ -244,11 +244,11 @@ export function WorkTypeToggle({
           aria-label={t`Toggle machine`}
         >
           <LuHammer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
-          <span className="text-xxs max-lg:text-xs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
+          <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Machine</Trans>
           </span>
           {active.machine && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 max-lg:size-3.5 max-lg:ring-2 max-lg:ring-background max-md:top-1.5 max-md:right-1.5 max-md:size-2 max-md:ring-0 bg-emerald-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}

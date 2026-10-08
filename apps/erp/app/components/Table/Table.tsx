@@ -628,6 +628,7 @@ const Table = <T extends object>({
     focusOnSelectedCell();
   });
 
+  const { isPhone } = useViewport();
   // Clicking outside the table clears the selected cell (and ends any edit). A
   // cell's editable input commits on blur first, so the value is saved before
   // this runs. Portaled dropdowns (e.g. a cell's combobox popover, or its
@@ -638,7 +639,13 @@ const Table = <T extends object>({
     enabled: selectedCell != null,
     handler: (e) => {
       const target = e.target as HTMLElement | null;
-      if (target?.closest("[data-radix-popper-content-wrapper],[role=dialog]"))
+      if (
+        target?.closest(
+          isPhone
+            ? "[data-radix-popper-content-wrapper],[role=dialog]"
+            : "[data-radix-popper-content-wrapper]"
+        )
+      )
         return;
       setIsEditing(false);
       setSelectedCell(null);
@@ -1115,7 +1122,6 @@ const Table = <T extends object>({
     params.getAll("sort").filter(Boolean).length === 0 &&
     !params.get("search")?.trim();
 
-  const { isPhone } = useViewport();
   // Phones export from the toolbar's ⋯ (list and grid alike); desktop keeps
   // the toolbar's Download button.
   const csvExport = withCsvExport
