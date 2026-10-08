@@ -56,20 +56,20 @@ An agreement in a foreign currency can be saved as a draft but not activated: re
 
 The agreement is laid out like a sales order. Its units are listed down the left; select one to open its own page, with its status, the shipment and receipt that moved it, and its **"Deliver"**, **"Return"**, **"Release unit"** and **"Sell to Customer"** actions, its rates and accounting treatment, and its own charges and billing periods.
 
-The agreement's ID in the header opens the agreement as a whole: a summary of its units and their rates with what has been billed, what is unbilled, the monthly rent, the deposit and what falls due next, then how the units will be accounted for, and every charge, billing period and deposit.
+The agreement's ID in the header opens the agreement as a whole: a summary of its units, with their rates and the shipment and receipt that moved each one, then what has been billed, what is unbilled, the monthly rent, the deposit and what falls due next, then how the units will be accounted for, and every charge, billing period and deposit.
 
 The terms (customer, dates, billing cycle and timing, payment terms, currency, deposit, tax and the accounting-treatment inputs) are in the **Properties** panel on the right, editable while the agreement is a draft.
 
-Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a unit treated as a sale on its purchase option. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **<Term>On Rent</Term>**, and a unit can only be on one live agreement at a time.
+Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a unit treated as a sale on its purchase option. On an active agreement, a second badge beside the agreement's status sums the units up: **"To Deliver"**, **"Partially Delivered"**, **"On Rent"**, **"Partially Returned"** or **"Returned"**. A sold unit counts as returned. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **<Term>On Rent</Term>**, and a unit can only be on one live agreement at a time.
 
 - **"Add Unit"**, at the foot of the units list while the agreement is a draft, lists fleet units that are Available right now. Choose its **"Rate Frequency"** (*Daily*, *Weekly* or *Monthly*); its **"Rate"** fills in from the [rates on file](#rates) and can be changed.
 - **"Deliver"** sends units out on a [shipment](/docs/reference/shipments). On an active agreement, **"Deliver"** in the header opens the agreement's draft shipment, or creates one that lists every pending unit, ticked. Untick the units that stay, enter each unit's **"Meter"** reading, and post. The post dialog asks for **"Delivered on"**: today by default, never later. Posting puts the ticked units on rent and refuses a unit that is out of service.
-- **"Return"** brings units back on a [receipt](/docs/reference/receipts). The receipt lists every unit on rent, ticked, and every unit not yet delivered, unticked. Tick an undelivered unit to end it too: its billing stops at the return date. Each unit takes a **"Meter"** reading and **"Notes"**. Tick **"Take out of service"** with a reason and the unit goes straight to In Maintenance instead of back to Available.
+- **"Return"** brings units back on a [receipt](/docs/reference/receipts). The receipt lists every unit on rent, ticked, and every unit not yet delivered, unticked. Tick an undelivered unit to end it too: its billing stops at the return date. Each unit takes a **"Meter"** reading and **"Notes"**. Turn on **"Take out of service"** with a reason and the unit goes straight to In Maintenance instead of back to Available.
 - The post dialog of a receipt asks for **"Returned on"**, which cannot be later than today. Posting re-cuts a rental unit's billing (below) and records each returned unit at the receipt's location.
 - On a unit's page, **"Deliver"** and **"Return"** open a document for that one unit, so a counter pickup takes two clicks: the button, then **"Post"**. Once the agreement has a document, the header buttons become **"Shipments"** and **"Receipts"** menus that list the agreement's documents.
 - **"Release unit"** ends a pending unit that never left the yard, with no document. Its **"Release date"** cannot be later than today. Billing stops on that date and the unit reads Available again. It is not offered for a unit treated as a sale, which comes back on a receipt instead.
 
-Delivering and returning needs sales update and inventory create permission, and posting the document needs inventory update permission. A posted shipment can be voided while every unit on it is still on rent and no revenue recognition run holds its accrued rent; the units go back to pending. A posted receipt cannot be voided.
+Delivering and returning needs sales update and inventory create permission, and posting the document needs inventory update permission. A posted shipment can be voided while every unit on it is still on rent and no revenue recognition run holds its accrued rent; the units go back to pending. A posted receipt cannot be voided. Once a shipment or receipt is posted, its units and their meter readings can no longer be edited.
 
 <Callout type="note" title="Billing runs from the agreement start, not from delivery">
 A unit's billing periods begin on the agreement's **"Start Date"** whether or not it has been delivered. Delivery decides when rent is *earned* for accounting (accruals start on the delivery date), not when it is *billed*.
@@ -332,26 +332,23 @@ Cancel blockers. Once anything is billed or accrued the agreement is closed inst
 ### "Only a Draft rental agreement can be deleted. Cancel it instead."
 Delete is Draft-only.
 
-### "No units to deliver" / "No units to return" / "Only a Pending unit can be delivered" / "Only a Pending or On Rent unit can be returned" / "The unit is already on an open shipment" / "The unit is already on an open receipt"
-Creating a rental shipment or receipt (header Deliver / Return, or the per-unit shortcut; `create` types `shipmentFromRentalAgreement` / `receiptFromRentalAgreement`). A shipment takes Pending units not on another open rental shipment; a receipt takes On Rent and Pending units. The agreement must be Active ("Rental agreement RA… is STATUS; units are delivered from an Active agreement").
+### Creating a rental shipment or receipt is refused
+Header Deliver / Return or the per-unit shortcut (`create` types `shipmentFromRentalAgreement` / `receiptFromRentalAgreement`). A shipment takes Pending units not on another open rental shipment; a receipt takes On Rent and Pending units. The agreement must be Active. The messages: "No units to deliver", "No units to return", "Only a Pending unit can be delivered", "Only a Pending or On Rent unit can be returned", "The unit is already on an open shipment", "The unit is already on an open receipt", "Rental agreement RA… is STATUS; units are delivered from an Active agreement".
 
-### "Select at least one unit to deliver" / "Select at least one unit to return"
-Posting a rental shipment or receipt with no unit ticked.
+### Posting a rental shipment or receipt is refused
+- "Select at least one unit to deliver" / "Select at least one unit to return": no unit is ticked.
+- "The delivery date cannot be in the future": the Delivered on date is after the company's today.
+- "UNIT is STATUS; only a Pending unit can be delivered" / "UNIT is STATUS; only a Pending or On Rent unit can be returned": posting re-checks every ticked unit, and another document or a release moved it in the meantime. Untick or remove the unit.
 
-### "The delivery date cannot be in the future"
-The shipment's Delivered on date is after the company's today.
+### Voiding a rental shipment or receipt is refused
+- "UNIT is STATUS; a rental shipment can be voided only while every unit is On Rent", "A posted revenue recognition run holds accrued rent for UNIT; the shipment cannot be voided", "A draft revenue recognition run holds accrued rent for UNIT; delete the run before voiding the shipment": the void guards of a rental shipment. A void sets the units back to Pending and deletes their unclaimed Planned Accrual rows.
+- "A rental return cannot be voided. Correct the unit by hand.": a posted rental receipt is never voided. The return deleted billing periods and may have booked a residual return.
 
-### "UNIT is STATUS; only a Pending unit can be delivered" / "UNIT is STATUS; only a Pending or On Rent unit can be returned"
-Posting re-checks every ticked unit; another document or a release moved it in the meantime. Untick or remove the unit.
+### Editing a posted rental shipment or receipt is refused
+"A posted shipment can no longer be changed" / "A posted receipt can no longer be changed": a unit row (tick, Meter, Notes, Take out of service, Return To) was edited after its document left Draft. `fixed-asset-lines.update` refuses it, because a posted document is a record.
 
-### "UNIT is STATUS; a rental shipment can be voided only while every unit is On Rent" / "A posted revenue recognition run holds accrued rent for UNIT; the shipment cannot be voided" / "A draft revenue recognition run holds accrued rent for UNIT; delete the run before voiding the shipment"
-Void guards of a rental shipment. A void sets the units back to Pending and deletes their unclaimed Planned Accrual rows.
-
-### "A rental return cannot be voided. Correct the unit by hand."
-A posted rental receipt is never voided: the return deleted billing periods and may have booked a residual return.
-
-### "The release date cannot be in the future" / "UNIT is STATUS; only a Pending unit can be released" / "UNIT is treated as a sale; return it on a rental receipt instead" / "UNIT is on shipment SHP…; remove it there before releasing the unit"
-Release unit (`post-rental-agreement` `release`, `update: sales`) ends a Pending unit with no document. A unit treated as a sale comes back on a rental receipt with Return To; a unit on an open rental shipment or receipt must leave that document first.
+### Releasing a unit is refused
+Release unit (`post-rental-agreement` `release`, `update: sales`) ends a Pending unit with no document. A unit treated as a sale comes back on a rental receipt with Return To; a unit on an open rental shipment or receipt must leave that document first. The messages: "The release date cannot be in the future", "UNIT is STATUS; only a Pending unit can be released", "UNIT is treated as a sale; return it on a rental receipt instead", "UNIT is on shipment SHP…; remove it there before releasing the unit".
 
 ### "Charges can only be added to an open rental agreement" / "The charge is on an invoice. Delete or void the invoice first."
 Charges are added on Draft or Active agreements; an invoiced charge cannot be deleted. `upsertRentalAgreementCharge` always writes charge type `Charge` (the form and MCP tool cannot choose a charge type); a Purchase Option charge comes only from Sell to Customer.
