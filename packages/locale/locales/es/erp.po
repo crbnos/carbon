@@ -21031,6 +21031,9 @@ msgstr "El proveedor no ofrece destinos de dimensión. Habilita la función en e
 msgid "The purchase order"
 msgstr "La orden de compra"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

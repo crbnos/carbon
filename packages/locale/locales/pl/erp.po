@@ -21031,6 +21031,9 @@ msgstr "Dostawca nie oferuje celów wymiarów. Najpierw włącz funkcję u dosta
 msgid "The purchase order"
 msgstr "Zamówienie zakupu"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

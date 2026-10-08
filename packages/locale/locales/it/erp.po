@@ -21031,6 +21031,9 @@ msgstr "Il provider non offre target di dimensione. Abilita prima la funzione ne
 msgid "The purchase order"
 msgstr "L'ordine di acquisto"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

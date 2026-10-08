@@ -21031,6 +21031,9 @@ msgstr "提供商不提供维度目标。首先在提供商中启用该功能（
 msgid "The purchase order"
 msgstr "采购订单"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

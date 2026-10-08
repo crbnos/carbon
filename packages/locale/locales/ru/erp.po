@@ -21031,6 +21031,9 @@ msgstr "Поставщик не предлагает целевые показа
 msgid "The purchase order"
 msgstr "Заказ поставщику"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

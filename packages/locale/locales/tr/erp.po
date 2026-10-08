@@ -21031,6 +21031,9 @@ msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etk
 msgid "The purchase order"
 msgstr "Satın alma siparişi"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

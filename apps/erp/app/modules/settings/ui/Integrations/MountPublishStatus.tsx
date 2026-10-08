@@ -19,6 +19,8 @@ import { path } from "~/utils/path";
 import type { IntegrationActionState } from "./IntegrationForm";
 
 const POLL_INTERVAL_MS = 3000;
+/** How long a Push may wait for its run to start while no other run is busy. */
+const STARTING_TIMEOUT_MS = 60_000;
 const ISSUES_SHOWN = 5;
 
 const ACTIONS = Object.entries(MOUNT_PUBLISH_ACTION_IDS) as Array<
@@ -36,18 +38,24 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
   const { revalidate } = useRevalidator();
   const records = useMemo(() => parseMountPublishRecords(metadata), [metadata]);
 
-  // The request id of the run this page started, per action. It is what
-  // the person did here, not a copy of the loader data.
-  const [started, setStarted] = useState<Record<string, string>>({});
+  // The request id of the run this page started, and when, per action. It
+  // is what the person did here, not a copy of the loader data.
+  const [started, setStarted] = useState<
+    Record<string, { requestId: string; at: number }>
+  >({});
   const announced = useRef(new Set<string>());
+
+  // Advanced while polling, so the give-up check below re-runs.
+  const [now, setNow] = useState(() => Date.now());
 
   const actionStates: Record<string, IntegrationActionState> = {};
   let polling = false;
   for (const [entityType, actionId] of ACTIONS) {
     const record = records[entityType];
-    const requestId = started[actionId];
+    const entry = started[actionId];
     // Started here, but the job has not picked it up yet.
-    const starting = requestId !== undefined && record?.requestId !== requestId;
+    const starting =
+      entry !== undefined && record?.requestId !== entry.requestId;
     const running = starting || record?.status === "running";
     if (running) polling = true;
 
@@ -65,14 +73,48 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
 
   useEffect(() => {
     if (!polling) return;
-    const id = setInterval(() => revalidate(), POLL_INTERVAL_MS);
+    const id = setInterval(() => {
+      revalidate();
+      setNow(Date.now());
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [polling, revalidate]);
+
+  // A Push whose run never reaches the job (the job service is down, or the
+  // event was lost) leaves no record to wait for, so it is given up after a
+  // while. Only one run per company goes at a time, so the wait counts from
+  // when the last run stopped: a Push queued behind another keeps waiting.
+  const lastBusyAt = useRef(0);
+  useEffect(() => {
+    const busy = ACTIONS.some(
+      ([entityType]) => records[entityType]?.status === "running"
+    );
+    if (busy) {
+      lastBusyAt.current = now;
+      return;
+    }
+    const stalled = ACTIONS.filter(([entityType, actionId]) => {
+      const entry = started[actionId];
+      return (
+        entry !== undefined &&
+        records[entityType]?.requestId !== entry.requestId &&
+        now - Math.max(entry.at, lastBusyAt.current) > STARTING_TIMEOUT_MS
+      );
+    }).map(([, actionId]) => actionId);
+    if (stalled.length === 0) return;
+
+    toast.error(t`The push to Mount did not start. Try again.`);
+    setStarted((current) => {
+      const next = { ...current };
+      for (const actionId of stalled) delete next[actionId];
+      return next;
+    });
+  }, [now, records, started, t]);
 
   // Say when a run this page started has ended.
   useEffect(() => {
     for (const [entityType, actionId] of ACTIONS) {
-      const requestId = started[actionId];
+      const requestId = started[actionId]?.requestId;
       const record = records[entityType];
       if (
         !requestId ||
@@ -99,7 +141,10 @@ export function useMountActionStates(metadata: Record<string, unknown>) {
     (actionId: string, response: Record<string, unknown>) => {
       const requestId = response.requestId;
       if (typeof requestId !== "string") return;
-      setStarted((current) => ({ ...current, [actionId]: requestId }));
+      setStarted((current) => ({
+        ...current,
+        [actionId]: { requestId, at: Date.now() }
+      }));
       revalidate();
     },
     [revalidate]

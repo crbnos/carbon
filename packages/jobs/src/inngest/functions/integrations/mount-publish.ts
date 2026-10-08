@@ -105,6 +105,7 @@ export const mountPublishFunction = inngest.createFunction(
 
     const records: PublishedRecords = [];
     for (const entityType of payload.entityTypes) {
+      let last: MountPublishRecord | null = null;
       for (let batch = 0; batch < MOUNT_PUBLISH_MAX_BATCHES; batch++) {
         // The sweep is idempotent, so a retried batch replaying records that
         // already published is harmless.
@@ -126,14 +127,12 @@ export const mountPublishFunction = inngest.createFunction(
           return { skipped: "integration-inactive" as const };
         }
 
-        if (result.final) {
-          records.push({
-            entityType,
-            record: result.record as MountPublishRecord
-          });
-          break;
-        }
+        last = result.record as MountPublishRecord;
+        if (result.final) break;
       }
+      // After the loop rather than on the final batch, so an entity type is
+      // reported even if the loop's cap and isFinalBatch's ever disagree.
+      if (last) records.push({ entityType, record: last });
     }
 
     log.info("Mount publish complete", {

@@ -21031,6 +21031,9 @@ msgstr "प्रदाता कोई आयाम लक्ष्य प्�
 msgid "The purchase order"
 msgstr "क्रय आदेश"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

@@ -83,7 +83,9 @@ export async function runMountPublishBatch({
   const stored = (metadata ?? {}) as StoredSettings;
 
   let current = parseMountPublishRecords(metadata)[entityType];
-  if (batch === 0 || current?.runId !== run.runId) {
+  // A record with this run's id already belongs to it: a retried first batch
+  // keeps what the earlier attempt recorded.
+  if (current?.runId !== run.runId) {
     current = startPublishRecord(current, run);
     await writePublishRecord(serviceRole, companyId, entityType, current);
   }

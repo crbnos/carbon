@@ -268,6 +268,11 @@ export class MountClient {
   ): Promise<T> {
     const settings = await this.getSettings(companyId);
     const accessToken = await this.getAccessToken(companyId, settings);
+    // Read with the token, not when its request fails: by then another
+    // request may have replaced it with one whose 403 is final.
+    const cached = this.tokens.get(companyId);
+    const forbiddenIsFinal =
+      cached?.accessToken === accessToken && cached.forbiddenIsFinal;
     const domainId = withDomain
       ? await this.resolveDomainId(companyId, settings)
       : null;
@@ -300,11 +305,14 @@ export class MountClient {
       // token from before an admin set the client's Member ID or granted that
       // member access. Re-exchange once per token for that; a 403 on a token
       // issued after one is a real permission problem.
-      const staleForbidden =
-        status === 403 && !this.tokens.get(companyId)?.forbiddenIsFinal;
+      const staleForbidden = status === 403 && !forbiddenIsFinal;
       if (retryOnUnauthorized && (status === 401 || staleForbidden)) {
-        this.invalidateToken(companyId);
-        if (staleForbidden) this.reissueAfterForbidden.add(companyId);
+        // When another request already replaced this token, replay with
+        // that one instead of exchanging again.
+        if (this.tokens.get(companyId)?.accessToken === accessToken) {
+          this.invalidateToken(companyId);
+          if (staleForbidden) this.reissueAfterForbidden.add(companyId);
+        }
         return await this.request<T>(companyId, config, {
           retryOnUnauthorized: false,
           withDomain

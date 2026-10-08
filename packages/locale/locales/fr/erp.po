@@ -21031,6 +21031,9 @@ msgstr "Le fournisseur n'offre pas de cibles de dimension. Activez d'abord la fo
 msgid "The purchase order"
 msgstr "Le bon de commande"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

@@ -21031,6 +21031,9 @@ msgstr "Der Provider bietet keine Dimensionsziele. Aktivieren Sie die Funktion z
 msgid "The purchase order"
 msgstr "Die Bestellung"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 

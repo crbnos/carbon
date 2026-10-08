@@ -21031,6 +21031,9 @@ msgstr "O provedor não oferece alvos de dimensão. Habilite o recurso no proved
 msgid "The purchase order"
 msgstr "O pedido de compra"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
 msgid "The push to Mount failed"
 msgstr ""
 
