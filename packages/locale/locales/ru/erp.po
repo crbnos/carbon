@@ -9050,6 +9050,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to plan job"
+msgstr "Ошибка при планировании производственного заказа"
+
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
 
@@ -14475,6 +14478,9 @@ msgstr "Дата заказа"
 
 msgid "Order Multiple"
 msgstr "Кратность заказа"
+
+msgid "Order Multiple:"
+msgstr "Кратность заказа:"
 
 msgid "Order Parts"
 msgstr "Заказать детали"

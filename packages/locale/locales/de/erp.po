@@ -9050,6 +9050,9 @@ msgstr "Fehler beim Laden von verfolgten Entitäten"
 msgid "Failed to move account: {0}"
 msgstr "Konto konnte nicht verschoben werden: {0}"
 
+msgid "Failed to plan job"
+msgstr "Fertigungsauftrag konnte nicht geplant werden"
+
 msgid "Failed to record gauge"
 msgstr "Prüfmittel konnte nicht aufgezeichnet werden"
 
@@ -14475,6 +14478,9 @@ msgstr "Bestelldatum"
 
 msgid "Order Multiple"
 msgstr "Bestellvielfaches"
+
+msgid "Order Multiple:"
+msgstr "Bestellvielfaches:"
 
 msgid "Order Parts"
 msgstr "Teile bestellen"

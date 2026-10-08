@@ -27,7 +27,10 @@ import {
   updatePlanningJob,
   upsertJobMethod
 } from "~/modules/production";
-import { cancelJob } from "~/modules/production/production.server";
+import {
+  cancelJob,
+  planDraftJob
+} from "~/modules/production/production.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -647,6 +650,81 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: true, message: "Updated job" };
     }
 
+    // ── Promote a Draft job to Planned (the drawer's Plan button). MRP does
+    // not count a Draft job as supply; once Planned it does, and the run
+    // inside planDraftJob shrinks the Make suggestion by it. Only this
+    // location's make-to-stock Draft jobs: the drawer lists nothing else, and
+    // a job a sales order owns is that order's, not planning's.
+    case "planJob": {
+      const parsedJob = z.object({ id: z.string().min(1) }).safeParse(job);
+      if (!parsedJob.success) {
+        return data(
+          { success: false, message: "A job id is required" },
+          { status: 400 }
+        );
+      }
+
+      const target = await client
+        .from("job")
+        .select("id, status, locationId, salesOrderId, salesOrderLineId")
+        .eq("id", parsedJob.data.id)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (target.error || !target.data) {
+        return data(
+          { success: false, message: "Job not found" },
+          { status: 404 }
+        );
+      }
+      if (target.data.locationId !== locationId) {
+        return data(
+          { success: false, message: "This job is for another location." },
+          { status: 409 }
+        );
+      }
+      if (target.data.salesOrderId || target.data.salesOrderLineId) {
+        return data(
+          {
+            success: false,
+            message: "This job is for a sales order. Plan it on the job."
+          },
+          { status: 409 }
+        );
+      }
+      if (target.data.status !== "Draft") {
+        return data(
+          { success: false, message: "Only a Draft job can be planned." },
+          { status: 409 }
+        );
+      }
+
+      const planned = await planDraftJob({
+        client,
+        db: getDatabaseClient(),
+        jobId: target.data.id,
+        companyId,
+        userId
+      });
+      if (planned.error) {
+        return data(
+          { success: false, message: planned.error },
+          { status: 500 }
+        );
+      }
+      if (!planned.updated) {
+        // Changed by someone else after the status check above.
+        return data(
+          { success: false, message: "Only a Draft job can be planned." },
+          { status: 409 }
+        );
+      }
+      return {
+        success: true,
+        message: "Planned job",
+        ...(planned.warning && { warning: planned.warning })
+      };
+    }
+
     // ── Apply a persisted planning action to its target job (spec §P1.5).
     // IDOR guard: the request carries ONLY planningActionIds — the type, target
     // and proposal values come from the persisted row, loaded by id+companyId
@@ -1223,7 +1301,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {
           success: false,
-          message: `Unknown action '${action}'. Expected one of: 'order', 'updateJob', 'apply', 'expedite', 'defer', 'increase', 'decrease', 'cancel', 'dismiss', 'reopen', 'assign'`
+          message: `Unknown action '${action}'. Expected one of: 'order', 'updateJob', 'planJob', 'apply', 'expedite', 'defer', 'increase', 'decrease', 'cancel', 'dismiss', 'reopen', 'assign'`
         },
         { status: 400 }
       );

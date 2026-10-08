@@ -9050,6 +9050,9 @@ msgstr "Nie udało się załadować śledzonych jednostek"
 msgid "Failed to move account: {0}"
 msgstr "Nie udało się przenieść konta: {0}"
 
+msgid "Failed to plan job"
+msgstr "Nie udało się zaplanować zlecenia produkcyjnego"
+
 msgid "Failed to record gauge"
 msgstr "Nie udało się zapisać przyrządu pomiarowego"
 
@@ -14475,6 +14478,9 @@ msgstr "Data zamówienia"
 
 msgid "Order Multiple"
 msgstr "Wielokrotność Zamówienia"
+
+msgid "Order Multiple:"
+msgstr "Wielokrotność zamówienia:"
 
 msgid "Order Parts"
 msgstr "Zamów części"

@@ -9050,6 +9050,9 @@ msgstr "Failed to load tracked entities"
 msgid "Failed to move account: {0}"
 msgstr "Failed to move account: {0}"
 
+msgid "Failed to plan job"
+msgstr "Failed to plan job"
+
 msgid "Failed to record gauge"
 msgstr "Failed to record gauge"
 
@@ -14475,6 +14478,9 @@ msgstr "Order Date"
 
 msgid "Order Multiple"
 msgstr "Order Multiple"
+
+msgid "Order Multiple:"
+msgstr "Order Multiple:"
 
 msgid "Order Parts"
 msgstr "Order Parts"

@@ -85,6 +85,9 @@ type ProductionPlanningOrderDrawerProps = {
   /** Apply / dismiss / reopen / assign, owned by the grid (one fetcher). */
   actionHandlers: PlanningActionHandlers;
   setOrders: (item: ProductionPlanningItem, orders: ProductionOrder[]) => void;
+  /** Drop the item's draft list so the drawer re-seeds from MRP's new
+   *  suggestions — after a Draft job is planned, which re-runs MRP. */
+  onSuggestionsStale: (item: ProductionPlanningItem) => void;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
   isOpen: boolean;
@@ -102,6 +105,7 @@ export const ProductionPlanningOrderDrawer = memo(
     actions,
     actionHandlers,
     setOrders,
+    onSuggestionsStale,
     locationId,
     periods,
     isOpen,
@@ -130,6 +134,8 @@ export const ProductionPlanningOrderDrawer = memo(
 
     // Re-read when the item's actions change: applying one rewrites its job.
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
+    // ...and after a Draft job is planned here, which changes its status.
+    const [openJobsVersion, setOpenJobsVersion] = useState(0);
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -180,7 +186,7 @@ export const ProductionPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
-    }, [isOpen, carbon, row.id, locationId, actionsKey]);
+    }, [isOpen, carbon, row.id, locationId, actionsKey, openJobsVersion]);
 
     const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openJobs)) return openJobs;
@@ -282,6 +288,66 @@ export const ProductionPlanningOrderDrawer = memo(
         }
       },
       [locationId, revalidate, t]
+    );
+
+    // Plan: a Draft job becomes Planned, so MRP counts it as supply. Draft is
+    // the planner's own unfinished job; without this it sat beside a Make
+    // suggestion for the same need, and both could be built. Edit its
+    // quantity and date in the row first — Plan keeps them.
+    const [planningJobId, setPlanningJobId] = useState<string | null>(null);
+    const onPlanDraftJob = useCallback(
+      async (jobId: string) => {
+        setPlanningJobId(jobId);
+        try {
+          const response = await fetch(path.to.bulkUpdateProductionPlanning, {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "planJob",
+              locationId,
+              job: { id: jobId }
+            })
+          });
+          const result = (await response.json().catch(() => null)) as {
+            success?: boolean;
+            message?: string;
+            warning?: string;
+          } | null;
+          if (response.ok && result?.success) {
+            if (result.warning) toast.error(result.warning);
+            else toast.success(t`Planned job`);
+            // MRP ran: the suggestions, the grid row and this list all moved
+            onSuggestionsStale(row);
+            setOpenJobsVersion((version) => version + 1);
+            void revalidate();
+          } else {
+            toast.error(result?.message ?? t`Failed to plan job`);
+          }
+        } catch {
+          toast.error(t`Failed to plan job`);
+        } finally {
+          setPlanningJobId(null);
+        }
+      },
+      [locationId, onSuggestionsStale, revalidate, row, t]
+    );
+
+    const renderPlanCommand = useCallback(
+      (openRow: OpenOrderRow) =>
+        openRow.status === "Draft" && actionHandlers.canUpdate ? (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant="secondary"
+              isLoading={planningJobId === openRow.id}
+              isDisabled={planningJobId !== null}
+              onClick={() => onPlanDraftJob(openRow.id)}
+            >
+              <Trans>Plan</Trans>
+            </Button>
+          </div>
+        ) : null,
+      [actionHandlers.canUpdate, onPlanDraftJob, planningJobId]
     );
 
     const renderOpenJobStatus = useCallback(
@@ -461,6 +527,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   rows={openJobRows}
                   todayIso={locationToday}
                   renderStatusIcon={renderOpenJobStatus}
+                  renderRowCommand={renderPlanCommand}
                   onSave={onSaveOpenJob}
                   onRowsChange={onOpenJobsChange}
                   {...actionHandlers}
@@ -507,6 +574,7 @@ export const ProductionPlanningOrderDrawer = memo(
         onIncludeBeyondFence,
         openJobRows,
         renderOpenJobStatus,
+        renderPlanCommand,
         onSaveOpenJob,
         onOpenJobsChange,
         actionHandlers,

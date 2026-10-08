@@ -9050,6 +9050,9 @@ msgstr "No se pudieron cargar las entidades rastreadas"
 msgid "Failed to move account: {0}"
 msgstr "Error al mover cuenta: {0}"
 
+msgid "Failed to plan job"
+msgstr "No se pudo planificar la orden de trabajo"
+
 msgid "Failed to record gauge"
 msgstr "No se pudo registrar el instrumento de medición"
 
@@ -14475,6 +14478,9 @@ msgstr "Fecha de Pedido"
 
 msgid "Order Multiple"
 msgstr "Múltiplo de Pedido"
+
+msgid "Order Multiple:"
+msgstr "Múltiplo de pedido:"
 
 msgid "Order Parts"
 msgstr "Pedir Piezas"

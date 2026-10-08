@@ -9050,6 +9050,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
+msgid "Failed to plan job"
+msgstr "작업 지시 계획 실패"
+
 msgid "Failed to record gauge"
 msgstr "계측기 기록에 실패했습니다"
 
@@ -14475,6 +14478,9 @@ msgstr "주문일"
 
 msgid "Order Multiple"
 msgstr "주문 배수"
+
+msgid "Order Multiple:"
+msgstr "주문 배수:"
 
 msgid "Order Parts"
 msgstr "부품 발주"
