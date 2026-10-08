@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { fetchAllByIds } from "@carbon/database";
 import { resolveIntegrationSecrets } from "@carbon/ee";
 import { emailNotificationsEnabled } from "@carbon/ee/email-notifications.server";
 import {
@@ -315,12 +316,18 @@ export const notifyFunction = inngest.createFunction(
       if (payload.from) ids = ids.filter((id) => id !== payload.from);
       ids = [...new Set(ids)];
 
+      // Every read keyed by the recipients goes through fetchAllByIds: a
+      // group can hold more users than one `.in()` URL or one 1000-row page
+      // carries, and a read cut short would drop recipients without an error.
       if (ids.length > 0) {
-        const members = await client
-          .from("userToCompany")
-          .select("userId")
-          .eq("companyId", payload.companyId)
-          .in("userId", ids);
+        const members = await fetchAllByIds(ids, (batch) =>
+          client
+            .from("userToCompany")
+            .select("userId")
+            .eq("companyId", payload.companyId)
+            .in("userId", batch)
+            .order("userId")
+        );
         if (members.error) {
           console.error(
             "Failed to filter recipients by company membership",
@@ -352,12 +359,18 @@ export const notifyFunction = inngest.createFunction(
     const { emailRecipientIds, slackRecipientIds } =
       wantsEmail || wantsSlack
         ? await step.run("filter-recipients-by-preference", async () => {
-            const { data: prefs, error } = await client
-              .from("notificationPreference")
-              .select("userId, channel, enabled")
-              .in("userId", userIds)
-              .eq("companyId", payload.companyId)
-              .eq("topic", topic);
+            const { data: prefs, error } = await fetchAllByIds(
+              userIds,
+              (batch) =>
+                client
+                  .from("notificationPreference")
+                  .select("userId, channel, enabled")
+                  .in("userId", batch)
+                  .eq("companyId", payload.companyId)
+                  .eq("topic", topic)
+                  .order("userId")
+                  .order("channel")
+            );
             if (error) {
               console.error("Failed to load notification preferences", error);
               throw error;
@@ -572,10 +585,15 @@ export const notifyFunction = inngest.createFunction(
       const emailEvents = await step.run(
         "resolve-email-recipients",
         async () => {
-          const { data: users, error } = await client
-            .from("user")
-            .select("id, email, fullName")
-            .in("id", emailRecipientIds);
+          const { data: users, error } = await fetchAllByIds(
+            emailRecipientIds,
+            (batch) =>
+              client
+                .from("user")
+                .select("id, email, fullName")
+                .in("id", batch)
+                .order("id")
+          );
           if (error) {
             console.error("Failed to resolve email recipients", error);
             throw error;
@@ -770,11 +788,16 @@ export const notifyFunction = inngest.createFunction(
               cookieMaxAgeSeconds: SESSION_MAX_AGE
             })
           );
-          const { data: subscriptions, error } = await client
-            .from("pushSubscription")
-            .select("id, userId")
-            .in("userId", userIds)
-            .gte("updatedAt", liveSince);
+          const { data: subscriptions, error } = await fetchAllByIds(
+            userIds,
+            (batch) =>
+              client
+                .from("pushSubscription")
+                .select("id, userId")
+                .in("userId", batch)
+                .gte("updatedAt", liveSince)
+                .order("id")
+          );
           if (error) {
             console.error("Failed to load push subscriptions", error);
             throw error;

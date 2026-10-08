@@ -2945,7 +2945,8 @@ with no actions — indistinguishable from "nothing to do". Demo data and hand-m
 (a few actions each) never came near the limit; it took load data to see it.
 
 **Rule:** An id list for `.in()` must be bounded by something you control (the page size), and
-chunked when that bound is large — about 100 ids per request. When the related rows hang off
+chunked when that bound is large — about 100 ids per request (`fetchAllByIds` in
+`@carbon/database` does the chunking and the paging). When the related rows hang off
 a foreign key, embed them in the first read instead of looking them up afterwards. And a
 loader never swaps a failed read for an empty list: log it and throw.
 

@@ -28,6 +28,10 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
   the first concurrently. `fetchAllRecords` is the same pager over a query FACTORY (`() => builder`)
   — a factory, because supabase-js builders are mutable, so concurrent awaits on one builder all
   fetch whichever `.range()` was set last.
+- Use `fetchAllByIds(ids, (batch) => query.in(col, batch).order(...))` for a read keyed by an id
+  list that can grow with the data. It sends 100 ids per request, because `.in()` writes every id
+  into the URL and the gateway rejects a long request line (HTTP 431). It pages each group with
+  `fetchAllRecords`, and one failed group fails the whole read.
 
 ## Ask First
 
@@ -62,7 +66,7 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
+| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchAllByIds` (100 ids per `.in()` request, each group paged), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
 | `./client` | Node-only. `Kysely`, `KyselyDatabase`, `getPostgresClient`, and `getProcessPool()` (one shared pool per process — never create another, never end it outside an exiting script); registers the NUMERIC → `Number` and DATE → `YYYY-MM-DD` type parsers at module load (see `.claude/rules/numeric-precision.md`) |
 | `./methods` | Make-method helpers shared by get-method and `@carbon/planning` (`getJobMethodTree`, `getQuoteMethodTree`, `traverseJobMethod`, `calculateQuoteLinePrices`, …) |
 | `./job-quantities-engine` | `computeJobQuantities` / `flattenJobQuantityTree` — the pure job-quantity cascade behind the `recalculate` server function |
