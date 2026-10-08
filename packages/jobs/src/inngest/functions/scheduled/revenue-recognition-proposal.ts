@@ -19,6 +19,19 @@ export function priorMonthEnd(today: string): string {
   return parseDate(today).set({ day: 1 }).subtract({ days: 1 }).toString();
 }
 
+/**
+ * The companies a proposal runs for: only those with accounting on. The
+ * synthesizers write rental accruals and contract revenue rows for any company
+ * they are pointed at, and a company with accounting off cannot post the run.
+ */
+export function companiesToPropose<T extends { id: string }>(
+  companies: T[],
+  accountingEnabledIds: string[]
+): T[] {
+  const enabled = new Set(accountingEnabledIds);
+  return companies.filter((company) => enabled.has(company.id));
+}
+
 export const revenueRecognitionProposalFunction = inngest.createFunction(
   { id: "revenue-recognition-proposal", retries: 2 },
   // Noon UTC on the 1st: every inhabited zone (UTC-11 … UTC+14) is already on
@@ -51,11 +64,30 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
         throw companies.error;
       }
 
-      if (companies.data.length === 0) {
+      const accountingEnabled = await fetchAllFromTable<{ id: string }>(
+        serviceRole,
+        "companySettings",
+        "id",
+        (query) => query.eq("accountingEnabled", true).order("id")
+      );
+
+      if (accountingEnabled.error) {
+        logger.error("Failed to get company settings", {
+          error: accountingEnabled.error
+        });
+        throw accountingEnabled.error;
+      }
+
+      const proposing = companiesToPropose(
+        companies.data,
+        accountingEnabled.data.map((settings) => settings.id)
+      );
+
+      if (proposing.length === 0) {
         logger.warn("No companies to propose revenue recognition runs for");
       }
 
-      return companies.data;
+      return proposing;
     });
 
     // One step per company: each is its own invocation with its own retries

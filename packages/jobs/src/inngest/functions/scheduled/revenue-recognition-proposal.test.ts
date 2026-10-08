@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it, vi } from "vitest";
-import { priorMonthEnd } from "./revenue-recognition-proposal";
+import {
+  companiesToPropose,
+  priorMonthEnd
+} from "./revenue-recognition-proposal";
 
 // priorMonthEnd is pure, but its module's neighbors are not:
 // @carbon/auth/client.server pulls in @carbon/env, which validates required
@@ -28,5 +31,24 @@ describe("priorMonthEnd", () => {
 
   it("crosses the year boundary from January", () => {
     expect(priorMonthEnd("2026-01-10")).toBe("2025-12-31");
+  });
+});
+
+describe("companiesToPropose", () => {
+  it("leaves out companies with accounting off", () => {
+    const companies = [
+      { id: "on", name: "Books On" },
+      { id: "off", name: "Books Off" }
+    ];
+
+    expect(companiesToPropose(companies, ["on"])).toEqual([
+      { id: "on", name: "Books On" }
+    ]);
+  });
+
+  it("proposes for nobody when no company has accounting on", () => {
+    expect(companiesToPropose([{ id: "off", name: "Books Off" }], [])).toEqual(
+      []
+    );
   });
 });
