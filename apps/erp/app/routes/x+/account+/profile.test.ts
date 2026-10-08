@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getAccount, updateAvatar } from "~/modules/account";
+import { getCurrentUser, updateAvatar } from "~/modules/account";
 import { action } from "./profile";
 
 // The photo intent saves the new avatar value, then deletes the photo it
@@ -24,6 +24,7 @@ vi.mock("~/modules/account/ui/Profile", () => ({ ProfileForm: () => null }));
 vi.mock("~/modules/account", () => ({
   accountProfileValidator: {},
   getAccount: vi.fn(),
+  getCurrentUser: vi.fn(),
   updateAvatar: vi.fn(),
   updatePublicAccount: vi.fn()
 }));
@@ -76,7 +77,7 @@ describe("profile action, photo intent", () => {
       calls.push(`update:${value}`);
       return { error: null };
     }) as never);
-    vi.mocked(getAccount).mockResolvedValue({
+    vi.mocked(getCurrentUser).mockResolvedValue({
       data: { avatarUrl: `${USER_ID}.webp` },
       error: null
     } as never);
@@ -97,7 +98,7 @@ describe("profile action, photo intent", () => {
   });
 
   it("deletes nothing when the previous avatar was generated", async () => {
-    vi.mocked(getAccount).mockResolvedValue({
+    vi.mocked(getCurrentUser).mockResolvedValue({
       data: { avatarUrl: "dicebear:croodles-neutral:abc" },
       error: null
     } as never);

@@ -19,6 +19,7 @@ import { data, useLoaderData } from "react-router";
 import {
   accountProfileValidator,
   getAccount,
+  getCurrentUser,
   updateAvatar,
   updatePublicAccount
 } from "~/modules/account";
@@ -94,7 +95,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const previous = await getAccount(client, userId);
+    // Only the replaced avatar is needed: the narrow reader, not `select("*")`.
+    const previous = await getCurrentUser(client, userId);
     if (previous.error) {
       logger.error("Failed to read the avatar being replaced", {
         userId,
