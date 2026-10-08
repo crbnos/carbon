@@ -183,8 +183,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function RentalAgreementRoute() {
-  const { rentalAgreement, lines, periods, leasePolicy, leaseInputs } =
-    useLoaderData<typeof loader>();
+  const {
+    rentalAgreement,
+    lines,
+    periods,
+    leasePolicy,
+    leaseInputs,
+    shipments,
+    receipts
+  } = useLoaderData<typeof loader>();
   const { id } = useParams();
   const matches = useMatches();
   if (!id) throw new Error("Could not find id");
@@ -204,6 +211,8 @@ export default function RentalAgreementRoute() {
           periods={periods}
           leasePolicy={leasePolicy}
           leaseInputs={leaseInputs}
+          shipments={shipments}
+          receipts={receipts}
         />
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">

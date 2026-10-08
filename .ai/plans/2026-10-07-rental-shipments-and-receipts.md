@@ -42,7 +42,7 @@ in spec → Open Questions.
 - [x] Task 18: Show the rental units on the receipt page
 - [x] Task 19: Add the source to tables, forms, document panels and traceability
 - [x] Task 20: Print a Delivery Ticket
-- [ ] Task 21: Add Deliver and Return to the agreement header
+- [x] Task 21: Add Deliver and Return to the agreement header
 - [ ] Task 22: Replace the `return` type with `release`
 - [ ] Task 23: Repoint the unit actions and add Release unit
 - [ ] Task 24: Run the full verification sweep
