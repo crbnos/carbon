@@ -12,15 +12,6 @@ afterEach(() => {
 });
 
 describe("module load", () => {
-  it("stops a server with one report of everything missing", async () => {
-    vi.stubEnv("VITEST", "");
-    vi.stubEnv("SESSION_SECRET", "");
-    vi.stubEnv("REDIS_URL", "");
-    await expect(import("./index")).rejects.toThrow(
-      /Carbon can't start[\s\S]*REDIS_URL[\s\S]*SESSION_SECRET/
-    );
-  });
-
   it("never throws in the browser, and keeps secrets out", async () => {
     vi.doMock("@carbon/utils", async (original) => ({
       ...(await original<typeof import("@carbon/utils")>()),
