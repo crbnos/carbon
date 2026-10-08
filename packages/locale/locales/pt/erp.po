@@ -3790,12 +3790,6 @@ msgstr "Procurar biblioteca"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Navegue pela versão publicada somente leitura. Você ainda pode reorganizar etapas para limpar o layout."
 
-msgid "browser"
-msgstr "navegador"
-
-msgid "Browser"
-msgstr "Navegador"
-
 msgid "Browser notifications"
 msgstr "Notificações do navegador"
 
@@ -9134,9 +9128,6 @@ msgstr "Falha ao salvar a alteração"
 msgid "Failed to save tools"
 msgstr "Falha ao salvar ferramentas"
 
-msgid "Failed to send a test notification"
-msgstr "Falha ao enviar uma notificação de teste"
-
 msgid "Failed to update batch property"
 msgstr "Falha ao atualizar propriedade de lote"
 
@@ -10437,14 +10428,8 @@ msgstr "Nas configurações da Empresa em Desenvolvedor, edite as permissões do
 msgid "In-app"
 msgstr "No aplicativo"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegam até você por e-mail ou em seus dispositivos."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegarão a você por email ou Slack."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegam até você por e-mail, Slack ou em seus dispositivos."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também chegarão a você por email."
@@ -18540,9 +18525,6 @@ msgstr "Lucro de vendas: <0/>"
 msgid "Send"
 msgstr "Enviar"
 
-msgid "Send a test notification"
-msgstr "Enviar uma notificação de teste"
-
 msgid "Send error"
 msgstr "Enviar erro"
 
@@ -20311,9 +20293,6 @@ msgstr "Termos de Serviço"
 
 msgid "Test"
 msgstr "Teste"
-
-msgid "Test notification sent"
-msgstr "Notificação de teste enviada"
 
 msgid "Test run"
 msgstr "Execução de teste"

@@ -3790,12 +3790,6 @@ msgstr "ライブラリを参照"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "公開済バージョンを読み取り専用で閲覧できます。レイアウトを整理するためにステップを並び替えることもできます。"
 
-msgid "browser"
-msgstr "ブラウザ"
-
-msgid "Browser"
-msgstr "ブラウザ"
-
 msgid "Browser notifications"
 msgstr "ブラウザー通知"
 
@@ -9134,9 +9128,6 @@ msgstr "変更の保存に失敗しました。"
 msgid "Failed to save tools"
 msgstr "ツールの保存に失敗しました"
 
-msgid "Failed to send a test notification"
-msgstr "テスト通知の送信に失敗しました"
-
 msgid "Failed to update batch property"
 msgstr "バッチプロパティの更新に失敗しました"
 
@@ -10437,14 +10428,8 @@ msgstr "Enterprise設定の開発者セクションで、プライベートOAuth
 msgid "In-app"
 msgstr "アプリ内"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "アプリ内通知は常に配信されます。メールまたはデバイスで受け取る通知をお選びください。"
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "アプリ内通知は常に配信されます。メール、Slack、またはデバイスで受け取る通知をお選びください。"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールでも届くかを選択してください。"
@@ -18540,9 +18525,6 @@ msgstr "売却利益: <0/>"
 msgid "Send"
 msgstr "送信"
 
-msgid "Send a test notification"
-msgstr "テスト通知を送信"
-
 msgid "Send error"
 msgstr "送信エラー"
 
@@ -20311,9 +20293,6 @@ msgstr "利用規約"
 
 msgid "Test"
 msgstr "テスト"
-
-msgid "Test notification sent"
-msgstr "テスト通知を送信しました"
 
 msgid "Test run"
 msgstr "テストラン"

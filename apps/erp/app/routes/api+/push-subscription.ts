@@ -5,12 +5,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { pushEndpointCookie } from "@carbon/auth/session.server";
-import { getAppUrl, isPushConfigured } from "@carbon/env";
-import { trigger } from "@carbon/jobs";
+import { isPushConfigured } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { z } from "zod";
 import {
   deletePushSubscription,
   getPushSubscription,
@@ -18,13 +16,8 @@ import {
   pushSubscriptionValidator,
   upsertPushSubscription
 } from "~/modules/account";
-import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "push-subscription");
-
-const testPushValidator = pushSubscriptionEndpointValidator.extend({
-  intent: z.literal("test")
-});
 
 // The carbon-push cookie names this browser's endpoint, so signing out
 // (clearAuthCookies in @carbon/auth) can delete its rows.
@@ -69,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 // This browser's Web Push subscription for the signed-in user.
 // PUT saves it (also from push-worker.js after a pushsubscriptionchange),
-// DELETE removes it, POST { intent: "test" } sends a test push to it.
+// DELETE removes it.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
@@ -161,41 +154,6 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
       );
-    }
-
-    case "POST": {
-      const parsed = testPushValidator.safeParse(body);
-      if (!parsed.success) {
-        return data({ error: "Invalid request" }, { status: 400 });
-      }
-      const subscription = await getPushSubscription(client, {
-        userId,
-        endpoint: parsed.data.endpoint
-      });
-      if (subscription.error) {
-        logger.error("Failed to read push subscription", {
-          companyId,
-          error: subscription.error
-        });
-        return data({ error: subscription.error.message }, { status: 500 });
-      }
-      if (!subscription.data) {
-        return data(
-          { error: "Browser notifications are not on in this browser" },
-          { status: 404 }
-        );
-      }
-
-      await trigger("send-push", {
-        subscriptionId: subscription.data.id,
-        userId,
-        companyId,
-        title: "Carbon",
-        body: "Browser notifications work in this browser.",
-        url: `${getAppUrl()}${path.to.notificationSettings}`,
-        tag: "carbon-test"
-      });
-      return { ok: true };
     }
 
     default:

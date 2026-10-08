@@ -3790,12 +3790,6 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "प्रकाशित संस्करण को केवल पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 
-msgid "browser"
-msgstr "ब्राउज़र"
-
-msgid "Browser"
-msgstr "ब्राउज़र"
-
 msgid "Browser notifications"
 msgstr "ब्राउज़र सूचनाएँ"
 
@@ -9134,9 +9128,6 @@ msgstr "परिवर्तन को सहेजने में विफ�
 msgid "Failed to save tools"
 msgstr "उपकरणों को सहेजने में विफल"
 
-msgid "Failed to send a test notification"
-msgstr "परीक्षण सूचना भेजने में विफल"
-
 msgid "Failed to update batch property"
 msgstr "बैच गुण अपडेट करने में विफल"
 
@@ -10437,14 +10428,8 @@ msgstr "अपनी Enterprise सेटिंग्स में Developer क
 msgid "In-app"
 msgstr "ऐप में"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "ऐप्लिकेशन के अंदर की सूचनाएं हमेशा पहुंचाई जाती हैं। चुनें कि कौन से विषय आपको ईमेल या आपके डिवाइस पर भी पहुंचें।"
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप सूचनाएं हमेशा दी जाती हैं। चुनें कि कौन से विषय आपको ईमेल या Slack द्वारा भी पहुंचें।"
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "ऐप्लिकेशन के अंदर की सूचनाएं हमेशा पहुंचाई जाती हैं। चुनें कि कौन से विषय आपको ईमेल, Slack या आपके डिवाइस पर भी पहुंचें।"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "इन-ऐप सूचनाएं हमेशा दी जाती हैं। चुनें कि कौन से विषय आपको ईमेल द्वारा भी पहुंचें।"
@@ -18540,9 +18525,6 @@ msgstr "विक्रय लाभ: <0/>"
 msgid "Send"
 msgstr "भेजें"
 
-msgid "Send a test notification"
-msgstr "परीक्षण सूचना भेजें"
-
 msgid "Send error"
 msgstr "त्रुटि भेजें"
 
@@ -20311,9 +20293,6 @@ msgstr "सेवा की शर्तें"
 
 msgid "Test"
 msgstr "परीक्षण"
-
-msgid "Test notification sent"
-msgstr "परीक्षण सूचना भेजी गई"
 
 msgid "Test run"
 msgstr "परीक्षण चलाएं"

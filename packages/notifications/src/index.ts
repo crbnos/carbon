@@ -100,8 +100,10 @@ export const USER_FACING_NOTIFICATION_TOPICS = [
   NotificationTopic.Changelog
 ] as const satisfies readonly NotificationTopic[];
 
-// In-app is always delivered, so it is not a preference channel.
-export type NotificationPreferenceChannel = "email" | "slack" | "push";
+// In-app is always delivered, so it is not a preference channel. Neither is
+// browser push: it mirrors in-app, every notification to every browser with
+// notifications enabled.
+export type NotificationPreferenceChannel = "email" | "slack";
 
 export function getNotificationTopicChannels(
   topic: NotificationTopic
@@ -110,7 +112,7 @@ export function getNotificationTopicChannels(
     case NotificationTopic.Changelog:
       return ["email"];
     default:
-      return ["email", "slack", "push"];
+      return ["email", "slack"];
   }
 }
 
@@ -154,26 +156,12 @@ export function isRecurringNotificationEvent(
 
 // Fan-out targets understood by the notify Inngest function. inApp is
 // always included regardless of what the caller passes — the topbar reflects
-// every notification. email, slack and push are opt-in extras.
+// every notification. email and slack are opt-in extras. Browser push is not
+// a destination: it follows in-app, so every notification pushes too.
 export enum NotificationDestination {
   InApp = "inApp",
   Email = "email",
-  Slack = "slack",
-  Push = "push"
-}
-
-// Push follows the external channels: an event that emails or posts to Slack
-// also pushes. In-app-only events (IntegrationSync re-fires every sweep) stay
-// quiet on the device.
-export function wantsPushDelivery(
-  destinations: readonly NotificationDestination[]
-): boolean {
-  return destinations.some(
-    (destination) =>
-      destination === NotificationDestination.Push ||
-      destination === NotificationDestination.Email ||
-      destination === NotificationDestination.Slack
-  );
+  Slack = "slack"
 }
 
 export function getNotificationTopic(

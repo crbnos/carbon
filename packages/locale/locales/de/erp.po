@@ -3790,12 +3790,6 @@ msgstr "Bibliothek durchsuchen"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Durchsuchen Sie die veröffentlichte Version schreibgeschützt. Sie können die Schritte weiterhin neu anordnen, um das Layout zu ordnen."
 
-msgid "browser"
-msgstr "Browser"
-
-msgid "Browser"
-msgstr "Browser"
-
 msgid "Browser notifications"
 msgstr "Browser-Benachrichtigungen"
 
@@ -9134,9 +9128,6 @@ msgstr "Fehler beim Speichern der Änderung"
 msgid "Failed to save tools"
 msgstr "Werkzeuge konnten nicht gespeichert werden"
 
-msgid "Failed to send a test notification"
-msgstr "Fehler beim Senden einer Test-Benachrichtigung"
-
 msgid "Failed to update batch property"
 msgstr "Fehler beim Aktualisieren der Batch-Eigenschaft"
 
@@ -10437,14 +10428,8 @@ msgstr "Bearbeiten Sie in Ihren Enterprise-Einstellungen unter Developer die Ber
 msgid "In-app"
 msgstr "In-App"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail oder auf Ihren Geräten erreichen."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail oder Slack erreichen."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail, Slack oder auf Ihren Geräten erreichen."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail erreichen."
@@ -18540,9 +18525,6 @@ msgstr "Verkaufsgewinn: <0/>"
 msgid "Send"
 msgstr "Senden"
 
-msgid "Send a test notification"
-msgstr "Test-Benachrichtigung senden"
-
 msgid "Send error"
 msgstr "Fehler beim Senden"
 
@@ -20311,9 +20293,6 @@ msgstr "Nutzungsbedingungen"
 
 msgid "Test"
 msgstr "Testen"
-
-msgid "Test notification sent"
-msgstr "Test-Benachrichtigung gesendet"
 
 msgid "Test run"
 msgstr "Testlauf"

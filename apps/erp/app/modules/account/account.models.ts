@@ -9,7 +9,7 @@ import { zfd } from "zod-form-data";
 
 export const notificationPreferenceValidator = z.object({
   topic: z.nativeEnum(NotificationTopic),
-  channel: z.enum(["email", "slack", "push"]),
+  channel: z.enum(["email", "slack"]),
   enabled: z.enum(["true", "false"])
 });
 

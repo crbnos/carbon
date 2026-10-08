@@ -215,29 +215,19 @@ export default function AccountNotifications() {
                 </Button>
               )}
               {device.state === "on" && (
-                <HStack>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={device.sendTest}
-                    isDisabled={device.busy}
-                  >
-                    <Trans>Send a test notification</Trans>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      // Off for this browser, for everyone: the bell stops
-                      // offering it too.
-                      dismissBrowserNotificationsPrompt({ permanently: true });
-                      device.turnOff();
-                    }}
-                    isDisabled={device.busy}
-                  >
-                    <Trans>Disable</Trans>
-                  </Button>
-                </HStack>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    // Off for this browser, for everyone: the bell stops
+                    // offering it too.
+                    dismissBrowserNotificationsPrompt({ permanently: true });
+                    device.turnOff();
+                  }}
+                  isDisabled={device.busy}
+                >
+                  <Trans>Disable</Trans>
+                </Button>
               )}
             </HStack>
           </CardHeader>
@@ -249,17 +239,7 @@ export default function AccountNotifications() {
             <Trans>Notifications</Trans>
           </CardTitle>
           <CardDescription>
-            {push && slackActive ? (
-              <Trans>
-                In-app notifications are always delivered. Choose which topics
-                also reach you by email, Slack or on your devices.
-              </Trans>
-            ) : push ? (
-              <Trans>
-                In-app notifications are always delivered. Choose which topics
-                also reach you by email or on your devices.
-              </Trans>
-            ) : slackActive ? (
+            {slackActive ? (
               <Trans>
                 In-app notifications are always delivered. Choose which topics
                 also reach you by email or Slack.
@@ -295,11 +275,6 @@ export default function AccountNotifications() {
                     <Trans>Slack</Trans>
                   </th>
                 )}
-                {push && (
-                  <th className="text-center text-sm font-medium py-2 w-24">
-                    <Trans>Browser</Trans>
-                  </th>
-                )}
               </tr>
             </thead>
             <tbody>
@@ -329,7 +304,6 @@ export default function AccountNotifications() {
                     <td className="text-sm py-3">{topicLabels[topic]}</td>
                     {cell("email", t`email`)}
                     {slackActive && cell("slack", t`Slack`)}
-                    {push && cell("push", t`browser`)}
                   </tr>
                 );
               })}

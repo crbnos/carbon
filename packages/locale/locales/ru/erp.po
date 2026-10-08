@@ -3790,12 +3790,6 @@ msgstr "Обзор библиотеки"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для очистки макета."
 
-msgid "browser"
-msgstr "браузер"
-
-msgid "Browser"
-msgstr "Браузер"
-
 msgid "Browser notifications"
 msgstr "Уведомления браузера"
 
@@ -9134,9 +9128,6 @@ msgstr "Не удалось сохранить изменение"
 msgid "Failed to save tools"
 msgstr "Ошибка при сохранении инструментов"
 
-msgid "Failed to send a test notification"
-msgstr "Ошибка отправки тестового уведомления"
-
 msgid "Failed to update batch property"
 msgstr "Не удалось обновить свойство партии"
 
@@ -10437,14 +10428,8 @@ msgstr "В настройках Enterprise под разделом Developer о�
 msgid "In-app"
 msgstr "В приложении"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны доходить вам по электронной почте или на ваши устройства."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте или Slack."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны доходить вам по электронной почте, Slack или на ваши устройства."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте."
@@ -18540,9 +18525,6 @@ msgstr "Прибыль от продажи: <0/>"
 msgid "Send"
 msgstr "Отправить"
 
-msgid "Send a test notification"
-msgstr "Отправить тестовое уведомление"
-
 msgid "Send error"
 msgstr "Ошибка отправки"
 
@@ -20311,9 +20293,6 @@ msgstr "Условия обслуживания"
 
 msgid "Test"
 msgstr "Тест"
-
-msgid "Test notification sent"
-msgstr "Тестовое уведомление отправлено"
 
 msgid "Test run"
 msgstr "Тестовый запуск"

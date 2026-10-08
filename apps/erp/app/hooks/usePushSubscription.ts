@@ -228,26 +228,5 @@ export function usePushSubscription({
     [run, t]
   );
 
-  const sendTest = useCallback(
-    () =>
-      run(async () => {
-        const subscription = await currentSubscription();
-        if (!subscription) {
-          setState("off");
-          return;
-        }
-        const response = await sendSubscription("POST", {
-          endpoint: subscription.endpoint,
-          intent: "test"
-        });
-        if (!response.ok) {
-          toast.error(t`Failed to send a test notification`);
-          return;
-        }
-        toast.success(t`Test notification sent`);
-      }, t`Failed to send a test notification`),
-    [run, t]
-  );
-
-  return { state, busy, turnOn, turnOff, sendTest };
+  return { state, busy, turnOn, turnOff };
 }

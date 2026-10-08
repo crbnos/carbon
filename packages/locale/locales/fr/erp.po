@@ -3790,12 +3790,6 @@ msgstr "Parcourir la bibliothèque"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Parcourez la version publiée en lecture seule. Vous pouvez toujours réarranger les étapes pour nettoyer la mise en page."
 
-msgid "browser"
-msgstr "navigateur"
-
-msgid "Browser"
-msgstr "Navigateur"
-
 msgid "Browser notifications"
 msgstr "Notifications du navigateur"
 
@@ -9134,9 +9128,6 @@ msgstr "Impossible d'enregistrer la modification"
 msgid "Failed to save tools"
 msgstr "Échec de l'enregistrement des outils"
 
-msgid "Failed to send a test notification"
-msgstr "Impossible d'envoyer une notification de test"
-
 msgid "Failed to update batch property"
 msgstr "Échec de la mise à jour de la propriété du lot de production"
 
@@ -10437,14 +10428,8 @@ msgstr "Dans vos paramètres Enterprise sous Développeur, modifiez les autorisa
 msgid "In-app"
 msgstr "In-app"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "Les notifications dans l'application sont toujours livrées. Choisissez les sujets qui vous parviennent également par e-mail ou sur vos appareils."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Les notifications dans l'application sont toujours livrées. Choisissez les sujets qui vous parviennent également par e-mail ou Slack."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "Les notifications dans l'application sont toujours livrées. Choisissez les sujets qui vous parviennent également par e-mail, Slack ou sur vos appareils."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Les notifications dans l'application sont toujours livrées. Choisissez les sujets qui vous parviennent également par e-mail."
@@ -18540,9 +18525,6 @@ msgstr "Bénéfice de vente : <0/>"
 msgid "Send"
 msgstr "Envoyer"
 
-msgid "Send a test notification"
-msgstr "Envoyer une notification de test"
-
 msgid "Send error"
 msgstr "Erreur d'envoi"
 
@@ -20311,9 +20293,6 @@ msgstr "Conditions d'utilisation"
 
 msgid "Test"
 msgstr "Tester"
-
-msgid "Test notification sent"
-msgstr "Notification de test envoyée"
 
 msgid "Test run"
 msgstr "Exécution de test"

@@ -20,10 +20,8 @@ import {
   isRecurringNotificationEvent,
   NotificationDestination,
   NotificationEvent,
-  type NotificationPreferenceChannel,
   renderInlineLinks,
-  renderSlackMrkdwn,
-  wantsPushDelivery
+  renderSlackMrkdwn
 } from "@carbon/notifications";
 import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
@@ -48,8 +46,7 @@ async function getCompanyIntegrations(
 // Per-event default destinations. Callers can override by passing
 // `destinations` in the payload; otherwise these defaults apply.
 // InApp is always added separately and cannot be opted out of. Push is not
-// listed here: it goes to every event that has Email or Slack
-// (wantsPushDelivery).
+// listed here: it follows in-app, so every notification pushes.
 const defaultDestinations: Partial<
   Record<NotificationEvent, NotificationDestination[]>
 > = {
@@ -335,51 +332,40 @@ export const notifyFunction = inngest.createFunction(
 
     const wantsEmail = destinations.includes(NotificationDestination.Email);
     const wantsSlack = destinations.includes(NotificationDestination.Slack);
-    // Push is free on every plan and follows the external channels; a
-    // deployment without VAPID keys has no push channel at all.
-    const wantsPush = isPushConfigured() && wantsPushDelivery(destinations);
+    // Push mirrors in-app: every notification goes to every browser with
+    // notifications enabled, with no per-topic switch. A deployment without
+    // VAPID keys has no push channel at all.
+    const wantsPush = isPushConfigured();
 
     // Per-user channel opt-outs: absence of a row = enabled; enabled=false
     // mutes that (topic, channel). In-app delivery is never filtered.
-    // pushRecipientIds defaults to []: a run in flight across the deploy
-    // replays this step's memoized output from before push existed, which has
-    // no such key — those runs simply send no push.
-    const {
-      emailRecipientIds,
-      slackRecipientIds,
-      pushRecipientIds = []
-    } = wantsEmail || wantsSlack || wantsPush
-      ? await step.run("filter-recipients-by-preference", async () => {
-          const { data: prefs, error } = await client
-            .from("notificationPreference")
-            .select("userId, channel, enabled")
-            .in("userId", userIds)
-            .eq("companyId", payload.companyId)
-            .eq("topic", topic);
-          if (error) {
-            console.error("Failed to load notification preferences", error);
-            throw error;
-          }
-          const mutedFor = (channel: NotificationPreferenceChannel) =>
-            new Set(
-              (prefs ?? [])
-                .filter((p) => p.channel === channel && !p.enabled)
-                .map((p) => p.userId)
-            );
-          const emailMuted = mutedFor("email");
-          const slackMuted = mutedFor("slack");
-          const pushMuted = mutedFor("push");
-          return {
-            emailRecipientIds: userIds.filter((id) => !emailMuted.has(id)),
-            slackRecipientIds: userIds.filter((id) => !slackMuted.has(id)),
-            pushRecipientIds: userIds.filter((id) => !pushMuted.has(id))
-          };
-        })
-      : {
-          emailRecipientIds: userIds,
-          slackRecipientIds: userIds,
-          pushRecipientIds: userIds
-        };
+    const { emailRecipientIds, slackRecipientIds } =
+      wantsEmail || wantsSlack
+        ? await step.run("filter-recipients-by-preference", async () => {
+            const { data: prefs, error } = await client
+              .from("notificationPreference")
+              .select("userId, channel, enabled")
+              .in("userId", userIds)
+              .eq("companyId", payload.companyId)
+              .eq("topic", topic);
+            if (error) {
+              console.error("Failed to load notification preferences", error);
+              throw error;
+            }
+            const mutedFor = (channel: "email" | "slack") =>
+              new Set(
+                (prefs ?? [])
+                  .filter((p) => p.channel === channel && !p.enabled)
+                  .map((p) => p.userId)
+              );
+            const emailMuted = mutedFor("email");
+            const slackMuted = mutedFor("slack");
+            return {
+              emailRecipientIds: userIds.filter((id) => !emailMuted.has(id)),
+              slackRecipientIds: userIds.filter((id) => !slackMuted.has(id))
+            };
+          })
+        : { emailRecipientIds: userIds, slackRecipientIds: userIds };
 
     // Existing EE hook for non-conformance assignment — keep as a separate
     // path because it handles cross-system task linking (Linear/Jira), not
@@ -755,18 +741,19 @@ export const notifyFunction = inngest.createFunction(
     }
 
     // ---- Push fan-out ----
-    // One carbon/send-push per browser row, so each browser retries on its
-    // own. A row belongs to the user, not a company: recipients are already
-    // limited to members of this notification's company (resolve-recipients),
-    // so each user gets the push of every company they belong to.
-    if (wantsPush && pushRecipientIds.length > 0) {
+    // Every recipient of the in-app row, one carbon/send-push per browser row,
+    // so each browser retries on its own. A row belongs to the user, not a
+    // company: recipients are already limited to members of this
+    // notification's company (resolve-recipients), so each user gets the push
+    // of every company they belong to.
+    if (wantsPush) {
       const pushEvents = await step.run(
         "resolve-push-subscriptions",
         async () => {
           const { data: subscriptions, error } = await client
             .from("pushSubscription")
             .select("id, userId")
-            .in("userId", pushRecipientIds);
+            .in("userId", userIds);
           if (error) {
             console.error("Failed to load push subscriptions", error);
             throw error;

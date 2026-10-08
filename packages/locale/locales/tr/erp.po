@@ -3790,12 +3790,6 @@ msgstr "Kütüphaneyi göz at"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Yayınlanan sürümü salt okunur şekilde inceleyin. Düzeni düzenlemek için adımları yine de yeniden düzenleyebilirsiniz."
 
-msgid "browser"
-msgstr "tarayıcı"
-
-msgid "Browser"
-msgstr "Tarayıcı"
-
 msgid "Browser notifications"
 msgstr "Tarayıcı Bildirimleri"
 
@@ -9134,9 +9128,6 @@ msgstr "Değişikliği kaydetme başarısız oldu"
 msgid "Failed to save tools"
 msgstr "Araç kaydedilemedi"
 
-msgid "Failed to send a test notification"
-msgstr "Test bildirimini göndermek başarısız oldu"
-
 msgid "Failed to update batch property"
 msgstr "Toplu özelliği güncelleme başarısız oldu"
 
@@ -10437,14 +10428,8 @@ msgstr "Enterprise ayarlarınızın Geliştirici bölümünde, özel OAuth uygul
 msgid "In-app"
 msgstr "Uygulama içi"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "Uygulama içi bildirimler her zaman gönderilir. Hangi konuların e-posta veya cihazlarınız üzerinden size ulaşacağını seçin."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "Uygulama içi bildirimler her zaman gönderilir. Hangi konuların e-posta, Slack veya cihazlarınız üzerinden size ulaşacağını seçin."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta aracılığıyla sizi ulaştıracağını seçin."
@@ -18540,9 +18525,6 @@ msgstr "Satış karı: <0/>"
 msgid "Send"
 msgstr "Gönder"
 
-msgid "Send a test notification"
-msgstr "Test bildirimi gönder"
-
 msgid "Send error"
 msgstr "Gönderme Hatası"
 
@@ -20311,9 +20293,6 @@ msgstr "Hizmet Şartları"
 
 msgid "Test"
 msgstr "Test"
-
-msgid "Test notification sent"
-msgstr "Test bildirimi gönderildi"
 
 msgid "Test run"
 msgstr "Test çalıştırması"

@@ -3790,12 +3790,6 @@ msgstr "라이브러리 둘러보기"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "게시됨 버전을 읽기 전용으로 탐색합니다. 단계를 다시 정렬하여 레이아웃을 정리할 수 있습니다."
 
-msgid "browser"
-msgstr "브라우저"
-
-msgid "Browser"
-msgstr "브라우저"
-
 msgid "Browser notifications"
 msgstr "브라우저 알림"
 
@@ -9134,9 +9128,6 @@ msgstr "변경 사항을 저장하지 못했습니다."
 msgid "Failed to save tools"
 msgstr "도구 저장 실패"
 
-msgid "Failed to send a test notification"
-msgstr "테스트 알림 전송 실패"
-
 msgid "Failed to update batch property"
 msgstr "배치 속성을 업데이트하지 못했습니다"
 
@@ -10437,14 +10428,8 @@ msgstr "엔터프라이즈 설정의 개발자 아래에서 개인 OAuth 애플�
 msgid "In-app"
 msgstr "인앱"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 기기에서도 받을 주제를 선택하세요."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "앱 내 알림은 항상 전달됩니다. 이메일, Slack 또는 기기에서도 받을 주제를 선택하세요."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일로도 전달받을 주제를 선택하세요."
@@ -18540,9 +18525,6 @@ msgstr "판매 이익: <0/>"
 msgid "Send"
 msgstr "전송"
 
-msgid "Send a test notification"
-msgstr "테스트 알림 전송"
-
 msgid "Send error"
 msgstr "전송 오류"
 
@@ -20311,9 +20293,6 @@ msgstr "이용약관"
 
 msgid "Test"
 msgstr "테스트"
-
-msgid "Test notification sent"
-msgstr "테스트 알림 전송됨"
 
 msgid "Test run"
 msgstr "테스트 실행"

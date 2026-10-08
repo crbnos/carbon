@@ -111,8 +111,7 @@ describe("notification topic settings", () => {
     ]);
     expect(getNotificationTopicChannels(NotificationTopic.Job)).toEqual([
       "email",
-      "slack",
-      "push"
+      "slack"
     ]);
   });
 

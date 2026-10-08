@@ -3790,12 +3790,6 @@ msgstr "浏览库"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
-msgid "browser"
-msgstr "浏览器"
-
-msgid "Browser"
-msgstr "浏览器"
-
 msgid "Browser notifications"
 msgstr "浏览器通知"
 
@@ -9134,9 +9128,6 @@ msgstr "保存更改失败"
 msgid "Failed to save tools"
 msgstr "保存工具失败"
 
-msgid "Failed to send a test notification"
-msgstr "发送测试通知失败"
-
 msgid "Failed to update batch property"
 msgstr "批处理属性更新失败"
 
@@ -10437,14 +10428,8 @@ msgstr "在您的企业设置的开发者下，编辑私有 OAuth 应用程序�
 msgid "In-app"
 msgstr "应用内"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "应用内通知始终会送达。选择哪些主题也通过电子邮件或设备上的通知向您发送。"
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "应用内通知始终会送达。选择哪些主题也通过电子邮件、Slack 或设备上的通知向您发送。"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件发送给您。"
@@ -18540,9 +18525,6 @@ msgstr "销售利润：<0/>"
 msgid "Send"
 msgstr "发送"
 
-msgid "Send a test notification"
-msgstr "发送测试通知"
-
 msgid "Send error"
 msgstr "发送错误"
 
@@ -20311,9 +20293,6 @@ msgstr "服务条款"
 
 msgid "Test"
 msgstr "测试"
-
-msgid "Test notification sent"
-msgstr "测试通知已发送"
 
 msgid "Test run"
 msgstr "测试运行"

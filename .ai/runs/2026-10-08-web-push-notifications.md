@@ -44,12 +44,10 @@
 2. Put `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` in `.env.local`.
 3. Restart the ERP and the Inngest dev server.
 4. Open Account → Notifications. Click **Enable** and allow the prompt.
-5. Click **Send a test notification**. Expect an OS notification. Click it and expect Account → Notifications.
-6. Close every Carbon tab. Assign a job to the user from a second account. Expect "Job assigned to you".
-7. Turn off the Jobs **Browser** switch. Assign another job. Expect no push and a new bell row.
-8. Click **Disable**. Expect 0 `pushSubscription` rows for the endpoint.
-9. Enable again, sign out, and sign in as another user. Expect that user's notifications with no prompt, and none of the first user's.
-10. If no banner appears although `send-push` returns `201`, check macOS: System Settings → Notifications → Microsoft Edge allows banners, and no Focus mode is on.
+5. Close every Carbon tab. Assign a job to the user from a second account. Expect "Job assigned to you".
+6. Click **Disable**. Expect 0 `pushSubscription` rows for the endpoint.
+7. Enable again, sign out, and sign in as another user. Expect that user's notifications with no prompt, and none of the first user's.
+8. If no banner appears although `send-push` returns `201`, check macOS: System Settings → Notifications → Microsoft Edge allows banners, and no Focus mode is on.
 
 ## Outcome
 - Built and verified. The user committed each round on `naveenkash/carbon-browser-notifications` and pushed the first 4 commits. Push works end to end in Edge on macOS.

@@ -13,7 +13,7 @@
     {"name":"account_getPublicAttributes","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"e93d76f694fe","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_updateAvatar","classification":"WRITE","paramCount":1,"schema":"a2f2d0de3049","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_updatePublicAccount","classification":"WRITE","paramCount":5,"schema":"1995f647bdcf","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
-    {"name":"account_upsertNotificationPreference","classification":"WRITE","paramCount":3,"schema":"f1f664da6560","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
+    {"name":"account_upsertNotificationPreference","classification":"WRITE","paramCount":3,"schema":"4bf056fb8af6","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
     {"name":"account_upsertUserAttributeValue","classification":"WRITE","paramCount":4,"schema":"ed5ec8d6e08d","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"none","paginates":false},
     {"name":"accounting_closePeriodWithChecklist","classification":"WRITE","paramCount":1,"schema":"7e5905ac5974","response":"3797626bd17e","injectAuth":"companyGroupId+companyId+updatedBy+userId","permission":"accounting:update","paginates":false},
     {"name":"accounting_completeCloseTask","classification":"WRITE","paramCount":2,"schema":"5d2e9a90637b","response":"none","injectAuth":"companyId+userId","permission":"accounting:update","paginates":false},

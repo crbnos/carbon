@@ -3790,12 +3790,6 @@ msgstr "Browse library"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 
-msgid "browser"
-msgstr "browser"
-
-msgid "Browser"
-msgstr "Browser"
-
 msgid "Browser notifications"
 msgstr "Browser notifications"
 
@@ -9134,9 +9128,6 @@ msgstr "Failed to save the change"
 msgid "Failed to save tools"
 msgstr "Failed to save tools"
 
-msgid "Failed to send a test notification"
-msgstr "Failed to send a test notification"
-
 msgid "Failed to update batch property"
 msgstr "Failed to update batch property"
 
@@ -10437,14 +10428,8 @@ msgstr "In your Enterprise settings under Developer, edit the private OAuth appl
 msgid "In-app"
 msgstr "In-app"
 
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or on your devices."
-
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
-
-msgid "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
-msgstr "In-app notifications are always delivered. Choose which topics also reach you by email, Slack or on your devices."
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email."
@@ -18540,9 +18525,6 @@ msgstr "Selling profit: <0/>"
 msgid "Send"
 msgstr "Send"
 
-msgid "Send a test notification"
-msgstr "Send a test notification"
-
 msgid "Send error"
 msgstr "Send error"
 
@@ -20311,9 +20293,6 @@ msgstr "Terms of Service"
 
 msgid "Test"
 msgstr "Test"
-
-msgid "Test notification sent"
-msgstr "Test notification sent"
 
 msgid "Test run"
 msgstr "Test run"

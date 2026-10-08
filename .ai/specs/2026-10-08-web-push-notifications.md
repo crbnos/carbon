@@ -8,7 +8,7 @@
 
 Carbon shows a notification only in the ERP bell, by email or by Slack. If no Carbon tab is open, the user sees nothing until they open the app or read their mail. This spec adds a fourth channel: **push**.
 
-Push uses the Web Push standard to show an operating-system notification, even when every Carbon tab is closed. Browser notifications are a setting of the **browser**, not of a user. Once someone enables them in a browser, whoever is signed in there gets their own notifications, from every company they belong to. Signing out stops them at once. A "Browser" switch per topic controls which topics push.
+Push uses the Web Push standard to show an operating-system notification, even when every Carbon tab is closed. Browser notifications are a setting of the **browser**, not of a user. Once someone enables them in a browser, whoever is signed in there gets their own notifications, from every company they belong to. Signing out stops them at once. Like the in-app bell, push has no per-topic switch: every notification pushes.
 
 The `notify` job sends one push for each notification it creates. The job uses the `web-push` package and one VAPID key pair for each deployment. If the deployment has no VAPID keys, Carbon hides the controls and sends no push.
 
@@ -73,11 +73,7 @@ Before this change, no code in `apps/` or `packages/` called the Notification AP
 
 ### Which notifications push
 
-The `notify` job sends a push when 3 conditions are true:
-
-1. The VAPID env vars are set (`isPushConfigured()`).
-2. The event's destinations include `Push`, `Email` or `Slack`. Push follows the other external channels. So `IntegrationSync`, an in-app-only event that fires again on each sweep, sends no push.
-3. The recipient has no `notificationPreference` row with `channel = 'push'`, `enabled = false` for the topic.
+Push mirrors in-app. If the VAPID env vars are set (`isPushConfigured()`), every recipient of the in-app row gets a push in each browser where notifications are on. There is no topic filter and no event filter. So `IntegrationSync`, which fires again on each sync sweep while failures last, also pushes each time.
 
 `notify` reads subscriptions by `userId` only. The step `resolve-recipients` already limits the recipients to members of the notification's company. So a user gets the push of every company they belong to, and a company switch does not silence the browser.
 
@@ -101,7 +97,8 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | Plan gating | None. Push is free on all plans. | Agreed with the user. Push is another view of the in-app notification, and the bell is free. |
 | Library | `web-push` in `@carbon/jobs` | Agreed with the user. It does VAPID signing and payload encryption, which are easy to get wrong by hand. |
 | Apps | ERP only | Agreed with the user. MES has no notification UI. |
-| Channel name | `push` in data and code; "Browser" and "browser notifications" in the UI | One term in code. "Browser" is the word a user understands. |
+| Channel name | "push" in code; "browser notifications" in the UI | "Browser notifications" is the word a user understands. |
+| Per-topic switch | None. Push is not a `NotificationDestination` or a `NotificationPreferenceChannel`. | Agreed with the user: push mirrors in-app, which has no switch either. |
 | Setting scope | A setting of the browser, not of a user | Agreed with the user. A shared computer gives each signed-in person their own notifications without a new opt-in. Browser permission is per site and browser too. |
 | Subscription rows | One row per endpoint (`UNIQUE ("endpoint")`), owned by the signed-in user. `companyId` is the company the user enabled it from. | One browser has one endpoint, so one owner at a time. `companyId` keeps tenant attribution and the RLS member check. |
 | Companies | The user gets the push of every company they belong to | Agreed with the user. `resolve-recipients` already drops non-members. |
@@ -114,9 +111,9 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | The soft ask | The bell's inbox shows "Enable browser notifications" while nobody has enabled them in this browser | The native prompt opens only from a click, so a user who is not interested says no to Carbon, not to the browser. A browser "Block" is close to permanent. |
 | Prompt snooze | **Not now** hides the row for 30 days in this browser; a second **Not now** or a **Disable** hides it for good | The row must not nag. Account → Notifications always keeps the setting. |
 | Disable | Off for this browser, for everyone who uses it | The setting belongs to the browser. |
-| Which events push | Destinations include `Push`, `Email` or `Slack` | No per-event list to maintain. In-app-only events stay quiet. |
+| Which events push | Every notification, like in-app | Agreed with the user. In-app-only events push too, including the repeated `IntegrationSync` alert. |
 | Digests | One push per `notify` call; no push from the digest cron | Agreed with the user. The cron only regroups delivered rows. |
-| Missing VAPID keys | No push channel, no card, no bell row, no "Browser" column | Agreed with the user. A self-hosted install without keys keeps working. |
+| Missing VAPID keys | No push channel, no card, no bell row | Agreed with the user. A self-hosted install without keys keeps working. |
 | Dead subscription | `send-push` deletes the row on HTTP 404 or 410 | Agreed with the user. Both codes mean that the subscription is gone for good. |
 | Retries | Retry on 429 and 5xx; no retry on other 4xx | A 4xx other than 404, 410 and 429 is a bad request, and a retry fails again. |
 | Delivery options | `TTL` = 86 400 s (1 day), `urgency` = `normal` | A notification older than 1 day is old news. The bell still has it. |
@@ -126,7 +123,6 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | Repeated pushes | The worker never passes `tag` to `showNotification`. It closes older notifications with the same `data.tag`, then shows the new one under a fresh identifier. | The browser gives the tag to macOS as the identifier, and macOS replaces a notification with the same identifier silently. `renotify` does not help. |
 | Rotated subscription | The worker handles `pushsubscriptionchange`. It subscribes again and sends the new subscription with the old endpoint. | A browser can rotate the subscription at any time. Without this step, push stops with no signal. |
 | Focused tab | The worker always shows the notification | Chrome requires a visible notification for each push (`userVisibleOnly: true`). |
-| Test button | **Send a test notification** sends a `carbon/send-push` for this browser's row | It is the only way to check the full path without a real assignment. |
 | VAPID public key in the browser | The settings loader and the app shell loader (`pushPublicKey`) return it. It is not in `window.env`. | The server already knows if all 3 vars are set, and returns `null` when they are not. |
 | MCP exposure | The new service functions have no `@mcp` tag | A browser subscription is meaningless to an API caller (`conventions-services.md`). |
 | Env group | New group `push` in `FEATURES`, with all 3 vars `needed` | `validateEnv` then warns when push is half-configured. |
@@ -134,7 +130,7 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 ## Data Model Changes
 
 1. A new table, `pushSubscription`, one row per endpoint (migration `20261008002726`).
-2. A wider CHECK on `notificationPreference.channel`: `('email', 'slack', 'push')`.
+2. A wider CHECK on `notificationPreference.channel`: `('email', 'slack', 'push')`. No code writes `push` since the per-topic switch was removed; the value stays allowed and unused.
 3. A new rule in `packages/database/src/authz/manifest.ts`, and the generated authz migration `20261008002814`. No migration holds a `CREATE POLICY`.
 
 ```mermaid
@@ -199,10 +195,7 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 
 ### `@carbon/notifications`
 
-1. Add `NotificationDestination.Push = "push"`.
-2. Change `NotificationPreferenceChannel` to `"email" | "slack" | "push"`.
-3. Change `getNotificationTopicChannels`: the default topics return `["email", "slack", "push"]`. `Changelog` stays `["email"]`.
-4. Add `wantsPushDelivery(destinations)`: true when the destinations include `Push`, `Email` or `Slack`.
+No change to the destinations or the preference channels. Push is neither a `NotificationDestination` nor a `NotificationPreferenceChannel`: it mirrors in-app.
 
 ### `@carbon/env`
 
@@ -225,10 +218,9 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 
 1. Add `web-push` (and `@types/web-push` as a dev dependency).
 2. Change `notify.ts`:
-   1. Compute `wantsPush`: `isPushConfigured()` and `wantsPushDelivery(destinations)`.
-   2. Add `push` to the step `filter-recipients-by-preference`. It returns `pushRecipientIds`, which defaults to `[]` when a run in flight replays the step's output from before push existed.
-   3. Add the step `resolve-push-subscriptions`. It reads the `pushSubscription` rows with `userId` in `pushRecipientIds`, and builds one `carbon/send-push` event per row, with the row's `userId`.
-   4. Send the events with `step.sendEvent("fan-out-push", …)`.
+   1. Compute `wantsPush`: `isPushConfigured()`. The step `filter-recipients-by-preference` stays as it was: it filters email and Slack only.
+   2. Add the step `resolve-push-subscriptions`. It reads the `pushSubscription` rows of every recipient (`userIds`, the same list as the in-app rows), and builds one `carbon/send-push` event per row, with the row's `userId`.
+   3. Send the events with `step.sendEvent("fan-out-push", …)`.
 3. Add `send-push.ts` (function id `send-push`, 3 retries):
    1. Read the row by `subscriptionId` and `userId` with the service role. If no row matches, return: the browser was disabled, signed out or handed to another user since the fan-out.
    2. Call `webpush.sendNotification` with the VAPID details, `TTL: 86400` and `urgency: "normal"`.
@@ -242,8 +234,7 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 ### ERP
 
 1. `account.models.ts`:
-   1. Widen `notificationPreferenceValidator.channel` to `["email", "slack", "push"]`.
-   2. Add `pushSubscriptionValidator`: `{ endpoint: url, keys: { p256dh, auth }, oldEndpoint?: url }`, and `pushSubscriptionEndpointValidator`: `{ endpoint: url }`.
+   1. Add `pushSubscriptionValidator`: `{ endpoint: url, keys: { p256dh, auth }, oldEndpoint?: url }`, and `pushSubscriptionEndpointValidator`: `{ endpoint: url }`.
 2. `account.service.ts`, with no `@mcp` tag:
    1. `getPushSubscription(client, { userId, endpoint })`
    2. `upsertPushSubscription(client, { userId, companyId, endpoint, p256dh, auth, userAgent })`, `onConflict: "endpoint"`
@@ -252,7 +243,6 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
    1. `GET ?endpoint=`: return `{ enabled }` for the signed-in user. If the row exists, set the `carbon-push` cookie again, so a row saved before the cookie existed still ends at sign-out.
    2. `PUT`: validate the body. If `oldEndpoint` is set, delete that row. Delete the rows of other users with the same endpoint (service role). Upsert the row. Set the `carbon-push` cookie.
    3. `DELETE`: delete the row of this user and endpoint. Clear the cookie.
-   4. `POST` with `intent = "test"`: read the row for this endpoint. Call `trigger("send-push", …)` with the title "Carbon", the body "Browser notifications work in this browser." and the settings link.
 4. The app shell loader (`x+/_layout.tsx`) returns `pushPublicKey`, which is `null` when push is not configured.
 
 ## UI Changes
@@ -276,7 +266,7 @@ The icon is `/carbon-mark-dark.png`, the file that the ERP's `site.webmanifest` 
 
 ### `apps/erp/app/hooks/usePushSubscription.ts` (new)
 
-`usePushSubscription({ publicKey })` returns one state and 3 actions:
+`usePushSubscription({ publicKey })` returns one state and 2 actions:
 
 | State | Meaning |
 |---|---|
@@ -289,7 +279,6 @@ Actions:
 
 1. `turnOn()`: request permission, register `/push-worker.js`, subscribe with `userVisibleOnly: true`, `PUT` the subscription, then set `browserNotificationsEnabled`.
 2. `turnOff()`: `DELETE` the row, unsubscribe in the browser, then clear `browserNotificationsEnabled`.
-3. `sendTest()`: `POST` the intent `test`.
 
 `useRestoreBrowserNotifications({ publicKey, userId })` runs once per tab and user, only when permission is `granted`:
 
@@ -313,11 +302,11 @@ Actions:
 1. The loader returns `push: { publicKey } | null`. The value is `null` when `isPushConfigured()` is false.
 2. If `push` is not null, the card **Browser notifications** sits above the topic table:
    - `off`: the text "Get your Carbon notifications as they happen." and the button **Enable**.
-   - `on`: the text "Browser notifications are on for this browser." and the buttons **Send a test notification** and **Disable**.
+   - `on`: the text "Browser notifications are on for this browser." and the button **Disable**.
    - `denied`: the text "Notifications are blocked for Carbon in this browser's site settings."
    - `unsupported`: the text "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
 3. **Disable** also snoozes the bell row for good.
-4. If `push` is not null, the topic table gets a **Browser** column with a switch per topic, next to Email and Slack.
+4. The topic table keeps only its Email and Slack columns: push has no per-topic switch.
 5. All new strings use Lingui macros, and `/translate` filled the 12 other locales.
 
 ### Other
@@ -328,19 +317,18 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 
 - [ ] With the 3 VAPID env vars set, a user clicks **Enable** at Account → Notifications and allows the prompt. The card says "Browser notifications are on for this browser".
 - [ ] After **Enable**, the database has exactly 1 `pushSubscription` row for that endpoint, owned by the user. The browser has the `carbon-push` cookie.
-- [ ] **Send a test notification** shows an operating-system notification within 10 seconds. A click opens Account → Notifications.
-- [ ] A second test in a row shows a second banner, not a silent replacement.
+- [ ] A second notification about the same job shows a second banner, not a silent replacement.
 - [ ] With every Carbon tab closed and the browser still running, assigning a job to the user shows "Job assigned to you". A click opens the job.
 - [ ] A user who belongs to 2 companies gets the push of a job assigned in each company, whichever company is open.
-- [ ] A user turns off the **Browser** switch for Jobs. A job assignment then sends no push, and the in-app row still appears.
-- [ ] An `IntegrationSync` notification creates an in-app row and sends no push.
+- [ ] The topic table has no Browser column. Every notification, of every topic, pushes to each enabled browser of its recipient.
+- [ ] An `IntegrationSync` notification creates an in-app row and also pushes, like every in-app notification.
 - [ ] After sign-out, the endpoint has no row and the next assignment to the previous user sends no push to that browser.
 - [ ] Another user signs in to that browser. The browser gets that user's notifications with no prompt, and none of the previous user's.
 - [ ] **Disable** deletes the row and clears `browserNotificationsEnabled`. The next user to sign in gets no push and no bell row.
 - [ ] The bell shows "Enable browser notifications" only while nobody has enabled them in this browser. **Not now** hides it for 30 days.
-- [ ] With no VAPID env vars, Account → Notifications shows no card and no Browser column, and the bell shows no row. `notify` sends no `carbon/send-push` event and does not fail.
+- [ ] With no VAPID env vars, Account → Notifications shows no card, and the bell shows no row. `notify` sends no `carbon/send-push` event and does not fail.
 - [ ] `pushDeliveryOutcome` has unit tests for 201, 404, 410, 413, 429 and 503. `push.test.ts` covers the snooze rules.
-- [ ] `notificationPreference` accepts `channel = 'push'` and refuses `channel = 'sms'`.
+- [ ] `notificationPreferenceValidator` accepts only `email` and `slack`.
 - [ ] Scoped typecheck passes for `@carbon/auth`, `@carbon/jobs`, `@carbon/notifications`, `@carbon/env`, `@carbon/lib`, `erp` and `docs`. Biome passes. `migration.test.ts` passes.
 
 ## Risks
@@ -364,15 +352,15 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 - [x] Should push need a paid plan? — **Answer (user):** No. Push is free on all plans.
 - [x] Which library sends the push? — **Answer (user):** `web-push` in `@carbon/jobs`.
 - [x] Which apps get push? — **Answer (user):** ERP only.
-- [x] How does a user opt in? — **Answer (user):** At Account → Notifications, plus a "Browser" switch per topic in `notificationPreference`. Later the user added the bell's "Enable browser notifications" row, with the copy of option A.
+- [x] How does a user opt in? — **Answer (user):** At Account → Notifications. A "Browser" switch per topic came first; the user later removed it, so push mirrors in-app. Later the user also added the bell's "Enable browser notifications" row, with the copy of option A.
 - [x] Do digests push? — **Answer (user):** One push per notification at creation. No digest for push.
 - [x] What happens without VAPID keys? — **Answer (user):** Carbon skips the channel and hides the controls.
 - [x] What happens to a dead subscription? — **Answer (user):** Carbon deletes it on 404 or 410.
 - [x] Is a subscription per user or per user and company? — **Answer (user, replaces the first autonomous answer "per user and company"):** The signed-in user gets the notifications of every company they belong to. One row per browser endpoint.
 - [x] What happens on sign-out? — **Answer (user):** Signing out stops the notifications in that browser, on every sign-out path.
 - [x] Is the setting per user or per browser? — **Answer (user):** Per browser. Once enabled, whoever signs in gets their own notifications.
-- [x] Which events push? — **Autonomous:** Each event whose destinations include `Push`, `Email` or `Slack`. In-app-only events, such as `IntegrationSync`, stay quiet.
-- [x] How does the user check that push works? — **Autonomous:** A "Send a test notification" button.
+- [x] Which events push? — **Answer (user, replaces the first autonomous answer "destinations with Push, Email or Slack"):** Every notification, exactly like in-app, including in-app-only events.
+- [x] How does the user check that push works? — **Autonomous at first:** a "Send a test notification" button. **Answer (user, later):** remove it; a real notification is the check.
 - [x] What happens when the browser rotates a subscription? — **Autonomous:** `push-worker.js` handles `pushsubscriptionchange` and sends the new subscription.
 - [x] Should Carbon register the existing `serviceWorker.js`? — **Autonomous:** No. A new `push-worker.js` holds only the push handlers.
 - [x] Should Carbon skip the push when a Carbon tab has focus? — **Autonomous:** No. Chrome requires a visible notification for each push.
@@ -402,4 +390,6 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   2. `endBrowserPush` builds the service-role client inside its `try`, so sign-out still clears its cookies when the client cannot be built.
   3. A workflow push takes its author's subject as the title and their message as the body.
   4. `packages/database/AGENTS.md` documents the user-owned preference rows (`notificationPreference`, `userModulePreference`, `pushSubscription`) as an exception to the table template.
+- 2026-10-08: Push mirrors in-app, at the user's request. The per-topic **Browser** switch is gone. Push is no longer a `NotificationDestination` or a `NotificationPreferenceChannel`, and `wantsPushDelivery` is removed. `notify` pushes to every recipient of the in-app row, so in-app-only events such as `IntegrationSync` push too. The `notificationPreference` CHECK still allows `push`, unused.
+- 2026-10-08: The "Send a test notification" button is removed, at the user's request: the card's `on` state shows only **Disable**, `usePushSubscription` has no `sendTest`, and `/api/push-subscription` has no `POST` branch.
 
