@@ -191,3 +191,26 @@ Checked and found clean:
 - `Materials.tsx` row model matches the old desktop table: the primary/secondary variant, the direct rule `=== false` and the batch totals (only when batched, `JobOperation.tsx:1813`) are the same.
 - `utils/origin.tsx` owns the origin logic, as C5 asked, and its `readOrigin` `/x/` guard blocks open redirects.
 - `ToolSurface` / `useToolSurface` (C3) are fine.
+
+## Outcomes (2026-10-08)
+
+`origin/main` was merged in first (`25890932ae`, 81 conflicts). Main deleted `DocumentHeader`, and posting documents moved onto `DocumentPage`, so `DocumentPageHeader` now carries the phone chrome for all of them: ⋯ and Copy ID in the app bar, actions in the bottom bar.
+
+| Finding | Outcome |
+|---|---|
+| P1 | Fixed: Subtotal excludes tax, and the Tax row is back. QuoteSummary now uses main's inline version again. |
+| O1 | Fixed by merging main. |
+| S1, S9 | Fixed: Escape is back to its original code; dialog clicks are ignored on phones only. |
+| S2, M1 | Fixed: MES mounts `ViewportProvider` with the server hint, and the JobDag hydration effect is gone. |
+| M6 | Fixed: the running caption, opening on the running timer, and the sheet title are phone-only; tablet classes removed. |
+| O7, R5 | Kept the uniform RecordHeader order; the owner approved it as a deliberate desktop change. |
+| M2–M5 | Fixed: stateful bars mount once, `--mes-tab-bar-h`, phone-only `MesAppBar` plus `MesQueueHeader`, context row and meters mount once. |
+| R1–R3 | Fixed: `useReportColumnStep`, `AppBarAction`, `meta.mobileCell`. |
+| R4, P2, O2, O4 | Fixed: `ItemRecordHeader`, `SummaryLineList`, plain `Location isReadOnly`, one `ActionPresentationProvider` for picking lines. |
+| S3 | Half done: `CreateMenu` renders in the tab bar and `CreateSheet` is deleted; `ProfileSheet` is kept (its panels have no menu equivalent). |
+| S4, S6 | Fixed: `sheetRowClassName` and `SheetSectionLabel`; SplitButton reuses Button's presentation. |
+| S5 | Fixed: `opacity-0 … max-md:opacity-100` is now `md:opacity-0` (75 uses). |
+| S7 | Partly fixed: one active-route rule. The second sidebar mount stays, because the title comes from module components. |
+| O3 | Fixed: one `PhoneActionBar` (the phone rows were already gone in the merge). |
+
+Not verified in a browser: the local stack was stopped. Typecheck passes for `@carbon/react`, `erp`, `mes`, `@carbon/documents` and `@carbon/printing`.
