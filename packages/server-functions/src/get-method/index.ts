@@ -2820,6 +2820,11 @@ const getMethod = defineServerFn({
 
                 let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
                   [];
+                // Index-aligned with quoteOperationsInserts, as in itemToJob:
+                // a blank configured processId skips a row and a billOfProcess
+                // configuration reorders and filters them, so the returned ids
+                // cannot be paired against relatedOperations.data.
+                let sourceOperations: typeof relatedOperations.data = [];
                 for await (const op of relatedOperations?.data ?? []) {
                   const [
                     processId,
@@ -2908,6 +2913,7 @@ const getMethod = defineServerFn({
                     ...operationRates
                   });
 
+                  sourceOperations.push(op);
                   quoteOperationsInserts.push({
                     quoteId,
                     quoteLineId,
@@ -2958,20 +2964,22 @@ const getMethod = defineServerFn({
                 }
 
                 if (bopConfiguration) {
-                  // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-                  quoteOperationsInserts = bopConfiguration
-                    .map((description, index) => {
-                      const operation = quoteOperationsInserts.find(
-                        (operation) => operation.description === description
-                      );
-                      if (operation) {
-                        return {
-                          ...operation,
-                          order: index + 1
-                        };
-                      }
-                    })
-                    .filter(Boolean);
+                  const configuredInserts: typeof quoteOperationsInserts = [];
+                  const configuredSources: typeof sourceOperations = [];
+                  bopConfiguration.forEach((description, index) => {
+                    const position = quoteOperationsInserts.findIndex(
+                      (operation) => operation.description === description
+                    );
+                    if (position !== -1) {
+                      configuredInserts.push({
+                        ...quoteOperationsInserts[position]!,
+                        order: index + 1
+                      });
+                      configuredSources.push(sourceOperations[position]!);
+                    }
+                  });
+                  quoteOperationsInserts = configuredInserts;
+                  sourceOperations = configuredSources;
                 }
 
                 if (quoteOperationsInserts?.length > 0) {
@@ -2981,10 +2989,8 @@ const getMethod = defineServerFn({
                     .returning(["id"])
                     .execute();
 
-                  for (const [index, operation] of (
-                    relatedOperations.data ?? []
-                  ).entries()) {
-                    const operationId = operationIds[index]!.id;
+                  for (const [index, operation] of sourceOperations.entries()) {
+                    const operationId = operationIds[index]?.id;
 
                     if (operationId) {
                       const {
@@ -3092,16 +3098,15 @@ const getMethod = defineServerFn({
                     }
                   }
 
-                  methodOperationsToQuoteOperations =
-                    relatedOperations.data?.reduce<Record<string, string>>(
-                      (acc, op, index) => {
-                        if (operationIds[index]!.id) {
-                          acc[op.id!] = operationIds[index]!.id!;
-                        }
-                        return acc;
-                      },
-                      {}
-                    ) ?? {};
+                  methodOperationsToQuoteOperations = sourceOperations.reduce<
+                    Record<string, string>
+                  >((acc, op, index) => {
+                    const operationId = operationIds[index]?.id;
+                    if (operationId) {
+                      acc[op.id!] = operationId;
+                    }
+                    return acc;
+                  }, {});
                 }
               } // end if (parts.billOfProcess)
 
