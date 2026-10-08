@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 "use client";
-import { getColorByValue } from "@carbon/utils";
+import { getColorByValue, parseGeneratedAvatar } from "@carbon/utils";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type {
@@ -18,10 +18,15 @@ import {
   createContext,
   forwardRef,
   useContext,
+  useMemo,
   useState
 } from "react";
 
 import { cn } from "./utils/cn";
+import {
+  generatedAvatarClassName,
+  useGeneratedAvatar
+} from "./utils/generatedAvatar";
 
 export const avatarVariants = cva(
   "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-medium transition-transform duration-200 ease-in-out",
@@ -58,22 +63,50 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
   ({ className, name, src, size, children, ...props }, ref) => {
     const isGroup = !!useAvatarGroupContext()?.limit;
     const avatarInitials = getInitials(name ?? "");
-    const [error, setError] = useState(false);
+    // `src` may be a generated-avatar value from `user.avatarUrl` rather than a URL.
+    const generated = useMemo(() => parseGeneratedAvatar(src), [src]);
+    const generatedState = useGeneratedAvatar(generated ? src : undefined);
+    const imageSrc = !generated
+      ? src
+      : generatedState.status === "ready"
+        ? generatedState.src
+        : undefined;
+    // Remember which source failed, so a new `src` (a changed avatar) is tried.
+    const [failedSrc, setFailedSrc] = useState<string>();
+    const error = imageSrc !== undefined && imageSrc === failedSrc;
 
     const colorValue = getColorByValue(name ?? "", "light");
     const background = colorValue?.background;
     const color = colorValue?.color;
 
-    return src && !error ? (
+    // A generated avatar whose style is still loading (or the server render):
+    // a plain circle, so the initials do not flash before the avatar. A style
+    // that failed to load falls through to the initials.
+    if (generated && generatedState.status === "loading") {
+      return (
+        <span
+          className={cn(
+            avatarVariants({ size, isGroup }),
+            "bg-muted",
+            className
+          )}
+          {...props}
+          ref={ref}
+        />
+      );
+    }
+
+    return imageSrc && !error ? (
       <img
         className={cn(
           avatarVariants({ size, isGroup }),
           "object-cover bg-muted-foreground border border-muted",
+          generated && generatedAvatarClassName(generated.style),
           className
         )}
         alt={name ?? "avatar"}
-        src={src}
-        onError={() => setError(true)}
+        src={imageSrc}
+        onError={() => setFailedSrc(imageSrc)}
       />
     ) : (
       <span

@@ -3415,8 +3415,21 @@ msgstr "Доступные часы"
 msgid "Available on the Business plan"
 msgstr "Доступно в плане Business"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Вариант аватара {0}"
+
+msgid "Avatar style"
+msgstr "Стиль аватара"
+
 msgid "Avatar url"
 msgstr "URL аватара"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Аватары из <0>{0}</0> от {1}, лицензия <1>{2}</1>."
 
 msgid "Avg Days to Close"
 msgstr "Среднее количество дней до закрытия"
@@ -3432,6 +3445,9 @@ msgstr "Вернуться к прослеживаемости"
 
 msgid "Backflush"
 msgstr "Ретроградное списание"
+
+msgid "Background"
+msgstr "Фон"
 
 msgid "Backup"
 msgstr "Резервная копия"
@@ -4401,6 +4417,9 @@ msgstr "выберите поставщика для {0} в производст
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
+
+msgid "Choose avatar"
+msgstr "Выбрать аватар"
 
 msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
@@ -14993,9 +15012,6 @@ msgstr "Телефон"
 msgid "Phone Number"
 msgstr "Номер телефона"
 
-msgid "Photo removed successfully"
-msgstr "Фото успешно удалено"
-
 msgid "Photo uploaded successfully"
 msgstr "Фото успешно загружено"
 
@@ -15037,6 +15053,9 @@ msgstr "Выберите тип записи…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Выберите шаг из списка, чтобы изменить его детали, компоненты и материалы."
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Выберите стиль и аватар или перемешайте, чтобы увидеть новые."
 
 msgid "Pick a target date to compare."
 msgstr "Выберите целевую дату для сравнения."
@@ -19063,6 +19082,9 @@ msgstr "Показано покупателю на счет-фактуре"
 msgid "Shown to the user when this rule fails."
 msgstr "Показано пользователю при ошибке этого правила."
 
+msgid "Shuffle"
+msgstr "Перемешать"
+
 msgid "Sign in to Carbon"
 msgstr "Войти в Carbon"
 
@@ -19623,6 +19645,9 @@ msgstr "В Stripe еще нет покупателя для этого поку�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
+
+msgid "Style default"
+msgstr "По умолчанию для стиля"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"

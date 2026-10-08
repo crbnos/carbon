@@ -3333,3 +3333,23 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
 
 **Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.
+
+## A generated avatar is a seed, so the library version decides the face
+
+**Context:** `user.avatarUrl` stores a generated avatar as `dicebear:<style>:<seed>[:<rrggbb>]` (`packages/utils/src/avatar.ts`). The browser draws it with DiceBear every time it renders (`packages/react/src/utils/generatedAvatar.ts`). Nothing about the picture is stored, only the seed.
+
+**Problem:** A new DiceBear major version can draw a different face for the same seed. The move from version 9 to 10 (2026-10-08) changed every existing avatar, and nothing in the database showed it. A style removed from `GENERATED_AVATAR_STYLES` makes its stored values unparseable, so those avatars fall back to initials without an error.
+
+**Rule:** Pin `@dicebear/core` and `@dicebear/styles` to exact versions, never a range. Treat a DiceBear upgrade as "every user's avatar may change", and compare renders of fixed seeds before and after. Only add to `GENERATED_AVATAR_STYLES`; the `Record` type of `STYLE_LOADERS` makes a style without a loader a type error.
+
+**Applies to:** `packages/react/package.json` (DiceBear versions), `packages/utils/src/avatar.ts`, `packages/react/src/utils/generatedAvatar.ts`.
+
+## A library that every page renders must not be imported statically
+
+**Context:** `Avatar` (`@carbon/react`) is in the shell of every app. It renders generated avatars with `@dicebear/core`.
+
+**Problem:** A static `import { Avatar, Style } from "@dicebear/core"` put about 156 KB minified (25 KB gzipped) into the main bundle of the ERP, MES and academy, on every page, whether or not a generated avatar was shown (found in self-review, 2026-10-08). Typecheck, tests and Biome all passed. Only a bundle measurement showed it.
+
+**Rule:** In a component that every page renders, import a heavy library with `import()` at the point of first use, and keep only `import type` at the top of the file. Check with a split bundle: `npx esbuild <file> --bundle --splitting --format=esm --minify --outdir=/tmp/out '--external:@carbon/*' --external:react`. The entry file must stay small, and the library must be a separate chunk.
+
+**Applies to:** `packages/react/src/**` components used in app shells (`Avatar`, `NavRail`, layout parts); any new dependency of `@carbon/react`.

@@ -3415,8 +3415,21 @@ msgstr "可用小时数"
 msgid "Available on the Business plan"
 msgstr "在商业计划中可用"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "头像选项 {0}"
+
+msgid "Avatar style"
+msgstr "头像风格"
+
 msgid "Avatar url"
 msgstr "头像网址"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "头像来自 {1} 的 <0>{0}</0>，采用 <1>{2}</1> 许可。"
 
 msgid "Avg Days to Close"
 msgstr "平均关闭天数"
@@ -3432,6 +3445,9 @@ msgstr "返回可追溯性"
 
 msgid "Backflush"
 msgstr "倒冲"
+
+msgid "Background"
+msgstr "背景"
 
 msgid "Backup"
 msgstr "备份"
@@ -4401,6 +4417,9 @@ msgstr "为工单上的{0}选择供应商"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
+
+msgid "Choose avatar"
+msgstr "选择头像"
 
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
@@ -14993,9 +15012,6 @@ msgstr "电话"
 msgid "Phone Number"
 msgstr "电话号码"
 
-msgid "Photo removed successfully"
-msgstr "照片已成功删除"
-
 msgid "Photo uploaded successfully"
 msgstr "照片上传成功"
 
@@ -15037,6 +15053,9 @@ msgstr "选择记录类型…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "从列表中选择一个步骤以编辑其详细信息、组件和原材料。"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "选择一种风格和一个头像，或随机生成新的头像。"
 
 msgid "Pick a target date to compare."
 msgstr "选择一个目标日期进行比较。"
@@ -19063,6 +19082,9 @@ msgstr "在发票上向客户显示"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Shuffle"
+msgstr "随机"
+
 msgid "Sign in to Carbon"
 msgstr "登录 Carbon"
 
@@ -19623,6 +19645,9 @@ msgstr "Stripe还没有为此Carbon客户创建对应的客户。确认将在您
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
+
+msgid "Style default"
+msgstr "风格默认"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
