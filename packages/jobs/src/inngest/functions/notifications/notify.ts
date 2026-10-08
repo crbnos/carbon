@@ -50,6 +50,9 @@ import { pushSessionMaxAgeMs, pushSubscriptionCutoff } from "./push-outcome";
 // a request line it cannot buffer (HTTP 431). Reads use fetchAllByIds.
 const IN_FILTER_CHUNK = 100;
 
+// Rows per `notification` insert, so one request body stays small.
+const INSERT_CHUNK = 500;
+
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
   companyId: string
@@ -491,57 +494,76 @@ export const notifyFunction = inngest.createFunction(
         // DigestNotification UI renders. Single-item digests use the flat path.
         if (digestItems && digestItems.length > 1) {
           let inserted = 0;
-          for (const userId of userIds) {
-            const parent = await client
+          // One parent insert per chunk of recipients, then their children,
+          // instead of two round trips per recipient.
+          for (const chunk of chunkArray(userIds, IN_FILTER_CHUNK)) {
+            const parents = await client
               .from("notification")
-              .insert({
-                companyId: payload.companyId,
-                event: NotificationEvent.Digest,
-                payload: {
-                  count: digestItems.length,
-                  description,
+              .insert(
+                chunk.map((userId) => ({
+                  companyId: payload.companyId,
                   event: NotificationEvent.Digest,
-                  sourceEvent: payload.event,
-                  topic
+                  payload: {
+                    count: digestItems.length,
+                    description,
+                    event: NotificationEvent.Digest,
+                    sourceEvent: payload.event,
+                    topic
+                  },
+                  title: description,
+                  topic,
+                  userId
+                }))
+              )
+              .select("id, userId");
+            if (parents.error) {
+              console.error("Failed to insert digest parents", parents.error);
+              throw parents.error;
+            }
+            inserted += parents.data.length;
+
+            // Keyed by user, so the order the rows come back in never matters.
+            const parentIdByUser = new Map(
+              parents.data.map((parent) => [parent.userId, parent.id])
+            );
+            const childRows = chunk.flatMap((userId) => {
+              const parentId = parentIdByUser.get(userId);
+              if (!parentId) {
+                throw new Error(`Failed to insert digest parent for ${userId}`);
+              }
+              return digestItems.map((item) => ({
+                companyId: payload.companyId,
+                digestedInto: parentId,
+                documentId: item.documentId,
+                documentType: payload.documentType ?? null,
+                event: payload.event,
+                from: payload.from ?? null,
+                payload: {
+                  description: item.description,
+                  documentId: item.documentId,
+                  event: payload.event,
+                  from: payload.from
                 },
-                title: description,
+                title: item.description,
                 topic,
                 userId
-              })
-              .select("id")
-              .single();
-            if (parent.error || !parent.data?.id) {
-              console.error("Failed to insert digest parent", parent.error);
-              throw parent.error ?? new Error("Failed to insert digest parent");
-            }
+              }));
+            });
 
-            const childRows = digestItems.map((item) => ({
-              companyId: payload.companyId,
-              digestedInto: parent.data.id,
-              documentId: item.documentId,
-              documentType: payload.documentType ?? null,
-              event: payload.event,
-              from: payload.from ?? null,
-              payload: {
-                description: item.description,
-                documentId: item.documentId,
-                event: payload.event,
-                from: payload.from
-              },
-              title: item.description,
-              topic,
-              userId
-            }));
-
-            const children = await client
-              .from("notification")
-              .insert(childRows)
-              .select("id");
-            if (children.error) {
-              console.error("Failed to insert digest children", children.error);
-              throw children.error;
+            for (const rows of chunkArray(childRows, INSERT_CHUNK)) {
+              const children = await client
+                .from("notification")
+                .insert(rows)
+                .select("id");
+              if (children.error) {
+                console.error(
+                  "Failed to insert digest children",
+                  children.error
+                );
+                throw children.error;
+              }
+              inserted += children.data?.length ?? 0;
             }
-            inserted += 1 + (children.data?.length ?? 0);
           }
           return { inserted, userIds };
         }
@@ -565,15 +587,19 @@ export const notifyFunction = inngest.createFunction(
           userId
         }));
 
-        const { data, error } = await client
-          .from("notification")
-          .insert(rows)
-          .select("id");
-        if (error) {
-          console.error("Failed to insert notification rows", error);
-          throw error;
+        let inserted = 0;
+        for (const chunk of chunkArray(rows, INSERT_CHUNK)) {
+          const { data, error } = await client
+            .from("notification")
+            .insert(chunk)
+            .select("id");
+          if (error) {
+            console.error("Failed to insert notification rows", error);
+            throw error;
+          }
+          inserted += data?.length ?? 0;
         }
-        return { inserted: data?.length ?? 0, userIds };
+        return { inserted, userIds };
       });
     }
 

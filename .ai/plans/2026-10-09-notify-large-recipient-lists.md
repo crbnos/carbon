@@ -24,7 +24,7 @@ The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one 
 ## Progress
 - [x] Task 1: Add the chunk sizes to `notify.ts`
 - [x] Task 2: Chunk the in-app supersede updates
-- [ ] Task 3: Insert digest rows in batches, and chunk the flat insert
+- [x] Task 3: Insert digest rows in batches, and chunk the flat insert
 - [ ] Task 4: Render and send emails in chunks
 - [ ] Task 5: Send the Slack and push events in chunks
 - [ ] Task 6: Look up Slack users with the email in hand and bounded concurrency
