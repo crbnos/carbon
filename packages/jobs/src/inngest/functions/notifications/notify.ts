@@ -53,6 +53,11 @@ const IN_FILTER_CHUNK = 100;
 // Rows per `notification` insert, so one request body stays small.
 const INSERT_CHUNK = 500;
 
+// Emails per render step and per send. One rendered notification email is
+// about 16.9 KB, and Inngest accepts at most 512 KB in one send: 20 × 16.9 KB
+// is about 338 KB, far under a step's 4 MB output limit too.
+const EMAIL_CHUNK = 20;
+
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
   companyId: string
@@ -619,53 +624,59 @@ export const notifyFunction = inngest.createFunction(
     }
 
     if (emailAllowed && emailRecipientIds.length > 0) {
-      const emailEvents = await step.run(
-        "resolve-email-recipients",
-        async () => {
-          const { data: users, error } = await fetchAllByIds(
-            emailRecipientIds,
-            (batch) =>
-              client
-                .from("user")
-                .select("id, email, fullName")
-                .in("id", batch)
-                .order("id")
-          );
-          if (error) {
-            console.error("Failed to resolve email recipients", error);
-            throw error;
-          }
+      // The read is its own step, and each chunk of EMAIL_CHUNK recipients is
+      // rendered and sent in steps of its own: one step holding every
+      // recipient's HTML outgrows a step's output and a send's size limit.
+      // These step ids are new on purpose: the single step they replace
+      // stored its output in another shape, and a replay must not read it.
+      const recipients = await step.run("load-email-recipients", async () => {
+        const { data: users, error } = await fetchAllByIds(
+          emailRecipientIds,
+          (batch) =>
+            client
+              .from("user")
+              .select("id, email, fullName")
+              .in("id", batch)
+              .order("id")
+        );
+        if (error) {
+          console.error("Failed to resolve email recipients", error);
+          throw error;
+        }
+        return (users ?? []).filter((u) => u.email);
+      });
 
-          const subject = description;
-          const heading = getNotificationEmailHeading(payload.event);
-          const ctaLabel = getNotificationEmailCtaLabel(payload.event);
-          const ctaUrl = buildNotificationLink(
-            payload.event,
-            primaryDocumentId,
-            payload.companyId,
-            payload.documentType
-          );
+      const subject = description;
+      const heading = getNotificationEmailHeading(payload.event);
+      const ctaLabel = getNotificationEmailCtaLabel(payload.event);
+      const ctaUrl = buildNotificationLink(
+        payload.event,
+        primaryDocumentId,
+        payload.companyId,
+        payload.documentType
+      );
 
-          const recipients = (users ?? []).filter((u) => u.email);
+      // Recurring reminders carry delivery tracking; the recurrence
+      // period is folded into the tracked id ("ta_1:2026") so each period
+      // gets a fresh MAX_NOTIFICATION_DELIVERIES budget, while a plain id
+      // (no period) caps permanently.
+      const trackedDocumentIds = isRecurringNotificationEvent(payload.event)
+        ? (digestItems?.map((item) =>
+            item.period ? `${item.documentId}:${item.period}` : item.documentId
+          ) ?? [primaryDocumentId])
+        : null;
 
-          // Recurring reminders carry delivery tracking; the recurrence
-          // period is folded into the tracked id ("ta_1:2026") so each period
-          // gets a fresh MAX_NOTIFICATION_DELIVERIES budget, while a plain id
-          // (no period) caps permanently.
-          const trackedDocumentIds = isRecurringNotificationEvent(payload.event)
-            ? (digestItems?.map((item) =>
-                item.period
-                  ? `${item.documentId}:${item.period}`
-                  : item.documentId
-              ) ?? [primaryDocumentId])
-            : null;
-
-          // Render the template once per recipient because the greeting bakes
-          // in the user's name. The template itself is small so this is cheap;
-          // if it ever becomes hot we can split into a shared body + per-user
-          // greeting Section.
-          const events = await Promise.all(
-            recipients.map(async (u) => {
+      for (const [index, chunk] of chunkArray(
+        recipients,
+        EMAIL_CHUNK
+      ).entries()) {
+        // Render the template once per recipient because the greeting bakes
+        // in the user's name. The template itself is small so this is cheap;
+        // if it ever becomes hot we can split into a shared body + per-user
+        // greeting Section.
+        const emailEvents = await step.run(`render-emails-${index}`, () =>
+          Promise.all(
+            chunk.map(async (u) => {
               const html = await render(
                 getNotificationEmailComponent({
                   companyId: payload.companyId,
@@ -712,12 +723,9 @@ export const notifyFunction = inngest.createFunction(
                 name: "carbon/send-email" as const
               };
             })
-          );
-          return events;
-        }
-      );
-      if (emailEvents.length > 0) {
-        await step.sendEvent("fan-out-emails", emailEvents);
+          )
+        );
+        await step.sendEvent(`fan-out-emails-${index}`, emailEvents);
       }
     }
 
