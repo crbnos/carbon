@@ -4,7 +4,7 @@
 
 import { Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePushSubscription } from "~/hooks/usePushSubscription";
 import {
   areBrowserNotificationsEnabled,
@@ -22,6 +22,7 @@ import {
 // their own (useRestoreBrowserNotifications).
 function canAsk() {
   return (
+    typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
     "PushManager" in window &&
     "Notification" in window &&
@@ -34,18 +35,16 @@ export function EnableBrowserNotifications({
 }: {
   publicKey: string | null;
 }) {
-  // Decided after mount: localStorage and the Notification API exist only in
-  // the browser.
-  const [eligible, setEligible] = useState(false);
-
-  useEffect(() => {
-    setEligible(
+  // Decided once, when the row mounts. The bell's popover renders its content
+  // only while open, so this never runs on the server; the window check in
+  // canAsk keeps it safe if that changes.
+  const [eligible, setEligible] = useState(
+    () =>
       Boolean(publicKey) &&
-        canAsk() &&
-        !areBrowserNotificationsEnabled() &&
-        !isPromptSnoozed(readPromptDismissal())
-    );
-  }, [publicKey]);
+      canAsk() &&
+      !areBrowserNotificationsEnabled() &&
+      !isPromptSnoozed(readPromptDismissal())
+  );
 
   if (!eligible || !publicKey) return null;
 

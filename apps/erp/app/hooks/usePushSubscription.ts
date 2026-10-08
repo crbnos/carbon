@@ -5,7 +5,7 @@
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { path } from "~/utils/path";
 import {
   areBrowserNotificationsEnabled,
@@ -34,16 +34,27 @@ async function currentSubscription() {
   return (await registration?.pushManager.getSubscription()) ?? null;
 }
 
-// Is the subscription on for the user signed in now? Read-only.
-async function isEnabledOnServer(endpoint: string) {
-  const params = new URLSearchParams({ endpoint });
-  const response = await fetch(
-    `${path.to.api.pushSubscription}?${params.toString()}`,
-    { credentials: "same-origin" }
-  );
-  if (!response.ok) return false;
-  const status = (await response.json()) as { enabled?: boolean };
-  return status.enabled === true;
+// Is the subscription on for the user signed in now? Read-only. The settings
+// card and the bell's restore ask at the same moment on the settings page;
+// concurrent asks for one endpoint share a request. Nothing is cached once it
+// settles, so the next ask sees an Enable or a Disable.
+const statusRequests = new Map<string, Promise<boolean>>();
+
+function isEnabledOnServer(endpoint: string) {
+  const inFlight = statusRequests.get(endpoint);
+  if (inFlight) return inFlight;
+  const request = (async () => {
+    const params = new URLSearchParams({ endpoint });
+    const response = await fetch(
+      `${path.to.api.pushSubscription}?${params.toString()}`,
+      { credentials: "same-origin" }
+    );
+    if (!response.ok) return false;
+    const status = (await response.json()) as { enabled?: boolean };
+    return status.enabled === true;
+  })().finally(() => statusRequests.delete(endpoint));
+  statusRequests.set(endpoint, request);
+  return request;
 }
 
 // Registers the worker and subscribes. Needs permission already granted;
@@ -69,10 +80,13 @@ function sendSubscription(
   });
 }
 
+// The users this tab has already restored for. Module scope, not a ref: the
+// restore runs once per tab and user even if the bell remounts.
+const restoredFor = new Set<string>();
+
 // Browser notifications are a setting of this browser: once enabled, the
 // subscription is saved for whoever signs in. Sign-out deletes the row, so
-// this re-saves it for the user signed in now — without asking. Runs once per
-// tab and user.
+// this re-saves it for the user signed in now — without asking.
 export function useRestoreBrowserNotifications({
   publicKey,
   userId
@@ -80,13 +94,11 @@ export function useRestoreBrowserNotifications({
   publicKey: string | null;
   userId: string;
 }) {
-  const ran = useRef<string | null>(null);
-
   useEffect(() => {
     if (!publicKey || !supportsPush()) return;
     if (Notification.permission !== "granted") return;
-    if (ran.current === userId) return;
-    ran.current = userId;
+    if (restoredFor.has(userId)) return;
+    restoredFor.add(userId);
 
     (async () => {
       try {

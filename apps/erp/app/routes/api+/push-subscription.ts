@@ -87,27 +87,27 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const { endpoint, keys, oldEndpoint } = parsed.data;
 
-      if (oldEndpoint) {
-        const removed = await deletePushSubscription(client, {
-          userId,
-          endpoint: oldEndpoint
+      // Independent of each other, so they run together: the endpoint this
+      // browser rotated away from, and other users' rows for this browser.
+      // One browser has one endpoint, and only the user signed in may own it;
+      // a previous user's row would otherwise block the upsert.
+      const [removed, handedOver] = await Promise.all([
+        oldEndpoint
+          ? deletePushSubscription(client, { userId, endpoint: oldEndpoint })
+          : Promise.resolve({ error: null }),
+        getCarbonServiceRole()
+          .from("pushSubscription")
+          .delete()
+          .eq("endpoint", endpoint)
+          .neq("userId", userId)
+      ]);
+      if (removed.error) {
+        logger.error("Failed to remove the rotated push subscription", {
+          companyId,
+          error: removed.error
         });
-        if (removed.error) {
-          logger.error("Failed to remove the rotated push subscription", {
-            companyId,
-            error: removed.error
-          });
-          return data({ error: removed.error.message }, { status: 500 });
-        }
+        return data({ error: removed.error.message }, { status: 500 });
       }
-
-      // One browser has one endpoint, and only the user signed into it gets
-      // its pushes. A previous user's row would otherwise block the upsert.
-      const handedOver = await getCarbonServiceRole()
-        .from("pushSubscription")
-        .delete()
-        .eq("endpoint", endpoint)
-        .neq("userId", userId);
       if (handedOver.error) {
         logger.error("Failed to remove other users' push subscriptions", {
           companyId,
