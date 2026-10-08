@@ -13,6 +13,7 @@ import {
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/services/service-context.server";
 
 // Bulk release — one release per selected Planned batch. Each is independent:
 // a batch the server fn refuses (no members, already recorded production) is
@@ -24,8 +25,15 @@ const bodySchema = z.object({ batchIds: z.array(z.string()) });
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "production"
+    });
+  const ctx = serviceContext(request, {
+    client,
+    companyId,
+    companyGroupId,
+    userId
   });
 
   // A body that is not JSON, or not the shape the table sends, is a plain
@@ -77,17 +85,13 @@ export async function action({ request }: ActionFunctionArgs) {
     // Member jobs release first, through the job page's release path. With no
     // dialog here, a batch with an invalid job or a PO choice to make is
     // skipped and named — the planner releases it from its drawer.
-    const releasedJobs = await releaseBatchMemberJobs({
-      client,
-      db: getDatabaseClient(),
-      jobIds: (members.data ?? []).map((op) => op.jobId),
-      companyId,
-      userId
+    const releasedJobs = await releaseBatchMemberJobs(ctx, {
+      jobIds: (members.data ?? []).map((op) => op.jobId)
     });
     if (releasedJobs.error) {
       failed.push({
         readableId: batch.readableId,
-        message: releasedJobs.error
+        message: releasedJobs.error.message
       });
       continue;
     }

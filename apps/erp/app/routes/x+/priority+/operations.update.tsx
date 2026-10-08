@@ -12,7 +12,7 @@ import {
 } from "~/modules/production/production.models";
 import { reorderScheduleOperations } from "~/modules/production/production.server";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
-import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/services/service-context.server";
 
 const invalidSchedulingRequest = () => ({
   success: false,
@@ -20,8 +20,15 @@ const invalidSchedulingRequest = () => ({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "production"
+    });
+  const ctx = serviceContext(request, {
+    client,
+    companyId,
+    companyGroupId,
+    userId
   });
   const formData = await request.formData();
 
@@ -41,19 +48,13 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!reorder.success) {
       return { success: false, message: "Invalid form data" };
     }
-    const result = await reorderScheduleOperations(
-      client,
-      getDatabaseClient(),
-      {
-        companyId,
-        userId,
-        ...reorder.data
-      }
-    );
-    if (!result.success) return result;
+    const result = await reorderScheduleOperations(ctx, reorder.data);
+    if (result.error) {
+      return { success: false, message: result.error.message };
+    }
     // Same rule as the single move below: only a work-center change
     // reschedules.
-    if (result.workCenterChanged) {
+    if (result.data.workCenterChanged) {
       await notifyScheduleInputsChanged(
         companyId,
         "work-center",

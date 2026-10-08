@@ -33,6 +33,7 @@ import {
 } from "~/modules/production/production.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/services/service-context.server";
 
 const logger = getLogger("erp", "production", "planning");
 
@@ -77,12 +78,19 @@ export async function action({ request }: ActionFunctionArgs) {
   // actions that already exist (apply, inline edits, dismiss, reopen, assign),
   // which the job screens gate on `update`. The client is the service role, so
   // this check is the only one.
-  const { client, companyId, userId } = await requirePermissions(request, {
-    ...(action === "order"
-      ? { create: "production" }
-      : { update: "production" }),
-    role: "employee",
-    bypassRls: true
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      ...(action === "order"
+        ? { create: "production" }
+        : { update: "production" }),
+      role: "employee",
+      bypassRls: true
+    });
+  const ctx = serviceContext(request, {
+    client,
+    companyId,
+    companyGroupId,
+    userId
   });
 
   if (typeof locationId !== "string") {
@@ -698,30 +706,19 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const planned = await planDraftJob({
-        client,
-        db: getDatabaseClient(),
-        jobId: target.data.id,
-        companyId,
-        userId
-      });
+      const planned = await planDraftJob(ctx, { jobId: target.data.id });
       if (planned.error) {
+        // A conflict is the job changed by someone else after the status
+        // check above.
         return data(
-          { success: false, message: planned.error },
-          { status: 500 }
-        );
-      }
-      if (!planned.updated) {
-        // Changed by someone else after the status check above.
-        return data(
-          { success: false, message: "Only a Draft job can be planned." },
-          { status: 409 }
+          { success: false, message: planned.error.message },
+          { status: planned.error.status }
         );
       }
       return {
         success: true,
         message: "Planned job",
-        ...(planned.warning && { warning: planned.warning })
+        ...(planned.data.warning && { warning: planned.data.warning })
       };
     }
 
@@ -1018,25 +1015,21 @@ export async function action({ request }: ActionFunctionArgs) {
             if (row.type === "Cancel") {
               // The job status route's cancel: picked material goes back and
               // the job's picking lists close before the status changes.
-              const failed = await cancelJob({
-                client,
-                db,
+              const cancelled = await cancelJob(ctx, {
                 jobId,
-                companyId,
-                userId,
                 // Read Draft / Planned above; released since, it goes to review
                 // instead of losing its picks.
                 fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
               });
-              if (failed?.refused) {
+              if (cancelled.error?.category === "conflict") {
                 await releaseClaim(planningActionId);
                 requiresManualAction.push({ id: planningActionId, jobId });
                 continue;
               }
-              if (failed) {
+              if (cancelled.error) {
                 await releaseClaim(planningActionId);
                 errors.push(
-                  `Failed to cancel job for planning action ${planningActionId}: ${failed.message}`
+                  `Failed to cancel job for planning action ${planningActionId}: ${cancelled.error.message}`
                 );
                 continue;
               }

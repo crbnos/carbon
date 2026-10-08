@@ -4,9 +4,6 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: vi.fn(() => ({}))
-}));
 vi.mock("@carbon/env", () => ({
   ASSEMBLER_SERVICE_URL: ""
 }));
@@ -18,9 +15,14 @@ vi.mock("~/modules/inventory/inventory.service", () => ({
 }));
 // production.models reaches the module barrels (and through them a Supabase
 // client built at import); cancelJob needs nothing from it.
-vi.mock("./production.models", () => ({
-  isJobLocked: vi.fn(() => false)
-}));
+vi.mock("./production.models", async () => {
+  const { z } = await import("zod");
+  return {
+    isJobLocked: vi.fn(() => false),
+    jobStatus: ["Draft", "Planned", "Ready", "Cancelled"],
+    scheduleOperationReorderValidator: z.object({})
+  };
+});
 vi.mock("./production.service", () => ({
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(),
@@ -30,6 +32,7 @@ vi.mock("./production.service", () => ({
 }));
 
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
+import { createServiceContext } from "~/services/service-fn.server";
 import { cancelJob } from "./production.server";
 import {
   returnPickedRemaindersForJob,
@@ -41,13 +44,19 @@ import {
 // and that it stops at the first failure, before the status changes.
 describe("cancelJob", () => {
   const events: string[] = [];
-  const args = {
-    client: {} as never,
-    db: {} as never,
-    jobId: "job-1",
-    companyId: "company-1",
-    userId: "user-1"
-  };
+  const db = {} as never;
+  const contextFor = (client: never) =>
+    createServiceContext({
+      actor: { type: "user", userId: "user-1" },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: client,
+      system: () => ({}) as never,
+      pg: () => db,
+      kv: () => ({}) as never
+    });
+  const client = {} as never;
+  const ctx = contextFor(client);
+  const input = { jobId: "job-1" };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,7 +76,10 @@ describe("cancelJob", () => {
   });
 
   it("returns picked material, then cancels the picking lists, then sets Cancelled", async () => {
-    await expect(cancelJob(args)).resolves.toBeNull();
+    await expect(cancelJob(ctx, input)).resolves.toEqual({
+      data: { jobId: "job-1" },
+      error: null
+    });
 
     expect(events).toEqual([
       "returnPickedRemainders",
@@ -76,15 +88,15 @@ describe("cancelJob", () => {
     ]);
     expect(returnPickedRemaindersForJob).toHaveBeenCalledWith(
       expect.anything(),
-      args.db,
+      db,
       { jobId: "job-1", userId: "user-1", companyId: "company-1" }
     );
-    expect(cancelOpenPickingListsForJob).toHaveBeenCalledWith(args.db, {
+    expect(cancelOpenPickingListsForJob).toHaveBeenCalledWith(db, {
       jobId: "job-1",
       companyId: "company-1",
       userId: "user-1"
     });
-    expect(updateJobStatus).toHaveBeenCalledWith(args.client, {
+    expect(updateJobStatus).toHaveBeenCalledWith(client, {
       id: "job-1",
       companyId: "company-1",
       status: "Cancelled",
@@ -98,9 +110,9 @@ describe("cancelJob", () => {
       error: new Error("sweep failed")
     } as never);
 
-    const failed = await cancelJob(args);
+    const { error } = await cancelJob(ctx, input);
 
-    expect(failed?.message).toBe(
+    expect(error?.message).toBe(
       "Cancel aborted: returning picked material failed"
     );
     expect(cancelOpenPickingListsForJob).not.toHaveBeenCalled();
@@ -112,9 +124,9 @@ describe("cancelJob", () => {
       error: new Error("lists failed")
     } as never);
 
-    const failed = await cancelJob(args);
+    const { error } = await cancelJob(ctx, input);
 
-    expect(failed?.message).toBe(
+    expect(error?.message).toBe(
       "Cancel aborted: its picking lists could not be closed"
     );
     expect(returnPickedRemaindersForJob).toHaveBeenCalledOnce();
@@ -127,9 +139,9 @@ describe("cancelJob", () => {
       return { data: null, error: new Error("update failed"), updated: false };
     }) as never);
 
-    const failed = await cancelJob(args);
+    const { error } = await cancelJob(ctx, input);
 
-    expect(failed?.message).toBe("Failed to update job status");
+    expect(error?.message).toBe("Failed to update job status");
     expect(events).toEqual([
       "returnPickedRemainders",
       "cancelOpenPickingLists",
@@ -154,21 +166,22 @@ describe("cancelJob", () => {
       }) as never;
 
     it("refuses a job no longer in those statuses and changes nothing", async () => {
-      const failed = await cancelJob({
-        ...args,
-        client: jobWithStatus("Ready"),
+      const { error } = await cancelJob(contextFor(jobWithStatus("Ready")), {
+        ...input,
         fromStatuses: ["Draft", "Planned"]
       });
 
-      expect(failed?.refused).toBe(true);
+      expect(error?.category).toBe("conflict");
       expect(events).toEqual([]);
     });
 
     it("cancels a job still in them, guarding the status write too", async () => {
       const client = jobWithStatus("Planned");
-      await expect(
-        cancelJob({ ...args, client, fromStatuses: ["Draft", "Planned"] })
-      ).resolves.toBeNull();
+      const { error } = await cancelJob(contextFor(client), {
+        ...input,
+        fromStatuses: ["Draft", "Planned"]
+      });
+      expect(error).toBeNull();
 
       expect(events).toEqual([
         "returnPickedRemainders",
@@ -187,13 +200,12 @@ describe("cancelJob", () => {
         return { data: [], error: null, updated: false };
       }) as never);
 
-      const failed = await cancelJob({
-        ...args,
-        client: jobWithStatus("Planned"),
+      const { error } = await cancelJob(contextFor(jobWithStatus("Planned")), {
+        ...input,
         fromStatuses: ["Draft", "Planned"]
       });
 
-      expect(failed?.refused).toBe(true);
+      expect(error?.category).toBe("conflict");
     });
   });
 });

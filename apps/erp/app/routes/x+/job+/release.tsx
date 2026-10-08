@@ -14,6 +14,7 @@ import { getJobReleaseReadiness } from "~/modules/production";
 import { releaseJobs } from "~/modules/production/production.server";
 import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
 import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/services/service-context.server";
 
 const logger = getLogger("erp", "job-release");
 
@@ -28,8 +29,15 @@ const bodySchema = z.object({ jobIds: z.array(z.string()) });
 // Fetcher-driven; the table toasts the summary and the loader revalidates.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "production"
+    });
+  const ctx = serviceContext(request, {
+    client,
+    companyId,
+    companyGroupId,
+    userId
   });
 
   // A body that is not JSON, or not the shape the table sends, is a plain
@@ -124,30 +132,27 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    const result = await releaseJobs({
-      client,
-      db: getDatabaseClient(),
+    const result = await releaseJobs(ctx, {
       jobIds: [job.id],
-      companyId,
-      userId,
       purchaseOrdersBySupplierId: purchaseOrders
     });
-    purchaseOrders = result.purchaseOrdersBySupplierId;
-    if (result.error) {
+    const failure = result.error ?? result.data.failure;
+    if (result.data) purchaseOrders = result.data.purchaseOrdersBySupplierId;
+    if (failure) {
       logger.error("Failed to release job", {
         companyId,
         jobId: job.id,
-        error: result.error
+        error: failure
       });
     }
     // The job is Ready when its id came back released, error or not; a job
     // that is Ready must be scheduled and counted, whatever failed after.
-    if (!result.releasedJobIds.includes(job.id)) {
-      failed.push({ readableId: job.jobId, message: result.error ?? "" });
+    if (!result.data?.releasedJobIds.includes(job.id)) {
+      failed.push({ readableId: job.jobId, message: failure?.message ?? "" });
       continue;
     }
-    if (result.error) {
-      warnings.push({ readableId: job.jobId, message: result.error });
+    if (failure) {
+      warnings.push({ readableId: job.jobId, message: failure.message });
     }
 
     locationIds.add(job.locationId);

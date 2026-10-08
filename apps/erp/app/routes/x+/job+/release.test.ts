@@ -24,6 +24,9 @@ vi.mock("@carbon/logger", () => ({
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
+vi.mock("~/services/service-context.server", () => ({
+  serviceContext: vi.fn(() => ({}))
+}));
 vi.mock("~/modules/production", () => ({
   getJobReleaseReadiness: vi.fn()
 }));
@@ -33,7 +36,24 @@ vi.mock("~/modules/production/production.server", () => ({
 
 import { getJobReleaseReadiness } from "~/modules/production";
 import { releaseJobs } from "~/modules/production/production.server";
+import { CarbonError } from "~/services/service-fn.server";
 import { action } from "./release";
+
+// What releaseJobs reports for one call: the jobs that are Ready, the purchase
+// orders it filled in, and what stopped it (if anything).
+const report = (
+  releasedJobIds: string[],
+  purchaseOrdersBySupplierId: Record<string, string> = {},
+  failure: string | null = null
+) =>
+  ({
+    data: {
+      releasedJobIds,
+      purchaseOrdersBySupplierId,
+      failure: failure ? new CarbonError("internal", failure) : null
+    },
+    error: null
+  }) as any;
 
 type JobRow = {
   id: string;
@@ -107,11 +127,8 @@ const run = (jobIds: string[]) =>
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(releaseJobs).mockImplementation(
-    async ({ jobIds, purchaseOrdersBySupplierId }) => ({
-      error: null,
-      purchaseOrdersBySupplierId,
-      releasedJobIds: jobIds
-    })
+    async (_ctx, { jobIds, purchaseOrdersBySupplierId }) =>
+      report(jobIds, purchaseOrdersBySupplierId)
   );
 });
 
@@ -134,7 +151,7 @@ describe("bulk job release", () => {
       "j2"
     ]);
     expect(
-      vi.mocked(releaseJobs).mock.calls.map(([args]) => args.jobIds)
+      vi.mocked(releaseJobs).mock.calls.map(([, args]) => args.jobIds)
     ).toEqual([["j1"], ["j2"]]);
     expect(result).toEqual({
       success: true,
@@ -162,7 +179,7 @@ describe("bulk job release", () => {
     const result = await run(["j1", "j2", "j3"]);
 
     expect(
-      vi.mocked(releaseJobs).mock.calls.map(([args]) => args.jobIds)
+      vi.mocked(releaseJobs).mock.calls.map(([, args]) => args.jobIds)
     ).toEqual([["j2"]]);
     expect(result).toMatchObject({
       released: 1,
@@ -195,7 +212,7 @@ describe("bulk job release", () => {
     const result = await run(["j1", "j2"]);
 
     expect(
-      vi.mocked(releaseJobs).mock.calls.map(([args]) => args.jobIds)
+      vi.mocked(releaseJobs).mock.calls.map(([, args]) => args.jobIds)
     ).toEqual([["j2"]]);
     expect(result).toMatchObject({
       released: 1,
@@ -221,18 +238,16 @@ describe("bulk job release", () => {
       },
       error: null
     });
-    vi.mocked(releaseJobs).mockImplementation(async ({ jobIds }) => ({
-      error: null,
-      purchaseOrdersBySupplierId: { "supplier-a": "po-new" },
-      releasedJobIds: jobIds
-    }));
+    vi.mocked(releaseJobs).mockImplementation(async (_ctx, { jobIds }) =>
+      report(jobIds, { "supplier-a": "po-new" })
+    );
 
     await run(["j1", "j2"]);
 
     expect(
       vi
         .mocked(releaseJobs)
-        .mock.calls.map(([args]) => args.purchaseOrdersBySupplierId)
+        .mock.calls.map(([, args]) => args.purchaseOrdersBySupplierId)
     ).toEqual([{ "supplier-a": "new" }, { "supplier-a": "po-new" }]);
   });
 
@@ -250,11 +265,11 @@ describe("bulk job release", () => {
       },
       error: null
     });
-    vi.mocked(releaseJobs).mockImplementation(async ({ jobIds }) => ({
-      error: jobIds[0] === "j2" ? "Failed to recalculate job j2" : null,
-      purchaseOrdersBySupplierId: {},
-      releasedJobIds: jobIds[0] === "j2" ? [] : jobIds
-    }));
+    vi.mocked(releaseJobs).mockImplementation(async (_ctx, { jobIds }) =>
+      jobIds[0] === "j2"
+        ? report([], {}, "Failed to recalculate job j2")
+        : report(jobIds)
+    );
 
     const result = await run(["j1", "j2", "j3", "j4"]);
 
@@ -274,14 +289,15 @@ describe("bulk job release", () => {
       data: { jobs: [ready("j1"), ready("j2")], suppliers: [] },
       error: null
     });
-    vi.mocked(releaseJobs).mockImplementation(async ({ jobIds }) => ({
-      error:
+    vi.mocked(releaseJobs).mockImplementation(async (_ctx, { jobIds }) =>
+      report(
+        jobIds,
+        {},
         jobIds[0] === "j1"
           ? "The job is released, but its purchase orders could not be created: no supplier currency"
-          : null,
-      purchaseOrdersBySupplierId: {},
-      releasedJobIds: jobIds
-    }));
+          : null
+      )
+    );
 
     const result = await run(["j1", "j2"]);
 
@@ -329,7 +345,7 @@ describe("bulk job release", () => {
     expect(result).toMatchObject({ released: 250, failed: [] });
     const released = vi
       .mocked(releaseJobs)
-      .mock.calls.map(([args]) => args.jobIds[0]);
+      .mock.calls.map(([, args]) => args.jobIds[0]);
     expect(released.slice(0, 3)).toEqual(["j0", "j1", "j2"]);
   });
 

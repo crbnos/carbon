@@ -52,7 +52,7 @@ import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
-import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/services/service-context.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -151,8 +151,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "parts"
+    });
+  const ctx = serviceContext(request, {
+    client,
+    companyId,
+    companyGroupId,
+    userId
   });
 
   const { itemId } = params;
@@ -192,11 +199,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     // The planning pages list MRP's suggestions; re-plan so they follow the
     // new settings now, not at the next scheduled run.
-    await replanAfterItemChange(getDatabaseClient(), {
-      itemId,
-      companyId,
-      userId
-    });
+    await replanAfterItemChange(ctx, { itemId });
 
     throw redirect(
       path.to.toolDetails(itemId),

@@ -42,6 +42,14 @@ vi.mock("@carbon/server-functions", () => {
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
+vi.mock("~/services/service-context.server", () => ({
+  serviceContext: vi.fn(
+    (_request: Request, auth: { companyId: string; userId: string }) => ({
+      company: { id: auth.companyId },
+      auditUserId: auth.userId
+    })
+  )
+}));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
@@ -80,20 +88,23 @@ vi.mock("~/modules/production/production.server", async () => {
   const production = await import("~/modules/production");
   return {
     // Cancel is delegated whole; its steps live in cancelJob.
-    cancelJob: vi.fn(async () => null),
-    releaseJobs: vi.fn(async ({ jobIds, companyId, userId }) => {
+    cancelJob: vi.fn(async () => ({ data: { jobId: "job-1" }, error: null })),
+    releaseJobs: vi.fn(async (ctx, { jobIds }) => {
       for (const id of jobIds) {
         await production.updateJobStatus({} as any, {
           id,
-          companyId,
+          companyId: ctx.company.id,
           status: "Ready",
-          updatedBy: userId
+          updatedBy: ctx.auditUserId
         });
       }
       return {
-        error: null,
-        purchaseOrdersBySupplierId: {},
-        releasedJobIds: jobIds
+        data: {
+          failure: null,
+          purchaseOrdersBySupplierId: {},
+          releasedJobIds: jobIds
+        },
+        error: null
       };
     })
   };
@@ -313,10 +324,10 @@ describe("Job cancel status action", () => {
 
     expect(cancelJob).toHaveBeenCalledWith(
       expect.objectContaining({
-        jobId: "job-1",
-        companyId: "company-1",
-        userId: "user-1"
-      })
+        company: { id: "company-1" },
+        auditUserId: "user-1"
+      }),
+      { jobId: "job-1" }
     );
     expect(updateJobStatus).not.toHaveBeenCalled();
   });

@@ -8,9 +8,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: vi.fn(() => ({}))
-}));
 vi.mock("@carbon/env", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/env")>()),
   ASSEMBLER_SERVICE_URL: ""
@@ -44,6 +41,17 @@ import {
   planDraftJob,
   releaseJobs
 } from "../app/modules/production/production.server";
+import { createServiceContext } from "../app/services/service-fn.server";
+
+const contextFor = (client: any) =>
+  createServiceContext({
+    actor: { type: "user", userId: "user-1" },
+    company: { id: "company-1", groupId: "group-1" },
+    caller: client,
+    system: () => ({}) as any,
+    pg: () => ({}) as any,
+    kv: () => ({}) as any
+  });
 
 // The release-date write: a chainable, thenable stand-in for the user client.
 function clientWith(stamp: { error: null | { message: string } }) {
@@ -55,14 +63,7 @@ function clientWith(stamp: { error: null | { message: string } }) {
 }
 
 const release = (client: any, jobIds = ["job-1"]) =>
-  releaseJobs({
-    client,
-    db: {} as any,
-    jobIds,
-    companyId: "company-1",
-    userId: "user-1",
-    purchaseOrdersBySupplierId: {}
-  });
+  releaseJobs(contextFor(client), { jobIds, purchaseOrdersBySupplierId: {} });
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -73,8 +74,8 @@ describe("releaseJobs", () => {
       error: new Error("planning blew up")
     });
     const result = await release(clientWith({ error: null }));
-    expect(result).toEqual({
-      error: null,
+    expect(result.data).toEqual({
+      failure: null,
       purchaseOrdersBySupplierId: {},
       releasedJobIds: ["job-1"]
     });
@@ -93,8 +94,11 @@ describe("releaseJobs", () => {
       status: "Ready",
       fromStatuses: ["Draft", "Planned"]
     });
-    expect(result).toEqual({
-      error: "The job is no longer Draft or Planned",
+    expect(result.data).toMatchObject({
+      failure: {
+        category: "conflict",
+        message: "The job is no longer Draft or Planned"
+      },
       purchaseOrdersBySupplierId: {},
       releasedJobIds: []
     });
@@ -104,8 +108,10 @@ describe("releaseJobs", () => {
     const result = await release(
       clientWith({ error: { message: "connection reset" } })
     );
-    expect(result).toEqual({
-      error: "The job is released, but its release date could not be saved",
+    expect(result.data).toMatchObject({
+      failure: {
+        message: "The job is released, but its release date could not be saved"
+      },
       purchaseOrdersBySupplierId: {},
       releasedJobIds: ["job-1"]
     });
@@ -115,14 +121,7 @@ describe("releaseJobs", () => {
 // The planning drawer's Plan on a Draft job follows releaseJobs' order: MRP
 // must never count a job as supply while its requirements are stale.
 describe("planDraftJob", () => {
-  const plan = () =>
-    planDraftJob({
-      client: {} as any,
-      db: {} as any,
-      jobId: "job-1",
-      companyId: "company-1",
-      userId: "user-1"
-    });
+  const plan = () => planDraftJob(contextFor({}), { jobId: "job-1" });
 
   it("recalculates, flips only from Draft, then runs MRP", async () => {
     const order: string[] = [];
@@ -139,7 +138,7 @@ describe("planDraftJob", () => {
       return { data: null, error: null } as any;
     });
 
-    expect(await plan()).toEqual({ updated: true });
+    expect(await plan()).toEqual({ data: { warning: null }, error: null });
     expect(order).toEqual(["recalculate", "flip", "mrp"]);
     expect(vi.mocked(updateJobStatus).mock.calls[0]?.[1]).toMatchObject({
       status: "Planned",
@@ -154,8 +153,7 @@ describe("planDraftJob", () => {
     } as any);
 
     const result = await plan();
-    expect(result.updated).toBe(false);
-    expect(result.error).toBeTruthy();
+    expect(result.error?.category).toBe("internal");
     expect(updateJobStatus).not.toHaveBeenCalled();
     expect(runMRP).not.toHaveBeenCalled();
   });
@@ -166,7 +164,7 @@ describe("planDraftJob", () => {
       updated: false
     } as any);
 
-    expect(await plan()).toEqual({ updated: false });
+    expect((await plan()).error?.category).toBe("conflict");
     expect(runMRP).not.toHaveBeenCalled();
   });
 
@@ -177,7 +175,7 @@ describe("planDraftJob", () => {
     });
 
     const result = await plan();
-    expect(result.updated).toBe(true);
-    expect(result.warning).toBeTruthy();
+    expect(result.error).toBeNull();
+    expect(result.data?.warning).toBeTruthy();
   });
 });

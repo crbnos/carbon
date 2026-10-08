@@ -22,14 +22,22 @@ import {
 import { cancelJob, releaseJobs } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/services/service-context.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "jobid-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "production"
+    });
+  const ctx = serviceContext(request, {
+    client,
+    companyId,
+    companyGroupId,
+    userId
   });
 
   const { jobId: id } = params;
@@ -142,20 +150,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const released = await releaseJobs({
-      client,
-      db: getDatabaseClient(),
+    const released = await releaseJobs(ctx, {
       jobIds: [id],
-      companyId,
-      userId,
       purchaseOrdersBySupplierId: JSON.parse(
         selectedPurchaseOrdersBySupplierId ?? "{}"
       )
     });
-    if (released.error) {
+    const failure = released.error ?? released.data.failure;
+    if (failure) {
       // The job is Ready when it came back released (its purchase orders
       // failed after the flip): schedule it, then say what failed.
-      if (released.releasedJobIds.includes(id)) {
+      if (released.data?.releasedJobIds.includes(id)) {
         try {
           await scheduleJobLocation({ id, companyId, userId });
         } catch (err) {
@@ -164,7 +169,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(null, released.error))
+        await flash(request, error(null, failure.message))
       );
     }
 
@@ -211,17 +216,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Cancelled") {
     // Returns picked material and closes picking lists before the status
     // changes — the same path the planning Cancel action takes.
-    const failed = await cancelJob({
-      client,
-      db: getDatabaseClient(),
-      jobId: id,
-      companyId,
-      userId
-    });
-    if (failed) {
+    const cancelled = await cancelJob(ctx, { jobId: id });
+    if (cancelled.error) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(failed.error, failed.message))
+        await flash(request, error(null, cancelled.error.message))
       );
     }
   } else {
