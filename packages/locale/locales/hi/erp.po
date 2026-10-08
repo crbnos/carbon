@@ -1986,6 +1986,15 @@ msgstr "पता पंक्ति 1"
 msgid "Address line2"
 msgstr "पता पंक्ति 2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "परिसंपत्ति को वह लागत जोड़ता है जो कभी चार्ज नहीं की गई थी, जैसे कि एक जॉब का श्रम और सामग्री जिसमें कुछ रिकॉर्ड नहीं किया गया था।"
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "परिसंपत्ति को वह लागत जोड़ता है जो कभी चार्ज नहीं की गई थी, जैसे कि एक जॉब का श्रम और सामग्री जिसमें कुछ रिकॉर्ड नहीं किया गया था। यह मान परिसंपत्ति को उस खाते से बुक किया जाता है जहाँ से खर्च किया गया था: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
+
+msgid "Adjust Cost"
+msgstr "लागत समायोजित करें"
+
 msgid "Adjustment"
 msgstr "समायोजन"
 
@@ -5166,6 +5175,9 @@ msgstr "परिवर्तित कर रहे हैं…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
 
+msgid "Copied ID to clipboard"
+msgstr "ID क्लिपबोर्ड में कॉपी किया गया"
+
 msgid "Copied link to clipboard"
 msgstr "क्लिपबोर्ड में लिंक कॉपी किया गया"
 
@@ -8315,6 +8327,12 @@ msgstr "अपने निजी OAuth एप्लिकेशन का Onsha
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
 
+msgid "Enter what it cost to make."
+msgstr "इसे बनाने में जो लागत आई उसे दर्ज करें।"
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "इसे बनाने में जो लागत आई उसे दर्ज करें। यह मान परिसंपत्ति को उस खाते से बुक किया जाता है जहाँ से खर्च किया गया था: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
+
 msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
 
@@ -10273,6 +10291,9 @@ msgstr "कच्चे माल के लिए ID और विवरण उ
 
 msgid "If"
 msgstr "यदि"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "यदि मूल्यह्रास पहले ही चला है, तो अगला रन उन महीनों को पकड़ता है जो एक सीधी रेखा परिसंपत्ति को पुरानी लागत पर ले गए।"
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "अगर यह अगली कॉल तक इंतज़ार नहीं कर सकता, तो दोनों तरफ के लीड फैसला लेते हैं।"
@@ -13229,6 +13250,9 @@ msgstr "कोई भी शर्त मेल नहीं खा सकती
 msgid "No conversion is required"
 msgstr "कोई रूपांतरण आवश्यक नहीं है"
 
+msgid "No cost"
+msgstr "कोई लागत नहीं"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "अभी तक इस संपत्ति के विरुद्ध कोई लागत दर्ज नहीं की गई है।"
 
@@ -13948,6 +13972,9 @@ msgstr "बंद — सिंक के बाहर संभाला गय
 
 msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए रिवीजन संपादन योग्य रहते हैं"
+
+msgid "Offset Account"
+msgstr "ऑफसेट खाता"
 
 msgid "ok"
 msgstr "ठीक"
@@ -16553,6 +16580,13 @@ msgstr "रिकॉर्ड"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "रिकॉर्ड और पोस्ट किए गए जर्नल इस प्रदाता को भेजे जा रहे हैं और प्राप्त किए जा रहे हैं।"
 
+msgid "Recost"
+msgstr "लागत पुनः निर्धारित करें"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "{0} की लागत पुनः निर्धारित करें"
+
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
 
@@ -18709,6 +18743,12 @@ msgstr "संस्करण {0} को सक्रिय संस्कर�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "एक भंडारण इकाई चुनने के लिए प्रोफ़ाइल सेटिंग्स में अपना डिफ़ॉल्ट स्थान सेट करें।"
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "यह निर्धारित करता है कि यह इकाई इन्वेंटरी में किस कीमत पर ले जाई जाती है।"
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "यह निर्धारित करता है कि यह इकाई इन्वेंटरी में किस कीमत पर ले जाई जाती है। अंतर इन्वेंटरी और उस खाते के बीच बुक किया जाता है जहाँ से लागत खर्च की गई थी: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
+
 msgid "Settings"
 msgstr "सेटिंग्स"
 
@@ -19204,6 +19244,9 @@ msgstr "कुछ रिकॉर्ड वापस नहीं आएंग�
 
 msgid "Some Shifts"
 msgstr "कुछ शिफ्ट"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "जो कोई भी लेखांकन को अपडेट कर सकता है, उसे इसे पूंजीकृत करने से पहले इसे बनाने की लागत दर्ज करनी होगी।"
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -20327,9 +20370,6 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "संपत्ति अपनी सेवा-में कक्षा में चली जाती है और सेवा-में तारीख से मूल्यह्रास शुरू करती है।"
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "संपत्ति का कोई मूल्य नहीं होगा। आइटम पर इकाई लागत सेट करें, फिर इसे पूंजीकृत करें।"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape में प्राधिकरण को अस्वीकार कर दिया गया था। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"

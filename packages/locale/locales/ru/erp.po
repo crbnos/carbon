@@ -1986,6 +1986,15 @@ msgstr "Адрес строка1"
 msgid "Address line2"
 msgstr "Адрес строка2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Добавляет себестоимость, которая не была отнесена на актив, такую как затраты труда и материалов производственного заказа, который не был зафиксирован."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Добавляет себестоимость, которая не была отнесена на актив, такую как затраты труда и материалов производственного заказа, который не был зафиксирован. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
+
+msgid "Adjust Cost"
+msgstr "Скорректировать себестоимость"
+
 msgid "Adjustment"
 msgstr "Корректировка"
 
@@ -5166,6 +5175,9 @@ msgstr "Преобразование…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
 
+msgid "Copied ID to clipboard"
+msgstr "ID скопирован в буфер обмена"
+
 msgid "Copied link to clipboard"
 msgstr "Ссылка скопирована в буфер обмена"
 
@@ -8315,6 +8327,12 @@ msgstr "Введите URL Onshape, ID клиента и клиентский с
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
 
+msgid "Enter what it cost to make."
+msgstr "Введите себестоимость производства."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Введите себестоимость производства. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
+
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
 
@@ -10273,6 +10291,9 @@ msgstr "Идентификаторы и описания генерируютс�
 
 msgid "If"
 msgstr "Если"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "Если амортизация уже была рассчитана, следующий расчет выровняет периоды, в течение которых актив с линейным методом амортизации учитывался по старой себестоимости."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Если это не может ждать до следующего звонка, решение принимают руководители с обеих сторон."
@@ -13229,6 +13250,9 @@ msgstr "Ни одно условие не должно совпадать"
 msgid "No conversion is required"
 msgstr "Преобразование не требуется"
 
+msgid "No cost"
+msgstr "Нет себестоимости"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "Никакие расходы еще не зафиксированы против этого актива."
 
@@ -13948,6 +13972,9 @@ msgstr "Отключено — обработано вне синхрониза�
 
 msgid "Off — released revisions stay editable"
 msgstr "Отключено — выпущенные ревизии остаются редактируемыми"
+
+msgid "Offset Account"
+msgstr "Счет компенсации"
 
 msgid "ok"
 msgstr "хорошо"
@@ -16553,6 +16580,13 @@ msgstr "Записи"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Записи и проведенные операции отправляются и получаются от этого поставщика."
 
+msgid "Recost"
+msgstr "Переоценить"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "Переоценить {0}"
+
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
 
@@ -18709,6 +18743,12 @@ msgstr "Установить версию {0} как активную верси
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Установите местоположение по умолчанию в настройках профиля, чтобы выбрать единицу хранения."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Задает себестоимость единицы в запасах."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Задает себестоимость единицы в запасах. Разница проводится между запасами и счетом, с которого была потрачена себестоимость: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
+
 msgid "Settings"
 msgstr "Настройки"
 
@@ -19204,6 +19244,9 @@ msgstr "Некоторые записи не вернутся. Введите <0
 
 msgid "Some Shifts"
 msgstr "Некоторые смены"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
@@ -20327,9 +20370,6 @@ msgstr "Журнал доступного только для добавлени
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Актив переходит в свой класс в эксплуатации и начинает амортизироваться с даты ввода в эксплуатацию."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "Актив будет иметь нулевую стоимость. Установите себестоимость номенклатуры, затем капитализируйте ее."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Авторизация была отклонена в Onshape. Сохраните настройки интеграции и попробуйте еще раз."

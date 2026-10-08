@@ -1986,6 +1986,15 @@ msgstr "Linha de endereço 1"
 msgid "Address line2"
 msgstr "Linha de endereço 2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Adiciona custo que o ativo nunca teve registrado, como a mão de obra e os materiais de uma ordem de produção que não registrou nenhum custo."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Adiciona custo que o ativo nunca teve registrado, como a mão de obra e os materiais de uma ordem de produção que não registrou nenhum custo. O valor é registrado no ativo da conta de onde foi gasto: Lucros acumulados para um ano anterior, ou despesa de mão de obra ou de materiais deste ano."
+
+msgid "Adjust Cost"
+msgstr "Ajustar Custo"
+
 msgid "Adjustment"
 msgstr "Ajuste"
 
@@ -5166,6 +5175,9 @@ msgstr "Convertendo…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte a unidade de compra de um fornecedor para sua unidade de inventário em uma linha de pedido, recebimento ou fatura — compre em caixas de 12, estoque em unidades."
 
+msgid "Copied ID to clipboard"
+msgstr "ID copiado para a área de transferência"
+
 msgid "Copied link to clipboard"
 msgstr "Link copiado para a área de transferência"
 
@@ -8315,6 +8327,12 @@ msgstr "Insira a URL do Onshape, o ID do cliente e o segredo do cliente de seu a
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Insira a quantidade que esse movimento deveria ter sido. Um movimento oposto para a diferença é lançado ao lado do original, no período de tempo do original."
 
+msgid "Enter what it cost to make."
+msgstr "Digite o custo para fabricar."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Digite o custo para fabricar. O valor é registrado no ativo da conta de onde foi gasto: Lucros acumulados para um ano anterior, ou despesa de mão de obra ou de materiais deste ano."
+
 msgid "Entered At Receipt"
 msgstr "Inserido no Recebimento"
 
@@ -10273,6 +10291,9 @@ msgstr "IDs e descrições são gerados para matérias-primas."
 
 msgid "If"
 msgstr "Se"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "Se a depreciação já foi executada, a próxima execução compensa os meses em que um ativo Linear foi depreciado com o custo antigo."
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Se não puder esperar pela próxima chamada, os líderes de ambos os lados decidem."
@@ -13229,6 +13250,9 @@ msgstr "Nenhuma condição pode corresponder"
 msgid "No conversion is required"
 msgstr "Nenhuma conversão é necessária"
 
+msgid "No cost"
+msgstr "Sem custo"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "Nenhum custo foi registrado para este ativo ainda."
 
@@ -13948,6 +13972,9 @@ msgstr "Desativado — tratado fora da sincronização"
 
 msgid "Off — released revisions stay editable"
 msgstr "Desativado — revisões lançadas permanecem editáveis"
+
+msgid "Offset Account"
+msgstr "Conta de Compensação"
 
 msgid "ok"
 msgstr "ok"
@@ -16553,6 +16580,13 @@ msgstr "Registros"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Registros e diários contabilizados estão sendo enviados e recebidos deste provedor."
 
+msgid "Recost"
+msgstr "Recalcular Custo"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "Recalcular Custo de {0}"
+
 msgid "Recovery Period"
 msgstr "Registrar"
 
@@ -18709,6 +18743,12 @@ msgstr "Definir Versão {0} como Versão Ativa?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Defina sua localização padrão nas configurações de perfil para escolher uma unidade de armazenamento."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Define o valor pelo qual esta unidade é registrada no inventário."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Define o valor pelo qual esta unidade é registrada no inventário. A diferença é registrada entre o inventário e a conta de onde o custo foi gasto: Lucros acumulados para um ano anterior, ou despesa de mão de obra ou de materiais deste ano."
+
 msgid "Settings"
 msgstr "Configurações"
 
@@ -19204,6 +19244,9 @@ msgstr "Alguns registros não voltarão. Digite <0>{CONFIRM_WORD}</0> para conti
 
 msgid "Some Shifts"
 msgstr "Alguns Turnos"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Alguém que possa atualizar a contabilidade deve inserir o custo para fabricar antes que possa ser capitalizado."
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo deu errado. Tente novamente."
@@ -20327,9 +20370,6 @@ msgstr "O registro de adição ao final de cada movimento de estoque; a quantida
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "O ativo entra em sua classe de serviço e começa a ser depreciado a partir da data de entrada em serviço."
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "O ativo não teria valor. Defina um custo unitário no item e depois capitalizá-lo."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "A autorização foi recusada no Onshape. Salve as configurações de integração para tentar novamente."

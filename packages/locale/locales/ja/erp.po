@@ -1986,6 +1986,15 @@ msgstr "住所 行1"
 msgid "Address line2"
 msgstr "住所 行2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料など。"
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料などです。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
+
+msgid "Adjust Cost"
+msgstr "原価を調整"
+
 msgid "Adjustment"
 msgstr "調整"
 
@@ -5166,6 +5175,9 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
+msgid "Copied ID to clipboard"
+msgstr "IDをクリップボードにコピーしました"
+
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
 
@@ -8315,6 +8327,12 @@ msgstr "プライベートOAuthアプリケーションのOnshape URL、クラ�
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
 
+msgid "Enter what it cost to make."
+msgstr "製造にかかった原価を入力してください。"
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "製造にかかった原価を入力してください。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
+
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
 
@@ -10273,6 +10291,9 @@ msgstr "IDと説明は原材料に対して生成されます。"
 
 msgid "If"
 msgstr "条件"
+
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "減価償却が既に実行されている場合、次回の減価償却実行時に定額法資産が旧原価で計上していた月分が埋め合わされます。"
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "次の通話を待つことができない場合、両側のリーダーが決定します。"
@@ -13229,6 +13250,9 @@ msgstr "条件が一致しない"
 msgid "No conversion is required"
 msgstr "変換は不要です"
 
+msgid "No cost"
+msgstr "原価なし"
+
 msgid "No cost has been recorded against this asset yet."
 msgstr "このアセットに対してまだ原価が記録されていません。"
 
@@ -13948,6 +13972,9 @@ msgstr "オフ — 同期外で処理"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
+
+msgid "Offset Account"
+msgstr "相殺勘定"
 
 msgid "ok"
 msgstr "OK"
@@ -16553,6 +16580,13 @@ msgstr "記録"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "レコードと転記済仕訳がこのプロバイダーとの間で送受信されています。"
 
+msgid "Recost"
+msgstr "原価を再査定"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "{0}の原価を再査定"
+
 msgid "Recovery Period"
 msgstr "登録"
 
@@ -18709,6 +18743,12 @@ msgstr "バージョン {0} をアクティブバージョンとして設定し�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "この個が在庫で計上されている価値を設定します。"
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "この個が在庫で計上されている価値を設定します。差額は在庫と支出元の勘定との間で計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
+
 msgid "Settings"
 msgstr "設定"
 
@@ -19204,6 +19244,9 @@ msgstr "いくつかのレコードは戻りません。続行するには<0>{CO
 
 msgid "Some Shifts"
 msgstr "一部のシフト"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
@@ -20327,9 +20370,6 @@ msgstr "すべての在庫移動の追加専用レコード。手持在庫はそ
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "資産が使用中クラスに移動され、使用開始日から減価償却が開始されます。"
-
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "資産の価値がゼロになります。品目に単価を設定してから、資産化してください。"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshapeで認可が拒否されました。連携設定を保存して再度試してください。"

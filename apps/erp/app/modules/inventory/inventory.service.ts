@@ -1512,6 +1512,42 @@ export async function getShippingTermsList(
     .order("name", { ascending: true });
 }
 
+/** What each serial unit of an item on hand would leave stock at — the
+ *  `preview-serial-unit-costs` server function, valued the way a shipment or
+ *  a capitalization would relieve it. Keyed by tracked entity id. */
+export async function getSerialUnitCosts(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    itemId: string;
+    locationId?: string | null;
+  }
+) {
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("preview-serial-unit-costs", input);
+}
+
+/** Recost one serial unit in stock — the `recost-serial-unit` server
+ *  function: re-books the unit's layer at `unitCost` and posts the
+ *  difference against the offset account. Requires accounting update. */
+export async function recostSerialUnit(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: ServerFnInput<"recost-serial-unit"> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("recost-serial-unit", input);
+}
+
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
 // quantity, earliest expiry) with genealogy back to every parent. The issue
 // server fn owns the writes; see `buildBatchMergeRecords` (@carbon/utils).

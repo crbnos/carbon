@@ -48,9 +48,11 @@ const registry = {
     import("./preview-asset-capitalization"),
   "preview-revenue-recognition-run": () =>
     import("./preview-revenue-recognition-run"),
+  "preview-serial-unit-costs": () => import("./preview-serial-unit-costs"),
   "propose-revenue-recognition-run": () =>
     import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),
+  "recost-serial-unit": () => import("./recost-serial-unit"),
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
