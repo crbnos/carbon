@@ -14,13 +14,6 @@ The `notify` job sends one push for each notification it creates. The job uses t
 
 ## Overview diagram
 
-![Sequence of messages between the browser, the push worker, the ERP routes, the pushSubscription table, the notify job, the send-push job and the push service, in 3 phases: enable, deliver, and sign out then sign in.](./2026-10-08-web-push-notifications.svg)
-
-Read the picture from top to bottom, one band at a time. Band 2 is the delivery path, and it runs with no Carbon tab open.
-
-<details>
-<summary>The same sequence as Mermaid</summary>
-
 ```mermaid
 sequenceDiagram
     participant U as Browser
@@ -41,8 +34,6 @@ sequenceDiagram
     ERP->>DB: delete rows of the endpoint
     U->>ERP: next sign-in, the bell re-saves the row
 ```
-
-</details>
 
 ## Problem Statement
 
@@ -411,5 +402,4 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   2. `endBrowserPush` builds the service-role client inside its `try`, so sign-out still clears its cookies when the client cannot be built.
   3. A workflow push takes its author's subject as the title and their message as the body.
   4. `packages/database/AGENTS.md` documents the user-owned preference rows (`notificationPreference`, `userModulePreference`, `pushSubscription`) as an exception to the table template.
-- 2026-10-08: The overview now shows the picture from the `/explain` page (`2026-10-08-web-push-notifications.svg`, kept beside the spec). The Mermaid version of the same sequence sits under it in a collapsed block. If the spec moves to `implemented/`, move the `.svg` and the `.html` with it.
 
