@@ -270,12 +270,12 @@ const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
   } as const;
 
   const labels = {
-    healthy: t`healthy`,
-    unhealthy: t`unhealthy`,
-    inactive: t`inactive`,
+    healthy: t`Healthy`,
+    unhealthy: t`Unhealthy`,
+    inactive: t`Inactive`,
     // Connected, but the accounting sync switch is off — a new connection
     // still being set up, or one switched off since.
-    "sync-off": t`sync off`
+    "sync-off": t`Sync Off`
   } as const;
 
   const ping = colors[status] || "text-gray-400";

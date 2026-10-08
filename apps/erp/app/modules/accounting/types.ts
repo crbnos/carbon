@@ -518,8 +518,13 @@ import type {
   getFixedAssetClass,
   getFixedAssetClasses,
   getFixedAssetDisposal,
+  getFixedAssetRelatedItems,
   getFixedAssets
 } from "./accounting.service";
+
+export type FixedAssetRelatedItems = Awaited<
+  ReturnType<typeof getFixedAssetRelatedItems>
+>;
 
 export type FixedAssetClass = NonNullable<
   Awaited<ReturnType<typeof getFixedAssetClass>>["data"]

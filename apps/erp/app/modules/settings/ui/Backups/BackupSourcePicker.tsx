@@ -4,6 +4,7 @@
 
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { useControlField } from "@carbon/form";
+import { useRevalidator } from "@carbon/query";
 import {
   Command,
   CommandEmpty,
@@ -26,7 +27,6 @@ import {
   LuLoaderCircle,
   LuUpload
 } from "react-icons/lu";
-import { useRevalidator } from "react-router";
 import { UploadProgress } from "~/components/UploadProgress";
 import { uploadToSignedUrlWithProgress } from "~/utils/signed-upload";
 import { formatBackupDate, formatBackupName } from "./format";

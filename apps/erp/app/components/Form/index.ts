@@ -68,7 +68,6 @@ import Process from "./Process";
 import Processes from "./Processes";
 import Sequence from "./Sequence";
 import SequenceOrCustomId from "./SequenceOrCustomId";
-import Service from "./Service";
 import {
   ShelfLifeStartProcess,
   ShelfLifeStartTiming
@@ -164,7 +163,6 @@ export {
   SelectControlled,
   Sequence,
   SequenceOrCustomId,
-  Service,
   StorageUnit,
   StorageTypes,
   Shift,

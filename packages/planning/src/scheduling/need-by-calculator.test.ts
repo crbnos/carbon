@@ -166,39 +166,26 @@ it("operationLeadTime on the consumer pulls feeders earlier, in working days", (
   assertEquals(weekendCrossing.get("a"), "2026-01-08");
 });
 
-it("assemblyLeadTime applies only when the edge crosses make methods", () => {
-  // Subassembly op feeding the parent method: pulled back 3 working days.
-  const crossing = needBy(
+it("a subassembly is due when its parent op starts — only its own routing pulls it back", () => {
+  // weld -> bend (subassembly method) -> fit (parent method). The
+  // subassembly item's manufacturing lead time is NOT subtracted at the
+  // assembly edge: its operations are walked here, so it would count twice.
+  const ops = [
+    makeOp({ id: "weld", order: 1, jobMakeMethodId: "mm-sub" }),
+    makeOp({ id: "bend", order: 2, jobMakeMethodId: "mm-sub" }),
+    makeOp({ id: "fit", order: 1, jobMakeMethodId: "mm-root" })
+  ];
+  const result = needBy(
+    ops,
     [
-      makeOp({
-        id: "sub",
-        order: 1,
-        jobMakeMethodId: "mm-sub",
-        assemblyLeadTime: 3
-      }),
-      makeOp({ id: "root", order: 1, jobMakeMethodId: "mm-root" })
+      ["bend", "weld"],
+      ["fit", "bend"]
     ],
-    [["root", "sub"]],
     "2026-01-16"
   );
-  assertEquals(crossing.get("root"), "2026-01-16"); // start 2026-01-15
-  assertEquals(crossing.get("sub"), "2026-01-12"); // 01-15 minus 3 working days
-
-  // Same make method: the lead time is ignored (not an assembly boundary).
-  const sameMethod = needBy(
-    [
-      makeOp({
-        id: "sub",
-        order: 1,
-        jobMakeMethodId: "mm-root",
-        assemblyLeadTime: 3
-      }),
-      makeOp({ id: "root", order: 2, jobMakeMethodId: "mm-root" })
-    ],
-    [["root", "sub"]],
-    "2026-01-16"
-  );
-  assertEquals(sameMethod.get("sub"), "2026-01-15");
+  assertEquals(result.get("fit"), "2026-01-16"); // start 01-15
+  assertEquals(result.get("bend"), "2026-01-15"); // start 01-14
+  assertEquals(result.get("weld"), "2026-01-14");
 });
 
 it("With Previous: copies its partner's target dates; upstream chains off the copy", () => {

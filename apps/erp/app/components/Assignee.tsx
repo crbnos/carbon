@@ -46,6 +46,10 @@ export type AssigneeProps = Omit<
   /** Controlled picker state. Omit both to let the trigger open it. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Saves the choice through the caller instead of the generic assign
+   *  route — for a record whose assignment has rules of its own (a planning
+   *  action marks a hand-set assignee so MRP never re-resolves it). */
+  onAssign?: (selected: string) => void;
 };
 
 const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
@@ -61,6 +65,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       onChange,
       open: controlledOpen,
       onOpenChange,
+      onAssign,
       className,
       ...props
     },
@@ -79,6 +84,10 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
     const permissions = usePermissions();
 
     const handleChange = (value: string) => {
+      if (onAssign) {
+        onAssign(value);
+        return;
+      }
       const formData = new FormData();
       formData.append("id", id);
       formData.append("assignee", value);

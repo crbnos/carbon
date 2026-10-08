@@ -19,14 +19,14 @@ import { FixedAssetForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
 
   if (asset.error) {
     throw redirect(
@@ -67,6 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     residualValuePercent: d.residualValuePercent,
     assetLifetimeUsage: d.assetLifetimeUsage ?? null,
     locationId: d.locationId ?? null,
+    workCenterId: d.workCenterId ?? null,
     taxDepreciationMethod: d.taxDepreciationMethod ?? null,
     taxUsefulLifeMonths: d.taxUsefulLifeMonths ?? null,
     taxResidualValuePercent: d.taxResidualValuePercent ?? null,
@@ -107,6 +108,9 @@ export default function FixedAssetDetailsRoute() {
       ? Number(asset.assetLifetimeUsage)
       : undefined,
     locationId: asset.locationId ?? undefined,
+    // The action writes `workCenterId ?? null`: unseeded, saving the form
+    // cleared the asset's work center.
+    workCenterId: asset.workCenterId ?? undefined,
     taxDepreciationMethod: (asset as any).taxDepreciationMethod ?? undefined,
     taxUsefulLifeMonths: (asset as any).taxUsefulLifeMonths ?? undefined,
     taxResidualValuePercent:

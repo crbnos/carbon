@@ -22,12 +22,13 @@ import {
   useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
+  LuKeyRound,
   LuSettings2,
   LuTrash
 } from "react-icons/lu";
@@ -57,6 +58,7 @@ import { isSalesInvoiceLocked } from "../../invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
 import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
+import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 export default function SalesInvoiceExplorer() {
   const { defaults } = useUser();
@@ -80,6 +82,7 @@ export default function SalesInvoiceExplorer() {
     unitOfMeasureCode: "",
     taxPercent: 0,
     unitPrice: 0,
+    discountPercent: 0,
     shippingCost: 0,
     addOnCost: 0,
     nonTaxableAddOnCost: 0,
@@ -245,17 +248,19 @@ function SalesInvoiceLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const readableId = getItemReadableId(items, line.itemId) ?? "";
+  const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
         <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
         <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">
-            {getItemReadableId(items, line.itemId) ?? ""}
-          </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.description}
-          </span>
+          <span className="font-semibold line-clamp-1">{readableId}</span>
+          {description && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -279,9 +284,19 @@ function SalesInvoiceLineItem({
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
+  const rentalLineTypeLabel = useRentalLineTypeLabel();
+  const isRental = line.invoiceLineType === "Rental";
 
   const isSelected =
     location.pathname === path.to.salesInvoiceLine(invoiceId, line.id!);
+
+  const secondaryText =
+    line.invoiceLineType === "Fixed Asset"
+      ? (line as any).assetName || line.description
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
 
   return (
     <VStack spacing={0} className="border-b">
@@ -296,18 +311,26 @@ function SalesInvoiceLineItem({
           )}
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-            <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
+            {isRental ? (
+              <div className="bg-muted rounded-lg flex items-center justify-center flex-shrink-0 w-10 h-10 p-1.5">
+                <LuKeyRound className="w-5 h-5 text-muted-foreground" />
+              </div>
+            ) : (
+              <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
+            )}
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
-                {line.invoiceLineType === "Fixed Asset"
-                  ? (line as any).assetReadableId || "Fixed Asset"
-                  : (getItemReadableId(items, line.itemId) ?? "")}
+                {isRental
+                  ? rentalLineTypeLabel(line.rentalLineType)
+                  : line.invoiceLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : (getItemReadableId(items, line.itemId) ?? "")}
               </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.invoiceLineType === "Fixed Asset"
-                  ? (line as any).assetName || line.description
-                  : line.description}
-              </span>
+              {secondaryText && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {secondaryText}
+                </span>
+              )}
             </VStack>
           </HStack>
           <div className="absolute right-2">

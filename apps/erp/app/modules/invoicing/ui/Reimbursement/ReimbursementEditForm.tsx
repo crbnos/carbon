@@ -9,10 +9,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
-  Status,
-  VStack
+  Status
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -20,7 +18,6 @@ import { useCallback, useState } from "react";
 import { LuCheckCheck, LuSave } from "react-icons/lu";
 import { Link } from "react-router";
 import type { z } from "zod";
-import { EmployeeAvatar } from "~/components";
 import type { ClientDocumentLine } from "~/components/DocumentLineEditor";
 import { DocumentLineEditor } from "~/components/DocumentLineEditor";
 import {
@@ -41,17 +38,17 @@ import { reimbursementUpdateValidator as validator } from "../../invoicing.model
 
 type ReimbursementEditFormProps = {
   reimbursementId: string;
-  displayId: string;
-  employeeId: string;
   initialValues: z.infer<typeof reimbursementUpdateValidator>;
   initialLines: ClientDocumentLine[];
   dimensions: DimensionWithValues[];
 };
 
+/**
+ * Edit mode of a Draft reimbursement, laid flat under the page header (which
+ * carries the readable id and status; the employee is under Documents).
+ */
 const ReimbursementEditForm = ({
   reimbursementId,
-  displayId,
-  employeeId,
   initialValues,
   initialLines,
   dimensions
@@ -101,19 +98,48 @@ const ReimbursementEditForm = ({
       method="post"
       validator={validator}
       defaultValues={initialValues}
-      style={{ width: "100%" }}
+      className="flex flex-col gap-4 w-full pt-2 pb-4"
     >
-      <VStack spacing={4} className="w-full">
-        {/* The running total lives in the page header, so the user sees the
-            line sum against the document amount as they type. */}
-        <HStack className="w-full justify-between">
-          <HStack spacing={2}>
-            <Heading as="h1" size="h3">
-              {displayId}
-            </Heading>
-            <EmployeeAvatar employeeId={employeeId} />
-          </HStack>
-          <HStack spacing={2}>
+      {/* Each Hidden renders a wrapper; keep them out of the flex gap. */}
+      <div className="hidden">
+        <Hidden name="id" />
+        {!isForeignCurrency && <Hidden name="exchangeRate" />}
+      </div>
+      <div className="grid grid-cols-1 @xl:grid-cols-2 gap-x-8 gap-y-4 w-full">
+        <DatePicker name="reimbursementDate" label={t`Reimbursement Date`} />
+        <Currency name="currencyCode" label={t`Currency`} isReadOnly />
+        {isForeignCurrency && (
+          <ExchangeRate
+            name="exchangeRate"
+            value={initialValues.exchangeRate ?? 1}
+            exchangeRateUpdatedAt={undefined}
+            isReadOnly
+          />
+        )}
+        <NumberControlled
+          name="amount"
+          label={t`Amount`}
+          value={headerAmount}
+          onChange={(value) => setHeaderAmount(isNaN(value) ? 0 : value)}
+          formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
+          step={INPUT_STEP.money(currencyDecimals)}
+          minValue={0}
+        />
+        <Input name="reference" label={t`Reference`} />
+        <div className="@xl:col-span-2">
+          <TextArea name="notes" label={t`Notes`} />
+        </div>
+        <CustomFormFields table="reimbursement" />
+      </div>
+
+      <Card>
+        {/* The running total sits on the lines, so the user sees the line sum
+            against the document amount as they type. */}
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
+          <CardTitle>
+            <Trans>Line items</Trans>
+          </CardTitle>
+          <HStack spacing={2} className="shrink-0">
             <span className="text-sm text-muted-foreground tabular-nums">
               {currencyFormatter.format(totals.total)}
             </span>
@@ -123,96 +149,44 @@ const ReimbursementEditForm = ({
               <Status color="red">{t`Unbalanced`}</Status>
             )}
           </HStack>
-        </HStack>
+        </CardHeader>
+        <CardContent>
+          <DocumentLineEditor
+            initialLines={initialLines}
+            currencyCode={currencyCode}
+            availableDimensions={dimensions}
+            headerAmount={headerAmount}
+            onTotalChange={onTotalChange}
+          />
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Details</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Hidden name="id" />
-            {!isForeignCurrency && <Hidden name="exchangeRate" />}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 w-full">
-              <DatePicker
-                name="reimbursementDate"
-                label={t`Reimbursement Date`}
-              />
-              <Currency name="currencyCode" label={t`Currency`} isReadOnly />
-              {isForeignCurrency && (
-                <ExchangeRate
-                  name="exchangeRate"
-                  value={initialValues.exchangeRate ?? 1}
-                  exchangeRateUpdatedAt={undefined}
-                  isReadOnly
-                />
-              )}
-              <NumberControlled
-                name="amount"
-                label={t`Amount`}
-                value={headerAmount}
-                onChange={(value) => setHeaderAmount(isNaN(value) ? 0 : value)}
-                formatOptions={INPUT_FORMAT.money(
-                  currencyCode,
-                  currencyDecimals
-                )}
-                step={INPUT_STEP.money(currencyDecimals)}
-                minValue={0}
-              />
-              <Input name="reference" label={t`Reference`} />
-              <div className="md:col-span-2">
-                <TextArea name="notes" label={t`Notes`} />
-              </div>
-              <CustomFormFields table="reimbursement" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Line items</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DocumentLineEditor
-              initialLines={initialLines}
-              currencyCode={currencyCode}
-              availableDimensions={dimensions}
-              headerAmount={headerAmount}
-              onTotalChange={onTotalChange}
-            />
-          </CardContent>
-        </Card>
-
-        <HStack className="w-full justify-end">
-          <Button variant="secondary" asChild>
-            <Link to={path.to.reimbursement(reimbursementId)}>
-              <Trans>Cancel</Trans>
-            </Link>
-          </Button>
-          <Button
-            type="submit"
-            name="intent"
-            value="save"
-            leftIcon={<LuSave />}
-            variant="secondary"
-          >
-            <Trans>Save</Trans>
-          </Button>
-          <Button
-            type="submit"
-            name="intent"
-            value="save-and-post"
-            leftIcon={<LuCheckCheck />}
-            variant="primary"
-            isDisabled={!totals.isBalanced}
-          >
-            <Trans>Save and post</Trans>
-          </Button>
-        </HStack>
-      </VStack>
+      <HStack className="w-full justify-end">
+        <Button variant="secondary" asChild>
+          <Link to={path.to.reimbursement(reimbursementId)}>
+            <Trans>Cancel</Trans>
+          </Link>
+        </Button>
+        <Button
+          type="submit"
+          name="intent"
+          value="save"
+          leftIcon={<LuSave />}
+          variant="secondary"
+        >
+          <Trans>Save</Trans>
+        </Button>
+        <Button
+          type="submit"
+          name="intent"
+          value="save-and-post"
+          leftIcon={<LuCheckCheck />}
+          variant="primary"
+          isDisabled={!totals.isBalanced}
+        >
+          <Trans>Save and post</Trans>
+        </Button>
+      </HStack>
     </ValidatedForm>
   );
 };

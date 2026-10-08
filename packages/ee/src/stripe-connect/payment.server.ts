@@ -19,7 +19,7 @@ import {
   getConnectInvoicePaymentDetails,
   toStripeAmount
 } from "@carbon/stripe/connect.server";
-import { datetime } from "@carbon/utils";
+import { datetime, isUniqueViolation } from "@carbon/utils";
 import { fromAbsolute, toCalendarDate } from "@internationalized/date";
 import { PostgresDriver, sql } from "kysely";
 import { createMappingService } from "../accounting/index";
@@ -446,7 +446,7 @@ export async function recordStripeConnectPayment({
       );
     } catch (err) {
       await serviceRole.from("payment").delete().eq("id", paymentId);
-      if ((err as { code?: string }).code === "23505") {
+      if (isUniqueViolation(err)) {
         return {
           status: "skipped",
           reason: `Stripe invoice ${stripeInvoiceId} was recorded concurrently by another delivery`

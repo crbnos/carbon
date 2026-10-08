@@ -225,8 +225,6 @@ const Items = (props: ItemsSelectProps) => {
           type="modal"
           onClose={handleCreateClose}
           initialValues={{
-            id: "",
-            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Non-Inventory",

@@ -44,7 +44,7 @@ If the request is ambiguous, ask the user at most 3–4 focused questions coveri
 Run all of these before designing anything:
 
 ```bash
-ls .ai/specs/ .ai/specs/implemented/ | grep -i {keyword}   # prior art — never duplicate a spec
+ls .ai/specs/ .ai/specs/implemented/ .ai/specs/archived/ | grep -i {keyword}   # prior art — never duplicate a spec; archived = superseded, cite the replacement
 cat .ai/lessons.md                                          # known pitfalls
 cat .ai/docs/module-conventions.md                          # module layout rules
 cat apps/erp/app/modules/{module}/AGENTS.md                 # for every module touched

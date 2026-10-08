@@ -193,7 +193,6 @@ export default function ReceiptDetailsRoute() {
         // @ts-expect-error
         initialValues={initialValues}
         status={routeData.receipt.status}
-        receiptLines={routeData.receiptLines}
       />
 
       <ReceiptLines />

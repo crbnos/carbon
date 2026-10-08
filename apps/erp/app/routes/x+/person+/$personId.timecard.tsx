@@ -14,6 +14,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DateTimePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -21,7 +22,6 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Input,
   MENU_ITEM_SHORTCUTS,
   Select,
   SelectContent,
@@ -35,8 +35,19 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { datetime, redirect } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import {
+  datetime,
+  fromLocalDateTime,
+  redirect,
+  toLocalDateTime
+} from "@carbon/utils";
+import type { CalendarDateTime } from "@internationalized/date";
+import {
+  getDayOfWeek,
+  parseDate,
+  Time,
+  toCalendarDateTime
+} from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -99,17 +110,6 @@ function formatDay(dateStr: string, locale: string) {
     month: "short",
     day: "numeric"
   });
-}
-
-/** Format a UTC date string to a local datetime-local input value */
-function toLocalDatetimeInput(dateStr: string) {
-  const d = new Date(dateStr);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -308,11 +308,9 @@ function getShiftTimesForDate(
     friday: boolean;
     saturday: boolean;
   } | null
-): { clockIn: string; clockOut: string } | null {
+): { clockIn: CalendarDateTime; clockOut: CalendarDateTime } | null {
   if (!shift) return null;
-  // Parse YYYY-MM-DD as local date (not UTC)
-  const [year, month, day2] = dateStr.split("-").map(Number);
-  const date = new Date(year, month - 1, day2);
+  const date = parseDate(dateStr);
   const dayNames = [
     "sunday",
     "monday",
@@ -322,23 +320,17 @@ function getShiftTimesForDate(
     "friday",
     "saturday"
   ] as const;
-  const day = dayNames[date.getDay()];
+  const day = dayNames[getDayOfWeek(date, "en-US")];
   if (!shift[day]) return null;
 
   const [startH, startM] = shift.startTime.split(":").map(Number);
   const [endH, endM] = shift.endTime.split(":").map(Number);
 
-  const clockIn = new Date(date);
-  clockIn.setHours(startH, startM, 0, 0);
+  const clockIn = toCalendarDateTime(date, new Time(startH, startM));
+  let clockOut = toCalendarDateTime(date, new Time(endH, endM));
+  if (clockOut.compare(clockIn) <= 0) clockOut = clockOut.add({ days: 1 });
 
-  const clockOut = new Date(date);
-  clockOut.setHours(endH, endM, 0, 0);
-  if (clockOut <= clockIn) clockOut.setDate(clockOut.getDate() + 1);
-
-  return {
-    clockIn: toLocalDatetimeInput(clockIn.toISOString()),
-    clockOut: toLocalDatetimeInput(clockOut.toISOString())
-  };
+  return { clockIn, clockOut };
 }
 
 export default function PersonTimecardRoute() {
@@ -357,14 +349,16 @@ export default function PersonTimecardRoute() {
     }
   });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editClockIn, setEditClockIn] = useState("");
-  const [editClockOut, setEditClockOut] = useState("");
+  const [editClockIn, setEditClockIn] = useState<CalendarDateTime | null>(null);
+  const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(
+    null
+  );
   const [editNote, setEditNote] = useState("");
   const [, setTick] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addDate, setAddDate] = useState("");
-  const [addClockIn, setAddClockIn] = useState("");
-  const [addClockOut, setAddClockOut] = useState("");
+  const [addClockIn, setAddClockIn] = useState<CalendarDateTime | null>(null);
+  const [addClockOut, setAddClockOut] = useState<CalendarDateTime | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<{
     id: string;
     clockIn: string;
@@ -387,12 +381,9 @@ export default function PersonTimecardRoute() {
       setAddClockOut(shiftTimes.clockOut);
     } else {
       // No shift for this day, default 9am-5pm
-      const [y, m, dy] = addDate.split("-").map(Number);
-      const d = new Date(y, m - 1, dy);
-      d.setHours(9, 0, 0, 0);
-      setAddClockIn(toLocalDatetimeInput(d.toISOString()));
-      d.setHours(17, 0, 0, 0);
-      setAddClockOut(toLocalDatetimeInput(d.toISOString()));
+      const date = parseDate(addDate);
+      setAddClockIn(toCalendarDateTime(date, new Time(9)));
+      setAddClockOut(toCalendarDateTime(date, new Time(17)));
     }
   }, [addDate, shift]);
 
@@ -403,8 +394,8 @@ export default function PersonTimecardRoute() {
     note: string | null;
   }) {
     setEditingId(entry.id);
-    setEditClockIn(toLocalDatetimeInput(entry.clockIn));
-    setEditClockOut(entry.clockOut ? toLocalDatetimeInput(entry.clockOut) : "");
+    setEditClockIn(toLocalDateTime(entry.clockIn));
+    setEditClockOut(entry.clockOut ? toLocalDateTime(entry.clockOut) : null);
     setEditNote(entry.note ?? "");
   }
 
@@ -422,8 +413,8 @@ export default function PersonTimecardRoute() {
               onClick={() => {
                 setShowAddForm(!showAddForm);
                 setAddDate("");
-                setAddClockIn("");
-                setAddClockOut("");
+                setAddClockIn(null);
+                setAddClockOut(null);
               }}
             >
               <Trans>Add Entry</Trans>
@@ -559,19 +550,23 @@ export default function PersonTimecardRoute() {
                   </Select>
                 </Td>
                 <Td>
-                  <Input
-                    type="datetime-local"
+                  <DateTimePicker
+                    aria-label={t`Clock In`}
+                    size="sm"
                     value={addClockIn}
-                    onChange={(e) => setAddClockIn(e.target.value)}
-                    className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                    onChange={(value) =>
+                      setAddClockIn(value ? toCalendarDateTime(value) : null)
+                    }
                   />
                 </Td>
                 <Td>
-                  <Input
-                    type="datetime-local"
+                  <DateTimePicker
+                    aria-label={t`Clock Out`}
+                    size="sm"
                     value={addClockOut}
-                    onChange={(e) => setAddClockOut(e.target.value)}
-                    className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                    onChange={(value) =>
+                      setAddClockOut(value ? toCalendarDateTime(value) : null)
+                    }
                   />
                 </Td>
                 <Td className="text-muted-foreground text-center">—</Td>
@@ -582,25 +577,20 @@ export default function PersonTimecardRoute() {
                       <input
                         type="hidden"
                         name="clockIn"
-                        value={
-                          isNaN(new Date(addClockIn).getTime())
-                            ? ""
-                            : new Date(addClockIn).toISOString()
-                        }
+                        value={addClockIn ? fromLocalDateTime(addClockIn) : ""}
                       />
-                      {addClockOut &&
-                        !isNaN(new Date(addClockOut).getTime()) && (
-                          <input
-                            type="hidden"
-                            name="clockOut"
-                            value={new Date(addClockOut).toISOString()}
-                          />
-                        )}
+                      {addClockOut && (
+                        <input
+                          type="hidden"
+                          name="clockOut"
+                          value={fromLocalDateTime(addClockOut)}
+                        />
+                      )}
                       <Button
                         isLoading={fetcher.state !== "idle"}
                         variant="secondary"
                         type="submit"
-                        disabled={isNaN(new Date(addClockIn).getTime())}
+                        disabled={!addClockIn}
                       >
                         <Trans>Save</Trans>
                       </Button>
@@ -632,19 +622,27 @@ export default function PersonTimecardRoute() {
                       {formatDay(entry.clockIn, locale)}
                     </Td>
                     <Td>
-                      <Input
-                        type="datetime-local"
+                      <DateTimePicker
+                        aria-label={t`Clock In`}
+                        size="sm"
                         value={editClockIn}
-                        onChange={(e) => setEditClockIn(e.target.value)}
-                        className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                        onChange={(value) =>
+                          setEditClockIn(
+                            value ? toCalendarDateTime(value) : null
+                          )
+                        }
                       />
                     </Td>
                     <Td>
-                      <Input
-                        type="datetime-local"
+                      <DateTimePicker
+                        aria-label={t`Clock Out`}
+                        size="sm"
                         value={editClockOut}
-                        onChange={(e) => setEditClockOut(e.target.value)}
-                        className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                        onChange={(value) =>
+                          setEditClockOut(
+                            value ? toCalendarDateTime(value) : null
+                          )
+                        }
                       />
                     </Td>
                     <Td className="text-muted-foreground text-center">—</Td>
@@ -665,25 +663,22 @@ export default function PersonTimecardRoute() {
                             type="hidden"
                             name="clockIn"
                             value={
-                              isNaN(new Date(editClockIn).getTime())
-                                ? ""
-                                : new Date(editClockIn).toISOString()
+                              editClockIn ? fromLocalDateTime(editClockIn) : ""
                             }
                           />
-                          {editClockOut &&
-                            !isNaN(new Date(editClockOut).getTime()) && (
-                              <input
-                                type="hidden"
-                                name="clockOut"
-                                value={new Date(editClockOut).toISOString()}
-                              />
-                            )}
+                          {editClockOut && (
+                            <input
+                              type="hidden"
+                              name="clockOut"
+                              value={fromLocalDateTime(editClockOut)}
+                            />
+                          )}
                           <input type="hidden" name="note" value={editNote} />
                           <Button
                             isLoading={fetcher.state !== "idle"}
                             variant="secondary"
                             type="submit"
-                            disabled={isNaN(new Date(editClockIn).getTime())}
+                            disabled={!editClockIn}
                           >
                             <Trans>Save</Trans>
                           </Button>

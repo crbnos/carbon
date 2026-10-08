@@ -21,7 +21,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
   LuFilePen,
   LuFilePlus,
@@ -61,6 +61,9 @@ type AuditLogDrawerProps = {
   planRestricted?: boolean;
 };
 
+/** How long after a change its audit rows typically take to be written. */
+const AUDIT_SETTLE_MS = 4000;
+
 type AuditLogFetcherData = {
   entries: AuditLogEntry[];
 };
@@ -86,71 +89,127 @@ const operationLabels: Record<
   }
 };
 
-const AuditLogDrawer = memo(
-  ({
-    isOpen,
-    onClose,
+type AuditLogFeedProps = {
+  entityType: string;
+  entityId: string;
+  companyId: string;
+  /**
+   * Optional: scope the view to a single raw row rather than the full entity.
+   * When set, the feed filters audit entries to `recordId = recordId`.
+   */
+  recordId?: string;
+  /** When true, shows an upgrade prompt instead of fetching audit data */
+  planRestricted?: boolean;
+  /** The feed loads only while active (an open drawer, a selected tab). */
+  isActive: boolean;
+  /**
+   * Changes whenever the entity may have new history (e.g. its `updatedAt`),
+   * so an always-mounted feed refetches after the record is saved.
+   */
+  refreshKey?: string | null;
+};
+
+/**
+ * The audit history of one entity: the upgrade prompt, the "not enabled"
+ * prompt, loading, empty, or the entry cards. Rendered by the drawer and by
+ * the document side panel's Activity tab.
+ */
+export function AuditLogFeed({
+  entityType,
+  entityId,
+  companyId,
+  recordId,
+  planRestricted = false,
+  isActive,
+  refreshKey
+}: AuditLogFeedProps) {
+  const fetcher = useFetcher<AuditLogFetcherData>();
+  // Held in a ref so a re-render (a new fetcher object) never re-runs the
+  // load effect and cancels its delayed second look.
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
+
+  const entityKey = `${entityType}:${entityId}:${companyId}:${recordId ?? ""}`;
+  const loadKey = `${entityKey}:${refreshKey ?? ""}`;
+  const lastLoadedRef = useRef<string | null>(null);
+  const requestedEntityRef = useRef<string | null>(null);
+  // The entity the fetched entries belong to, so another record's history is
+  // never shown while this one's loads.
+  const [dataEntity, setDataEntity] = useState<string | null>(null);
+
+  const rootRouteData = useRouteData<{ auditLogEnabled: Promise<boolean> }>(
+    path.to.authenticatedRoot
+  );
+  const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
+  const { can } = usePermissions();
+  // /api/audit-log requires settings view and answers anyone else with a
+  // redirect, which a fetcher follows — off the page the user is on.
+  const canViewHistory = can("view", "settings");
+
+  useEffect(() => {
+    if (
+      planRestricted ||
+      !auditLogEnabled ||
+      !canViewHistory ||
+      !isActive ||
+      !entityType ||
+      !entityId ||
+      lastLoadedRef.current === loadKey
+    ) {
+      return;
+    }
+    lastLoadedRef.current = loadKey;
+    const params = new URLSearchParams({ entityType, entityId, companyId });
+    if (recordId) params.set("recordId", recordId);
+    const load = () => {
+      requestedEntityRef.current = entityKey;
+      fetcherRef.current.load(`/api/audit-log?${params.toString()}`);
+    };
+    load();
+    // Audit rows are written by the event queue a few seconds after the
+    // change itself, so look again once a save's entries have landed.
+    const settle = setTimeout(load, AUDIT_SETTLE_MS);
+    return () => clearTimeout(settle);
+  }, [
+    planRestricted,
+    auditLogEnabled,
+    canViewHistory,
+    isActive,
     entityType,
     entityId,
     companyId,
-    title,
     recordId,
-    planRestricted = false
-  }: AuditLogDrawerProps) => {
-    const fetcher = useFetcher<AuditLogFetcherData>();
-    const lastLoadedRef = useRef<string | null>(null);
-    const loadKey = `${entityType}:${entityId}:${companyId}:${recordId ?? ""}`;
+    entityKey,
+    loadKey
+  ]);
 
-    const rootRouteData = useRouteData<{ auditLogEnabled: Promise<boolean> }>(
-      path.to.authenticatedRoot
+  // Reset tracking when the feed goes inactive so it re-fetches next time
+  useEffect(() => {
+    if (!isActive) {
+      lastLoadedRef.current = null;
+    }
+  }, [isActive]);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      setDataEntity(requestedEntityRef.current);
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  const hasCurrentData = Boolean(fetcher.data) && dataEntity === entityKey;
+  const entries = hasCurrentData ? (fetcher.data?.entries ?? []) : [];
+  const isLoading = !hasCurrentData;
+
+  if (!canViewHistory) {
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        <Trans>You don't have permission to view history.</Trans>
+      </p>
     );
-    const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
-    const { can } = usePermissions();
+  }
 
-    // Load audit log data when drawer opens or entity changes
-    useEffect(() => {
-      if (
-        planRestricted ||
-        !auditLogEnabled ||
-        !isOpen ||
-        !entityType ||
-        !entityId ||
-        fetcher.state !== "idle" ||
-        lastLoadedRef.current === loadKey
-      ) {
-        return;
-      }
-      lastLoadedRef.current = loadKey;
-      const params = new URLSearchParams({
-        entityType,
-        entityId,
-        companyId
-      });
-      if (recordId) params.set("recordId", recordId);
-      fetcher.load(`/api/audit-log?${params.toString()}`);
-    }, [
-      isOpen,
-      entityType,
-      entityId,
-      companyId,
-      recordId,
-      loadKey,
-      fetcher,
-      planRestricted,
-      auditLogEnabled
-    ]);
-
-    // Reset tracking when drawer closes so it re-fetches on next open
-    useEffect(() => {
-      if (!isOpen) {
-        lastLoadedRef.current = null;
-      }
-    }, [isOpen]);
-
-    const entries = fetcher.data?.entries ?? [];
-    const isLoading = fetcher.state === "loading";
-
-    const drawerBody = planRestricted ? (
+  if (planRestricted) {
+    return (
       <UpgradeOverlayInline>
         <UpgradeOverlayIcon>
           <LuHistory className="size-6 text-muted-foreground" />
@@ -169,7 +228,11 @@ const AuditLogDrawer = memo(
           <UpgradeOverlayUpgradeButton />
         </UpgradeOverlayActions>
       </UpgradeOverlayInline>
-    ) : !auditLogEnabled ? (
+    );
+  }
+
+  if (!auditLogEnabled) {
+    return (
       <div className="flex flex-col items-center justify-start flex-1 w-full pt-[15dvh] text-center gap-4 px-4 h-full">
         <div className="rounded-full bg-muted p-3">
           <LuHistory className="size-6 text-muted-foreground" />
@@ -199,21 +262,40 @@ const AuditLogDrawer = memo(
           </span>
         )}
       </div>
-    ) : isLoading ? (
+    );
+  }
+
+  if (isLoading) {
+    return (
       <VStack spacing={3}>
         <Skeleton className="w-full h-[151px]" />
         <Skeleton className="w-full h-[151px]" />
-      </VStack>
-    ) : entries.length === 0 ? (
-      <Empty />
-    ) : (
-      <VStack spacing={3}>
-        {entries.map((entry) => (
-          <AuditLogEntryCard key={entry.id} entry={entry} />
-        ))}
       </VStack>
     );
+  }
 
+  if (entries.length === 0) return <Empty className="py-12" />;
+
+  return (
+    <VStack spacing={3}>
+      {entries.map((entry) => (
+        <AuditLogEntryCard key={entry.id} entry={entry} />
+      ))}
+    </VStack>
+  );
+}
+
+const AuditLogDrawer = memo(
+  ({
+    isOpen,
+    onClose,
+    entityType,
+    entityId,
+    companyId,
+    title,
+    recordId,
+    planRestricted = false
+  }: AuditLogDrawerProps) => {
     return (
       <Drawer
         open={isOpen}
@@ -228,7 +310,16 @@ const AuditLogDrawer = memo(
               {title ?? <Trans>History</Trans>}
             </DrawerTitle>
           </DrawerHeader>
-          <DrawerBody>{drawerBody}</DrawerBody>
+          <DrawerBody>
+            <AuditLogFeed
+              entityType={entityType}
+              entityId={entityId}
+              companyId={companyId}
+              recordId={recordId}
+              planRestricted={planRestricted}
+              isActive={isOpen}
+            />
+          </DrawerBody>
         </DrawerContent>
       </Drawer>
     );
@@ -421,7 +512,7 @@ function ChangePill({
   }
   const text = hasDisplay ? formatValue(display) : formatValue(value);
   const className = cn(
-    "px-2 py-0.5 rounded",
+    "px-2 py-0.5 rounded min-w-0 break-all",
     !hasDisplay && "font-mono",
     variant === "old"
       ? "bg-red-500/10 text-red-500"
@@ -453,7 +544,10 @@ function ChangeLine({
 }) {
   return (
     <div
-      className={cn("flex items-center gap-2 text-sm py-1", indent && "pl-4")}
+      className={cn(
+        "flex flex-wrap items-center gap-2 text-sm py-1",
+        indent && "pl-4"
+      )}
     >
       <span className="text-muted-foreground font-medium min-w-[120px]">
         {label}

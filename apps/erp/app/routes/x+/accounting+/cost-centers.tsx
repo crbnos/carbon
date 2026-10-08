@@ -8,20 +8,18 @@ import { flash } from "@carbon/auth/session.server";
 import { getApprovalRulesForApprover } from "@carbon/ee/approvals.server";
 import {
   HStack,
+  RecordOutlet,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { SettingsPageHeading } from "~/components/SettingsPage";
 import { getCostCentersTree } from "~/modules/accounting";
@@ -36,9 +34,6 @@ export const handle: Handle = {
   breadcrumb: msg`Cost Centers`,
   to: path.to.costCenters
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -130,7 +125,7 @@ export default function Route() {
         />
       </TabsContent>
 
-      <Outlet />
+      <RecordOutlet />
     </Tabs>
   );
 }

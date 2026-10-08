@@ -26,7 +26,7 @@ import { satelliteAssembly } from "./assembly.ts";
 //               HARNESS- / PCB-EPS- / PCB-ADCS-
 //   Buy Parts:  BAT- / RW- / ST- / TXRX- / THR- / TANK- / VLV- / FST- / BRG- /
 //               PCB-BARE-
-//   MAT- = Materials, TL- = Tools, SVC- = Services, CN- = Consumables
+//   MAT- = Materials, TL- = Tools, CN- = Consumables; services are keyed by name
 // PCB- spans both: the bare board is bought, the populated assemblies are made.
 // ---------------------------------------------------------------------------
 
@@ -248,12 +248,34 @@ export const TOOLS: ItemSpec[] = [
 
 export const SERVICES: ItemSpec[] = [
   {
-    readableId: "SVC-TVT",
-    name: "Thermal Vacuum Test (external)",
+    // A service's readableId is its name.
+    readableId: "Thermal Vacuum Test",
+    name: "Thermal Vacuum Test",
     type: "Service",
+    thumbnail: "SVC-TVT",
     replenishment: "Buy",
     standardCost: 8500,
     leadTime: 30
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Ground Segment Integration",
+    name: "Ground Segment Integration",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Commissioning of a customer ground station against the bus telemetry and command interface.",
+    standardCost: 32000
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Mission Operations Support",
+    name: "Mission Operations Support",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Flight dynamics, anomaly response and pass planning for a flying bus.",
+    standardCost: 9500
   }
 ];
 

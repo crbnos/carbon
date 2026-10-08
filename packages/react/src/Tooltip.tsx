@@ -162,10 +162,15 @@ const TooltipTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
 );
 TooltipTrigger.displayName = "TooltipTrigger";
 
+/**
+ * `anchor` positions the popup against a different element than the trigger.
+ * Use it when one tooltip serves many small hover targets inside its trigger
+ * (a strip of bars): the content follows the hovered target, not the strip.
+ */
 type ContentProps = TooltipPrimitive.Popup.Props &
   Pick<
     TooltipPrimitive.Positioner.Props,
-    "side" | "sideOffset" | "align" | "alignOffset"
+    "side" | "sideOffset" | "align" | "alignOffset" | "anchor"
   > & {
     /**
      * Portal to `document.body` and paint above other overlays. Opt in only for a
@@ -206,6 +211,7 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
       sideOffset = 4,
       align = "center",
       alignOffset = 0,
+      anchor,
       elevated = false,
       ...props
     },
@@ -229,6 +235,7 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
           sideOffset={sideOffset}
           align={align}
           alignOffset={alignOffset}
+          anchor={anchor}
           className={elevated ? "z-[9999]" : "z-50"}
         >
           <TooltipPrimitive.Popup

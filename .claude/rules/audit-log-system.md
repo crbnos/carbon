@@ -93,8 +93,19 @@ Entity keys are **not** all bare table names — notably `salesQuote` (label "Qu
 `item`, `salesOrder`, `purchaseOrder`, `salesInvoice`, `purchaseInvoice`, `employee`, `nonConformance`, `gauge`,
 `shipment`, `receipt`, `warehouseTransfer`, `stockTransfer`, `inventoryCount` (root `inventoryCount` +
 child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
-`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`. (~27 entities; the
-old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension table of `item`.)
+`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`, `accountingPeriod`,
+`rentalAgreement`, and the posting documents added for the `DocumentPage` Activity tab — `journalEntry`
+(`journal` + `journalLine`), `payment` / `memo` (each with `invoiceSettlement` as a child, keyed by
+`paymentId` / `memoId`), `reimbursement` (+ `reimbursementLine`), `pickingList` (+ `pickingListLine`),
+`depreciationRun` (+ `depreciationRunLine`), `revenueRecognitionRun` (+ `revenueRecognitionRunLine`);
+each table queues its changes through `events: true` in `packages/database/src/event-system/attachments.ts`
+(shipped by `20261006221901_posting-documents-audit-events.sql`). An audited table needs that entry.
+(~36 entities; the old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension
+table of `item`.) Every table logs INSERT, UPDATE and DELETE except an extension table's INSERT
+(created 1:1 with its parent). A child's `entityIdColumn` may be a list: the row is logged once per
+distinct non-null parent it names (`invoiceSettlement` under the payment that made it, the one a memo
+was applied through, and the prior credit it draws on). `journalLine` sets `createFields` (account
+snapshotted to number + name), so an added line shows what it is.
 
 Other config knobs:
 - `tableLabels` — friendly per-`tableName` labels for diff provenance (fallback: camelCase → Title Case).
@@ -150,7 +161,10 @@ than from config.
   Unknown prefixes render as plain text.
 - `.../AuditLog/AuditLogSettings.tsx` — enable/disable + archive download list.
 - `apps/erp/app/components/AuditLog/` — per-entity history `AuditLogDrawer.tsx` + `useAuditLog.tsx` hook,
-  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. `AuditLogDrawer.tsx` also exports
+  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. The body is `AuditLogFeed` (same
+  file), also rendered inline as the Activity tab of `components/DocumentPage/DocumentSidebar.tsx`. The
+  API requires `view: settings` and answers anyone else with a redirect — which a fetcher FOLLOWS — so the
+  feed never fetches without that permission and the sidebar hides the tab. `AuditLogDrawer.tsx` also exports
   `ChangeRow`, the snapshot-aware diff-row renderer (FK name from `diff[col].snapshot`, raw id on hover)
   used by BOTH the drawer and the global `AuditLogTable` expanded rows — don't render `change.old/new`
   raw or FKs regress to bare ids.

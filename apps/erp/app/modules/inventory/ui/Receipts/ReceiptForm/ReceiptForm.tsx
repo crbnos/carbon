@@ -3,38 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DefaultDisabledSubmit, ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  HStack,
-  MENU_ITEM_SHORTCUTS,
-  useDisclosure,
-  VStack
-} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-  LuCheckCheck,
-  LuChevronDown,
-  LuClipboardCheck,
-  LuCreditCard,
-  LuShoppingCart,
-  LuTicketX,
-  LuTrash,
-  LuTruck,
-  LuUndo2
-} from "react-icons/lu";
-import { Link, useNavigation, useParams } from "react-router";
 import type { z } from "zod";
-import { DocumentHeader, PrintButton } from "~/components";
-import { useAuditLog } from "~/components/AuditLog";
 import {
   Combobox,
   CustomFormFields,
@@ -43,57 +13,32 @@ import {
   Location,
   Select
 } from "~/components/Form";
-import {
-  RecordAction,
-  RecordHeroTarget
-} from "~/components/Layout/RecordHeader";
-import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import type {
-  ItemTracking,
-  Receipt,
-  ReceiptLine,
   ReceiptSourceDocument,
   receiptStatusType
 } from "~/modules/inventory";
 import {
-  ReceiptPostModal,
-  ReceiptStatus,
-  ReceiptVoidModal,
   receiptSourceDocumentType,
   receiptValidator
 } from "~/modules/inventory";
-import { InspectionStatus } from "~/modules/quality/ui/Inspections/InspectionStatus";
 import { path } from "~/utils/path";
 import useReceiptForm from "./useReceiptForm";
 
 type ReceiptFormProps = {
   initialValues: z.infer<typeof receiptValidator>;
   status: (typeof receiptStatusType)[number];
-  receiptLines: ReceiptLine[];
 };
 
 const formId = "receipt-form";
 
-const ReceiptForm = ({
-  initialValues,
-  status,
-  receiptLines
-}: ReceiptFormProps) => {
-  const { receiptId } = useParams();
-  if (!receiptId) throw new Error("receiptId not found");
-
-  const routeData = useRouteData<{
-    receipt: Receipt;
-    receiptLineTracking: ItemTracking[];
-    receiptInspections: ReceiptInspection[];
-    fixedAssetLines: { id: string; received: boolean }[];
-  }>(path.to.receipt(receiptId));
-
-  const { company } = useUser();
+/**
+ * The receipt's own fields, laid flat under its header. Posting locks where
+ * it was received and what it receives.
+ */
+const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const navigation = useNavigation();
   const {
     locationId,
     sourceDocuments,
@@ -102,368 +47,81 @@ const ReceiptForm = ({
     setSourceDocument
   } = useReceiptForm({ status, initialValues });
 
-  const postModal = useDisclosure();
-  const voidModal = useDisclosure();
-  const deleteDisclosure = useDisclosure();
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "receipt",
-    entityId: receiptId,
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
   const isPosted = status === "Posted";
-  const isVoided = status === "Voided";
-  const isInvoiced = routeData?.receipt?.invoiced === true;
   const isEditing = initialValues.id !== undefined;
 
-  const hasReceivableFaLines = (routeData?.fixedAssetLines ?? []).some(
-    (line) => line.received
-  );
-  const canPost =
-    (receiptLines.length > 0 &&
-      receiptLines.some((line) => (line.receivedQuantity ?? 0) !== 0)) ||
-    hasReceivableFaLines;
-
-  const receiptLineTracking = routeData?.receiptLineTracking ?? [];
-
-  const canInvoice =
-    isPosted &&
-    !isInvoiced &&
-    routeData?.receipt?.sourceDocument === "Purchase Order" &&
-    routeData?.receipt?.sourceDocumentId &&
-    permissions.can("create", "invoicing");
-
-  const isInvoicing =
-    navigation.state !== "idle" &&
-    navigation.location?.pathname === path.to.newPurchaseInvoice;
-
-  const statusBadge = <ReceiptStatus status={status} />;
-
-  const menuItems = (
-    <>
-      {auditLogTrigger}
-      {isPosted && (
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            disabled={
-              isVoided || isInvoiced || !permissions.can("update", "inventory")
-            }
-            destructive
-            onClick={voidModal.onOpen}
-          >
-            <DropdownMenuIcon icon={<LuTicketX />} />
-            <Trans>Void</Trans>
-          </DropdownMenuItem>
-        </>
-      )}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        shortcut={MENU_ITEM_SHORTCUTS.delete}
-        disabled={
-          !permissions.can("delete", "inventory") || !permissions.is("employee")
-        }
-        destructive
-        onClick={deleteDisclosure.onOpen}
-      >
-        <DropdownMenuIcon icon={<LuTrash />} />
-        <Trans>Delete</Trans>
-      </DropdownMenuItem>
-    </>
-  );
-
   return (
-    <>
-      <RecordHeroTarget bleed />
-      <Card>
-        <ValidatedForm
-          id={formId}
-          validator={receiptValidator}
-          method="post"
-          action={path.to.receiptDetails(initialValues.id)}
-          defaultValues={initialValues}
-          style={{ width: "100%" }}
-        >
-          <DocumentHeader
-            title={routeData?.receipt?.receiptId ?? ""}
-            status={statusBadge}
-            menuItems={menuItems}
-            actions={
-              <>
-                {receiptLineTracking.length > 0 && (
-                  <RecordAction slot="overflow">
-                    <PrintButton
-                      sourceDocument="Receipt"
-                      sourceDocumentId={receiptId}
-                      locationId={locationId ?? undefined}
-                      context="receiving"
-                      fileRoutes={{
-                        pdf: path.to.file.receiptLabelsPdf,
-                        zpl: path.to.file.receiptLabelsZpl
-                      }}
-                    />
-                  </RecordAction>
-                )}
-                <RecordAction slot="overflow">
-                  <SourceDocumentLink
-                    sourceDocument={
-                      routeData?.receipt?.sourceDocument ?? undefined
-                    }
-                    sourceDocumentId={
-                      routeData?.receipt?.sourceDocumentId ?? undefined
-                    }
-                    sourceDocumentReadableId={
-                      routeData?.receipt?.sourceDocumentReadableId ?? undefined
-                    }
-                  />
-                </RecordAction>
-                <RecordAction slot="overflow">
-                  <InspectionsLink
-                    inspections={routeData?.receiptInspections ?? []}
-                  />
-                </RecordAction>
-                <RecordAction slot={isPosted ? "primary" : "overflow"}>
-                  <Button
-                    variant={canInvoice ? "primary" : "secondary"}
-                    isDisabled={!canInvoice || isInvoicing}
-                    isLoading={isInvoicing}
-                    leftIcon={<LuCreditCard />}
-                    asChild
-                  >
-                    <Link
-                      to={`${path.to.newPurchaseInvoice}?sourceDocument=Purchase Order&sourceDocumentId=${routeData?.receipt?.sourceDocumentId}`}
-                    >
-                      <Trans>Invoice</Trans>
-                    </Link>
-                  </Button>
-                </RecordAction>
-                <RecordAction slot={isPosted ? "overflow" : "primary"}>
-                  <Button
-                    variant={
-                      canPost && !isPosted && !isVoided
-                        ? "primary"
-                        : "secondary"
-                    }
-                    onClick={postModal.onOpen}
-                    isDisabled={
-                      !canPost ||
-                      isPosted ||
-                      isVoided ||
-                      !permissions.is("employee")
-                    }
-                    leftIcon={<LuCheckCheck />}
-                  >
-                    <Trans>Post</Trans>
-                  </Button>
-                </RecordAction>
-              </>
+    <ValidatedForm
+      id={formId}
+      validator={receiptValidator}
+      method="post"
+      action={path.to.receiptDetails(initialValues.id)}
+      defaultValues={initialValues}
+      className="flex flex-col gap-4 w-full pt-2 pb-4"
+    >
+      {/* Each Hidden renders a wrapper; keep them out of the flex gap. */}
+      <div className="hidden">
+        <Hidden name="id" />
+        <Hidden name="receiptId" />
+        <Hidden name="supplierId" value={supplierId ?? ""} />
+      </div>
+      <div className="grid grid-cols-1 @xl:grid-cols-2 gap-x-8 gap-y-4 w-full">
+        <Select
+          name="sourceDocument"
+          label={t`Source Document`}
+          termId="receipt-source-document"
+          options={receiptSourceDocumentType.map((v) => ({
+            label: v,
+            value: v
+          }))}
+          onChange={(newValue) => {
+            if (newValue) {
+              setSourceDocument(newValue.value as ReceiptSourceDocument);
             }
-          />
-
-          <CardContent>
-            <Hidden name="id" />
-            <Hidden name="supplierId" value={supplierId ?? ""} />
-            <VStack spacing={4} className="min-h-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 w-full">
-                <Input name="receiptId" label={t`Receipt ID`} isReadOnly />
-                <Location
-                  name="locationId"
-                  label={t`Location`}
-                  value={locationId ?? undefined}
-                  onChange={(newValue) => {
-                    if (newValue) setLocationId(newValue.value as string);
-                  }}
-                  isReadOnly={isPosted}
-                />
-                <Select
-                  name="sourceDocument"
-                  label={t`Source Document`}
-                  termId="receipt-source-document"
-                  options={receiptSourceDocumentType.map((v) => ({
-                    label: v,
-                    value: v
-                  }))}
-                  onChange={(newValue) => {
-                    if (newValue) {
-                      setSourceDocument(
-                        newValue.value as ReceiptSourceDocument
-                      );
-                    }
-                  }}
-                  isReadOnly={isPosted}
-                />
-                <Combobox
-                  name="sourceDocumentId"
-                  label={t`Source Document ID`}
-                  termId="receipt-source-document-id"
-                  options={sourceDocuments.map((d) => ({
-                    label: d.name,
-                    value: d.id
-                  }))}
-                  isReadOnly={isPosted}
-                />
-                <Input
-                  name="externalDocumentId"
-                  label={t`External Reference`}
-                  termId="receipt-external-reference"
-                  isDisabled={isPosted}
-                />
-                <CustomFormFields table="receipt" />
-              </div>
-            </VStack>
-          </CardContent>
-          <CardFooter>
-            <DefaultDisabledSubmit
-              formId={formId}
-              isDisabled={
-                isEditing
-                  ? !permissions.can("update", "inventory")
-                  : !permissions.can("create", "inventory")
-              }
-            >
-              <Trans>Save</Trans>
-            </DefaultDisabledSubmit>
-          </CardFooter>
-        </ValidatedForm>
-      </Card>
-
-      {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
-      {voidModal.isOpen && <ReceiptVoidModal onClose={voidModal.onClose} />}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteReceipt(receiptId)}
-          isOpen={deleteDisclosure.isOpen}
-          name={routeData?.receipt?.receiptId ?? "receipt"}
-          text={t`Are you sure you want to delete ${routeData?.receipt?.receiptId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
           }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
+          isReadOnly={isPosted}
         />
-      )}
-      {auditLogDrawer}
-    </>
-  );
-};
-
-function SourceDocumentLink({
-  sourceDocument,
-  sourceDocumentId,
-  sourceDocumentReadableId
-}: {
-  sourceDocument?: string;
-  sourceDocumentId?: string;
-  sourceDocumentReadableId?: string;
-}) {
-  const permissions = usePermissions();
-
-  if (!sourceDocument || !sourceDocumentId || !sourceDocumentReadableId)
-    return null;
-  switch (sourceDocument) {
-    case "Purchase Order":
-      if (!permissions.can("view", "purchasing")) return null;
-      return (
-        <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
-          <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
-            <Trans>Purchase Order</Trans>
-          </Link>
-        </Button>
-      );
-    case "Purchase Invoice":
-      if (!permissions.can("view", "invoicing")) return null;
-      return (
-        <Button variant="secondary" leftIcon={<LuCreditCard />} asChild>
-          <Link to={path.to.purchaseInvoice(sourceDocumentId!)}>
-            <Trans>Purchase Invoice</Trans>
-          </Link>
-        </Button>
-      );
-    case "Inbound Transfer":
-      if (!permissions.can("view", "inventory")) return null;
-      return (
-        <Button variant="secondary" leftIcon={<LuTruck />} asChild>
-          <Link to={path.to.warehouseTransferDetails(sourceDocumentId!)}>
-            <Trans>Warehouse Transfer</Trans>
-          </Link>
-        </Button>
-      );
-    case "Sales Return Order":
-      if (!permissions.can("view", "sales")) return null;
-      return (
-        <Button variant="secondary" leftIcon={<LuUndo2 />} asChild>
-          <Link to={path.to.salesReturnOrderDetails(sourceDocumentId!)}>
-            <Trans>Sales Return</Trans>
-          </Link>
-        </Button>
-      );
-    default:
-      return null;
-  }
-}
-
-type ReceiptInspection = {
-  id: string;
-  inspectionId: string;
-  itemId: string | null;
-  itemReadableId: string | null;
-  status: string;
-};
-
-// Link the receipt header to the inspection lots created on posting (one per
-// inspected line). A single lot renders a button; multiple render a dropdown —
-// mirrors the sales order header's Invoices link.
-function InspectionsLink({
-  inspections
-}: {
-  inspections: ReceiptInspection[];
-}) {
-  const permissions = usePermissions();
-
-  if (!permissions.can("view", "quality") || inspections.length === 0)
-    return null;
-
-  if (inspections.length === 1) {
-    const inspection = inspections[0];
-    return (
-      <Button variant="secondary" leftIcon={<LuClipboardCheck />} asChild>
-        <Link to={path.to.inspection(inspection.id)}>
-          <Trans>Inspection</Trans>
-        </Link>
-      </Button>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="secondary"
-          leftIcon={<LuClipboardCheck />}
-          rightIcon={<LuChevronDown />}
+        <Combobox
+          name="sourceDocumentId"
+          label={t`Source Document ID`}
+          termId="receipt-source-document-id"
+          options={sourceDocuments.map((d) => ({
+            label: d.name,
+            value: d.id
+          }))}
+          isReadOnly={isPosted}
+        />
+        <Location
+          name="locationId"
+          label={t`Location`}
+          value={locationId ?? undefined}
+          onChange={(newValue) => {
+            if (newValue) setLocationId(newValue.value as string);
+          }}
+          isReadOnly={isPosted}
+        />
+        <Input
+          name="externalDocumentId"
+          label={t`External Reference`}
+          termId="receipt-external-reference"
+          isDisabled={isPosted}
+        />
+        <CustomFormFields table="receipt" />
+      </div>
+      <div>
+        <DefaultDisabledSubmit
+          formId={formId}
+          isDisabled={
+            isEditing
+              ? !permissions.can("update", "inventory")
+              : !permissions.can("create", "inventory")
+          }
         >
-          <Trans>Inspections</Trans>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {inspections.map((inspection) => (
-          <DropdownMenuItem key={inspection.id} asChild>
-            <Link to={path.to.inspection(inspection.id)}>
-              <DropdownMenuIcon icon={<LuClipboardCheck />} />
-              <HStack spacing={8}>
-                <span>
-                  {inspection.itemReadableId ?? inspection.inspectionId}
-                </span>
-                <InspectionStatus status={inspection.status} />
-              </HStack>
-            </Link>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <Trans>Save</Trans>
+        </DefaultDisabledSubmit>
+      </div>
+    </ValidatedForm>
   );
-}
+};
 
 export default ReceiptForm;

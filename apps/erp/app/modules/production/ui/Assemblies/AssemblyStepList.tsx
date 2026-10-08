@@ -91,6 +91,10 @@ import {
   useStepStatusLabel
 } from "./AssemblyStepStatus";
 
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+
 /** The search param that opens a sub-assembly: the list and player show only its steps. */
 export const SUB_ASSEMBLY_PARAM = "subAssembly";
 
@@ -427,8 +431,8 @@ export default function AssemblyStepList({
   const [headerToDelete, setHeaderToDelete] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter })
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   /**
@@ -1248,3 +1252,8 @@ function RowIcon({ label, children }: { label: string; children: ReactNode }) {
     </Tooltip>
   );
 }
+
+// Declared after `coordinateGetter`. A module constant: a new options object
+// makes a new sensor, and with it new listeners for every draggable on every
+// render.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };

@@ -77,9 +77,21 @@ describe("canCreatePurchaseOrderRevision", () => {
     ).toBe(expected);
   });
 
-  it("is never eligible for a non-Draft target status", () => {
+  it("follows the same matrix when reopening to Planned", () => {
+    for (const { currentStatus, orderDate, expected } of reopenMatrix) {
+      expect(
+        canCreatePurchaseOrderRevision({
+          newStatus: "Planned",
+          currentStatus,
+          orderDate
+        })
+      ).toBe(expected);
+    }
+  });
+
+  it("is never eligible for a target status that is not a reopen", () => {
     for (const newStatus of purchaseOrderStatusType) {
-      if (newStatus === "Draft") continue;
+      if (newStatus === "Draft" || newStatus === "Planned") continue;
       for (const currentStatus of purchaseOrderStatusType) {
         expect(
           canCreatePurchaseOrderRevision({

@@ -7,6 +7,7 @@ import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
@@ -781,6 +782,22 @@ export type Events = {
       actorId: string | null;
       /** Output name -> entity id, per the moment's declaration. */
       outputs: Record<string, { id: string }>;
+    };
+  };
+
+  // Invoice automation: post (and email) one drafted recurring invoice.
+  // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II
+  "carbon/invoice.automate": {
+    data: {
+      companyId: string;
+      invoiceId: string;
+      /** Absent = the invoice's recurring source's effective mode. */
+      mode?: InvoiceAutomation;
+      /**
+       * The invoice's Send action: retry a failed send of a posted invoice —
+       * via Stripe when that is the effective mode, else by email.
+       */
+      resend?: boolean;
     };
   };
 };

@@ -65,7 +65,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         <div
           ref={ref}
           className={cn(
-            "relative flex flex-col rounded-xl shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]  bg-accent dark:bg-card text-card-foreground p-0 w-full",
+            "relative flex flex-col rounded-xl border border-border bg-accent dark:bg-card text-card-foreground p-0 w-full",
             className
           )}
           {...props}
@@ -219,7 +219,7 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
       <div
         ref={ref}
         className={cn(
-          "flex flex-col flex-1 p-6 rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:border-x-0 max-md:border-b-0 max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl max-md:[&:is([class~='max-md:hidden']+*)]:border-t-0",
+          "flex flex-col flex-1 p-6 m-[-1px] rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:border-x-0 max-md:border-b-0 max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl max-md:[&:is([class~='max-md:hidden']+*)]:border-t-0",
           className
         )}
         {...props}

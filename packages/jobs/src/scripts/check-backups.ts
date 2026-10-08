@@ -182,6 +182,10 @@ function reportBlocking(
 // without GIT_WORK_TREE, so git takes the current directory (packages/jobs) as
 // the worktree top and `git add` would stage the file at the wrong path.
 function git(args: string[]): string {
+  // Always from the repo root. A git hook exports GIT_DIR without GIT_WORK_TREE,
+  // and git then takes the CURRENT directory as the work tree — so `git add` of
+  // the absolute manifest path, run from packages/jobs by `pnpm --filter`,
+  // indexed it as a root-level `manifests/schema.json` on every migration commit.
   return execFileSync("git", args, {
     cwd: REPO_ROOT,
     encoding: "utf8",

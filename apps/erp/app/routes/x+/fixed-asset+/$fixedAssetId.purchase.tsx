@@ -35,15 +35,20 @@ const purchaseAssetValidator = z.object({
   supplierId: z.string().min(1, { message: "Supplier is required" })
 });
 
+// A construction-in-progress asset collects purchased cost alongside job
+// cost, so it can still be purchased while Under Construction; receipt and
+// invoice posting add a CIP cost row and leave its status alone.
+const PURCHASABLE_ASSET_STATUSES: string[] = ["Draft", "Under Construction"];
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -51,10 +56,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (asset.data.status !== "Draft") {
+  if (!PURCHASABLE_ASSET_STATUSES.includes(asset.data.status)) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(null, "Only Draft assets can be purchased"))
+      await flash(
+        request,
+        error(null, "Only a Draft or Under Construction asset can be purchased")
+      )
     );
   }
 
@@ -81,7 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { supplierId } = validation.data;
 
   const [asset, defaults] = await Promise.all([
-    getFixedAsset(client, fixedAssetId),
+    getFixedAsset(client, fixedAssetId, companyId),
     getUserDefaults(client, userId, companyId)
   ]);
 

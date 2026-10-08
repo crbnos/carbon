@@ -18,6 +18,7 @@ import {
 import { chunkArray, datetime, Edition, formatDate } from "@carbon/utils";
 import { render } from "@react-email/components";
 import type { Kysely } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   deleteCompanies,
@@ -31,6 +32,7 @@ import {
   splitByWarning,
   type Warning
 } from "./inactive-companies";
+import { dropOrphanCompanyTables } from "./purge-company";
 
 /**
  * Keeps a backlog under Inngest's per-run step limit (ten companies a step, for
@@ -317,6 +319,21 @@ export const weeklyFunction = inngest.createFunction(
           error
         });
       }
+    }
+
+    // Tables left by purges whose table drop was refused. Bounded per run:
+    // every drop makes PostgREST reload its schema cache.
+    try {
+      const dropped = await step.run("drop-orphan-company-tables", () =>
+        dropOrphanCompanyTables(getJobDatabaseClient(), 200)
+      );
+      if (dropped.length > 0) {
+        logger.info("Dropped orphan company tables", {
+          count: dropped.length
+        });
+      }
+    } catch (error) {
+      logger.error("Failed to drop orphan company tables", { error });
     }
 
     // Build inside a memoized step, send via step.sendEvent — sending

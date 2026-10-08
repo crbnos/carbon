@@ -100,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     readableIdLookups.push(
       client
         .from("salesInvoiceLine")
-        .select("salesInvoice(id, invoiceId)")
+        .select("salesInvoice!salesInvoiceLine_invoiceId_fkey(id, invoiceId)")
         .eq("id", line.data.salesInvoiceLineId)
         .eq("companyId", companyId)
         .maybeSingle()

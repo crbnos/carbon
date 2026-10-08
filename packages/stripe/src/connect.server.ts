@@ -8,7 +8,14 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
 import { STRIPE_CONNECT_ACCOUNT_CONFIG } from "./connect.constants";
+import {
+  type ConnectInvoiceLineInput,
+  expectedConnectInvoiceTotal
+} from "./connect-invoice";
 import { stripe } from "./stripe.server";
+
+export type { ConnectInvoiceLineInput } from "./connect-invoice";
+export { expectedConnectInvoiceTotal } from "./connect-invoice";
 
 const log = getLogger("stripe-connect");
 
@@ -536,52 +543,13 @@ export async function upsertConnectCustomer(
   return created.id;
 }
 
-/**
- * One Carbon `salesInvoiceLine`, as the Stripe mapping needs to see it.
- *
- * The cost components are NOT interchangeable and — apart from `unitPrice` —
- * are NOT per-unit. This mirrors the `salesInvoices` view, which is the single
- * definition of what a Carbon sales invoice is worth (migration
- * `20260702224219_fix-ar-ap-legacy-paid.sql`):
- *
- *   subtotal = Σ (quantity·unitPrice + addOnCost + nonTaxableAddOnCost + shippingCost)
- *   totalTax = Σ taxPercent·(quantity·unitPrice + addOnCost + shippingCost)
- *   total    = subtotal + totalTax + salesInvoiceShipment.shippingCost
- *
- * Three consequences worth stating out loud, because each one is a way to bill
- * the customer an amount Carbon's ledger disagrees with:
- *  - `nonTaxableAddOnCost` counts toward the subtotal but NOT the tax base.
- *  - the header-level shipping cost is added AFTER tax and is never taxed.
- *  - `setupPrice` appears in neither sum, so it is deliberately absent from
- *    this type. Billing it would collect more cash than the invoice is owed,
- *    and `recordStripeConnectPayment` settles whatever Stripe collected.
- */
-export type ConnectInvoiceLineInput = {
-  description: string;
-  /** `salesInvoiceLine.quantity` — NUMERIC, so genuinely fractional. */
-  quantity: number;
-  /** Per-unit price, in the invoice currency (never the `converted*` mirror). */
-  unitPrice: number;
-  /** Flat per-line surcharge, taxable. Not multiplied by quantity. */
-  addOnCost?: number;
-  /** Flat per-line freight, taxable. Not multiplied by quantity. */
-  shippingCost?: number;
-  /** Flat per-line surcharge, NOT taxed. */
-  nonTaxableAddOnCost?: number;
-  /**
-   * A FRACTION in [0, 1] — that is the column's CHECK constraint, not a
-   * percent. 0.0825 means 8.25%. Passing 8.25 here would bill 825% tax.
-   */
-  taxPercent?: number;
-  unitOfMeasureCode?: string | null;
-  /** Carbon ids for traceability; merged into every item this line emits. */
-  metadata?: Record<string, string>;
-};
-
 export type ConnectInvoiceInput = {
   lines: ConnectInvoiceLineInput[];
   currencyCode: string;
-  /** `salesInvoiceShipment.shippingCost` — invoice-level, and never taxed. */
+  /**
+   * `salesInvoiceShipment.shippingCost` converted to the invoice currency —
+   * invoice-level, and never taxed.
+   */
   shippingCost?: number;
   /** Carbon's human-readable `invoiceId`, printed as Stripe's invoice number. */
   invoiceNumber?: string;
@@ -613,32 +581,15 @@ export type ConnectInvoiceInput = {
     };
   };
   metadata?: Record<string, string>;
+  /**
+   * Stable per Carbon invoice (and connected account). Every Stripe write of
+   * the send derives its own key from it, so a retry after Stripe already
+   * created (or sent) the invoice replays those responses instead of creating
+   * a SECOND invoice. Stripe keeps a key for 24 hours and refuses a reused key
+   * whose parameters changed — a safe failure, never a duplicate.
+   */
+  idempotencyKey: string;
 };
-
-/**
- * What Carbon says this invoice is worth, by the `salesInvoices` view's own
- * arithmetic. Exported so callers gate on the same number Stripe will be
- * reconciled against instead of an independent (and quietly different) sum.
- */
-export function expectedConnectInvoiceTotal(params: {
-  lines: ConnectInvoiceLineInput[];
-  shippingCost?: number;
-}): { subtotal: number; tax: number; shipping: number; total: number } {
-  let subtotal = 0;
-  let tax = 0;
-
-  for (const line of params.lines) {
-    const taxable =
-      line.unitPrice * line.quantity +
-      (line.addOnCost ?? 0) +
-      (line.shippingCost ?? 0);
-    subtotal += taxable + (line.nonTaxableAddOnCost ?? 0);
-    tax += (line.taxPercent ?? 0) * taxable;
-  }
-
-  const shipping = params.shippingCost ?? 0;
-  return { subtotal, tax, shipping, total: subtotal + tax + shipping };
-}
 
 // Tax rate ids resolved this process, keyed by account + percentage. Stripe has
 // no upsert for tax rates, so without this every line of every invoice would
@@ -845,15 +796,18 @@ export async function createAndSendConnectInvoice(
       auto_advance: false,
       metadata: params.metadata
     },
-    options
+    // A retry with this key replays the first attempt's draft instead of
+    // creating a second invoice; every write below derives its own key from it,
+    // so the items, the finalize and the send replay too.
+    { ...options, idempotencyKey: params.idempotencyKey }
   );
 
   // Sequential, not Promise.all: invoice items render in creation order, and a
   // reordered PDF would not match the Carbon invoice beside it.
-  for (const item of items) {
+  for (const [index, item] of items.entries()) {
     await stripe.invoiceItems.create(
       { ...item, invoice: invoice.id! },
-      options
+      { ...options, idempotencyKey: `${params.idempotencyKey}-item-${index}` }
     );
   }
 
@@ -885,9 +839,13 @@ export async function createAndSendConnectInvoice(
   const finalized = await stripe.invoices.finalizeInvoice(
     invoice.id!,
     {},
-    options
+    { ...options, idempotencyKey: `${params.idempotencyKey}-finalize` }
   );
-  const sent = await stripe.invoices.sendInvoice(finalized.id!, {}, options);
+  const sent = await stripe.invoices.sendInvoice(
+    finalized.id!,
+    {},
+    { ...options, idempotencyKey: `${params.idempotencyKey}-send` }
+  );
 
   return {
     id: sent.id!,

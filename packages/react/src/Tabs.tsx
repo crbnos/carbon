@@ -22,7 +22,7 @@ const TabsList = forwardRef<
       // No fixed height and no border — p-1 sizes the box, so the space
       // around the triggers is uniform on every side (a fixed h-* squeezed
       // them, and a border-b read as an extra pixel of bottom padding)
-      "inline-flex items-center justify-center rounded-[0.5rem] bg-muted p-1 text-muted-foreground border border-border",
+      "inline-flex items-center justify-center rounded-[0.5rem] bg-muted p-0.5 text-muted-foreground border border-border",
       // Phones: an underline tab row that scrolls sideways, inset 16pt.
       "max-md:flex max-md:w-full max-md:justify-start max-md:gap-5 max-md:overflow-x-auto max-md:scrollbar-hide max-md:rounded-none max-md:border-0 max-md:border-b max-md:bg-transparent max-md:p-0 max-md:px-4",
       className

@@ -6,20 +6,18 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
+  RecordOutlet,
   ResizableHandle,
   ResizablePanel,
   ScrollArea,
   useViewport,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { RecordHero } from "~/components/Layout/RecordHeader";
 import { useUrlParams } from "~/hooks";
@@ -27,11 +25,6 @@ import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemH
 import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["itemId"], search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -139,7 +132,7 @@ export default function ItemInventoryRoute() {
             itemType={item.type}
           />
           <VStack className="p-2 max-md:p-4">
-            <Outlet />
+            <RecordOutlet />
           </VStack>
         </ScrollArea>
       </ResizablePanel>

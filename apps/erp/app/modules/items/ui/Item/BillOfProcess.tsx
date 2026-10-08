@@ -7,7 +7,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -75,12 +75,7 @@ import {
   LuTriangleAlert,
   LuWorkflow
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useFetchers,
-  useParams,
-  useRevalidator
-} from "react-router";
+import { useFetcher, useFetchers, useParams } from "react-router";
 import { z } from "zod";
 import {
   DateTime,
@@ -320,12 +315,10 @@ const BillOfProcess = ({
       }, {} as PendingWorkInstructions);
     });
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const operationsById = new Map<
     string,
@@ -1917,7 +1910,8 @@ function AttributesForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");

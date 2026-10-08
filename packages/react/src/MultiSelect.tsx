@@ -4,7 +4,7 @@
 
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useState } from "react";
+import { forwardRef, useId, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
@@ -14,7 +14,7 @@ import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { reactNodeToString, withDistinctHelpers } from "./utils/react";
 import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type MultiSelectProps = Omit<
@@ -48,7 +48,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     {
       size,
       value,
-      options,
+      options: optionsProp,
       isReadOnly: isReadOnlyProp,
       disabled,
       isClearable,
@@ -65,6 +65,12 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // An item option's helper is its name, which for a service repeats the
+    // readable id in the label.
+    const options = useMemo(
+      () => withDistinctHelpers(optionsProp),
+      [optionsProp]
+    );
     // Treat the native `disabled` prop as equivalent to `isReadOnly` — the type
     // accepts it (extends button props), so honor it rather than swallow it.
     const isReadOnly = isReadOnlyProp || disabled;

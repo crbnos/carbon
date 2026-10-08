@@ -32,6 +32,15 @@ export const modulesType = [
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 
+// Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
+// invoice (rental agreements today) when the daily job creates it.
+export const invoiceAutomations = [
+  "Draft Only",
+  "Post",
+  "Post and Email",
+  "Post and Send via Stripe"
+] as const;
+
 export const purchasePriceUpdateTimingTypes = [
   "Purchase Invoice Post",
   "Purchase Order Finalize"
@@ -240,6 +249,34 @@ export const jobCompletedValidator = z.object({
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
 });
 
+export const invoiceAutomationValidator = z.object({
+  invoiceAutomation: z.enum(invoiceAutomations)
+});
+
+export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
+
+// "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
+// once a day at `mrpRunTime` on the company's own clock. The form offers whole
+// hours, but the column (and the MCP tool) take any time — the cron checks
+// every 15 minutes — so the field is the stored "HH:MM[:SS]" string, and a
+// time like 14:30 saves back unchanged instead of being cut to 14:00.
+export const mrpScheduleValidator = z
+  .object({
+    mrpSchedule: z.enum(mrpScheduleTypes),
+    mrpRunTime: zfd.text(
+      z
+        .string()
+        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
+          message: "Choose a time"
+        })
+        .optional()
+    )
+  })
+  .refine(
+    (data) => data.mrpSchedule !== "Daily" || data.mrpRunTime !== undefined,
+    { message: "Time is required", path: ["mrpRunTime"] }
+  );
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });
@@ -262,6 +299,21 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Planning settings (MRP suggestions). Whole days / whole weekly buckets.
+export const rescheduleToleranceValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(365))
+});
+
+// Empty clears the default: items without their own horizon then have no fence.
+export const planningHorizonValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(3650).optional())
+});
+
+export const forecastConsumptionValidator = z.object({
+  backwardPeriods: zfd.numeric(z.number().int().min(0).max(52)),
+  forwardPeriods: zfd.numeric(z.number().int().min(0).max(52))
+});
 
 // Every shelf-life knob lives inside the companySettings.inventoryShelfLife
 // JSONB blob. The validator below reads/writes that single object so the
@@ -342,6 +394,12 @@ export const productLabelSizeValidator = z.object({
       message: "Product label size is required"
     }
   )
+});
+
+export const invoiceNotificationValidator = z.object({
+  invoiceNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
 });
 
 export const rfqReadyValidator = z.object({

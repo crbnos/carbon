@@ -4,7 +4,7 @@
 
 import { IconButton, Input, NumberField, NumberInput } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuTrash } from "react-icons/lu";
 import { AccountControlled } from "~/components/Form";
 import { useCurrencyDecimals } from "~/hooks";
@@ -14,6 +14,38 @@ import type {
   DimensionWithValues,
   JournalLineDimensionValue
 } from "./types";
+
+/**
+ * The grid shared by the line rows, the column headers and the totals, sized
+ * by the lines card (an `@container`), not the viewport — the content pane is
+ * resizable.
+ *
+ * - From 40rem: one row — number, account & details, debit, credit, delete.
+ *   Each amount column is up to 176px, room for "$12,345,678.00" in the mono
+ *   input font (~118px) plus padding; grid fills a fixed maximum before a 1fr
+ *   track gets the rest, so the account gives way, never below 10rem.
+ * - Narrower: the account & details span the row, and debit and credit sit
+ *   side by side beneath them, each labelled. A single row there leaves the
+ *   account a sliver and clips everything in it.
+ */
+export const journalLineGridClassName =
+  "grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_32px] gap-x-3 gap-y-2 @min-[40rem]:grid-cols-[auto_minmax(10rem,1fr)_minmax(0,176px)_minmax(0,176px)_32px] @min-[40rem]:gap-3";
+
+/** Where each cell sits in `journalLineGridClassName`, narrow then wide. */
+export const journalLineCell = {
+  number: "col-start-1 row-start-1",
+  details: "col-start-2 col-span-2 row-start-1 @min-[40rem]:col-span-1 min-w-0",
+  debit:
+    "col-start-2 row-start-2 @min-[40rem]:col-start-3 @min-[40rem]:row-start-1 min-w-0",
+  credit:
+    "col-start-3 row-start-2 @min-[40rem]:col-start-4 @min-[40rem]:row-start-1 min-w-0",
+  actions: "col-start-4 row-start-1 @min-[40rem]:col-start-5",
+  /** The Debit / Credit captions a narrow row shows above its amounts. */
+  narrowLabel:
+    "mb-1 font-sans text-xs font-medium text-muted-foreground @min-[40rem]:hidden",
+  /** Header cells that only make sense as columns (wide). */
+  wideOnly: "hidden @min-[40rem]:block"
+} as const;
 
 type JournalLineRowProps = {
   line: ClientJournalLine;
@@ -70,14 +102,18 @@ const JournalLineRow = ({
 
   return (
     <div className="group">
-      <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-start gap-3 py-4 px-4 transition-colors hover:bg-muted/30 max-md:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_40px]">
+      <div
+        className={`${journalLineGridClassName} items-start py-4 px-4 transition-colors hover:bg-muted/30`}
+      >
         {/* Row number */}
-        <div className="flex h-9 w-6 items-center justify-center text-xs font-medium text-muted-foreground tabular-nums">
+        <div
+          className={`${journalLineCell.number} flex h-9 w-6 items-center justify-center text-xs font-medium text-muted-foreground tabular-nums`}
+        >
           {index + 1}
         </div>
 
         {/* Account and Description */}
-        <div className="space-y-2 max-md:col-span-3 max-md:min-w-0">
+        <div className={`${journalLineCell.details} space-y-2`}>
           <AccountControlled
             value={line.accountId}
             onChange={handleAccountChange}
@@ -105,38 +141,49 @@ const JournalLineRow = ({
         </div>
 
         {/* Debit */}
-        <NumberField
-          className="max-md:col-start-2"
-          value={line.debit ?? 0}
-          onChange={handleDebitChange}
-          formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
-          minValue={0}
-          isDisabled={isDisabled}
-          isReadOnly={isDisabled}
-        >
-          <NumberInput
-            className="text-right font-mono tabular-nums max-md:px-3"
+        <div className={journalLineCell.debit}>
+          <div className={journalLineCell.narrowLabel}>
+            <Trans>Debit</Trans>
+          </div>
+          <NumberField
+            value={line.debit ?? 0}
+            onChange={handleDebitChange}
+            formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
+            minValue={0}
+            isDisabled={isDisabled}
             isReadOnly={isDisabled}
-          />
-        </NumberField>
+          >
+            <NumberInput
+              className="text-right font-mono tabular-nums max-md:px-3"
+              isReadOnly={isDisabled}
+            />
+          </NumberField>
+        </div>
 
         {/* Credit */}
-        <NumberField
-          value={line.credit ?? 0}
-          onChange={handleCreditChange}
-          formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
-          minValue={0}
-          isDisabled={isDisabled}
-          isReadOnly={isDisabled}
-        >
-          <NumberInput
-            className="text-right font-mono tabular-nums max-md:px-3"
+        <div className={journalLineCell.credit}>
+          <div className={journalLineCell.narrowLabel}>
+            <Trans>Credit</Trans>
+          </div>
+          <NumberField
+            value={line.credit ?? 0}
+            onChange={handleCreditChange}
+            formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
+            minValue={0}
+            isDisabled={isDisabled}
             isReadOnly={isDisabled}
-          />
-        </NumberField>
+          >
+            <NumberInput
+              className="text-right font-mono tabular-nums max-md:px-3"
+              isReadOnly={isDisabled}
+            />
+          </NumberField>
+        </div>
 
         {/* Delete button */}
-        <div className="flex h-9 items-center justify-center">
+        <div
+          className={`${journalLineCell.actions} flex h-9 items-center justify-center`}
+        >
           {!isDisabled && (
             <IconButton
               aria-label={t`Delete line`}

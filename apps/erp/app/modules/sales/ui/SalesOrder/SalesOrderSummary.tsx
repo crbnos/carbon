@@ -28,7 +28,11 @@ import {
   VStack
 } from "@carbon/react";
 import type { SalesOrderForProductionCheck } from "@carbon/utils";
-import { getSalesOrderJobStatus, hasLinesRequiringJobs } from "@carbon/utils";
+import {
+  distinctItemText,
+  getSalesOrderJobStatus,
+  hasLinesRequiringJobs
+} from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -423,7 +427,12 @@ function LineItems({
                   decimalPlaces={currencyDecimals}
                 />
               }
-              description={line.description}
+              description={distinctItemText(
+                line.salesOrderLineType === "Fixed Asset"
+                  ? line.assetReadableId || t`Fixed Asset`
+                  : line.itemReadableId,
+                line.description
+              )}
               meta={
                 <>
                   {line.saleQuantity} × {formatter.format(line.unitPrice ?? 0)}{" "}
@@ -443,6 +452,11 @@ function LineItems({
         if (!line.id) return null;
 
         const isMade = line.methodType === "Make to Order";
+        const title =
+          line.salesOrderLineType === "Fixed Asset"
+            ? (line as any).assetReadableId || "Fixed Asset"
+            : line.itemReadableId;
+        const description = distinctItemText(title, line.description);
 
         const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
           // @ts-expect-error TS2345 - TODO: fix type
@@ -487,11 +501,7 @@ function LineItems({
                       className="flex-1 min-w-0 max-md:basis-full"
                     >
                       <HStack spacing={2} className="flex min-w-0 w-full">
-                        <Heading className="truncate">
-                          {line.salesOrderLineType === "Fixed Asset"
-                            ? (line as any).assetReadableId || "Fixed Asset"
-                            : line.itemReadableId}
-                        </Heading>
+                        <Heading className="truncate">{title}</Heading>
                         <Button
                           asChild
                           variant="link"
@@ -503,12 +513,14 @@ function LineItems({
                           </Link>
                         </Button>
                       </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={line.description}
-                      >
-                        {line.description}
-                      </TruncatedTooltipText>
+                      {description && (
+                        <TruncatedTooltipText
+                          className="text-muted-foreground text-sm truncate w-full"
+                          tooltip={description}
+                        >
+                          {description}
+                        </TruncatedTooltipText>
+                      )}
                     </VStack>
                     <VStack
                       spacing={2}
@@ -516,6 +528,7 @@ function LineItems({
                     >
                       <HStack spacing={4}>
                         <MotionMoney
+                          className="font-semibold text-xl whitespace-nowrap"
                           value={getSalesOrderLineTotal(line)}
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}
@@ -717,7 +730,7 @@ function LineItems({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>Total</Td>
                       <Td className="text-right">
                         <MotionMoney

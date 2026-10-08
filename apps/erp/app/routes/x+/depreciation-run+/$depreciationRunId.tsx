@@ -6,49 +6,42 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
-  MENU_ITEM_SHORTCUTS,
-  useDisclosure
+  CardTitle,
+  RecordOutlet
 } from "@carbon/react";
-import { formatDate, isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import {
-  Link,
-  Outlet,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
-import { DateTime } from "~/components";
-import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useSettings, useUser } from "~/hooks";
+import { Trans, useLingui } from "@lingui/react/macro";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { DateTime, Hyperlink } from "~/components";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import {
   getDepreciationRun,
-  getDepreciationRunLines
+  getDepreciationRunLines,
+  getPeriodRunRelatedItems
 } from "~/modules/accounting";
 import { depreciationRunLineDisplay } from "~/modules/accounting/accounting.utils";
-import { DepreciationRunStatus } from "~/modules/accounting/ui/FixedAssets";
+import {
+  DepreciationRunDocuments,
+  DepreciationRunHeader
+} from "~/modules/accounting/ui/FixedAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+/**
+ * Posting writes one journal entry per asset per month (a month with no book
+ * amount has none), plus one deferred tax entry per month when tax
+ * depreciation is on. Up to this many are listed under Documents; past it the
+ * list would bury the accounting period, and each asset is still one click
+ * away from its line.
+ */
+const MAX_LISTED_JOURNALS = 10;
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -58,13 +51,8 @@ export const handle: Handle = {
   module: "accounting"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["depreciationRunId"] })
-    ? false
-    : args.defaultShouldRevalidate;
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
@@ -83,143 +71,162 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // Each month's line has its own journal, and each month its deferred tax.
+  const journalIds = [
+    ...new Set(
+      (lines.data ?? []).flatMap((line) =>
+        [line.journalId, line.deferredTaxJournalId].filter((id): id is string =>
+          Boolean(id)
+        )
+      )
+    )
+  ];
+
   return {
     run: run.data,
-    lines: lines.data ?? []
+    lines: lines.data ?? [],
+    relatedItems: getPeriodRunRelatedItems(
+      client,
+      companyId,
+      run.data.periodEnd,
+      journalIds.length <= MAX_LISTED_JOURNALS ? journalIds : []
+    )
   };
 }
 
 export default function DepreciationRunDetailRoute() {
-  const { depreciationRunId } = useParams();
+  const { t } = useLingui();
   const { run, lines } = useLoaderData<typeof loader>();
   const settings = useSettings();
   const taxDepreciationEnabled =
     (settings as any).assetTaxDepreciationEnabled ?? false;
-  const permissions = usePermissions();
-  const navigate = useNavigate();
-  const fetcher = useFetcher();
   const { company } = useUser();
   const currencyFormatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode
   });
-  const deleteModal = useDisclosure();
-  const repeatModal = useDisclosure();
 
-  if (!depreciationRunId) throw new Error("Could not find depreciationRunId");
-
-  const isDraft = run.status === "Draft";
   const isPosted = run.status === "Posted";
   const totalAmount = lines.reduce((sum, line) => sum + Number(line.amount), 0);
   const totalTaxAmount = taxDepreciationEnabled
     ? lines.reduce((sum, line) => sum + Number((line as any).taxAmount ?? 0), 0)
     : 0;
+  // A run holds one line per asset per month.
+  const assetCount = new Set(lines.map((line) => line.fixedAssetId)).size;
+  // Per asset: its total in this run, and its running total before each
+  // line's month, so a later month starts from the earlier months.
+  const runAmountByAsset = new Map<string, number>();
+  const earlierAmountByLine = new Map<string, number>();
+  for (const line of lines) {
+    const before = runAmountByAsset.get(line.fixedAssetId) ?? 0;
+    earlierAmountByLine.set(line.id, before);
+    runAmountByAsset.set(line.fixedAssetId, before + Number(line.amount));
+  }
 
   const gridCols = taxDepreciationEnabled
-    ? "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px_120px]"
-    : "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px]";
+    ? "grid-cols-[auto_100px_1fr_1fr_120px_120px_120px_120px_120px]"
+    : "grid-cols-[auto_100px_1fr_1fr_120px_120px_120px_120px]";
+  // The columns are fixed-width money; below this the table scrolls sideways
+  // instead of crushing the asset names.
+  const minTableWidth = taxDepreciationEnabled
+    ? "min-w-[980px]"
+    : "min-w-[860px]";
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <HStack>
-              <Heading as="h1" size="h3">
-                {run.depreciationRunId}
-              </Heading>
-              <Copy text={run.depreciationRunId} />
-              {(isDraft || isPosted) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <IconButton
-                      aria-label="More options"
-                      icon={<LuEllipsisVertical />}
-                      variant="secondary"
-                      size="sm"
-                    />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {isPosted && (
-                      <DropdownMenuItem
-                        disabled={!permissions.can("create", "accounting")}
-                        onClick={repeatModal.onOpen}
-                      >
-                        <DropdownMenuIcon icon={<LuRepeat />} />
-                        Repeat Run
-                      </DropdownMenuItem>
-                    )}
-                    {isDraft && (
-                      <DropdownMenuItem
-                        shortcut={MENU_ITEM_SHORTCUTS.delete}
-                        disabled={!permissions.can("delete", "accounting")}
-                        destructive
-                        onClick={deleteModal.onOpen}
-                      >
-                        <DropdownMenuIcon icon={<LuTrash />} />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              <DepreciationRunStatus status={run.status} />
-            </HStack>
-            <HStack>
-              {isDraft && permissions.can("update", "accounting") && (
-                <fetcher.Form method="post" action="post">
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    isLoading={fetcher.state !== "idle"}
-                  >
-                    Post Run
-                  </Button>
-                </fetcher.Form>
-              )}
-            </HStack>
-          </CardHeader>
+    <DocumentPage
+      header={<DepreciationRunHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<DepreciationRunDocuments />}
+          activity={{
+            entityType: "depreciationRun",
+            entityId: run.id,
+            refreshKey: `${run.postedAt ?? ""}:${run.status}`
+          }}
+        />
+      }
+    >
+      <dl className="grid grid-cols-2 @min-[42rem]:grid-cols-4 gap-x-8 gap-y-4 w-full pt-2 pb-4">
+        <div className="flex flex-col gap-1">
+          <dt className="text-sm text-muted-foreground">
+            <Trans>Period End</Trans>
+          </dt>
+          <dd className="text-sm">
+            <DateTime value={run.periodEnd} variant="date" />
+          </dd>
+        </div>
+        <div className="flex flex-col gap-1">
+          <dt className="text-sm text-muted-foreground">
+            <Trans>Assets</Trans>
+          </dt>
+          <dd className="text-sm tabular-nums">{assetCount}</dd>
+        </div>
+        <div className="flex flex-col gap-1">
+          <dt className="text-sm text-muted-foreground">
+            <Trans>Depreciation</Trans>
+          </dt>
+          <dd className="text-sm tabular-nums">
+            {currencyFormatter.format(totalAmount)}
+          </dd>
+        </div>
+        {taxDepreciationEnabled && (
+          <div className="flex flex-col gap-1">
+            <dt className="text-sm text-muted-foreground">
+              <Trans>Tax Depreciation</Trans>
+            </dt>
+            <dd className="text-sm tabular-nums">
+              {currencyFormatter.format(totalTaxAmount)}
+            </dd>
+          </div>
+        )}
+      </dl>
 
-          <CardContent>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3 w-full mb-6">
-              <div>
-                <p className="text-sm text-muted-foreground">Period End</p>
-                <p className="text-sm">
-                  <DateTime value={run.periodEnd} variant="date" />
-                </p>
-              </div>
-              {run.postedAt && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Posted At</p>
-                  <p className="text-sm">
-                    <DateTime value={run.postedAt} variant="date" />
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Depreciation Lines */}
-            <div className="rounded-lg border border-border overflow-hidden w-full">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Depreciation Lines</Trans>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-border overflow-x-auto w-full">
+            <div className={minTableWidth}>
               {/* Column Headers */}
               <div
                 className={`grid ${gridCols} items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border`}
               >
                 <div className="w-6" />
-                <div>Asset</div>
-                <div>Name</div>
-                <div className="text-right">Cost</div>
-                <div className="text-right">Accum. Depr.</div>
-                <div className="text-right">Amount</div>
+                <div>
+                  <Trans>Period</Trans>
+                </div>
+                <div>
+                  <Trans>Asset</Trans>
+                </div>
+                <div>
+                  <Trans>Name</Trans>
+                </div>
+                <div className="text-right">
+                  <Trans>Cost</Trans>
+                </div>
+                <div className="text-right">
+                  <Trans>Accum. Depr.</Trans>
+                </div>
+                <div className="text-right">
+                  <Trans>Amount</Trans>
+                </div>
                 {taxDepreciationEnabled && (
-                  <div className="text-right">Tax Amount</div>
+                  <div className="text-right">
+                    <Trans>Tax Amount</Trans>
+                  </div>
                 )}
-                <div className="text-right">NBV After</div>
+                <div className="text-right">
+                  <Trans>NBV After</Trans>
+                </div>
               </div>
 
               {/* Lines */}
               <div className="divide-y divide-border">
                 {lines.length === 0 ? (
                   <div className="px-4 py-6 text-sm text-muted-foreground text-center">
-                    No assets to depreciate for this period.
+                    <Trans>No assets to depreciate for this period.</Trans>
                   </div>
                 ) : (
                   lines.map((line, index) => {
@@ -235,7 +242,10 @@ export default function DepreciationRunDetailRoute() {
                         asset?.accumulatedDepreciation ?? 0
                       ),
                       amount,
-                      isPosted
+                      isPosted,
+                      earlierAmount: earlierAmountByLine.get(line.id) ?? 0,
+                      runAmount:
+                        runAmountByAsset.get(line.fixedAssetId) ?? amount
                     });
                     return (
                       <div
@@ -245,19 +255,22 @@ export default function DepreciationRunDetailRoute() {
                         <div className="w-6 text-muted-foreground tabular-nums">
                           {index + 1}
                         </div>
-                        <div>
+                        <div className="tabular-nums">
+                          <DateTime
+                            value={line.periodEnd ?? run.periodEnd}
+                            variant="date"
+                          />
+                        </div>
+                        <div className="min-w-0 truncate">
                           {asset?.id ? (
-                            <Link
-                              to={path.to.fixedAsset(asset.id)}
-                              className="text-foreground hover:underline"
-                            >
+                            <Hyperlink to={path.to.fixedAsset(asset.id)}>
                               {asset.fixedAssetId ?? "—"}
-                            </Link>
+                            </Hyperlink>
                           ) : (
                             "—"
                           )}
                         </div>
-                        <div className="text-muted-foreground">
+                        <div className="min-w-0 truncate text-muted-foreground">
                           {asset?.name ?? "—"}
                         </div>
                         <div className="text-right tabular-nums">
@@ -291,8 +304,9 @@ export default function DepreciationRunDetailRoute() {
                   className={`grid ${gridCols} items-center gap-3 px-4 py-3 bg-muted/50 border-t border-border`}
                 >
                   <div className="w-6" />
+                  <div />
                   <div className="text-sm font-medium">
-                    {lines.length} {lines.length === 1 ? "Asset" : "Assets"}
+                    {assetCount === 1 ? t`1 Asset` : t`${assetCount} Assets`}
                   </div>
                   <div />
                   <div />
@@ -309,33 +323,11 @@ export default function DepreciationRunDetailRoute() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Outlet />
-
-        <ConfirmDelete
-          action={path.to.deleteDepreciationRun(depreciationRunId)}
-          isOpen={deleteModal.isOpen}
-          name={run.depreciationRunId}
-          text={`Are you sure you want to delete ${run.depreciationRunId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={() => {
-            deleteModal.onClose();
-            navigate(path.to.depreciationRuns);
-          }}
-        />
-
-        <Confirm
-          action={path.to.repeatDepreciationRun(depreciationRunId)}
-          isOpen={repeatModal.isOpen}
-          title="Repeat Run"
-          text={`This will create a new draft depreciation run for the same period (${formatDate(run.periodEnd)}), including only active assets not already covered by an existing run.`}
-          confirmText="Create Repeat Run"
-          onCancel={repeatModal.onClose}
-          onSubmit={repeatModal.onClose}
-        />
-      </div>
-    </div>
+      <RecordOutlet />
+    </DocumentPage>
   );
 }

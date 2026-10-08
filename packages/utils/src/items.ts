@@ -41,6 +41,22 @@ export function getItemReadableId(
 }
 
 /**
+ * The secondary text shown with an item's readable id — its name, or a line's
+ * description — or undefined when it only repeats the readable id. A service's
+ * readable id IS its name, and a part's name is sometimes typed the same as its
+ * number; showing both reads as a stutter. Compares the text, not the item
+ * type, so an edited line description still shows.
+ */
+export function distinctItemText(
+  primary: string | null | undefined,
+  secondary: string | null | undefined
+): string | undefined {
+  const text = secondary?.trim();
+  if (!text) return undefined;
+  return text === primary?.trim() ? undefined : secondary!;
+}
+
+/**
  * Get an item by its ID
  * @param items - Array of items from useItems hook
  * @param itemId - The item ID to look up

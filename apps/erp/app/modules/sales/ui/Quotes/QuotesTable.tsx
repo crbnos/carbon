@@ -226,6 +226,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -236,6 +239,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

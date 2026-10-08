@@ -132,6 +132,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -142,6 +145,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

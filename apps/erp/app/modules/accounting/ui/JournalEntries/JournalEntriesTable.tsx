@@ -94,6 +94,9 @@ const JournalEntriesTable = memo(
             <DateTime value={row.original.postingDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -287,6 +290,8 @@ const JournalEntriesTable = memo(
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Journal Entries`}
+          table="journal"
+          withSavedView
         />
         {selectedEntry && selectedEntry.id && (
           <ConfirmDelete

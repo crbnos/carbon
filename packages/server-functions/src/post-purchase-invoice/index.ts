@@ -138,6 +138,96 @@ const postPurchaseInvoice = defineServerFn({
         if (invoiceLinesVoid.error)
           throw new Error("Failed to fetch purchase invoice lines");
 
+        // A Fixed Asset line that posted into Construction in Progress wrote a
+        // CIP cost row; voiding removes those rows and takes their amount back
+        // off the asset. A capitalized asset must be reversed first. Assets on a
+        // depreciating class keep the existing behaviour (no asset write).
+        const faAssetIdsVoid: string[] = [];
+        for (const line of invoiceLinesVoid.data) {
+          if (
+            line.invoiceLineType === "Fixed Asset" &&
+            line.assetId &&
+            !faAssetIdsVoid.includes(line.assetId)
+          ) {
+            faAssetIdsVoid.push(line.assetId);
+          }
+        }
+        const cipAssetUpdatesVoid = new Map<string, number>();
+        if (faAssetIdsVoid.length > 0) {
+          const [cipCostRowsVoid, faRecordsVoid] = await inOrder([
+            () =>
+              many(
+                db,
+                "fixedAssetCipCost",
+                { companyId, sourceDocumentId: invoiceId },
+                { columns: ["fixedAssetId", "amount"] }
+              ),
+            () =>
+              many<
+                "fixedAsset",
+                Pick<
+                  Tables["fixedAsset"]["Row"],
+                  "id" | "status" | "acquisitionCost"
+                > & {
+                  fixedAssetClass: Pick<
+                    Tables["fixedAssetClass"]["Row"],
+                    "isConstructionInProgress"
+                  > | null;
+                }
+              >(
+                db,
+                "fixedAsset",
+                { companyId, id: faAssetIdsVoid },
+                {
+                  columns: ["id", "status", "acquisitionCost"],
+                  embed: {
+                    fixedAssetClass: {
+                      table: "fixedAssetClass",
+                      via: "fixedAssetClassId",
+                      columns: ["isConstructionInProgress"]
+                    }
+                  }
+                }
+              )
+          ]);
+          if (cipCostRowsVoid.error)
+            throw new Error("Failed to fetch fixed asset CIP costs");
+          if (faRecordsVoid.error)
+            throw new Error("Failed to fetch fixed assets");
+
+          const cipCostByAssetVoid = new Map<string, number>();
+          for (const row of cipCostRowsVoid.data) {
+            cipCostByAssetVoid.set(
+              row.fixedAssetId,
+              (cipCostByAssetVoid.get(row.fixedAssetId) ?? 0) +
+                Number(row.amount)
+            );
+          }
+
+          for (const asset of faRecordsVoid.data) {
+            const isConstructionInProgress =
+              cipCostByAssetVoid.has(asset.id) ||
+              Boolean((asset.fixedAssetClass as any)?.isConstructionInProgress);
+            if (!isConstructionInProgress) continue;
+            if (asset.status !== "Under Construction") {
+              throw new Error(
+                "Asset was capitalized; reverse the capitalization first"
+              );
+            }
+            // Every acquisitionCost change this invoice made to a CIP asset
+            // wrote a CIP cost row (the direct line's cost, a receipt-backed
+            // line's variance), so no row means it changed nothing to undo:
+            // a receipt-backed line whose variance was within a cent.
+            const cipCost = cipCostByAssetVoid.get(asset.id);
+            if (cipCost !== undefined) {
+              cipAssetUpdatesVoid.set(
+                asset.id,
+                Math.max(0, round(Number(asset.acquisitionCost) - cipCost))
+              );
+            }
+          }
+        }
+
         const purchaseOrderLineIdsVoid = invoiceLinesVoid.data.reduce<string[]>(
           (acc, invoiceLine) => {
             if (
@@ -380,6 +470,21 @@ const postPurchaseInvoice = defineServerFn({
               .updateTable("purchaseOrder")
               .set({ status })
               .where("id", "=", purchaseOrderId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
+            await trx
+              .deleteFrom("fixedAssetCipCost")
+              .where("companyId", "=", companyId)
+              .where("sourceDocumentId", "=", invoiceId)
+              .where("fixedAssetId", "=", assetId)
+              .execute();
+            await trx
+              .updateTable("fixedAsset")
+              .set({ acquisitionCost, updatedBy: userId })
+              .where("id", "=", assetId)
               .where("companyId", "=", companyId)
               .execute();
           }
@@ -699,6 +804,14 @@ const postPurchaseInvoice = defineServerFn({
 
       const journalLineInserts: Omit<
         Database["public"]["Tables"]["journalLine"]["Insert"],
+        "journalId"
+      >[] = [];
+
+      // A Construction in Progress asset records every posting that adds to its
+      // acquisition cost as a CIP cost row. Written inside the transaction, after
+      // the journal, so it can carry the journal id.
+      const cipCostInserts: Omit<
+        Database["public"]["Tables"]["fixedAssetCipCost"]["Insert"],
         "journalId"
       >[] = [];
 
@@ -1553,14 +1666,38 @@ const postPurchaseInvoice = defineServerFn({
                 purchaseOrderLine &&
                 (purchaseOrderLine.quantityReceived ?? 0) > 0;
 
-              const faRecord = await single(
+              const faRecord = await single<
+                "fixedAsset",
+                Pick<
+                  Tables["fixedAsset"]["Row"],
+                  "locationId" | "fixedAssetClassId"
+                > & {
+                  fixedAssetClass: Pick<
+                    Tables["fixedAssetClass"]["Row"],
+                    "isConstructionInProgress"
+                  > | null;
+                }
+              >(
                 db,
                 "fixedAsset",
                 { id: invoiceLine.assetId },
-                { columns: ["locationId", "fixedAssetClassId"] }
+                {
+                  columns: ["locationId", "fixedAssetClassId"],
+                  embed: {
+                    fixedAssetClass: {
+                      table: "fixedAssetClass",
+                      via: "fixedAssetClassId",
+                      columns: ["isConstructionInProgress"]
+                    }
+                  }
+                }
               );
               const faLocationId = faRecord.data?.locationId ?? null;
               const faClassId = faRecord.data?.fixedAssetClassId ?? null;
+              const faIsConstructionInProgress = Boolean(
+                (faRecord.data?.fixedAssetClass as any)
+                  ?.isConstructionInProgress
+              );
 
               const jlStartIdxFa = journalLineInserts.length;
               let faFixedAssetClassId: string | null = null;
@@ -1665,6 +1802,19 @@ const postPurchaseInvoice = defineServerFn({
                         Number(assetRecord.data.acquisitionCost) + variance,
                       updatedBy: userId
                     });
+
+                    if (faIsConstructionInProgress) {
+                      cipCostInserts.push({
+                        fixedAssetId: invoiceLine.assetId,
+                        sourceType: "Purchase Invoice",
+                        sourceDocumentId: invoiceId,
+                        sourceDocumentLineId: invoiceLine.id,
+                        amount: round(variance),
+                        costDate: today,
+                        companyId,
+                        createdBy: userId
+                      });
+                    }
                   }
                 }
                 faFixedAssetClassId = faClassId;
@@ -1683,7 +1833,7 @@ const postPurchaseInvoice = defineServerFn({
                   > & {
                     fixedAssetClass: Pick<
                       Tables["fixedAssetClass"]["Row"],
-                      "assetAccountId"
+                      "assetAccountId" | "isConstructionInProgress"
                     > | null;
                   }
                 >(
@@ -1703,7 +1853,7 @@ const postPurchaseInvoice = defineServerFn({
                       fixedAssetClass: {
                         table: "fixedAssetClass",
                         via: "fixedAssetClassId",
-                        columns: ["assetAccountId"]
+                        columns: ["assetAccountId", "isConstructionInProgress"]
                       }
                     }
                   }
@@ -1715,6 +1865,10 @@ const postPurchaseInvoice = defineServerFn({
 
                 faFixedAssetClassId =
                   assetRecord.data.fixedAssetClassId ?? null;
+                const isConstructionInProgress = Boolean(
+                  (assetRecord.data.fixedAssetClass as any)
+                    ?.isConstructionInProgress
+                );
 
                 journalLineReference = nanoid();
 
@@ -1767,11 +1921,18 @@ const postPurchaseInvoice = defineServerFn({
                 if (!assetRecord.data.acquisitionDate) {
                   updateData.acquisitionDate = today;
                 }
-                if (!assetRecord.data.depreciationStartDate) {
+                // A CIP asset does not depreciate until it is capitalized, so its
+                // depreciation start date stays null and it goes Under Construction.
+                if (
+                  !isConstructionInProgress &&
+                  !assetRecord.data.depreciationStartDate
+                ) {
                   updateData.depreciationStartDate = today;
                 }
                 if (assetRecord.data.status === "Draft") {
-                  updateData.status = "Active";
+                  updateData.status = isConstructionInProgress
+                    ? "Under Construction"
+                    : "Active";
                 }
 
                 if (invoiceLine.locationId) {
@@ -1779,6 +1940,19 @@ const postPurchaseInvoice = defineServerFn({
                 }
 
                 fixedAssetWrites.patch(invoiceLine.assetId, updateData);
+
+                if (isConstructionInProgress) {
+                  cipCostInserts.push({
+                    fixedAssetId: invoiceLine.assetId,
+                    sourceType: "Purchase Invoice",
+                    sourceDocumentId: invoiceId,
+                    sourceDocumentLineId: invoiceLine.id,
+                    amount: round(totalLineCostWithWeightedShipping),
+                    costDate: today,
+                    companyId,
+                    createdBy: userId
+                  });
+                }
               }
 
               const faJlCount = journalLineInserts.length - jlStartIdxFa;
@@ -2008,6 +2182,7 @@ const postPurchaseInvoice = defineServerFn({
             .execute();
         }
 
+        let invoiceJournalId: string | null = null;
         if (accountingEnabled && journalLineInserts.length > 0) {
           const journalEntryId = await getNextSequence(
             trx,
@@ -2034,6 +2209,7 @@ const postPurchaseInvoice = defineServerFn({
 
           const journalId = journal[0]!.id;
           if (!journalId) throw new Error("Failed to insert journal");
+          invoiceJournalId = journalId;
 
           const journalLineResults = await trx
             .insertInto("journalLine")
@@ -2315,6 +2491,18 @@ const postPurchaseInvoice = defineServerFn({
                 .execute();
             }
           }
+        }
+
+        if (cipCostInserts.length > 0) {
+          await trx
+            .insertInto("fixedAssetCipCost")
+            .values(
+              cipCostInserts.map((row) => ({
+                ...row,
+                journalId: invoiceJournalId
+              }))
+            )
+            .execute();
         }
 
         if (itemLedgerInserts.length > 0) {

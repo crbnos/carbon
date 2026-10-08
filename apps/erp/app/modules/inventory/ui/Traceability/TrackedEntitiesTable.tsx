@@ -206,6 +206,9 @@ const TrackedEntitiesTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendarClock />
           }
         },

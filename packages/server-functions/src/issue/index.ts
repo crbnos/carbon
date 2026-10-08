@@ -603,7 +603,13 @@ async function issueJobOperationMaterials(
 async function createMaterialWipEntries(
   trx: Transaction<KyselyDatabase>,
   args: {
-    consumptionLedgers: Array<{ itemId: string; quantity: number }>;
+    // trackedEntityId: the serial consumed, relieved from its own cost layer
+    // first (specific identification, lib/cost-layer-order.ts).
+    consumptionLedgers: Array<{
+      itemId: string;
+      quantity: number;
+      trackedEntityId?: string | null;
+    }>;
     jobId: string;
     operationId: string;
     description: string;
@@ -692,7 +698,8 @@ async function createMaterialWipEntries(
       const cogsResult = await calculateCOGS(trx, {
         itemId: ledger.itemId,
         quantity: absQty,
-        companyId
+        companyId,
+        trackedEntityIds: ledger.trackedEntityId ? [ledger.trackedEntityId] : []
       });
       cost = cogsResult.totalCost;
     } else {
@@ -1847,7 +1854,8 @@ async function consumeTrackedEntitiesIntoOperation(
       .filter((l) => l.entryType === "Consumption")
       .map((l) => ({
         itemId: l.itemId as string,
-        quantity: Number(l.quantity)
+        quantity: Number(l.quantity),
+        trackedEntityId: l.trackedEntityId
       }));
 
     if (consumptionEntries.length > 0) {
@@ -3341,7 +3349,8 @@ const issue = defineServerFn({
             await createMaterialWipEntries(trx, {
               consumptionLedgers: itemLedgerInserts.map((l) => ({
                 itemId: l.itemId as string,
-                quantity: Number(l.quantity)
+                quantity: Number(l.quantity),
+                trackedEntityId: l.trackedEntityId
               })),
               jobId: jobOperation?.jobId!,
               operationId: id,

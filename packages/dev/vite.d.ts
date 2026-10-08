@@ -6,5 +6,11 @@ import type { Plugin } from "vite";
 
 export function applyDotenvToProcessEnv(mode: string, appDir: string): void;
 export function clientOnlyAlias(specifier: string, file: string): Plugin;
+export function stackActivity(): Plugin;
+export function precompressedAssets(env: {
+  command: "build" | "serve";
+  mode: string;
+}): Promise<Plugin[]>;
+export function compressRemaining(directory: string): Promise<void>;
 
 export function linguiWithoutIdQuery<T>(plugins: T[]): T[];

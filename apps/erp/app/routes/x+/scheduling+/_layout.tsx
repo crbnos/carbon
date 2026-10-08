@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
 import { ProductionSections } from "~/modules/production/ui/useProductionSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -26,5 +26,5 @@ export const handle: Handle = {
 };
 
 export default function SchedulingRoute() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

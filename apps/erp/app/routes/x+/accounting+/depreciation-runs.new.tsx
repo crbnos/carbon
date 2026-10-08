@@ -5,16 +5,16 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getBaseCurrencyDecimalPlaces,
-  insertDepreciationRun
+  createDepreciationRun,
+  depreciationRunValidator
 } from "~/modules/accounting";
-import {
-  buildDepreciationLines,
-  getNextPeriodEnd
-} from "~/modules/accounting/accounting.utils";
+import { futureRunPeriodError } from "~/modules/accounting/accounting.server";
+import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -35,7 +35,34 @@ export async function action({ request }: ActionFunctionArgs) {
   const lastPeriodEnd =
     lastRun.data && lastRun.data.length > 0 ? lastRun.data[0].periodEnd : null;
 
-  const periodEnd = getNextPeriodEnd(lastPeriodEnd);
+  // The list page posts the period the user picked; a bare POST falls back to
+  // the period after the last run. Depreciation is monthly, so the picked
+  // date snaps to its month end, and it must come after the last run — the
+  // calculation depreciates every month from the last posted run up to it.
+  const validation = await validator(depreciationRunValidator).validate(
+    await request.formData()
+  );
+  const periodEnd = validation.error
+    ? getNextPeriodEnd(lastPeriodEnd)
+    : endOfMonth(parseDate(validation.data.periodEnd)).toString();
+
+  if (lastPeriodEnd && periodEnd <= lastPeriodEnd) {
+    throw redirect(
+      path.to.depreciationRuns,
+      await flash(
+        request,
+        error(null, "The period must end after the last depreciation run")
+      )
+    );
+  }
+
+  const futureError = await futureRunPeriodError(client, companyId, periodEnd);
+  if (futureError) {
+    throw redirect(
+      path.to.depreciationRuns,
+      await flash(request, error(null, futureError))
+    );
+  }
 
   // Check for existing run at this period
   const existing = await client
@@ -54,85 +81,18 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const companySettings = await client
-    .from("companySettings")
-    .select("assetTaxDepreciationEnabled")
-    .eq("id", companyId)
-    .single();
-
-  const taxEnabled =
-    (companySettings.data as any)?.assetTaxDepreciationEnabled ?? false;
-
-  const assets = await client
-    .from("fixedAsset")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("status", "Active");
-
-  if (assets.error) {
-    throw redirect(
-      path.to.depreciationRuns,
-      await flash(request, error(assets.error, "Failed to fetch assets"))
-    );
-  }
-
-  // For depreciation calculation, use last *posted* run
-  const lastPostedRun = await client
-    .from("depreciationRun")
-    .select("periodEnd")
-    .eq("companyId", companyId)
-    .eq("status", "Posted")
-    .order("periodEnd", { ascending: false })
-    .limit(1);
-
-  const lastPostedPeriodEnd =
-    lastPostedRun.data && lastPostedRun.data.length > 0
-      ? lastPostedRun.data[0].periodEnd
-      : null;
-
-  const usageLogs = await client
-    .from("fixedAssetUsageLog")
-    .select("fixedAssetId, unitsProduced")
-    .eq("periodEnd", periodEnd);
-
-  const usageMap = new Map(
-    (usageLogs.data ?? []).map((u) => [u.fixedAssetId, u])
-  );
-
-  const lines = buildDepreciationLines(
-    (assets.data ?? []).map((a) => ({
-      ...a,
-      accumulatedTaxDepreciation: Number(
-        (a as any).accumulatedTaxDepreciation ?? 0
-      ),
-      taxDepreciationMethod: (a as any).taxDepreciationMethod ?? null,
-      taxUsefulLifeMonths: (a as any).taxUsefulLifeMonths ?? null,
-      taxResidualValuePercent: (a as any).taxResidualValuePercent ?? null,
-      macrsPropertyClass: (a as any).macrsPropertyClass ?? null,
-      macrsConvention: (a as any).macrsConvention ?? null,
-      bonusDepreciationPercent: (a as any).bonusDepreciationPercent ?? null
-    })),
-    periodEnd,
-    lastPostedPeriodEnd,
-    taxEnabled,
-    usageMap,
-    await getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
-  );
-
-  const result = await insertDepreciationRun(client, {
-    periodEnd,
-    lines,
+  // Never an empty run: with nothing to depreciate this refuses.
+  const result = await createDepreciationRun(client, {
     companyId,
-    createdBy: userId
+    companyGroupId,
+    periodEnd,
+    userId
   });
 
-  if (result.error || !result.data) {
+  if (result.error) {
     throw redirect(
       path.to.depreciationRuns,
-      await flash(
-        request,
-        error(result.error, "Failed to create depreciation run")
-      )
+      await flash(request, error(result.error, result.error.message))
     );
   }
 

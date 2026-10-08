@@ -17,6 +17,7 @@ import {
   useRouteData
 } from "@carbon/react";
 import { convertDateStringToIsoString } from "@carbon/utils";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
@@ -43,6 +44,7 @@ import {
 import { useDateFormatter } from "~/hooks";
 import { withOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
+import { DUE_URGENCY_BORDER, getDueUrgency } from "../dueUrgency";
 import type { DisplaySettings, Item } from "../types";
 
 interface Progress {
@@ -93,16 +95,22 @@ export function ItemCard({
   const { formatRelativeTime } = useDateFormatter();
   const routeData = useRouteData<{
     customers: { id: string; name: string }[];
+    today: string | null;
   }>("/x/operations");
+  // The factory's calendar day from the loader (location time zone); the
+  // device's own day only when there is no location.
+  const scheduleToday =
+    routeData?.today ?? today(getLocalTimeZone()).toString();
 
   const customer = showCustomer
     ? routeData?.customers.find((c) => c.id === item.customerId)
     : undefined;
 
   const isOverdue =
-    item.deadlineType !== "No Deadline" && item.dueDate
-      ? new Date(item.dueDate) < new Date()
-      : false;
+    item.deadlineType !== "ASAP" &&
+    item.deadlineType !== "No Deadline" &&
+    !!item.dueDate &&
+    item.dueDate < scheduleToday;
 
   const progress = progressByItemId?.[item.id]?.progress ?? item.progress ?? 0;
   const status = progressByItemId?.[item.id]?.active
@@ -114,6 +122,7 @@ export function ItemCard({
 
   const location = useLocation();
   const isBatch = (item.batchSize ?? 0) > 1 && !!item.batchId;
+  const urgency = getDueUrgency({ ...item, status }, scheduleToday);
 
   return (
     <Link
@@ -125,10 +134,10 @@ export function ItemCard({
       <Card
         className={cn(
           "max-w-[330px] max-md:max-w-none",
-          item.hasConflict && "border-red-500 border-2",
           cardVariants({
             status: status
-          })
+          }),
+          urgency && DUE_URGENCY_BORDER[urgency]
         )}
       >
         <CardHeader className="flex flex-col justify-between relative gap-2 max-md:pb-1">
@@ -154,7 +163,7 @@ export function ItemCard({
                   <TooltipTrigger>
                     <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="whitespace-pre-line">
                     {item.conflictReason ?? t`Scheduling conflict`}
                   </TooltipContent>
                 </Tooltip>

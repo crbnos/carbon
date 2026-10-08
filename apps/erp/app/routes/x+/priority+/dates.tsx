@@ -27,7 +27,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import {
   endOfMonth,
   endOfWeek,
@@ -40,12 +40,10 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
+import { replaceEqualDeep } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronLeft, LuChevronRight, LuSettings2 } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { SearchFilter } from "~/components";
 import { useLocations } from "~/components/Form/Location";
@@ -75,11 +73,6 @@ export const handle: Handle = {
 };
 
 type ViewType = "week" | "month";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -588,8 +581,10 @@ function DateKanbanSchedule() {
       : defaultDisplaySettings
   );
 
+  // A reload hands over new objects for every card. Keeping the ones that did
+  // not change lets their memoized cards skip the render.
   useEffect(() => {
-    setItems(initialItems);
+    setItems((previous) => replaceEqualDeep(previous, initialItems));
   }, [initialItems]);
 
   const sortItems = useCallback((items: JobItem[]) => {

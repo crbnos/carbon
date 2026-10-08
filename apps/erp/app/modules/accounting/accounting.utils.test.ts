@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
@@ -13,11 +14,18 @@ import {
   calculateTaxDepreciation,
   computeDisposalGainLoss,
   depreciationRunLineDisplay,
+  depreciationRunLinesMatch,
+  diffJournalLines,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
-  getNextPeriodEnd
+  getNextPeriodEnd,
+  getNextRevenueRecognitionPeriodEnd,
+  isFutureRunPeriod,
+  monthEndOf,
+  runPostingTargets,
+  usageKey
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -139,6 +147,32 @@ describe("computeDisposalGainLoss", () => {
 // ---------------------------------------------------------------------------
 
 describe("depreciationRunLineDisplay", () => {
+  it("starts a later month from the earlier months of the same run", () => {
+    // Two months of 1,800 on a 120,000 asset with 10,000 already depreciated.
+    const draftSecond = depreciationRunLineDisplay({
+      acquisitionCost: 120000,
+      accumulatedDepreciation: 10000,
+      amount: 1800,
+      isPosted: false,
+      earlierAmount: 1800,
+      runAmount: 3600
+    });
+    const postedSecond = depreciationRunLineDisplay({
+      acquisitionCost: 120000,
+      accumulatedDepreciation: 13600,
+      amount: 1800,
+      isPosted: true,
+      earlierAmount: 1800,
+      runAmount: 3600
+    });
+    const expected = {
+      accumulatedDepreciationBefore: 11800,
+      netBookValueAfter: 106400
+    };
+    expect(draftSecond).toEqual(expected);
+    expect(postedSecond).toEqual(expected);
+  });
+
   // cost 100k, 20k already depreciated, this run adds 4k → NBV after = 76k.
   const cost = 100_000;
   const amount = 4_000;
@@ -196,28 +230,137 @@ describe("depreciationRunLineDisplay", () => {
 // Date helpers
 // ---------------------------------------------------------------------------
 
+describe("depreciationRunLinesMatch", () => {
+  const P = "2026-09-30";
+  const computed = [
+    { fixedAssetId: "fa1", periodEnd: P, amount: 100, taxAmount: null },
+    { fixedAssetId: "fa2", periodEnd: P, amount: 50.5, taxAmount: null }
+  ];
+
+  it("matches the same assets and amounts in any order, numeric strings included", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [
+          {
+            fixedAssetId: "fa2",
+            periodEnd: P,
+            amount: "50.50",
+            taxAmount: null
+          },
+          { fixedAssetId: "fa1", periodEnd: P, amount: 100, taxAmount: null }
+        ],
+        computed
+      )
+    ).toBe(true);
+  });
+
+  it("is stale when an asset was disposed since the draft", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [
+          ...computed,
+          { fixedAssetId: "fa3", periodEnd: P, amount: 10, taxAmount: null }
+        ],
+        computed
+      )
+    ).toBe(false);
+  });
+
+  it("is stale when an asset was added since the draft", () => {
+    expect(depreciationRunLinesMatch(computed.slice(0, 1), computed)).toBe(
+      false
+    );
+  });
+
+  it("is stale when an amount changed", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [computed[0], { ...computed[1], amount: 40 }],
+        computed
+      )
+    ).toBe(false);
+  });
+
+  it("is stale when tax depreciation was switched on or the tax amount moved", () => {
+    const taxed = computed.map((line) => ({ ...line, taxAmount: 80 }));
+    expect(depreciationRunLinesMatch(computed, taxed)).toBe(false);
+    expect(
+      depreciationRunLinesMatch(
+        taxed.map((line) => ({ ...line, taxAmount: 70 })),
+        taxed
+      )
+    ).toBe(false);
+    expect(depreciationRunLinesMatch(taxed, taxed)).toBe(true);
+  });
+
+  it("is stale when the same asset's line is for a different month", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [computed[0], { ...computed[1], periodEnd: "2026-08-31" }],
+        computed
+      )
+    ).toBe(false);
+  });
+});
+
+describe("isFutureRunPeriod", () => {
+  it("allows the current month and earlier ones", () => {
+    expect(isFutureRunPeriod("2026-10-31", "2026-10-04")).toBe(false);
+    expect(isFutureRunPeriod("2026-09-30", "2026-10-04")).toBe(false);
+  });
+
+  it("refuses a month that has not started", () => {
+    expect(isFutureRunPeriod("2026-11-30", "2026-10-04")).toBe(true);
+  });
+});
+
+describe("monthEndOf", () => {
+  it("returns the last day of the date's month, leap years included", () => {
+    expect(monthEndOf("2026-10-04")).toBe("2026-10-31");
+    expect(monthEndOf("2024-02-10T12:00:00Z")).toBe("2024-02-29");
+  });
+});
+
+describe("runPostingTargets", () => {
+  it("posts each month in its own period, and a Closed month in the run's", () => {
+    expect(
+      runPostingTargets({
+        months: ["2026-08-31", "2026-09-30", "2026-10-31"],
+        runPeriodEnd: "2026-10-31",
+        closedMonths: new Set(["2026-08-31"])
+      })
+    ).toEqual(
+      new Map([
+        ["2026-08-31", "2026-10-31"],
+        ["2026-09-30", "2026-09-30"],
+        ["2026-10-31", "2026-10-31"]
+      ])
+    );
+  });
+});
+
 describe("getMonthsBetween", () => {
   it("returns 1 for same month when end day >= start day", () => {
     expect(
-      getMonthsBetween(new Date("2025-01-15"), new Date("2025-01-20"))
+      getMonthsBetween(parseDate("2025-01-15"), parseDate("2025-01-20"))
     ).toBe(1);
   });
 
   it("returns 0 when end day < start day in same month", () => {
     expect(
-      getMonthsBetween(new Date("2025-01-20"), new Date("2025-01-15"))
+      getMonthsBetween(parseDate("2025-01-20"), parseDate("2025-01-15"))
     ).toBe(0);
   });
 
   it("counts months across years", () => {
     expect(
-      getMonthsBetween(new Date("2024-11-01"), new Date("2025-02-01"))
+      getMonthsBetween(parseDate("2024-11-01"), parseDate("2025-02-01"))
     ).toBe(4);
   });
 
   it("returns 0 for start after end", () => {
     expect(
-      getMonthsBetween(new Date("2025-06-01"), new Date("2025-01-01"))
+      getMonthsBetween(parseDate("2025-06-01"), parseDate("2025-01-01"))
     ).toBe(0);
   });
 });
@@ -225,35 +368,81 @@ describe("getMonthsBetween", () => {
 describe("getMonthsElapsed", () => {
   it("returns 0 for same month", () => {
     expect(
-      getMonthsElapsed(new Date("2025-01-15"), new Date("2025-01-20"))
+      getMonthsElapsed(parseDate("2025-01-15"), parseDate("2025-01-20"))
     ).toBe(0);
   });
 
   it("counts elapsed months", () => {
     expect(
-      getMonthsElapsed(new Date("2025-01-01"), new Date("2025-04-01"))
+      getMonthsElapsed(parseDate("2025-01-01"), parseDate("2025-04-01"))
     ).toBe(3);
   });
 
   it("returns 0 when start after end", () => {
     expect(
-      getMonthsElapsed(new Date("2025-06-01"), new Date("2025-01-01"))
+      getMonthsElapsed(parseDate("2025-06-01"), parseDate("2025-01-01"))
     ).toBe(0);
   });
 });
 
 describe("addOneMonth", () => {
   it("advances to first of next month", () => {
-    const result = addOneMonth("2025-01-15");
-    expect(result.getFullYear()).toBe(2025);
-    expect(result.getMonth()).toBe(1);
-    expect(result.getDate()).toBe(1);
+    expect(addOneMonth("2025-01-15").toString()).toBe("2025-02-01");
   });
 
   it("rolls over year boundary", () => {
-    const result = addOneMonth("2025-12-15");
-    expect(result.getFullYear()).toBe(2026);
-    expect(result.getMonth()).toBe(0);
+    expect(addOneMonth("2025-12-15").toString()).toBe("2026-01-01");
+  });
+
+  // Aug 31 + 1 month used to overflow "Sep 31" into Oct 1, so September got
+  // no depreciation after an August run.
+  it("advances a 31st into a shorter month without skipping it", () => {
+    expect(addOneMonth("2026-08-31").toString()).toBe("2026-09-01");
+    expect(addOneMonth("2026-01-31").toString()).toBe("2026-02-01");
+  });
+});
+
+describe("month arithmetic after a posted run", () => {
+  const straightLine = {
+    acquisitionCost: 120000,
+    accumulatedDepreciation: 0,
+    residualValuePercent: 10,
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    depreciationStartDate: "2025-01-01",
+    acquisitionDate: "2025-01-01",
+    assetLifetimeUsage: null
+  };
+
+  it("charges every month after a run for a 31-day month", () => {
+    for (const [lastPosted, periodEnd] of [
+      ["2026-01-31", "2026-02-28"],
+      ["2026-03-31", "2026-04-30"],
+      ["2026-05-31", "2026-06-30"],
+      ["2026-08-31", "2026-09-30"],
+      ["2026-10-31", "2026-11-30"]
+    ]) {
+      expect(
+        calculateDepreciation(straightLine, periodEnd, lastPosted, 2)
+      ).toBe(1800);
+    }
+  });
+
+  it("takes a Jan 1 MACRS asset's year-1 percentage in January, whatever the server's timezone", () => {
+    // 5-year half-year property: year 1 is 20%, spread over Jan–Dec.
+    expect(
+      calculateMacrsDepreciation({
+        adjustedBasis: 120000,
+        propertyClass: "5",
+        convention: "Half-Year",
+        depreciationStartDate: "2025-01-01",
+        periodEnd: "2025-01-31",
+        lastPostedPeriodEnd: null,
+        accumulatedTaxDepreciation: 0,
+        bonusAmount: 0,
+        decimalPlaces: 2
+      })
+    ).toBe(2000);
   });
 });
 
@@ -280,6 +469,46 @@ describe("getNextPeriodEnd", () => {
   it("handles year rollover", () => {
     const result = getNextPeriodEnd("2025-12-31");
     expect(result).toBe("2026-01-31");
+  });
+
+  it("defaults to the end of the current month of the given business date", () => {
+    expect(getNextPeriodEnd(null, "2026-02-10")).toBe("2026-02-28");
+    expect(getNextPeriodEnd(null, "2024-02-01")).toBe("2024-02-29");
+  });
+});
+
+describe("getNextRevenueRecognitionPeriodEnd", () => {
+  it("returns the month end after the last run", () => {
+    expect(getNextRevenueRecognitionPeriodEnd("2026-09-30", "2026-11-03")).toBe(
+      "2026-10-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd("2025-12-31", "2026-03-01")).toBe(
+      "2026-01-31"
+    );
+  });
+
+  it("defaults to the month just closed, not the month in progress", () => {
+    expect(getNextRevenueRecognitionPeriodEnd(null, "2026-11-01")).toBe(
+      "2026-10-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd(null, "2026-01-15")).toBe(
+      "2025-12-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd(null, "2026-03-31")).toBe(
+      "2026-02-28"
+    );
+  });
+
+  // A month that has not started cannot run, so after a run for the current
+  // month the default stays on it — a second run picks up rows that fell due
+  // after the first posted.
+  it("never proposes a month that has not started", () => {
+    expect(getNextRevenueRecognitionPeriodEnd("2026-10-31", "2026-10-04")).toBe(
+      "2026-10-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd("2026-09-30", "2026-10-04")).toBe(
+      "2026-10-31"
+    );
   });
 });
 
@@ -441,14 +670,15 @@ describe("calculateDepreciation", () => {
     });
 
     it("uses lastPostedPeriodEnd to narrow the window", () => {
-      // addOneMonth("2025-01-31") overflows Feb→Mar 1; Mar 1 to Mar 31 = 1 month
+      // After a Jan 31 run, a Mar 31 run covers February and March. This
+      // test used to expect one month: Jan 31 + 1 month overflowed to Mar 1.
       const result = calculateDepreciation(
         baseAsset,
         "2025-03-31",
         "2025-01-31",
         2
       );
-      expect(result).toBeCloseTo(1800, 0);
+      expect(result).toBe(3600);
     });
   });
 
@@ -732,7 +962,16 @@ describe("buildDepreciationLines", () => {
     bonusDepreciationPercent: 0
   };
 
-  it("returns book and tax amounts when tax is enabled", () => {
+  const total = (lines: { amount: number; taxAmount: number | null }[]) =>
+    lines.reduce<{ amount: number; taxAmount: number }>(
+      (sum, line) => ({
+        amount: sum.amount + line.amount,
+        taxAmount: sum.taxAmount + (line.taxAmount ?? 0)
+      }),
+      { amount: 0, taxAmount: 0 }
+    );
+
+  it("returns one line per month, each with book and tax amounts when tax is enabled", () => {
     const lines = buildDepreciationLines(
       [baseAsset],
       "2025-12-31",
@@ -741,10 +980,25 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(1);
-    expect(lines[0].amount).toBeGreaterThan(0);
-    expect(lines[0].taxAmount).not.toBeNull();
-    expect(lines[0].taxAmount!).toBeGreaterThan(0);
+    expect(lines).toHaveLength(12);
+    expect(lines.map((line) => line.periodEnd)).toEqual([
+      "2025-01-31",
+      "2025-02-28",
+      "2025-03-31",
+      "2025-04-30",
+      "2025-05-31",
+      "2025-06-30",
+      "2025-07-31",
+      "2025-08-31",
+      "2025-09-30",
+      "2025-10-31",
+      "2025-11-30",
+      "2025-12-31"
+    ]);
+    for (const line of lines) {
+      expect(line.amount).toBeGreaterThan(0);
+      expect(line.taxAmount!).toBeGreaterThan(0);
+    }
   });
 
   it("returns null taxAmount when tax is disabled", () => {
@@ -756,9 +1010,8 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(1);
-    expect(lines[0].amount).toBeGreaterThan(0);
-    expect(lines[0].taxAmount).toBeNull();
+    expect(lines).toHaveLength(12);
+    expect(lines.every((line) => line.taxAmount === null)).toBe(true);
   });
 
   it("skips assets with zero depreciation", () => {
@@ -792,9 +1045,9 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(1);
-    expect(lines[0].amount).toBe(0);
-    expect(lines[0].taxAmount!).toBeGreaterThan(0);
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.every((line) => line.amount === 0)).toBe(true);
+    expect(total(lines).taxAmount).toBeGreaterThan(0);
   });
 
   it("handles multiple assets", () => {
@@ -807,7 +1060,10 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(2);
+    expect(lines).toHaveLength(24);
+    expect(new Set(lines.map((line) => line.fixedAssetId))).toEqual(
+      new Set(["asset-1", "asset-2"])
+    );
   });
 
   it("book vs tax difference: MACRS produces more year-1 depreciation than SL", () => {
@@ -821,6 +1077,268 @@ describe("buildDepreciationLines", () => {
     );
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
-    expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+    expect(total(lines)).toEqual({ amount: 21600, taxAmount: 24000 });
+  });
+
+  it("splits a 3-month straight-line catch-up into 3 equal months", () => {
+    const lines = buildDepreciationLines(
+      [baseAsset],
+      "2025-12-31",
+      "2025-09-30",
+      false,
+      new Map(),
+      2
+    );
+    expect(
+      lines.map(({ periodEnd, amount }) => ({ periodEnd, amount }))
+    ).toEqual([
+      { periodEnd: "2025-10-31", amount: 1800 },
+      { periodEnd: "2025-11-30", amount: 1800 },
+      { periodEnd: "2025-12-31", amount: 1800 }
+    ]);
+  });
+
+  it("declines month by month on declining balance", () => {
+    const lines = buildDepreciationLines(
+      [{ ...baseAsset, depreciationMethod: "Declining Balance" }],
+      "2025-03-31",
+      null,
+      false,
+      new Map(),
+      2
+    );
+    expect(lines).toHaveLength(3);
+    expect(lines[1].amount).toBeLessThan(lines[0].amount);
+    expect(lines[2].amount).toBeLessThan(lines[1].amount);
+  });
+
+  it("charges units of production only in the months with logged usage", () => {
+    const lines = buildDepreciationLines(
+      [
+        {
+          ...baseAsset,
+          depreciationMethod: "Units of Production",
+          assetLifetimeUsage: 10000
+        }
+      ],
+      "2025-03-31",
+      null,
+      false,
+      new Map([
+        [usageKey("asset-1", "2025-01-31"), 100],
+        [usageKey("asset-1", "2025-03-31"), 50]
+      ]),
+      2
+    );
+    // 108,000 / 10,000 units = 10.80 a unit.
+    expect(
+      lines.map(({ periodEnd, amount }) => ({ periodEnd, amount }))
+    ).toEqual([
+      { periodEnd: "2025-01-31", amount: 1080 },
+      { periodEnd: "2025-03-31", amount: 540 }
+    ]);
+  });
+
+  it("takes MACRS bonus depreciation in the first month only", () => {
+    const lines = buildDepreciationLines(
+      [{ ...baseAsset, bonusDepreciationPercent: 50 }],
+      "2025-03-31",
+      null,
+      true,
+      new Map(),
+      2
+    );
+    // Bonus 60,000 in January, then 20% of the 60,000 basis over 12 months.
+    expect(lines.map((line) => line.taxAmount)).toEqual([61000, 1000, 1000]);
+  });
+
+  it("never depreciates before an asset placed in service after the last posted run", () => {
+    const lines = buildDepreciationLines(
+      [
+        {
+          ...baseAsset,
+          depreciationStartDate: "2025-04-15",
+          acquisitionDate: "2025-04-15",
+          bonusDepreciationPercent: 50
+        }
+      ],
+      "2025-06-30",
+      "2025-01-31",
+      true,
+      new Map(),
+      2
+    );
+    // Nothing for February or March: the bonus lands in April, the month the
+    // asset went into service, not in the month after the last posted run.
+    expect(lines.map((line) => line.periodEnd)).toEqual([
+      "2025-04-30",
+      "2025-05-31",
+      "2025-06-30"
+    ]);
+    expect(lines[0].taxAmount).toBeGreaterThanOrEqual(60000);
+    expect(lines.slice(1).every((line) => line.taxAmount! < 60000)).toBe(true);
+  });
+});
+
+describe("diffJournalLines", () => {
+  const stored = [
+    {
+      id: "jl_a",
+      accountId: "acct_cash",
+      description: "Rent",
+      amount: 1000,
+      dimensions: [{ dimensionId: "dim_loc", valueId: "loc_hq" }]
+    },
+    {
+      id: "jl_b",
+      accountId: "acct_rent",
+      description: null,
+      amount: -1000,
+      dimensions: []
+    }
+  ];
+
+  it("keeps lines nothing changed on, and deletes nothing", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: [{ dimensionId: "dim_loc", valueId: "loc_hq" }]
+      },
+      {
+        id: "jl_b",
+        accountId: "acct_rent",
+        description: "",
+        amount: -1000,
+        dimensions: []
+      }
+    ]);
+    expect(changes.map((c) => c.op)).toEqual(["keep", "keep"]);
+    expect(changes.every((c) => !c.dimensionsChanged)).toBe(true);
+    expect(deleteIds).toEqual([]);
+  });
+
+  it("updates a line in place when its account, description or amount changes", () => {
+    const { changes } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Office rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      },
+      {
+        id: "jl_b",
+        accountId: "acct_other",
+        description: null as unknown as string,
+        amount: -1000,
+        dimensions: []
+      }
+    ]);
+    expect(changes.map((c) => [c.op, c.id])).toEqual([
+      ["update", "jl_a"],
+      ["update", "jl_b"]
+    ]);
+  });
+
+  it("ignores float noise in amounts", () => {
+    const { changes } = diffJournalLines(stored.slice(0, 1), [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000.0000000001,
+        dimensions: stored[0].dimensions
+      }
+    ]);
+    expect(changes[0].op).toBe("keep");
+  });
+
+  it("inserts a line with no id or an unknown id, and deletes stored lines not submitted", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      },
+      { accountId: "acct_fee", amount: 5, dimensions: [] },
+      {
+        id: "client-xyz",
+        accountId: "acct_fee",
+        amount: -5,
+        dimensions: [{ dimensionId: "d", valueId: "v" }]
+      }
+    ]);
+    expect(changes.map((c) => c.op)).toEqual(["keep", "insert", "insert"]);
+    expect(changes[1].dimensionsChanged).toBe(false);
+    expect(changes[2].dimensionsChanged).toBe(true);
+    expect(deleteIds).toEqual(["jl_b"]);
+  });
+
+  it("matches a stored id once — a repeat is inserted, never a second update of the same row", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      },
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      }
+    ]);
+    expect(changes.map((c) => [c.op, c.id])).toEqual([
+      ["keep", "jl_a"],
+      ["insert", undefined]
+    ]);
+    expect(deleteIds).toEqual(["jl_b"]);
+  });
+
+  it("flags a dimension change regardless of order, and only a real change", () => {
+    const twoDims = [
+      { dimensionId: "d1", valueId: "v1" },
+      { dimensionId: "d2", valueId: "v2" }
+    ];
+    const withDims = [{ ...stored[1], dimensions: twoDims }];
+    const reordered = diffJournalLines(withDims, [
+      {
+        id: "jl_b",
+        accountId: "acct_rent",
+        amount: -1000,
+        dimensions: [...twoDims].reverse()
+      }
+    ]);
+    expect(reordered.changes[0].dimensionsChanged).toBe(false);
+
+    const changed = diffJournalLines(withDims, [
+      {
+        id: "jl_b",
+        accountId: "acct_rent",
+        amount: -1000,
+        dimensions: [twoDims[0]]
+      }
+    ]);
+    expect(changed.changes[0]).toMatchObject({
+      op: "keep",
+      dimensionsChanged: true
+    });
+  });
+
+  it("replaces every line for a caller that sends no ids", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      { accountId: "acct_cash", amount: 1000, dimensions: [] },
+      { accountId: "acct_rent", amount: -1000, dimensions: [] }
+    ]);
+    expect(changes.map((c) => c.op)).toEqual(["insert", "insert"]);
+    expect(deleteIds).toEqual(["jl_a", "jl_b"]);
   });
 });

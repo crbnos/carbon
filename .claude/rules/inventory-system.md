@@ -34,7 +34,20 @@ Key service functions (verified):
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
   `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
   `post-inventory-count` books its variances through the same shared core
-  (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
+  (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL.
+  **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
+  (migration `20261006220601`) stamps a layer booked for ONE serial unit — every layer
+  `bookAdjustment` writes for a `Serial` item (a fixed asset returned to stock at NBV, a
+  sales-type lease residual, an unscrap, a positive adjustment). `calculateCOGS` takes
+  optional `trackedEntityIds` and orders FIFO / LIFO layers through
+  `orderLayersForConsumption` (`packages/server-functions/src/lib/cost-layer-order.ts`): the leaving unit's own layer
+  first, then unstamped layers, then another unit's stamped layer as the last resort (so
+  nothing else eats a returned unit's value). Callers passing the ids: `bookAdjustment`
+  decreases, the three `post-shipment` COGS calls (`leavingTrackedEntityIds` over the
+  shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
+  layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
+  Pinned by `lib/cost-layer-order.test.ts` and the database test
+  `lib/calculate-cogs.test.ts`. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
@@ -131,14 +144,16 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20260713235406_item-ledger-snapshot.sql` (snapshot + delta via
-`itemLedgerSnapshot`; `item_id` restricts to one item for detail-page loads). Returns ~52 cols:
+read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
+`20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
+`item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
+`GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
 item identity + material props, planning fields, and quantities `quantityOnHand`, `quantityOnHold`,
 `quantityRejected` (status-aware: excludes `Rejected`, surfaces `On Hold`), `quantityOnSalesOrder`,
 `quantityOnPurchaseOrder`, `quantityOnProductionOrder`, `quantityOnProductionDemand`, `demandForecast`,
 `usageLast30Days`, `usageLast90Days`, `daysRemaining`, plus `storageTypeIds`/`storageUnitIds` arrays.
 Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
-and `demandForecast`/`demandActual`.
+`demandForecast`/`demandActual`, and `demandProjection` net of `consumedQuantity`.
 
 Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 `20260807090400`), `trackedEntityStatus`
@@ -156,7 +171,7 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20260713235406`), not the
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261006130001`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —

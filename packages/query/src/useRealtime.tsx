@@ -13,11 +13,12 @@ import {
   useRef,
   useSyncExternalStore
 } from "react";
-import { useFetchers, useMatches, useRevalidator } from "react-router";
+import { useMatches } from "react-router";
 import { getClientCache } from "./cache";
 import { invalidateLoaderEntries } from "./invalidation";
 import { matchesFilter } from "./realtimeFilter";
 import { useRealtimeChannel } from "./useRealtimeChannel";
+import { useRevalidator } from "./useRevalidator";
 
 /** What `broadcast_table_changes` sends: no row data, only which rows changed. */
 export type BroadcastChange = {
@@ -148,31 +149,12 @@ const requestRevalidation = (revalidate: () => void) => {
 };
 
 /**
- * `revalidate()` that waits for submitting fetchers. React Router drops a
- * fetcher's redirect when a revalidation starts during its action, so a change
- * that arrives mid-submit is held and applied once the fetcher is done.
+ * The page reload a realtime change asks for: debounced across the tables a
+ * page follows, and held while a save is in flight (see `useRevalidator`).
  */
 export function useRealtimeRevalidator() {
-  const revalidator = useRevalidator();
-  const submitting = useFetchers().some((f) => f.state === "submitting");
-  const submittingRef = useRef(submitting);
-  submittingRef.current = submitting;
-  const held = useRef(false);
-
-  useEffect(() => {
-    if (!submitting && held.current) {
-      held.current = false;
-      requestRevalidation(revalidator.revalidate);
-    }
-  }, [submitting, revalidator]);
-
-  return useCallback(() => {
-    if (submittingRef.current) {
-      held.current = true;
-      return;
-    }
-    requestRevalidation(revalidator.revalidate);
-  }, [revalidator]);
+  const { revalidate } = useRevalidator();
+  return useCallback(() => requestRevalidation(revalidate), [revalidate]);
 }
 
 /**
@@ -267,6 +249,9 @@ function TableSubscription(props: {
  * `api+` loaders rather than a matched route. Render it once, in the shell.
  */
 export function RouteRealtime({ companyId }: { companyId: string }) {
+  // Mounted for the whole session, so a held revalidation always has a caller
+  // left to run it.
+  useRevalidator();
   const matches = useMatches();
   const tables = useMemo(() => {
     const followed = new Map<

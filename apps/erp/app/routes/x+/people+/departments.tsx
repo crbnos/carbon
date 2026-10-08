@@ -16,23 +16,21 @@ import {
   Heading,
   HStack,
   IconButton,
+  RecordOutlet,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
   useViewport
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuDownload, LuEllipsis } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarActions } from "~/components/Layout/Mobile";
@@ -48,9 +46,6 @@ export const handle: Handle = {
   breadcrumb: msg`Departments`,
   to: path.to.departments
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -209,7 +204,7 @@ export default function Route() {
         />
       )}
 
-      <Outlet />
+      <RecordOutlet />
     </Tabs>
   );
 }

@@ -105,6 +105,14 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "create-contract-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "create-rental-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
   "finalize-purchasing-rfq": {
     "create": "purchasing",
   },
@@ -266,8 +274,14 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "post-asset-transfer": {
+    "create": "accounting",
+  },
   "post-charge": {
     "update": "invoicing",
+  },
+  "post-customer-contract": {
+    "update": "sales",
   },
   "post-inventory-adjustment": {
     "update": "inventory",
@@ -300,6 +314,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-reimbursement": {
     "update": "invoicing",
   },
+  "post-rental-agreement": {
+    "update": "sales",
+  },
   "post-sales-invoice": {
     "update": "invoicing",
   },
@@ -307,8 +324,20 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "inventory",
   },
   "post-stock-transfer": {},
+  "preview-asset-capitalization": {
+    "view": "accounting",
+  },
+  "preview-revenue-recognition-run": {
+    "view": "accounting",
+  },
+  "propose-revenue-recognition-run": {
+    "create": "accounting",
+  },
   "recalculate": {
     "update": "production",
+  },
+  "recalculate-revenue-recognition-run": {
+    "update": "accounting",
   },
   "reschedule": {
     "update": "production",

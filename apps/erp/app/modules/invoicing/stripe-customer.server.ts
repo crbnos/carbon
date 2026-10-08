@@ -7,21 +7,31 @@ import { createMappingService } from "@carbon/ee/accounting";
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
 import {
   findConnectCustomersByEmail,
-  retrieveConnectCustomer
+  retrieveConnectCustomer,
+  upsertConnectCustomer
 } from "@carbon/stripe/connect.server";
 import {
+  getStripeConnectAccountId,
+  STRIPE_CONNECT_INTEGRATION
+} from "@carbon/stripe/send-sales-invoice.server";
+import {
   getCustomer,
+  getCustomerContact,
   getCustomerLocation,
   getCustomerPayment,
-  getCustomerTax
+  getCustomerTax,
+  updateCustomerContact
 } from "~/modules/sales";
 import { getDatabaseClient } from "~/services/database.server";
+import type { stripeCustomerActions } from "./invoicing.models";
 import type { StripeCustomerSources } from "./stripe-customer.mapper";
 import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
-export const STRIPE_CONNECT_INTEGRATION = "stripe-connect";
+// The connected-account lookup lives in @carbon/stripe so invoice automation
+// (in @carbon/jobs) reads it the same way the ERP does.
+export { getStripeConnectAccountId, STRIPE_CONNECT_INTEGRATION };
 
 // The pure Carbon → Stripe field mapping lives in its own module so it can be
 // unit tested without this file's database and Stripe imports.
@@ -41,25 +51,28 @@ export type { StripeCustomerSources };
  * `billingCustomerId` is already validated against the invoice's `companyId` by
  * `getBillingCustomerId`. Without this, a caller who knows a contact UUID from
  * another tenant's customer could resolve that contact's email into this Stripe
- * lookup.
+ * lookup. With no contact (a contract need not name one) the email can only
+ * come from the caller's `emailOverride`.
  */
 export async function resolveStripeCustomerSources(
   serviceRole: ServiceRole,
   companyId: string,
   billingCustomerId: string,
-  customerContactId: string
+  customerContactId: string | null
 ): Promise<StripeCustomerSources | null> {
   const [customer, contact, payment, customerTax] = await Promise.all([
     getCustomer(serviceRole, billingCustomerId, companyId),
-    serviceRole
-      .from("customerContact")
-      .select(
-        "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
-      )
-      .eq("id", customerContactId)
-      .eq("customerId", billingCustomerId)
-      .eq("companyId", companyId)
-      .single(),
+    customerContactId
+      ? serviceRole
+          .from("customerContact")
+          .select(
+            "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
+          )
+          .eq("id", customerContactId)
+          .eq("customerId", billingCustomerId)
+          .eq("companyId", companyId)
+          .single()
+      : { data: null },
     getCustomerPayment(serviceRole, billingCustomerId, companyId),
     getCustomerTax(serviceRole, billingCustomerId, companyId)
   ]);
@@ -126,38 +139,6 @@ function toSummary(customer: {
 }
 
 /**
- * The connected account this company bills through, or null if the
- * integration is not set up or onboarding is not far enough along to accept
- * charges yet.
- *
- * `active` alone is not enough to gate on: the connect callback sets it
- * `true` as soon as a Stripe account exists, before onboarding (and
- * `chargesEnabled`) is complete. Gating only on `active` let mid-onboarding
- * companies see the Stripe send option, get their invoice Posted, and then
- * fail the actual Stripe send.
- */
-export async function getStripeConnectAccountId(
-  serviceRole: ServiceRole,
-  companyId: string
-): Promise<string | null> {
-  const integration = await serviceRole
-    .from("companyIntegration")
-    .select("active, metadata")
-    .eq("id", STRIPE_CONNECT_INTEGRATION)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (!integration.data?.active) return null;
-
-  const metadata = integration.data.metadata as
-    | Record<string, unknown>
-    | undefined;
-  if (metadata?.chargesEnabled !== true) return null;
-
-  return (metadata?.stripeAccountId as string | undefined) ?? null;
-}
-
-/**
  * Who gets billed for this invoice.
  *
  * `invoiceCustomerId` is the bill-to and takes precedence — it is set when the
@@ -186,6 +167,10 @@ export async function getBillingCustomerId(
  * check the answer it got back) call this. Running the same resolution on both
  * sides is what stops a client from claiming "just link me to cus_X" for a
  * customer that does not exist, belongs to another account, or was never offered.
+ *
+ * Starts from an INVOICE: the billed customer is its bill-to. A contract (or
+ * anything else that already knows who it bills) uses
+ * `resolveStripeCustomerForBilling` directly.
  */
 export async function resolveStripeCustomer({
   serviceRole,
@@ -199,29 +184,12 @@ export async function resolveStripeCustomer({
   invoiceId: string;
   customerContactId: string;
   emailOverride?: string;
-}): Promise<
-  | { resolution: StripeCustomerResolution; sources: null }
-  | {
-      resolution: StripeCustomerResolution;
-      sources: StripeCustomerSources;
-      stripeAccountId: string;
-      billingCustomerId: string;
-      input: ConnectCustomerInput | null;
-    }
-> {
+}): Promise<StripeCustomerResolutionResult> {
   const stripeAccountId = await getStripeConnectAccountId(
     serviceRole,
     companyId
   );
-  if (!stripeAccountId) {
-    return {
-      resolution: {
-        state: "unavailable",
-        message: "Stripe Connect is not connected for this company"
-      },
-      sources: null
-    };
-  }
+  if (!stripeAccountId) return notConnected();
 
   const billingCustomerId = await getBillingCustomerId(
     serviceRole,
@@ -238,11 +206,96 @@ export async function resolveStripeCustomer({
     };
   }
 
+  return resolveForAccount({
+    serviceRole,
+    companyId,
+    stripeAccountId,
+    billingCustomerId,
+    customerContactId,
+    emailOverride
+  });
+}
+
+type StripeCustomerResolutionResult =
+  | { resolution: StripeCustomerResolution; sources: null }
+  | {
+      resolution: StripeCustomerResolution;
+      sources: StripeCustomerSources;
+      stripeAccountId: string;
+      billingCustomerId: string;
+      input: ConnectCustomerInput | null;
+    };
+
+function notConnected(): StripeCustomerResolutionResult {
+  return {
+    resolution: {
+      state: "unavailable",
+      message: "Stripe Connect is not connected for this company"
+    },
+    sources: null
+  };
+}
+
+/**
+ * `resolveStripeCustomer`, starting from the customer who is billed rather
+ * than from an invoice. `billingCustomerId` must already be the bill-to (a
+ * contract's `invoiceCustomerId ?? customerId`); it is loaded scoped to
+ * `companyId`, so a customer of another company resolves to `unavailable`
+ * before anything reaches Stripe.
+ *
+ * `customerContactId` is optional: a contract need not name an invoice
+ * contact, and the Stripe customer's email can then come only from
+ * `emailOverride`.
+ */
+export async function resolveStripeCustomerForBilling({
+  serviceRole,
+  companyId,
+  billingCustomerId,
+  customerContactId,
+  emailOverride
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  billingCustomerId: string;
+  customerContactId?: string | null;
+  emailOverride?: string;
+}): Promise<StripeCustomerResolutionResult> {
+  const stripeAccountId = await getStripeConnectAccountId(
+    serviceRole,
+    companyId
+  );
+  if (!stripeAccountId) return notConnected();
+
+  return resolveForAccount({
+    serviceRole,
+    companyId,
+    stripeAccountId,
+    billingCustomerId,
+    customerContactId,
+    emailOverride
+  });
+}
+
+async function resolveForAccount({
+  serviceRole,
+  companyId,
+  stripeAccountId,
+  billingCustomerId,
+  customerContactId,
+  emailOverride
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  stripeAccountId: string;
+  billingCustomerId: string;
+  customerContactId?: string | null;
+  emailOverride?: string;
+}): Promise<StripeCustomerResolutionResult> {
   const sources = await resolveStripeCustomerSources(
     serviceRole,
     companyId,
     billingCustomerId,
-    customerContactId
+    customerContactId ?? null
   );
   if (!sources) {
     return {
@@ -330,5 +383,198 @@ export async function resolveStripeCustomer({
         taxExempt: input.taxExempt ?? "none"
       }
     }
+  };
+}
+
+/**
+ * Act on the user's Stripe customer choice for the customer who is billed,
+ * and link the result in `externalIntegrationMapping`.
+ *
+ * The choice comes from a form (the invoice post modal, the contract confirm
+ * modal), so it is never taken at face value: the resolution is re-run here —
+ * the same one the modal showed — and the action is checked against what the
+ * connected account looks like now. That closes the gap between the dialog
+ * being shown and the form being submitted (a customer deleted in the Stripe
+ * dashboard, a mapping written by a concurrent post, a hand-rolled form body
+ * naming someone else's customer id).
+ *
+ * `contactEmail` is an address the user typed for a contact that had none; it
+ * is saved to that contact before resolving, so the match search runs on it.
+ */
+export async function linkStripeCustomerForBilling({
+  serviceRole,
+  companyId,
+  userId,
+  billingCustomerId,
+  customerContactId,
+  action,
+  stripeCustomerId,
+  contactEmail
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  userId: string;
+  billingCustomerId: string;
+  customerContactId?: string | null;
+  action: (typeof stripeCustomerActions)[number];
+  stripeCustomerId?: string;
+  contactEmail?: string;
+}): Promise<
+  | {
+      ok: true;
+      stripeAccountId: string;
+      stripeCustomerId: string;
+      customerName: string;
+    }
+  | { ok: false; message: string }
+> {
+  if (contactEmail && customerContactId) {
+    // customerContactId comes from the form and the service role bypasses RLS:
+    // scope it so another company's contact is never read or rewritten.
+    const contact = await getCustomerContact(
+      serviceRole,
+      customerContactId,
+      companyId
+    );
+    if (contact.data && !contact.data.contact?.email) {
+      const update = await updateCustomerContact(serviceRole, {
+        contactId: contact.data.contactId,
+        contact: {
+          firstName: contact.data.contact?.firstName ?? "",
+          lastName: contact.data.contact?.lastName ?? "",
+          email: contactEmail
+        }
+      });
+      if (update.error) {
+        return { ok: false, message: "the contact email could not be saved" };
+      }
+    }
+  }
+
+  const resolveNow = () =>
+    resolveStripeCustomerForBilling({
+      serviceRole,
+      companyId,
+      billingCustomerId,
+      customerContactId,
+      emailOverride: contactEmail
+    });
+
+  const resolved = await resolveNow();
+
+  if (!resolved.sources) {
+    return {
+      ok: false,
+      message:
+        resolved.resolution.state === "unavailable"
+          ? resolved.resolution.message
+          : "the Stripe customer could not be resolved"
+    };
+  }
+
+  const { stripeAccountId, sources, input } = resolved;
+
+  if (!input) {
+    return { ok: false, message: "the selected contact has no email address" };
+  }
+
+  const customerName = sources.customer.name;
+  if (!customerName) {
+    return { ok: false, message: "the customer could not be loaded" };
+  }
+
+  let resolvedCustomerId: string;
+
+  switch (action) {
+    case "use-linked": {
+      // The dialog showed a linked customer; it must still be linked and live.
+      // Falling through to a create here would put a customer on the merchant's
+      // account that the user never agreed to.
+      if (resolved.resolution.state !== "linked") {
+        return {
+          ok: false,
+          message:
+            "the linked Stripe customer is no longer available — reopen the dialog"
+        };
+      }
+      resolvedCustomerId = resolved.resolution.customer.id;
+      break;
+    }
+    case "link-existing": {
+      if (!stripeCustomerId) {
+        return {
+          ok: false,
+          message: "no Stripe customer was selected to link"
+        };
+      }
+      // Confirm the id exists on THIS connected account before writing it into
+      // the mapping — an id from another account (or an invented one) would
+      // otherwise be linked and every future invoice would fail at send.
+      const existing = await retrieveConnectCustomer(
+        stripeAccountId,
+        stripeCustomerId
+      );
+      if (!existing) {
+        return {
+          ok: false,
+          message: "that Stripe customer no longer exists on this account"
+        };
+      }
+      resolvedCustomerId = existing.id;
+      break;
+    }
+    case "create": {
+      // A concurrent post (or a link made since the dialog opened) means this
+      // Carbon customer now HAS a Stripe customer. Creating a second one is
+      // exactly what this flow exists to prevent, so stop and let the user
+      // confirm the one that now exists.
+      if (resolved.resolution.state === "linked") {
+        return {
+          ok: false,
+          message:
+            "this customer was just linked to a Stripe customer — reopen the dialog to confirm it"
+        };
+      }
+      try {
+        resolvedCustomerId = await upsertConnectCustomer(
+          stripeAccountId,
+          null,
+          input
+        );
+      } catch (err) {
+        // A genuinely concurrent post for the same unlinked customer reuses
+        // the same idempotency key (upsertConnectCustomer scopes it by
+        // companyId+carbonCustomerId) — Stripe rejects the SECOND request
+        // in-flight with an idempotency_error rather than returning the
+        // first request's result. The winning request finishes and links
+        // its mapping shortly after, so re-resolve once instead of failing
+        // outright.
+        if ((err as { type?: string }).type !== "idempotency_error") {
+          throw err;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const retried = await resolveNow();
+        if (retried.resolution.state !== "linked") {
+          throw err;
+        }
+        resolvedCustomerId = retried.resolution.customer.id;
+      }
+      break;
+    }
+  }
+
+  await createMappingService(getDatabaseClient(), companyId).link(
+    "customer",
+    billingCustomerId,
+    STRIPE_CONNECT_INTEGRATION,
+    resolvedCustomerId,
+    { createdBy: userId }
+  );
+
+  return {
+    ok: true,
+    stripeAccountId,
+    stripeCustomerId: resolvedCustomerId,
+    customerName
   };
 }

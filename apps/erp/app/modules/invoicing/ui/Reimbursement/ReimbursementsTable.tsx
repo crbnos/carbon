@@ -97,7 +97,7 @@ const ReimbursementsTable = memo(
           header: t`Date`,
           cell: (item) =>
             formatDate(item.getValue<string>(), undefined, locale),
-          meta: { icon: <LuCalendar /> }
+          meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
         },
         {
           accessorKey: "reference",

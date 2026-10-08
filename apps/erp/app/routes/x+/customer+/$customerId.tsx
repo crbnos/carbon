@@ -5,14 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { cn } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { cn, RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+
 import { usePermissions } from "~/hooks";
 import {
   getCustomer,
@@ -32,11 +29,6 @@ export const handle: Handle = {
   ),
   module: "sales"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["customerId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -88,7 +80,7 @@ export default function CustomerRoute() {
         )}
       >
         {isEmployee && <CustomerSidebar />}
-        <Outlet />
+        <RecordOutlet />
       </div>
     </>
   );

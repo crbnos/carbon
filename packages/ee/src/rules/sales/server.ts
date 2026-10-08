@@ -385,6 +385,52 @@ export async function resolveSalesOrderShipTo(
 }
 
 /**
+ * Resolve the ship-to of a sales invoice's STANDALONE lines (lines with no
+ * source order): the invoice shipment's `customerLocationId`.
+ *
+ * Never the bill-to (`invoiceCustomerLocationId`) — a different address and
+ * frequently a different country, so substituting it would clear a rule that
+ * should have blocked. With no ship-to set the location is null, which flows
+ * into the engine's required-field semantics and fails closed. Order-derived
+ * lines resolve through `resolveSalesOrderShipTo` instead.
+ */
+export async function resolveSalesInvoiceShipTo(
+  client: Client,
+  invoiceId: string,
+  companyId: string
+): Promise<{ customerId: string | null; customerLocationId: string | null }> {
+  const [invoiceRes, shipmentRes] = await Promise.all([
+    client
+      .from("salesInvoice")
+      .select("customerId")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("salesInvoiceShipment")
+      .select("customerLocationId")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+
+  // Guessing on a failed read would evaluate the wrong destination.
+  if (invoiceRes.error || shipmentRes.error) {
+    const err = invoiceRes.error ?? shipmentRes.error;
+    throw new Error(
+      `Sales rule evaluation could not resolve the ship-to for ${invoiceId}: ${
+        (err as { message?: string })?.message ?? String(err)
+      }`
+    );
+  }
+
+  return {
+    customerId: invoiceRes.data?.customerId ?? null,
+    customerLocationId: shipmentRes.data?.customerLocationId ?? null
+  };
+}
+
+/**
  * Evaluate every item-bearing line on a sales document, using the context as it
  * stands right now.
  *
@@ -513,33 +559,25 @@ export async function evaluateSalesRulesForSalesDocument({
   // gate is the only checkpoint such an invoice ever passes. Ship-to is
   // resolved PER SOURCE ORDER: a line converted from a sales order carries
   // `salesOrderId` and resolves the real destination through that order
-  // (drop-ship included, staleness re-checked); a standalone line has no
-  // ship-to and none may be invented — the bill-to
+  // (drop-ship included, staleness re-checked); a standalone line uses the
+  // invoice's own ship-to (`salesInvoiceShipment.customerLocationId`,
+  // `resolveSalesInvoiceShipTo`). None may be invented — the bill-to
   // (`invoiceCustomerLocationId`) is a different address and frequently a
   // different country, so substituting it would clear a rule that should
-  // have blocked. A null location flows into the engine's required-field
-  // semantics ("Customer country is required" at the rule's severity), so
-  // the information-poorer path fails closed rather than open.
+  // have blocked. With no ship-to set, a null location flows into the
+  // engine's required-field semantics ("Customer country is required" at the
+  // rule's severity), so the information-poorer path fails closed.
   if (documentType === "salesInvoice") {
-    const [invoiceRes, linesRes] = await Promise.all([
-      client
-        .from("salesInvoice")
-        .select("customerId")
-        .eq("id", documentId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
-      client
-        .from("salesInvoiceLine")
-        .select("id, itemId, quantity, salesOrderId")
-        .eq("invoiceId", documentId)
-        .eq("companyId", companyId)
-    ]);
+    const linesRes = await client
+      .from("salesInvoiceLine")
+      .select("id, itemId, quantity, salesOrderId")
+      .eq("invoiceId", documentId)
+      .eq("companyId", companyId);
 
     // A read error that silently yields zero lines turns the gate off.
-    if (invoiceRes.error || linesRes.error) {
-      const err = invoiceRes.error ?? linesRes.error;
+    if (linesRes.error) {
       throw new Error(
-        `Sales rule evaluation could not load sales invoice ${documentId}: ${err?.message}`
+        `Sales rule evaluation could not load sales invoice ${documentId}: ${linesRes.error.message}`
       );
     }
 
@@ -564,10 +602,7 @@ export async function evaluateSalesRulesForSalesDocument({
       [...groups].map(async ([salesOrderId, groupLines]) => {
         const shipTo = salesOrderId
           ? await resolveSalesOrderShipTo(client, salesOrderId, companyId)
-          : {
-              customerId: invoiceRes.data?.customerId ?? null,
-              customerLocationId: null
-            };
+          : await resolveSalesInvoiceShipTo(client, documentId, companyId);
         return evaluateSalesRuleLines({
           client,
           companyId,

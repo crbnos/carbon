@@ -1763,8 +1763,17 @@ const importCsv = defineServerFn({
         // Inventory" is not valid for a Non-Inventory item, and an independent
         // column could contradict the replenishment system on the same row.
         // `ServiceForm` derives both the same way and hides the method field.
+        // A service is identified by its name: the wizard offers no Service ID,
+        // Revision or Unit of Measure column — the name is its readable id and
+        // its unit is Each, as in `upsertService`.
         if (table === "service") {
           for (const record of mappedRecords) {
+            // A missing name stays undefined, so validation reports it.
+            const name = record.name?.trim() as string;
+            record.name = name;
+            record.readableId = name;
+            record.revision = "0";
+            record.unitOfMeasureCode = "EA";
             record.itemTrackingType = "Non-Inventory";
             record.defaultMethodType =
               record.replenishmentSystem === "Make"
@@ -1828,9 +1837,13 @@ const importCsv = defineServerFn({
             // key (externalIdMap), so a blank one is broken data, not a new row.
             // Part Number / Description are likewise required for a usable item.
             id: z.string().min(1, { message: "Unique ID is required" }),
-            readableId: z
-              .string()
-              .min(1, { message: "Part Number is required" }),
+            readableId: z.string().min(1, {
+              // A service's readable id is its name (set above).
+              message:
+                table === "service"
+                  ? "Name is required"
+                  : "Part Number is required"
+            }),
             revision: z.string().optional(),
             name: z.string().min(1, { message: "Description is required" }),
             description: z.string().optional(),
@@ -1972,11 +1985,13 @@ const importCsv = defineServerFn({
                 .filter((id): id is string => !!id && id.trim() !== "")
             )
           ];
-          const existingItemKeys = new Set<string>();
+          // readable id with revision → item id, so an update can tell its own
+          // key from another item's.
+          const existingItemKeys = new Map<string, string>();
           if (candidateReadableIds.length > 0) {
             const existingItems = await trx
               .selectFrom("item")
-              .select(["readableId", "revision"])
+              .select(["id", "readableId", "revision"])
               .where("companyId", "=", companyId)
               .where(
                 "type",
@@ -1992,11 +2007,12 @@ const importCsv = defineServerFn({
               .where("readableId", "in", candidateReadableIds)
               .execute();
             for (const existing of existingItems) {
-              existingItemKeys.add(
+              existingItemKeys.set(
                 getReadableIdWithRevision(
                   existing.readableId,
                   existing.revision
-                )
+                ),
+                existing.id
               );
             }
           }
@@ -2033,6 +2049,19 @@ const importCsv = defineServerFn({
               const existingEntityId = externalIdMap.get(getExternalId(id))!;
 
               readableIds.add(readableIdWithRevision);
+              // Renaming onto another item's readable id would violate
+              // item_unique and abort the whole import; refuse just this row.
+              const owner = existingItemKeys.get(readableIdWithRevision);
+              if (owner && owner !== existingEntityId) {
+                summary.errors.push({
+                  row: rowIndex,
+                  reason:
+                    table === "service"
+                      ? `A service named "${item.data.readableId}" already exists.`
+                      : `An item with Unique ID "${item.data.readableId}" already exists.`
+                });
+                continue;
+              }
               itemUpdates.push({
                 id: existingEntityId,
                 data: {
@@ -2117,7 +2146,10 @@ const importCsv = defineServerFn({
               if (existingItemKeys.has(readableIdWithRevision)) {
                 summary.errors.push({
                   row: rowIndex,
-                  reason: `An item with Unique ID "${item.data.readableId}" already exists. Change the Unique ID (and Name) or delete the existing item, then re-import.`
+                  reason:
+                    table === "service"
+                      ? `A service named "${item.data.readableId}" already exists. Change the Name or delete the existing service, then re-import.`
+                      : `An item with Unique ID "${item.data.readableId}" already exists. Change the Unique ID (and Name) or delete the existing item, then re-import.`
                 });
                 continue;
               }

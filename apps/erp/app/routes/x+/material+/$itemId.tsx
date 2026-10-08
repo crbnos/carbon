@@ -5,16 +5,13 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useRouteData } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Await, Outlet, useLoaderData, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import type { ItemFile, MaterialSummary } from "~/modules/items";
 import {
@@ -43,11 +40,6 @@ export const handle: Handle = {
   ),
   module: "items"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["itemId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -245,7 +237,7 @@ export default function MaterialRoute() {
             }
             content={
               <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                <Outlet />
+                <RecordOutlet />
               </div>
             }
             properties={<MaterialProperties key={itemId} />}

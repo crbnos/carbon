@@ -101,7 +101,14 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`
   is non-null) made a remapped restore crash — the FK-nulling dangling-ref policy
   in `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast`
-  is deliberately kept: it has a user-forecast write path and no such CHECK. The
+  is deliberately kept: it has a user-forecast write path and no such CHECK.
+  `planningAction` is kept too — `Dismissed` and `assigneeOverridden` are the
+  planner's own state, not regenerable — even though it has a comparable CHECK
+  (`planningAction_change_target_chk`, `20261006130000`: a change action keeps
+  its `jobId` or `purchaseOrderLineId`). Its target FKs are nullable with ON
+  DELETE CASCADE, so a consistent snapshot never carries a dangling target; a
+  remapped restore that did would null the FK and fail that CHECK. The dataset
+  wipe (`wipe.ts` `TRANSIENT_MRP_TABLES`) deletes it, which is a different path. The
   two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
   `assertBackupImportable` also skips — an OLDER backup that still carries an
   excluded table is not schema drift, its rows are just ignored on load),

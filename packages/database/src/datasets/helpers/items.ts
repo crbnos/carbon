@@ -63,7 +63,7 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     unitOfMeasureCode: uom,
     description: spec.description ?? null,
     thumbnailPath: ctx.dataset.industryId
-      ? `_templates/${ctx.dataset.industryId}/${spec.readableId}.svg`
+      ? `_templates/${ctx.dataset.industryId}/${spec.thumbnail ?? spec.readableId}.svg`
       : null,
     active: spec.active ?? true,
     // undefined is dropped by insertRow, keeping the column default.

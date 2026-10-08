@@ -322,6 +322,147 @@ it("asset disposal loss uses the expense account and zero gain requires neither 
   });
 });
 
+it("deferred revenue account takes the sales leg as a liability credit of the net amount and the lines still balance", () => {
+  const input = fixture();
+  input.deferredRevenueAccount = account("deferred", "Liability");
+  const result = buildSalesPostingLines(input);
+  expect(byAccount(result)).toEqual({
+    deferred: 123,
+    shipping: 15,
+    tax: 13,
+    ar: 151
+  });
+  expect(
+    result.lines.find((line) => line.accountId === "deferred")?.description
+  ).toEqual("Deferred Revenue");
+  expect(result.lines.some((line) => line.accountId === "sales")).toEqual(
+    false
+  );
+  expect(result.amounts.salesRevenueBase).toEqual(123);
+  expect(result.signedDebitTotal).toEqual(0);
+  const wrongClass = fixture();
+  wrongClass.deferredRevenueAccount = account("deferred", "Revenue");
+  expect(() => buildSalesPostingLines(wrongClass)).toThrow(
+    "Deferred Revenue account"
+  );
+});
+
+const rentalFixture = (unitPrice: number): BuildSalesPostingLinesInput => ({
+  ...fixture(),
+  line: { invoiceLineType: "Rental", quantity: 1, unitPrice, taxPercent: 0.1 }
+});
+
+it("a Rental line posts its revenue to a Liability revenue leg referencing the agreement", () => {
+  const input = rentalFixture(1500);
+  input.revenueLegs = [
+    {
+      account: account("deferred", "Liability"),
+      accountClass: "Liability",
+      description: "Deferred Revenue",
+      documentType: "Rental Agreement",
+      documentId: "agreement"
+    }
+  ];
+  const result = buildSalesPostingLines(input);
+  expect(byAccount(result)).toEqual({ deferred: 1500, tax: 150, ar: 1650 });
+  expect(result.revenueLegAmounts).toEqual([1500]);
+  expect(result.signedDebitTotal).toEqual(0);
+  const deferred = result.lines.find((line) => line.accountId === "deferred")!;
+  expect(deferred.documentType).toEqual("Rental Agreement");
+  expect(deferred.documentId).toEqual("agreement");
+  for (const line of result.lines.filter(
+    (line) => line.accountId !== "deferred"
+  )) {
+    expect(line.documentType).toEqual("Invoice");
+    expect(line.documentId).toEqual("invoice");
+  }
+  expect(result.lines.some((line) => line.accountId === "sales")).toEqual(
+    false
+  );
+});
+
+it("revenue legs split the line: explicit amounts first, the last leg takes the remainder", () => {
+  const input = rentalFixture(1500);
+  input.revenueLegs = [
+    {
+      account: account("contract", "Asset"),
+      accountClass: "Asset",
+      description: "Contract Assets",
+      amount: 600
+    },
+    {
+      account: account("deferred", "Liability"),
+      accountClass: "Liability",
+      description: "Deferred Revenue"
+    }
+  ];
+  const result = buildSalesPostingLines(input);
+  // Crediting an Asset stores a negative natural-balance amount.
+  expect(byAccount(result)).toEqual({
+    contract: -600,
+    deferred: 900,
+    tax: 150,
+    ar: 1650
+  });
+  expect(result.revenueLegAmounts).toEqual([600, 900]);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("a negative Rental line mirrors every leg and still balances", () => {
+  const input = rentalFixture(-1200);
+  input.revenueLegs = [
+    {
+      account: account("rental-income", "Revenue"),
+      accountClass: "Revenue",
+      description: "Rental Income",
+      amount: -200
+    },
+    {
+      account: account("deferred", "Liability"),
+      accountClass: "Liability",
+      description: "Deferred Revenue"
+    }
+  ];
+  const result = buildSalesPostingLines(input);
+  // Dr deferred revenue 1,000 and Dr rental income 200 / Cr AR 1,320, with
+  // the tax reversed too.
+  expect(byAccount(result)).toEqual({
+    "rental-income": -200,
+    deferred: -1000,
+    tax: -120,
+    ar: -1320
+  });
+  expect(result.revenueLegAmounts).toEqual([-200, -1000]);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("revenue legs are refused when missing, misshapen, overshooting or combined with a deferral account", () => {
+  expect(() => buildSalesPostingLines(rentalFixture(100))).toThrow(
+    "Rental posting requires its revenue legs"
+  );
+  const leg = (amount?: number) => ({
+    account: account("deferred", "Liability"),
+    accountClass: "Liability" as const,
+    description: "Deferred Revenue",
+    amount
+  });
+  const lastWithAmount = rentalFixture(100);
+  lastWithAmount.revenueLegs = [leg(100)];
+  expect(() => buildSalesPostingLines(lastWithAmount)).toThrow(
+    "the last takes the remainder"
+  );
+  const overshoot = rentalFixture(100);
+  overshoot.revenueLegs = [leg(150), leg()];
+  expect(() => buildSalesPostingLines(overshoot)).toThrow("exceed");
+  const wrongSign = rentalFixture(100);
+  wrongSign.revenueLegs = [leg(-10), leg()];
+  expect(() => buildSalesPostingLines(wrongSign)).toThrow("line's sign");
+  const both = rentalFixture(100);
+  both.revenueLegs = [leg()];
+  both.deferredRevenueAccount = account("deferred", "Liability");
+  expect(() => buildSalesPostingLines(both)).toThrow("cannot be combined");
+});
+
 it("nonzero required accounts must be valid active leaves in the company group with the correct class", () => {
   for (const key of ["sales", "shipping", "tax", "receivables"] as const) {
     const input = fixture();
@@ -416,7 +557,8 @@ it("nonfinite component arithmetic is refused before any charge rows can be post
     "addOnCost",
     "nonTaxableAddOnCost",
     "taxPercent",
-    "allocatedHeaderShipping"
+    "allocatedHeaderShipping",
+    "discountPercent"
   ] as const) {
     expect(() =>
       calculateSalesPostingAmounts({ ...fixture().line, [key]: Number.NaN })
@@ -428,4 +570,130 @@ it("nonfinite component arithmetic is refused before any charge rows can be post
       unitPrice: Number.MAX_VALUE
     })
   ).toThrow();
+});
+
+it("a line discount nets merchandise only: 10 × 40 at 20% off and 10% tax", () => {
+  const line = {
+    invoiceLineType: "Service",
+    quantity: 10,
+    unitPrice: 40,
+    discountPercent: 0.2,
+    taxPercent: 0.1
+  };
+  expect(calculateSalesPostingAmounts(line)).toEqual({
+    salesRevenueBase: 320,
+    shippingRevenueBase: 0,
+    salesTaxBase: 32,
+    grossReceivableBase: 352
+  });
+  // Add-ons and shipping are never discounted; tax is charged on the net.
+  expect(
+    calculateSalesPostingAmounts({
+      ...line,
+      addOnCost: 20,
+      nonTaxableAddOnCost: 3,
+      shippingCost: 10
+    })
+  ).toEqual({
+    salesRevenueBase: 343,
+    shippingRevenueBase: 10,
+    salesTaxBase: 35,
+    grossReceivableBase: 388
+  });
+  const input = fixture();
+  input.line = line;
+  expect(byAccount(buildSalesPostingLines(input))).toEqual({
+    sales: 320,
+    tax: 32,
+    ar: 352
+  });
+});
+
+it("header shipping weights a discounted line by its net merchandise", () => {
+  const allocations = allocateSalesHeaderShipping(
+    [
+      // 100 × 1 at 75% off weighs 25.
+      {
+        id: "a",
+        invoiceLineType: "Part",
+        quantity: 1,
+        unitPrice: 100,
+        discountPercent: 0.75
+      },
+      // 75 undiscounted weighs 75.
+      { id: "b", invoiceLineType: "Part", quantity: 1, unitPrice: 75 }
+    ],
+    100
+  );
+  expect([...allocations]).toEqual([
+    ["a", 25],
+    ["b", 75]
+  ]);
+});
+
+it("the seller's intercompany matching basis is net of the line discount", () => {
+  expect(
+    calculateSalesIntercompanyAmount(
+      [
+        {
+          invoiceLineType: "Part",
+          quantity: 10,
+          unitPrice: 40,
+          discountPercent: 0.2,
+          shippingCost: 5
+        }
+      ],
+      1
+    )
+  ).toEqual(325);
+});
+
+it("the project dimensions only the revenue-side legs", () => {
+  const input = fixture();
+  input.metadata.projectId = "project";
+  const result = buildSalesPostingLines(input);
+  const projectByAccount = Object.fromEntries(
+    result.lines.map((line, index) => [
+      line.accountId,
+      result.metadata[index]!.projectId
+    ])
+  );
+  expect(projectByAccount).toEqual({
+    sales: "project",
+    shipping: null,
+    tax: null,
+    ar: null
+  });
+
+  const deferred = fixture();
+  deferred.metadata.projectId = "project";
+  deferred.deferredRevenueAccount = account("deferred", "Liability");
+  const deferredResult = buildSalesPostingLines(deferred);
+  expect(
+    deferredResult.lines
+      .filter((_, index) => deferredResult.metadata[index]!.projectId)
+      .map((line) => line.accountId)
+  ).toEqual(["deferred"]);
+
+  const rental = rentalFixture(1500);
+  rental.metadata.projectId = "project";
+  rental.revenueLegs = [
+    {
+      account: account("contract", "Asset"),
+      accountClass: "Asset",
+      description: "Contract Assets",
+      amount: 600
+    },
+    {
+      account: account("rental-income", "Revenue"),
+      accountClass: "Revenue",
+      description: "Rental Income"
+    }
+  ];
+  const rentalResult = buildSalesPostingLines(rental);
+  expect(
+    rentalResult.lines
+      .filter((_, index) => rentalResult.metadata[index]!.projectId)
+      .map((line) => line.accountId)
+  ).toEqual(["contract", "rental-income"]);
 });

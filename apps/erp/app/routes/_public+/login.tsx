@@ -40,6 +40,7 @@ import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -291,6 +292,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
+  // A signed-out user lands here however the session ended (sign out, expiry,
+  // a revoked account), so this is where the lists kept on the device go.
+  useEffect(() => {
+    import("localforage")
+      .then((storage) => storage.default.clear())
+      .catch((error) =>
+        getLogger("erp", "login").warn("stored lists not cleared", { error })
+      );
+  }, []);
+
   const { t } = useLingui();
   const {
     hasOutlookAuth,

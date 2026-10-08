@@ -73,6 +73,8 @@ import {
   nightlyReplanFunction,
   notificationDigestFunction,
   purgeInactiveCompaniesFunction,
+  recurringBillingFunction,
+  revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
@@ -90,6 +92,7 @@ import {
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  invoiceAutomateFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -139,6 +142,7 @@ export const functions = [
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  invoiceAutomateFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -167,6 +171,8 @@ export const functions = [
     ? [purgeInactiveCompaniesFunction]
     : []),
   workflowRunRetentionFunction,
+  revenueRecognitionProposalFunction,
+  recurringBillingFunction,
   // Integrations
   jiraSyncFunction,
   linearSyncFunction,

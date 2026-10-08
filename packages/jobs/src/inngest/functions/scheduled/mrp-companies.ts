@@ -3,7 +3,70 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { filterEmpty } from "@carbon/utils";
+import {
+  parseTime,
+  toCalendarDate,
+  toCalendarDateTime,
+  toTimeZone,
+  toZoned,
+  type ZonedDateTime
+} from "@internationalized/date";
 import type { JobDatabase } from "../../../db";
+
+/** How often the scheduled function fires. Keep in step with its cron. */
+export const MRP_TICK_MINUTES = 15;
+
+/** The cadence of a company that has set no run time: every N hours, UTC. */
+const MRP_DEFAULT_INTERVAL_HOURS = 3;
+
+/**
+ * The cron slot a run belongs to: its start time floored to the tick, in UTC.
+ * A run that starts late (a retry, a queue) still answers for its own slot.
+ * The one-minute lead absorbs a cron that fires a moment before the boundary,
+ * which would otherwise floor into the previous slot and skip this one.
+ */
+export function mrpTick(instant: ZonedDateTime): ZonedDateTime {
+  const utc = toTimeZone(instant, "UTC").add({ minutes: 1 });
+  return utc.set({
+    minute: utc.minute - (utc.minute % MRP_TICK_MINUTES),
+    second: 0,
+    millisecond: 0
+  });
+}
+
+/**
+ * Whether a scheduled tick should plan for a company.
+ *
+ * `mrpRunTime` (companySettings, a wall-clock "HH:MM:SS") is the company's
+ * chosen time of day on its own clock (`company.timezone`). With none set the
+ * company keeps the default cadence, every 3 hours. With one set it runs once
+ * a day instead, on the first tick at or after that time.
+ *
+ * "First tick at or after" is tested against the run time's INSTANT rather
+ * than by comparing local hours, so a day whose clocks skip the run time
+ * (spring forward) still runs — at the moment the skipped time resolves to —
+ * and a day that repeats it (fall back) runs once, not twice. Yesterday's run
+ * time is checked too: one set late in the day's last tick is first reached
+ * just after midnight.
+ */
+export function isMrpDue(
+  tick: ZonedDateTime,
+  schedule: { timezone: string; mrpRunTime: string | null }
+): boolean {
+  if (!schedule.mrpRunTime) {
+    return tick.minute === 0 && tick.hour % MRP_DEFAULT_INTERVAL_HOURS === 0;
+  }
+
+  const runTime = parseTime(schedule.mrpRunTime);
+  const today = toCalendarDate(toTimeZone(tick, schedule.timezone));
+
+  return [today, today.subtract({ days: 1 })].some((date) => {
+    const sinceRunTime = tick.compare(
+      toZoned(toCalendarDateTime(date, runTime), schedule.timezone)
+    );
+    return sinceRunTime >= 0 && sinceRunTime < MRP_TICK_MINUTES * 60 * 1000;
+  });
+}
 
 /**
  * Which companies a scheduled MRP run should plan for. A company with no
@@ -38,12 +101,22 @@ export function selectCompaniesForMrp<T extends { id: string }>(
 
 /**
  * The companies a run can change anything for: open demand or supply to plan,
- * or rows an earlier run wrote that a new one would clear. For every other
- * company `runMrp` reads its inputs, finds nothing and rewrites nothing, which
- * was 93% of scheduled runs and the largest share of server time (2026-10-01
- * traces). Each source is a superset of what `runMrp` reads (projections and
- * actuals are not narrowed to the planning horizon), so a company is only left
- * out when a run would be a no-op.
+ * stock a reorder policy would replenish with no document behind it, or rows
+ * an earlier run wrote that a new one would clear. For every other company
+ * `runMrp` reads its inputs, finds nothing and rewrites nothing, which was 93%
+ * of scheduled runs and the largest share of server time (2026-10-01 traces).
+ * Each source is a superset of what `runMrp` reads (projections and actuals
+ * are not narrowed to the planning horizon), so a company is only left out
+ * when a run would be a no-op.
+ *
+ * With no demand and no supply, the planning actions still size an Order /
+ * Make from on-hand alone (`generatePlanningActions`: the shared sizing, and
+ * the Stock Only reserve), and each of those fires only below a positive
+ * floor or on negative stock: a Demand-Based Reorder item under its safety
+ * stock, a Fixed Reorder Quantity / Maximum Quantity item under its reorder
+ * point, a superseded item under its minimum reserve — or any policy but
+ * Manual Reorder below zero. Those are the last two sources. "Not Manual
+ * Reorder" alone is no filter: it is the column's default.
  */
 export async function companiesWithPlanningWork(
   db: JobDatabase
@@ -57,6 +130,9 @@ export async function companiesWithPlanningWork(
     .union(db.selectFrom("demandProjection").select("companyId"))
     .union(db.selectFrom("demandForecastSource").select("companyId"))
     .union(db.selectFrom("supplyForecast").select("companyId"))
+    // A run clears the worklist of a company whose demand is gone; without
+    // this a company with no other planning work keeps its stale actions.
+    .union(db.selectFrom("planningAction").select("companyId"))
     .union(
       db
         .selectFrom("demandForecast")
@@ -74,6 +150,34 @@ export async function companiesWithPlanningWork(
         .selectFrom("supplyActual")
         .select("companyId")
         .where("actualQuantity", "!=", 0)
+    )
+    .union(
+      db
+        .selectFrom("itemPlanning")
+        .select("companyId")
+        .where((eb) =>
+          eb.or([
+            // the Stock Only reserve applies whatever the policy
+            eb("minimumReserveQuantity", ">", 0),
+            eb.and([
+              eb("reorderingPolicy", "=", "Demand-Based Reorder"),
+              eb("demandAccumulationSafetyStock", ">", 0)
+            ]),
+            eb.and([
+              eb("reorderingPolicy", "in", [
+                "Fixed Reorder Quantity",
+                "Maximum Quantity"
+              ]),
+              eb("reorderPoint", ">", 0)
+            ])
+          ])
+        )
+    )
+    .union(
+      db
+        .selectFrom("itemStockQuantities")
+        .select("companyId")
+        .where("quantityOnHand", "<", 0)
     )
     .execute();
 

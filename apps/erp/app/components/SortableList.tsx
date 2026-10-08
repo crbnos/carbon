@@ -64,7 +64,7 @@ function SortableListItem<T>({
 }: SortableListItemProps<T>) {
   const { t } = useLingui();
   const [isDragging, setIsDragging] = useState(false);
-  const [isDraggable] = useState(!isExpanded && !isReadOnly);
+  const isDraggable = !isExpanded && !isReadOnly;
   const dragControls = useDragControls();
   const itemRef = useRef<HTMLDivElement>(null);
 

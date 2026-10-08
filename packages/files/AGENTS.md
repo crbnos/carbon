@@ -112,6 +112,10 @@ PDF.js bundle could not be resolved" while dev worked, because dev leaves
   safety net for legacy/API-stored files, not a licence to skip conversion.
 - Expose imgproxy outside the Docker network — it reads the storage volume with
   no RLS.
+- Report a failed storage image transform with a message of your own. Pass the
+  error through `imageTransformErrorMessage(error, fallback)` (`@carbon/files`):
+  the local dev stack leaves imgproxy off unless booted with `crbn up --full`,
+  and that helper is what tells the developer to run `crbn reload imgproxy`.
 
 ## Validation
 

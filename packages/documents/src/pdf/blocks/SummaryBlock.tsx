@@ -7,7 +7,12 @@ import {
   DEFAULT_SUMMARY_OPTIONS,
   type SummaryBlock as SummaryBlockType
 } from "../../template";
-import { getLineTaxableSubtotal, getTotal } from "../../utils/sales-invoice";
+import {
+  getLineDiscount,
+  getLineGrossMerchandise,
+  getLineTaxableSubtotal,
+  getTotal
+} from "../../utils/sales-invoice";
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
 
@@ -28,11 +33,15 @@ export function SummaryBlock({
   } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
+  const discount = salesInvoiceLines.reduce(
+    (sum, line) => sum + getLineDiscount(line),
+    0
+  );
 
   return (
     <View style={tw("mb-4")}>
       <View>
-        {/* Subtotal - extended price only */}
+        {/* Subtotal - extended list price, before line discounts */}
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -45,13 +54,29 @@ export function SummaryBlock({
           <Text style={tw("w-1/6 text-center text-gray-800")}>
             {numberFormatter.format(
               salesInvoiceLines.reduce(
-                (sum, line) =>
-                  sum + (line.quantity ?? 0) * (line.convertedUnitPrice ?? 0),
+                (sum, line) => sum + getLineGrossMerchandise(line),
                 0
               )
             )}
           </Text>
         </View>
+
+        {/* Discount - only when a line carries one, taken off the subtotal */}
+        {discount !== 0 ? (
+          <View
+            style={[
+              tw("flex flex-row py-1.5 px-3 text-[9px]"),
+              { backgroundColor: "rgba(249, 250, 251, 0.6)" }
+            ]}
+          >
+            <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
+              Discount ({currencyCode})
+            </Text>
+            <Text style={tw("w-1/6 text-center text-gray-800")}>
+              {numberFormatter.format(-discount)}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Add-Ons */}
         {salesInvoiceLines.some(

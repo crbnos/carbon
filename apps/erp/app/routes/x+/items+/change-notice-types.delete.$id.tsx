@@ -5,7 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
@@ -57,10 +57,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId
   );
   if (deleteError) {
-    const errorMessage =
-      deleteError.code === "23503"
-        ? "Change notice category is used elsewhere, cannot delete"
-        : "Failed to delete change notice category";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteError,
+      "Failed to delete change notice category",
+      { referenced: "Change notice category is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.changeNoticeTypes}?${getParams(request)}`,

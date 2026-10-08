@@ -10,15 +10,17 @@ import {
   dedupeViolations,
   evaluateSalesRuleLines,
   isBlocked,
+  resolveSalesInvoiceShipTo,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { getItemReadableId, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { getItemReadableId, redirect, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import {
   getSalesInvoice,
@@ -101,6 +103,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
+  // The form types percent points; the column holds the 0–1 fraction.
+  if (d.discountPercent !== undefined) {
+    d.discountPercent = round(d.discountPercent / 100);
+  }
+
   if (d.invoiceLineType === "Fixed Asset") {
     d.accountId = undefined;
     d.itemId = undefined;
@@ -111,10 +118,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Sales-rule enforcement — only for lines that reference an item. A line
   // converted from a sales order resolves its ship-to through that order
-  // (drop-ship included); a standalone line has no ship-to and none may be
-  // invented — the bill-to is a different address, so a null location flows
-  // into the engine's required-field semantics and a destination rule blocks
-  // rather than passes.
+  // (drop-ship included); a standalone line uses the invoice's own ship-to.
+  // None may be invented — the bill-to is a different address — so with no
+  // ship-to set a null location flows into the engine's required-field
+  // semantics and a destination rule blocks rather than passes.
   let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
   let acknowledgedRuleNames: Record<string, string> = {};
   if (d.itemId) {
@@ -140,10 +147,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           existingLine.data.salesOrderId,
           companyId
         )
-      : {
-          customerId: invoice.data?.customerId ?? null,
-          customerLocationId: null
-        };
+      : await resolveSalesInvoiceShipTo(serviceRole, invoiceId, companyId);
 
     const { violations, ruleNames } = await evaluateSalesRuleLines({
       client: serviceRole,
@@ -236,11 +240,14 @@ export default function EditSalesInvoiceLineRoute() {
     description: salesInvoiceLine?.description ?? "",
     quantity: salesInvoiceLine?.quantity ?? 1,
     unitPrice: salesInvoiceLine?.unitPrice ?? 0,
+    discountPercent: round((salesInvoiceLine?.discountPercent ?? 0) * 100),
     shippingCost: salesInvoiceLine?.shippingCost ?? 0,
     taxPercent: salesInvoiceLine?.taxPercent ?? 0,
     exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,
     unitOfMeasureCode: salesInvoiceLine?.unitOfMeasureCode ?? "",
     storageUnitId: salesInvoiceLine?.storageUnitId ?? "",
+    serviceStartDate: salesInvoiceLine?.serviceStartDate ?? "",
+    serviceEndDate: salesInvoiceLine?.serviceEndDate ?? "",
     assetReadableId: (salesInvoiceLine as any)?.assetReadableId ?? undefined,
     assetName: (salesInvoiceLine as any)?.assetName ?? undefined,
     ...getCustomFields(salesInvoiceLine?.customFields)
@@ -275,7 +282,7 @@ export default function EditSalesInvoiceLineRoute() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

@@ -7,6 +7,7 @@
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
 import type {
+  ContractSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
@@ -962,11 +963,63 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
   }
 ];
 
+// One Active contract: an implementation fee and two subscriptions on Service
+// items, two months in. Tier 04 marks every invoice dated up to today Billed
+// Externally, so the schedule shows history without drafted invoices.
+export const CONTRACTS: ContractSpec[] = [
+  {
+    key: "ridgeline-monitoring",
+    name: "Ridgeline drive monitoring",
+    customer: "Ridgeline Drive Systems",
+    startOffset: -60,
+    termMonths: 12,
+    renewal: "Renew",
+    renewalUpliftPercent: 5,
+    billingFrequency: "Month",
+    billingAlignment: "Calendar",
+    billingTiming: "Advance",
+    lines: [
+      {
+        revenueType: "One-time",
+        item: "Motor Test Cell Setup",
+        description: "Test cell build for the traction motor program",
+        quantity: 1,
+        rate: 7800,
+        startOffset: -60,
+        endOffset: -31,
+        revenueMethod: "Daily"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Predictive Maintenance Monitoring",
+        description: "Condition monitoring per installed motor",
+        quantity: 12,
+        rate: 65,
+        rateUnit: "Month",
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Dynamometer Certification",
+        description: "Annual dynamometer certification",
+        quantity: 1,
+        rate: 2400,
+        rateUnit: "Year",
+        discountPercent: 10,
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
 export const motorSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
   salesReturns: SALES_RETURNS,
+  contracts: CONTRACTS,
   customerPortals: ["Ridgeline Drive Systems", "Cardinal Motorworks"],
   customerBankAccounts: [
     {

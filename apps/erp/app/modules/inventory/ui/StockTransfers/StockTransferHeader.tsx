@@ -14,29 +14,27 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
-  LuBarcode,
   LuCircleCheck,
   LuCirclePlay,
   LuLoaderCircle,
   LuTrash
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
-import { PrintButton } from "~/components";
+import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
-import { useAuditLog } from "~/components/AuditLog";
-import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
+import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import {
   isStockTransferLocked,
   type StockTransfer,
   type StockTransferLine
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
-import StockTransferCompleteModal from "./StockTransferCompleteModal";
 import StockTransferStatus from "./StockTransferStatus";
 
 const StockTransferHeader = () => {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
@@ -45,14 +43,7 @@ const StockTransferHeader = () => {
     stockTransferLines: StockTransferLine[];
   }>(path.to.stockTransfer(id));
 
-  if (!routeData?.stockTransfer)
-    throw new Error("Failed to load stockTransfer");
-  const status = routeData.stockTransfer.status;
-
-  const { t } = useLingui();
-  const { company } = useUser();
   const permissions = usePermissions();
-  const postModal = useDisclosure();
   const deleteModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
   // Storage rules fire on Release + Complete (the "go" transitions). Each gets
@@ -66,136 +57,125 @@ const StockTransferHeader = () => {
     action: path.to.stockTransferStatus(id)
   });
   const completeFetcher = completeRules.fetcher;
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "stockTransfer",
-    entityId: id,
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
-  const canComplete =
-    routeData.stockTransferLines.length > 0 &&
-    routeData.stockTransferLines.some(
-      (line) => (line.pickedQuantity ?? 0) !== 0
-    ) &&
-    ["Released", "In Progress"].includes(status);
-
-  const isCompleted = status === "Completed";
-  const isLocked = isStockTransferLocked(status);
 
   const optimisticAssignment = useOptimisticAssignment({
     id,
     table: "stockTransfer"
   });
+
+  const stockTransfer = routeData?.stockTransfer;
+  if (!stockTransfer) throw new Error("Failed to load stockTransfer");
+
+  const status = stockTransfer.status;
+  const lines = routeData?.stockTransferLines ?? [];
+
+  const isDraft = status === "Draft";
+  const isCompleted = status === "Completed";
+  const isLocked = isStockTransferLocked(status);
+
+  const canComplete =
+    lines.length > 0 &&
+    lines.some((line) => (line.pickedQuantity ?? 0) !== 0) &&
+    ["Released", "In Progress"].includes(status);
+
   const assignee =
     optimisticAssignment !== undefined
       ? optimisticAssignment
-      : routeData?.stockTransfer?.assignee;
+      : stockTransfer.assignee;
 
-  const hasPickedItems = routeData?.stockTransferLines.some(
+  const hasPickedItems = lines.some(
     (line) => line.pickedQuantity && line.pickedQuantity > 0
   );
 
-  const hasTrackedLines = routeData?.stockTransferLines.some(
-    (line) => !!line.trackedEntityId
-  );
-
-  const statusBadge = (
-    <StockTransferStatus status={routeData?.stockTransfer?.status} />
-  );
-
-  const menuItems = (
-    <>
-      {auditLogTrigger}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        disabled={
-          ["Draft"].includes(routeData?.stockTransfer?.status ?? "") ||
-          statusFetcher.state !== "idle" ||
-          !permissions.can("delete", "inventory")
-        }
-        onClick={() => {
-          statusFetcher.submit(
-            { status: "Draft" },
-            {
-              method: "post",
-              action: path.to.stockTransferStatus(id)
-            }
-          );
-        }}
-      >
-        <DropdownMenuIcon icon={<LuLoaderCircle />} />
-        <Trans>Reopen</Trans>
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        shortcut={MENU_ITEM_SHORTCUTS.delete}
-        disabled={
-          !permissions.can("delete", "inventory") ||
-          !permissions.is("employee") ||
-          !["Released", "Draft"].includes(status) ||
-          hasPickedItems ||
-          isLocked
-        }
-        destructive
-        onClick={deleteModal.onOpen}
-      >
-        <DropdownMenuIcon icon={<LuTrash />} />
-        <Trans>Delete Stock Transfer</Trans>
-      </DropdownMenuItem>
-    </>
-  );
+  const hasTrackedLines = lines.some((line) => !!line.trackedEntityId);
 
   return (
     <>
-      <RecordHeader
-        title={routeData?.stockTransfer?.stockTransferId}
-        copyValue={routeData?.stockTransfer?.stockTransferId ?? ""}
-        menu={menuItems}
-        status={statusBadge}
+      <DocumentPageHeader
+        title={stockTransfer.stockTransferId}
+        status={<StockTransferStatus status={status} />}
+        meta={[
+          <Trans key="created">
+            Created{" "}
+            <DateTime value={stockTransfer.createdAt} variant="relative" /> by{" "}
+            <EmployeeAvatar employeeId={stockTransfer.createdBy} />
+          </Trans>,
+          stockTransfer.completedAt ? (
+            <Trans key="completed">
+              Completed{" "}
+              <DateTime value={stockTransfer.completedAt} variant="relative" />
+            </Trans>
+          ) : null
+        ]}
+        menuItems={
+          <>
+            {!isDraft && (
+              <>
+                <DropdownMenuItem
+                  disabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("delete", "inventory")
+                  }
+                  onClick={() => {
+                    statusFetcher.submit(
+                      { status: "Draft" },
+                      {
+                        method: "post",
+                        action: path.to.stockTransferStatus(id)
+                      }
+                    );
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                  <Trans>Reopen</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
+              disabled={
+                !permissions.can("delete", "inventory") ||
+                !permissions.is("employee") ||
+                !["Released", "Draft"].includes(status) ||
+                hasPickedItems ||
+                isLocked
+              }
+              destructive
+              onClick={deleteModal.onOpen}
+            >
+              <DropdownMenuIcon icon={<LuTrash />} />
+              <Trans>Delete Stock Transfer</Trans>
+            </DropdownMenuItem>
+          </>
+        }
         actions={
           <>
-            <RecordAction slot="overflow">
-              <Assignee
-                size="md"
-                id={id}
-                value={assignee ?? ""}
-                table="stockTransfer"
-                isReadOnly={!permissions.can("update", "inventory")}
-              />
-            </RecordAction>
+            <Assignee
+              size="md"
+              id={id}
+              value={assignee ?? ""}
+              table="stockTransfer"
+              isReadOnly={!permissions.can("update", "inventory")}
+            />
             {hasTrackedLines && (
-              <RecordAction slot="overflow">
-                <PrintButton
-                  sourceDocument="StockTransfer"
-                  sourceDocumentId={id}
-                  locationId={routeData?.stockTransfer?.locationId ?? undefined}
-                  context="inventory"
-                  fileRoutes={{
-                    pdf: path.to.file.stockTransferLabelsPdf,
-                    zpl: path.to.file.stockTransferLabelsZpl
-                  }}
-                />
-              </RecordAction>
+              <PrintButton
+                sourceDocument="StockTransfer"
+                sourceDocumentId={id}
+                locationId={stockTransfer.locationId ?? undefined}
+                context="inventory"
+                fileRoutes={{
+                  pdf: path.to.file.stockTransferLabelsPdf,
+                  zpl: path.to.file.stockTransferLabelsZpl
+                }}
+              />
             )}
-            <RecordAction slot="secondary">
-              <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
-                <a
-                  target="_blank"
-                  href={path.to.file.stockTransfer(id)}
-                  rel="noreferrer"
-                >
-                  <Trans>Pick List</Trans>
-                </a>
-              </Button>
-            </RecordAction>
-            <RecordAction slot={status === "Draft" ? "primary" : "overflow"}>
+            {isDraft && (
               <Button
                 type="button"
                 leftIcon={<LuCirclePlay />}
-                variant={status === "Draft" ? "primary" : "secondary"}
+                variant="primary"
                 isDisabled={
-                  status !== "Draft" ||
                   releaseFetcher.state !== "idle" ||
                   !permissions.can("update", "inventory")
                 }
@@ -208,59 +188,45 @@ const StockTransferHeader = () => {
               >
                 <Trans>Release</Trans>
               </Button>
-            </RecordAction>
-            <releaseRules.ViolationModal />
-
-            <RecordAction slot={status === "Draft" ? "overflow" : "primary"}>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
+            )}
+            {!isCompleted && (
+              // Release comes first: until then Complete is shown, but it is
+              // not the next step.
+              <Button
+                type="button"
+                variant={isDraft ? "secondary" : "primary"}
+                isDisabled={
+                  !canComplete ||
+                  !permissions.is("employee") ||
+                  completeFetcher.state !== "idle"
+                }
+                leftIcon={<LuCircleCheck />}
+                isLoading={completeFetcher.state !== "idle"}
+                onClick={() => {
                   const fd = new FormData();
                   fd.set("status", "Completed");
                   completeRules.submit(fd);
                 }}
               >
-                <Button
-                  type="submit"
-                  variant={
-                    canComplete && !isCompleted ? "primary" : "secondary"
-                  }
-                  isDisabled={
-                    !canComplete ||
-                    isCompleted ||
-                    !permissions.is("employee") ||
-                    completeFetcher.state !== "idle"
-                  }
-                  leftIcon={<LuCircleCheck />}
-                  isLoading={completeFetcher.state !== "idle"}
-                >
-                  <Trans>Complete</Trans>
-                </Button>
-              </form>
-            </RecordAction>
-            <completeRules.ViolationModal />
+                <Trans>Complete</Trans>
+              </Button>
+            )}
           </>
         }
       />
 
-      {postModal.isOpen && (
-        <StockTransferCompleteModal onClose={postModal.onClose} />
-      )}
+      <releaseRules.ViolationModal />
+      <completeRules.ViolationModal />
       {deleteModal.isOpen && (
         <ConfirmDelete
           action={path.to.deleteStockTransfer(id)}
           isOpen={deleteModal.isOpen}
-          name={routeData?.stockTransfer?.stockTransferId ?? "stockTransfer"}
-          text={t`Are you sure you want to delete ${routeData?.stockTransfer?.stockTransferId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
+          name={stockTransfer.stockTransferId ?? "stockTransfer"}
+          text={t`Are you sure you want to delete ${stockTransfer.stockTransferId}? This cannot be undone.`}
+          onCancel={deleteModal.onClose}
+          onSubmit={deleteModal.onClose}
         />
       )}
-      {auditLogDrawer}
     </>
   );
 };

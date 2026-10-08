@@ -23,7 +23,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { formatDate, groupBy, round } from "@carbon/utils";
+import { distinctItemText, formatDate, groupBy, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Fragment, Suspense, useCallback, useState } from "react";
@@ -500,6 +500,7 @@ export function BatchOverview({
               {members.map((m) => {
                 const job = m.job as {
                   deadlineType?: string | null;
+                  dueDate?: string | null;
                   customer?: { name?: string | null } | null;
                 } | null;
                 const toRun = remaining(m);
@@ -530,9 +531,12 @@ export function BatchOverview({
                           <span className="block truncate font-medium">
                             {m.jobMakeMethod?.item?.readableIdWithRevision}
                           </span>
-                          {m.jobMakeMethod?.item?.name && (
+                          {distinctItemText(
+                            m.jobMakeMethod?.item?.readableIdWithRevision,
+                            m.jobMakeMethod?.item?.name
+                          ) && (
                             <p className="truncate text-sm text-muted-foreground">
-                              {m.jobMakeMethod.item.name}
+                              {m.jobMakeMethod?.item?.name}
                             </p>
                           )}
                         </div>
@@ -546,9 +550,9 @@ export function BatchOverview({
                     >
                       {["ASAP", "No Deadline"].includes(
                         job?.deadlineType ?? ""
-                      ) || !m.dueDate
+                      ) || !job?.dueDate
                         ? (job?.deadlineType ?? "—")
-                        : formatDate(m.dueDate)}
+                        : formatDate(job.dueDate)}
                     </Td>
                     {showLots && (
                       <Td

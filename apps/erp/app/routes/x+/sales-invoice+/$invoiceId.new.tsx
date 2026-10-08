@@ -9,11 +9,12 @@ import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
-  isBlocked
+  isBlocked,
+  resolveSalesInvoiceShipTo
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useUser } from "~/hooks";
@@ -73,6 +74,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
+  // The form types percent points; the column holds the 0–1 fraction.
+  if (d.discountPercent !== undefined) {
+    d.discountPercent = round(d.discountPercent / 100);
+  }
+
   if (d.invoiceLineType === "Fixed Asset") {
     d.accountId = undefined;
     d.itemId = undefined;
@@ -83,23 +89,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Sales-rule enforcement — only for lines that reference an item (Comment
   // and Fixed Asset lines carry no itemId). A manually created invoice line
-  // is standalone: it has no source sales order, so there is no ship-to and
-  // none may be invented — the bill-to is a different address. A null
-  // location flows into the engine's required-field semantics, so a
-  // destination rule blocks rather than passes.
+  // is standalone: it has no source sales order, so it uses the invoice's own
+  // ship-to. None may be invented — the bill-to is a different address — so
+  // with no ship-to set a null location flows into the engine's
+  // required-field semantics and a destination rule blocks rather than passes.
   const serviceRole = getCarbonServiceRole();
   let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
   let acknowledgedRuleNames: Record<string, string> = {};
   if (d.itemId) {
     const acknowledged = formData.get("acknowledged") === "true";
+    const shipTo = await resolveSalesInvoiceShipTo(
+      serviceRole,
+      invoiceId,
+      companyId
+    );
     const { violations, ruleNames } = await evaluateSalesRuleLines({
       client: serviceRole,
       companyId,
       userId,
       surface: "salesInvoiceLine",
       lines: [{ lineId: "new", itemId: d.itemId, quantity: d.quantity ?? 1 }],
-      customerId: invoice.data?.customerId ?? null,
-      customerLocationId: null
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
     });
     const deduped = dedupeViolations(violations);
     if (deduped.length > 0) {
@@ -184,11 +195,14 @@ export default function NewSalesInvoiceLineRoute() {
     locationId:
       salesInvoiceData?.salesInvoice?.locationId ?? defaults.locationId ?? "",
     unitPrice: 0,
+    discountPercent: 0,
     shippingCost: 0,
     addOnCost: 0,
     nonTaxableAddOnCost: 0,
     taxPercent: 0,
-    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1
+    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
+    serviceStartDate: "",
+    serviceEndDate: ""
   };
 
   return <SalesInvoiceLineForm initialValues={initialValues} />;

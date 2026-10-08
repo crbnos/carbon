@@ -20,6 +20,7 @@ import { useEffect } from "react";
 import type { z } from "zod";
 import {
   Account,
+  DatePicker,
   Hidden,
   Input,
   Number,
@@ -102,13 +103,7 @@ const IntercompanyTransactionForm = ({
                   label={t`Credit Account`}
                   termId="intercompany-credit-account"
                 />
-                <Input
-                  name="postingDate"
-                  label={t`Posting Date`}
-                  termId="intercompany-posting-date"
-                  type="date"
-                />
-                <SourcePostingDateSync companies={companies} />
+                <PostingDate companies={companies} />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -130,25 +125,34 @@ const IntercompanyTransactionForm = ({
 // (and the browser's) around midnight. Only overwrites while the user hasn't
 // picked a source yet or switches it; an explicit date edit stays theirs until
 // the next source change.
-function SourcePostingDateSync({
+function PostingDate({
   companies
 }: {
   companies: { id: string; timezone: string | null }[];
 }) {
+  const { t } = useLingui();
   const [sourceCompanyId] = useControlField<string>("sourceCompanyId");
-  const [, setPostingDate] = useControlField<string>("postingDate");
+  const [postingDate, setPostingDate] = useControlField<string>("postingDate");
 
   const timezone =
     companies.find((c) => c.id === sourceCompanyId)?.timezone ?? null;
 
   // Keyed on sourceCompanyId (not just timezone) so switching between two
   // companies in the SAME zone still re-defaults a manually edited date.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: sourceCompanyId intentionally re-triggers the default
   useEffect(() => {
     if (timezone) setPostingDate(today(timezone).toString());
-    // biome-ignore lint/correctness/useExhaustiveDependencies: sourceCompanyId intentionally re-triggers the default
   }, [sourceCompanyId, timezone, setPostingDate]);
 
-  return null;
+  return (
+    <DatePicker
+      name="postingDate"
+      label={t`Posting Date`}
+      termId="intercompany-posting-date"
+      value={postingDate}
+      onChange={(date) => setPostingDate(date ?? "")}
+    />
+  );
 }
 
 function SourceCurrencySync({

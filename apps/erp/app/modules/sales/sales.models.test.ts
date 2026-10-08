@@ -18,8 +18,13 @@ vi.mock("@lingui/core/macro", () => ({
       : String(strings)
 }));
 
-const { quoteLineValidator, quoteValidator, salesOrderLineValidator } =
-  await import("./sales.models");
+const {
+  contractTermFromServicePeriods,
+  quoteLineValidator,
+  quoteValidator,
+  rentalAgreementChargeValidator,
+  salesOrderLineValidator
+} = await import("./sales.models");
 
 // `quote.internalNotes` is a `json` column that the sales-order conversion
 // copies through Kysely. A bare string stored there (which `notes: z.any()`
@@ -53,6 +58,95 @@ describe("quoteValidator.notes", () => {
     expect(quoteValidator.safeParse({ ...base, notes: 42 }).success).toBe(
       false
     );
+  });
+});
+
+// A service period on a line is either absent or a complete, ordered pair:
+// revenue recognition schedules from it, so a lone start or an end before the
+// start must be refused at validation rather than stored. Only a Service line
+// has one — every other item type is a physical good, earned when it ships.
+
+const lineBase = {
+  salesOrderId: "so_1",
+  salesOrderLineType: "Service" as const,
+  itemId: "item_1",
+  locationId: "loc_1",
+  methodType: "Pull from Inventory" as const,
+  taxPercent: 0
+};
+
+describe("salesOrderLineValidator service dates", () => {
+  it("rejects a service end before the service start", () => {
+    const result = salesOrderLineValidator.safeParse({
+      ...lineBase,
+      serviceStartDate: "2026-03-01",
+      serviceEndDate: "2026-02-01"
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toEqual(["serviceEndDate"]);
+      expect(result.error.issues[0]?.message).toBe(
+        "Service end must be on or after service start"
+      );
+    }
+  });
+
+  it("rejects a service start without a service end", () => {
+    expect(
+      salesOrderLineValidator.safeParse({
+        ...lineBase,
+        serviceStartDate: "2026-03-01"
+      }).success
+    ).toBe(false);
+  });
+
+  it("accepts a service start and end in order", () => {
+    const parsed = salesOrderLineValidator.parse({
+      ...lineBase,
+      serviceStartDate: "2026-03-01",
+      serviceEndDate: "2026-03-31"
+    });
+    expect(parsed.serviceStartDate).toBe("2026-03-01");
+    expect(parsed.serviceEndDate).toBe("2026-03-31");
+  });
+
+  it("accepts a line with no service period", () => {
+    expect(salesOrderLineValidator.safeParse(lineBase).success).toBe(true);
+  });
+
+  it("rejects a service period on a Part line", () => {
+    const result = salesOrderLineValidator.safeParse({
+      ...lineBase,
+      salesOrderLineType: "Part",
+      serviceStartDate: "2026-03-01",
+      serviceEndDate: "2026-03-31"
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toEqual(["serviceStartDate"]);
+      expect(result.error.issues[0]?.message).toBe(
+        "Service dates only apply to Service lines"
+      );
+    }
+  });
+});
+
+// A charge's type is never the caller's: `Rent` is billed from the schedule and
+// `Purchase Option` only by Sell to Customer, whose guards a posted type would
+// skip. The form validator must not carry one through.
+describe("rentalAgreementChargeValidator", () => {
+  it("drops a posted chargeType", () => {
+    const result = rentalAgreementChargeValidator.safeParse({
+      rentalAgreementLineId: "ral_1",
+      chargeType: "Purchase Option",
+      chargeDate: "2026-09-23",
+      description: "Damage",
+      amount: "100",
+      taxPercent: "0"
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data).not.toHaveProperty("chargeType");
   });
 });
 
@@ -107,5 +201,47 @@ describe("quoteLineValidator.quantity", () => {
     expect(
       quoteLineValidator.shape.quantity.safeParse([10, 20, 25]).success
     ).toBe(true);
+  });
+});
+
+// Create Contract on a sales order starts the contract when the order's
+// service starts. Before this it always started today, for 12 months, and the
+// service dates typed on the order were silently dropped.
+describe("contractTermFromServicePeriods", () => {
+  const undated = { serviceStartDate: null, serviceEndDate: null };
+
+  it("is null when no line has a service period", () => {
+    expect(contractTermFromServicePeriods([undated])).toBeNull();
+    expect(contractTermFromServicePeriods([])).toBeNull();
+  });
+
+  it("uses a month preset when the period is exactly N months", () => {
+    expect(
+      contractTermFromServicePeriods([
+        { serviceStartDate: "2027-01-01", serviceEndDate: "2027-12-31" },
+        undated
+      ])
+    ).toEqual({ startDate: "2027-01-01", duration: "12" });
+  });
+
+  it("covers every line: earliest start, latest end", () => {
+    expect(
+      contractTermFromServicePeriods([
+        { serviceStartDate: "2027-02-01", serviceEndDate: "2027-02-14" },
+        { serviceStartDate: "2027-01-15", serviceEndDate: "2027-07-14" }
+      ])
+    ).toEqual({ startDate: "2027-01-15", duration: "6" });
+  });
+
+  it("falls back to a custom end date", () => {
+    expect(
+      contractTermFromServicePeriods([
+        { serviceStartDate: "2027-01-01", serviceEndDate: "2027-03-15" }
+      ])
+    ).toEqual({
+      startDate: "2027-01-01",
+      duration: "custom",
+      endDate: "2027-03-15"
+    });
   });
 });

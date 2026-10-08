@@ -250,6 +250,22 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
+  it("pushes a discounted line's NET amount", async () => {
+    const source = fxInvoice();
+    // 2 × 50 base list, 20% off → 80 base merchandise, 64 EUR at 0.8.
+    const payload = await makeInvoiceSyncer(db()).mapToRemote({
+      ...source,
+      subtotal: 80,
+      totalAmount: 80,
+      balance: 80,
+      lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+    });
+    expect(payload.LineItems[0]?.UnitAmount).toBe(64);
+    expect(payload.LineItems[0]?.LineAmount).toBe(64);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 32 EUR");
+    expect(payload.LineItems[0]).not.toHaveProperty("DiscountRate");
+  });
+
   it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
     // Xero wants EUR per USD, which is what Carbon already stores. Sending the

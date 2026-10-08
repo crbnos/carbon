@@ -21,9 +21,9 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -42,6 +42,7 @@ import {
   getCompanySettings,
   updateAccountingEnabledSetting,
   updateAssetTaxDepreciationSettings,
+  updateLeasePolicySettings,
   updateShowCurrencyTrailingZerosSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -56,6 +57,25 @@ const taxDepreciationSettingsValidator = z.object({
   deferredTaxExpenseAccountId: z.string().min(1, {
     message: "Deferred tax expense account is required"
   })
+});
+
+const leasePolicySettingsValidator = z.object({
+  intent: z.literal("leasePolicy"),
+  leaseMajorPartThresholdPercent: zfd.numeric(
+    z
+      .number()
+      .gt(0, { message: "Threshold must be above 0" })
+      .max(100, { message: "Threshold cannot exceed 100" })
+  ),
+  leaseSubstantiallyAllThresholdPercent: zfd.numeric(
+    z
+      .number()
+      .gt(0, { message: "Threshold must be above 0" })
+      .max(100, { message: "Threshold cannot exceed 100" })
+  ),
+  leaseDefaultDiscountRate: zfd.numeric(
+    z.number().min(0, { message: "Discount rate cannot be negative" })
+  )
 });
 
 export const handle: Handle = {
@@ -128,6 +148,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Fixed asset settings updated" };
   }
 
+  if (intent === "leasePolicy") {
+    const validation = await validator(leasePolicySettingsValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { intent: _intent, ...settings } = validation.data;
+    const update = await updateLeasePolicySettings(client, companyId, settings);
+    if (update.error) return { success: false, message: update.error.message };
+    return { success: true, message: "Lease policy updated" };
+  }
+
   if (intent === "assetTaxDepreciation") {
     const validation = await validator(
       taxDepreciationSettingsValidator
@@ -196,7 +231,20 @@ export default function AccountingSettingsRoute() {
       }
     }
   });
+  const leaseFetcher = useAction<typeof action>({
+    onSettled: (data) => {
+      if (data && "success" in data) {
+        if (data.success === true && data.message) {
+          toast.success(data.message);
+        }
+        if (data.success === false && data.message) {
+          toast.error(data.message);
+        }
+      }
+    }
+  });
   const { isInternal } = useFlags();
+  const { t } = useLingui();
 
   const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
 
@@ -334,6 +382,69 @@ export default function AccountingSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <ValidatedForm
+          className="w-full"
+          validator={leasePolicySettingsValidator}
+          method="post"
+          fetcher={leaseFetcher}
+          defaultValues={{
+            intent: "leasePolicy",
+            leaseMajorPartThresholdPercent:
+              companySettings.leaseMajorPartThresholdPercent,
+            leaseSubstantiallyAllThresholdPercent:
+              companySettings.leaseSubstantiallyAllThresholdPercent,
+            leaseDefaultDiscountRate: companySettings.leaseDefaultDiscountRate
+          }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <Trans>Lease Classification</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  A rental line is a sales-type lease when any ASC 842 test is
+                  met. These thresholds set tests (c) and (d); the discount rate
+                  is the default for new rental agreements.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="leasePolicy" />
+              <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3">
+                <NumberInput
+                  name="leaseMajorPartThresholdPercent"
+                  label={t`Major Part of Economic Life (%)`}
+                  minValue={0}
+                  maxValue={100}
+                  step={INPUT_STEP.percent}
+                  formatOptions={INPUT_FORMAT.percentPoints}
+                />
+                <NumberInput
+                  name="leaseSubstantiallyAllThresholdPercent"
+                  label={t`Substantially All of Fair Value (%)`}
+                  minValue={0}
+                  maxValue={100}
+                  step={INPUT_STEP.percent}
+                  formatOptions={INPUT_FORMAT.percentPoints}
+                />
+                <NumberInput
+                  name="leaseDefaultDiscountRate"
+                  label={t`Default Discount Rate (%)`}
+                  minValue={0}
+                  step={INPUT_STEP.percent}
+                  formatOptions={INPUT_FORMAT.percentPoints}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit isDisabled={leaseFetcher.state !== "idle"}>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </Card>
+        </ValidatedForm>
 
         <ValidatedForm
           className="w-full"

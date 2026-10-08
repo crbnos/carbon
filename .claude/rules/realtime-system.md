@@ -96,8 +96,10 @@ export const handle: Handle = {
 the matched routes and, 300 ms after the last message, invalidates the cached
 loader entries and revalidates the page. A burst is one reload; a route and a
 component following the same table reload once; a reload waits while a fetcher
-is submitting (React Router drops a fetcher's redirect when a revalidation
-starts during its action) and runs when it finishes.
+is submitting or a navigation is in flight, and runs when both are done
+(`useRevalidator` from `@carbon/query`, the only one app code may import). During
+an action React Router drops the fetcher's redirect, and a revalidation during
+the navigation that follows a save restarts that navigation.
 
 - Update the list when the loader starts reading a new table. Nothing checks
   that a list is COMPLETE, only that each name can broadcast.
@@ -125,15 +127,34 @@ other down. Every listener registers in a module-level registry and
 query cache under `["live", companyId, <name>]`; the hooks keep their
 `[rows, setRows]` shape. `LiveLists` (in `RealtimeDataProvider`) loads them:
 
-1. IndexedDB first (`<name>:<companyId>`), so pickers have options at once.
+1. IndexedDB first (`<name>:<companyId>:<userId>`), so pickers have options at once.
 2. One `table_changes_since(cursor)` call.
 3. Only the rows it names are re-read; a named row that does not come back is
    removed. The whole list is fetched once per device, and again only when the
    log answers `reset` or names more than 500 rows. Ids are re-read 100 per
    request: `.in()` goes in the URL, and a few hundred ids exceed the gateway's
    limit.
-4. While the tab is open, broadcasts patch the list row by row. After a
-   reconnect, step 2 runs again.
+4. While the tab is open, broadcasts patch the list row by row, in memory
+   only. After a reconnect, step 2 runs again.
+
+The stored copy is written only in step 3. A broadcast's patch does not move the
+cursor, so the next load re-reads those rows whatever was stored, and storing
+means writing the whole list (about 150 ms of blocked page for 150,000 items).
+
+**Who may keep a stored list.** It is company data on a device, so it goes when
+the user's access does: `LiveLists` takes `companyIds` (the companies the user
+is an employee of, from the shell) and at page load removes every stored list
+of another company or another user (`staleStoredKeys`); when
+`table_changes_since` refuses the caller (`42501`, removed while the page was
+open) the current company's lists are emptied in memory and on the device; and
+each app's login page clears the store, whichever way the session ended. A
+stored list also expires: its write time is kept beside it
+(`<key>:at`, so checking it does not read the list) and a list not written for
+24 hours is removed (`STORED_LIST_MAX_AGE_MS`). The check runs at page load
+and every hour while a page is open (`BACKGROUND_CHECK_MS`); a visible page
+also asks the log again then, which rewrites its own lists (so a list in use
+does not expire) and catches a user who has left the company. A browser that never opens
+Carbon again keeps its copy: nothing can reach it.
 
 ### The change log
 
@@ -154,6 +175,12 @@ company) is the only reader, and the backup engine skips the table.
   token every call resets, until the hourly `util.purge_table_changes()` writes
   a new one. A writer that runs with triggers off (company restore) inserts a
   null-`rowId` row per `CHANGE_LOGGED_TABLES` entry itself.
+- **A writer with triggers off must also broadcast.** The log only answers a
+  client that asks, and an open tab asks when a broadcast tells it to (or once an
+  hour). `wipeAndLoad` (backup restore, template revert) therefore sends a
+  null-`ids` message on every `REALTIME_TABLES` topic of the company, in its
+  transaction. Without it a tab kept a reverted template's parts in its pickers,
+  and creating a job with one of them returned 404.
 - **`table_changes_since` must stay `STABLE`**: the read of the log and
   `pg_current_snapshot()` then share one snapshot. As `VOLATILE`, a change
   committed between the two is skipped for good.

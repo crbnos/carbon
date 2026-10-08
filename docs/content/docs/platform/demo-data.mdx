@@ -100,7 +100,7 @@ Expected refusal. The company has customers or suppliers linked to another compa
 Expected refusal. Posted and voided card transactions cannot be deleted, so the demo-data wipe cannot clear the company. Nothing was written. Apply the template to a company without posted card transactions.
 
 ### Material Planning, Scheduling or Priorities are empty right after applying
-Planning runs as a separate background step once the demo data is committed: MRP for the company, then scheduling for every location with Ready, In Progress or Paused jobs. Give it a moment. If that step failed, the demo data stays and MRP fills in on its regular run every three hours.
+Planning runs as a separate background step once the demo data is committed: MRP for the company, then scheduling for every location with Ready, In Progress or Paused jobs. Give it a moment. If that step failed, the demo data stays and MRP fills in on its next scheduled run (every three hours by default).
 
 ### The Webhooks, API keys or Audit log screens are empty after applying
 Expected. Templates never seed credentials, webhooks or audit history, and applying a template leaves any existing webhooks and API keys in place.

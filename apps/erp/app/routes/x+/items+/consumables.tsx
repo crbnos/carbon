@@ -5,11 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getConsumables } from "~/modules/items";
 import { ConsumablesTable } from "~/modules/items/ui/Consumables";
 import { getTagsList } from "~/modules/shared";
@@ -73,7 +73,7 @@ export default function ConsumablesSearchRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ConsumablesTable data={consumables} count={count} tags={tags} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

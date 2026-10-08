@@ -4,6 +4,11 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  type InvoiceDocumentIds,
+  loadDepositScope,
+  loadSalesInvoiceDocumentIds
+} from "@carbon/database/deposit-scope";
+import {
   buildPaymentJournal,
   type PaymentJournalFeeInput
 } from "@carbon/database/posting";
@@ -12,8 +17,10 @@ import {
   allocatePaymentFunding,
   assertCurrencyDecimals,
   assertExchangeRate,
+  CUSTOMER_DEPOSIT_DESCRIPTION,
   datetime,
   type FundingRequest,
+  fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   onAccountCreditDescription,
@@ -269,6 +276,14 @@ export function postPaymentTransaction(
       throw new Error("An employee payment must be a disbursement");
     }
     const isRefund = !isReimbursement && cashIn !== isAR;
+    // A payment that references a sales order or rental agreement is a
+    // customer deposit: its unapplied cash is a liability on the prepayment
+    // account rather than on-account receivable credit, and a Disbursement
+    // carrying the reference refunds it from there. The builder ignores the
+    // flag for supplier payments; applications are unaffected either way.
+    const isDeposit = Boolean(
+      payment.rentalAgreementId ?? payment.salesOrderId
+    );
     assertExchangeRate(Number(payment.exchangeRate));
     const company = await trx
       .selectFrom("company")
@@ -778,16 +793,28 @@ export function postPaymentTransaction(
               .onRef("journal.id", "=", "line.journalId")
               .onRef("journal.companyId", "=", "line.companyId")
           )
-          .select(["line.documentId", "line.accountId"])
+          .select(["line.documentId", "line.accountId", "line.description"])
           .where("line.companyId", "=", companyId)
           .where("line.documentType", "=", "Payment")
           .where("line.documentId", "in", sourceIds)
-          .where("line.description", "=", onAccountCreditDescription(isAR))
+          // A source's unapplied cash was booked EITHER as on-account credit or,
+          // for a deposit, on the prepayment account; the description says which.
+          .where(
+            "line.description",
+            "in",
+            isAR
+              ? [onAccountCreditDescription(isAR), CUSTOMER_DEPOSIT_DESCRIPTION]
+              : [onAccountCreditDescription(isAR)]
+          )
           .where("journal.sourceType", "=", "Payment")
           .where("journal.status", "=", "Posted")
           .execute()
       : [];
     const sourceControlById = new Map<string, string>();
+    // Sources whose credit is a deposit (booked on the prepayment account):
+    // released as a liability under the deposit description, never as
+    // receivables — the class check below expects Liability for them.
+    const depositSourceIds = new Set<string>();
     for (const line of sourceControls) {
       if (!line.documentId) continue;
       if (!line.accountId) {
@@ -795,13 +822,19 @@ export function postPaymentTransaction(
           "Funding source is missing its original control account"
         );
       }
+      const lineIsDeposit = line.description === CUSTOMER_DEPOSIT_DESCRIPTION;
       const originalAccount = sourceControlById.get(line.documentId);
-      if (originalAccount && originalAccount !== line.accountId) {
+      if (
+        originalAccount &&
+        (originalAccount !== line.accountId ||
+          depositSourceIds.has(line.documentId) !== lineIsDeposit)
+      ) {
         throw new Error(
           "Funding source has conflicting original control accounts"
         );
       }
       sourceControlById.set(line.documentId, line.accountId);
+      if (lineIsDeposit) depositSourceIds.add(line.documentId);
     }
     const consumed = sourceIds.length
       ? (
@@ -818,12 +851,29 @@ export function postPaymentTransaction(
             .execute()
         ).filter(isEffectiveSettlement)
       : [];
+    // A customer deposit funds only invoices of its own rental agreement or
+    // sales order, and a deposit payment applies to nothing else — re-derived
+    // here so a crafted Draft cannot spend one document's deposit on another.
     const priorSources = remainingFundingSources(
-      sources,
+      sources.map((source) => ({
+        ...source,
+        scope: isAR ? fundingScopeOf(source) : null
+      })),
       consumed,
       new Map([[payment.currencyCode, decimals]]),
       isAR
     );
+    const currentScope =
+      isAR && !isRefund && !isReimbursement
+        ? await loadDepositScope(trx, companyId, payment)
+        : null;
+    const invoiceDocuments =
+      isAR &&
+      !isRefund &&
+      !isReimbursement &&
+      (currentScope || priorSources.some((source) => source.scope))
+        ? await loadSalesInvoiceDocumentIds(trx, companyId, targetIds)
+        : new Map<string, InvoiceDocumentIds>();
     const requestByTarget = new Map<string, FundingRequest>();
     for (const draft of drafts.filter((row) => row.paymentId === paymentId)) {
       const targetId = draft[targetColumn]!;
@@ -852,7 +902,8 @@ export function postPaymentTransaction(
         remainingBase: target.remainingBase,
         requestedDocumentPrincipal: 0,
         discountAmount: 0,
-        writeOffAmount: 0
+        writeOffAmount: 0,
+        ...invoiceDocuments.get(targetId)
       };
       request.requestedDocumentPrincipal = toDocumentAmount(
         request.requestedDocumentPrincipal + requested,
@@ -876,7 +927,8 @@ export function postPaymentTransaction(
         remainingBase: toBaseAmount(
           Number(payment.totalAmount),
           Number(payment.exchangeRate)
-        )
+        ),
+        scope: currentScope
       },
       priorSources,
       requests: [...requestByTarget.values()].sort((a, b) =>
@@ -990,17 +1042,30 @@ export function postPaymentTransaction(
         [accounts.fxLossAccountId, "Expense"],
         [fee?.accountId, "Expense"]
       );
+      if (isDeposit && isAR) {
+        expectedAccountClasses.push([defaults.prepaymentAccount, "Liability"]);
+      }
       const journalApplications = normalized.map((application) => ({
         ...application,
         targetControlAccountId: targetControlById.get(application.targetId),
         sourceControlAccountId: application.sourcePaymentId
           ? sourceControlById.get(application.sourcePaymentId)
+          : undefined,
+        sourceIsDeposit: application.sourcePaymentId
+          ? depositSourceIds.has(application.sourcePaymentId)
           : undefined
       }));
       for (const application of journalApplications) {
         expectedAccountClasses.push(
           [application.targetControlAccountId, isAR ? "Asset" : "Liability"],
-          [application.sourceControlAccountId, isAR ? "Asset" : "Liability"]
+          [
+            application.sourceControlAccountId,
+            application.sourceIsDeposit
+              ? "Liability"
+              : isAR
+                ? "Asset"
+                : "Liability"
+          ]
         );
       }
       journalLines = buildPaymentJournal({
@@ -1016,7 +1081,9 @@ export function postPaymentTransaction(
         applications: journalApplications,
         newOnAccountBase: allocation.sourceRemainders[0]!.remainingBase,
         fee,
-        accounts
+        accounts,
+        isDeposit,
+        depositAccountId: defaults.prepaymentAccount
       }).lines;
     }
     const accountIds = [

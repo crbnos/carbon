@@ -11,16 +11,15 @@ import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
   getJobReleaseReadiness,
   jobStatus,
+  makeToAssetItemError,
   recalculateJobRequirements,
-  returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
-import { releaseJobs } from "~/modules/production/production.server";
+import { cancelJob, releaseJobs } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -62,7 +61,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Ready") {
     const { data } = await client
       .from("job")
-      .select("item(itemReplenishment(manufacturingBlocked))")
+      .select(
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      )
       .eq("id", id)
       .single();
 
@@ -71,6 +72,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
       );
+    }
+
+    // Make to Asset gate, checked here so every path to Ready (the release
+    // dialog and the plain status post) refuses before releaseJobs runs. The
+    // item rule is `makeToAssetItemError`; a job on a sales order line is a
+    // sale, not a capitalisation.
+    if (data?.fixedAssetClassId || data?.fixedAssetId) {
+      const itemError = makeToAssetItemError({
+        fixedAssetClassId: data.fixedAssetClassId,
+        fixedAssetId: data.fixedAssetId,
+        itemTrackingType: data.item?.itemTrackingType,
+        quantity: data.quantity
+      });
+      if (itemError) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(request, error(null, itemError))
+        );
+      }
+      if (data.salesOrderLineId) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(
+            request,
+            error(
+              null,
+              "A job linked to a sales order line cannot complete to a fixed asset"
+            )
+          )
+        );
+      }
     }
   }
 
@@ -121,6 +153,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     });
     if (released.error) {
+      // The job is Ready when it came back released (its purchase orders
+      // failed after the flip): schedule it, then say what failed.
+      if (released.releasedJobIds.includes(id)) {
+        try {
+          await scheduleJobLocation({ id, companyId, userId });
+        } catch (err) {
+          logger.error("Error", { error: err });
+        }
+      }
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, released.error))
@@ -168,55 +209,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // picked-material return sweep. The UI never sends Completed to this route —
   // the Complete button uses $jobId.complete.tsx, which runs both.
   if (status === "Cancelled") {
-    const sweep = await returnPickedRemaindersForJob(
-      getCarbonServiceRole(),
-      getDatabaseClient(),
-      {
-        jobId: id,
-        userId,
-        companyId
-      }
-    );
-    if (sweep.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(sweep.error, "Cancel aborted: returning picked material failed")
-        )
-      );
-    }
-    const picks = await cancelOpenPickingListsForJob(getDatabaseClient(), {
+    // Returns picked material and closes picking lists before the status
+    // changes — the same path the planning Cancel action takes.
+    const failed = await cancelJob({
+      client,
+      db: getDatabaseClient(),
       jobId: id,
       companyId,
       userId
     });
-    if (picks.error) {
+    if (failed) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(
-            picks.error,
-            "Cancel aborted: its picking lists could not be closed"
-          )
-        )
+        await flash(request, error(failed.error, failed.message))
       );
     }
-  }
-
-  const update = await updateJobStatus(client, {
-    id,
-    companyId,
-    status,
-    assignee: ["Cancelled"].includes(status) ? null : undefined,
-    updatedBy: userId
-  });
-  if (update.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(id),
-      await flash(request, error(update.error, "Failed to update job status"))
-    );
+  } else {
+    const update = await updateJobStatus(client, {
+      id,
+      companyId,
+      status,
+      updatedBy: userId
+    });
+    if (update.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(update.error, "Failed to update job status"))
+      );
+    }
   }
 
   if (status === "Planned" && shouldSchedule) {

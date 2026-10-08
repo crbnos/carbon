@@ -22,14 +22,14 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -68,7 +68,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const registration = validation.data;
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, asset] = await Promise.all([
+    getCompanySettings(client, companyId),
+    client
+      .from("fixedAsset")
+      .select(
+        "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId, isConstructionInProgress)"
+      )
+      .eq("id", fixedAssetId)
+      .eq("companyId", companyId)
+      .single()
+  ]);
+
   if (companySettings.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
@@ -78,44 +89,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+  if (asset.error || !asset.data) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(request, error(asset.error, "Failed to get fixed asset"))
+    );
+  }
+
   const accountingEnabled =
     (companySettings.data as { accountingEnabled?: boolean } | null)
       ?.accountingEnabled ?? false;
+
+  const assetClass = asset.data.fixedAssetClass as {
+    assetAccountId: string;
+    accumulatedDepreciationAccountId: string;
+    isConstructionInProgress: boolean;
+  } | null;
+
+  // An asset in a construction-in-progress class is registered as Under
+  // Construction rather than Active: it accumulates cost until it is
+  // capitalized into its in-service class, and is not depreciated before then.
+  const registeredStatus = assetClass?.isConstructionInProgress
+    ? "Under Construction"
+    : "Active";
 
   // With accounting on, capitalize the asset with a real GL entry
   // (Dr asset / Cr owner equity) rather than a bare status flip, so no
   // capitalized asset exists without a journal.
   if (accountingEnabled) {
-    const [asset, defaults, dimensionsResult, accountingPeriod] =
-      await Promise.all([
-        client
-          .from("fixedAsset")
-          .select(
-            "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId)"
-          )
-          .eq("id", fixedAssetId)
-          .eq("companyId", companyId)
-          .single(),
-        getDefaultAccounts(client, companyId),
-        client
-          .from("dimension")
-          .select("id, entityType")
-          .eq("companyGroupId", companyGroupId)
-          .eq("active", true),
-        getOrCreateAccountingPeriod(
-          client,
-          companyId,
-          registration.acquisitionDate,
-          "accounting"
-        )
-      ]);
+    const [defaults, dimensionsResult, accountingPeriod] = await Promise.all([
+      getDefaultAccounts(client, companyId),
+      client
+        .from("dimension")
+        .select("id, entityType")
+        .eq("companyGroupId", companyGroupId)
+        .eq("active", true),
+      getOrCreateAccountingPeriod(
+        client,
+        companyId,
+        registration.acquisitionDate,
+        "accounting"
+      )
+    ]);
 
-    if (asset.error || !asset.data) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(request, error(asset.error, "Failed to get fixed asset"))
-      );
-    }
     if (accountingPeriod.error || !accountingPeriod.data) {
       throw redirect(
         path.to.fixedAsset(fixedAssetId),
@@ -135,10 +151,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const assetClass = asset.data.fixedAssetClass as {
-      assetAccountId: string;
-      accumulatedDepreciationAccountId: string;
-    } | null;
     const assetAccountId = assetClass?.assetAccountId;
     const accumulatedDepreciationAccountId =
       assetClass?.accumulatedDepreciationAccountId;
@@ -183,14 +195,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
         fixedAssetId,
         fixedAssetReadableId: asset.data.fixedAssetId,
         registration,
-        locationId: asset.data.locationId,
-        fixedAssetClassId: asset.data.fixedAssetClassId,
-        assetAccountId,
-        accumulatedDepreciationAccountId,
-        offsetAccountId,
-        accountingPeriodId: accountingPeriod.data,
-        locationDimensionId,
-        assetClassDimensionId,
+        posting: {
+          locationId: asset.data.locationId,
+          fixedAssetClassId: asset.data.fixedAssetClassId,
+          assetAccountId,
+          accumulatedDepreciationAccountId,
+          offsetAccountId,
+          accountingPeriodId: accountingPeriod.data,
+          locationDimensionId,
+          assetClassDimensionId
+        },
+        status: registeredStatus,
         companyId,
         userId
       });
@@ -207,32 +222,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Accounting disabled — a plain status flip (no journal). Select the affected
-  // row back so a concurrent update that already moved the asset out of Draft
-  // (zero rows matched) is treated as a failure rather than a false success.
-  const result = await client
-    .from("fixedAsset")
-    .update({
-      ...registration,
-      status: "Active",
-      updatedBy: userId
-    })
-    .eq("id", fixedAssetId)
-    .eq("companyId", companyId)
-    .eq("status", "Draft")
-    .select("id");
-
-  if (result.error) {
+  // Accounting disabled — no journal, but the status flip and a CIP class's
+  // cost row are still one transaction, and the Draft guard inside it treats a
+  // concurrent registration as a failure rather than a false success.
+  try {
+    await postAssetRegistration(getDatabaseClient(), {
+      fixedAssetId,
+      fixedAssetReadableId: asset.data.fixedAssetId,
+      registration,
+      posting: null,
+      status: registeredStatus,
+      companyId,
+      userId
+    });
+  } catch (err) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(result.error, "Failed to register asset"))
-    );
-  }
-
-  if (!result.data || result.data.length === 0) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(null, "Only Draft assets can be registered"))
+      await flash(request, error(err, "Failed to register asset"))
     );
   }
 

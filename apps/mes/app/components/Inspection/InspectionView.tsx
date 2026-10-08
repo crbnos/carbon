@@ -1127,7 +1127,7 @@ export function InspectionView({
               />
               <ActionSheetButton
                 icon={<LuCheck className="size-4 shrink-0" />}
-                label={t`Finish`}
+                label={t`Mark as Done`}
                 onClick={() => {
                   actionsSheet.onClose();
                   finishModal.onOpen();

@@ -21,7 +21,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
@@ -119,7 +119,7 @@ const LineItems = ({
             "Indirect Expense")
           : isFixedAsset
             ? line.description || "Fixed Asset"
-            : line.description;
+            : distinctItemText(itemReadableId, line.description);
         const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
         const supplierLineTotal =
           (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
@@ -204,12 +204,14 @@ const LineItems = ({
                           </Link>
                         </Button>
                       </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={lineDescription}
-                      >
-                        {lineDescription}
-                      </TruncatedTooltipText>
+                      {lineDescription && (
+                        <TruncatedTooltipText
+                          className="text-muted-foreground text-sm truncate w-full"
+                          tooltip={lineDescription}
+                        >
+                          {lineDescription}
+                        </TruncatedTooltipText>
+                      )}
                     </VStack>
                     <VStack
                       spacing={2}
@@ -217,7 +219,7 @@ const LineItems = ({
                     >
                       <HStack spacing={4}>
                         <VStack spacing={0}>
-                          <span className="font-bold text-xl whitespace-nowrap">
+                          <span className="font-semibold text-xl whitespace-nowrap">
                             {formatter.format(total)}
                           </span>
                           {shouldConvertCurrency && (
@@ -428,7 +430,7 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>Total</Td>
                       <Td className="text-right">
                         <VStack spacing={0} className="items-end">

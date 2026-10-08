@@ -28,6 +28,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -143,9 +144,14 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
             <Hyperlink to={path.to.toolDetails(row.original.id!)}>
               <VStack spacing={0}>
                 {row.original.readableIdWithRevision}
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.name}
-                </div>
+                {distinctItemText(
+                  row.original.readableIdWithRevision,
+                  row.original.name
+                ) && (
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.name}
+                  </div>
+                )}
               </VStack>
             </Hyperlink>
           </HStack>

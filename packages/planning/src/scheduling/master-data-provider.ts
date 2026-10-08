@@ -32,6 +32,11 @@ import {
   type WorkCenterAvailabilityInput
 } from "./machine-availability.ts";
 import {
+  type JobWrites,
+  mergeCrossJobOperations,
+  visibleReservations
+} from "./run-overlay.ts";
+import {
   type BaseOperation,
   capacityHoldingJobStatuses,
   type Job,
@@ -51,6 +56,7 @@ const peopleDateUpperBound = (instant: number, timeZone: string) =>
   parseDate(businessDayFromMs(instant, timeZone)).add({ days: 1 }).toString();
 
 export type JobMaterialWithMakeMethod = {
+  id: string | null;
   jobMaterialMakeMethodId: string | null;
   jobOperationId: string | null;
 };
@@ -171,10 +177,6 @@ export interface MasterDataProvider {
   getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }>;
-  /** Manufacturing lead time (raw, in days) of the item each make method builds. */
-  getMakeMethodLeadTimes(
-    makeMethodIds: string[]
-  ): Promise<Map<string, unknown>>;
   /** The location's timezone, falling back to the company's. */
   getLocationTimeZone(locationId: string): Promise<string>;
   getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]>;
@@ -254,17 +256,33 @@ function toJob<
 
 type Row<T extends keyof DB> = Selectable<DB[T]>;
 
+/**
+ * What the jobs of a location run have computed so far. Nothing is written
+ * until the run ends, so a later job reads the earlier jobs' results here.
+ */
+type RunOverlay = {
+  now: number;
+  /** Rows no job of the run rewrites: other jobs' and batch-tagged ones. */
+  fixedReservations: LiveReservation[];
+  /** Per job of the run: its stored rows, then its new ones once it has run. */
+  reservationsByJob: Map<string, LiveReservation[]>;
+  storedOperationsByWorkCenter: Map<string, CrossJobOperation[]>;
+  placedOperations: Map<string, CrossJobOperation>;
+};
+
 type JobPreload = {
   jobIds: Set<string>;
   jobs: Map<string, Job>;
   operations: Record<string, Row<"jobOperation">[]>;
   dependencies: Record<string, Row<"jobOperationDependency">[]>;
-  unlinked: Record<string, { id: string; jobMakeMethodId: string }[]>;
+  unlinked: Record<
+    string,
+    { id: string; jobMakeMethodId: string; methodType: string }[]
+  >;
   materials: Row<"jobMaterialWithMakeMethodId">[];
   jobIdByMakeMethodId: Map<string, string>;
   rootByJobId: Map<string, { id: string; itemId: string | null }>;
   treeByRootId: Record<string, JobMethod[]>;
-  leadTimeByMakeMethodId: Map<string, unknown>;
   operationIds: Set<string>;
   operationsWithEvents: Set<string>;
 };
@@ -283,13 +301,18 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
    * Batch mode: when several jobs are scheduled in one invocation, the
    * company's STATIC master data (processes, work centers, qualifications,
    * shift windows, dispatch policies) is identical for every job — cache it
-   * on first read instead of re-querying per job. Live reservations are
-   * NEVER cached: they must stay DB-fresh so each job in the batch sees the
-   * previous jobs' just-persisted placements. Job-scoped rows (operations,
+   * on first read instead of re-querying per job. Job-scoped rows (operations,
    * dependencies, method trees) are read once for the batch by `preloadJobs`.
+   * Live reservations and other jobs' operations change as the batch runs:
+   * `beginRun` reads them once and `recordJob` keeps them current.
    */
   private companyCache: Map<string, Promise<unknown>> | null = null;
   private preload: JobPreload | null = null;
+  private run: RunOverlay | null = null;
+  private processRequirements = new Map<
+    string,
+    Promise<ProcessRequirementRow[]>
+  >();
 
   constructor(
     db: Kysely<DB>,
@@ -318,9 +341,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   /**
    * Read every job-scoped row the engine needs for these jobs in one query per
    * table, so a location run does not repeat ~15 reads per job. Call it after
-   * anything that writes those rows for the batch (the batch pre-pass). Each
-   * job's rows are served to that job's own engine, which reads them before it
-   * writes any of them; reads that follow a write stay live.
+   * anything that writes those rows for the batch (the batch pre-pass). The
+   * engine writes nothing while the batch runs, so the rows stay the stored
+   * state for the whole run.
    */
   async preloadJobs(jobIds: string[]): Promise<void> {
     if (jobIds.length === 0) return;
@@ -348,7 +371,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
           .execute(),
         this.db
           .selectFrom("jobMaterial")
-          .select(["id", "jobMakeMethodId", "jobId"])
+          .select(["id", "jobMakeMethodId", "jobId", "methodType"])
           .where("jobId", "in", jobIds)
           .where("companyId", "=", this.companyId)
           .where("jobOperationId", "is", null)
@@ -363,14 +386,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
     const roots = makeMethods.filter((m) => m.parentMaterialId === null);
     const rootIds = roots.map((m) => m.id);
-    const itemIds = [
-      ...new Set(
-        makeMethods.map((m) => m.itemId).filter((id): id is string => !!id)
-      )
-    ];
     const operationIds = operations.map((o) => o.id);
 
-    const [trees, replenishments, withEvents] = await Promise.all([
+    const [trees, withEvents] = await Promise.all([
       rootIds.length === 0
         ? { rows: [] as (JobMethod & { rootMethodId: string })[] }
         : sql<JobMethod & { rootMethodId: string }>`
@@ -379,20 +397,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
               LATERAL get_job_methods_by_method_id(r.id) WITH ORDINALITY AS t
             ORDER BY r.id, t.ordinality
           `.execute(this.db),
-      itemIds.length === 0
-        ? ([] as { itemId: string; leadTime: number }[])
-        : this.db
-            .selectFrom("itemReplenishment")
-            .select(["itemId", "leadTime"])
-            .where("itemId", "in", itemIds)
-            .where("companyId", "=", this.companyId)
-            .execute(),
       this.readOperationsWithEvents(operationIds)
     ]);
 
-    const leadTimeByItemId = new Map<string, unknown>(
-      replenishments.map((r) => [r.itemId, r.leadTime])
-    );
     const preload: JobPreload = {
       jobs: new Map(jobs.map((j) => [j.id as string, toJob(j)])),
       operations: groupBy(operations, (o) => o.jobId as string),
@@ -402,9 +409,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       jobIdByMakeMethodId: new Map(makeMethods.map((m) => [m.id, m.jobId])),
       rootByJobId: new Map(roots.map((m) => [m.jobId, m])),
       treeByRootId: groupBy(trees.rows, (t) => t.rootMethodId),
-      leadTimeByMakeMethodId: new Map(
-        makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "")])
-      ),
       operationIds: new Set(operationIds),
       operationsWithEvents: withEvents,
       jobIds: new Set(jobIds)
@@ -513,7 +517,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
-    if (this.materialsAreLinked(makeMethodIds)) {
+    if (this.arePreloaded(makeMethodIds)) {
       const ids = new Set(makeMethodIds);
       return this.preload!.materials.filter(
         (m) => m.jobMakeMethodId && ids.has(m.jobMakeMethodId)
@@ -534,7 +538,14 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
-    if (this.materialsAreLinked(makeMethodIds)) return [];
+    if (this.arePreloaded(makeMethodIds)) {
+      const ids = new Set(makeMethodIds);
+      return Object.values(this.preload!.unlinked)
+        .flat()
+        .filter(
+          (m) => m.methodType === "Make to Order" && ids.has(m.jobMakeMethodId)
+        );
+    }
 
     return await this.db
       .selectFrom("jobMaterial")
@@ -546,17 +557,14 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   /**
-   * True when these make methods belong to preloaded jobs that had every
-   * material on an operation. A run only ever links unlinked materials, so
-   * for such a job the preloaded material rows are still what is stored.
+   * True when these ids come from a preloaded job's method tree. The tree
+   * also carries the ids of its bought materials, which are no make method's
+   * id and match no row, so one known make method is enough to tell.
    */
-  private materialsAreLinked(makeMethodIds: string[]): boolean {
+  private arePreloaded(makeMethodIds: string[]): boolean {
     const preload = this.preload;
     if (!preload) return false;
-    return makeMethodIds.every((id) => {
-      const jobId = preload.jobIdByMakeMethodId.get(id);
-      return jobId !== undefined && !preload.unlinked[jobId]?.length;
-    });
+    return makeMethodIds.some((id) => preload.jobIdByMakeMethodId.has(id));
   }
 
   async getUnlinkedMaterials(jobId: string): Promise<UnlinkedMaterial[]> {
@@ -593,38 +601,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     const rows = this.preload?.treeByRootId[methodId];
     if (rows) return { data: getJobMethodTreeArrayToTree(rows), error: null };
     return await getJobMethodTree(this.db, methodId);
-  }
-
-  async getMakeMethodLeadTimes(
-    makeMethodIds: string[]
-  ): Promise<Map<string, unknown>> {
-    const preloaded = this.preload?.leadTimeByMakeMethodId;
-    if (preloaded && makeMethodIds.every((id) => preloaded.has(id))) {
-      return preloaded;
-    }
-    if (makeMethodIds.length === 0) return new Map();
-    const makeMethods = await this.db
-      .selectFrom("jobMakeMethod")
-      .select(["id", "itemId"])
-      .where("id", "in", makeMethodIds)
-      .execute();
-    const itemIds = [
-      ...new Set(
-        makeMethods.map((m) => m.itemId).filter((id): id is string => !!id)
-      )
-    ];
-    if (itemIds.length === 0) return new Map();
-    const replenishments = await this.db
-      .selectFrom("itemReplenishment")
-      .select(["itemId", "leadTime"])
-      .where("itemId", "in", itemIds)
-      .execute();
-    const leadTimeByItemId = new Map<string, unknown>(
-      replenishments.map((r) => [r.itemId, r.leadTime])
-    );
-    return new Map(
-      makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "")])
-    );
   }
 
   getLocationTimeZone(locationId: string): Promise<string> {
@@ -672,6 +648,33 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
+    const run = this.run;
+    if (!run) return this.readCrossJobOperations(workCenterIds);
+
+    const missing = workCenterIds.filter(
+      (id) => !run.storedOperationsByWorkCenter.has(id)
+    );
+    if (missing.length > 0) {
+      const rows = groupBy(
+        await this.readCrossJobOperations(missing),
+        (op) => op.workCenterId as string
+      );
+      for (const id of missing) {
+        run.storedOperationsByWorkCenter.set(id, rows[id] ?? []);
+      }
+    }
+    return mergeCrossJobOperations(
+      workCenterIds.flatMap(
+        (id) => run.storedOperationsByWorkCenter.get(id) ?? []
+      ),
+      run.placedOperations,
+      workCenterIds
+    );
+  }
+
+  private async readCrossJobOperations(
+    workCenterIds: string[]
+  ): Promise<CrossJobOperation[]> {
     return await this.db
       .selectFrom("jobOperation as jo")
       .innerJoin("job as j", "j.id", "jo.jobId")
@@ -704,6 +707,97 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getLiveReservations(
+    fromDate: number,
+    excludeJobIds: string[]
+  ): Promise<LiveReservation[]> {
+    const run = this.run;
+    if (!run || run.now !== fromDate) {
+      return this.readLiveReservations(fromDate, excludeJobIds);
+    }
+    const excluded = new Set(excludeJobIds);
+    const rows = [...run.fixedReservations];
+    for (const [jobId, reservations] of run.reservationsByJob) {
+      if (!excluded.has(jobId)) rows.push(...reservations);
+    }
+    return rows;
+  }
+
+  /**
+   * Start a location run over these jobs: read the live reservations once.
+   * Call it after the batch pre-pass, which rewrites the batch-tagged rows.
+   */
+  async beginRun(jobIds: string[], now: number): Promise<void> {
+    const batch = new Set(jobIds);
+    const fixedReservations: LiveReservation[] = [];
+    const reservationsByJob = new Map<string, LiveReservation[]>();
+    for (const row of await this.readLiveReservations(now, [])) {
+      // The same split as the read's excludeJobIds filter: a batch-tagged row
+      // is never excluded.
+      if (row.jobOperationBatchId !== null || !batch.has(row.jobId)) {
+        fixedReservations.push(row);
+        continue;
+      }
+      const rows = reservationsByJob.get(row.jobId);
+      if (rows) rows.push(row);
+      else reservationsByJob.set(row.jobId, [row]);
+    }
+    this.run = {
+      now,
+      fixedReservations,
+      reservationsByJob,
+      storedOperationsByWorkCenter: new Map(),
+      placedOperations: new Map()
+    };
+  }
+
+  /** Make a job's result visible to the jobs that run after it. */
+  recordJob(writes: JobWrites): void {
+    const run = this.run;
+    const job = this.preload?.jobs.get(writes.jobId);
+    if (!run || !job) return;
+
+    run.reservationsByJob.set(
+      writes.jobId,
+      visibleReservations(writes, job.readableJobId ?? "", run.now)
+    );
+
+    // Terminal jobs never compete in dispatch order (the stored read's filter).
+    if (["Cancelled", "Completed", "Closed"].includes(job.status ?? "")) return;
+    const stored = new Map(
+      (this.preload?.operations[writes.jobId] ?? []).map((o) => [o.id, o])
+    );
+    for (const { id, placement } of writes.placements) {
+      const op = stored.get(id);
+      if (!op) continue;
+      run.placedOperations.set(id, {
+        id,
+        dueDate:
+          placement.dueDate !== undefined
+            ? (placement.dueDate as string | null)
+            : (op.dueDate as string | null),
+        startDate: placement.startDate as string | null,
+        priority:
+          placement.priority !== undefined
+            ? (placement.priority as number)
+            : op.priority,
+        deadlineType: job.deadlineType ?? null,
+        jobPriority: job.priority ?? null,
+        workCenterId: placement.workCenterId as string | null,
+        createdAt: op.createdAt,
+        projectedCompletionAt: placement.projectedCompletionAt as string | null,
+        setupTime: op.setupTime,
+        setupUnit: op.setupUnit,
+        laborTime: op.laborTime,
+        laborUnit: op.laborUnit,
+        machineTime: op.machineTime,
+        machineUnit: op.machineUnit,
+        operationQuantity: op.operationQuantity,
+        operationLeadTime: op.operationLeadTime
+      });
+    }
+  }
+
+  private async readLiveReservations(
     fromDate: number,
     excludeJobIds: string[]
   ): Promise<LiveReservation[]> {
@@ -833,10 +927,25 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]> {
-    return this.cached(
-      `processRequirements:${[...processIds].sort().join(",")}`,
-      () => this.loadProcessRequirements(processIds)
+    if (!this.companyCache) return this.loadProcessRequirements(processIds);
+
+    // Cached per process, so two jobs sharing a process share its read.
+    const missing = processIds.filter(
+      (id) => !this.processRequirements.has(id)
     );
+    if (missing.length > 0) {
+      const loaded = this.loadProcessRequirements(missing);
+      for (const id of missing) {
+        this.processRequirements.set(
+          id,
+          loaded.then((rows) => rows.filter((r) => r.processId === id))
+        );
+      }
+    }
+    const rows = await Promise.all(
+      processIds.map((id) => this.processRequirements.get(id)!)
+    );
+    return rows.flat();
   }
 
   private async loadProcessRequirements(

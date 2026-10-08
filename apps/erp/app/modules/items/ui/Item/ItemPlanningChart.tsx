@@ -58,9 +58,9 @@ import { DateTime, Empty, Hyperlink } from "~/components";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
-import type { PlannedOrder } from "../../../purchasing/purchasing.models";
 import { DemandForecastSourcesPopover } from "./DemandForecastSourcesPopover";
 import { PlannedOrderDetailsPopover } from "./PlannedOrderDetailsPopover";
+import type { ChartPlannedOrder } from "./planningSupplyDemand";
 import {
   demandSourceTypes,
   mergePlannedOrders,
@@ -154,14 +154,19 @@ export const ItemPlanningChart = ({
   locationId,
   plannedOrders = [],
   safetyStock,
-  conversionFactor = 1
+  conversionFactor = 1,
+  timeFenceDate = null
 }: {
   compact?: boolean;
   itemId: string;
   locationId: string;
-  plannedOrders?: PlannedOrder[];
+  plannedOrders?: ChartPlannedOrder[];
   safetyStock?: number;
   conversionFactor?: number;
+  /** The planning horizon's cutoff (ISO date). Marked on the chart as a
+   *  vertical line on the week it falls in; omitted when there is no fence or
+   *  it lies outside the charted weeks. */
+  timeFenceDate?: string | null;
 }) => {
   const { t } = useLingui();
   const forecastFetcher = useLoaderQuery<typeof forecastLoader>(
@@ -195,7 +200,8 @@ export const ItemPlanningChart = ({
     const empty = {
       data: [] as ChartDataPoint[],
       stockoutDate: null as string | null,
-      belowSafetyDate: null as string | null
+      belowSafetyDate: null as string | null,
+      timeFenceWeek: null as string | null
     };
     if (
       !forecastFetcher.data?.demand ||
@@ -250,11 +256,17 @@ export const ItemPlanningChart = ({
       }
 
       if (groupedData[periodId]) {
-        // Convert purchase quantity to inventory quantity for display
-        // Inventory Quantity = Purchase Quantity × Conversion Factor
-        const purchaseQuantityDelta =
+        // A DRAFT order is in purchase units: convert its quantity to
+        // inventory units (× conversionFactor). An EXISTING order arrives
+        // already converted, with `existingQuantity` in inventory units too
+        // (see the purchasing drawer's chartOrders and mergePlannedOrders) —
+        // converting it again drew an edit from 5 to 6 boxes of 10 as +100.
+        const quantityDelta =
           (order.quantity ?? 0) - (order.existingQuantity ?? 0);
-        const inventoryQuantityDelta = purchaseQuantityDelta * conversionFactor;
+        const inventoryQuantityDelta =
+          order.existingId || order.existingLineId
+            ? quantityDelta
+            : quantityDelta * conversionFactor;
 
         // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
         groupedData[periodId]["Planned"] += inventoryQuantityDelta;
@@ -336,8 +348,23 @@ export const ItemPlanningChart = ({
       return period;
     });
 
-    return { data, stockoutDate, belowSafetyDate };
+    // The charted week the time fence falls in: the last week starting on or
+    // before it. ISO dates order as strings. A fence before the first week or
+    // past the last one has no bar to sit on.
+    let timeFenceWeek: string | null = null;
+    const lastEndDate = periods.reduce(
+      (latest, period) => (period.endDate > latest ? period.endDate : latest),
+      ""
+    );
+    if (timeFenceDate && timeFenceDate <= lastEndDate) {
+      for (const period of data) {
+        if (period.startDate <= timeFenceDate) timeFenceWeek = period.startDate;
+      }
+    }
+
+    return { data, stockoutDate, belowSafetyDate, timeFenceWeek };
   }, [
+    timeFenceDate,
     forecastFetcher.data,
     plannedOrders,
     conversionFactor,
@@ -709,6 +736,23 @@ export const ItemPlanningChart = ({
                         value: t`Safety stock (${numberFormatter.format(safetyStockValue)})`,
                         position: "insideTopLeft",
                         fill: chartColors.safety,
+                        fontSize: 11,
+                        fontWeight: 600
+                      }}
+                    />
+                  )}
+                  {chartData.timeFenceWeek && (
+                    <ReferenceLine
+                      x={chartData.timeFenceWeek}
+                      stroke={chartColors.zero}
+                      strokeDasharray="2 4"
+                      label={{
+                        value: t`Planning horizon`,
+                        // Recharts mirrors the names on a vertical line:
+                        // "insideTopLeft" is the side AWAY from the y-axis,
+                        // so the label never lands on the tick numbers.
+                        position: "insideTopLeft",
+                        fill: chartColors.zero,
                         fontSize: 11,
                         fontWeight: 600
                       }}
@@ -1284,7 +1328,7 @@ interface PlanningItem {
   // Planned-row metadata (only set on rows with sourceType === "Planned").
   // Carries enough info for PlannedOrderDetailsPopover to render order facts,
   // policy reasoning, and the linked PO section.
-  plannedOrder?: PlannedOrder;
+  plannedOrder?: ChartPlannedOrder;
 }
 
 const sourceTypeIcons: Record<SourceType, JSX.Element> = {

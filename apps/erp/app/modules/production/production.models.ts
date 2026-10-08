@@ -68,6 +68,43 @@ export const jobStatus = [
   "Due Today" // deprecated
 ] as const;
 
+export const planningActionType = [
+  "Order",
+  "Make",
+  "Expedite",
+  "Defer",
+  "Cancel",
+  "Increase",
+  "Decrease",
+  "Release"
+] as const;
+
+export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
+
+// Pure (no lingui / JSX) so the ERP vitest suite can import it directly — the
+// models barrel drags the glossary's lingui macros, which vitest does not
+// transform (see apps/erp/test/job-complete-logic.test.ts).
+export {
+  actionsOfTypes,
+  PLANNING_ACTIONS_COLUMN,
+  PLANNING_ASSIGNEE_COLUMN,
+  PLANNING_DRAWER_PARAM,
+  resolvePlanningActionScope
+} from "./ui/Planning/planning-action-scope";
+
+/**
+ * The job statuses planning may change: Apply on a planning action and the
+ * order drawer's inline edits. An allowlist on purpose — a job past Planned is
+ * on the floor, finished, closed or cancelled, and is reviewed on the job.
+ */
+export const PLANNING_EDITABLE_JOB_STATUSES = ["Draft", "Planned"] as const;
+
+export function isJobEditableFromPlanning(
+  status: Database["public"]["Enums"]["jobStatus"] | null | undefined
+): boolean {
+  return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
+}
+
 export const JOB_LOCKED_STATUSES = [
   "Completed",
   "Closed",
@@ -227,7 +264,12 @@ const baseJobValidator = z.object({
     .string()
     .min(1, { message: "Unit of measure is required" }),
   modelUploadId: zfd.text(z.string().optional()),
-  configuration: z.any().optional()
+  configuration: z.any().optional(),
+  // Make to Asset: the job completes to a fixed asset instead of inventory —
+  // either capitalised into a class, or its cost swept onto one asset that is
+  // already under construction. At most one is set (DB CHECK, refined below).
+  fixedAssetClassId: zfd.text(z.string().optional()),
+  fixedAssetId: zfd.text(z.string().optional())
 });
 
 export const bulkJobValidator = z
@@ -294,18 +336,48 @@ export const bulkJobValidator = z
     }
   );
 
-export const jobValidator = baseJobValidator.refine(
-  (data) => {
-    if (deadlineRequiresDueDate(data.deadlineType) && !data.dueDate) {
-      return false;
+export const jobValidator = baseJobValidator
+  .refine(
+    (data) => {
+      if (deadlineRequiresDueDate(data.deadlineType) && !data.dueDate) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Due date is required",
+      path: ["dueDate"]
     }
-    return true;
-  },
-  {
-    message: "Due date is required",
-    path: ["dueDate"]
+  )
+  .refine((data) => !(data.fixedAssetClassId && data.fixedAssetId), {
+    message:
+      "A job completes to a fixed-asset class or to one asset under construction, not both",
+    path: ["fixedAssetId"]
+  });
+
+/**
+ * The Make to Asset item rule, the same one `complete_job_to_inventory`
+ * enforces at completion. A job that targets a class makes new assets, each a
+ * fleet unit that rental, return to inventory and capitalization follow by its
+ * serial, so the item must be serialized. A job attached to an asset under
+ * construction makes no new unit, so an unserialized item is fine there as a
+ * single unit. Returns the refusal, or null when the job may go ahead.
+ */
+export function makeToAssetItemError(job: {
+  fixedAssetClassId?: string | null;
+  fixedAssetId?: string | null;
+  itemTrackingType?: string | null;
+  quantity?: number | null;
+}): string | null {
+  if (job.itemTrackingType === "Serial") return null;
+  if (job.fixedAssetClassId) {
+    return "A job that completes to a fixed asset class needs a serialized item";
   }
-);
+  if (job.fixedAssetId && Number(job.quantity ?? 0) > 1) {
+    return "Make to Asset needs a serialized item or a quantity of one";
+  }
+  return null;
+}
 
 export const leftoverAction = ["ship", "receive", "split", "discard"] as const;
 export type LeftoverAction = (typeof leftoverAction)[number];
@@ -985,7 +1057,7 @@ export const productionOrderValidator = z.object({
   existingId: zfd.text(z.string().optional()),
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),
-  existingStatus: zfd.text(z.string().optional()),
+  existingStatus: zfd.text(z.enum(jobStatus).optional()),
   isASAP: z.boolean().optional()
 });
 
@@ -1012,6 +1084,23 @@ export const scheduleOperationUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
   columnId: z.string().min(1, { message: "Column is required" }),
   priority: schedulePriorityValidator
+});
+
+// A drop that renumbers several cards of one column, sent as one request.
+export const scheduleOperationReorderValidator = z.object({
+  columnId: z.string().min(1, { message: "Column is required" }),
+  updates: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        priority: z.number().refine(Number.isFinite, "Priority must be finite")
+      })
+    )
+    .min(1)
+    .max(1000)
+    .refine((rows) => new Set(rows.map((r) => r.id)).size === rows.length, {
+      message: "Each operation may appear once"
+    })
 });
 
 export const scheduleJobUpdateValidator = z.object({

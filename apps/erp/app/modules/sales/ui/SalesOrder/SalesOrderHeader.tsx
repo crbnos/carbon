@@ -37,6 +37,7 @@ import {
   LuCreditCard,
   LuEye,
   LuFile,
+  LuFileText,
   LuGitCompare,
   LuLoaderCircle,
   LuTrash,
@@ -66,6 +67,7 @@ import { path } from "~/utils/path";
 import { isSalesOrderLocked, salesConfirmValidator } from "../../sales.models";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 import { CancelSalesOrderModal } from "./CancelSalesOrderModal";
+import SalesOrderToContractModal from "./SalesOrderToContractModal";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
@@ -230,10 +232,23 @@ const SalesOrderHeader = () => {
   });
 
   const salesOrderToJobsModal = useDisclosure();
+  const salesOrderToContractModal = useDisclosure();
   const confirmDisclosure = useDisclosure();
   const deleteSalesOrderModal = useDisclosure();
   const cancelDisclosure = useDisclosure();
   const [customers] = useCustomers();
+
+  // A contract takes Service lines no invoice has touched (decision 7).
+  const contractEligibleLines = useMemo(
+    () =>
+      (routeData?.lines ?? []).filter(
+        (line) =>
+          line.salesOrderLineType === "Service" &&
+          !line.invoicedComplete &&
+          !line.quantityInvoiced
+      ),
+    [routeData?.lines]
+  );
 
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "salesOrder",
@@ -307,6 +322,20 @@ const SalesOrderHeader = () => {
       >
         <DropdownMenuIcon icon={<LuGitCompare />} />
         <Trans>Convert Lines to Jobs</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        disabled={
+          ["Cancelled", "Closed"].includes(
+            routeData?.salesOrder?.status ?? ""
+          ) ||
+          contractEligibleLines.length === 0 ||
+          !permissions.can("create", "sales") ||
+          !permissions.is("employee")
+        }
+        onClick={salesOrderToContractModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuFileText />} />
+        <Trans>Create Contract</Trans>
       </DropdownMenuItem>
       <DropdownMenuItem asChild>
         <CSVLink
@@ -655,6 +684,18 @@ const SalesOrderHeader = () => {
           onCancel={salesOrderToJobsModal.onClose}
           onSubmit={salesOrderToJobsModal.onClose}
           action={path.to.salesOrderLinesToJobs(orderId)}
+        />
+      )}
+      {salesOrderToContractModal.isOpen && (
+        <SalesOrderToContractModal
+          orderId={orderId}
+          salesOrderId={routeData?.salesOrder?.salesOrderId ?? ""}
+          customerName={
+            customers.find((c) => c.id === routeData?.salesOrder?.customerId)
+              ?.name
+          }
+          lines={contractEligibleLines}
+          onClose={salesOrderToContractModal.onClose}
         />
       )}
       {confirmDisclosure.isOpen && (

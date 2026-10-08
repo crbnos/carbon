@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 // a non-draft delete fails at the database; the UI also hides the action.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const remove = await deletePayment(client, paymentId);
+  const remove = await deletePayment(client, paymentId, companyId);
   if (remove.error) {
     throw redirect(
       path.to.payment(paymentId),

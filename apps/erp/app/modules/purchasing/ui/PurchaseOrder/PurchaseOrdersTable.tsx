@@ -196,6 +196,9 @@ const PurchaseOrdersTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -206,6 +209,9 @@ const PurchaseOrdersTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -242,6 +248,9 @@ const PurchaseOrdersTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

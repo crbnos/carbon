@@ -1387,19 +1387,10 @@ export const fieldMappings = {
       required: true,
       type: "string"
     },
-    readableId: {
-      label: "Service ID",
-      required: true,
-      type: "string"
-    },
-    revision: {
-      label: "Revision",
-      required: true,
-      type: "string",
-      default: "0"
-    },
+    // No Service ID or Revision column: a service is identified by its name,
+    // which the edge function uses as its readable id (as `upsertService` does).
     name: {
-      label: "Description",
+      label: "Name",
       required: true,
       type: "string"
     },
@@ -1425,16 +1416,7 @@ export const fieldMappings = {
     // for the same reason; the server function derives it identically. Offering
     // the column would admit both an invalid method and one that contradicts
     // the replenishment system on the same row.
-    unitOfMeasureCode: {
-      label: "Unit of Measure",
-      required: false,
-      type: "enum",
-      enumData: {
-        description: "The unit of measure of the service",
-        fetcher: unitOfMeasureFetcher,
-        default: "EA"
-      }
-    },
+    // No Unit of Measure column: a service is always counted in Each (EA).
     ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
@@ -2826,15 +2808,10 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "ID is required" })
       .describe("The unique ID of the service"),
-    readableId: z
-      .string()
-      .min(1, { message: "Service ID is required" })
-      .describe("The service ID shown throughout the app"),
-    revision: z.string().optional().describe("The revision of the service"),
     name: z
       .string()
-      .min(1, { message: "Description is required" })
-      .describe("The description of the service"),
+      .min(1, { message: "Name is required" })
+      .describe("The name of the service, also used as its service ID"),
     active: z
       .string()
       .optional()
@@ -2845,10 +2822,6 @@ export const importSchemas: Record<
       .describe(
         "Whether the service is bought from a supplier or performed in-house"
       ),
-    unitOfMeasureCode: z
-      .string()
-      .optional()
-      .describe("The unit of measure code of the service"),
     supplierId: z
       .string()
       .optional()

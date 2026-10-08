@@ -7,14 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeNotice,
@@ -64,11 +62,6 @@ export const handle: Handle = {
   // Items module sidebar here so two left sidebars don't stack.
   hideModuleSidebar: true
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -343,7 +336,7 @@ export default function ChangeNoticeIdRoute() {
               explorer={<ChangeNoticeExplorer />}
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={<ChangeNoticeProperties key={id} />}

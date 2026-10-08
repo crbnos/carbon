@@ -66,6 +66,8 @@ export const attachments = {
     events: true,
     statement: ["broadcast_reference_changes"]
   },
+  depreciationRun: { events: true },
+  depreciationRunLine: { events: true },
   document: {
     before: ["sync_edit_document_transaction"],
     after: ["sync_upload_document_transaction"],
@@ -97,7 +99,7 @@ export const attachments = {
   inventoryCount: { events: true, statement: ["broadcast_table_changes"] },
   inventoryCountLine: { events: true, statement: ["broadcast_table_changes"] },
   invite: { events: true },
-  invoiceSettlement: { statement: ["broadcast_table_changes"] },
+  invoiceSettlement: { events: true, statement: ["broadcast_table_changes"] },
   itarCertification: { events: true },
   item: {
     after: [
@@ -164,6 +166,7 @@ export const attachments = {
   jobOperationStep: { statement: ["broadcast_table_changes"] },
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
   journal: { events: true, statement: ["broadcast_table_changes"] },
+  journalLine: { events: true },
   location: {
     after: ["sync_create_location_related_records"],
     events: true,
@@ -182,6 +185,7 @@ export const attachments = {
   materialForm: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
   materialType: { statement: ["broadcast_reference_changes"] },
+  memo: { events: true },
   methodMaterial: {
     before: ["sync_check_method_material_self_reference"],
     events: true
@@ -207,8 +211,8 @@ export const attachments = {
   part: { statement: ["broadcast_table_changes"] },
   payment: { events: true, statement: ["broadcast_table_changes"] },
   paymentTerm: { statement: ["broadcast_reference_changes"] },
-  pickingList: { statement: ["broadcast_table_changes"] },
-  pickingListLine: { statement: ["broadcast_table_changes"] },
+  pickingList: { events: true, statement: ["broadcast_table_changes"] },
+  pickingListLine: { events: true, statement: ["broadcast_table_changes"] },
   printJob: { statement: ["broadcast_table_changes"] },
   procedure: {
     before: ["sync_archive_other_procedures"],
@@ -260,6 +264,7 @@ export const attachments = {
     events: true,
     statement: ["broadcast_table_changes"]
   },
+  quoteLinePrice: { statement: ["broadcast_table_changes"] },
   quoteMakeMethod: { statement: ["broadcast_table_changes"] },
   quoteMaterial: {
     before: ["sync_update_quote_material_make_method_item_id"],
@@ -271,6 +276,9 @@ export const attachments = {
   receipt: { events: true, statement: ["broadcast_table_changes"] },
   receiptLine: { events: true, statement: ["broadcast_table_changes"] },
   reimbursement: { events: true },
+  reimbursementLine: { events: true },
+  revenueRecognitionRun: { events: true },
+  revenueRecognitionRunLine: { events: true },
   salesInvoice: {
     before: ["prevent_posted_sales_invoice_deletion"],
     events: true,

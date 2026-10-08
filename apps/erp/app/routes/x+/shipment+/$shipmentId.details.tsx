@@ -293,7 +293,6 @@ export default function ShipmentDetailsRoute() {
         // @ts-expect-error
         initialValues={initialValues}
         status={routeData.shipment.status}
-        shipmentLines={routeData.shipmentLines}
       />
 
       <ShipmentLines />

@@ -2,14 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { box, intro, log, outro, progress, tasks } from "@clack/prompts";
+import { writeFileSync } from "node:fs";
+import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
+import pc from "picocolors";
 import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
-import { onShutdown } from "../helpers.js";
+import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
   assemblerDepsBuilt,
@@ -35,15 +37,25 @@ import {
   listContainers,
   pullStack,
   restartServices,
+  type StackSize,
+  sleepStack,
   tailServiceLogs
 } from "../services/compose.js";
+import {
+  activityFile,
+  stackStateDir,
+  startWaker,
+  watchIdle
+} from "../services/hibernate.js";
 import {
   applyBootstrapSql,
   applyMigrations,
   ensureConfigRow,
   ensureSmokeTestUser,
   syncAuthz,
+  waitForApi,
   waitForPostgres,
+  waitForServiceSchemas,
   waitForStorageReady,
   waitForTcp
 } from "../services/migrations.js";
@@ -59,7 +71,7 @@ import {
   syncHostsFile,
   waitForProxyReady
 } from "../services/portless.js";
-import { summaryLines } from "../ui.js";
+import { progress, summaryLines, tasks } from "../ui.js";
 import {
   ensureSlugAvailable,
   getSlot,
@@ -102,6 +114,10 @@ type UpOpts = {
    * hosts where the Supabase dashboard and email testing UI aren't needed.
    */
   minimal?: boolean;
+  /** Also start Studio, Postgres-Meta and the edge runtime. */
+  full?: boolean;
+  /** Stop the containers while ERP/MES get no traffic (default true). */
+  hibernate?: boolean;
 };
 
 type Ctx = {
@@ -120,6 +136,7 @@ export async function up(opts: UpOpts = {}) {
   const shouldRegen = shouldMigrate && (opts.regen ?? true);
   const shouldBorrow = opts.borrow === true;
   const minimal = opts.minimal ?? false;
+  const size = { minimal, full: !minimal && opts.full === true };
   // Services-only mode: boot compose stack + portless aliases (api/studio/
   // mail/inngest URLs still useful), skip spawnApps + auto-`down` on Ctrl+C.
   // Triggered by --no-apps OR by deselecting everything in the picker.
@@ -192,8 +209,9 @@ export async function up(opts: UpOpts = {}) {
   let borrowedEntry:
     | { ports: PortMap; redisDb: number; jwt: JwtCreds }
     | undefined;
+  let borrowSlug: string | undefined;
   if (shouldBorrow) {
-    const borrowSlug = await pickBorrowSlug(slug);
+    borrowSlug = await pickBorrowSlug(slug);
     const entry = getSlot(borrowSlug);
     if (!entry)
       throw new Error(
@@ -222,8 +240,8 @@ export async function up(opts: UpOpts = {}) {
   if (borrowedEntry) {
     await waitForServices(ctx);
   } else {
-    await pullImages(ctx, { force: opts.pull === true, minimal });
-    await bootDockerStack(ctx, { minimal });
+    await pullImages(ctx, { force: opts.pull === true, size });
+    await bootDockerStack(ctx, size);
     await waitForServices(ctx);
   }
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
@@ -251,7 +269,8 @@ export async function up(opts: UpOpts = {}) {
   const summary = summaryLines(
     ctx.ports,
     selectedApps,
-    portless ? ctx.branchPrefix : undefined
+    portless ? ctx.branchPrefix : undefined,
+    size.full
   );
   // `box()` derives its padding from `process.stdout.columns`; some
   // non-interactive terminals (e.g. Conductor's run pane) report a width of 0,
@@ -294,14 +313,107 @@ export async function up(opts: UpOpts = {}) {
     return;
   }
   outro("apps starting (Ctrl+C to stop)");
-  await runAppsThenTeardown(
-    root,
-    selectedApps,
-    ctx.ports,
-    portless,
-    stripeChild
-  );
+
+  // The dev servers report traffic for the stack they talk to — the borrowed
+  // one under --borrow, whose own `crbn up` does the hibernating.
+  const stateDir = stackStateDir(borrowSlug ?? slug);
+  process.env.CRBN_STACK_STATE = stateDir;
+  const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
+  const hibernates =
+    opts.hibernate !== false &&
+    !borrowSlug &&
+    idleMinutes > 0 &&
+    reactRouterApps(selectedApps).length > 0;
+  // Deep sleep parks the dev servers: the watcher aborts them, listens on
+  // their ports itself, and on the next request starts the containers and lets
+  // the app loop below spawn them again.
+  const deepMinutes = Number(process.env.CRBN_APPS_IDLE_MINUTES ?? 120);
+  const appPorts = reactRouterApps(selectedApps).flatMap((id) => {
+    const key = APP_PORT_KEY[id];
+    return key ? [ctx.ports[key]] : [];
+  });
+  const parking: AppParking = { parked: false };
+  let wakers: Array<() => Promise<void>> = [];
+  let tearingDown = false;
+  const wakeContainers = async () => {
+    await bootStack(root, slug, size);
+    await waitForPostgres(ctx.ports.PORT_DB);
+    await waitForApi(ctx.ports.PORT_API, ctx.jwt.anonKey);
+  };
+  const stopWatching = hibernates
+    ? watchIdle({
+        dir: stateDir,
+        idleMs: idleMinutes * 60_000,
+        deepMs: deepMinutes * 60_000,
+        sleep: () => sleepStack(root, slug),
+        deepen: async () => {
+          parking.parked = true;
+          parking.stop?.abort();
+          await parking.exited;
+          wakers = appPorts.map((port) =>
+            startWaker(port, () => writeFileSync(activityFile(stateDir), ""))
+          );
+        },
+        wake: async (from) => {
+          try {
+            await wakeContainers();
+          } finally {
+            // Whatever happened to the containers, never leave the apps
+            // parked behind a listener that can no longer wake them.
+            if (from === "deep") {
+              await Promise.all(wakers.map((stop) => stop()));
+              wakers = [];
+              parking.parked = false;
+              parking.resume?.();
+              // Awake means the dev servers are listening again: until then
+              // no request can reach them, and the idle clock must not run.
+              // Unless the stack is being torn down — nothing will listen.
+              const deadline = Date.now() + 180_000;
+              while (!tearingDown && Date.now() < deadline) {
+                const open = await Promise.all(
+                  appPorts.map((port) => tryConnect("127.0.0.1", port, 500))
+                );
+                if (open.every(Boolean)) break;
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
+            }
+          }
+        },
+        log: (line) => process.stderr.write(`${pc.cyan("•")} ${line}\n`)
+      })
+    : undefined;
+  // Before `down()`, not after it: a request (the waking page polls every
+  // 1.5 s) can start a wake at any moment, and one that ran during or after
+  // the teardown would leave the containers up with no `crbn up` owning them.
+  const stopHibernation = async () => {
+    tearingDown = true;
+    await stopWatching?.();
+    await Promise.all(wakers.map((stop) => stop()));
+    wakers = [];
+  };
+  try {
+    await runAppsThenTeardown(
+      root,
+      selectedApps,
+      ctx.ports,
+      portless,
+      stripeChild,
+      parking,
+      stopHibernation
+    );
+  } finally {
+    await stopHibernation();
+  }
 }
+
+// Shared between the idle watcher and the app loop. `parked` means the dev
+// servers were stopped on purpose and will be started again.
+type AppParking = {
+  parked: boolean;
+  stop?: AbortController;
+  exited?: Promise<void>;
+  resume?: () => void;
+};
 
 // Kill the detached stripe listener's whole process group (apps-mode teardown).
 function killStripe(child?: ExecaChildProcess) {
@@ -436,27 +548,22 @@ async function provisionSlot(
 // Pull images outside `tasks()` so we can use clack's progress bar (one
 // tick per `<service> Pulled` event). Spinner subtitle inside `tasks()`
 // can't render a bar, only a single line of text.
-async function pullImages(
-  ctx: Ctx,
-  opts: { force: boolean; minimal: boolean }
-) {
+async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
   if (!opts.force) {
-    const refs = await devComposeImageRefs(ctx.root, ctx.slug, {
-      minimal: opts.minimal
-    });
+    const refs = await devComposeImageRefs(ctx.root, ctx.slug, opts.size);
     if (refs && (await allImagesPresentLocally(refs))) {
       log.info("docker images already present — skipping compose pull");
       return;
     }
   }
 
-  const services = await listComposeServices(ctx.root, ctx.slug, {
-    minimal: opts.minimal
-  });
+  const services = await listComposeServices(ctx.root, ctx.slug, opts.size);
   const max = Math.max(services.length, 1);
   const bar = progress({ style: "heavy", max });
   bar.start(
-    opts.minimal ? "Pulling docker images (minimal)" : "Pulling docker images"
+    opts.size.minimal
+      ? "Pulling docker images (minimal)"
+      : "Pulling docker images"
   );
   try {
     await pullStack(
@@ -466,7 +573,7 @@ async function pullImages(
         bar.message(line.slice(0, 80));
         if (/ Pulled$/.test(line)) bar.advance(1);
       },
-      { minimal: opts.minimal }
+      opts.size
     );
     bar.stop("images up to date");
   } catch (err) {
@@ -475,17 +582,17 @@ async function pullImages(
   }
 }
 
-async function bootDockerStack(ctx: Ctx, opts: { minimal: boolean }) {
-  const serviceCount = opts.minimal ? 8 : 11;
-  const label = opts.minimal
-    ? "Boot docker compose stack (minimal — no studio/meta/inbucket)"
-    : "Boot docker compose stack";
+async function bootDockerStack(ctx: Ctx, size: StackSize) {
+  const label = size.minimal
+    ? "Boot docker compose stack (minimal — no inbucket)"
+    : size.full
+      ? "Boot docker compose stack (full — with studio/meta/edge-runtime/imgproxy)"
+      : "Boot docker compose stack";
   await tasks([
     {
       title: label,
-      task: async (msg) => {
-        msg(`starting ${serviceCount} services`);
-        await bootStack(ctx.root, ctx.slug, { minimal: opts.minimal });
+      task: async () => {
+        await bootStack(ctx.root, ctx.slug, size);
         return "containers up";
       }
     }
@@ -526,7 +633,9 @@ async function waitForServices(ctx: Ctx) {
       },
       onTimeout: () => dumpStorageDiagnostics(ctx)
     });
-    bar.advance(1, "storage.buckets ready");
+    bar.message("waiting for auth / realtime schemas");
+    await waitForServiceSchemas(ctx.ports.PORT_DB);
+    bar.advance(1, "service schemas ready");
     bar.stop("all services responding");
   } catch (err) {
     bar.stop("services not ready");
@@ -683,9 +792,12 @@ async function runAppsThenTeardown(
   selectedApps: AppId[],
   ports: PortMap,
   portless: boolean,
-  stripeChild?: ExecaChildProcess
+  stripeChild?: ExecaChildProcess,
+  parking: AppParking = { parked: false },
+  beforeTeardown?: () => Promise<void>
 ) {
   const apps = reactRouterApps(selectedApps);
+  let detachParked: (() => void) | undefined;
   if (apps.length === 0) {
     await Promise.race([
       new Promise<void>((resolve) => {
@@ -694,7 +806,33 @@ async function runAppsThenTeardown(
       whenAuxAppExits()
     ]);
   } else {
-    await spawnApps({ root, apps, ports, portless });
+    for (;;) {
+      parking.stop = new AbortController();
+      parking.exited = spawnApps({
+        root,
+        apps,
+        ports,
+        portless,
+        signal: parking.stop.signal
+      });
+      await parking.exited;
+      // Exited on their own or on Ctrl+C: tear down. Parked: wait for the
+      // wake (or a Ctrl+C, which spawnApps is no longer listening for).
+      if (!parking.parked) break;
+      const interrupted = await new Promise<boolean>((resolve) => {
+        // The listener is NOT removed from inside the signal: execa's cleanup
+        // hook re-raises a signal it finds nobody else listening for, and a
+        // wake has a docker child running. It stays until the teardown
+        // listener below is in place.
+        detachParked = onShutdown(() => resolve(true));
+        parking.resume = () => {
+          detachParked?.();
+          detachParked = undefined;
+          resolve(false);
+        };
+      });
+      if (interrupted) break;
+    }
   }
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
@@ -703,7 +841,9 @@ async function runAppsThenTeardown(
   const detach = onShutdown(() => {
     process.stderr.write("\nfinishing teardown — please wait\n");
   });
+  detachParked?.();
   try {
+    await beforeTeardown?.();
     // Kill the stripe listener too — it's detached and would otherwise survive.
     killStripe(stripeChild);
     // silent: post-SIGINT stdin raw-mode triggers EIO in clack's spinner.

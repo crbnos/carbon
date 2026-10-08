@@ -59,6 +59,9 @@ const DepreciationRunTable = memo(
           ),
           meta: {
             mobile: "P3",
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

@@ -40,6 +40,7 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
+import { leavingTrackedEntityIds } from "../lib/cost-layer-order";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -1242,7 +1243,11 @@ const postShipment = defineServerFn({
                     const cogsResult = await calculateCOGS(trx, {
                       itemId,
                       quantity: info.totalQuantity,
-                      companyId
+                      companyId,
+                      trackedEntityIds: leavingTrackedEntityIds(
+                        itemLedgerInserts,
+                        itemId
+                      )
                     });
 
                     let costAssigned = 0;
@@ -2194,7 +2199,11 @@ const postShipment = defineServerFn({
                   const cogsResult = await calculateCOGS(trx, {
                     itemId,
                     quantity,
-                    companyId
+                    companyId,
+                    trackedEntityIds: leavingTrackedEntityIds(
+                      itemLedgerInserts,
+                      itemId
+                    )
                   });
 
                   await trx
@@ -2771,7 +2780,11 @@ const postShipment = defineServerFn({
                   const cogsResult = await calculateCOGS(trx, {
                     itemId,
                     quantity,
-                    companyId
+                    companyId,
+                    trackedEntityIds: leavingTrackedEntityIds(
+                      itemLedgerInserts,
+                      itemId
+                    )
                   });
 
                   await trx

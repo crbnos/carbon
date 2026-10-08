@@ -50,6 +50,13 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "sales_updateSalesRFQFavorite",
   "purchasing_updateSupplierQuoteFavorite",
   "resources_insertTrainingCompletion",
+  // Bare deletes that bypass the ERP's delete routes. Removing a sales invoice
+  // (or a line) that billed a rental period, a rental charge or a contract
+  // schedule line must release those stamps so they are billed again — the
+  // routes do that (`deleteSalesInvoiceReleasingRentals`); these plain deletes
+  // would orphan them, and the periods would never be re-billed.
+  "invoicing_deleteSalesInvoice",
+  "invoicing_deleteSalesInvoiceLine",
   // Variadic (`...items`): the dispatcher fills one positional argument per
   // parameter from a JSON object and has no slot for a rest tail.
   "production_getPartDocuments"

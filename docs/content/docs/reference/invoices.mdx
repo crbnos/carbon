@@ -7,7 +7,9 @@ An **invoice** records an amount owed. A **sales invoice** bills a customer; a *
 
 ## Where they come from
 
-A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills.
+A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills. A [contract](/docs/reference/contracts) or a [rental agreement](/docs/reference/rental-agreements) also drafts sales invoices as its billing falls due.
+
+A sales invoice's **"Ship To"**, on its **Shipping** card, is one of the customer's locations. An invoice from a sales order takes the order's delivery location (the drop-ship location on a drop shipment), a contract invoice takes the contract's **"Ship To"**, and a rental invoice takes the agreement's **"Rental Site"**. The PDF prints it as the Ship To address, and [sales rules](/docs/reference/sales-rules) check the invoice's own lines against it. It is never the bill-to.
 
 <Callout type="note">
 A purchase invoice reconciles on the **purchase order line**, not on a <Term id="receipt">receipt</Term>. There's no direct receipt link, and a receipt isn't even required to bill. Posting clears the <Term id="gr-ir">goods-received-not-invoiced</Term> accrual against the shared order line and books any price difference to <Term id="purchase-price-variance">variance</Term>.
@@ -36,10 +38,23 @@ Most invoice line types populate details from an item. Sales and purchase invoic
 | --- | --- | --- |
 | Part, Service, Material, Tool, Consumable | Yes | Yes |
 | Comment (a note, no charge) | Yes | Yes |
-| Fixed Asset | Yes | — |
+| Fixed Asset | Yes | Yes |
+| Rental (drafted from a rental agreement, read-only) | Yes | — |
 | G/L Account (charge straight to an account) | — | Yes |
 
-A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description — freight, a fee, anything without an item behind it. Sales invoices don't offer it; they carry a **Fixed Asset** line instead, for billing a capitalized asset.
+A sales invoice line can carry a **"Discount (%)"**. It discounts the line's quantity times unit price only: add-ons and shipping are charged in full, and tax is charged on the discounted amount. The line keeps its list unit price, and the invoice and its PDF show the discount beside it.
+
+A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description: freight, a fee, anything without an item behind it. Sales invoices don't offer it.
+
+A **Fixed Asset** line exists on both sides: on a sales invoice it bills a capitalized asset, and on a purchase invoice (the line form's **"Asset"** tab) it buys an asset or adds cost to one under construction.
+
+<Screenshot label="Purchase invoice line form with the Item, GL Account and Asset tabs, the Asset tab selected" caption="A purchase invoice line picks its type by tab: an item, a ledger account, or a fixed asset." />
+
+A **Rental** line is never added by hand: [rental agreement](/docs/reference/rental-agreements) billing writes one per billing period or charge, with no item, and it posts to lease accounts rather than to sales.
+
+On a unit treated as a rental, rent posts to contract assets and deferred revenue, and the recognition run releases it across its period. An early-return credit is drafted as a credit memo, not an invoice line; posting it takes the credit off deferred revenue, and off rental income for any part already recognized.
+
+On a unit treated as a sale, rent and the purchase option credit net investment in leases, and the purchase option also settles the rest of the unit's net investment: a shortfall to cost of goods sold, an excess to lease revenue. A charge posts to rental income either way.
 
 ## Posting
 
@@ -91,6 +106,9 @@ Carbon forgives **dust**. When settlements leave a balance under one cent — sm
 ## Troubleshooting
 
 Exact errors users hit when posting, voiding, deleting, or paying invoices.
+
+### "Invoice has recognized revenue; reverse the recognition journal first"
+Voiding a sales invoice (`post-sales-invoice` VOID) whose deferred rent or service revenue a Revenue Recognition run has already released. Reverse that run's journal, then void the invoice; the invoice's periods and charges return to unbilled.
 
 ### "Can only void posted purchase invoices"
 Voiding applies only after posting. A Draft invoice can simply be edited or deleted.

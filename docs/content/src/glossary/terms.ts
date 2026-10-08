@@ -472,6 +472,123 @@ export const terms = {
     definition: msg`Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed.`,
     href: "/docs/reference/fixed-assets#selling-vs-disposing"
   },
+  "rental-fleet": {
+    term: msg`Rental fleet`,
+    definition: msg`The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register.`,
+    href: "/docs/reference/fixed-assets#fleet-register"
+  },
+  "make-to-asset": {
+    term: msg`Make to Asset`,
+    definition: msg`A job that completes to a fixed asset class instead of inventory: each finished unit becomes an asset priced at its WIP cost and never enters stock.`,
+    href: "/docs/reference/fixed-assets#acquiring"
+  },
+  "out-of-service": {
+    term: msg`Out of service`,
+    definition: msg`A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service.`,
+    href: "/docs/reference/fixed-assets#fleet-register"
+  },
+
+  // ── Rentals ─────────────────────────────────────────────────────────────
+  "rental-agreement": {
+    term: msg`Rental agreement`,
+    definition: msg`A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed.`,
+    href: "/docs/reference/rental-agreements"
+  },
+  "on-rent": {
+    term: msg`On rent`,
+    definition: msg`A fleet unit delivered to the customer on an active rental agreement; before delivery it reads Reserved, and after its return it is Available again or In Maintenance.`,
+    href: "/docs/reference/rental-agreements#units-and-the-fleet"
+  },
+  "fleet-unit": {
+    term: msg`Fleet unit`,
+    definition: msg`A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement.`,
+    href: "/docs/reference/rental-agreements#units-and-the-fleet"
+  },
+  "rate-frequency": {
+    term: msg`Rate frequency`,
+    definition: msg`What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month.`,
+    href: "/docs/reference/rental-agreements#rates"
+  },
+  "cycle-billing": {
+    term: msg`Cycle billing`,
+    definition: msg`Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears).`,
+    href: "/docs/reference/rental-agreements#billing"
+  },
+  "billing-cycle": {
+    term: msg`Billing cycle`,
+    definition: msg`How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days.`,
+    href: "/docs/reference/rental-agreements#billing"
+  },
+  "billing-timing": {
+    term: msg`Billing timing`,
+    definition: msg`When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  "customer-deposit": {
+    term: msg`Customer deposit`,
+    definition: msg`A customer receipt recorded against a sales order or rental agreement, whose unapplied cash is held on the Customer Prepayments liability until it is applied to an invoice or refunded.`,
+    href: "/docs/reference/rental-agreements#deposits"
+  },
+  "contract-asset": {
+    term: msg`Contract asset`,
+    definition: msg`Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it.`,
+    href: "/docs/reference/rental-agreements#what-posts-to-the-ledger"
+  },
+  "deferred-revenue": {
+    term: msg`Deferred revenue`,
+    definition: msg`Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes.`,
+    href: "/docs/reference/rental-agreements#what-posts-to-the-ledger"
+  },
+  "sales-type-lease": {
+    term: msg`Sales-type lease`,
+    definition: msg`A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place.`,
+    href: "/docs/reference/rental-agreements#sales-type-leases"
+  },
+  "net-investment-in-leases": {
+    term: msg`Net investment in leases`,
+    definition: msg`The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice.`,
+    href: "/docs/reference/rental-agreements#commencement"
+  },
+  "purchase-option": {
+    term: msg`Purchase option`,
+    definition: msg`A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer.`,
+    href: "/docs/reference/rental-agreements#end-of-the-term"
+  },
+  contract: {
+    term: msg`Contract`,
+    definition: msg`A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled.`,
+    href: "/docs/reference/contracts"
+  },
+  "contract-type": {
+    term: msg`Contract type`,
+    definition: msg`How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it.`,
+    href: "/docs/reference/contracts#contract-types"
+  },
+  "invoice-schedule": {
+    term: msg`Invoice schedule`,
+    definition: msg`The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  "contract-close-date": {
+    term: msg`Contract close date`,
+    definition: msg`The date the customer agreed to the contract — when the deal was won. It records the booking for reporting; billing and revenue start from the contract's start date, not its close date.`,
+    href: "/docs/reference/contracts#setting-up-a-contract"
+  },
+  "revenue-method": {
+    term: msg`Revenue method`,
+    definition: msg`How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days.`,
+    href: "/docs/reference/contracts#revenue"
+  },
+  "billed-through": {
+    term: msg`Billed through`,
+    definition: msg`A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  amendment: {
+    term: msg`Amendment`,
+    definition: msg`A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period.`,
+    href: "/docs/reference/contracts#amendments"
+  },
 
   // ── Inventory ledger ────────────────────────────────────────────────────
   "item-ledger": {
@@ -589,6 +706,30 @@ export const terms = {
   "account-default-sales-shipping-revenue": {
     term: msg`Shipping Revenue (default)`,
     definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
+  },
+  "account-default-deferred-revenue": {
+    term: msg`Deferred Revenue (default)`,
+    definition: msg`Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue.`
+  },
+  "account-default-contract-assets": {
+    term: msg`Contract Assets (default)`,
+    definition: msg`Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts.`
+  },
+  "account-default-net-investment-in-leases": {
+    term: msg`Net Investment in Leases (default)`,
+    definition: msg`Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it.`
+  },
+  "account-default-rental-income": {
+    term: msg`Rental Income (default)`,
+    definition: msg`Revenue GL account for operating rental income recognized straight-line over the rental period, and for variable rental charges.`
+  },
+  "account-default-lease-revenue": {
+    term: msg`Lease Revenue (default)`,
+    definition: msg`Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments.`
+  },
+  "account-default-lease-interest-income": {
+    term: msg`Interest Income – Leases (default)`,
+    definition: msg`Other Income GL account for the monthly interest earned on the net investment in sales-type leases.`
   },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,
@@ -1120,6 +1261,30 @@ export const terms = {
   "item-planning-max-order-quantity": {
     term: msg`Maximum Order Quantity`,
     definition: msg`Planning's upper bound on a single suggested replenishment; quantities above this are split into multiple orders.`
+  },
+  "item-planning-horizon": {
+    term: msg`Planning Horizon (Days)`,
+    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
+  },
+  "planning-action": {
+    term: msg`Planning action`,
+    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
+    href: "/docs/reference/planning#planning-actions"
+  },
+  "reschedule-tolerance": {
+    term: msg`Reschedule tolerance`,
+    definition: msg`How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days.`,
+    href: "/docs/reference/planning#reschedule-tolerance"
+  },
+  "responsible-employee": {
+    term: msg`Responsible employee`,
+    definition: msg`The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default.`,
+    href: "/docs/reference/planning#planning-ownership"
+  },
+  "forecast-consumption": {
+    term: msg`Forecast consumption`,
+    definition: msg`Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units.`,
+    href: "/docs/reference/forecast"
   },
 
   // ── Items: Supersession (ItemSupersessionForm) ──────────────────────────

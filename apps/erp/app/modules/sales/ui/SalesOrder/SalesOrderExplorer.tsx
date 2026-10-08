@@ -26,7 +26,7 @@ import {
   useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useRef, useState } from "react";
 import {
@@ -323,17 +323,19 @@ function SalesOrderLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const readableId = getItemReadableId(items, line.itemId);
+  const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
         <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
         <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">
-            {getItemReadableId(items, line.itemId)}
-          </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.description}
-          </span>
+          <span className="font-semibold line-clamp-1">{readableId}</span>
+          {description && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -370,6 +372,14 @@ function SalesOrderLineItem({
   const isSelected =
     location.pathname === path.to.salesOrderLine(orderId, line.id!);
 
+  const secondaryText =
+    line.salesOrderLineType === "Fixed Asset"
+      ? (line as any).assetName || line.description
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
+
   const onLineClick = () => {
     if (location.pathname !== path.to.salesOrderLine(orderId, line.id!)) {
       navigate(path.to.salesOrderLine(orderId, line.id!));
@@ -397,11 +407,11 @@ function SalesOrderLineItem({
                 ? (line as any).assetReadableId || "Fixed Asset"
                 : getItemReadableId(items, line.itemId)}
             </span>
-            <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {line.salesOrderLineType === "Fixed Asset"
-                ? (line as any).assetName || line.description
-                : line.description}
-            </span>
+            {secondaryText && (
+              <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                {secondaryText}
+              </span>
+            )}
           </VStack>
         </HStack>
         <div className="absolute right-2">

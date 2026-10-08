@@ -4,10 +4,10 @@
 
 "use client";
 
+import { useRevalidator } from "@carbon/query";
 import { Avatar } from "@carbon/react";
 import { useState } from "react";
 import { LuChevronDown } from "react-icons/lu";
-import { useRevalidator } from "react-router";
 import type { PinnedInUser } from "~/types";
 import { PinInOverlay } from "./PinInOverlay";
 

@@ -145,7 +145,10 @@ function StepRow({
 }) {
   const { t } = useLingui();
   const label = useWorkflowLabel();
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  // Null until the user toggles the row: a step that fails while the run is
+  // being watched then opens on its own, as it does when the drawer is reopened.
+  const [toggled, setToggled] = useState<boolean | null>(null);
+  const expanded = toggled ?? defaultExpanded;
   const [raw, setRaw] = useState(false);
   const isNotReached = step === null;
 
@@ -177,7 +180,7 @@ function StepRow({
       <button
         type="button"
         className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left max-md:flex-wrap max-md:gap-y-1"
-        onClick={() => hasDetail && setExpanded((p) => !p)}
+        onClick={() => hasDetail && setToggled(!expanded)}
         disabled={!hasDetail}
       >
         {hasDetail ? (

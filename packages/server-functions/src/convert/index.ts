@@ -131,6 +131,20 @@ function resolveTaxPercent(line: {
   );
 }
 
+/**
+ * Where an order's goods go, for the invoice's customer ship-to: a drop
+ * shipment's own location, else the order header's ship-to. The same rule as
+ * `resolveSalesOrderShipTo` (sales rules) — never the bill-to.
+ */
+function orderShipToCustomerLocationId(
+  order: { customerLocationId: string | null },
+  orderShipment: { dropShipment: boolean; customerLocationId: string | null }
+): string | null {
+  return orderShipment.dropShipment
+    ? orderShipment.customerLocationId
+    : order.customerLocationId;
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
@@ -858,10 +872,17 @@ const convert = defineServerFn({
           throw new NotFoundError("Sales order delivery details not found");
         const orderShipment = salesOrderShipment.data;
 
+        // Lines a contract bills are marked invoicedComplete when the
+        // contract is created; the lines inserted below skip them, so the
+        // subtotal must too.
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
         >((acc, line) => {
-          if (line?.quantityToInvoice && line.quantityToInvoice > 0) {
+          if (
+            line?.quantityToInvoice &&
+            line.quantityToInvoice > 0 &&
+            !line.invoicedComplete
+          ) {
             acc.push(line);
           }
 
@@ -927,6 +948,10 @@ const convert = defineServerFn({
             .values({
               id: salesInvoiceId,
               locationId: orderShipment.locationId,
+              customerLocationId: orderShipToCustomerLocationId(
+                order,
+                orderShipment
+              ),
               shippingCost: orderShipment.shippingCost ?? 0,
               shippingMethodId: orderShipment.shippingMethodId,
               shippingTermId: orderShipment.shippingTermId,
@@ -965,6 +990,8 @@ const convert = defineServerFn({
                 taxPercent: line.taxPercent ?? 0,
                 unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
                 exchangeRate: line.exchangeRate ?? 1,
+                serviceStartDate: line.serviceStartDate ?? null,
+                serviceEndDate: line.serviceEndDate ?? null,
                 sortOrder: line.sortOrder ?? 1,
                 companyId,
                 createdBy: userId
@@ -1543,6 +1570,10 @@ const convert = defineServerFn({
             .values({
               id: salesInvoiceId,
               locationId: orderShipment.locationId,
+              customerLocationId: orderShipToCustomerLocationId(
+                order,
+                orderShipment
+              ),
               shippingCost: orderShipment.shippingCost ?? 0,
               shippingMethodId: orderShipment.shippingMethodId,
               shippingTermId: orderShipment.shippingTermId,
@@ -1581,6 +1612,8 @@ const convert = defineServerFn({
                 taxPercent: line.taxPercent ?? 0,
                 unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
                 exchangeRate: line.exchangeRate ?? 1,
+                serviceStartDate: line.serviceStartDate ?? null,
+                serviceEndDate: line.serviceEndDate ?? null,
                 sortOrder: line.sortOrder ?? 1,
                 companyId,
                 createdBy: userId

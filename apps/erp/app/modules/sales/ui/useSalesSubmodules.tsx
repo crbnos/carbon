@@ -6,8 +6,10 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
   LuGlobe,
+  LuKeyRound,
   LuList,
   LuPercent,
+  LuSection,
   LuShapes,
   LuShieldCheck,
   LuSquareUser,
@@ -61,6 +63,23 @@ export default function useSalesSubmodules() {
           to: path.to.salesReturnOrders,
           icon: <LuUndo2 />,
           table: "salesReturnOrder"
+        }
+      ]
+    },
+    {
+      name: t`Deals`,
+      routes: [
+        {
+          name: t`Service Contracts`,
+          to: path.to.contracts,
+          icon: <LuSection />,
+          table: "customerContract"
+        },
+        {
+          name: t`Rental Agreements`,
+          to: path.to.rentalAgreements,
+          icon: <LuKeyRound />,
+          table: "rentalAgreement"
         }
       ]
     },

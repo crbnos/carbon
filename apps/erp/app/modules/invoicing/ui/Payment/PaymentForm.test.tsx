@@ -45,29 +45,9 @@ vi.mock("react", async (importOriginal) => {
     }
   };
 });
-vi.mock("@carbon/react", () => {
-  const Box = ({ children }: { children?: ReactNode }) =>
-    createElement("div", null, children);
-  return {
-    Button: Box,
-    Card: Box,
-    CardContent: Box,
-    CardDescription: Box,
-    CardFooter: Box,
-    CardHeader: Box,
-    CardTitle: Box,
-    DropdownMenuIcon: Box,
-    DropdownMenuItem: Box,
-    MENU_ITEM_SHORTCUTS: { delete: "backspace" },
-    Status: Box,
-    VStack: Box,
-    useDisclosure: () => ({ isOpen: false }),
-    useMount: () => undefined
-  };
-});
-vi.mock("~/components/Layout/RecordHeader", () => ({
-  RecordAction: ({ children }: { children?: ReactNode }) => children,
-  RecordHeroTarget: () => null
+// PaymentForm imports nothing from @carbon/react; `useCurrencies` needs useMount.
+vi.mock("@carbon/react", () => ({
+  useMount: () => undefined
 }));
 vi.mock("@carbon/form", () => ({
   ValidatedForm: ({
@@ -92,7 +72,6 @@ vi.mock("~/components/Form", () => {
     Hidden: ({ name, value }: { name: string; value?: string }) =>
       createElement("input", { type: "hidden", name, value, readOnly: true }),
     Input: Field,
-    Select: Field,
     SelectControlled: ({
       options,
       onChange
@@ -158,9 +137,6 @@ vi.mock("react-router", () => ({
   generatePath: (path: string) => path,
   useFetcher: () => ({ state: "idle" })
 }));
-vi.mock("~/components", () => ({ DocumentHeader: () => null }));
-vi.mock("~/components/Enumerable", () => ({ Enumerable: () => null }));
-vi.mock("~/components/Modals", () => ({ ConfirmDelete: () => null }));
 vi.mock("~/hooks/useCompanySettings", () => ({
   useCompanySettings: () => ({ showCurrencyTrailingZeros: true })
 }));

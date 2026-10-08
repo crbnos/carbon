@@ -641,7 +641,15 @@ export const itemPlanningValidator = z
     maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-    orderMultiple: zfd.numeric(z.number().min(1)).optional()
+    orderMultiple: zfd.numeric(z.number().min(1)).optional(),
+    // The planning horizon (time fence) in days from today: the planning grids
+    // surface only the actions and suggested orders that fall inside it. Empty
+    // = inherit the company default, else no fence; 0 = no fence for this item
+    // even when the company has a default.
+    planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
+    // the ownership ladder's leaf override (spec §P1.3): this item at this
+    // location; empty = inherit item group → location → company default
+    responsibleEmployee: zfd.text(z.string().optional())
     // critical: zfd.checkbox(),
   })
   .refine(
@@ -960,14 +968,29 @@ export const revisionValidator = z
     { message: "Revision or copy from is required" }
   );
 
+export const SERVICE_NAME_MAX_LENGTH = 100;
+
+/**
+ * The built-in "Each" unit of measure. Every company has it and the database
+ * refuses to rename, deactivate or delete it; a service is always counted in it.
+ */
+export const EACH_UNIT_OF_MEASURE_CODE = "EA";
+
 export const serviceValidator = applyStorageAndShelfLifeRefines(
   itemValidator.merge(
     z.object({
-      id: z.string().min(1, { message: "Service ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      unitOfMeasureCode: z
+      // A service is identified by its name: it is the readable id, so
+      // neither an id nor a revision is asked for. `id` is only the key of the
+      // service to update.
+      id: zfd.text(z.string().max(255).optional()),
+      name: z
         .string()
-        .min(1, { message: "Unit of Measure is required" }),
+        .trim()
+        .min(1, { message: "Name is required" })
+        .max(SERVICE_NAME_MAX_LENGTH),
+      revision: zfd.text(z.string().optional()),
+      // Ignored: a service is always counted in Each (EA).
+      unitOfMeasureCode: zfd.text(z.string().optional()),
       replenishmentSystem: z.enum(serviceReplenishmentSystems, {
         error: "Replenishment system is required"
       }),
@@ -1319,8 +1342,9 @@ export type ChangeNoticeItemDiff = {
   // read-only diff viewer can render the BOP as a tree.
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Record<string, unknown>>[];
-  // Supplier parts on a Revision/New Part draft item. Drafts start with none
-  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  // Supplier parts on a draft item. A Revision draft starts with a copy of its
+  // source revision's, so its entries are a real diff against the source; a
+  // Replacement Part / New Part draft starts with none, so its are all `added`.
   supplierParts: MethodDiffEntry<Record<string, unknown>>[];
 };
 

@@ -28,7 +28,13 @@ catalogSearch, toolMetadata }`.
 > root task `//#generate:mcp`. `postinstall` runs that task, and the `typecheck`,
 > `build` and `test` of the two packages that read the manifest — `erp` and `docs`
 > (`apps/erp/turbo.json`, `docs/turbo.json`) — depend on it, so a fresh clone
-> regenerates it before anything imports it. The task is CACHED: its `inputs` in
+> regenerates it before anything imports it. The `postinstall` half is for
+> local development only (`react-router dev`, the editor and a bare `vitest` bypass
+> turbo). Under `CI` it is skipped, because the generator needs about 3 GB and most CI
+> installs never read the manifest: there the turbo dependency is the only producer,
+> so a CI step that reads the manifest outside turbo must run `//#generate:mcp`
+> itself, as `check:workflow-catalog` does. The root `Dockerfile` installs with
+> `CI=1`. Vercel is exempt (`VERCEL` set) and keeps generating on install. The task is CACHED: its `inputs` in
 > `turbo.json` are every `.ts` file under `apps/erp/app/modules`, the app's
 > `types` and `utils`, the generated DB types, the two `mcp-*` lib files,
 > `scripts/lib`, and the `src` of each package a `*.models.ts` imports. With none

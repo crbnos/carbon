@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { Spinner } from "./Spinner";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { reactNodeToString, withDistinctHelpers } from "./utils/react";
 import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type ComboboxOption = {
@@ -62,7 +62,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       asButton,
       size,
       value,
-      options,
+      options: optionsProp,
       filter,
       isClearable,
       isLoading,
@@ -78,6 +78,12 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // An item option's helper is its name, which for a service repeats the
+    // readable id in the label.
+    const options = useMemo(
+      () => withDistinctHelpers(optionsProp),
+      [optionsProp]
+    );
     // Treat the native `disabled` prop as equivalent to `isReadOnly`. The type
     // accepts `disabled` (it extends button props), so callers reasonably pass
     // it — honor it instead of silently overwriting it below.

@@ -147,16 +147,23 @@ export type OperationType = (typeof operationTypes)[number];
 // inspectionDocumentId. Writes go through this so a stale pointer can't survive
 // a type change (sanitize() only nullifies present-undefined keys — it never
 // clears an omitted field). See .ai/specs/2026-07-21-operation-instruction-sources.md.
+// The same holds for the work center: Outside Processing runs at the supplier,
+// and a work center left over from an in-house type put the operation on the
+// MES Work Centers board.
 export function normalizeOperationSourceIds<
   T extends {
     operationType?: string;
     procedureId?: string | null;
     assemblyInstructionId?: string | null;
     inspectionDocumentId?: string | null;
+    workCenterId?: string | null;
   }
 >(operation: T): T {
   return {
     ...operation,
+    ...(operation.operationType === "Outside Processing"
+      ? { workCenterId: null }
+      : {}),
     procedureId:
       operation.operationType === "Process"
         ? operation.procedureId || null

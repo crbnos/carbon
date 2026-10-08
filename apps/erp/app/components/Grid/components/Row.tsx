@@ -4,7 +4,7 @@
 
 import { cn, Tr } from "@carbon/react";
 import type { Row as RowType } from "@tanstack/react-table";
-import type { MutableRefObject } from "react";
+import type { Ref } from "react";
 import { memo } from "react";
 import type {
   EditableTableCellComponent,
@@ -20,7 +20,16 @@ type RowProps<T> = {
   row: RowType<T>;
   rowIsClickable?: boolean;
   rowIsSelected: boolean;
-  rowRef?: MutableRefObject<HTMLTableRowElement | null>;
+  rowRef?: Ref<HTMLTableRowElement>;
+  /** The row's index in a virtualized grid, read back when it is measured. */
+  virtualIndex?: number;
+  /**
+   * Draw a line between body rows. A virtualized grid scrolls its rows under a
+   * pinned header, where rows with no separator read as one tall cell per
+   * column. The header row already draws the line under itself, so the first
+   * row adds none and nothing doubles up.
+   */
+  withRowBorder?: boolean;
   onCellClick: (row: number, column: number) => void;
   onCellUpdate: (row: number) => (updates: Record<string, unknown>) => void;
   onEditRow?: (row: T) => void;
@@ -35,6 +44,8 @@ const Row = <T extends object>({
   rowIsSelected,
   rowRef,
   selectedCell,
+  virtualIndex,
+  withRowBorder = false,
   onCellClick,
   onCellUpdate
 }: RowProps<T>) => {
@@ -44,7 +55,11 @@ const Row = <T extends object>({
     <Tr
       key={row.id}
       ref={rowRef}
-      className={cn(rowIsClickable && "cursor-pointer")}
+      data-index={virtualIndex}
+      className={cn(
+        withRowBorder && "border-t border-border first:border-t-0",
+        rowIsClickable && "cursor-pointer"
+      )}
     >
       {row.getVisibleCells().map((cell, columnIndex) => {
         const isSelected =

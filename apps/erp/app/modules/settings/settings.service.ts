@@ -23,6 +23,7 @@ import {
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -33,6 +34,7 @@ import { sanitize } from "~/utils/supabase";
 import type {
   accountsPayableBillingAddressValidator,
   accountsReceivableBillingAddressValidator,
+  invoiceAutomations,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
@@ -1052,6 +1054,24 @@ export async function updateAssetTaxDepreciationSettings(
     .eq("id", companyId);
 }
 
+/** The ASC 842 classification thresholds and the default lessor discount
+ *  rate, all percentage points (75, 90, 6). * @mcp update
+ */
+export async function updateLeasePolicySettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  settings: {
+    leaseMajorPartThresholdPercent: number;
+    leaseSubstantiallyAllThresholdPercent: number;
+    leaseDefaultDiscountRate: number;
+  }
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize(settings))
+    .eq("id", companyId);
+}
+
 /** @mcp update */
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
@@ -1383,6 +1403,30 @@ export async function updateQuoteLineCategoryMarkups(
 }
 
 /** @mcp update */
+export async function updateInvoiceAutomationSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceAutomation: (typeof invoiceAutomations)[number]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ invoiceAutomation }))
+    .eq("id", companyId);
+}
+
+/** @mcp update */
+export async function updateInvoiceNotificationSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceNotificationGroup: string[]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ invoiceNotificationGroup }))
+    .eq("id", companyId);
+}
+
+/** @mcp update */
 export async function updateRfqReadySetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1494,6 +1538,22 @@ export async function updateAutoSelectMaterialWithoutPickingListSetting(
     .eq("id", companyId);
 }
 
+/**
+ * The time of day scheduled MRP runs, on the company's own clock ("HH:MM:SS").
+ * `null` restores the default cadence, every 3 hours.
+ * @mcp update
+ */
+export async function updateMrpRunTimeSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  mrpRunTime: string | null
+) {
+  return client
+    .from("companySettings")
+    .update({ mrpRunTime })
+    .eq("id", companyId);
+}
+
 /** @mcp update */
 export async function updateIncompletePickingListPolicySetting(
   client: SupabaseClient<Database>,
@@ -1516,4 +1576,147 @@ export async function updateReturnPickedMaterialTimingSetting(
     .from("companySettings")
     .update(sanitize({ returnPickedMaterialTiming }))
     .eq("id", companyId);
+}
+
+// ── Planning ownership + tolerance (spec §P1.3 / §P1.6) ────────────────────
+// The responsibleEmployee ladder's configurable rungs: company default →
+// per-location → per-(location, item group). The item-group tier is
+// LOCATION-SPECIFIC, stored sparsely in itemPostingGroupResponsibility — an
+// inheritance tree (the printer AssignmentsCard model), never a matrix.
+
+export async function getItemPostingGroupResponsibilities(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("itemPostingGroupResponsibility")
+    .select("id, locationId, itemPostingGroupId, responsibleEmployee")
+    .eq("companyId", companyId);
+}
+
+export async function setDefaultResponsibleEmployee(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string | null }
+) {
+  return client
+    .from("companySettings")
+    .update({ defaultResponsibleEmployee: args.employeeId })
+    .eq("id", args.companyId);
+}
+
+export async function setLocationResponsibleEmployee(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    employeeId: string | null;
+    userId: string;
+  }
+) {
+  // `location` is a resources table: without resources_update, row-level
+  // security matches no row and the update succeeds having changed nothing.
+  // Returning the row lets the caller tell the two apart.
+  return client
+    .from("location")
+    .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
+    .eq("id", args.locationId)
+    .eq("companyId", args.companyId)
+    .select("id");
+}
+
+/**
+ * Upsert one (location, item group) ownership cell; clearing the employee
+ * DELETES the row (unset → inherit up the tree, matching printers).
+ */
+export async function upsertItemPostingGroupResponsibility(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemPostingGroupId: string;
+    employeeId: string | null;
+    userId: string;
+  }
+) {
+  if (!args.employeeId) {
+    return client
+      .from("itemPostingGroupResponsibility")
+      .delete()
+      .eq("companyId", args.companyId)
+      .eq("locationId", args.locationId)
+      .eq("itemPostingGroupId", args.itemPostingGroupId);
+  }
+  // Update first, insert only when the cell is new: an upsert would restate
+  // `createdBy` on every reassignment.
+  const updated = await client
+    .from("itemPostingGroupResponsibility")
+    .update({
+      responsibleEmployee: args.employeeId,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId)
+    .eq("itemPostingGroupId", args.itemPostingGroupId)
+    .select("id");
+  if (updated.error || (updated.data?.length ?? 0) > 0) return updated;
+  return client
+    .from("itemPostingGroupResponsibility")
+    .insert({
+      companyId: args.companyId,
+      locationId: args.locationId,
+      itemPostingGroupId: args.itemPostingGroupId,
+      responsibleEmployee: args.employeeId,
+      createdBy: args.userId
+    })
+    .select("id");
+}
+
+export async function setRescheduleToleranceDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; days: number }
+) {
+  return client
+    .from("companySettings")
+    .update({ rescheduleToleranceDays: args.days })
+    .eq("id", args.companyId);
+}
+
+/**
+ * Whether a purchase order the planning pages raised skips the approval rule
+ * when it is finalized (`purchaseOrder.createdFromPlanning`, cleared by any
+ * manual line change). On by default.
+ */
+export async function setSkipApprovalForPlanningPurchaseOrders(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; enabled: boolean }
+) {
+  return client
+    .from("companySettings")
+    .update({ skipApprovalForPlanningPurchaseOrders: args.enabled })
+    .eq("id", args.companyId);
+}
+
+/** The company-wide planning horizon; `null` = no default (no time fence). */
+export async function setDefaultPlanningHorizonDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; days: number | null }
+) {
+  return client
+    .from("companySettings")
+    .update({ defaultPlanningHorizonDays: args.days })
+    .eq("id", args.companyId);
+}
+
+export async function setForecastConsumptionWindow(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; backwardPeriods: number; forwardPeriods: number }
+) {
+  return client
+    .from("companySettings")
+    .update({
+      forecastConsumptionBackwardPeriods: args.backwardPeriods,
+      forecastConsumptionForwardPeriods: args.forwardPeriods
+    })
+    .eq("id", args.companyId);
 }

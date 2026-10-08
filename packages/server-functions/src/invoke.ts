@@ -16,6 +16,8 @@ const registry = {
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
+  "create-contract-invoices": () => import("./create-contract-invoices"),
+  "create-rental-invoices": () => import("./create-rental-invoices"),
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),
   create: () => import("./create"),
@@ -24,7 +26,9 @@ const registry = {
   "get-method": () => import("./get-method"),
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
+  "post-asset-transfer": () => import("./post-asset-transfer"),
   "post-charge": () => import("./post-charge"),
+  "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
   "post-inventory-count": () => import("./post-inventory-count"),
   "post-maintenance-event": () => import("./post-maintenance-event"),
@@ -36,10 +40,19 @@ const registry = {
   "post-purchase-invoice": () => import("./post-purchase-invoice"),
   "post-receipt": () => import("./post-receipt"),
   "post-reimbursement": () => import("./post-reimbursement"),
+  "post-rental-agreement": () => import("./post-rental-agreement"),
   "post-sales-invoice": () => import("./post-sales-invoice"),
   "post-shipment": () => import("./post-shipment"),
   "post-stock-transfer": () => import("./post-stock-transfer"),
+  "preview-asset-capitalization": () =>
+    import("./preview-asset-capitalization"),
+  "preview-revenue-recognition-run": () =>
+    import("./preview-revenue-recognition-run"),
+  "propose-revenue-recognition-run": () =>
+    import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),
+  "recalculate-revenue-recognition-run": () =>
+    import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
   "seed-company": () => import("./seed-company"),
   sync: () => import("./sync"),

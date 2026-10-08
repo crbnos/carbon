@@ -13,12 +13,60 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuCircleAlert, LuCreditCard } from "react-icons/lu";
+import { useFetcher } from "react-router";
 import { Hidden, InputControlled } from "~/components/Form";
 import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
+import { path } from "~/utils/path";
 
 const CREATE_NEW = "__create_new__";
+
+/** Who the Stripe customer is resolved for: an invoice's bill-to, or a
+ *  billing customer directly (a contract, which has no invoice yet). */
+export type StripeCustomerSource =
+  | { invoiceId: string; customerContactId: string }
+  | { customerId: string; customerContactId?: string | null };
+
+/**
+ * Load the panel's resolution by invoice or by customer. `email` is the
+ * address the user committed for a contact that had none. A response for an
+ * earlier source or email is stale and reads as loading, so the panel never
+ * offers a choice about a different customer than the one on screen.
+ */
+export function useStripeCustomerResolution(
+  source: StripeCustomerSource | null,
+  email?: string
+): { resolution: StripeCustomerResolution | null; isLoading: boolean } {
+  const fetcher = useFetcher<StripeCustomerResolution>();
+  const url = !source
+    ? null
+    : "invoiceId" in source
+      ? path.to.api.stripeConnectCustomer(
+          source.invoiceId,
+          source.customerContactId,
+          email
+        )
+      : path.to.api.stripeConnectCustomerByCustomer(
+          source.customerId,
+          source.customerContactId,
+          email
+        );
+  const loadedUrl = useRef<string | null>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `fetcher` is a fresh object each render, so depending on it would re-run this effect forever.
+  useEffect(() => {
+    if (!url) return;
+    loadedUrl.current = url;
+    fetcher.load(url);
+  }, [url]);
+
+  if (!url) return { resolution: null, isLoading: false };
+  return {
+    resolution: fetcher.data ?? null,
+    isLoading: fetcher.state !== "idle" || loadedUrl.current !== url
+  };
+}
 
 type StripeCustomerPanelProps = {
   resolution: StripeCustomerResolution | null;
@@ -27,6 +75,9 @@ type StripeCustomerPanelProps = {
   email: string;
   onEmailChange: (email: string) => void;
   onEmailCommit: (email: string) => void;
+  /** What the choice is made for, which only changes the copy: posting one
+   *  invoice, or confirming a contract whose invoices are sent via Stripe. */
+  subject?: "invoice" | "contract";
 };
 
 function CustomerLine({
@@ -60,8 +111,10 @@ const StripeCustomerPanel = ({
   isLoading,
   email,
   onEmailChange,
-  onEmailCommit
+  onEmailCommit,
+  subject = "invoice"
 }: StripeCustomerPanelProps) => {
+  const isContract = subject === "contract";
   const { t } = useLingui();
   const [selection, setSelection] = useState<string>(CREATE_NEW);
 
@@ -102,13 +155,25 @@ const StripeCustomerPanel = ({
           <Alert variant="warning">
             <LuCircleAlert />
             <AlertTitle>
-              <Trans>This contact has no email address</Trans>
+              {isContract ? (
+                <Trans>No email address for this customer</Trans>
+              ) : (
+                <Trans>This contact has no email address</Trans>
+              )}
             </AlertTitle>
             <AlertDescription>
-              <Trans>
-                Stripe emails the invoice to the customer, so an address is
-                required. This will also be saved to the contact in Carbon.
-              </Trans>
+              {isContract ? (
+                <Trans>
+                  Stripe emails the invoices to the customer, so an address is
+                  required. It is also saved to the contract's invoice contact
+                  in Carbon, if it has one.
+                </Trans>
+              ) : (
+                <Trans>
+                  Stripe emails the invoice to the customer, so an address is
+                  required. This will also be saved to the contact in Carbon.
+                </Trans>
+              )}
             </AlertDescription>
           </Alert>
           <InputControlled
@@ -130,11 +195,19 @@ const StripeCustomerPanel = ({
               <Trans>Existing Stripe customer</Trans>
             </AlertTitle>
             <AlertDescription>
-              <Trans>
-                This invoice will be billed to the Stripe customer already
-                linked to this Carbon customer. To change its details, edit it
-                in the Stripe dashboard.
-              </Trans>
+              {isContract ? (
+                <Trans>
+                  The contract's invoices will be billed to the Stripe customer
+                  already linked to this Carbon customer. To change its details,
+                  edit it in the Stripe dashboard.
+                </Trans>
+              ) : (
+                <Trans>
+                  This invoice will be billed to the Stripe customer already
+                  linked to this Carbon customer. To change its details, edit it
+                  in the Stripe dashboard.
+                </Trans>
+              )}
             </AlertDescription>
           </Alert>
           <div className="w-full rounded-lg border p-3">
@@ -211,10 +284,17 @@ const StripeCustomerPanel = ({
               <Trans>A new Stripe customer will be created</Trans>
             </AlertTitle>
             <AlertDescription>
-              <Trans>
-                Stripe has no customer for this Carbon customer yet. Posting
-                will create one on your connected account.
-              </Trans>
+              {isContract ? (
+                <Trans>
+                  Stripe has no customer for this Carbon customer yet.
+                  Confirming will create one on your connected account.
+                </Trans>
+              ) : (
+                <Trans>
+                  Stripe has no customer for this Carbon customer yet. Posting
+                  will create one on your connected account.
+                </Trans>
+              )}
             </AlertDescription>
           </Alert>
           <div className="w-full rounded-lg border p-3">

@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+
 import { GroupedContentSidebar } from "~/components/Layout";
 import { SettingsPage } from "~/components/SettingsPage";
 import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
@@ -37,7 +37,7 @@ export default function AccountRoute() {
       className="overflow-y-auto scrollbar-hide h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >
       <SettingsPage>
-        <Outlet />
+        <RecordOutlet />
       </SettingsPage>
     </VStack>
   );

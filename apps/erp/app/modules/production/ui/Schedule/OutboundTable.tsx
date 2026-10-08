@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { Badge, Combobox, cn, HStack, VStack } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { distinctItemText, formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -226,7 +226,10 @@ const OutboundTable = memo(
               <span className="truncate">
                 {row.original.itemReadableIdWithRevision}
               </span>
-              {row.original.itemName && (
+              {distinctItemText(
+                row.original.itemReadableIdWithRevision,
+                row.original.itemName
+              ) && (
                 <span className="text-xs text-muted-foreground truncate max-w-[240px]">
                   {row.original.itemName}
                 </span>

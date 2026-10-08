@@ -1362,6 +1362,17 @@ async function buildEventContent(
       };
     }
 
+    // Payload-carried digest: the recurring-billing job sends the counts as
+    // `body`; documentIds are the invoices it touched, but nothing is read.
+    case NotificationEvent.RecurringInvoicing: {
+      return {
+        description: opts?.body
+          ? `Recurring invoicing: ${opts.body}`
+          : "Recurring invoicing",
+        details: []
+      };
+    }
+
     default:
       return null;
   }

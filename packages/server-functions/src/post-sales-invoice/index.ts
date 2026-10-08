@@ -8,7 +8,15 @@ import {
   journalReference
 } from "@carbon/database";
 import {
+  addMovement,
+  type ContractPosition,
+  EMPTY_POSITION,
+  negatePosition,
+  normalizePosition
+} from "@carbon/database/contract-position";
+import {
   inOrder,
+  isNull,
   many,
   maybeSingle,
   single,
@@ -29,21 +37,41 @@ import {
   datetime,
   debit,
   round,
+  roundSalesPostingAmounts,
   type SalesPostingAccount,
-  type SalesPostingMetadata
+  type SalesPostingMetadata,
+  spreadStraightLine
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
+import {
+  loadContractPositions,
+  lockContractPositions,
+  samePosition,
+  signedCreditAmount
+} from "../lib/contract-ledger";
+import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import {
+  type ContractPostingAccounts,
+  planContractInvoiceLine
+} from "./contract-posting";
+import {
+  leaseSettlementJournalLines,
+  planRentalLine,
+  purchaseOptionSettlement,
+  type RentalScheduleFact,
+  rentalScheduleRows
+} from "./rental-posting";
 
 const logger = getLogger("server-functions", "post-sales-invoice");
 
@@ -51,6 +79,9 @@ export const postSalesInvoiceInput = z.object({
   type: z.enum(["post", "void"]).default("post"),
   invoiceId: z.string()
 });
+
+const RECOGNIZED_REVENUE_VOID_ERROR =
+  "Invoice has recognized revenue; reverse its revenue recognition run first";
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
 const postSalesInvoice = defineServerFn({
@@ -291,6 +322,29 @@ const postSalesInvoice = defineServerFn({
           ) {
             throw new Error("Error getting account defaults");
           }
+          // Revenue recognition defers a dated service line's revenue at posting.
+          // It is meaningless without a journal, so it follows accountingEnabled
+          // and only engages when a line actually carries a service range. Only a
+          // Service line is deferred: every other item type is a physical good,
+          // earned when it ships, so dates left on one (a line whose type changed,
+          // an API write) must not move its revenue. Rental lines defer through
+          // their own path below, and so do contract lines: they move their
+          // contract line's position instead (plan D6).
+          const deferredServicePeriod = (line: InvoiceLineRecord) =>
+            line.invoiceLineType === "Service" &&
+            !line.customerContractLineId &&
+            line.serviceStartDate &&
+            line.serviceEndDate
+              ? {
+                  startDate: line.serviceStartDate,
+                  endDate: line.serviceEndDate
+                }
+              : null;
+          const hasServiceDates =
+            accountingEnabled &&
+            salesInvoiceLines.data.some(
+              (line: InvoiceLineRecord) => deferredServicePeriod(line) !== null
+            );
 
           const dimensions = accountingEnabled
             ? await many(
@@ -306,7 +360,8 @@ const postSalesInvoice = defineServerFn({
                     "CostCenter",
                     "FixedAssetClass",
                     "Customer",
-                    "Item"
+                    "Item",
+                    "Project"
                   ]
                 },
                 { columns: ["id", "entityType"] }
@@ -515,6 +570,94 @@ const postSalesInvoice = defineServerFn({
           ]) {
             if (id) accountIds.add(id);
           }
+          // The deferral account comes from accountDefault (a stable id, never an
+          // account number) and is validated through the same query as the charge
+          // accounts. A dated line with no mapped account refuses to post rather
+          // than silently booking deferrable revenue straight to Sales.
+          const deferredRevenueAccountId = hasServiceDates
+            ? (accountDefaults?.data?.deferredRevenueAccount ?? null)
+            : null;
+          if (hasServiceDates && !deferredRevenueAccountId) {
+            throw new Error(
+              "Deferred Revenue account is not mapped; map it in the accounting defaults before posting lines with service dates"
+            );
+          }
+          if (deferredRevenueAccountId)
+            accountIds.add(deferredRevenueAccountId);
+          // Rental lines always post through deferred revenue, contract assets
+          // and rental income, with or without service dates: rent is
+          // recognized by schedule, never at billing.
+          const rentalInvoiceLines = accountingEnabled
+            ? salesInvoiceLines.data.filter(
+                (line: InvoiceLineRecord) => line.invoiceLineType === "Rental"
+              )
+            : [];
+          const rentalAccountIds =
+            rentalInvoiceLines.length > 0
+              ? {
+                  deferredRevenue:
+                    accountDefaults?.data?.deferredRevenueAccount ?? null,
+                  contractAsset:
+                    accountDefaults?.data?.contractAssetAccount ?? null,
+                  rentalIncome:
+                    accountDefaults?.data?.rentalIncomeAccount ?? null
+                }
+              : null;
+          if (rentalAccountIds) {
+            if (
+              !rentalAccountIds.deferredRevenue ||
+              !rentalAccountIds.contractAsset ||
+              !rentalAccountIds.rentalIncome
+            ) {
+              throw new Error(
+                "Rental invoices need the Deferred Revenue, Contract Assets and Rental Income accounts mapped in the accounting defaults"
+              );
+            }
+            accountIds.add(rentalAccountIds.deferredRevenue);
+            accountIds.add(rentalAccountIds.contractAsset);
+            accountIds.add(rentalAccountIds.rentalIncome);
+            // Read with the others, but only required (and validated) once the
+            // agreement lines show a Sale line on this invoice.
+            if (accountDefaults?.data?.netInvestmentInLeasesAccount) {
+              accountIds.add(accountDefaults.data.netInvestmentInLeasesAccount);
+            }
+            // An exercised purchase option settles the rest of the net
+            // investment to one of these; each is required only when its
+            // settlement leg is.
+            if (
+              rentalInvoiceLines.some(
+                (line: InvoiceLineRecord) =>
+                  line.rentalLineType === "Purchase Option"
+              )
+            ) {
+              for (const id of [
+                accountDefaults?.data?.costOfGoodsSoldAccount,
+                accountDefaults?.data?.leaseRevenueAccount
+              ]) {
+                if (id) accountIds.add(id);
+              }
+            }
+          }
+          // Contract lines post to Deferred Revenue / Contract Assets (and
+          // realized FX when a pool carried at another rate is cleared); the
+          // run later recognizes into Sales.
+          const contractInvoiceLines = accountingEnabled
+            ? salesInvoiceLines.data.filter(
+                (line: InvoiceLineRecord) =>
+                  !!line.customerContractLineId &&
+                  line.invoiceLineType !== "Comment"
+              )
+            : [];
+          if (contractInvoiceLines.length > 0) {
+            for (const id of [
+              accountDefaults?.data?.deferredRevenueAccount,
+              accountDefaults?.data?.contractAssetAccount,
+              accountDefaults?.data?.realizedExchangeGainAccount,
+              accountDefaults?.data?.realizedExchangeLossAccount
+            ]) {
+              if (id) accountIds.add(id);
+            }
+          }
           for (const asset of assetRecords.data ?? []) {
             const assetClass = asset.fixedAssetClass;
             for (const id of [
@@ -561,6 +704,403 @@ const postSalesInvoice = defineServerFn({
             ),
             tax: account(accountDefaults?.data?.salesTaxPayableAccount)
           };
+          const deferredRevenueAccount = deferredRevenueAccountId
+            ? (account(deferredRevenueAccountId) ?? null)
+            : null;
+          if (
+            deferredRevenueAccountId &&
+            (!deferredRevenueAccount ||
+              deferredRevenueAccount.class !== "Liability" ||
+              !deferredRevenueAccount.active ||
+              deferredRevenueAccount.isGroup)
+          ) {
+            throw new Error(
+              "Deferred Revenue account is invalid; expected an active Liability leaf in this company group"
+            );
+          }
+          // Validated here, not only when a leg is pushed: a rent line's schedule
+          // rows credit Rental Income later even when this posting skips it.
+          type RentalAccountKey =
+            | "deferredRevenue"
+            | "contractAsset"
+            | "rentalIncome";
+          let rentalAccounts: Record<
+            RentalAccountKey,
+            SalesPostingAccount
+          > | null = null;
+          if (rentalAccountIds) {
+            const expected = [
+              ["deferredRevenue", "Liability", "Deferred Revenue"],
+              ["contractAsset", "Asset", "Contract Assets"],
+              ["rentalIncome", "Revenue", "Rental Income"]
+            ] as const;
+            const resolved: Partial<
+              Record<RentalAccountKey, SalesPostingAccount>
+            > = {};
+            for (const [key, accountClass, label] of expected) {
+              const candidate = account(rentalAccountIds[key]);
+              if (
+                !candidate ||
+                candidate.class !== accountClass ||
+                !candidate.active ||
+                candidate.isGroup
+              ) {
+                throw new Error(
+                  `${label} account is invalid; expected an active ${accountClass} leaf in this company group`
+                );
+              }
+              resolved[key] = candidate;
+            }
+            rentalAccounts = resolved as Record<
+              RentalAccountKey,
+              SalesPostingAccount
+            >;
+          }
+
+          // Validated here, not only when a leg is pushed: the run later
+          // recognizes from both pools into Sales.
+          let contractAccounts: ContractPostingAccounts | null = null;
+          if (contractInvoiceLines.length > 0) {
+            const leaf = (
+              id: string | null | undefined,
+              accountClass: string,
+              label: string,
+              required: boolean
+            ) => {
+              const candidate = account(id);
+              if (!id && !required) return null;
+              // The FX accounts are only needed when a line clears a pool
+              // carried at another rate; the planner refuses then.
+              if (
+                !required &&
+                (!candidate ||
+                  candidate.class !== accountClass ||
+                  !candidate.active ||
+                  candidate.isGroup)
+              )
+                return null;
+              if (
+                !candidate ||
+                candidate.class !== accountClass ||
+                !candidate.active ||
+                candidate.isGroup
+              ) {
+                throw new Error(
+                  id
+                    ? `${label} account is invalid; expected an active ${accountClass} leaf in this company group`
+                    : `Contract invoices need the ${label} account mapped in the accounting defaults`
+                );
+              }
+              return candidate;
+            };
+            contractAccounts = {
+              deferredRevenue: leaf(
+                accountDefaults?.data?.deferredRevenueAccount,
+                "Liability",
+                "Deferred Revenue",
+                true
+              )!,
+              contractAsset: leaf(
+                accountDefaults?.data?.contractAssetAccount,
+                "Asset",
+                "Contract Assets",
+                true
+              )!,
+              fxGain: leaf(
+                accountDefaults?.data?.realizedExchangeGainAccount,
+                "Revenue",
+                "Realized Exchange Gain",
+                false
+              ),
+              fxLoss: leaf(
+                accountDefaults?.data?.realizedExchangeLossAccount,
+                "Expense",
+                "Realized Exchange Loss",
+                false
+              )
+            };
+            leaf(accountDefaults?.data?.salesAccount, "Revenue", "Sales", true);
+          }
+          // Each involved contract line's position, read once; the line loop
+          // keeps it running, so two lines of one contract line on this
+          // invoice see each other. Re-read under the position lock inside
+          // the posting transaction, which refuses if it moved meanwhile.
+          const contractPositionsRead =
+            contractInvoiceLines.length > 0
+              ? await loadContractPositions(
+                  db,
+                  companyId,
+                  contractInvoiceLines.map(
+                    (line: InvoiceLineRecord) => line.customerContractLineId!
+                  )
+                )
+              : new Map<string, ContractPosition>();
+          const contractPositions = new Map(contractPositionsRead);
+          const contractLedgerInserts: Omit<
+            Tables["customerContractLedgerEntry"]["Insert"],
+            "journalId"
+          >[] = [];
+
+          // Rental facts, read once for every Rental line: the agreement lines,
+          // the billing periods the lines bill, and each agreement line's
+          // unbilled Accrual rows (Planned or Posted) and Planned Deferral rows.
+          type RentalAgreementLineRecord = Pick<
+            Tables["rentalAgreementLine"]["Row"],
+            "id" | "rentalAgreementId" | "itemId" | "lessorClassification"
+          >;
+          type RentalBillingPeriodRecord = Pick<
+            Tables["rentalBillingPeriod"]["Row"],
+            "id" | "periodStart" | "periodEnd"
+          >;
+          type RentalScheduleRecord = Pick<
+            Tables["revenueRecognitionSchedule"]["Row"],
+            | "id"
+            | "rentalAgreementLineId"
+            | "periodStart"
+            | "periodEnd"
+            | "scheduledDate"
+            | "amount"
+          >;
+          type RentalLeaseScheduleRecord = Pick<
+            Tables["rentalLeaseScheduleLine"]["Row"],
+            | "id"
+            | "rentalAgreementLineId"
+            | "periodDate"
+            | "closingNetInvestment"
+          >;
+          const rentalAgreementLineIds = [
+            ...new Set(
+              rentalInvoiceLines
+                .map((line: InvoiceLineRecord) => line.rentalAgreementLineId)
+                .filter((id: string | null): id is string => !!id)
+            )
+          ];
+          // Agreement lines whose purchase option this invoice exercises: their
+          // lease schedule's closing balance is what the option settles.
+          const purchaseOptionAgreementLineIds = [
+            ...new Set(
+              rentalInvoiceLines
+                .filter(
+                  (line: InvoiceLineRecord) =>
+                    line.rentalLineType === "Purchase Option"
+                )
+                .map((line: InvoiceLineRecord) => line.rentalAgreementLineId)
+                .filter((id: string | null): id is string => !!id)
+            )
+          ];
+          const rentalBillingPeriodIds = [
+            ...new Set(
+              rentalInvoiceLines
+                .map((line: InvoiceLineRecord) => line.rentalBillingPeriodId)
+                .filter((id: string | null): id is string => !!id)
+            )
+          ];
+          const scheduleColumns = [
+            "id",
+            "rentalAgreementLineId",
+            "periodStart",
+            "periodEnd",
+            "scheduledDate",
+            "amount"
+          ] as const;
+          const noRows = <T>() =>
+            Promise.resolve({ data: [] as T[], error: null as Error | null });
+          const [
+            rentalAgreementLines,
+            rentalBillingPeriods,
+            rentalAccruals,
+            rentalDeferrals,
+            rentalLeaseSchedules
+          ] = await inOrder([
+            () =>
+              rentalAgreementLineIds.length > 0
+                ? many(
+                    db,
+                    "rentalAgreementLine",
+                    { id: rentalAgreementLineIds, companyId },
+                    {
+                      columns: [
+                        "id",
+                        "rentalAgreementId",
+                        "itemId",
+                        "lessorClassification"
+                      ],
+                      orderBy: ["id"]
+                    }
+                  )
+                : noRows<RentalAgreementLineRecord>(),
+            () =>
+              rentalBillingPeriodIds.length > 0
+                ? many(
+                    db,
+                    "rentalBillingPeriod",
+                    { id: rentalBillingPeriodIds, companyId },
+                    {
+                      columns: ["id", "periodStart", "periodEnd"],
+                      orderBy: ["id"]
+                    }
+                  )
+                : noRows<RentalBillingPeriodRecord>(),
+            () =>
+              rentalAgreementLineIds.length > 0
+                ? many(
+                    db,
+                    "revenueRecognitionSchedule",
+                    {
+                      companyId,
+                      rentalAgreementLineId: rentalAgreementLineIds,
+                      type: "Accrual",
+                      billedBySalesInvoiceLineId: isNull
+                    },
+                    { columns: scheduleColumns, orderBy: ["id"] }
+                  )
+                : noRows<RentalScheduleRecord>(),
+            () =>
+              rentalAgreementLineIds.length > 0
+                ? many(
+                    db,
+                    "revenueRecognitionSchedule",
+                    {
+                      companyId,
+                      rentalAgreementLineId: rentalAgreementLineIds,
+                      type: "Deferral",
+                      status: "Planned"
+                    },
+                    { columns: scheduleColumns, orderBy: ["id"] }
+                  )
+                : noRows<RentalScheduleRecord>(),
+            () =>
+              purchaseOptionAgreementLineIds.length > 0
+                ? many(
+                    db,
+                    "rentalLeaseScheduleLine",
+                    {
+                      companyId,
+                      rentalAgreementLineId: purchaseOptionAgreementLineIds
+                    },
+                    {
+                      columns: [
+                        "id",
+                        "rentalAgreementLineId",
+                        "periodDate",
+                        "closingNetInvestment"
+                      ],
+                      orderBy: ["id"]
+                    }
+                  )
+                : noRows<RentalLeaseScheduleRecord>()
+          ]);
+          if (rentalAgreementLines.error)
+            throw new Error("Failed to fetch rental agreement lines");
+          if (rentalBillingPeriods.error)
+            throw new Error("Failed to fetch rental billing periods");
+          if (rentalAccruals.error || rentalDeferrals.error)
+            throw new Error("Failed to fetch rental revenue schedules");
+          if (rentalLeaseSchedules.error)
+            throw new Error("Failed to fetch rental lease schedules");
+          // Each agreement line's lease schedule closing balance: the
+          // closingNetInvestment of its last line by period date.
+          const leaseClosingTargetByLine = new Map<
+            string,
+            { periodDate: string; closingNetInvestment: number }
+          >();
+          for (const row of rentalLeaseSchedules.data ?? []) {
+            const latest = leaseClosingTargetByLine.get(
+              row.rentalAgreementLineId
+            );
+            if (!latest || row.periodDate > latest.periodDate) {
+              leaseClosingTargetByLine.set(row.rentalAgreementLineId, {
+                periodDate: row.periodDate,
+                closingNetInvestment: Number(row.closingNetInvestment)
+              });
+            }
+          }
+          const rentalAgreementLineById = new Map<
+            string,
+            RentalAgreementLineRecord
+          >(
+            (rentalAgreementLines.data ?? []).map(
+              (line: RentalAgreementLineRecord) => [line.id, line]
+            )
+          );
+          // A sales-type line's rent and purchase option collect the net
+          // investment booked at commencement. An operating-only invoice never
+          // needs the account mapped.
+          let netInvestmentInLeasesAccount: SalesPostingAccount | null = null;
+          if (
+            (rentalAgreementLines.data ?? []).some(
+              (line: RentalAgreementLineRecord) =>
+                line.lessorClassification === "Sale"
+            )
+          ) {
+            const candidate = account(
+              accountDefaults?.data?.netInvestmentInLeasesAccount
+            );
+            if (!accountDefaults?.data?.netInvestmentInLeasesAccount) {
+              throw new Error(
+                "Rentals treated as a sale need the Net Investment in Leases account mapped in the accounting defaults"
+              );
+            }
+            if (
+              !candidate ||
+              candidate.class !== "Asset" ||
+              !candidate.active ||
+              candidate.isGroup
+            ) {
+              throw new Error(
+                "Net Investment in Leases account is invalid; expected an active Asset leaf in this company group"
+              );
+            }
+            netInvestmentInLeasesAccount = candidate;
+          }
+          const rentalBillingPeriodById = new Map<
+            string,
+            RentalBillingPeriodRecord
+          >(
+            (rentalBillingPeriods.data ?? []).map(
+              (period: RentalBillingPeriodRecord) => [period.id, period]
+            )
+          );
+          const scheduleFactsByAgreementLine = (
+            rows: RentalScheduleRecord[] | null
+          ) => {
+            const byLine = new Map<string, RentalScheduleFact[]>();
+            for (const row of rows ?? []) {
+              if (!row.rentalAgreementLineId) continue;
+              const facts = byLine.get(row.rentalAgreementLineId) ?? [];
+              facts.push({
+                id: row.id,
+                periodStart: row.periodStart,
+                periodEnd: row.periodEnd,
+                scheduledDate: row.scheduledDate,
+                amount: Number(row.amount)
+              });
+              byLine.set(row.rentalAgreementLineId, facts);
+            }
+            return byLine;
+          };
+          const rentalAccrualsByLine = scheduleFactsByAgreementLine(
+            rentalAccruals.data
+          );
+          const rentalDeferralsByLine = scheduleFactsByAgreementLine(
+            rentalDeferrals.data
+          );
+          // Accrual rows billed by this invoice, by the invoice line that bills
+          // them — one row is never billed twice, even by two lines of one invoice.
+          const billedAccruals = new Map<string, string>();
+          const rentalScheduleInserts: Tables["revenueRecognitionSchedule"]["Insert"][] =
+            [];
+
+          // One entry per invoice line whose revenue was deferred; expanded into
+          // revenueRecognitionSchedule rows inside the posting transaction.
+          const deferrals: {
+            salesInvoiceLineId: string;
+            amountBase: number;
+            debitAccountId: string;
+            creditAccountId: string;
+            startDate: string;
+            endDate: string;
+          }[] = [];
 
           for (const invoiceLine of salesInvoiceLines.data) {
             const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
@@ -595,30 +1135,144 @@ const postSalesInvoice = defineServerFn({
                   const itemTrackingType =
                     invoiceLineItem?.itemTrackingType ?? "Inventory";
 
-                  if (accountingEnabled && accountDefaults?.data) {
+                  const lineMetadata: SalesPostingMetadata = {
+                    customerTypeId: customer.data.customerTypeId ?? null,
+                    itemPostingGroupId:
+                      itemCosts.data.find(
+                        (
+                          cost: Pick<
+                            Database["public"]["Tables"]["itemCost"]["Row"],
+                            "itemId" | "itemPostingGroupId"
+                          >
+                        ) => cost.itemId === invoiceLine.itemId
+                      )?.itemPostingGroupId ?? null,
+                    itemId: invoiceLine.itemId ?? null,
+                    locationId: invoiceLine.locationId ?? null,
+                    costCenterId: null,
+                    fixedAssetClassId: null,
+                    projectId: invoiceLine.projectId ?? null
+                  };
+                  const contractLineId = invoiceLine.customerContractLineId;
+                  if (
+                    accountingEnabled &&
+                    accountDefaults?.data &&
+                    contractLineId &&
+                    contractAccounts
+                  ) {
+                    // A contract line moves its position: Cr Contract Assets
+                    // for what the run accrued ahead of billing, the rest Cr
+                    // Deferred Revenue (a negative line the reverse), and the
+                    // run recognizes from there. No schedule rows (plan D6).
+                    const position =
+                      contractPositions.get(contractLineId) ?? EMPTY_POSITION;
+                    const plan = planContractInvoiceLine({
+                      position,
+                      revenueBase:
+                        roundSalesPostingAmounts(postingLine).salesRevenueBase,
+                      rate: invoiceExchangeRate,
+                      accounts: contractAccounts,
+                      customerContractId:
+                        invoiceLine.customerContractId ?? invoiceHeader.id
+                    });
                     const charges = buildSalesPostingLines({
                       line: postingLine,
                       context: postingContext,
                       accounts: chargeAccounts,
-                      metadata: {
-                        customerTypeId: customer.data.customerTypeId ?? null,
-                        itemPostingGroupId:
-                          itemCosts.data.find(
-                            (
-                              cost: Pick<
-                                Database["public"]["Tables"]["itemCost"]["Row"],
-                                "itemId" | "itemPostingGroupId"
-                              >
-                            ) => cost.itemId === invoiceLine.itemId
-                          )?.itemPostingGroupId ?? null,
-                        itemId: invoiceLine.itemId ?? null,
-                        locationId: invoiceLine.locationId ?? null,
-                        costCenterId: null,
-                        fixedAssetClassId: null
-                      }
+                      revenueLegs: plan.revenueLegs,
+                      metadata: lineMetadata
                     });
                     journalLineInserts.push(...charges.lines);
                     journalLineDimensionsMeta.push(...charges.metadata);
+                    // Same journal line reference, so a VOID reverses them
+                    // with the line.
+                    for (const reclass of plan.reclass) {
+                      journalLineInserts.push({
+                        accountId: reclass.account.id,
+                        description: reclass.description,
+                        amount: signedCreditAmount(
+                          reclass.accountClass,
+                          reclass.credit
+                        ),
+                        quantity: round(invoiceLine.quantity),
+                        documentType: "Contract",
+                        documentId:
+                          invoiceLine.customerContractId ?? invoiceHeader.id,
+                        externalDocumentId: postingContext.externalDocumentId,
+                        documentLineReference:
+                          postingContext.documentLineReference,
+                        journalLineReference:
+                          postingContext.journalLineReference,
+                        companyId
+                      });
+                      journalLineDimensionsMeta.push(lineMetadata);
+                    }
+                    contractPositions.set(
+                      contractLineId,
+                      addMovement(position, plan.movement)
+                    );
+                    if (
+                      plan.movement.deferredAmount !== 0 ||
+                      plan.movement.assetAmount !== 0 ||
+                      plan.movement.deferredBase !== 0 ||
+                      plan.movement.assetBase !== 0
+                    ) {
+                      contractLedgerInserts.push({
+                        customerContractId: invoiceLine.customerContractId!,
+                        customerContractLineId: contractLineId,
+                        entryType: "Invoice",
+                        postingDate: today,
+                        salesInvoiceLineId: invoiceLine.id,
+                        deferredAmount: plan.movement.deferredAmount,
+                        deferredBase: plan.movement.deferredBase,
+                        assetAmount: plan.movement.assetAmount,
+                        assetBase: plan.movement.assetBase,
+                        companyId,
+                        createdBy: userId
+                      });
+                    }
+                  } else if (accountingEnabled && accountDefaults?.data) {
+                    // A dated service range defers this line's revenue: the sales
+                    // leg is credited to Deferred Revenue now and a straight-line
+                    // schedule recognizes it into Sales later.
+                    const servicePeriod = deferredServicePeriod(invoiceLine);
+                    const deferral =
+                      deferredRevenueAccount && servicePeriod
+                        ? { account: deferredRevenueAccount, ...servicePeriod }
+                        : null;
+                    const charges = buildSalesPostingLines({
+                      line: postingLine,
+                      context: postingContext,
+                      accounts: chargeAccounts,
+                      deferredRevenueAccount: deferral?.account,
+                      metadata: lineMetadata
+                    });
+                    journalLineInserts.push(...charges.lines);
+                    journalLineDimensionsMeta.push(...charges.metadata);
+                    if (deferral && charges.amounts.salesRevenueBase !== 0) {
+                      // The run credits Sales when it recognizes, so the revenue
+                      // account must be valid even though this posting skipped it.
+                      const salesAccount = chargeAccounts.sales;
+                      if (
+                        !salesAccount ||
+                        salesAccount.class !== "Revenue" ||
+                        !salesAccount.active ||
+                        salesAccount.isGroup
+                      ) {
+                        throw new Error(
+                          "Invalid or missing Sales Account; a deferred line needs an active Revenue leaf to recognize into"
+                        );
+                      }
+                      deferrals.push({
+                        salesInvoiceLineId: invoiceLine.id,
+                        // The builder's sales component IS the deferral leg in base
+                        // currency (credit("liability", x) === x).
+                        amountBase: charges.amounts.salesRevenueBase,
+                        debitAccountId: deferral.account.id,
+                        creditAccountId: salesAccount.id,
+                        startDate: deferral.startDate,
+                        endDate: deferral.endDate
+                      });
+                    }
                   }
 
                   // if the sales order line is null, we ship the part, do the normal entries and do not use accrual/reversing
@@ -639,7 +1293,8 @@ const postSalesInvoice = defineServerFn({
                         locationId: invoiceLine.locationId,
                         storageUnitId: invoiceLine.storageUnitId,
                         unitOfMeasure: invoiceLine.unitOfMeasureCode ?? "EA",
-                        unitPrice: invoiceLine.unitPrice ?? 0,
+                        // Net of the line discount: what the line sold for.
+                        unitPrice: invoiceLine.netUnitPrice ?? 0,
                         createdBy: invoiceLine.createdBy,
                         companyId
                       });
@@ -711,7 +1366,8 @@ const postSalesInvoice = defineServerFn({
                             itemId: invoiceLine.itemId ?? null,
                             locationId: invoiceLine.locationId ?? null,
                             costCenterId: null,
-                            fixedAssetClassId: null
+                            fixedAssetClassId: null,
+                            projectId: null
                           });
                         }
                       }
@@ -768,7 +1424,8 @@ const postSalesInvoice = defineServerFn({
                       asset.locationId ??
                       null,
                     costCenterId: null,
-                    fixedAssetClassId: assetClass.id
+                    fixedAssetClassId: assetClass.id,
+                    projectId: invoiceLine.projectId ?? null
                   },
                   disposal:
                     wasShipped && disposal
@@ -820,6 +1477,162 @@ const postSalesInvoice = defineServerFn({
                 }
                 break;
               }
+              case "Rental": {
+                // A Rental line has no item: nothing ships, nothing leaves stock,
+                // and there is no COGS. Only its revenue leg differs from a sale.
+                if (!accountingEnabled || !rentalAccounts) break;
+                const agreementLine = rentalAgreementLineById.get(
+                  invoiceLine.rentalAgreementLineId ?? ""
+                );
+                if (!agreementLine) {
+                  throw new Error(
+                    `Rental invoice line ${invoiceLine.id} has no rental agreement line`
+                  );
+                }
+                if (!invoiceLine.rentalLineType) {
+                  throw new Error(
+                    `Rental invoice line ${invoiceLine.id} has no rental line type`
+                  );
+                }
+                const billingPeriod = invoiceLine.rentalBillingPeriodId
+                  ? rentalBillingPeriodById.get(
+                      invoiceLine.rentalBillingPeriodId
+                    )
+                  : undefined;
+                if (invoiceLine.rentalBillingPeriodId && !billingPeriod) {
+                  throw new Error(
+                    `Rental billing period ${invoiceLine.rentalBillingPeriodId} was not found`
+                  );
+                }
+                const period = billingPeriod
+                  ? {
+                      periodStart: billingPeriod.periodStart,
+                      periodEnd: billingPeriod.periodEnd
+                    }
+                  : invoiceLine.serviceStartDate && invoiceLine.serviceEndDate
+                    ? {
+                        periodStart: invoiceLine.serviceStartDate,
+                        periodEnd: invoiceLine.serviceEndDate
+                      }
+                    : null;
+                const plan = planRentalLine({
+                  lineType: invoiceLine.rentalLineType,
+                  classification: agreementLine.lessorClassification,
+                  revenueBase:
+                    roundSalesPostingAmounts(postingLine).salesRevenueBase,
+                  period,
+                  unbilledAccruals: (
+                    rentalAccrualsByLine.get(agreementLine.id) ?? []
+                  ).filter((row) => !billedAccruals.has(row.id)),
+                  plannedDeferrals:
+                    rentalDeferralsByLine.get(agreementLine.id) ?? [],
+                  accounts: {
+                    ...rentalAccounts,
+                    netInvestmentInLeases: netInvestmentInLeasesAccount
+                  },
+                  rentalAgreementId: agreementLine.rentalAgreementId
+                });
+                const rentalMetadata: SalesPostingMetadata = {
+                  customerTypeId: customer.data.customerTypeId ?? null,
+                  itemPostingGroupId: null,
+                  // The rented unit's item, for the Item dimension only.
+                  itemId: agreementLine.itemId ?? null,
+                  locationId: invoiceLine.locationId ?? null,
+                  costCenterId: null,
+                  fixedAssetClassId: null,
+                  projectId: invoiceLine.projectId ?? null
+                };
+                const charges = buildSalesPostingLines({
+                  line: postingLine,
+                  context: postingContext,
+                  accounts: chargeAccounts,
+                  revenueLegs: plan.revenueLegs,
+                  metadata: rentalMetadata
+                });
+                journalLineInserts.push(...charges.lines);
+                journalLineDimensionsMeta.push(...charges.metadata);
+                // An exercised purchase option derecognizes the whole net
+                // investment: the schedule's closing balance less the option
+                // just credited goes to COGS (a shortfall) or Lease Revenue (a
+                // gain), on the same journal line reference so a VOID reverses it.
+                if (
+                  invoiceLine.rentalLineType === "Purchase Option" &&
+                  agreementLine.lessorClassification === "Sale" &&
+                  netInvestmentInLeasesAccount
+                ) {
+                  const closing = leaseClosingTargetByLine.get(
+                    agreementLine.id
+                  );
+                  if (!closing) {
+                    throw new Error(
+                      `Rental agreement line ${agreementLine.id} has no lease schedule to settle the purchase option against`
+                    );
+                  }
+                  const settlementLines = leaseSettlementJournalLines(
+                    purchaseOptionSettlement({
+                      closingTarget: closing.closingNetInvestment,
+                      // The Net Investment leg is the plan's only revenue leg.
+                      optionAmount: charges.revenueLegAmounts[0] ?? 0,
+                      accounts: {
+                        netInvestmentInLeases: netInvestmentInLeasesAccount,
+                        costOfGoodsSold: account(
+                          accountDefaults?.data?.costOfGoodsSoldAccount
+                        ),
+                        leaseRevenue: account(
+                          accountDefaults?.data?.leaseRevenueAccount
+                        )
+                      },
+                      rentalAgreementId: agreementLine.rentalAgreementId
+                    }),
+                    {
+                      companyId,
+                      quantity: invoiceLine.quantity,
+                      journalLineReference: postingContext.journalLineReference,
+                      externalDocumentId: postingContext.externalDocumentId,
+                      documentLineReference:
+                        postingContext.documentLineReference
+                    }
+                  );
+                  journalLineInserts.push(...settlementLines);
+                  for (let i = 0; i < settlementLines.length; i++) {
+                    // Derecognition (COGS / Lease Revenue) is not the line's
+                    // revenue side, so it carries no project.
+                    journalLineDimensionsMeta.push({
+                      ...rentalMetadata,
+                      projectId: null
+                    });
+                  }
+                }
+                for (const accrualId of plan.billedAccrualIds) {
+                  billedAccruals.set(accrualId, invoiceLine.id);
+                }
+                // The deferred-revenue leg is always the last revenue leg; its
+                // posted base amount is what the Deferral rows must sum to.
+                const deferredAmount =
+                  charges.revenueLegAmounts[
+                    charges.revenueLegAmounts.length - 1
+                  ] ?? 0;
+                for (const row of rentalScheduleRows(
+                  plan.schedule,
+                  deferredAmount
+                )) {
+                  rentalScheduleInserts.push({
+                    type: "Deferral",
+                    status: "Planned",
+                    salesInvoiceLineId: invoiceLine.id,
+                    rentalAgreementLineId: agreementLine.id,
+                    periodStart: row.periodStart,
+                    periodEnd: row.periodEnd,
+                    scheduledDate: row.scheduledDate,
+                    amount: row.amount,
+                    debitAccountId: rentalAccounts.deferredRevenue.id,
+                    creditAccountId: rentalAccounts.rentalIncome.id,
+                    companyId,
+                    createdBy: userId
+                  });
+                }
+                break;
+              }
               case "Comment":
                 break;
 
@@ -828,11 +1641,44 @@ const postSalesInvoice = defineServerFn({
             }
           }
 
+          // An exercised purchase option sells the unit to the lessee. It is a
+          // custody fact, so it applies whether or not accounting is on.
+          const soldAgreementLineIds = [
+            ...new Set<string>(
+              salesInvoiceLines.data
+                .filter(
+                  (line: InvoiceLineRecord) =>
+                    line.invoiceLineType === "Rental" &&
+                    line.rentalLineType === "Purchase Option"
+                )
+                .map((line: InvoiceLineRecord) => line.rentalAgreementLineId)
+                .filter((id: string | null): id is string => !!id)
+            )
+          ];
+
           const accountingPeriodId = accountingEnabled
             ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
           await db.transaction().execute(async (trx) => {
+            // The movements above were computed from positions read before
+            // this transaction; refuse if another writer moved one since.
+            if (contractPositionsRead.size > 0) {
+              await lockContractPositions(trx, companyId);
+              const current = await loadContractPositions(trx, companyId, [
+                ...contractPositionsRead.keys()
+              ]);
+              for (const [lineId, read] of contractPositionsRead) {
+                if (
+                  !samePosition(read, current.get(lineId) ?? EMPTY_POSITION)
+                ) {
+                  throw new Error(
+                    "A contract line's revenue position changed while this invoice was posting; post it again"
+                  );
+                }
+              }
+            }
+
             if (shipmentLineInserts.length > 0) {
               const shipmentLinesGroupedByLocationId =
                 shipmentLineInserts.reduce<
@@ -969,7 +1815,10 @@ const postSalesInvoice = defineServerFn({
 
             // Calculate COGS for direct invoice items (no sales order)
             const directInvoiceItems = salesInvoiceLines.data.filter(
-              (line) => line.salesOrderLineId === null && line.itemId
+              (line) =>
+                line.salesOrderLineId === null &&
+                line.itemId &&
+                line.invoiceLineType !== "Rental"
             );
 
             for (const directLine of directInvoiceItems) {
@@ -1129,6 +1978,15 @@ const postSalesInvoice = defineServerFn({
                       companyId
                     });
                   }
+                  // Set on the revenue-side legs only (buildSalesPostingLines).
+                  if (meta.projectId && dimensionMap.has("Project")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Project")!,
+                      valueId: meta.projectId,
+                      companyId
+                    });
+                  }
                   if (
                     invoiceHeader.customerId &&
                     dimensionMap.has("Customer")
@@ -1148,6 +2006,118 @@ const postSalesInvoice = defineServerFn({
                     .values(journalLineDimensionInserts)
                     .execute();
                 }
+              }
+
+              // Straight-line each deferred line into Planned schedule rows; a
+              // recognition run later moves each row from Deferred Revenue to
+              // Sales. The rows sum to the deferred leg exactly.
+              if (deferrals.length > 0) {
+                await trx
+                  .insertInto("revenueRecognitionSchedule")
+                  .values(
+                    deferrals.flatMap((deferral) =>
+                      spreadStraightLine({
+                        amount: deferral.amountBase,
+                        startDate: deferral.startDate,
+                        endDate: deferral.endDate
+                      }).map((row) => ({
+                        type: "Deferral" as const,
+                        status: "Planned" as const,
+                        salesInvoiceLineId: deferral.salesInvoiceLineId,
+                        periodStart: row.periodStart,
+                        periodEnd: row.periodEnd,
+                        scheduledDate: row.scheduledDate,
+                        amount: row.amount,
+                        debitAccountId: deferral.debitAccountId,
+                        creditAccountId: deferral.creditAccountId,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    )
+                  )
+                  .execute();
+              }
+
+              // One movement per contract invoice line, on this journal.
+              if (contractLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("customerContractLedgerEntry")
+                  .values(
+                    contractLedgerInserts.map((entry) => ({
+                      ...entry,
+                      journalId: journalResult.id
+                    }))
+                  )
+                  .execute();
+              }
+
+              // Rental rent: the unearned part as Planned Deferral rows (an
+              // early-return credit as negative rows shrinking its period).
+              if (rentalScheduleInserts.length > 0) {
+                await trx
+                  .insertInto("revenueRecognitionSchedule")
+                  .values(rentalScheduleInserts)
+                  .execute();
+              }
+
+              // Accrued rent this invoice bills moved off the contract asset;
+              // stamp each Accrual row with the line that billed it. A row still
+              // Planned debits the contract asset when its run posts, cancelling
+              // this credit, so the balance nets to zero whichever posts first.
+              // The guard columns make a concurrent bill fail loudly instead of
+              // crediting the contract asset twice.
+              if (billedAccruals.size > 0) {
+                const billed = [...billedAccruals];
+                const stamped = await trx
+                  .updateTable("revenueRecognitionSchedule")
+                  .set({
+                    billedBySalesInvoiceLineId: sql<string>`CASE "id" ${sql.join(
+                      billed.map(
+                        ([accrualId, invoiceLineId]) =>
+                          sql`WHEN ${accrualId} THEN ${invoiceLineId}`
+                      ),
+                      sql` `
+                    )} END`,
+                    updatedBy: userId,
+                    updatedAt: datetime.timestamp()
+                  })
+                  .where("companyId", "=", companyId)
+                  .where(
+                    "id",
+                    "in",
+                    billed.map(([accrualId]) => accrualId)
+                  )
+                  .where("type", "=", "Accrual")
+                  .where("billedBySalesInvoiceLineId", "is", null)
+                  .executeTakeFirst();
+                if (Number(stamped.numUpdatedRows) !== billed.length) {
+                  throw new Error(
+                    "A rental accrual changed while this invoice was posting; post it again"
+                  );
+                }
+              }
+            }
+
+            // The unit is the lessee's now: the line is Sold, which lets the
+            // agreement close. Only a sales-type unit still on rent can be sold;
+            // a second purchase option on the same line finds it Sold and fails.
+            if (soldAgreementLineIds.length > 0) {
+              const sold = await trx
+                .updateTable("rentalAgreementLine")
+                .set({
+                  status: "Sold",
+                  updatedBy: userId,
+                  updatedAt: datetime.timestamp()
+                })
+                .where("companyId", "=", companyId)
+                .where("id", "in", soldAgreementLineIds)
+                .where("lessorClassification", "=", "Sale")
+                .where("status", "=", "On Rent")
+                .executeTakeFirst();
+              if (Number(sold.numUpdatedRows) !== soldAgreementLineIds.length) {
+                throw new Error(
+                  "A purchase option can only be billed on a unit treated as a sale that is on rent"
+                );
               }
             }
 
@@ -1411,6 +2381,54 @@ const postSalesInvoice = defineServerFn({
             throw new Error("No journal entries found for invoice");
           }
 
+          // A Rental line's revenue legs reference the rental agreement, not the
+          // invoice, so the query above misses them; a contract line's
+          // revenue legs (and FX reclass) reference the contract. They share
+          // the posting journal and the journal line reference of their
+          // invoice line's AR leg, which is how they are found.
+          const rentalLineIds = salesInvoiceLines.data
+            .filter((line) => line.invoiceLineType === "Rental")
+            .map((line) => line.id);
+          const contractInvoiceLines = salesInvoiceLines.data.filter(
+            (line) => !!line.customerContractLineId
+          );
+          type JournalLineRecord = Tables["journalLine"]["Row"];
+          let rentalJournalEntries: JournalLineRecord[] = [];
+          if (
+            (rentalLineIds.length > 0 || contractInvoiceLines.length > 0) &&
+            journalEntries.length > 0
+          ) {
+            const journalIds = [
+              ...new Set(
+                journalEntries.map(
+                  (entry: JournalLineRecord) => entry.journalId
+                )
+              )
+            ];
+            const references = [
+              ...new Set(
+                journalEntries
+                  .map((entry: JournalLineRecord) => entry.journalLineReference)
+                  .filter(
+                    (reference: string | null): reference is string =>
+                      !!reference
+                  )
+              )
+            ];
+            const rentalLegs =
+              references.length > 0
+                ? await many(db, "journalLine", {
+                    companyId,
+                    documentType: ["Rental Agreement", "Contract"],
+                    journalId: journalIds,
+                    journalLineReference: references
+                  })
+                : { data: [] as JournalLineRecord[], error: null };
+            if (rentalLegs.error)
+              throw new Error("Failed to fetch rental journal lines");
+            rentalJournalEntries = rentalLegs.data ?? [];
+          }
+
           // Get shipments created from this invoice
           const { data: invoiceShipments } = await many(
             db,
@@ -1471,17 +2489,44 @@ const postSalesInvoice = defineServerFn({
             return acc;
           }, {});
 
+          // Deferred revenue already recognized cannot be voided by flipping the
+          // invoice journal alone — the recognition journal must be reversed
+          // first. Planned rows are dropped inside the void transaction below.
+          // A contract line has no Deferral rows (it posts to its position),
+          // so this never refuses one: its VOID reclasses instead.
+          const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
+          if (invoiceLineIds.length > 0) {
+            const recognized = await db
+              .selectFrom("revenueRecognitionSchedule")
+              .select(["status"])
+              .where("companyId", "=", companyId)
+              .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .where("status", "=", "Posted")
+              .executeTakeFirst();
+            if (recognized) {
+              throw new InvalidInputError(RECOGNIZED_REVENUE_VOID_ERROR);
+            }
+          }
+
           // Create reversing journal entries
           const reversingJournalEntries = accountingEnabled
-            ? journalEntries.map((entry) => ({
+            ? [...journalEntries, ...rentalJournalEntries].map((entry) => ({
                 accountId: entry.accountId,
                 description: `VOID: ${entry.description}`,
                 // A reversal is a sign flip of an already-posted value, which is
                 // exact — no rounding to do.
                 amount: -entry.amount,
                 quantity: -entry.quantity,
-                documentType: "Invoice" as const,
-                documentId: invoiceHeader.id,
+                ...(entry.documentType === "Rental Agreement" ||
+                entry.documentType === "Contract"
+                  ? {
+                      documentType: entry.documentType,
+                      documentId: entry.documentId
+                    }
+                  : {
+                      documentType: "Invoice" as const,
+                      documentId: invoiceHeader.id
+                    }),
                 externalDocumentId: entry.externalDocumentId,
                 documentLineReference: entry.documentLineReference,
                 journalLineReference: entry.journalLineReference,
@@ -1525,6 +2570,130 @@ const postSalesInvoice = defineServerFn({
             : null;
 
           await db.transaction().execute(async (trx) => {
+            if (invoiceLineIds.length > 0) {
+              // Re-checked under lock: a run may have posted since the check
+              // above, and its rows must never be dropped. Every row left is
+              // Planned; a Draft recognition run may hold some, and its lines
+              // go with them (a Draft is a proposal, not a commitment).
+              const rows = await trx
+                .selectFrom("revenueRecognitionSchedule")
+                .select(["id", "status", "runLineId"])
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .forUpdate()
+                .execute();
+              if (rows.some((row) => row.status === "Posted")) {
+                throw new InvalidInputError(RECOGNIZED_REVENUE_VOID_ERROR);
+              }
+              await syncDraftRecognitionRuns(trx, {
+                companyId,
+                userId,
+                deletedScheduleIds: rows
+                  .filter((row) => row.runLineId !== null)
+                  .map((row) => row.id)
+              });
+              await trx
+                .deleteFrom("revenueRecognitionSchedule")
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .execute();
+            }
+
+            // Undo what posting a Rental line consumed: its accruals are unbilled
+            // again (the reversed journal restores the contract asset), and the
+            // billing periods and charges it billed are billable again — and
+            // remember the voided invoice, so the automated re-bill is held for
+            // review (spec 2026-10-02-rental-invoice-automation).
+            if (rentalLineIds.length > 0) {
+              const updatedAt = datetime.timestamp();
+              await trx
+                .updateTable("revenueRecognitionSchedule")
+                .set({
+                  billedBySalesInvoiceLineId: null,
+                  updatedBy: userId,
+                  updatedAt
+                })
+                .where("companyId", "=", companyId)
+                .where("billedBySalesInvoiceLineId", "in", rentalLineIds)
+                .execute();
+              await trx
+                .updateTable("rentalBillingPeriod")
+                .set({
+                  status: "Pending",
+                  salesInvoiceLineId: null,
+                  voidedSalesInvoiceId: invoiceId,
+                  updatedBy: userId,
+                  updatedAt
+                })
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", rentalLineIds)
+                .execute();
+              await trx
+                .updateTable("rentalAgreementCharge")
+                .set({
+                  salesInvoiceLineId: null,
+                  voidedSalesInvoiceId: invoiceId,
+                  updatedBy: userId,
+                  updatedAt
+                })
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", rentalLineIds)
+                .execute();
+              // A voided purchase option un-sells the unit: back on rent, but
+              // only if nothing has moved the line on since it was sold.
+              const soldAgreementLineIds = [
+                ...new Set<string>(
+                  salesInvoiceLines.data
+                    .filter(
+                      (line) =>
+                        line.invoiceLineType === "Rental" &&
+                        line.rentalLineType === "Purchase Option"
+                    )
+                    .map((line) => line.rentalAgreementLineId)
+                    .filter((id: string | null): id is string => !!id)
+                )
+              ];
+              if (soldAgreementLineIds.length > 0) {
+                await trx
+                  .updateTable("rentalAgreementLine")
+                  .set({ status: "On Rent", updatedBy: userId, updatedAt })
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", soldAgreementLineIds)
+                  .where("status", "=", "Sold")
+                  .execute();
+              }
+            }
+
+            // Undo what drafting a contract invoice stamped: its schedule rows
+            // are billable again (remembering the voided invoice, so the
+            // automated re-bill is held for review) and the planned invoice is
+            // Planned again.
+            if (invoiceLineIds.length > 0) {
+              const updatedAt = datetime.timestamp();
+              await trx
+                .updateTable("customerContractInvoiceLine")
+                .set({
+                  salesInvoiceLineId: null,
+                  voidedSalesInvoiceId: invoiceId,
+                  updatedBy: userId,
+                  updatedAt
+                })
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .execute();
+            }
+            await trx
+              .updateTable("customerContractInvoice")
+              .set({
+                status: "Planned",
+                salesInvoiceId: null,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("companyId", "=", companyId)
+              .where("salesInvoiceId", "=", invoiceId)
+              .execute();
+
             // Update sales order lines to reverse invoiced quantities
             for await (const [salesOrderLineId, update] of Object.entries(
               salesOrderLineUpdates
@@ -1600,6 +2769,130 @@ const postSalesInvoice = defineServerFn({
                 .execute();
             }
 
+            // A contract line's VOID is the negation of its Invoice entry —
+            // the journal above reverses its legs exactly — then any pool the
+            // negation drove below zero (the run already recognized part of
+            // what this invoice deferred) is reclassed to the other pool, on
+            // this VOID journal, so Deferred Revenue and Contract Assets stay
+            // max(N, 0) / max(−N, 0) (plan D6).
+            const contractVoidEntries: Omit<
+              Tables["customerContractLedgerEntry"]["Insert"],
+              "journalId"
+            >[] = [];
+            if (accountingEnabled && contractInvoiceLines.length > 0) {
+              await lockContractPositions(trx, companyId);
+              const invoiceEntries = await trx
+                .selectFrom("customerContractLedgerEntry")
+                .select([
+                  "customerContractId",
+                  "customerContractLineId",
+                  "salesInvoiceLineId",
+                  "deferredAmount",
+                  "deferredBase",
+                  "assetAmount",
+                  "assetBase"
+                ])
+                .where("companyId", "=", companyId)
+                .where("entryType", "=", "Invoice")
+                .where(
+                  "salesInvoiceLineId",
+                  "in",
+                  contractInvoiceLines.map((line) => line.id)
+                )
+                .orderBy("createdAt")
+                .orderBy("id")
+                .execute();
+              if (invoiceEntries.length > 0) {
+                const positions = await loadContractPositions(
+                  trx,
+                  companyId,
+                  invoiceEntries.map((entry) => entry.customerContractLineId)
+                );
+                const defaults = await trx
+                  .selectFrom("accountDefault")
+                  .select(["deferredRevenueAccount", "contractAssetAccount"])
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst();
+                for (const entry of invoiceEntries) {
+                  const negation = negatePosition({
+                    deferredAmount: Number(entry.deferredAmount),
+                    deferredBase: Number(entry.deferredBase),
+                    assetAmount: Number(entry.assetAmount),
+                    assetBase: Number(entry.assetBase)
+                  });
+                  const before = addMovement(
+                    positions.get(entry.customerContractLineId) ??
+                      EMPTY_POSITION,
+                    negation
+                  );
+                  const reclass = normalizePosition(before);
+                  const movement = addMovement(negation, reclass);
+                  positions.set(
+                    entry.customerContractLineId,
+                    addMovement(before, reclass)
+                  );
+                  contractVoidEntries.push({
+                    customerContractId: entry.customerContractId,
+                    customerContractLineId: entry.customerContractLineId,
+                    entryType: "Void",
+                    postingDate: today,
+                    salesInvoiceLineId: entry.salesInvoiceLineId,
+                    ...movement,
+                    companyId,
+                    createdBy: userId
+                  });
+                  // Equal base on both pools: one Contract Assets / Deferred
+                  // Revenue pair.
+                  if (reclass.deferredBase !== 0) {
+                    if (
+                      !defaults?.deferredRevenueAccount ||
+                      !defaults.contractAssetAccount
+                    ) {
+                      throw new Error(
+                        "Voiding a contract invoice needs the Deferred Revenue and Contract Assets accounts mapped in the accounting defaults"
+                      );
+                    }
+                    const invoiceLine = contractInvoiceLines.find(
+                      (line) => line.id === entry.salesInvoiceLineId
+                    );
+                    const reference = nanoid();
+                    for (const [
+                      accountId,
+                      accountClass,
+                      description,
+                      value
+                    ] of [
+                      [
+                        defaults.deferredRevenueAccount,
+                        "Liability",
+                        "VOID: Deferred Revenue reclass",
+                        reclass.deferredBase
+                      ],
+                      [
+                        defaults.contractAssetAccount,
+                        "Asset",
+                        "VOID: Contract Assets reclass",
+                        -reclass.assetBase
+                      ]
+                    ] as const) {
+                      reversingJournalEntries.push({
+                        accountId,
+                        description,
+                        amount: signedCreditAmount(accountClass, value),
+                        quantity: invoiceLine?.quantity ?? 0,
+                        documentType: "Contract",
+                        documentId: entry.customerContractId,
+                        externalDocumentId: invoiceHeader.customerReference,
+                        documentLineReference: null,
+                        journalLineReference: reference,
+                        companyId
+                      });
+                    }
+                  }
+                }
+              }
+            }
+
             // Nothing to reverse for a zero-value invoice — no empty VOID header.
             if (accountingEnabled && reversingJournalEntries.length > 0) {
               const voidJournalEntryId = await getNextSequence(
@@ -1635,6 +2928,18 @@ const postSalesInvoice = defineServerFn({
                 )
                 .returning(["id"])
                 .execute();
+
+              if (contractVoidEntries.length > 0) {
+                await trx
+                  .insertInto("customerContractLedgerEntry")
+                  .values(
+                    contractVoidEntries.map((entry) => ({
+                      ...entry,
+                      journalId: voidJournalResult.id
+                    }))
+                  )
+                  .execute();
+              }
             }
 
             // Insert reversing item ledger entries

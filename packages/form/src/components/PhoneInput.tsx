@@ -142,8 +142,10 @@ const CountrySelect = ({
         <Button
           type="button"
           variant={"ghost"}
+          // The input's height, from the row: `h-full` needs a parent with a
+          // definite height, which a form field sized to its content is not.
           className={cn(
-            "py-1 border flex gap-1 h-full rounded-e-none rounded-s-lg pr-1 pl-3"
+            "py-1 border flex gap-1 h-auto self-stretch rounded-e-none rounded-s-lg pr-1 pl-3"
           )}
           disabled={disabled}
         >

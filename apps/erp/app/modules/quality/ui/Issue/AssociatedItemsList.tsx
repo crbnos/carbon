@@ -38,7 +38,7 @@ import {
   NumberInput as NumberFieldInput,
   toast
 } from "@carbon/react";
-import { EPSILON, INPUT_FORMAT } from "@carbon/utils";
+import { distinctItemText, EPSILON, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -408,9 +408,14 @@ export function AssociatedItemsList({
                     <h3 className="font-semibold truncate">
                       {item.readableIdWithRevision}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.name}
-                    </p>
+                    {distinctItemText(
+                      item.readableIdWithRevision,
+                      item.name
+                    ) && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.name}
+                      </p>
+                    )}
                   </div>
                   <div className="w-20 shrink-0 flex flex-col gap-1">
                     <span className="text-xs font-medium text-muted-foreground">

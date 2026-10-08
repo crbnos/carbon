@@ -150,7 +150,7 @@ export default function IssueDetailsRoute() {
   if (!routeData) throw new Error("Could not find issue data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <IssueContent
         key={id}
         id={id}

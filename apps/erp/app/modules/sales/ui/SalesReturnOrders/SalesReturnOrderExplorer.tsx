@@ -28,6 +28,7 @@ import {
   useShortcutKeyMap,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import {
@@ -310,9 +311,14 @@ function SalesReturnOrderLineItem({
             <span className="font-semibold line-clamp-1">
               {line.item?.readableIdWithRevision}
             </span>
-            <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {line.item?.name}
-            </span>
+            {distinctItemText(
+              line.item?.readableIdWithRevision,
+              line.item?.name
+            ) && (
+              <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                {line.item?.name}
+              </span>
+            )}
           </VStack>
         </HStack>
         <div className="absolute right-2">

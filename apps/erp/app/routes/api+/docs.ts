@@ -8,6 +8,8 @@ import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import { getClientIp } from "@carbon/utils";
 import { data, type LoaderFunctionArgs } from "react-router";
 
+import { DAY_CACHE_HEADERS } from "~/modules/shared/shared.server";
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
@@ -21,7 +23,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw data({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  return swaggerDocsSchema;
+  // Fixed until the next deploy, and the limit above is 20 an hour.
+  return data(swaggerDocsSchema, { headers: DAY_CACHE_HEADERS });
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>({

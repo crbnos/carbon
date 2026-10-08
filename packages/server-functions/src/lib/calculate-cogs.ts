@@ -4,6 +4,7 @@
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import type { Transaction } from "kysely";
+import { orderLayersForConsumption } from "./cost-layer-order";
 
 export interface CostLayer {
   costLedgerId: string;
@@ -22,11 +23,16 @@ export async function calculateCOGS(
   {
     itemId,
     quantity,
-    companyId
+    companyId,
+    trackedEntityIds
   }: {
     itemId: string;
     quantity: number;
     companyId: string;
+    // The serial units leaving, when the caller knows them: each is relieved
+    // from the layer booked for it (specific identification) before the
+    // FIFO / LIFO layers. See cost-layer-order.ts.
+    trackedEntityIds?: readonly string[];
   }
 ): Promise<COGSResult> {
   const itemCost = await trx
@@ -61,7 +67,7 @@ export async function calculateCOGS(
     case "LIFO": {
       const orderDirection = costingMethod === "FIFO" ? "asc" : "desc";
 
-      const layers = await trx
+      const orderedLayers = await trx
         .selectFrom("costLedger")
         .selectAll()
         .where("itemId", "=", itemId)
@@ -84,6 +90,7 @@ export async function calculateCOGS(
         // the layer twice (lost update).
         .forUpdate()
         .execute();
+      const layers = orderLayersForConsumption(orderedLayers, trackedEntityIds);
 
       let remainingToConsume = quantity;
       let totalCost = 0;

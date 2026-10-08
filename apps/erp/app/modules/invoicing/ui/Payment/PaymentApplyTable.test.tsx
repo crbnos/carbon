@@ -490,6 +490,89 @@ describe("payment composer document funding", () => {
   });
 });
 
+describe("customer deposits fund only their own document", () => {
+  const ra1 = { type: "rentalAgreement" as const, id: "ra-1" };
+  const scoped = {
+    paymentTotal: 0,
+    priorSources: [
+      {
+        paymentId: "deposit",
+        postingDate: "2026-09-01",
+        exchangeRate: 1.2,
+        remainingDocument: 60,
+        remainingBase: 50,
+        scope: { ...ra1, readableId: "RA000001" }
+      }
+    ],
+    openInvoices: [
+      { ...props.openInvoices[0], rentalAgreementIds: ["ra-3"] },
+      { ...props.openInvoices[1], rentalAgreementIds: ["ra-1"] }
+    ]
+  };
+
+  it("lists a deposit apart from on-account credit and auto applies it only to its agreement's invoice", () => {
+    const html = render(scoped);
+    expect(html).toContain("Deposit for RA000001 (its invoices only)");
+    expect(html).not.toContain("On-account credit available");
+    click("Auto apply");
+    render(scoped);
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({
+        targetSalesInvoiceId: "two",
+        appliedAmount: 50,
+        sourceAmount: 60
+      })
+    ]);
+  });
+
+  it("selecting another document's invoice draws nothing from the deposit", () => {
+    render(scoped);
+    harness.checkboxes[0]?.onCheckedChange?.(true);
+    render(scoped);
+    harness.checkboxes[1]?.onCheckedChange?.(true);
+    render(scoped);
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({ targetSalesInvoiceId: "two", sourceAmount: 60 })
+    ]);
+  });
+
+  it("a deposit payment lists only its document's invoices and refuses an application to another", () => {
+    const deposit = {
+      paymentScope: { ...ra1, readableId: "RA000001" },
+      openInvoices: scoped.openInvoices
+    };
+    const html = render(deposit);
+    expect(html).toContain("INV2");
+    expect(html).not.toContain("INV1");
+    harness.state = undefined;
+    const refused = render({
+      ...deposit,
+      existingApplications: [
+        {
+          targetSalesInvoiceId: "one",
+          targetPurchaseInvoiceId: null,
+          appliedAmount: 100,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          sourceAmount: 110,
+          targetExchangeRate: 1.1,
+          sourceExchangeRate: 1.2,
+          appliedDate: "2026-09-07"
+        }
+      ]
+    });
+    expect(refused).toContain(
+      "A deposit for RA000001 can only be applied to that agreement&#x27;s invoices"
+    );
+    const save = harness.buttons.find((b) =>
+      renderToStaticMarkup(createElement("span", null, b.children)).includes(
+        "Save applications"
+      )
+    );
+    expect(save?.isDisabled).toBe(true);
+  });
+});
+
 it("displays staged memo base and document amounts and retains a zero-base document cent", () => {
   const html = renderToStaticMarkup(
     createElement(AvailableCreditsTable, {

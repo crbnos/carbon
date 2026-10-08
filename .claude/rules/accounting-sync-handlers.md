@@ -347,6 +347,59 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     sweep include mapped voided documents/payments, and mapping tombstones stop
     repeated deletes. Compare independent remote GL, including recognition
     and reversal, instead of treating create HTTP200 as accounting parity.
+- **Sales invoice line discount reaches providers at NET.** `salesInvoiceLine.discountPercent`
+  (a 0–1 fraction, merchandise only; add-ons and shipping are never discounted) is loaded by
+  `loadSalesInvoices` (`sales-invoice-source.ts`, `lineAmount = quantity × unitPrice × (1 −
+  discountPercent)`, the expression the `salesInvoices` view and `calculateSalesPostingAmounts`
+  use) and carried on `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line
+  pulled back from a provider carries its net price). `buildSalesDocumentComponents` sends every
+  provider the NET unit price: `unitPrice` and `convertedUnitPrice` are both LIST prices, the
+  discount is applied to each before they are reconciled, and a discounted converted price is
+  rounded to storage scale. Pinned by `sales-document-components.test.ts` and the Xero / QBO /
+  Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
+  `Service` lines with a `discountPercent`, and no mapper treats them differently. But Carbon
+  posts their revenue legs to Contract Assets / Deferred Revenue with `documentType 'Contract'`
+  / `documentId` = the contract (`post-sales-invoice/contract-posting.ts`), never to Sales, so
+  the selection caveat of rental lines below applies to them too: a reader of an invoice's
+  `documentType = 'Invoice'` journal lines never sees a contract revenue leg.
+  <!-- UNVERIFIED: which account each provider books a contract invoice line to remotely -->
+
+- **Rental invoice lines — provider behavior is a spike pending, not a
+  decision.** A rental agreement drafts sales invoices whose lines are
+  `invoiceLineType 'Rental'` with **no item** (`itemId` null;
+  `rentalLineType` Rent / Charge / Purchase Option; an early-return credit
+  is a Rent line with a NEGATIVE unit price). Carbon posts their revenue legs to
+  Contract Assets / Deferred Revenue (Rent of a `Rental` line), Rental Income (Charge) or
+  Net Investment in Leases, an ASSET (Rent and Purchase Option of a `Sale`
+  line, i.e. a sales-type lease), NOT to the Sales default, and those legs carry `documentType 'Rental Agreement'` /
+  `documentId = rentalAgreement.id` — only the AR and tax legs keep
+  `documentType 'Invoice'`. Anything that selects an invoice's journal lines by
+  `documentType = 'Invoice'` (`sales-invoice-source.ts` shipping-account read,
+  `document-costing.ts`, `invoicing.service.ts` control-line totals) therefore
+  never sees a rental revenue leg; today none of them needs it, but a future
+  "replay the invoice's revenue accounts" mapper would miss them. Static read of
+  the current mappers (`sales-document-components.ts` turns an itemless line
+  into a `Merchandise` component with `itemId` null):
+  - **Xero** (`buildXeroSalesInvoiceLines`): the line goes out with
+    `AccountCode` = the company's `accountDefault.salesAccount` code and no
+    `ItemCode`, so the remote invoice books rent to Sales, not to Deferred
+    Revenue / Contract Assets. <!-- UNVERIFIED: not exercised against a Xero
+    tenant; whether a negative early-return line is accepted is also untested -->
+  - **QBO** (`buildQboInvoiceLines`): an itemless component is sent as
+    `SalesItemLineDetail` with NO `ItemRef` (the throw only fires when an item
+    or shipping id fails to resolve). <!-- UNVERIFIED: which income account
+    QuickBooks books an ItemRef-less line to, and whether it accepts it, is
+    untested -->
+  - **Rillet** (`preflightRilletComponents`): refuses the whole invoice with
+    the structured `UNMAPPED_ACCOUNTS` Warning "Cannot sync invoice: Rillet
+    revenue recognition lines require a product and positive quantity; some
+    components have no item or unsupported quantities" — rental invoices park
+    as Warnings. (Static read; not exercised against a Rillet sandbox.)
+  The spec's intent (§1 Sync) is an account-costed line to the deferred-revenue
+  account per provider, or an exclusion with a reason code relying on the
+  `Revenue Recognition` journals (`POSTING_POLICY` `defaultEnabled: false`, so
+  those journals do not push unless the company turns them on). None of that
+  is built; record the outcome per provider here when the spike runs.
 - **Provider items are non-tracked** so the provider never posts inventory
   (bills) or COGS (invoices): Xero pushes `IsTrackedAsInventory: false` on
   create and OMITS the flag on update (Xero rejects untracking an item with
@@ -586,6 +639,27 @@ is dead config for Rillet only, left in place for the capped providers.
   charges implement provider-aware void/delete paths where supported; unsupported or
   unconfirmed deletes fail or park visibly and never receive a false tombstone.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
+- **Default-off journal types are opt-in per source type.** Despite the
+  "no per-source-type on/off" framing above, `getJournalPostingPolicyDecision`
+  (`core/posting.ts`) excludes a source type whose `POSTING_POLICY` entry has
+  `defaultEnabled: false` with `SOURCE_TYPE_DISABLED` ("Source type … is
+  disabled — enable it in the accounting sync settings to push these
+  journals") unless the company's per-type config sets `enabled`. The
+  default-off set (`POSTING_SYNC_DEFAULT_SOURCE_TYPES` excludes them) is the
+  three return types, `'Revenue Recognition'`, `'Asset Transfer'` and
+  `'Lease'`: a new journal type never starts pushing to a customer's external
+  ledger unasked (plan decision 1 of
+  `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I). **`'Lease'`**
+  (migration `20261006220301_fleet-rental-lease-enums.sql`, `packages/ee/src/accounting/core/models.ts`,
+  `individual` granularity) carries only a sales-type lease's commencement
+  (Dr Net Investment in Leases / Dr COGS / Dr accumulated depreciation, Cr
+  Lease Revenue / Cr fleet class asset) and its end-of-term residual return
+  (Dr Rental Fleet class asset or inventory / Cr Net Investment in Leases),
+  written by `post-rental-agreement` with `documentType 'Rental Agreement'`;
+  the lease's monthly interest posts inside the `'Revenue Recognition'`
+  journal, and its rent invoices go out through the invoice mappers (the
+  Rental-line spike above). <!-- UNVERIFIED: no provider has been exercised
+  with a Lease journal or a sales-type rental invoice -->
 
 ## Credit memos and supplier credits as provider documents
 

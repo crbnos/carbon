@@ -70,6 +70,9 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
         ),
         meta: {
           mobile: "P2",
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendarDays />
         }
       }

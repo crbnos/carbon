@@ -6,11 +6,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getStockTransfers } from "~/modules/inventory";
 import StockTransfersTable from "~/modules/inventory/ui/StockTransfers/StockTransfersTable";
 import { getLocationsList } from "~/modules/resources";
@@ -103,7 +103,7 @@ export default function StockTransfersRoute() {
         count={count ?? 0}
         locationId={locationId}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -989,7 +989,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     projectedCompletionAt: { kind: "primitive", of: "date" },
     scheduleOutdatedReason: { kind: "primitive", of: "string" },
     scheduleOutdatedAt: { kind: "primitive", of: "date" },
-    productionQuantity: { kind: "primitive", of: "number" }
+    productionQuantity: { kind: "primitive", of: "number" },
+    fixedAssetClassId: { kind: "primitive", of: "string" },
+    fixedAssetId: { kind: "primitive", of: "string" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },
@@ -1055,7 +1057,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     createdAt: { kind: "primitive", of: "date" },
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     code: { kind: "primitive", of: "string" },
-    requiresStaffing: { kind: "primitive", of: "boolean" }
+    requiresStaffing: { kind: "primitive", of: "boolean" },
+    responsibleEmployee: { kind: "entity", of: "user" }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },
@@ -1142,7 +1145,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     supplierInteractionId: { kind: "primitive", of: "string" },
     purchaseOrderType: { kind: "primitive", of: "string" },
     jobId: { kind: "entity", of: "job" },
-    jobReadableId: { kind: "primitive", of: "string" }
+    jobReadableId: { kind: "primitive", of: "string" },
+    createdFromPlanning: { kind: "primitive", of: "boolean" }
   },
   quote: {
     id: { kind: "primitive", of: "string" },
@@ -1225,7 +1229,12 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     externalNotes: { kind: "primitive", of: "string" },
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     createdAt: { kind: "primitive", of: "date" },
-    createdBy: { kind: "entity", of: "user" }
+    createdBy: { kind: "entity", of: "user" },
+    automationHoldReason: { kind: "primitive", of: "string" },
+    sentAt: { kind: "primitive", of: "date" },
+    sentTo: { kind: "primitive", of: "string" },
+    sendError: { kind: "primitive", of: "string" },
+    customerContractId: { kind: "primitive", of: "string" }
   },
   salesOrder: {
     id: { kind: "primitive", of: "string" },

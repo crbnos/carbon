@@ -15,8 +15,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useDisclosure,
-  useViewport
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -26,12 +25,12 @@ import {
   LuCircleStop,
   LuLoaderCircle,
   LuTrash,
-  LuTriangleAlert,
-  LuUser
+  LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
+import { DateTime, EmployeeAvatar } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
-import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
+import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
@@ -40,7 +39,6 @@ import type {
   UnresolvedPickingListLine
 } from "~/modules/inventory";
 import { isPickingListLocked } from "~/modules/inventory";
-import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import PickingListStatus from "./PickingListStatus";
 
@@ -65,11 +63,8 @@ const PickingListHeader = () => {
   const status = pickingList.status;
 
   const { t } = useLingui();
-  const { isPhone } = useViewport();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const [people] = usePeople();
-  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
   const statusFetcher = useFetcher<{
     needsAcknowledgement?: boolean;
     unresolvedLines?: UnresolvedPickingListLine[];
@@ -88,6 +83,8 @@ const PickingListHeader = () => {
   }, [statusFetcher.data]);
 
   const isClosed = isPickingListLocked(status);
+  const isSubmitting = statusFetcher.state !== "idle";
+  const canUpdate = permissions.can("update", "inventory");
   const hasPickedLines = (routeData.pickingListLines ?? []).some(
     (l) => Number(l.quantityPicked ?? 0) > 0
   );
@@ -100,26 +97,6 @@ const PickingListHeader = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : pickingList.assignee;
-  const canAssign =
-    permissions.can("update", "inventory") && permissions.is("employee");
-
-  // Phones: the hero line. The list has no job column, so the jobs come
-  // from its lines: the first one, then "+N" for the others.
-  const jobIds = Array.from(
-    new Set(
-      (routeData.pickingListLines ?? [])
-        .map((line) => line.job?.jobId)
-        .filter((jobId): jobId is string => Boolean(jobId))
-    )
-  );
-  const jobLabel =
-    jobIds.length > 1 ? `${jobIds[0]} +${jobIds.length - 1}` : jobIds[0];
-  const assigneeName =
-    optimisticAssignment !== undefined
-      ? people.find((person) => person.id === optimisticAssignment)?.name
-      : pickingList.assigneeUser?.fullName;
-  const subtitle =
-    [jobLabel, assigneeName].filter(Boolean).join(" · ") || undefined;
 
   const submitStatus = (next: string, acknowledged?: boolean) => {
     if (acknowledged !== true) setAcknowledgeLines(null);
@@ -129,148 +106,105 @@ const PickingListHeader = () => {
     );
   };
 
-  const statusBadge = <PickingListStatus status={status} />;
+  const isSubmittingStatus = (next: string) =>
+    isSubmitting && statusFetcher.formData?.get("status") === next;
 
-  const menuItems = (
-    <>
-      <DropdownMenuItem
-        disabled={
-          status === "Draft" ||
-          statusFetcher.state !== "idle" ||
-          !permissions.can("delete", "inventory")
-        }
-        onClick={() => submitStatus("Draft")}
-      >
-        <DropdownMenuIcon icon={<LuLoaderCircle />} />
-        <Trans>Reopen</Trans>
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        shortcut={MENU_ITEM_SHORTCUTS.delete}
-        disabled={
-          status !== "Draft" ||
-          hasPickedLines ||
-          !permissions.can("delete", "inventory") ||
-          !permissions.is("employee")
-        }
-        destructive
-        onClick={deleteModal.onOpen}
-      >
-        <DropdownMenuIcon icon={<LuTrash />} />
-        <Trans>Delete Picking List</Trans>
-      </DropdownMenuItem>
-    </>
-  );
+  const locationName = pickingList.location?.name;
 
   return (
     <>
-      <RecordHeader
+      <DocumentPageHeader
         title={pickingList.pickingListId}
-        copyValue={pickingList.pickingListId ?? ""}
-        menu={menuItems}
-        status={statusBadge}
-        subtitle={subtitle}
+        status={<PickingListStatus status={status} />}
+        meta={[
+          <Trans key="created">
+            Created{" "}
+            <DateTime value={pickingList.createdAt} variant="relative" /> by{" "}
+            <EmployeeAvatar employeeId={pickingList.createdBy} />
+          </Trans>,
+          pickingList.dueDate ? (
+            <Trans key="due">
+              Due <DateTime value={pickingList.dueDate} variant="date" />
+            </Trans>
+          ) : null,
+          locationName ? <Trans key="location">At {locationName}</Trans> : null
+        ]}
+        menuItems={
+          <>
+            {status !== "Draft" && (
+              <DropdownMenuItem
+                disabled={
+                  isSubmitting || !permissions.can("delete", "inventory")
+                }
+                onClick={() => submitStatus("Draft")}
+              >
+                <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                <Trans>Reopen</Trans>
+              </DropdownMenuItem>
+            )}
+            {!isClosed && (
+              <DropdownMenuItem
+                disabled={isSubmitting || !canUpdate}
+                destructive
+                onClick={() => submitStatus("Cancelled")}
+              >
+                <DropdownMenuIcon icon={<LuCircleStop />} />
+                <Trans>Cancel Picking List</Trans>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
+              disabled={
+                status !== "Draft" ||
+                hasPickedLines ||
+                !permissions.can("delete", "inventory") ||
+                !permissions.is("employee")
+              }
+              destructive
+              onClick={deleteModal.onOpen}
+            >
+              <DropdownMenuIcon icon={<LuTrash />} />
+              <Trans>Delete Picking List</Trans>
+            </DropdownMenuItem>
+          </>
+        }
         actions={
           <>
-            <RecordAction slot="overflow">
-              {isPhone ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  leftIcon={<LuUser />}
-                  isDisabled={!canAssign}
-                  onClick={() => setIsAssigneeOpen(true)}
-                >
-                  <Trans>Assign</Trans>
-                </Button>
-              ) : (
-                <Assignee
-                  size="md"
-                  id={pickingListId}
-                  value={assignee ?? ""}
-                  table="pickingList"
-                  isReadOnly={!permissions.can("update", "inventory")}
-                />
-              )}
-            </RecordAction>
-            <RecordAction slot={status === "Draft" ? "primary" : "overflow"}>
+            <Assignee
+              size="md"
+              id={pickingListId}
+              value={assignee ?? ""}
+              table="pickingList"
+              isReadOnly={!canUpdate}
+            />
+            {status === "Draft" && (
               <Button
                 type="button"
+                variant="primary"
                 leftIcon={<LuCirclePlay />}
-                variant={status === "Draft" ? "primary" : "secondary"}
-                isDisabled={
-                  status !== "Draft" ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "inventory")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "In Progress"
-                }
+                isDisabled={isSubmitting || !canUpdate}
+                isLoading={isSubmittingStatus("In Progress")}
                 onClick={() => submitStatus("In Progress")}
               >
                 <Trans>Start</Trans>
               </Button>
-            </RecordAction>
-            <RecordAction
-              slot={status === "In Progress" ? "primary" : "overflow"}
-            >
+            )}
+            {status === "In Progress" && (
               <Button
                 type="button"
+                variant="primary"
                 leftIcon={<LuCircleCheck />}
-                variant="secondary"
-                isDisabled={
-                  status !== "In Progress" ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "inventory")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Completed"
-                }
+                isDisabled={isSubmitting || !canUpdate}
+                isLoading={isSubmittingStatus("Completed")}
                 onClick={() => submitStatus("Completed")}
               >
                 <Trans>Finish</Trans>
               </Button>
-            </RecordAction>
-            <RecordAction slot="overflow">
-              <Button
-                type="button"
-                variant="secondary"
-                leftIcon={<LuCircleStop />}
-                isDisabled={
-                  isClosed ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "inventory")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Cancelled"
-                }
-                onClick={() => submitStatus("Cancelled")}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-            </RecordAction>
+            )}
           </>
         }
       />
-
-      {/* Phones: the ⋯ "Assign" row opens the picker as a sheet; its own
-          trigger stays hidden. */}
-      {isPhone && (
-        <div className="hidden">
-          <Assignee
-            size="md"
-            id={pickingListId}
-            value={assignee ?? ""}
-            table="pickingList"
-            isReadOnly={!permissions.can("update", "inventory")}
-            open={isAssigneeOpen}
-            onOpenChange={setIsAssigneeOpen}
-          />
-        </div>
-      )}
 
       {acknowledgeLines && (
         <Modal
@@ -316,7 +250,7 @@ const PickingListHeader = () => {
               <Button
                 variant="secondary"
                 onClick={() => setAcknowledgeLines(null)}
-                isDisabled={statusFetcher.state !== "idle"}
+                isDisabled={isSubmitting}
               >
                 <Trans>Keep picking</Trans>
               </Button>
@@ -326,8 +260,8 @@ const PickingListHeader = () => {
                   setAcknowledgeLines(null);
                   submitStatus("Completed", true);
                 }}
-                isLoading={statusFetcher.state !== "idle"}
-                isDisabled={statusFetcher.state !== "idle"}
+                isLoading={isSubmitting}
+                isDisabled={isSubmitting}
               >
                 <Trans>Acknowledge & finish</Trans>
               </Button>

@@ -29,12 +29,13 @@ vi.mock("@carbon/content/glossary", () => ({
 
 import type {
   PeriodCloseTaskRow,
-  PeriodReadinessCheck
+  PeriodReadinessCheck,
+  PeriodRunPreview
 } from "./accounting.service";
 import {
   checklistTasksToCreate,
   closeAccountingPeriod,
-  closePeriodWithChecklist,
+  computePeriodReadiness,
   createFiscalYearPeriods,
   deleteAccountingPeriod,
   evaluateCloseChecklist,
@@ -76,6 +77,9 @@ function makeClient(responses: Scripted[]) {
     or: () => builder,
     order: () => builder,
     limit: () => builder,
+    not: () => builder,
+    is: () => builder,
+    range: () => builder,
     single: () => Promise.resolve(next()),
     maybeSingle: () => Promise.resolve(next()),
     then: (resolve: (v: Scripted) => unknown) => resolve(next())
@@ -110,6 +114,9 @@ function makeRecordingClient(responses: Scripted[]) {
       or: () => builder,
       order: () => builder,
       limit: () => builder,
+      not: () => builder,
+      is: () => builder,
+      range: () => builder,
       single: () => Promise.resolve(next()),
       maybeSingle: () => Promise.resolve(next()),
       then: (resolve: (v: Scripted) => unknown) => resolve(next())
@@ -181,7 +188,20 @@ function makeKyselyRecorder() {
   return { db, updates, rawExecutions };
 }
 
-const args = { periodId: "P2", companyId: "C1", userId: "U1" };
+const args = {
+  periodId: "P2",
+  companyId: "C1",
+  companyGroupId: "G1",
+  userId: "U1"
+};
+
+// What new runs would hold. The close path takes it as a function so these
+// tests need no server function or depreciation reads.
+const nothingDue: PeriodRunPreview = {
+  revenue: { count: 0, amount: 0, error: null },
+  depreciation: { count: 0, amount: 0, error: null }
+};
+const noRunsDue = async () => nothingDue;
 
 describe("closeAccountingPeriod — sequential close", () => {
   it("rejects closing period N while an earlier period is not Closed", async () => {
@@ -191,7 +211,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     ]);
     const { db } = makeKyselyRecorder();
 
-    const result = await closeAccountingPeriod(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error).toBeTruthy();
     expect(result.error?.message).toMatch(/sequential close/i);
@@ -204,7 +224,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     ]);
     const { db } = makeKyselyRecorder();
 
-    const result = await closeAccountingPeriod(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error?.message).toMatch(/must be locked/i);
     expect(result.data).toBeNull();
@@ -231,7 +251,7 @@ describe("closeAccountingPeriod — sequential close", () => {
       { data: [] }, // external GL readiness: no active integrations
       { count: 0 }, // readiness: draft journals
       { data: [] }, // readiness: posted journals in period
-      { count: 0 }, // readiness: draft depreciation
+      { data: [] }, // readiness: Draft depreciation runs
       { count: 0 }, // readiness: unmatched intercompany
       { count: 0 }, // readiness: pending receipts
       { count: 0 }, // readiness: pending shipments
@@ -243,7 +263,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     // The period-flip write goes through the Kysely transaction, not supabase.
     const { db } = makeKyselyRecorder();
 
-    const result = await closeAccountingPeriod(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "P2" });
@@ -275,7 +295,7 @@ const lockedPeriodWithRange = {
   endDate: "2026-02-28"
 };
 
-describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", () => {
+describe("closeAccountingPeriod — Blocker gate + Auto-task persistence", () => {
   it("rejects the close when a Blocker auto-check (draft JEs) is failing", async () => {
     const { client, updates } = makeRecordingClient([
       { data: lockedPeriod }, // getAccountingPeriodById
@@ -308,7 +328,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
       { data: [] }, // external GL readiness: no active integrations
       { count: 2 }, // readiness: draft journals present -> Blocker failing
       { data: [] }, // readiness: posted journals in period
-      { count: 0 }, // readiness: draft depreciation
+      { data: [] }, // readiness: Draft depreciation runs
       { count: 0 }, // readiness: unmatched intercompany
       { count: 0 }, // readiness: pending receipts
       { count: 0 }, // readiness: pending shipments
@@ -319,7 +339,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
     ]);
     const { db, updates: txUpdates } = makeKyselyRecorder();
 
-    const result = await closePeriodWithChecklist(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.data).toBeNull();
     expect(result.error?.message).toMatch(/draft journal/i);
@@ -366,7 +386,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
       { data: [] }, // external GL readiness: no active integrations
       { count: 0 }, // readiness: no draft journals -> Blocker passing
       { data: [] }, // readiness: posted journals in period
-      { count: 0 }, // readiness: draft depreciation
+      { data: [] }, // readiness: Draft depreciation runs
       { count: 0 }, // readiness: unmatched intercompany
       { count: 0 }, // readiness: pending receipts
       { count: 0 }, // readiness: pending shipments
@@ -378,7 +398,7 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
     // The task persist + period flip both run inside the Kysely transaction.
     const { db, updates: txUpdates, rawExecutions } = makeKyselyRecorder();
 
-    const result = await closePeriodWithChecklist(client, db, args);
+    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "P2" });
@@ -961,6 +981,158 @@ describe("createFiscalYearPeriods", () => {
       periodNumber: 12,
       startDate: "2027-02-01",
       fiscalYear: 2027
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The two run checks ask what new runs would hold (the preview) and which
+// Draft runs are waiting. The batched readiness reads come first, then the
+// Planned rows Draft revenue recognition runs hold.
+// ---------------------------------------------------------------------------
+
+describe("computePeriodReadiness — run checks", () => {
+  const script = ({
+    draftDepreciationRuns = [],
+    heldRevenueRows = []
+  }: {
+    draftDepreciationRuns?: unknown[];
+    heldRevenueRows?: unknown[];
+  }): Scripted[] => [
+    { data: { timezone: "America/New_York" } },
+    { data: [] }, // external GL readiness: no active integrations
+    { count: 0 }, // draft journals
+    { data: [] }, // posted journals in period
+    { data: draftDepreciationRuns },
+    { count: 0 }, // unmatched intercompany
+    { count: 0 }, // pending receipts
+    { count: 0 }, // pending shipments
+    { count: 0 }, // pending sales invoices
+    { count: 0 }, // pending purchase invoices
+    { count: 0 }, // draft payments
+    { count: 0 }, // draft memos
+    { data: heldRevenueRows }
+  ];
+  const preview = (overrides: Partial<PeriodRunPreview>): PeriodRunPreview => ({
+    ...nothingDue,
+    ...overrides
+  });
+  const readiness = (client: unknown, runPreview: PeriodRunPreview) =>
+    computePeriodReadiness(
+      client as any,
+      "C1",
+      "2026-10-01",
+      "2026-10-31",
+      runPreview
+    );
+  const check = (result: Awaited<ReturnType<typeof readiness>>, key: string) =>
+    result.checks.find((c) => c.autoCheckKey === key);
+
+  it("passes both when nothing is due and no Draft run waits", async () => {
+    const result = await readiness(makeClient(script({})), nothingDue);
+
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: false,
+      count: 0,
+      amount: 0
+    });
+    expect(check(result, "draft-depreciation")).toMatchObject({
+      failing: false,
+      count: 0,
+      amount: 0
+    });
+  });
+
+  it("fails revenue with what a new run would claim", async () => {
+    const result = await readiness(
+      makeClient(script({})),
+      preview({ revenue: { count: 2, amount: 150, error: null } })
+    );
+
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: true,
+      count: 2,
+      amount: 150,
+      due: { count: 2, amount: 150 },
+      draftRuns: []
+    });
+    expect(
+      result.warnings.find((w) => w.key === "unposted-revenue-schedules")?.count
+    ).toBe(2);
+  });
+
+  it("adds the rows a Draft run holds, and names the run", async () => {
+    const result = await readiness(
+      makeClient(
+        script({
+          heldRevenueRows: [
+            {
+              amount: 40,
+              run: { id: "R1", runId: "RR-000001", periodEnd: "2026-09-30" }
+            },
+            {
+              amount: 10,
+              run: { id: "R1", runId: "RR-000001", periodEnd: "2026-09-30" }
+            }
+          ]
+        })
+      ),
+      preview({ revenue: { count: 1, amount: 25, error: null } })
+    );
+
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: true,
+      count: 3,
+      amount: 75,
+      draftRuns: [
+        { id: "R1", readableId: "RR-000001", periodEnd: "2026-09-30" }
+      ]
+    });
+  });
+
+  it("fails revenue when the preview could not run", async () => {
+    const result = await readiness(
+      makeClient(script({})),
+      preview({
+        revenue: {
+          count: 0,
+          amount: 0,
+          error: "Set the Contract Assets account default"
+        }
+      })
+    );
+
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: true,
+      count: 0
+    });
+  });
+
+  it("counts the assets a new run would depreciate plus the Draft runs", async () => {
+    const result = await readiness(
+      makeClient(
+        script({
+          draftDepreciationRuns: [
+            {
+              id: "D1",
+              depreciationRunId: "DEP-000001",
+              periodEnd: "2026-10-31",
+              depreciationRunLine: [{ amount: 60 }, { amount: 40 }]
+            }
+          ]
+        })
+      ),
+      preview({ depreciation: { count: 3, amount: 900, error: null } })
+    );
+
+    expect(check(result, "draft-depreciation")).toMatchObject({
+      failing: true,
+      count: 4,
+      amount: 1000,
+      due: { count: 3, amount: 900 },
+      draftRuns: [
+        { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
+      ]
     });
   });
 });

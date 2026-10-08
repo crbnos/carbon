@@ -30,6 +30,7 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
 import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -39,13 +40,21 @@ import {
   LuInfo,
   LuLock,
   LuLockOpen,
+  LuPlay,
   LuSkipForward,
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
+import {
+  data,
+  Link,
+  useFetcher,
+  useLoaderData,
+  useNavigate
+} from "react-router";
 import { EmployeeAvatar } from "~/components";
+import { useCurrencyFormatter } from "~/hooks";
 import type {
   PeriodCloseStatus,
   PeriodCloseTaskView
@@ -55,6 +64,7 @@ import {
   closeTaskCompleteValidator,
   closeTaskSkipValidator,
   completeCloseTask,
+  createDepreciationRun,
   getAccountingPeriods,
   getPeriodCloseChecklist,
   LOCK_PERIOD_TASK_NAME,
@@ -62,6 +72,7 @@ import {
   skipCloseTask,
   unlockAccountingPeriod
 } from "~/modules/accounting";
+import { futureRunPeriodError } from "~/modules/accounting/accounting.server";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -73,16 +84,22 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      view: "accounting",
+      role: "employee"
+    });
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
   const [checklist, periods] = await Promise.all([
-    getPeriodCloseChecklist(client, companyId, periodId),
+    getPeriodCloseChecklist(client, getDatabaseClient(), {
+      companyId,
+      companyGroupId,
+      userId,
+      periodId
+    }),
     getAccountingPeriods(client, companyId)
   ]);
 
@@ -103,9 +120,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "accounting"
+    });
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
@@ -185,9 +203,126 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({}, await flash(request, success("Period unlocked")));
   }
 
+  if (intent === "create-revenue-run" || intent === "create-depreciation-run") {
+    await requirePermissions(request, { create: "accounting" });
+    const period = await client
+      .from("accountingPeriod")
+      .select("endDate")
+      .eq("id", periodId)
+      .eq("companyId", companyId)
+      .single();
+    if (period.error) {
+      return data(
+        {},
+        await flash(request, error(period.error, "Failed to load the period"))
+      );
+    }
+    const periodEnd = period.data.endDate;
+    const futureError = await futureRunPeriodError(
+      client,
+      companyId,
+      periodEnd
+    );
+    if (futureError) {
+      return data({}, await flash(request, error(null, futureError)));
+    }
+
+    if (intent === "create-revenue-run") {
+      // One Draft per period: send the user to it rather than make another.
+      const existingDraft = await client
+        .from("revenueRecognitionRun")
+        .select("id, runId")
+        .eq("periodEnd", periodEnd)
+        .eq("companyId", companyId)
+        .eq("status", "Draft")
+        .maybeSingle();
+      if (existingDraft.data) {
+        throw redirect(
+          path.to.revenueRecognitionRun(existingDraft.data.id),
+          await flash(
+            request,
+            error(
+              null,
+              `${existingDraft.data.runId} is already a draft for this period. Recalculate it instead.`
+            )
+          )
+        );
+      }
+
+      let proposal: { id: string } | null;
+      try {
+        // The proposal creates nothing when nothing is due.
+        proposal = await serverFns
+          .system({ db: getDatabaseClient(), companyId, userId })
+          .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
+      } catch (e) {
+        return data(
+          {},
+          await flash(
+            request,
+            error(e, "Failed to create revenue recognition run")
+          )
+        );
+      }
+      if (!proposal) {
+        return data(
+          {},
+          await flash(
+            request,
+            error(null, "Nothing to recognize for this period")
+          )
+        );
+      }
+      throw redirect(
+        path.to.revenueRecognitionRun(proposal.id),
+        await flash(request, success("Revenue recognition run created"))
+      );
+    }
+
+    const existingDraft = await client
+      .from("depreciationRun")
+      .select("id, depreciationRunId")
+      .eq("periodEnd", periodEnd)
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .limit(1)
+      .maybeSingle();
+    if (existingDraft.data) {
+      throw redirect(
+        path.to.depreciationRun(existingDraft.data.id),
+        await flash(
+          request,
+          error(
+            null,
+            `${existingDraft.data.depreciationRunId} is already a draft for this period. Recalculate it instead.`
+          )
+        )
+      );
+    }
+
+    // Never an empty run: with nothing to depreciate this refuses.
+    const result = await createDepreciationRun(client, {
+      companyId,
+      companyGroupId,
+      periodEnd,
+      userId
+    });
+    if (result.error) {
+      return data(
+        {},
+        await flash(request, error(result.error, result.error.message))
+      );
+    }
+    throw redirect(
+      path.to.depreciationRun(result.data.id),
+      await flash(request, success("Depreciation run created"))
+    );
+  }
+
   if (intent === "close") {
     const result = await closePeriodWithChecklist(client, getDatabaseClient(), {
       companyId,
+      companyGroupId,
       periodId,
       userId
     });
@@ -287,6 +422,7 @@ export default function AccountingPeriodCloseRoute() {
                   key={task.id}
                   task={task}
                   closeStatus={period?.closeStatus}
+                  periodEnd={period?.endDate}
                 />
               ))}
             </Tbody>
@@ -312,10 +448,12 @@ export default function AccountingPeriodCloseRoute() {
 
 function PeriodCloseTaskRow({
   task,
-  closeStatus
+  closeStatus,
+  periodEnd
 }: {
   task: PeriodCloseTaskView;
   closeStatus?: PeriodCloseStatus;
+  periodEnd?: string;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<typeof action>();
@@ -329,9 +467,11 @@ function PeriodCloseTaskRow({
       case "draft-journals":
         return t`Journal entries dated in this period that are still Draft must be posted, or re-dated into a later open period. Draft entries aren't part of the ledger, so their debits and credits would be missing from the close.`;
       case "draft-depreciation":
-        return t`Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period.`;
+        return t`Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period.`;
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
+      case "unposted-revenue-schedules":
+        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
     }
@@ -359,6 +499,22 @@ function PeriodCloseTaskRow({
     !isLockTask && task.taskType !== "Auto" && status === "Open";
   const canSkip =
     !isLockTask && task.severity !== "Blocker" && status === "Open";
+  // The two run checks offer to create the run that would clear them, unless
+  // the period already has a Draft run (recalculate that one instead).
+  const createRunIntent =
+    task.autoCheckKey === "unposted-revenue-schedules"
+      ? "create-revenue-run"
+      : task.autoCheckKey === "draft-depreciation"
+        ? "create-depreciation-run"
+        : null;
+  const due = task.autoCheck?.due;
+  const canCreateRun =
+    createRunIntent !== null &&
+    status === "Open" &&
+    (due?.count ?? 0) > 0 &&
+    !(task.autoCheck?.draftRuns ?? []).some(
+      (run) => run.periodEnd === periodEnd
+    );
 
   return (
     <>
@@ -433,6 +589,37 @@ function PeriodCloseTaskRow({
                   </button>
                 </PeriodCloseUnpostedDocumentsPopover>
               )}
+            {status === "Open" && task.autoCheck?.failing && (
+              <>
+                {createRunIntent && due && (
+                  <PeriodRunDue
+                    due={due}
+                    draftRuns={task.autoCheck.draftRuns ?? []}
+                    runType={
+                      task.autoCheckKey === "draft-depreciation"
+                        ? "depreciation"
+                        : "revenue"
+                    }
+                  />
+                )}
+                {task.autoCheckKey === "draft-depreciation" && (
+                  <Link
+                    to={path.to.depreciationRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to depreciation runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "unposted-revenue-schedules" && (
+                  <Link
+                    to={path.to.revenueRecognitionRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to revenue recognition runs</Trans>
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         </Td>
         <Td>{task.taskType}</Td>
@@ -475,6 +662,20 @@ function PeriodCloseTaskRow({
                   isLoading={isBusy}
                 >
                   <Trans>Unlock</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canCreateRun && createRunIntent && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value={createRunIntent} />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuPlay />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Create Run</Trans>
                 </Button>
               </fetcher.Form>
             )}
@@ -551,5 +752,51 @@ function PeriodCloseTaskRow({
         </Tr>
       )}
     </>
+  );
+}
+
+/** What a run check is waiting on: what a new run would hold, and the
+ *  Draft runs to post. */
+function PeriodRunDue({
+  due,
+  draftRuns,
+  runType
+}: {
+  due: { count: number; amount: number; error: string | null };
+  draftRuns: { id: string; readableId: string; periodEnd: string }[];
+  runType: "revenue" | "depreciation";
+}) {
+  const { t } = useLingui();
+  const currencyFormatter = useCurrencyFormatter();
+  const amount = currencyFormatter.format(due.amount);
+
+  return (
+    <div className="flex flex-col gap-0.5 text-xs font-normal">
+      {due.error && <span className="text-destructive">{due.error}</span>}
+      {due.count > 0 && (
+        <span className="text-muted-foreground">
+          {runType === "depreciation"
+            ? due.count === 1
+              ? t`1 asset to depreciate · ${amount}`
+              : t`${due.count} assets to depreciate · ${amount}`
+            : due.count === 1
+              ? t`1 entry to recognize · ${amount}`
+              : t`${due.count} entries to recognize · ${amount}`}
+        </span>
+      )}
+      {draftRuns.map((run) => (
+        <Link
+          key={run.id}
+          to={
+            runType === "depreciation"
+              ? path.to.depreciationRun(run.id)
+              : path.to.revenueRecognitionRun(run.id)
+          }
+          className="w-fit text-primary hover:underline"
+        >
+          <Trans>Post draft run {run.readableId}</Trans>
+        </Link>
+      ))}
+    </div>
   );
 }

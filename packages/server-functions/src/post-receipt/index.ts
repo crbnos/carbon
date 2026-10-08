@@ -699,6 +699,31 @@ const postReceipt = defineServerFn({
             pol.receivedComplete
         );
 
+        // CIP cost rows this receipt wrote, summed per asset. Their presence is
+        // the durable record that the posting went into Construction in
+        // Progress, even if the asset has since been capitalized into a
+        // depreciating class.
+        const cipCostByAssetVoid = new Map<string, number>();
+        if (faPoLinesForVoid.length > 0) {
+          const cipCostRowsVoid = await many(
+            db,
+            "fixedAssetCipCost",
+            { companyId, sourceDocumentId: receiptId },
+            { columns: ["fixedAssetId", "amount"] }
+          );
+          if (cipCostRowsVoid.error)
+            throw new Error("Failed to fetch fixed asset CIP costs");
+          for (const row of cipCostRowsVoid.data) {
+            cipCostByAssetVoid.set(
+              row.fixedAssetId,
+              (cipCostByAssetVoid.get(row.fixedAssetId) ?? 0) +
+                Number(row.amount)
+            );
+          }
+        }
+        // Reduced acquisition cost per CIP asset, written inside the void transaction
+        const cipAssetUpdatesVoid = new Map<string, number>();
+
         for (const faPoLine of faPoLinesForVoid) {
           const hasReceiptEntries = originalJournalLines.data.some(
             (jl) =>
@@ -721,15 +746,64 @@ const postReceipt = defineServerFn({
               )
               .reduce((sum, jl) => sum + Math.abs(jl.amount ?? 0), 0);
 
-            const assetRecord = await single(
+            const assetRecord = await single<
+              "fixedAsset",
+              Pick<
+                Tables["fixedAsset"]["Row"],
+                "id" | "acquisitionCost" | "status"
+              > & {
+                fixedAssetClass: Pick<
+                  Tables["fixedAssetClass"]["Row"],
+                  "isConstructionInProgress"
+                > | null;
+              }
+            >(
               db,
               "fixedAsset",
               { id: faPoLine.assetId! },
-              { columns: ["id", "acquisitionCost", "status"] }
+              {
+                columns: ["id", "acquisitionCost", "status"],
+                embed: {
+                  fixedAssetClass: {
+                    table: "fixedAssetClass",
+                    via: "fixedAssetClassId",
+                    columns: ["isConstructionInProgress"]
+                  }
+                }
+              }
             );
 
             if (!assetRecord.error && assetRecord.data) {
               fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
+              const isConstructionInProgress =
+                cipCostByAssetVoid.has(faPoLine.assetId!) ||
+                Boolean(
+                  (assetRecord.data.fixedAssetClass as any)
+                    ?.isConstructionInProgress
+                );
+              if (isConstructionInProgress) {
+                if (assetRecord.data.status !== "Under Construction") {
+                  throw new Error(
+                    "Asset was capitalized; reverse the capitalization first"
+                  );
+                }
+                const cipCost = cipCostByAssetVoid.get(faPoLine.assetId!);
+                if (cipCost !== undefined) {
+                  cipAssetUpdatesVoid.set(
+                    faPoLine.assetId!,
+                    Math.max(
+                      0,
+                      round(Number(assetRecord.data.acquisitionCost) - cipCost)
+                    )
+                  );
+                  continue;
+                }
+                // No CIP cost row for this receipt (posted before the class
+                // was a CIP class): the cost still came in through this
+                // receipt, so back it out like any other asset below rather
+                // than leave it on the asset.
+              }
+
               const newAcquisitionCost = Math.max(
                 0,
                 Number(assetRecord.data.acquisitionCost) - receiptCost
@@ -846,6 +920,21 @@ const postReceipt = defineServerFn({
             .where("id", "=", receiptHeader.sourceDocumentId!)
             .where("companyId", "=", companyId)
             .execute();
+
+          for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
+            await trx
+              .deleteFrom("fixedAssetCipCost")
+              .where("companyId", "=", companyId)
+              .where("sourceDocumentId", "=", receiptId)
+              .where("fixedAssetId", "=", assetId)
+              .execute();
+            await trx
+              .updateTable("fixedAsset")
+              .set({ acquisitionCost, updatedBy: userId })
+              .where("id", "=", assetId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
 
           if (reversingJournalLines.length > 0) {
             const voidJournalEntryId = await getNextSequence(
@@ -1803,7 +1892,7 @@ const postReceipt = defineServerFn({
             db,
             "receiptFixedAssetLine",
             { receiptId, received: true },
-            { columns: ["purchaseOrderLineId", "serialNumber"] }
+            { columns: ["id", "purchaseOrderLineId", "serialNumber"] }
           );
           const receivedFaPoLineIds = new Set(
             (receiptFaLines ?? []).map((r) => r.purchaseOrderLineId)
@@ -1814,6 +1903,17 @@ const postReceipt = defineServerFn({
               r.serialNumber
             ])
           );
+          const faReceiptLineIds = new Map<string, string>();
+          for (const r of receiptFaLines ?? []) {
+            faReceiptLineIds.set(r.purchaseOrderLineId, r.id);
+          }
+          // A Construction in Progress asset records every posting that adds to
+          // its acquisition cost as a CIP cost row. Written inside the
+          // transaction, after the journal, so it can carry the journal id.
+          const cipCostInserts: Omit<
+            Database["public"]["Tables"]["fixedAssetCipCost"]["Insert"],
+            "journalId"
+          >[] = [];
 
           const faPurchaseOrderLines = purchaseOrderLines.data.filter(
             (pol) =>
@@ -1845,7 +1945,7 @@ const postReceipt = defineServerFn({
                 > & {
                   fixedAssetClass: Pick<
                     Tables["fixedAssetClass"]["Row"],
-                    "assetAccountId"
+                    "assetAccountId" | "isConstructionInProgress"
                   > | null;
                 }
               >(
@@ -1866,7 +1966,7 @@ const postReceipt = defineServerFn({
                     fixedAssetClass: {
                       table: "fixedAssetClass",
                       via: "fixedAssetClassId",
-                      columns: ["assetAccountId"]
+                      columns: ["assetAccountId", "isConstructionInProgress"]
                     }
                   }
                 }
@@ -1875,6 +1975,11 @@ const postReceipt = defineServerFn({
               if (assetRecord.error)
                 throw new Error("Failed to fetch fixed asset");
               fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
+
+              const isConstructionInProgress = Boolean(
+                (assetRecord.data.fixedAssetClass as any)
+                  ?.isConstructionInProgress
+              );
 
               const journalLineRef = nanoid();
 
@@ -1935,11 +2040,18 @@ const postReceipt = defineServerFn({
               if (!assetRecord.data.acquisitionDate) {
                 updateData.acquisitionDate = today;
               }
-              if (!assetRecord.data.depreciationStartDate) {
+              // A CIP asset does not depreciate until it is capitalized, so its
+              // depreciation start date stays null and it goes Under Construction.
+              if (
+                !isConstructionInProgress &&
+                !assetRecord.data.depreciationStartDate
+              ) {
                 updateData.depreciationStartDate = today;
               }
               if (assetRecord.data.status === "Draft") {
-                updateData.status = "Active";
+                updateData.status = isConstructionInProgress
+                  ? "Under Construction"
+                  : "Active";
               }
 
               const serialNumber = faSerialNumbers.get(faPoLine.id!);
@@ -1954,6 +2066,20 @@ const postReceipt = defineServerFn({
               }
 
               fixedAssetWrites.patch(faPoLine.assetId!, updateData);
+
+              if (isConstructionInProgress) {
+                cipCostInserts.push({
+                  fixedAssetId: faPoLine.assetId!,
+                  sourceType: "Receipt",
+                  sourceDocumentId: receiptId,
+                  sourceDocumentLineId:
+                    faReceiptLineIds.get(faPoLine.id!) ?? null,
+                  amount: round(cost),
+                  costDate: today,
+                  companyId,
+                  createdBy: userId
+                });
+              }
             }
 
             purchaseOrderLineUpdates[faPoLine.id!] = {
@@ -2209,6 +2335,7 @@ const postReceipt = defineServerFn({
               .where("companyId", "=", companyId)
               .execute();
 
+            let receiptJournalId: string | null = null;
             if (accountingEnabled && journalLineInserts.length > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
@@ -2232,6 +2359,7 @@ const postReceipt = defineServerFn({
                 })
                 .returning(["id"])
                 .executeTakeFirstOrThrow();
+              receiptJournalId = journalResult.id;
 
               const journalLineResults = await trx
                 .insertInto("journalLine")
@@ -2331,6 +2459,18 @@ const postReceipt = defineServerFn({
                     .execute();
                 }
               }
+            }
+
+            if (cipCostInserts.length > 0) {
+              await trx
+                .insertInto("fixedAssetCipCost")
+                .values(
+                  cipCostInserts.map((row) => ({
+                    ...row,
+                    journalId: receiptJournalId
+                  }))
+                )
+                .execute();
             }
 
             if (itemLedgerInserts.length > 0) {

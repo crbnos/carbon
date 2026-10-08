@@ -21,8 +21,14 @@ COPY patches ./patches
 COPY scripts ./scripts
 # @carbon/content (glossary, the agent's doc corpus) lives with the docs it serves.
 COPY docs/content ./docs/content
+# Set before the install: its postinstall runs //#generate:mcp, which needs more
+# than node's default ~2 GB heap. Inherited by `build`.
+ARG NODE_OPTIONS="--max-old-space-size=8024"
+ENV NODE_OPTIONS=${NODE_OPTIONS}
+# CI=1 as on any CI install: the postinstall leaves the MCP manifest to the task
+# that reads it. `build` makes it through turbo for erp; nothing else here does.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile
+    CI=1 pnpm install --frozen-lockfile
 
 FROM deps AS build
 ARG APP
@@ -31,31 +37,52 @@ ARG APP
 # same-origin — the controlled/air-gapped variant is this default, not a flag.
 ARG ASSETS_URL
 ENV ASSETS_URL=${ASSETS_URL}
-ARG NODE_OPTIONS="--max-old-space-size=8024"
-ENV NODE_OPTIONS=${NODE_OPTIONS}
 RUN --mount=type=cache,id=turbo,target=/repo/.turbo,sharing=locked \
     pnpm run build:${APP}
 # Build scratch `runner` must not inherit: .vite is the dep-optimizer cache,
 # .ignored_<name> is pnpm's per-importer copy of a side-effects-cached package.
 RUN rm -rf apps/${APP}/node_modules/.vite apps/${APP}/node_modules/.ignored_*
 
-# --- Ops image (DB migrations + first-boot seed) --------------------------
-# The migrate/seed Jobs need the supabase CLI and tsx/esbuild — exactly what
-# `runner` strips for its CVE posture — so they get their own never-exposed
-# image, scanned report-only. Kept BEFORE `runner` so `runner` stays the
-# default build stage. Pruned in a separate stage because a delete only
-# reclaims space across a stage boundary.
-FROM deps AS ops-pruned
-ARG SOURCEMAPS
-RUN find /repo -maxdepth 4 \( -name '.ignored_*' -o -name '.vite' \) \
-        -prune -exec rm -rf {} + 2>/dev/null || true ; \
-    find /repo/node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' \
-        -o -name '*.d.cts' -o -name '*.md' \) -delete 2>/dev/null || true ; \
-    if [ "${SOURCEMAPS}" != "1" ]; then \
-        find /repo/node_modules -type f -name '*.map' -delete 2>/dev/null || true ; \
-    fi
+# --- Bootstrap image (DB migrations + first-boot seed) ---------------------
+# Runs two commands, both in packages/database: `supabase migration up` and
+# `tsx src/seed.ts`. It installs that one package and nothing else, so it does
+# not build on `deps`. It keeps the supabase CLI and tsx/esbuild that `runner`
+# strips for its CVE posture, so it is never exposed and is scanned
+# report-only. Kept BEFORE `runner` so `runner` stays the default build stage.
+FROM node:22-slim AS bootstrap-deps
+WORKDIR /repo
+RUN corepack enable
+ENV npm_config_store_dir=/pnpm/store
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY patches ./patches
+# @carbon/config is the package's one workspace dependency.
+COPY packages/config ./packages/config
+COPY packages/database ./packages/database
+# --ignore-scripts keeps the root postinstall out (it needs turbo and the whole
+# repo); the rebuild then runs the dependencies' own install scripts, which is
+# where the supabase CLI binary is downloaded.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --filter @carbon/database --ignore-scripts \
+    && pnpm --filter @carbon/database rebuild
+# A workspace install always brings the root project's tooling and the rest of
+# this package's dependencies. Neither command loads these, so the heavy ones
+# go; a package missing from this list only costs size.
+RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
+        -name 'sst@*' -o -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
+        -name '@biomejs+*' -o \
+        -name 'turbo@*' -o -name '@turbo+*' -o \
+        -name 'typescript@*' -o -name '@typescript+native-preview*' -o \
+        -name 'ts-morph@*' -o -name '@ts-morph+*' -o \
+        -name 'vite@*' -o -name 'rolldown@*' -o -name '@rolldown+*' -o \
+        -name 'vitest@*' -o -name '@vitest+*' -o \
+        -name 'npm@*' -o \
+        -name 'pdfjs-dist@*' -o -name '@napi-rs+canvas*' -o \
+        -name 'libpg-query@*' \
+    \) -prune -exec rm -rf {} + ; \
+    find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' \
+        -o -name '*.md' -o -name '*.map' \) -delete 2>/dev/null || true
 
-FROM node:22-slim AS ops
+FROM node:22-slim AS bootstrap
 # slim ships no CA certs, and the supabase CLI is a Go binary that verifies TLS
 # against the system store — migrations default to sslmode=require.
 RUN apt-get update \
@@ -63,10 +90,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 # Pre-seeded corepack cache, so `pnpm exec` never dials npmjs from the migrate Job.
-COPY --from=ops-pruned /root/.cache/node/corepack /root/.cache/node/corepack
-COPY --from=ops-pruned /repo /repo
+COPY --from=bootstrap-deps /root/.cache/node/corepack /root/.cache/node/corepack
+COPY --from=bootstrap-deps /repo /repo
 WORKDIR /repo/packages/database
 CMD ["bash"]
+
+# The image's former name. BYOC builds it by this target; remove once it
+# builds `bootstrap`.
+FROM bootstrap AS ops
 
 # --- Runtime dependency tree ----------------------------------------------
 # Runs in its own stage: done in `runner` after the COPY, a delete reclaims

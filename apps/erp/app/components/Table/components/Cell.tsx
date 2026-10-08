@@ -12,6 +12,7 @@ import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { useMovingCellRef } from "~/hooks";
 import { getAccessorKey } from "../utils";
+import { CellContent } from "./CellContent";
 
 const logger = getLogger("erp", "cell");
 
@@ -129,7 +130,7 @@ const Cell = <T extends object>({
         </div>
       ) : (
         <div ref={ref}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          <CellContent cell={cell} />
           {showEditAffordance && (
             <LuPencil
               aria-hidden

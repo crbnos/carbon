@@ -48,8 +48,8 @@ export type ColumnOf<T extends TableName> = Extract<
 /**
  * `createFields` controls which columns appear in the diff for INSERT events.
  * By default, INSERT audit entries carry a null diff (rendered as "Created").
- * List columns here to surface their initial values. Only meaningful on
- * tables that log INSERTs (today: root tables).
+ * List columns here to surface their initial values. Every table logs its
+ * INSERTs except extension tables (created 1:1 with their parent).
  *
  * `snapshotFields` declares FK columns whose target row's display values
  * should be captured into the diff at write time. The audit handler resolves
@@ -95,7 +95,13 @@ type ExtensionTable<T extends TableName> = {
 };
 
 type ChildTable<T extends TableName> = {
-  entityIdColumn: ColumnOf<T>;
+  /**
+   * The column naming the parent entity. A list attributes the row to every
+   * distinct, non-null parent it names (a settlement row belongs to the
+   * payment that made it, the one it was applied through, and the prior
+   * credit it draws on).
+   */
+  entityIdColumn: ColumnOf<T> | readonly ColumnOf<T>[];
   createFields?: readonly ColumnOf<T>[];
   snapshotFields?: SnapshotFields<T>;
 };
@@ -273,6 +279,16 @@ export const auditConfig = {
             }
           }
         }
+      }
+    },
+
+    // A lease classification override is audit-logged against its agreement
+    // (spec §4); the agreement's own edits come along with it.
+    rentalAgreement: {
+      label: "Rental Agreement",
+      tables: {
+        rentalAgreement: { role: "root" },
+        rentalAgreementLine: { entityIdColumn: "rentalAgreementId" }
       }
     },
 
@@ -609,6 +625,77 @@ export const auditConfig = {
           createFields: ["startDate", "endDate", "status"]
         }
       }
+    },
+
+    journalEntry: {
+      label: "Journal Entry",
+      tables: {
+        journal: { role: "root" },
+        journalLine: {
+          entityIdColumn: "journalId",
+          createFields: ["accountId", "description", "amount"],
+          snapshotFields: {
+            accountId: { table: "account", displayColumns: ["number", "name"] }
+          }
+        }
+      }
+    },
+
+    // A settlement row is shown under every payment it involves — the one
+    // that made it, the one a memo was applied through, and the prior credit
+    // it draws on — and under the memo it applies; a null column is skipped.
+    payment: {
+      label: "Payment",
+      tables: {
+        payment: { role: "root" },
+        invoiceSettlement: {
+          entityIdColumn: [
+            "paymentId",
+            "appliedViaPaymentId",
+            "sourcePaymentId"
+          ]
+        }
+      }
+    },
+
+    memo: {
+      label: "Memo",
+      tables: {
+        memo: { role: "root" },
+        invoiceSettlement: { entityIdColumn: "memoId" }
+      }
+    },
+
+    reimbursement: {
+      label: "Reimbursement",
+      tables: {
+        reimbursement: { role: "root" },
+        reimbursementLine: { entityIdColumn: "reimbursementId" }
+      }
+    },
+
+    pickingList: {
+      label: "Picking List",
+      tables: {
+        pickingList: { role: "root" },
+        pickingListLine: { entityIdColumn: "pickingListId" }
+      }
+    },
+
+    depreciationRun: {
+      label: "Depreciation Run",
+      tables: {
+        depreciationRun: { role: "root" },
+        depreciationRunLine: { entityIdColumn: "depreciationRunId" }
+      }
+    },
+
+    revenueRecognitionRun: {
+      label: "Revenue Recognition Run",
+      tables: {
+        revenueRecognitionRun: { role: "root" },
+        revenueRecognitionRunLine: { entityIdColumn: "runId" }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -618,6 +705,9 @@ export const auditConfig = {
    * Tables not listed here fall back to a camelCase → Title Case conversion.
    */
   tableLabels: {
+    journal: "Journal Entry",
+    invoiceSettlement: "Settlement",
+    revenueRecognitionRunLine: "Recognition Line",
     customer: "Customer",
     customerPayment: "Payment",
     customerShipping: "Shipping",
@@ -642,6 +732,8 @@ export const auditConfig = {
     salesOrderLine: "Line Item",
     salesOrderPayment: "Payment",
     salesOrderShipment: "Shipment",
+    rentalAgreement: "Rental Agreement",
+    rentalAgreementLine: "Unit",
     purchaseOrder: "Purchase Order",
     purchaseOrderLine: "Line Item",
     purchaseOrderPayment: "Payment",
@@ -994,7 +1086,13 @@ export function getEntityLabel(entityType: AuditEntityType): string {
 /** Get human-readable label for a table name */
 export function getTableLabel(tableName: string): string {
   const labels = auditConfig.tableLabels as Record<string, string | undefined>;
-  return labels[tableName] ?? tableName.replace(/([A-Z])/g, " $1").trim();
+  return (
+    labels[tableName] ??
+    tableName
+      .replace(/([A-Z])/g, " $1")
+      .trim()
+      .replace(/^./, (c) => c.toUpperCase())
+  );
 }
 
 /**

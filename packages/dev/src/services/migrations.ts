@@ -55,6 +55,33 @@ export async function waitForPostgres(port: number, timeoutMs = 60_000) {
   throw new Error(`postgres did not accept queries within ${timeoutMs}ms`);
 }
 
+// Block until Kong answers for both PostgREST and GoTrue. After a hibernated
+// stack is started again the ports open well before these two can serve, and
+// the request that woke the stack is waiting on exactly them.
+export async function waitForApi(
+  port: number,
+  anonKey: string,
+  timeoutMs = 60_000
+) {
+  const deadline = Date.now() + timeoutMs;
+  const up = async (path: string) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+        headers: { apikey: anonKey },
+        signal: AbortSignal.timeout(2000)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+  while (Date.now() < deadline) {
+    if ((await up("/rest/v1/")) && (await up("/auth/v1/health"))) return;
+    await sleep(500);
+  }
+  throw new Error(`the API did not answer within ${timeoutMs}ms`);
+}
+
 /**
  * Block until supabase storage-api has bootstrapped `storage.buckets`. Probes
  * for 30s first; if missing, invokes `onHeal` (re-apply init.sql + restart
@@ -283,6 +310,9 @@ async function repairStaleMigrations(
  * stack can't abort the run, which means a missing `storage.objects` would let
  * the restore finish "successfully" with no buckets seeded. Both services must
  * have booted.
+ *
+ * Realtime is the third: `realtime.messages` is built by the Realtime service,
+ * and Carbon's migrations put policies on it.
  */
 export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
   return withClient(dbPort, async (c) => {
@@ -290,6 +320,7 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
       `SELECT to_regclass('auth.users') IS NOT NULL
                 AND to_regclass('storage.objects') IS NOT NULL
                 AND to_regclass('storage.buckets') IS NOT NULL
+                AND to_regclass('realtime.messages') IS NOT NULL
                 AND EXISTS (
                   SELECT 1 FROM information_schema.columns
                   WHERE table_schema = 'auth' AND table_name = 'users'
@@ -298,6 +329,19 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
     );
     return r.rows[0]?.ready === true;
   });
+}
+
+// Carbon's migrations write into schemas GoTrue, Storage and Realtime build on
+// their first boot, so a fresh volume can't be migrated until all three have.
+export async function waitForServiceSchemas(port: number, timeoutMs = 90_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await serviceSchemasReady(port).catch(() => false)) return;
+    await sleep(1000);
+  }
+  throw new Error(
+    `auth / storage / realtime schemas not ready within ${timeoutMs}ms — check the gotrue, storage and realtime containers`
+  );
 }
 
 // The singleton "config" row (the API URL and anon key some database

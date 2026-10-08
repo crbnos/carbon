@@ -128,6 +128,9 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           return date ? <DateTime value={date} variant="date" /> : "N/A";
         },
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },

@@ -30,10 +30,8 @@ vi.mock("@carbon/react", () => {
     CardContent: Box,
     CardHeader: Box,
     CardTitle: Box,
-    Heading: Box,
     HStack: Box,
     Status: Box,
-    VStack: Box,
     useMount: () => undefined,
     useRouteData: () => undefined
   };
@@ -91,7 +89,6 @@ vi.mock("~/components/DocumentLineEditor", () => ({
   DocumentLineEditor: ({ currencyCode }: { currencyCode: string }) =>
     createElement("div", { "data-lines-currency": currencyCode })
 }));
-vi.mock("~/components", () => ({ EmployeeAvatar: () => null }));
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
   useLingui: () => ({
@@ -154,8 +151,6 @@ function render(values: Props["initialValues"] = initialValues) {
   return renderToStaticMarkup(
     createElement(ReimbursementEditForm, {
       reimbursementId: "rmb_1",
-      displayId: "RMB000001",
-      employeeId: "emp_1",
       initialValues: values,
       initialLines: [],
       dimensions: []

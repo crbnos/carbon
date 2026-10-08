@@ -41,7 +41,6 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import {
   type ComponentProps,
@@ -59,10 +58,7 @@ import {
   LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
@@ -89,11 +85,6 @@ export const handle: Handle = {
     }
   ]
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["pickingListId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});

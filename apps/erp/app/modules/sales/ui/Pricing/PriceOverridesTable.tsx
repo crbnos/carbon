@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -153,9 +154,14 @@ const PriceListTable = memo(
                     {row.original.partId}
                   </span>
                 )}
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.itemName}
-                </div>
+                {distinctItemText(
+                  row.original.partId,
+                  row.original.itemName
+                ) && (
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.itemName}
+                  </div>
+                )}
               </VStack>
             </HStack>
           ),

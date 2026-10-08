@@ -5,6 +5,12 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type InvoiceDocumentIds,
+  loadDepositScope,
+  loadSalesInvoiceDocumentIds
+} from "@carbon/database/deposit-scope";
+import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import {
   allocatePaymentFunding,
@@ -17,7 +23,9 @@ import {
   type FundingConsumptionRow,
   type FundingPaymentRow,
   type FundingRequest,
+  type FundingScope,
   type FundingSource,
+  fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   PAYABLE_POSTING_DESCRIPTIONS,
@@ -68,11 +76,13 @@ import type {
   salesInvoiceValidator
 } from "./invoicing.models";
 
+const logger = getLogger("erp", "invoicing");
+
 const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName" as const;
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -1324,10 +1334,27 @@ export async function upsertSalesInvoiceLine(
     purchaseOrderLineId: _purchaseOrderLineId,
     ...line
   } = salesInvoiceLine;
+
+  // Only a Service line has a service period (a Rental line carries its
+  // billing period) — every other item type is a physical good, earned when it
+  // ships. A cleared DatePicker posts "", which a DATE column rejects, so both
+  // collapse to null.
+  const hasServicePeriod =
+    line.invoiceLineType === "Service" || line.invoiceLineType === "Rental";
+  const servicePeriod = {
+    serviceStartDate: (hasServicePeriod && line.serviceStartDate) || null,
+    serviceEndDate: (hasServicePeriod && line.serviceEndDate) || null
+  };
+
   if ("id" in line) {
     return client
       .from("salesInvoiceLine")
-      .update(sanitize(line))
+      .update(
+        sanitize({
+          ...line,
+          ...servicePeriod
+        })
+      )
       .eq("id", line.id)
       .select("id")
       .single();
@@ -1345,7 +1372,7 @@ export async function upsertSalesInvoiceLine(
 
   return client
     .from("salesInvoiceLine")
-    .insert([{ ...line, sortOrder: maxSortOrder + 1 }])
+    .insert([{ ...line, ...servicePeriod, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
 }
@@ -1532,6 +1559,51 @@ export async function getReimbursements(
     { column: "reimbursementId", ascending: false }
   ]);
   return query;
+}
+
+/**
+ * The payments that settle a reimbursement, for its Documents panel. One read
+ * of its settlement rows with the payment embedded — a reimbursement is only
+ * ever settled by an employee payment, never by a memo — de-duplicated, since
+ * one payment can carry several settlement rows.
+ * @mcp read
+ */
+export async function getReimbursementRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  reimbursementId: string
+) {
+  type Payment = Pick<
+    Database["public"]["Tables"]["payment"]["Row"],
+    "id" | "paymentId" | "status" | "paymentDate"
+  >;
+  const settlements = await fetchAllFromTable<{ payment: Payment | null }>(
+    client,
+    "invoiceSettlement",
+    "payment:payment!invoiceSettlement_paymentId_fkey(id, paymentId, status, paymentDate)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("targetReimbursementId", reimbursementId)
+        .not("paymentId", "is", null)
+        .order("appliedDate")
+        .order("id")
+  );
+  if (settlements.error) {
+    logger.error("Failed to get reimbursement settlements", {
+      companyId,
+      reimbursementId,
+      error: settlements.error
+    });
+  }
+
+  const payments = new Map<string, Payment>();
+  for (const settlement of settlements.data ?? []) {
+    const payment = settlement.payment;
+    if (payment && !payments.has(payment.id)) payments.set(payment.id, payment);
+  }
+
+  return { payments: [...payments.values()] };
 }
 
 /**
@@ -1992,6 +2064,177 @@ export async function getMemoApplications(
   return { data: rows, error: null };
 }
 
+/**
+ * The documents around a payment or memo, for its Documents panel: the
+ * statuses of what it settles, the credits a payment draws (memo settlements
+ * applied through it) and what those settle, its posting journal, and a
+ * memo's return order. One query per table; ids the caller does not pass are
+ * not queried.
+ */
+export async function getSettlementRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    journalId: string | null;
+    targets: {
+      targetSalesInvoiceId: string | null;
+      targetPurchaseInvoiceId: string | null;
+      targetMemoId: string | null;
+      targetReimbursementId: string | null;
+    }[];
+    appliedViaPaymentId?: string;
+    // The payment is still Draft: credits applied through it are only staged,
+    // so what they target is not settled yet (as in getMemoApplications).
+    appliedViaPaymentStaged?: boolean;
+    salesReturnOrderId?: string | null;
+    purchaseReturnOrderId?: string | null;
+    /** A rental early-return credit memo's agreement. */
+    rentalAgreementId?: string | null;
+  }
+) {
+  const viaPayment = args.appliedViaPaymentId
+    ? await client
+        .from("invoiceSettlement")
+        .select(
+          "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId"
+        )
+        .eq("companyId", companyId)
+        .eq("appliedViaPaymentId", args.appliedViaPaymentId)
+    : null;
+  if (viaPayment?.error) {
+    logger.error("Failed to get credits applied via payment", {
+      companyId,
+      paymentId: args.appliedViaPaymentId,
+      error: viaPayment.error
+    });
+  }
+  const viaRows = viaPayment?.data ?? [];
+  const targets = args.appliedViaPaymentStaged
+    ? args.targets
+    : [...args.targets, ...viaRows];
+
+  const unique = (ids: (string | null | undefined)[]) => [
+    ...new Set(ids.filter((id): id is string => Boolean(id)))
+  ];
+  const salesInvoiceIds = unique(targets.map((t) => t.targetSalesInvoiceId));
+  const purchaseInvoiceIds = unique(
+    targets.map((t) => t.targetPurchaseInvoiceId)
+  );
+  const creditIds = unique(viaRows.map((row) => row.memoId));
+  const memoIds = unique([...targets.map((t) => t.targetMemoId), ...creditIds]);
+  const reimbursementIds = unique(targets.map((t) => t.targetReimbursementId));
+
+  const [
+    journal,
+    salesInvoices,
+    purchaseInvoices,
+    memos,
+    reimbursements,
+    salesReturnOrder,
+    purchaseReturnOrder,
+    rentalAgreement
+  ] = await Promise.all([
+    args.journalId
+      ? client
+          .from("journal")
+          .select("id, journalEntryId, status")
+          .eq("id", args.journalId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    salesInvoiceIds.length > 0
+      ? client
+          .from("salesInvoices")
+          .select("id, invoiceId, status")
+          .in("id", salesInvoiceIds)
+          .eq("companyId", companyId)
+          .order("invoiceId")
+      : null,
+    purchaseInvoiceIds.length > 0
+      ? client
+          .from("purchaseInvoices")
+          .select("id, invoiceId, status")
+          .in("id", purchaseInvoiceIds)
+          .eq("companyId", companyId)
+          .order("invoiceId")
+      : null,
+    memoIds.length > 0
+      ? client
+          .from("memo")
+          .select("id, memoId, status")
+          .in("id", memoIds)
+          .eq("companyId", companyId)
+          .order("memoId")
+      : null,
+    reimbursementIds.length > 0
+      ? client
+          .from("reimbursement")
+          .select("id, reimbursementId, status")
+          .in("id", reimbursementIds)
+          .eq("companyId", companyId)
+          .order("reimbursementId")
+      : null,
+    args.salesReturnOrderId
+      ? client
+          .from("salesReturnOrder")
+          .select("id, salesReturnOrderId, status")
+          .eq("id", args.salesReturnOrderId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.purchaseReturnOrderId
+      ? client
+          .from("purchaseReturnOrder")
+          .select("id, purchaseReturnOrderId, status")
+          .eq("id", args.purchaseReturnOrderId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.rentalAgreementId
+      ? client
+          .from("rentalAgreement")
+          .select("id, rentalAgreementId, status")
+          .eq("id", args.rentalAgreementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  const failures = {
+    journal,
+    salesInvoices,
+    purchaseInvoices,
+    memos,
+    reimbursements,
+    salesReturnOrder,
+    purchaseReturnOrder,
+    rentalAgreement
+  };
+  for (const [read, result] of Object.entries(failures)) {
+    if (result?.error) {
+      logger.error("Failed to get settlement related {read}", {
+        read,
+        companyId,
+        error: result.error
+      });
+    }
+  }
+
+  const credits = new Set(creditIds);
+  const allMemos = memos?.data ?? [];
+  return {
+    journal: journal?.data ?? null,
+    salesInvoices: salesInvoices?.data ?? [],
+    purchaseInvoices: purchaseInvoices?.data ?? [],
+    memos: allMemos.filter((memo) => !credits.has(memo.id)),
+    credits: allMemos.filter((memo) => credits.has(memo.id)),
+    reimbursements: reimbursements?.data ?? [],
+    salesReturnOrder: salesReturnOrder?.data ?? null,
+    purchaseReturnOrder: purchaseReturnOrder?.data ?? null,
+    rentalAgreement: rentalAgreement?.data ?? null
+  };
+}
+
 // Open sales invoices for a customer (active status and a positive
 // balance). Drives the apply table on the AR payment detail.
 /** @mcp read */
@@ -2059,6 +2302,10 @@ async function getOpenInvoicesForParty(
     Database["public"]["Tables"]["journalLine"]["Row"],
     "documentId" | "amount"
   >;
+  type DocumentLineRow = Pick<
+    Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
+    "invoiceId" | "rentalAgreementId" | "salesOrderId"
+  >;
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
       client,
@@ -2094,51 +2341,91 @@ async function getOpenInvoicesForParty(
   const ids = invoices.data.map((i) => i.id!);
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
+  const documentLines: DocumentLineRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
   for (const batch of chunkArray(ids, 100)) {
-    const [batchSettlements, batchControls] = await Promise.all([
-      fetchAllFromTable<SettlementRow>(
-        client,
-        "invoiceSettlement",
-        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
-        (query) =>
-          query
-            .eq("companyId", companyId)
-            .in(
-              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
-              batch
+    const [batchSettlements, batchControls, batchDocumentLines] =
+      await Promise.all([
+        fetchAllFromTable<SettlementRow>(
+          client,
+          "invoiceSettlement",
+          "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+          (query) =>
+            query
+              .eq("companyId", companyId)
+              .in(
+                isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+                batch
+              )
+              .order("id")
+        ),
+        fetchAllFromTable<ControlRow>(
+          client,
+          "journalLine",
+          "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+          (query) =>
+            query
+              .eq("companyId", companyId)
+              .eq("journal.companyId", companyId)
+              .eq("journal.status", "Posted")
+              .eq(
+                "journal.sourceType",
+                isAR ? "Sales Invoice" : "Purchase Invoice"
+              )
+              .eq("documentType", "Invoice")
+              .in(
+                "description",
+                isAR
+                  ? RECEIVABLE_POSTING_DESCRIPTIONS
+                  : PAYABLE_POSTING_DESCRIPTIONS
+              )
+              .in("documentId", batch)
+              .order("id")
+        ),
+        // The documents each invoice bills: a customer deposit funds only an
+        // invoice of its own rental agreement or sales order.
+        isAR
+          ? fetchAllFromTable<DocumentLineRow>(
+              client,
+              "salesInvoiceLine",
+              "invoiceId, rentalAgreementId, salesOrderId",
+              (query) =>
+                query
+                  .eq("companyId", companyId)
+                  .in("invoiceId", batch)
+                  .or("rentalAgreementId.not.is.null,salesOrderId.not.is.null")
+                  .order("id")
             )
-            .order("id")
-      ),
-      fetchAllFromTable<ControlRow>(
-        client,
-        "journalLine",
-        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
-        (query) =>
-          query
-            .eq("companyId", companyId)
-            .eq("journal.companyId", companyId)
-            .eq("journal.status", "Posted")
-            .eq(
-              "journal.sourceType",
-              isAR ? "Sales Invoice" : "Purchase Invoice"
-            )
-            .eq("documentType", "Invoice")
-            .in(
-              "description",
-              isAR
-                ? RECEIVABLE_POSTING_DESCRIPTIONS
-                : PAYABLE_POSTING_DESCRIPTIONS
-            )
-            .in("documentId", batch)
-            .order("id")
-      )
-    ]);
-    const error = batchSettlements.error ?? batchControls.error;
+          : { data: [] as DocumentLineRow[], error: null }
+      ]);
+    const error =
+      batchSettlements.error ?? batchControls.error ?? batchDocumentLines.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
+    documentLines.push(...(batchDocumentLines.data ?? []));
+  }
+  const documentsByInvoice = new Map<
+    string,
+    { rentalAgreementIds: string[]; salesOrderIds: string[] }
+  >();
+  for (const line of documentLines) {
+    const documents = documentsByInvoice.get(line.invoiceId) ?? {
+      rentalAgreementIds: [],
+      salesOrderIds: []
+    };
+    if (
+      line.rentalAgreementId &&
+      !documents.rentalAgreementIds.includes(line.rentalAgreementId)
+    )
+      documents.rentalAgreementIds.push(line.rentalAgreementId);
+    if (
+      line.salesOrderId &&
+      !documents.salesOrderIds.includes(line.salesOrderId)
+    )
+      documents.salesOrderIds.push(line.salesOrderId);
+    documentsByInvoice.set(line.invoiceId, documents);
   }
   try {
     const decimals = new Map(
@@ -2179,7 +2466,10 @@ async function getOpenInvoicesForParty(
             id: i.id,
             currencyCode: i.currencyCode,
             balance: remaining.remainingBase,
-            remainingDocument: remaining.remainingDocument
+            remainingDocument: remaining.remainingDocument,
+            rentalAgreementIds:
+              documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
+            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2439,11 +2729,19 @@ async function loadOnAccountSources(
   party: PaymentParty,
   currencyCode?: string
 ) {
+  type OnAccountPaymentRow = FundingPaymentRow & {
+    rentalAgreementId: string | null;
+    salesOrderId: string | null;
+    depositAgreement: { readableId: string } | null;
+    depositOrder: { readableId: string } | null;
+  };
   const [payments, company] = await Promise.all([
-    fetchAllFromTable<FundingPaymentRow>(
+    fetchAllFromTable<OnAccountPaymentRow>(
       client,
       "payment",
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode",
+      // A deposit's document comes along with its readable id so the composer
+      // can say which document the deposit is reserved for.
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -2499,15 +2797,33 @@ async function loadOnAccountSources(
   const effective = (apps.data ?? []).filter(
     (a) => a.payment?.status === "Posted"
   );
+  const isAR = party.paymentType === "Receipt";
   return {
     sources: remainingFundingSources(
-      payments.data ?? [],
+      (payments.data ?? []).map((payment) => {
+        const scope = isAR ? fundingScopeOf(payment) : null;
+        return {
+          ...payment,
+          scope: scope && {
+            ...scope,
+            readableId:
+              (scope.type === "rentalAgreement"
+                ? payment.depositAgreement?.readableId
+                : payment.depositOrder?.readableId) ?? null
+          }
+        };
+      }),
       effective,
       decimals,
-      party.paymentType === "Receipt"
+      isAR
     ),
     decimals
   };
+}
+
+/** On-account credit funds any invoice; a deposit only its own document's. */
+function onAccountOnly(sources: FundingSource[]): FundingSource[] {
+  return sources.filter((source) => !source.scope);
 }
 
 /** @mcp read */
@@ -2531,16 +2847,19 @@ export async function getAvailableOnAccountCreditSources(
       party,
       currencyCode
     );
+    // `sources` keeps deposits (each carries its `scope`) for the allocator;
+    // the totals are on-account credit only, which any invoice can draw on.
+    const credit = onAccountOnly(sources);
     return {
       data: {
         sources,
         availableDocumentAmount: toDocumentAmount(
-          sources.reduce((sum, p) => sum + p.remainingDocument, 0),
+          credit.reduce((sum, p) => sum + p.remainingDocument, 0),
           1,
           requireCurrencyDecimals(decimals, currencyCode)
         ),
         availableBaseAmount: round(
-          sources.reduce((sum, p) => sum + p.remainingBase, 0)
+          credit.reduce((sum, p) => sum + p.remainingBase, 0)
         )
       },
       error: null
@@ -2569,7 +2888,9 @@ export async function getAvailableOnAccountCredit(
 ): Promise<number> {
   try {
     const { sources } = await loadOnAccountSources(client, companyId, party);
-    return round(sources.reduce((sum, p) => sum + p.remainingBase, 0));
+    return round(
+      onAccountOnly(sources).reduce((sum, p) => sum + p.remainingBase, 0)
+    );
   } catch {
     return 0;
   }
@@ -2599,6 +2920,8 @@ export async function upsertPayment(
           ...sanitize(payment),
           customerId: payment.customerId ?? null,
           supplierId: payment.supplierId ?? null,
+          salesOrderId: payment.salesOrderId ?? null,
+          rentalAgreementId: payment.rentalAgreementId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -2611,6 +2934,8 @@ export async function upsertPayment(
       ...sanitize(payment),
       customerId: payment.customerId ?? null,
       supplierId: payment.supplierId ?? null,
+      salesOrderId: payment.salesOrderId ?? null,
+      rentalAgreementId: payment.rentalAgreementId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.
@@ -2625,9 +2950,14 @@ export async function upsertPayment(
 /** @mcp delete */
 export async function deletePayment(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("payment").delete().eq("id", id);
+  return client
+    .from("payment")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function upsertInvoiceSettlement(
@@ -3457,7 +3787,21 @@ export async function replaceInvoiceSettlements(
     priorQuery = isAR
       ? priorQuery.where("customerId", "=", partyId)
       : priorQuery.where("supplierId", "=", partyId);
-    const priorPayments = await priorQuery.orderBy("id").forUpdate().execute();
+    const priorPayments = (
+      await priorQuery.orderBy("id").forUpdate().execute()
+    ).map((p) => ({
+      ...p,
+      // A customer deposit funds only invoices of its own document.
+      scope: isAR ? fundingScopeOf(p) : null
+    }));
+    const currentScope: FundingScope | null = isAR
+      ? await loadDepositScope(trx, args.companyId, payment)
+      : null;
+    // Only read the invoices' documents when a deposit is in play.
+    const invoiceDocuments =
+      currentScope || priorPayments.some((p) => p.scope)
+        ? await loadSalesInvoiceDocumentIds(trx, args.companyId, ids)
+        : new Map<string, InvoiceDocumentIds>();
     const sourceIds = priorPayments.map((p) => p.id);
     const consumption = sourceIds.length
       ? await trx
@@ -3521,7 +3865,8 @@ export async function replaceInvoiceSettlements(
         remainingBase: invoice.remainingBase,
         requestedDocumentPrincipal: 0,
         discountAmount: 0,
-        writeOffAmount: 0
+        writeOffAmount: 0,
+        ...invoiceDocuments.get(id)
       };
       request.requestedDocumentPrincipal = toDocumentAmount(
         request.requestedDocumentPrincipal + sourceAmount,
@@ -3546,7 +3891,8 @@ export async function replaceInvoiceSettlements(
         remainingBase: toBaseAmount(
           Number(payment.totalAmount),
           Number(payment.exchangeRate)
-        )
+        ),
+        scope: currentScope
       },
       priorSources: remainingFundingSources(
         priorPayments,
@@ -3589,8 +3935,14 @@ export async function replaceInvoiceSettlements(
 // function; the apply table is editable only while the memo is Draft.
 
 /** @mcp read */
-export async function getMemo(client: SupabaseClient<Database>, id: string) {
-  return client.from("memo").select("*").eq("id", id).single();
+export async function getMemo(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId?: string
+) {
+  let query = client.from("memo").select("*").eq("id", id);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 /** @mcp read */
@@ -3676,8 +4028,12 @@ export async function upsertMemo(
 
 // RLS DELETE policy on memo restricts to status='Draft'.
 /** @mcp delete */
-export async function deleteMemo(client: SupabaseClient<Database>, id: string) {
-  return client.from("memo").delete().eq("id", id);
+export async function deleteMemo(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client.from("memo").delete().eq("id", id).eq("companyId", companyId);
 }
 
 // The party's available credit to draw on when clearing invoices alongside cash:

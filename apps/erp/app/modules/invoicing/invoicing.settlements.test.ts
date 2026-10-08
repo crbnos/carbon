@@ -1537,3 +1537,141 @@ it("a fully refunded memo cannot also fund an invoice", async () => {
   ).rejects.toThrow(/remaining funding balance/);
   expect(inserts).toEqual([]);
 });
+
+describe("customer deposits fund only their own document", () => {
+  const deposit = { ...payment, id: "deposit", rentalAgreementId: "ra-1" };
+  const agreement = {
+    id: "ra-1",
+    companyId: "co",
+    rentalAgreementId: "RA000001"
+  };
+  const billsAgreement = (rentalAgreementId: string) => ({
+    salesInvoiceLine: [
+      {
+        invoiceId: "invoice",
+        companyId: "co",
+        rentalAgreementId,
+        salesOrderId: null
+      }
+    ]
+  });
+
+  it("does not draw a prior deposit for an invoice of another agreement", async () => {
+    const { db, inserts, deletes } = draftDb({
+      payment: [{ ...current, totalAmount: 0 }, deposit],
+      ...billsAgreement("ra-3")
+    });
+    await expect(
+      service.replaceInvoiceSettlements(db, {
+        paymentId: "current",
+        companyId: "co",
+        createdBy: "user",
+        applications: [draft]
+      })
+    ).rejects.toThrow("Insufficient payment funding for target: invoice");
+    expect(deletes).toEqual([]);
+    expect(inserts).toEqual([]);
+  });
+
+  it("draws a prior deposit for an invoice that bills its agreement", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...current, totalAmount: 0 }, deposit],
+      ...billsAgreement("ra-1")
+    });
+    await service.replaceInvoiceSettlements(db, {
+      paymentId: "current",
+      companyId: "co",
+      createdBy: "user",
+      applications: [draft]
+    });
+    expect(inserts).toEqual([
+      expect.objectContaining({
+        sourcePaymentId: "deposit",
+        sourceAmount: 110,
+        appliedAmount: 100
+      })
+    ]);
+  });
+
+  it("refuses a deposit payment applied to another agreement's invoice, naming it", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...current, rentalAgreementId: "ra-1" }],
+      rentalAgreement: [agreement],
+      ...billsAgreement("ra-3")
+    });
+    await expect(
+      service.replaceInvoiceSettlements(db, {
+        paymentId: "current",
+        companyId: "co",
+        createdBy: "user",
+        applications: [draft]
+      })
+    ).rejects.toThrow(
+      "A deposit for RA000001 can only be applied to that agreement's invoices"
+    );
+    expect(inserts).toEqual([]);
+  });
+
+  it("keeps deposits out of on-account credit totals but returns them scoped", async () => {
+    const { client } = clientFor({
+      ...config,
+      payment: [
+        payment,
+        {
+          ...deposit,
+          totalAmount: 55,
+          depositAgreement: { readableId: "RA000001" },
+          depositOrder: null
+        }
+      ]
+    });
+    const result = await service.getAvailableOnAccountCreditSources(
+      client,
+      "co",
+      { paymentType: "Receipt", customerId: "cust" },
+      "EUR"
+    );
+    expect(result.data?.availableDocumentAmount).toBe(110);
+    expect(result.data?.availableBaseAmount).toBe(100);
+    expect(result.data?.sources).toEqual([
+      expect.objectContaining({ paymentId: "prior" }),
+      expect.objectContaining({
+        paymentId: "deposit",
+        remainingDocument: 55,
+        scope: { type: "rentalAgreement", id: "ra-1", readableId: "RA000001" }
+      })
+    ]);
+    expect(result.data?.sources[0]).not.toHaveProperty("scope");
+    expect(
+      await service.getAvailableOnAccountCredit(client, "co", {
+        paymentType: "Receipt",
+        customerId: "cust"
+      })
+    ).toBe(100);
+  });
+
+  it("lists the agreements and orders each open invoice bills", async () => {
+    const { client } = clientFor({
+      ...config,
+      salesInvoices: [invoice],
+      salesInvoiceLine: [
+        { invoiceId: "invoice", rentalAgreementId: "ra-1", salesOrderId: null },
+        {
+          invoiceId: "invoice",
+          rentalAgreementId: "ra-1",
+          salesOrderId: "so-1"
+        }
+      ]
+    });
+    const result = await service.getOpenSalesInvoicesForCustomer(
+      client,
+      "co",
+      "cust",
+      "EUR"
+    );
+    expect(result.data?.[0]).toMatchObject({
+      rentalAgreementIds: ["ra-1"],
+      salesOrderIds: ["so-1"]
+    });
+  });
+});

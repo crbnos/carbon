@@ -20,7 +20,10 @@ import {
 import {
   allocatePaymentFunding,
   EPSILON,
+  type FundingScope,
   type FundingSource,
+  fundableDocumentAmounts,
+  fundingScopeCovers,
   INPUT_FORMAT,
   round,
   toBaseAmount,
@@ -52,6 +55,10 @@ type OpenInvoice = {
   balance: number;
   remainingDocument: number;
   status: string | null;
+  // The documents the invoice bills: a customer deposit funds only invoices of
+  // its own rental agreement or sales order.
+  rentalAgreementIds?: string[];
+  salesOrderIds?: string[];
 };
 
 type ExistingApplication = {
@@ -79,6 +86,8 @@ type ApplyRow = {
   exchangeRate: number;
   balance: number;
   remainingDocument: number;
+  rentalAgreementIds?: string[];
+  salesOrderIds?: string[];
   checked: boolean;
   appliedAmount: number;
   discountAmount: number;
@@ -100,11 +109,17 @@ type PaymentApplyTableProps = {
   paymentCurrency: string;
   baseCurrency: string;
   currencyDecimals: number;
+  // Prior posted receipts this payment can draw on. A source with a `scope` is
+  // a customer deposit and funds only invoices of its own document.
   priorSources: FundingSource[];
+  // Set when this payment is itself a deposit: it applies only to invoices of
+  // that document.
+  paymentScope?: FundingScope | null;
   paymentTotal: number;
   paymentExchangeRate: number;
   // On-account credit (in payment currency) the counterparty can draw on when
-  // applying more than this payment's cash. 0 when none is available.
+  // applying more than this payment's cash — deposits excluded, they are
+  // listed per document from `priorSources`. 0 when none is available.
   availableCredit: number;
   openInvoices: OpenInvoice[];
   existingApplications: ExistingApplication[];
@@ -154,6 +169,7 @@ const PaymentApplyTable = ({
   baseCurrency,
   currencyDecimals,
   priorSources,
+  paymentScope = null,
   paymentTotal,
   paymentExchangeRate,
   availableCredit,
@@ -220,7 +236,11 @@ const PaymentApplyTable = ({
     return openInvoices
       .filter(
         (inv) =>
-          inv.currencyCode === paymentCurrency && inv.remainingDocument > 0
+          inv.currencyCode === paymentCurrency &&
+          inv.remainingDocument > 0 &&
+          // A deposit lists only its own document's invoices (and any it is
+          // already applied to, so the refusal below can say why).
+          (fundingScopeCovers(paymentScope, inv) || byInvoice.has(inv.id))
       )
       .map((inv) => ({
         ...inv,
@@ -238,6 +258,7 @@ const PaymentApplyTable = ({
     isRefund,
     isReimbursement,
     paymentCurrency,
+    paymentScope,
     currencyDecimals
   ]);
   const [rows, setRows] = useState<ApplyRow[]>(seed);
@@ -247,9 +268,16 @@ const PaymentApplyTable = ({
       postingDate: today,
       exchangeRate: paymentExchangeRate,
       remainingDocument: paymentTotal,
-      remainingBase: toBaseAmount(paymentTotal, paymentExchangeRate)
+      remainingBase: toBaseAmount(paymentTotal, paymentExchangeRate),
+      scope: paymentScope
     }),
-    [paymentId, today, paymentExchangeRate, paymentTotal]
+    [paymentId, today, paymentExchangeRate, paymentTotal, paymentScope]
+  );
+  // Deposits fund only their own document's invoices, so they are not part of
+  // the on-account credit any row can draw on.
+  const deposits = useMemo(
+    () => priorSources.filter((source) => source.scope),
+    [priorSources]
   );
   const preview = useMemo(() => {
     try {
@@ -268,7 +296,9 @@ const PaymentApplyTable = ({
               remainingBase: r.balance,
               requestedDocumentPrincipal: r.sourceAmount,
               discountAmount: r.discountAmount,
-              writeOffAmount: r.writeOffAmount
+              writeOffAmount: r.writeOffAmount,
+              rentalAgreementIds: r.rentalAgreementIds,
+              salesOrderIds: r.salesOrderIds
             }))
         }),
         error: null
@@ -285,8 +315,15 @@ const PaymentApplyTable = ({
     1,
     currencyDecimals
   );
+  // A deposit counts toward what can be applied only once a row it can fund is
+  // selected; whether the selection is actually fundable is the preview's call.
+  const eligibleDeposits = deposits.filter((deposit) =>
+    rows.some((r) => r.checked && fundingScopeCovers(deposit.scope, r))
+  );
   const maxApplicable = toDocumentAmount(
-    paymentTotal + availableCredit,
+    paymentTotal +
+      availableCredit +
+      eligibleDeposits.reduce((sum, d) => sum + d.remainingDocument, 0),
     1,
     currencyDecimals
   );
@@ -326,19 +363,22 @@ const PaymentApplyTable = ({
   const toggleRow = useCallback(
     (id: string, checked: boolean) =>
       setRows((prev) => {
-        const available = Math.max(
-          0,
-          toDocumentAmount(
-            maxApplicable -
-              prev.reduce(
-                (sum, r) =>
-                  sum + (r.id !== id && r.checked ? r.sourceAmount : 0),
-                0
-              ),
-            1,
-            currencyDecimals
-          )
-        );
+        const toggled = prev.find((r) => r.id === id);
+        // What this row can draw once every other selected row keeps its
+        // amount: deposits reach only their own document's invoices.
+        const available = toggled
+          ? fundableDocumentAmounts({
+              currentPayment,
+              priorSources,
+              currencyDecimals,
+              requests: [
+                ...prev
+                  .filter((r) => r.id !== id && r.checked)
+                  .map((r) => ({ ...r, maximumDocument: r.sourceAmount })),
+                { ...toggled, maximumDocument: toggled.remainingDocument }
+              ]
+            }).at(-1)!
+          : 0;
         return prev.map((r) => {
           if (r.id !== id) return r;
           if (!checked)
@@ -367,7 +407,7 @@ const PaymentApplyTable = ({
           };
         });
       }),
-    [maxApplicable, currencyDecimals]
+    [currentPayment, priorSources, currencyDecimals]
   );
   const updateAmount = useCallback(
     (id: string, field: AmountField, value: number) =>
@@ -421,24 +461,27 @@ const PaymentApplyTable = ({
   const onAutoApply = useCallback(
     () =>
       setRows((prev) => {
-        let remaining = maxApplicable;
-        const requests = prev.map((r) => {
-          const sourceAmount = Math.min(remaining, r.remainingDocument);
-          remaining = toDocumentAmount(
-            remaining - sourceAmount,
-            1,
-            currencyDecimals
-          );
-          return {
-            targetId: r.id,
-            targetExchangeRate: r.exchangeRate,
-            remainingDocument: r.remainingDocument,
-            remainingBase: r.balance,
-            requestedDocumentPrincipal: sourceAmount,
-            discountAmount: 0,
-            writeOffAmount: 0
-          };
+        // Rows in order, each as much as the funding it may use allows.
+        const amounts = fundableDocumentAmounts({
+          currentPayment,
+          priorSources,
+          currencyDecimals,
+          requests: prev.map((r) => ({
+            ...r,
+            maximumDocument: r.remainingDocument
+          }))
         });
+        const requests = prev.map((r, i) => ({
+          targetId: r.id,
+          targetExchangeRate: r.exchangeRate,
+          remainingDocument: r.remainingDocument,
+          remainingBase: r.balance,
+          requestedDocumentPrincipal: amounts[i]!,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          rentalAgreementIds: r.rentalAgreementIds,
+          salesOrderIds: r.salesOrderIds
+        }));
         const result = allocatePaymentFunding({
           currentPayment,
           priorSources,
@@ -464,7 +507,7 @@ const PaymentApplyTable = ({
           };
         });
       }),
-    [maxApplicable, currentPayment, priorSources, currencyDecimals, isReceipt]
+    [currentPayment, priorSources, currencyDecimals, isReceipt]
   );
   const onClear = useCallback(
     () =>
@@ -731,6 +774,26 @@ const PaymentApplyTable = ({
                 </span>
               </div>
             ) : null}
+            {deposits.map((deposit) => {
+              const document = deposit.scope?.readableId;
+              return (
+                <div
+                  key={deposit.paymentId}
+                  className="mt-1 flex items-baseline justify-between text-xs text-muted-foreground"
+                >
+                  <span>
+                    {document ? (
+                      <Trans>Deposit for {document} (its invoices only)</Trans>
+                    ) : (
+                      <Trans>Deposit (its document's invoices only)</Trans>
+                    )}
+                  </span>
+                  <span className="tabular-nums">
+                    {currencyFormatter.format(deposit.remainingDocument)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : null}
         {preview.error ? (

@@ -18,6 +18,7 @@ import {
   getOperationEligibility,
   startProductionEvent
 } from "~/services/operations.service";
+import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -46,6 +47,19 @@ export async function action({ request }: ActionFunctionArgs) {
     // qualification check must run on this path (not only in the
     // start.$operationId loader)
     const serviceRole = await getCarbonServiceRole();
+    const operation = await serviceRole
+      .from("jobOperation")
+      .select("operationType")
+      .eq("id", d.jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (operation.data?.operationType === "Outside Processing") {
+      return data(
+        {},
+        await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
+      );
+    }
+
     const eligibility = await getOperationEligibility(serviceRole, {
       operationId: d.jobOperationId,
       employeeId: userId,

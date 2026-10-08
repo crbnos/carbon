@@ -406,7 +406,11 @@ export const COVERAGE = {
     missing: (status) => `accounting.closeTasks: no "${status}" task`
   },
   fixedAssetStatus: {
-    values: enumValues("fixedAssetStatus"),
+    // Under Construction needs a CIP class and fixedAssetCipCost rows, which
+    // FixedAssetSpec cannot express.
+    values: enumValues("fixedAssetStatus", {
+      "Under Construction": NOT_AUTHORABLE
+    }),
     missing: (status) => `accounting.fixedAssets: no "${status}" asset`
   },
 
@@ -1269,6 +1273,7 @@ export function foundation(ctx: ValidationCtx): void {
     ["sales.statusOrders", dataset.sales.statusOrders],
     ["sales.releasedOrders", dataset.sales.releasedOrders],
     ["sales.salesReturns", dataset.sales.salesReturns],
+    ["sales.contracts", dataset.sales.contracts],
     ["purchasing.rfqLines", dataset.purchasing.rfqLines],
     ["purchasing.rfqQuotes", dataset.purchasing.rfqQuotes],
     ["purchasing.lifecycleRfqs", dataset.purchasing.lifecycleRfqs],
@@ -1544,6 +1549,14 @@ export function itemIdentity(ctx: ValidationCtx): void {
         ctx.fail(`${bucket}: duplicate item readableId "${spec.readableId}"`);
       }
       itemIds.add(spec.readableId);
+    }
+  }
+  // A service is identified by its name (upsertService, the CSV import).
+  for (const spec of ctx.dataset.items.services) {
+    if (spec.readableId !== spec.name) {
+      ctx.fail(
+        `items.services "${spec.readableId}": a service's readableId must equal its name "${spec.name}"`
+      );
     }
   }
 }
@@ -2259,6 +2272,32 @@ export function sales(ctx: ValidationCtx): void {
             `${where} line "${line.item}": Completed return line needs a toShelf`
           );
         }
+      }
+    }
+  }
+
+  const serviceItems = new Set(
+    dataset.items.services.map((spec) => spec.readableId)
+  );
+  for (const contract of dataset.sales.contracts) {
+    const where = `sales.contracts "${contract.key}"`;
+    needCustomer(where, contract.customer);
+    if (contract.lines.length === 0) fail(`${where}: no lines`);
+    for (const line of contract.lines) {
+      need("item", where, line.item);
+      if (!serviceItems.has(line.item)) {
+        fail(`${where} line "${line.item}": not a Service item`);
+      }
+      if (
+        (line.revenueType === "Recurring") !==
+        (line.rateUnit !== undefined)
+      ) {
+        fail(
+          `${where} line "${line.item}": a Recurring line needs a rateUnit and a One-time line has none`
+        );
+      }
+      if (line.startOffset < contract.startOffset) {
+        fail(`${where} line "${line.item}": starts before the contract`);
       }
     }
   }

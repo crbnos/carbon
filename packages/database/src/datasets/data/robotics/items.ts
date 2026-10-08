@@ -28,7 +28,7 @@ import { roboticsAssembly } from "./assembly.ts";
 //   MOT- / GBX- / ENC- / SNS- / BRG- / FST- = Buy Parts
 //   MAT- = Materials
 //   TL-  = Tools
-//   SVC- = Services
+//   Services are keyed by name, not a prefix
 //   CN-  = Consumables
 // ---------------------------------------------------------------------------
 
@@ -251,12 +251,34 @@ export const TOOLS: ItemSpec[] = [
 
 export const SERVICES: ItemSpec[] = [
   {
-    readableId: "SVC-CAL",
-    name: "Robot Calibration & Certification (external)",
+    // A service's readableId is its name.
+    readableId: "Robot Calibration & Certification",
+    name: "Robot Calibration & Certification",
     type: "Service",
+    thumbnail: "SVC-CAL",
     replenishment: "Buy",
     standardCost: 1850,
     leadTime: 21
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Robot Cell Commissioning",
+    name: "Robot Cell Commissioning",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "On-site installation, teach-in and acceptance of a delivered robot cell.",
+    standardCost: 6800
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Fleet Uptime Support",
+    name: "Fleet Uptime Support",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Remote monitoring and next-day field service for an installed robot fleet.",
+    standardCost: 1400
   }
 ];
 

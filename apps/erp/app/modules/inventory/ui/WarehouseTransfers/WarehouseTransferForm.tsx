@@ -2,44 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCarbon } from "@carbon/auth";
-import { useRuleViolations } from "@carbon/ee/rules";
-import { InputControlled, ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  MENU_ITEM_SHORTCUTS,
-  toast,
-  useDisclosure,
-  VStack
-} from "@carbon/react";
+import { ValidatedForm } from "@carbon/form";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
-import {
-  LuCheckCheck,
-  LuChevronDown,
-  LuCirclePlus,
-  LuCircleStop,
-  LuHandCoins,
-  LuLoaderCircle,
-  LuTrash,
-  LuTruck
-} from "react-icons/lu";
-import { Link, useSubmit } from "react-router";
 import type { z } from "zod";
-import { DocumentHeader } from "~/components";
-import { useAuditLog } from "~/components/AuditLog";
 import {
   DatePicker,
   Hidden,
@@ -49,51 +14,27 @@ import {
   Submit,
   TextArea
 } from "~/components/Form";
-import {
-  RecordAction,
-  RecordHeroTarget
-} from "~/components/Layout/RecordHeader";
-import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useUser } from "~/hooks";
-import type { action as statusAction } from "~/routes/x+/warehouse-transfer+/$transferId.status";
-import { path } from "~/utils/path";
+import { usePermissions } from "~/hooks";
 import {
   isWarehouseTransferLocked,
   warehouseTransferValidator
 } from "../../inventory.models";
-import type { Receipt, Shipment, WarehouseTransfer } from "../../types";
-import { ReceiptStatus } from "../Receipts";
-import { ShipmentStatus } from "../Shipments";
-import WarehouseTransferStatus from "./WarehouseTransferStatus";
+import type { WarehouseTransfer } from "../../types";
 
 type WarehouseTransferFormProps = {
   initialValues: z.infer<typeof warehouseTransferValidator>;
   warehouseTransfer?: WarehouseTransfer;
 };
 
+/**
+ * The transfer's own fields, laid flat — under its header on the transfer
+ * page, inside a card on the new-transfer page. Only a Draft is editable.
+ */
 const WarehouseTransferForm = ({
   initialValues,
   warehouseTransfer
 }: WarehouseTransferFormProps) => {
-  const { company } = useUser();
   const permissions = usePermissions();
-  // Storage rules eval at every "go" status transition (Confirm/Ship/Receive/
-  // Complete). Surface violations through the hook's modal rather than the
-  // plain navigation path.
-  const statusRules = useRuleViolations<typeof statusAction>({
-    action: warehouseTransfer?.id
-      ? path.to.warehouseTransferStatus(warehouseTransfer.id)
-      : ""
-  });
-  const statusFetcher = statusRules.fetcher;
-  const deleteModal = useDisclosure();
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "warehouseTransfer",
-    entityId: warehouseTransfer?.id ?? "",
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
   const { t } = useLingui();
   const isEditing = !!initialValues.id;
   const isLocked = isWarehouseTransferLocked(warehouseTransfer?.status);
@@ -102,434 +43,49 @@ const WarehouseTransferForm = ({
       ["Draft"].includes(warehouseTransfer?.status ?? "")
     : permissions.can("create", "inventory");
 
-  const { receipts, shipments, ship, receive, hasShippedItems } =
-    useWarehouseTransferRelatedDocuments(warehouseTransfer?.id);
-
-  const statusBadge = warehouseTransfer ? (
-    <WarehouseTransferStatus status={warehouseTransfer.status} />
-  ) : null;
-
-  const menuItems = warehouseTransfer ? (
-    <>
-      {auditLogTrigger}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        disabled={
-          ["Draft"].includes(warehouseTransfer.status ?? "") ||
-          statusFetcher.state !== "idle" ||
-          !permissions.can("update", "inventory")
-        }
-        onClick={() => {
-          statusFetcher.submit(
-            { status: "Draft" },
-            {
-              method: "post",
-              action: path.to.warehouseTransferStatus(warehouseTransfer.id)
-            }
-          );
-        }}
-      >
-        <DropdownMenuIcon icon={<LuLoaderCircle />} />
-        <Trans>Reopen</Trans>
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        shortcut={MENU_ITEM_SHORTCUTS.delete}
-        disabled={
-          isLocked ||
-          !permissions.can("delete", "inventory") ||
-          !permissions.is("employee")
-        }
-        destructive
-        onClick={deleteModal.onOpen}
-      >
-        <DropdownMenuIcon icon={<LuTrash />} />
-        <Trans>Delete Warehouse Transfer</Trans>
-      </DropdownMenuItem>
-    </>
-  ) : null;
-
   return (
-    <>
-      <ValidatedForm
-        validator={warehouseTransferValidator}
-        method="post"
-        defaultValues={initialValues}
-        className="w-full"
-        isDisabled={isEditing && isLocked}
-      >
-        <Card className="w-full">
-          {isEditing && warehouseTransfer ? (
-            <>
-              <RecordHeroTarget />
-              <DocumentHeader
-                title={warehouseTransfer.transferId ?? ""}
-                status={statusBadge}
-                menuItems={menuItems}
-                actions={
-                  <>
-                    <RecordAction
-                      slot={
-                        warehouseTransfer.status === "Draft"
-                          ? "primary"
-                          : "overflow"
-                      }
-                    >
-                      <Button
-                        type="button"
-                        leftIcon={<LuCheckCheck />}
-                        variant={
-                          warehouseTransfer.status === "Draft"
-                            ? "primary"
-                            : "secondary"
-                        }
-                        isDisabled={
-                          !["Draft"].includes(warehouseTransfer.status) ||
-                          statusFetcher.state !== "idle" ||
-                          !permissions.can("update", "inventory")
-                        }
-                        isLoading={
-                          statusFetcher.state !== "idle" &&
-                          statusFetcher.formData?.get("status") ===
-                            "To Ship and Receive"
-                        }
-                        onClick={() => {
-                          const fd = new FormData();
-                          fd.set("status", "To Ship and Receive");
-                          statusRules.submit(fd);
-                        }}
-                      >
-                        <Trans>Confirm</Trans>
-                      </Button>
-                    </RecordAction>
-
-                    <RecordAction slot="overflow">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        leftIcon={<LuCircleStop />}
-                        isDisabled={
-                          ["Cancelled", "Completed"].includes(
-                            warehouseTransfer.status
-                          ) ||
-                          statusFetcher.state !== "idle" ||
-                          !permissions.can("update", "inventory")
-                        }
-                        isLoading={
-                          statusFetcher.state !== "idle" &&
-                          statusFetcher.formData?.get("status") === "Cancelled"
-                        }
-                        onClick={() => {
-                          const fd = new FormData();
-                          fd.set("status", "Cancelled");
-                          statusRules.submit(fd);
-                        }}
-                      >
-                        <Trans>Cancel</Trans>
-                      </Button>
-                    </RecordAction>
-
-                    <RecordAction
-                      slot={
-                        ["To Ship", "To Ship and Receive"].includes(
-                          warehouseTransfer.status ?? ""
-                        )
-                          ? "primary"
-                          : "overflow"
-                      }
-                    >
-                      {shipments.length > 0 ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              leftIcon={<LuTruck />}
-                              variant="secondary"
-                              rightIcon={<LuChevronDown />}
-                            >
-                              <Trans>Shipments</Trans>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              disabled={
-                                !["To Ship", "To Ship and Receive"].includes(
-                                  warehouseTransfer.status ?? ""
-                                )
-                              }
-                              onClick={() => ship(warehouseTransfer)}
-                            >
-                              <DropdownMenuIcon icon={<LuCirclePlus />} />
-                              <Trans>New Shipment</Trans>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {shipments.map((shipment) => (
-                              <DropdownMenuItem key={shipment.id} asChild>
-                                <Link to={path.to.shipment(shipment.id)}>
-                                  <DropdownMenuIcon icon={<LuTruck />} />
-                                  <HStack spacing={8}>
-                                    <span>{shipment.shipmentId}</span>
-                                    <ShipmentStatus status={shipment.status} />
-                                  </HStack>
-                                </Link>
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <Button
-                          leftIcon={<LuTruck />}
-                          isDisabled={
-                            !["To Ship", "To Ship and Receive"].includes(
-                              warehouseTransfer.status ?? ""
-                            )
-                          }
-                          variant={
-                            ["To Ship", "To Ship and Receive"].includes(
-                              warehouseTransfer.status ?? ""
-                            )
-                              ? "primary"
-                              : "secondary"
-                          }
-                          onClick={() => ship(warehouseTransfer)}
-                        >
-                          <Trans>Ship</Trans>
-                        </Button>
-                      )}
-                    </RecordAction>
-
-                    <RecordAction
-                      slot={
-                        warehouseTransfer.status === "To Receive"
-                          ? "primary"
-                          : "overflow"
-                      }
-                    >
-                      {receipts.length > 0 ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              leftIcon={<LuHandCoins />}
-                              variant={
-                                ["To Receive", "To Ship and Receive"].includes(
-                                  warehouseTransfer.status ?? ""
-                                )
-                                  ? "primary"
-                                  : "secondary"
-                              }
-                              rightIcon={<LuChevronDown />}
-                            >
-                              <Trans>Receipts</Trans>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              disabled={
-                                !["To Receive", "To Ship and Receive"].includes(
-                                  warehouseTransfer.status ?? ""
-                                ) || !hasShippedItems
-                              }
-                              onClick={() => receive(warehouseTransfer)}
-                            >
-                              <DropdownMenuIcon icon={<LuCirclePlus />} />
-                              <Trans>New Receipt</Trans>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {receipts.map((receipt) => (
-                              <DropdownMenuItem key={receipt.id} asChild>
-                                <Link to={path.to.receipt(receipt.id)}>
-                                  <DropdownMenuIcon icon={<LuHandCoins />} />
-                                  <HStack spacing={8}>
-                                    <span>{receipt.receiptId}</span>
-                                    <ReceiptStatus status={receipt.status} />
-                                  </HStack>
-                                </Link>
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <Button
-                          leftIcon={<LuHandCoins />}
-                          isDisabled={
-                            !["To Receive", "To Ship and Receive"].includes(
-                              warehouseTransfer.status ?? ""
-                            ) || !hasShippedItems
-                          }
-                          variant={
-                            ["To Receive", "To Ship and Receive"].includes(
-                              warehouseTransfer.status ?? ""
-                            ) && hasShippedItems
-                              ? "primary"
-                              : "secondary"
-                          }
-                          onClick={() => receive(warehouseTransfer)}
-                        >
-                          <Trans>Receive</Trans>
-                        </Button>
-                      )}
-                    </RecordAction>
-                  </>
-                }
-              />
-            </>
-          ) : (
-            <CardHeader>
-              <Heading as="h1" size="h3" className="font-sans">
-                <Trans>New Warehouse Transfer</Trans>
-              </Heading>
-            </CardHeader>
-          )}
-
-          <CardContent>
-            <Hidden name="id" />
-            <VStack spacing={4}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">
-                {isEditing ? (
-                  <InputControlled
-                    name="transferId"
-                    label={t`Transfer ID`}
-                    isReadOnly
-                    value={initialValues.transferId!}
-                  />
-                ) : (
-                  <SequenceOrCustomId
-                    name="transferId"
-                    label={t`Transfer ID`}
-                    table="warehouseTransfer"
-                  />
-                )}
-                <Input
-                  name="reference"
-                  label={t`Reference`}
-                  autoFocus={!isEditing}
-                />
-                <Location name="fromLocationId" label={t`From Location`} />
-                <Location name="toLocationId" label={t`To Location`} />
-                {isEditing && (
-                  <>
-                    <DatePicker name="transferDate" label={t`Transfer Date`} />
-                    <DatePicker
-                      name="expectedReceiptDate"
-                      label={t`Expected Receipt Date`}
-                      termId="warehouse-transfer-expected-receipt-date"
-                    />
-                  </>
-                )}
-              </div>
-              <TextArea name="notes" label={t`Notes`} />
-            </VStack>
-          </CardContent>
-
-          <CardFooter>
-            <Submit disabled={!canEdit}>
-              <Trans>Save</Trans>
-            </Submit>
-          </CardFooter>
-        </Card>
-      </ValidatedForm>
-
-      <statusRules.ViolationModal />
-      {deleteModal.isOpen && warehouseTransfer && (
-        <ConfirmDelete
-          action={path.to.deleteWarehouseTransfer(warehouseTransfer.id)}
-          isOpen={deleteModal.isOpen}
-          name={warehouseTransfer.transferId ?? "warehouse transfer"}
-          text={t`Are you sure you want to delete ${warehouseTransfer.transferId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
-      {auditLogDrawer}
-    </>
+    <ValidatedForm
+      validator={warehouseTransferValidator}
+      method="post"
+      defaultValues={initialValues}
+      className="flex flex-col gap-4 w-full pt-2 pb-4"
+      isDisabled={isEditing && isLocked}
+    >
+      {/* Each Hidden renders a wrapper; keep them out of the flex gap. */}
+      <div className="hidden">
+        <Hidden name="id" />
+        {isEditing && <Hidden name="transferId" />}
+      </div>
+      <div className="grid grid-cols-1 @xl:grid-cols-2 gap-x-8 gap-y-4 w-full items-start">
+        {!isEditing && (
+          <SequenceOrCustomId
+            name="transferId"
+            label={t`Transfer ID`}
+            table="warehouseTransfer"
+          />
+        )}
+        <Input name="reference" label={t`Reference`} autoFocus={!isEditing} />
+        <Location name="fromLocationId" label={t`From Location`} />
+        <Location name="toLocationId" label={t`To Location`} />
+        {isEditing && (
+          <>
+            <DatePicker name="transferDate" label={t`Transfer Date`} />
+            <DatePicker
+              name="expectedReceiptDate"
+              label={t`Expected Receipt Date`}
+              termId="warehouse-transfer-expected-receipt-date"
+            />
+          </>
+        )}
+      </div>
+      <TextArea name="notes" label={t`Notes`} />
+      <div>
+        <Submit disabled={!canEdit}>
+          <Trans>Save</Trans>
+        </Submit>
+      </div>
+    </ValidatedForm>
   );
-};
-
-const useWarehouseTransferRelatedDocuments = (warehouseTransferId?: string) => {
-  const [receipts, setReceipts] = useState<
-    Pick<Receipt, "id" | "receiptId" | "status">[]
-  >([]);
-
-  const [shipments, setShipments] = useState<
-    Pick<Shipment, "id" | "shipmentId" | "status">[]
-  >([]);
-
-  const [hasShippedItems, setHasShippedItems] = useState(false);
-
-  const { carbon } = useCarbon();
-
-  const submitForm = useSubmit();
-
-  const ship = useCallback(
-    (warehouseTransfer: WarehouseTransfer) => {
-      const formData = new FormData();
-      formData.set("sourceDocument", "Outbound Transfer");
-      formData.set("sourceDocumentId", warehouseTransfer.id);
-      submitForm(formData, { method: "post", action: path.to.newShipment });
-    },
-    [submitForm]
-  );
-
-  const receive = useCallback(
-    (warehouseTransfer: WarehouseTransfer) => {
-      const formData = new FormData();
-      formData.set("sourceDocument", "Inbound Transfer");
-      formData.set("sourceDocumentId", warehouseTransfer.id);
-      submitForm(formData, { method: "post", action: path.to.newReceipt });
-    },
-    [submitForm]
-  );
-
-  const getRelatedDocuments = useCallback(
-    async (id: string) => {
-      if (!carbon || !id) return;
-      const [r, s, lines] = await Promise.all([
-        carbon
-          .from("receipt")
-          .select("id, receiptId, status")
-          .eq("sourceDocument", "Inbound Transfer")
-          .eq("sourceDocumentId", id),
-        carbon
-          .from("shipment")
-          .select("id, shipmentId, status")
-          .eq("sourceDocument", "Outbound Transfer")
-          .eq("sourceDocumentId", id),
-        carbon
-          .from("warehouseTransferLine")
-          .select("shippedQuantity")
-          .eq("transferId", id)
-      ]);
-
-      if (r.error) {
-        toast.error("Failed to load receipts");
-      } else {
-        setReceipts(r.data);
-      }
-
-      if (s.error) {
-        toast.error("Failed to load shipments");
-      } else {
-        setShipments(s.data);
-      }
-
-      if (!lines.error) {
-        setHasShippedItems(
-          lines.data.some((line) => (line.shippedQuantity ?? 0) > 0)
-        );
-      }
-    },
-    [carbon]
-  );
-
-  useEffect(() => {
-    if (!warehouseTransferId) return;
-    getRelatedDocuments(warehouseTransferId);
-  }, [getRelatedDocuments, warehouseTransferId]);
-
-  return { receipts, shipments, ship, receive, hasShippedItems };
 };
 
 export default WarehouseTransferForm;

@@ -189,6 +189,11 @@ const defaultDestinations: Partial<
     NotificationDestination.InApp,
     NotificationDestination.Email
   ],
+  // At most one per recipient per daily run.
+  [NotificationEvent.RecurringInvoicing]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
   // In-app only: the outbound sweep re-fires while failures persist, and an
   // email per sweep cycle would be noise.
   [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]

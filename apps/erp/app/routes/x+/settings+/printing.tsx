@@ -16,17 +16,13 @@ import {
   upsertPrinterRoute
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
-import { Button, ScrollArea } from "@carbon/react";
-import { isUnaffectedByNavigation, labelSizes, redirect } from "@carbon/utils";
+import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
+import { labelSizes, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuPrinter } from "react-icons/lu";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Link, Outlet, useLoaderData } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { getLocationsList, getWorkCentersList } from "~/modules/resources";
 import { getCompanySettings, printerRouteValidator } from "~/modules/settings";
@@ -39,9 +35,6 @@ export const handle: Handle = {
   breadcrumb: msg`Printing`,
   to: path.to.printingSettings
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -266,7 +259,7 @@ export default function PrintingSettingsRoute() {
           workCenters={workCenters}
         />
       </SettingsPage>
-      <Outlet />
+      <RecordOutlet />
     </ScrollArea>
   );
 }

@@ -16,7 +16,8 @@ import {
 import {
   cascadeItemTrackingType,
   updateItemMethodAndSourcing,
-  updateMaterialProperties
+  updateMaterialProperties,
+  updateServiceName
 } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -504,68 +505,31 @@ export async function action({ request }: ActionFunctionArgs) {
 
         return toolItemUpdates;
       }
-    case "serviceId":
+    case "serviceName": {
       if (items.length > 1) {
         return {
           error: { message: "Cannot update multiple items" },
           data: null
         };
       }
-      const [serviceItem] = items as string[];
-      const serviceData = await client
-        .from("item")
-        .select("readableId, type")
-        .eq("id", serviceItem)
-        .eq("type", "Service")
-        .eq("companyId", companyId)
-        .single();
-
-      if (serviceData.error) {
-        return serviceData;
+      try {
+        return await updateServiceName(getDatabaseClient(), {
+          itemId: items[0] as string,
+          name: value,
+          companyId,
+          userId
+        });
+      } catch (err) {
+        logger.error("Failed to update service name", {
+          itemIds: items,
+          error: err
+        });
+        return {
+          error: { message: "Failed to update service name" },
+          data: null
+        };
       }
-      if (serviceData.data?.type !== "Service") {
-        return { error: { message: "Item is not a service" }, data: null };
-      }
-
-      const currentServiceId = serviceData.data?.readableId;
-
-      const relatedServices = await client
-        .from("item")
-        .select("id")
-        .eq("readableId", currentServiceId)
-        .eq("type", "Service")
-        .eq("companyId", companyId);
-      if (relatedServices.error) {
-        return relatedServices;
-      }
-      const relatedServiceIds = relatedServices.data?.map((item) => item.id);
-      if (relatedServiceIds) {
-        const [serviceItemUpdates, serviceUpdate] = await Promise.all([
-          client
-            .from("item")
-            .update({
-              readableId: value as string,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", relatedServiceIds as string[])
-            .eq("companyId", companyId),
-          client
-            .from("service")
-            .update({
-              id: value,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .eq("id", currentServiceId)
-            .eq("companyId", companyId)
-        ]);
-        if (serviceUpdate.error) {
-          return serviceUpdate;
-        }
-
-        return serviceItemUpdates;
-      }
+    }
     default:
       return { error: { message: "Invalid field" }, data: null };
   }

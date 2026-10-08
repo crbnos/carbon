@@ -5,7 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
@@ -53,10 +53,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id
   );
   if (deleteNoQuoteReasonError) {
-    const errorMessage =
-      deleteNoQuoteReasonError.code === "23503"
-        ? "No quote reason is used elsewhere, cannot delete"
-        : "Failed to delete noQuote reason";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteNoQuoteReasonError,
+      "Failed to delete noQuote reason",
+      { referenced: "No quote reason is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.noQuoteReasons}?${getParams(request)}`,

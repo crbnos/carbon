@@ -1,0 +1,109 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
+import type {
+  ContractPlannedInvoice,
+  ContractPositionMonth,
+  ContractRevenueRow,
+  RevenueMonth
+} from "@carbon/utils";
+import type {
+  getContractAmendments,
+  getContractInvoiceSchedule,
+  getContractLines
+} from "../../sales.service";
+
+type Enums = Database["public"]["Enums"];
+
+export type ContractStatusType = Enums["customerContractStatus"];
+export type ContractType = Enums["customerContractType"];
+export type ContractRevenueType = Enums["contractRevenueType"];
+export type ContractInvoiceStatusType = Enums["contractInvoiceStatus"];
+
+type ContractView = Database["public"]["Views"]["customerContracts"]["Row"];
+
+/** A contract as its page reads it. A view types every column nullable;
+ *  `currencyCode` is NOT NULL on the table, so the contract route narrows it
+ *  once rather than each component guessing a currency. */
+export type Contract = Omit<ContractView, "currencyCode"> & {
+  currencyCode: string;
+};
+
+export type ContractListItem = ContractView;
+
+export type ContractLine = NonNullable<
+  Awaited<ReturnType<typeof getContractLines>>["data"]
+>[number];
+
+type ContractInvoiceScheduleData = NonNullable<
+  Awaited<ReturnType<typeof getContractInvoiceSchedule>>["data"]
+>;
+
+/** A persisted planned invoice, with its lines. */
+export type ContractInvoice = ContractInvoiceScheduleData["invoices"][number];
+
+/** A schedule row on a cancellation credit memo rather than an invoice. */
+export type ContractCredit = ContractInvoiceScheduleData["credits"][number];
+
+export type ContractAmendment = NonNullable<
+  Awaited<ReturnType<typeof getContractAmendments>>["data"]
+>[number];
+
+/** The sales invoice drafted from a planned invoice, keyed by its id (the
+ *  planned invoice's stamped `salesInvoiceId`). */
+export type ContractInvoiceLinks = Record<
+  string,
+  {
+    id: string;
+    invoiceId: string;
+    status: Enums["salesInvoiceStatus"];
+    automationHoldReason: string | null;
+  }
+>;
+
+/** The credit memo a cancellation credit row sits on, keyed by memo id. */
+export type ContractCreditMemoLinks = Record<
+  string,
+  { id: string; memoId: string; status: Enums["memoStatus"] }
+>;
+
+/** The Revenue section's preview (Phase A): each line's monthly revenue and
+ *  the month-by-month invoiced / recognized / deferred position. */
+export type ContractRevenue = {
+  lines: RevenueMonth[];
+  position: ContractPositionMonth[];
+};
+
+/** The shell route's loader data, read by every section through
+ *  `useRouteData(path.to.contract(id))`. */
+export type ContractRouteData = {
+  contract: Contract;
+  lines: ContractLine[];
+  /** The persisted schedule; empty for an unedited Draft. */
+  schedule: ContractInvoice[];
+  credits: ContractCredit[];
+  amendments: ContractAmendment[];
+  /** The schedule planned live from the lines while a Draft has none
+   *  persisted; null once it is persisted. */
+  computedSchedule: ContractPlannedInvoice[] | null;
+  /** Per line: computed total − Σ its scheduled amounts, for an edited Draft.
+   *  A non-zero value offers Reset schedule. */
+  residuals: Record<string, number>;
+  /** The drafted sales invoices of the schedule, for links and Held badges. */
+  invoiceLinks: ContractInvoiceLinks;
+  /** The memos of `credits`, for "Credited on {memoId}". */
+  creditMemoLinks: ContractCreditMemoLinks;
+  revenue: ContractRevenue;
+  /** Per line: its total across the live plan of a Draft — what its billed
+   *  rows must add up to. Empty once the contract is not a Draft. */
+  lineTotals: Record<string, number>;
+  /** The revenue plan, one row per (line, month): the stored rows, or the
+   *  live plan while none is stored. */
+  revenueRows: ContractRevenueRow[];
+  /** Whether `revenueRows` are stored (a revenue edit or Confirm wrote them). */
+  revenueIsStored: boolean;
+  /** Per line: what it bills − Σ its revenue rows. Non-zero blocks Confirm. */
+  revenueResiduals: Record<string, number>;
+};

@@ -7,15 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMappingService } from "@carbon/ee/accounting";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
@@ -57,11 +53,6 @@ export const handle: Handle = {
   ),
   module: "invoicing"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["invoiceId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -136,11 +127,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency: currency?.data ?? null,
     salesInvoiceLines: salesInvoiceLines.data ?? [],
     salesInvoiceShipment: salesInvoiceShipment.data,
-    files: getOpportunityDocuments(
-      client,
-      companyId,
-      salesInvoice.data?.opportunityId!
-    ),
+    files: salesInvoice.data?.opportunityId
+      ? getOpportunityDocuments(
+          client,
+          companyId,
+          salesInvoice.data.opportunityId
+        )
+      : Promise.resolve([]),
     opportunity: opportunity?.data ?? null,
     customer: customer?.data ?? null,
     defaultCc,
@@ -169,7 +162,7 @@ export default function SalesInvoiceRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

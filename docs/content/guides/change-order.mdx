@@ -67,10 +67,12 @@ to **Revision**.
 This bracket requires a new drawing revision and a stock phase-over, so select **Revision**. Update the wall
 attribute, remove the fastener from the BoM, and attach the revised drawing to the draft.
 
-<Callout tone="amber" badge="PURCHASED PARTS NEED A SUPPLIER" title="A bought revision releases un-buyable unless you set its supplier up first.">
-A purchased revision includes a **Supplier Parts** grid. Supplier parts are not copied from the old revision.
-Before releasing a **Buy** revision, add its supplier, supplier part number, price, and ordering quantities.
-Without a supplier part, the released item cannot be added to a purchase order.
+<Callout tone="green" badge="PURCHASED PARTS KEEP THEIR SUPPLIERS" title="A bought revision inherits the old revision's suppliers.">
+A purchased revision includes a **Supplier Parts** grid. A Revision draft starts with the old revision's
+supplier parts and price breaks, plus its lead time, batch size, and reordering policy. Change the grid only
+where the new revision differs, such as a new supplier part number. A **Replacement Part** or **New Part**
+starts with an empty grid. Add its supplier parts before you release, or the released item cannot be added to
+a purchase order.
 </Callout>
 
 ## Review the diff

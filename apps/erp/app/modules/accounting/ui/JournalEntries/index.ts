@@ -4,14 +4,18 @@
 
 import DimensionSelector from "./DimensionSelector";
 import JournalEntriesTable from "./JournalEntriesTable";
+import JournalEntryDocuments from "./JournalEntryDocuments";
 import JournalEntryForm from "./JournalEntryForm";
+import JournalEntryHeader from "./JournalEntryHeader";
 import JournalEntryStatus from "./JournalEntryStatus";
 import JournalLineRow from "./JournalLineRow";
 
 export {
   DimensionSelector,
   JournalEntriesTable,
+  JournalEntryDocuments,
   JournalEntryForm,
+  JournalEntryHeader,
   JournalEntryStatus,
   JournalLineRow
 };

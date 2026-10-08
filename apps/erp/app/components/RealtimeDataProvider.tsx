@@ -10,7 +10,8 @@ import {
   LOADER,
   useTableChanges
 } from "@carbon/query";
-import { useUser } from "~/hooks";
+import { useMemo } from "react";
+import { useRouteData, useUser } from "~/hooks";
 import { customersList } from "~/stores/customers";
 import { itemsList } from "~/stores/items";
 import { peopleList } from "~/stores/people";
@@ -28,6 +29,20 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     id: userId,
     company: { id: companyId }
   } = useUser();
+  const shell = useRouteData<{
+    companies: { companyId: string | null; role: string | null }[];
+  }>(path.to.authenticatedRoot);
+  // The companies this user works in. Lists stored for any other are removed
+  // from the device when the page loads (see `LiveLists`).
+  const companyIds = useMemo(
+    () =>
+      (shell?.companies ?? []).flatMap((company) =>
+        company.role === "employee" && company.companyId
+          ? [company.companyId]
+          : []
+      ),
+    [shell?.companies]
+  );
 
   // Quantities are maintained incrementally by triggers on itemLedger, so this
   // fires on the posting itself. Invalidate rather than refetch: the on-hand map
@@ -50,6 +65,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       <LiveLists
         companyId={companyId}
         userId={userId}
+        companyIds={companyIds}
         lists={LISTS}
         storage={storage}
       />

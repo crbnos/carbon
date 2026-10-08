@@ -24,6 +24,7 @@ const taskToEvent = {
   "company-template-finalize": "carbon/company-template-finalize",
   "company-template-revert": "carbon/company-template-revert",
   "generate-maintenance": "carbon/generate-maintenance",
+  "invoice-automate": "carbon/invoice.automate",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",
   notify: "carbon/notify",

@@ -19,7 +19,7 @@ import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
-import { createCookieSessionStorage } from "react-router";
+import { createCookieSessionStorage, data } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import {
   getCustomerContact,
@@ -620,7 +620,7 @@ type CompanyScopedTable = {
 }[keyof Tables];
 
 /**
- * Throws a 404 `Response` unless a row of `table` in `companyId` matches every
+ * Throws a 404 `Response` naming the record unless a row of `table` in `companyId` matches every
  * column in `match` — e.g. `{ id: lineId, quoteId }` proves the line exists,
  * belongs to the company AND hangs off that quote. One query.
  *
@@ -652,12 +652,57 @@ export async function requireCompanyRecord(
       match,
       error
     });
-    throw new Response("Not found", { status: 404 });
+    // The check itself failed: nothing is known about the record.
+    throw new Response(`Failed to verify the ${recordName(table)}`, {
+      status: 500
+    });
   }
   if (!data) {
     logger.error("{table} not found for company", { table, companyId, match });
-    throw new Response("Not found", { status: 404 });
+    // One message for a missing row and another company's row: the caller
+    // must not learn which.
+    throw new Response(
+      `The ${recordName(table)} could not be found. It may have been deleted, or it belongs to another company.`,
+      { status: 404 }
+    );
   }
+}
+
+/**
+ * Whether `userId` is an ACTIVE employee of `companyId` — the check every
+ * user-id field that names a person in the company needs before it is saved
+ * (a planning action's assignee, a responsible employee). Those columns
+ * reference the global `user` table, so the database accepts anyone's id,
+ * including a person from another company or one since deactivated. One query;
+ * a failed read is logged and answered false (fail closed).
+ */
+export async function isActiveCompanyEmployee(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("employee")
+    .select("id")
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error) {
+    logger.error("Failed to verify employee for company", {
+      companyId,
+      userId,
+      error
+    });
+    return false;
+  }
+  return data !== null;
+}
+
+/** `quoteLine` → `quote line`, for a message a person reads. */
+function recordName(table: string): string {
+  return table.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 }
 
 // What `get_app_shell` returns: the rows the shell used to read with nine
@@ -685,11 +730,17 @@ type AppShellRows = {
  */
 export async function getAppShell(
   client: SupabaseClient<Database>,
-  companyId: string,
+  // Absent for someone who has signed in and has no company yet.
+  companyId: string | null | undefined,
   userId: string
 ) {
   const result = await client.rpc("get_app_shell", {
-    company_id: companyId,
+    // Sent as null, never left out. An undefined key is dropped from the
+    // request, the API then looks for a `get_app_shell(user_id)` that does
+    // not exist, and a first sign-in was logged straight back out instead
+    // of being sent to onboarding. With null the function runs and returns
+    // the user with no company rows.
+    company_id: (companyId ?? null) as string,
     user_id: userId
   });
   if (result.error || !result.data) {
@@ -875,4 +926,20 @@ export async function clearOnboardingDraft(request: Request): Promise<string> {
   );
   session.set(ONBOARDING_DRAFT_KEY, undefined);
   return onboardingDraftStorage.commitSession(session);
+}
+
+// For a list that is the same for every company and changes only with a deploy
+// or the database's own reference data. `private`: the route still needs a
+// session, so no shared cache may hold it.
+export const DAY_CACHE_HEADERS = { "Cache-Control": "private, max-age=86400" };
+
+/**
+ * A global `{ data, error }` list the browser keeps for a day, across page
+ * loads. An empty or failed read is not kept: it would stick for the day.
+ */
+export function keptForADay<T extends { data: unknown[] | null }>(result: T) {
+  return data(
+    result,
+    result.data?.length ? { headers: DAY_CACHE_HEADERS } : undefined
+  );
 }

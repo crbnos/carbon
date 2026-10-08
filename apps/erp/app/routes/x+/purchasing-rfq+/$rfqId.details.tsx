@@ -126,7 +126,7 @@ export default function PurchasingRFQDetailsRoute() {
   if (!rfqData) throw new Error("Could not find rfq data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <SupplierInteractionState
         currentRfq={{
           id: rfqData.rfqSummary.id!,

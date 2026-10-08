@@ -505,6 +505,7 @@ const seedCompany = defineServerFn({
                 accountIdByKey[fac.gainOnDisposalAccount]!,
               lossOnDisposalAccountId:
                 accountIdByKey[fac.lossOnDisposalAccount]!,
+              isConstructionInProgress: fac.isConstructionInProgress,
               companyId,
               createdBy: userId
             }))

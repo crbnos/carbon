@@ -83,3 +83,66 @@ export function upsertRows<Row extends { id: string }>(
     ...fetched
   ].sort(sort);
 }
+
+/** The key a list is stored under on the device. */
+export const storedListKey = (
+  companyId: string,
+  userId: string,
+  name: string
+) => `${name}:${companyId}:${userId}`;
+
+/**
+ * How long a stored list may stay on a device without being rewritten: it is
+ * company data, so a copy nobody has refreshed for a day goes. An open page
+ * rewrites its own lists every hour (`LiveLists`), so a list in use does not
+ * expire under its reader.
+ */
+export const STORED_LIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Where a stored list's write time is kept: beside it, so reading it is cheap. */
+export const storedAtKey = (key: string) => `${key}:at`;
+
+/** True for a stored list's own key, not the write time beside it. */
+const isListKey = (key: string) => key.split(":").length === 3;
+
+/**
+ * The stored lists that are too old to keep, given each one's write time. A
+ * list with no write time (stored before lists expired) counts as too old.
+ */
+export function expiredStoredKeys(
+  storedAt: [key: string, at: unknown][],
+  now: number
+): string[] {
+  return storedAt
+    .filter(
+      ([, at]) => typeof at !== "number" || now - at > STORED_LIST_MAX_AGE_MS
+    )
+    .map(([key]) => key);
+}
+
+/**
+ * The stored lists this user may no longer hold: another user's, or a
+ * company's the user does not belong to (removed from it since the copy was
+ * taken). Keys that are not a live list are left alone; the store is shared.
+ */
+export function staleStoredKeys(
+  keys: string[],
+  {
+    names,
+    userId,
+    companyIds
+  }: { names: string[]; userId: string; companyIds: string[] }
+): string[] {
+  return keys.filter((key) => {
+    const [name, companyId, owner] = key.split(":");
+    if (!names.includes(name ?? "")) return false;
+    return owner !== userId || !companyIds.includes(companyId ?? "");
+  });
+}
+
+/** Of these keys, the stored lists named `names` (not their write times). */
+export function storedListKeys(keys: string[], names: string[]): string[] {
+  return keys.filter(
+    (key) => isListKey(key) && names.includes(key.split(":")[0] ?? "")
+  );
+}

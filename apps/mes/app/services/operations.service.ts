@@ -125,10 +125,11 @@ export async function getJobOperationBatch(
   // (summed into the work-type toggle), completion pre-fill quantities, the
   // member's job id for the chip / completion table, and the due dates and
   // customers the batch's header summarizes.
+  // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons.md)
   const operations = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, dueDate, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, customer(name))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, dueDate, customer(name))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId)

@@ -153,6 +153,12 @@ interface TableProps<T extends object> {
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderExpandedRow?: (row: T) => ReactNode;
+  // Pin an expanded row's content (`sticky left-0`) to the scroll container's
+  // visible width, so on a table several viewports wide (the 48-week planning
+  // grids) it stays in view instead of sitting at the far left of the row and
+  // scrolling away with it. Off by default: it changes how every other
+  // expanded row scrolls.
+  pinExpandedRows?: boolean;
   // When `renderExpandedRow` is set, gates which rows can expand (show a chevron
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
@@ -318,6 +324,7 @@ const Table = <T extends object>({
   renderActions,
   renderContextMenu,
   renderExpandedRow,
+  pinExpandedRows = false,
   canExpandRow,
   groupRowsBy,
   mobileLayout = "list",
@@ -325,6 +332,19 @@ const Table = <T extends object>({
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  // Visible width of the scroll container, for `pinExpandedRows`.
+  const [containerWidth, setContainerWidth] = useState(0);
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!pinExpandedRows || !el || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    const update = () => setContainerWidth(el.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [pinExpandedRows]);
 
   const { currentView, view } = useSavedViews();
 
@@ -695,13 +715,13 @@ const Table = <T extends object>({
       // Don't hijack keys aimed at a portaled overlay (a cell editor's
       // combobox/date popover, a row context menu) — those own their keys.
       if (event.nativeEvent.isComposing) return;
+      // A dialog the table itself sits in (a grid in a modal) is not an
+      // overlay over it: only skip one that does not contain the table.
       const target = event.target as HTMLElement | null;
-      if (
-        target?.closest(
-          "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]"
-        )
-      )
-        return;
+      const overlay = target?.closest(
+        "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]"
+      );
+      if (overlay && !overlay.contains(event.currentTarget)) return;
 
       const { code, shiftKey } = event;
 
@@ -1542,7 +1562,20 @@ const Table = <T extends object>({
                             colSpan={visibleColumns.length}
                             className="p-0 bg-muted/20 border-b border-border"
                           >
-                            {renderExpandedRow(row.original)}
+                            {pinExpandedRows ? (
+                              <div
+                                className="sticky left-0"
+                                style={
+                                  containerWidth > 0
+                                    ? { width: containerWidth }
+                                    : undefined
+                                }
+                              >
+                                {renderExpandedRow(row.original)}
+                              </div>
+                            ) : (
+                              renderExpandedRow(row.original)
+                            )}
                           </Td>
                         </Tr>
                       )}
@@ -1574,7 +1607,7 @@ const Table = <T extends object>({
                           }}
                         >
                           {!footer.isPlaceholder &&
-                            footer.column.columnDef.meta?.renderTotal && (
+                            (footer.column.columnDef.meta?.renderTotal ? (
                               <AggregateSelector
                                 value={total}
                                 aggregateFunction={aggregateFn}
@@ -1588,7 +1621,14 @@ const Table = <T extends object>({
                                   footer.column.columnDef.meta?.formatter
                                 }
                               />
-                            )}
+                            ) : footer.column.columnDef.footer ? (
+                              // A caller-defined footer (e.g. a grid's
+                              // per-column remainder), never editable.
+                              flexRender(
+                                footer.column.columnDef.footer,
+                                footer.getContext()
+                              )
+                            ) : null)}
                         </Th>
                       );
                     })}

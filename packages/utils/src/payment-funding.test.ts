@@ -7,9 +7,12 @@ import { round } from "@carbon/database/precision";
 import { expect, it } from "vitest";
 import {
   allocatePaymentFunding,
+  depositScopeMessage,
   type FundingApplication,
   type FundingRequest,
   type FundingSource,
+  fundableDocumentAmounts,
+  fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   reduceInvoiceSettlements,
@@ -855,4 +858,268 @@ it("legacy settlements without a document principal derive it from applied base"
     remainingFundingSources([payment], [tiny, tiny], decimals, true)[0]!
       .remainingDocument
   ).toEqual(220);
+});
+
+const ra1 = { type: "rentalAgreement" as const, id: "ra-1" };
+const so1 = { type: "salesOrder" as const, id: "so-1" };
+
+it("a deposit is skipped for another document's invoice and drawn for its own later in the same allocation", () => {
+  const result = allocate(
+    source("current", 0),
+    [
+      request("other", 50, 1, { rentalAgreementIds: ["ra-3"] }),
+      request("own", 40, 1, { rentalAgreementIds: ["ra-1"] })
+    ],
+    {
+      priorSources: [
+        // Older than the ordinary receipt, so it comes first in source order.
+        source("deposit", 40, 1, { postingDate: "2026-09-01", scope: ra1 }),
+        source("ordinary", 50, 1, { postingDate: "2026-09-05" })
+      ]
+    }
+  );
+  expect(
+    result.applications.map((a) => [
+      a.targetId,
+      a.sourcePaymentId,
+      a.sourceAmount
+    ])
+  ).toEqual([
+    ["other", "ordinary", 50],
+    ["own", "deposit", 40]
+  ]);
+  expect(result.sourceRemainders).toEqual([
+    { paymentId: "current", remainingDocument: 0, remainingBase: 0 },
+    { paymentId: "deposit", remainingDocument: 0, remainingBase: 0 },
+    { paymentId: "ordinary", remainingDocument: 0, remainingBase: 0 }
+  ]);
+});
+
+it("a sales order deposit funds only an invoice billing that order, keeping each pair's FX", () => {
+  const result = allocate(
+    source("current", 0, 1.2),
+    [request("own", 110, 1.1, { salesOrderIds: ["so-1", "so-2"] })],
+    {
+      priorSources: [
+        source("deposit", 110, 1.1, { scope: so1 }),
+        source("ordinary", 110, 1.2, { postingDate: "2026-09-08" })
+      ]
+    }
+  );
+  expect(firstApplication(result.applications)).toMatchObject({
+    sourcePaymentId: "deposit",
+    sourceAmount: 110,
+    appliedAmount: 100,
+    fxGainLossAmount: 0
+  });
+  expect(result.applications).toHaveLength(1);
+});
+
+it("insufficient eligible funding throws even while an out-of-scope deposit has funds", () => {
+  const prior = source("deposit", 500, 1, { scope: ra1 });
+  expect(() =>
+    allocate(
+      source("current", 30),
+      [request("unrelated", 50, 1, { salesOrderIds: ["so-1"] })],
+      { priorSources: [prior] }
+    )
+  ).toThrow("Insufficient payment funding for target: unrelated");
+  // An invoice that bills no document at all is out of every deposit's scope.
+  expect(() =>
+    allocate(source("current", 0), [request("plain", 10)], {
+      priorSources: [source("deposit", 10, 1, { scope: so1 })]
+    })
+  ).toThrow("Insufficient payment funding for target: plain");
+  expect(prior.remainingDocument).toBe(500);
+});
+
+it("a deposit payment is refused on another document's invoice, naming the deposit", () => {
+  const deposit = source("current", 100, 1, {
+    scope: { ...ra1, readableId: "RA000001" }
+  });
+  expect(() =>
+    allocate(deposit, [
+      request("own", 40, 1, { rentalAgreementIds: ["ra-1"] }),
+      request("other", 10, 1, { rentalAgreementIds: ["ra-3"] })
+    ])
+  ).toThrow(
+    "A deposit for RA000001 can only be applied to that agreement's invoices"
+  );
+  // Even a discount-only row on another document's invoice is refused.
+  expect(() =>
+    allocate(source("current", 100, 1, { scope: so1 }), [
+      request("other", 0, 1, {
+        remainingDocument: 10,
+        remainingBase: 10,
+        discountAmount: 5
+      })
+    ])
+  ).toThrow(
+    "A sales order deposit can only be applied to that order's invoices"
+  );
+  const own = allocate(deposit, [
+    request("own", 40, 1, { rentalAgreementIds: ["ra-1"] })
+  ]);
+  expect(own.newOnAccountDocument).toBe(60);
+  expect(depositScopeMessage({ ...so1, readableId: "SO000123" })).toBe(
+    "A deposit for SO000123 can only be applied to that order's invoices"
+  );
+});
+
+it("fundingScopeOf and remainingFundingSources carry a deposit's document onto its source", () => {
+  expect(
+    fundingScopeOf({ rentalAgreementId: "ra-1", salesOrderId: null })
+  ).toEqual(ra1);
+  expect(fundingScopeOf({ salesOrderId: "so-1" })).toEqual(so1);
+  expect(fundingScopeOf({})).toBeNull();
+  const rows = [
+    {
+      id: "deposit",
+      totalAmount: 10,
+      exchangeRate: 1,
+      postingDate: "2026-09-01",
+      paymentDate: "2026-09-01",
+      currencyCode: "USD",
+      scope: ra1
+    },
+    {
+      id: "ordinary",
+      totalAmount: 5,
+      exchangeRate: 1,
+      postingDate: "2026-09-02",
+      paymentDate: "2026-09-02",
+      currencyCode: "USD"
+    }
+  ];
+  const sources = remainingFundingSources(
+    rows,
+    [],
+    new Map([["USD", 2]]),
+    true
+  );
+  expect(sources[0]).toMatchObject({ paymentId: "deposit", scope: ra1 });
+  expect(sources[1]).not.toHaveProperty("scope");
+});
+
+it("fundable amounts follow the allocator's order and eligibility, so they allocate", () => {
+  const currentPayment = source("current", 30);
+  const priorSources = [
+    source("deposit", 40, 1, { postingDate: "2026-09-01", scope: ra1 }),
+    source("ordinary", 25, 1, { postingDate: "2026-09-05" })
+  ];
+  const targets = [
+    { id: "other", remainingDocument: 100, rentalAgreementIds: ["ra-3"] },
+    { id: "own", remainingDocument: 100, rentalAgreementIds: ["ra-1"] }
+  ];
+  const amounts = fundableDocumentAmounts({
+    currentPayment,
+    priorSources,
+    currencyDecimals: 2,
+    requests: targets.map((t) => ({
+      ...t,
+      maximumDocument: t.remainingDocument
+    }))
+  });
+  // other: current 30 + ordinary 25; own: only its deposit is left.
+  expect(amounts).toEqual([55, 40]);
+  const result = allocate(
+    currentPayment,
+    targets.map((t, i) =>
+      request(t.id, amounts[i]!, 1, {
+        remainingDocument: 100,
+        remainingBase: 100,
+        rentalAgreementIds: t.rentalAgreementIds
+      })
+    ),
+    { priorSources }
+  );
+  expect(result.applications).toHaveLength(3);
+  // A deposit payment can fund nothing outside its document.
+  expect(
+    fundableDocumentAmounts({
+      currentPayment: source("current", 30, 1, { scope: ra1 }),
+      priorSources: [],
+      currencyDecimals: 2,
+      requests: [
+        { maximumDocument: 10, rentalAgreementIds: ["ra-3"] },
+        { maximumDocument: 50, rentalAgreementIds: ["ra-1"] }
+      ]
+    })
+  ).toEqual([0, 30]);
+});
+
+it("ordinary cash still goes first, so a deposit is drawn only beyond the payment", () => {
+  const result = allocate(
+    source("current", 100),
+    [request("own", 100, 1, { rentalAgreementIds: ["ra-1"] })],
+    { priorSources: [source("deposit", 100, 1, { scope: ra1 })] }
+  );
+  expect(result.applications).toEqual([
+    expect.objectContaining({ sourcePaymentId: null, sourceAmount: 100 })
+  ]);
+  expect(result.sourceRemainders[1]).toMatchObject({
+    paymentId: "deposit",
+    remainingDocument: 100
+  });
+});
+
+it("a deposit's invoice never starves an invoice the deposit cannot reach, in either request order", () => {
+  const priorSources = [source("deposit", 100, 1, { scope: ra1 })];
+  const own = request("own", 100, 1, { rentalAgreementIds: ["ra-1"] });
+  const plain = request("plain", 100);
+  for (const requests of [
+    [own, plain],
+    [plain, own]
+  ]) {
+    const result = allocate(source("current", 100), requests, {
+      priorSources
+    });
+    const fundedBy = Object.fromEntries(
+      result.applications.map((a) => [a.targetId, a.sourcePaymentId])
+    );
+    expect(fundedBy).toEqual({ own: "deposit", plain: null });
+    expect(result.newOnAccountDocument).toBe(0);
+  }
+  // Two documents, each with a deposit too small to cover its invoice alone.
+  const result = allocate(
+    source("current", 100),
+    [
+      request("ra1-invoice", 100, 1, { rentalAgreementIds: ["ra-1"] }),
+      request("ra2-invoice", 150, 1, { rentalAgreementIds: ["ra-2"] })
+    ],
+    {
+      priorSources: [
+        source("deposit-1", 100, 1, { scope: ra1 }),
+        source("deposit-2", 50, 1, {
+          scope: { type: "rentalAgreement", id: "ra-2" }
+        })
+      ]
+    }
+  );
+  expect(
+    result.applications.map((a) => [
+      a.targetId,
+      a.sourcePaymentId,
+      a.sourceAmount
+    ])
+  ).toEqual([
+    ["ra1-invoice", "deposit-1", 100],
+    ["ra2-invoice", null, 100],
+    ["ra2-invoice", "deposit-2", 50]
+  ]);
+});
+
+it("fundable amounts tell how much a row added last can draw without starving the others", () => {
+  const amounts = fundableDocumentAmounts({
+    currentPayment: source("current", 100),
+    priorSources: [source("deposit", 100, 1, { scope: ra1 })],
+    currencyDecimals: 2,
+    requests: [
+      // Already entered: needs the ordinary cash.
+      { maximumDocument: 100 },
+      // Toggled on last: the deposit is still there for it.
+      { maximumDocument: 250, rentalAgreementIds: ["ra-1"] }
+    ]
+  });
+  expect(amounts).toEqual([100, 100]);
 });

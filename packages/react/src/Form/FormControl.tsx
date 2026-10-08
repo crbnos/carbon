@@ -236,9 +236,13 @@ export const FormControl = forwardRef<HTMLDivElement, FormControlProps>(
 
     return (
       <FormControlContext.Provider value={context}>
+        {/* Its own height, never the row's: a grid stretches a field to its
+            tallest neighbour (one with helper text), and a growing child —
+            the comboboxes' wrapper is `flex-grow` — would then fill that
+            space and sit its input lower than the fields beside it. */}
         <div
           {...getRootProps({}, ref)}
-          className={cn("flex flex-col w-full gap-y-2", props.className)}
+          className={cn("flex flex-col w-full h-fit gap-y-2", props.className)}
         />
       </FormControlContext.Provider>
     );

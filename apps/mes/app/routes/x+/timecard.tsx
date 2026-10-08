@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DateTimePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -20,7 +21,6 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Input,
   MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
@@ -37,7 +37,9 @@ import {
   Tr,
   useViewport
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import type { CalendarDateTime } from "@internationalized/date";
+import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -91,16 +93,6 @@ function formatDay(dateStr: string, locale: string) {
     month: "short",
     day: "numeric"
   });
-}
-
-function toLocalDatetimeInput(dateStr: string) {
-  const d = new Date(dateStr);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -200,8 +192,10 @@ export default function MESTimecardPage() {
     }
   });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editClockIn, setEditClockIn] = useState("");
-  const [editClockOut, setEditClockOut] = useState("");
+  const [editClockIn, setEditClockIn] = useState<CalendarDateTime | null>(null);
+  const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(
+    null
+  );
   const [, setTick] = useState(0);
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -223,8 +217,8 @@ export default function MESTimecardPage() {
     clockOut: string | null;
   }) {
     setEditingId(entry.id);
-    setEditClockIn(toLocalDatetimeInput(entry.clockIn));
-    setEditClockOut(entry.clockOut ? toLocalDatetimeInput(entry.clockOut) : "");
+    setEditClockIn(toLocalDateTime(entry.clockIn));
+    setEditClockOut(entry.clockOut ? toLocalDateTime(entry.clockOut) : null);
   }
 
   const renderClockForm = (size: "md" | "lg", className?: string) =>
@@ -263,24 +257,20 @@ export default function MESTimecardPage() {
       <input
         type="hidden"
         name="clockIn"
-        value={
-          isNaN(new Date(editClockIn).getTime())
-            ? ""
-            : new Date(editClockIn).toISOString()
-        }
+        value={editClockIn ? fromLocalDateTime(editClockIn) : ""}
       />
-      {editClockOut && !isNaN(new Date(editClockOut).getTime()) && (
+      {editClockOut && (
         <input
           type="hidden"
           name="clockOut"
-          value={new Date(editClockOut).toISOString()}
+          value={fromLocalDateTime(editClockOut)}
         />
       )}
       <Button
         isLoading={fetcher.state !== "idle"}
         variant="secondary"
         type="submit"
-        disabled={isNaN(new Date(editClockIn).getTime())}
+        disabled={!editClockIn}
       >
         <Trans>Save</Trans>
       </Button>
@@ -416,19 +406,23 @@ export default function MESTimecardPage() {
                             <span className="text-sm font-medium">
                               {formatDay(entry.clockIn, locale)}
                             </span>
-                            <Input
-                              type="datetime-local"
+                            <DateTimePicker
                               aria-label={t`Clock In`}
                               value={editClockIn}
-                              onChange={(e) => setEditClockIn(e.target.value)}
-                              className="w-full"
+                              onChange={(value) =>
+                                setEditClockIn(
+                                  value ? toCalendarDateTime(value) : null
+                                )
+                              }
                             />
-                            <Input
-                              type="datetime-local"
+                            <DateTimePicker
                               aria-label={t`Clock Out`}
                               value={editClockOut}
-                              onChange={(e) => setEditClockOut(e.target.value)}
-                              className="w-full"
+                              onChange={(value) =>
+                                setEditClockOut(
+                                  value ? toCalendarDateTime(value) : null
+                                )
+                              }
                             />
                             <HStack className="justify-end">
                               {renderSaveForm(entry.id)}
@@ -527,23 +521,27 @@ export default function MESTimecardPage() {
                                 {formatDay(entry.clockIn, locale)}
                               </Td>
                               <Td>
-                                <Input
-                                  type="datetime-local"
+                                <DateTimePicker
+                                  aria-label={t`Clock In`}
+                                  size="sm"
                                   value={editClockIn}
-                                  onChange={(e) =>
-                                    setEditClockIn(e.target.value)
+                                  onChange={(value) =>
+                                    setEditClockIn(
+                                      value ? toCalendarDateTime(value) : null
+                                    )
                                   }
-                                  className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
                                 />
                               </Td>
                               <Td>
-                                <Input
-                                  type="datetime-local"
+                                <DateTimePicker
+                                  aria-label={t`Clock Out`}
+                                  size="sm"
                                   value={editClockOut}
-                                  onChange={(e) =>
-                                    setEditClockOut(e.target.value)
+                                  onChange={(value) =>
+                                    setEditClockOut(
+                                      value ? toCalendarDateTime(value) : null
+                                    )
                                   }
-                                  className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
                                 />
                               </Td>
                               <Td className="text-muted-foreground text-center">

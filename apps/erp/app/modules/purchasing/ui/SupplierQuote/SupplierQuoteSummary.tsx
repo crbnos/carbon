@@ -19,7 +19,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
@@ -103,7 +103,7 @@ const LineItems = ({
         const lineDescription = isGlAccount
           ? (accounts.find((a) => a.id === line.accountId)?.name ??
             "G/L Account")
-          : line.description;
+          : distinctItemText(itemReadableId, line.description);
         if (!line || !prices || !line.id) {
           return null;
         }
@@ -159,12 +159,14 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <TruncatedTooltipText
-                    className="text-muted-foreground text-sm truncate"
-                    tooltip={lineDescription}
-                  >
-                    {lineDescription}
-                  </TruncatedTooltipText>
+                  {lineDescription && (
+                    <TruncatedTooltipText
+                      className="text-muted-foreground text-sm truncate"
+                      tooltip={lineDescription}
+                    >
+                      {lineDescription}
+                    </TruncatedTooltipText>
+                  )}
                 </div>
               </VStack>
             </HStack>

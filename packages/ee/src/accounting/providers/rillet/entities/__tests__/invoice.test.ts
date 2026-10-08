@@ -136,6 +136,30 @@ function mapArguments(source = charges()) {
   };
 }
 describe("Rillet revenue recognition native sales components", () => {
+  it("sends a discounted line's NET amount", () => {
+    const source = charges();
+    // 1 × 100 base list, 20% off → 80 base merchandise, 64 EUR at 0.8. Add-ons
+    // and shipping are not discounted; tax is on the discounted merchandise.
+    const payload = mapSalesInvoiceToRilletInvoice(
+      mapArguments({
+        ...source,
+        subtotal: 113,
+        totalTax: 11,
+        totalAmount: 129,
+        balance: 129,
+        lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+      })
+    );
+    expect(payload.items.map((line) => line.total_amount.amount)).toEqual([
+      "64.00",
+      "16.00",
+      "2.40",
+      "8.00",
+      "4.00"
+    ]);
+    expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
   it("exports the document currency components with shipping revenue override and native header tax exactly once", () => {
     const payload = mapSalesInvoiceToRilletInvoice(mapArguments());
     expect(

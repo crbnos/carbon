@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
+import type { PlanningGridColumns } from "../production/types";
 import type {
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
@@ -59,9 +60,13 @@ export type PurchaseOrderType =
 export type PurchaseOrderTransactionType =
   Database["public"]["Enums"]["purchaseOrderTransactionType"];
 
-export type PurchasingPlanningItem = NonNullable<
-  Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
->[number];
+export type PurchasingPlanningItem = Omit<
+  NonNullable<
+    Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
+  >[number],
+  keyof PlanningGridColumns
+> &
+  PlanningGridColumns;
 
 export type PurchasingRFQ = NonNullable<
   Awaited<ReturnType<typeof getPurchasingRFQs>>["data"]

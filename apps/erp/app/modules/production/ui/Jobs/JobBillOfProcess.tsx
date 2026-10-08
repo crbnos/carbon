@@ -9,7 +9,7 @@ import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useAction, useChangedRows } from "@carbon/query";
+import { useAction, useChangedRows, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -88,16 +88,11 @@ import {
   LuRefreshCcw,
   LuSend,
   LuShieldX,
+  LuSquareChartGantt,
   LuTriangleAlert,
   LuWorkflow
 } from "react-icons/lu";
-import {
-  Link,
-  useFetcher,
-  useFetchers,
-  useParams,
-  useRevalidator
-} from "react-router";
+import { Link, useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import {
   Assignee,
@@ -350,8 +345,9 @@ function makeItem(
             (behindDays > 0 ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="red">
-                    <Trans>Projected {formatDate(projectedDate)}</Trans>
+                  <Badge variant="red" className="gap-1">
+                    <LuSquareChartGantt className="size-3 shrink-0" />
+                    {formatDate(projectedDate)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -361,8 +357,9 @@ function makeItem(
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                <Trans>Projected {formatDate(projectedDate)}</Trans>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                <LuSquareChartGantt className="size-3 shrink-0" />
+                {formatDate(projectedDate)}
               </span>
             ))}
           <OperationDueDatePicker
@@ -549,12 +546,10 @@ const JobBillOfProcess = ({
     });
 
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const operationsById = new Map<
     string,
@@ -1148,7 +1143,8 @@ function StepsForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");

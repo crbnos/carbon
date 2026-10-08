@@ -17,7 +17,7 @@ import {
   Status,
   useDisclosure
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -29,6 +29,8 @@ import {
   LuDollarSign,
   LuEye,
   LuFile,
+  LuFileText,
+  LuSend,
   LuTicketX,
   LuTrash,
   LuTruck
@@ -121,6 +123,21 @@ const SalesInvoiceHeader = () => {
   const canMarkPaid = canToggleManualPaid && baseStatus === "Submitted";
   const canMarkUnpaid = canToggleManualPaid && baseStatus === "Paid";
 
+  // Invoice automation outcome: a held draft waits for review; a posted
+  // invoice was either sent (emailed or via Stripe) or failed to send (and
+  // can be re-sent).
+  const sendFetcher = useFetcher<{}>();
+  const isPostedNotVoided = isPosted && !isVoided;
+  const holdReason =
+    salesInvoice.status === "Draft" ? salesInvoice.automationHoldReason : null;
+  const sentTo = salesInvoice.sentTo ?? "";
+  const sentDate = formatDate(salesInvoice.sentAt);
+  const showEmailed = isPostedNotVoided && !!salesInvoice.sentAt;
+  // A Stripe send stamps `sentTo: "Stripe"` — Stripe emailed it, not Carbon.
+  const sentViaStripe = sentTo === "Stripe";
+  const showNotSent =
+    isPostedNotVoided && !!salesInvoice.sendError && !salesInvoice.sentAt;
+
   const [relatedDocs, setRelatedDocs] = useState<{
     salesOrders: { id: string; readableId: string }[];
     shipments: { id: string; readableId: string; status: string }[];
@@ -165,8 +182,43 @@ const SalesInvoiceHeader = () => {
     getRelatedDocuments();
   }, [carbon, salesInvoice.opportunityId, salesInvoice.status]);
 
+  // The salesInvoices view does not carry the contract, so it is read off the
+  // invoice row itself, with the contract's readable id embedded.
+  const [contract, setContract] = useState<{
+    id: string;
+    readableId: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!carbon) return;
+    let cancelled = false;
+    carbon
+      .from("salesInvoice")
+      .select("customerContractId, customerContract(customerContractId)")
+      .eq("id", invoiceId)
+      .eq("companyId", company.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setContract(
+          data?.customerContractId
+            ? {
+                id: data.customerContractId,
+                readableId:
+                  data.customerContract?.customerContractId ??
+                  data.customerContractId
+              }
+            : null
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, invoiceId, company.id]);
+  const contractReadableId = contract?.readableId;
+
   const showPostModal = async () => {
-    // check if there are any lines that are not associated with a PO
+    // The lines posting will ship: items not on a sales order. A Service is
+    // never shipped — post-sales-invoice skips it — so it is not listed.
     if (!carbon) throw new Error("carbon not found");
     const { data, error } = await carbon
       .from("salesInvoiceLine")
@@ -177,7 +229,6 @@ const SalesInvoiceHeader = () => {
         "Material",
         "Tool",
         "Consumable",
-        "Service",
         "Fixture"
       ])
       .is("salesOrderLineId", null);
@@ -291,6 +342,48 @@ const SalesInvoiceHeader = () => {
   const statusBadges = (
     <>
       <SalesInvoiceStatus status={salesInvoice.status} />
+      {holdReason && (
+        <Status color="orange" tooltip={holdReason}>
+          <Trans>Needs Review</Trans>
+        </Status>
+      )}
+      {showEmailed &&
+        (sentViaStripe ? (
+          <Status color="green" tooltip={t`On ${sentDate}`}>
+            <Trans>Sent via Stripe</Trans>
+          </Status>
+        ) : (
+          <Status color="green" tooltip={t`To ${sentTo} on ${sentDate}`}>
+            <Trans>Emailed</Trans>
+          </Status>
+        ))}
+      {showNotSent && (
+        <>
+          <Status color="red" tooltip={salesInvoice.sendError}>
+            <Trans>Not sent</Trans>
+          </Status>
+          <Button
+            variant="secondary"
+            leftIcon={<LuSend />}
+            isLoading={sendFetcher.state !== "idle"}
+            isDisabled={
+              sendFetcher.state !== "idle" ||
+              !permissions.can("update", "invoicing")
+            }
+            onClick={() =>
+              sendFetcher.submit(
+                {},
+                {
+                  method: "post",
+                  action: path.to.salesInvoiceSend(invoiceId)
+                }
+              )
+            }
+          >
+            <Trans>Send</Trans>
+          </Button>
+        </>
+      )}
       {routeData?.stripeInvoiceUrl && isPosted && (
         <a
           href={routeData.stripeInvoiceUrl}
@@ -317,6 +410,16 @@ const SalesInvoiceHeader = () => {
         onToggleProperties={toggleProperties}
         actions={
           <>
+            {contract && (
+              <RecordAction slot="overflow">
+                <Button variant="secondary" leftIcon={<LuFileText />} asChild>
+                  <Link to={path.to.contract(contract.id)}>
+                    <Trans>Contract {contractReadableId}</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
+            )}
+
             {relatedDocs.salesOrders.length === 1 && (
               <RecordAction slot="overflow">
                 <Button

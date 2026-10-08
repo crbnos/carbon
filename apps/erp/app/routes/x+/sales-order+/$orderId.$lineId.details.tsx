@@ -15,12 +15,12 @@ import {
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { Card, CardHeader, CardTitle } from "@carbon/react";
+import { Card, CardHeader, CardTitle, RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, Outlet, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getItemReplenishment } from "~/modules/items";
@@ -269,6 +269,8 @@ export default function EditSalesOrderLineRoute() {
     methodType: line?.methodType ?? "Make to Order",
     nonTaxableAddOnCost: line?.nonTaxableAddOnCost ?? 0,
     promisedDate: line?.promisedDate ?? undefined,
+    serviceStartDate: line?.serviceStartDate ?? "",
+    serviceEndDate: line?.serviceEndDate ?? "",
     saleQuantity: line?.saleQuantity ?? 1,
     setupPrice: line?.setupPrice ?? 0,
     storageUnitId: line?.storageUnitId ?? "",
@@ -372,7 +374,7 @@ export default function EditSalesOrderLineRoute() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

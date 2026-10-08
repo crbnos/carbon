@@ -80,14 +80,14 @@ providers, which own the data and mirror it out.
 >   2026-09-28, so a US supplier with a country but no state fell through to the
 >   useless "see the provider error" branch).
 >   The PREVENTIVE half is the `requireSupplierContactAndLocation` company setting
->   (`apps/erp/app/modules/settings/party-contact.ts`): when on, a supplier must have
+>   (`packages/lib/src/party-contact.ts`, re-exported by `apps/erp/app/modules/settings/party-contact.ts`): when on, a supplier must have
 >   an emailable contact AND a location whose address carries a country (plus a state
 >   when that country is US) before its supplier quote, purchase order or purchase
 >   invoice can be issued or posted, so the gap is caught while the person who can fix
 >   it is still looking at the document. ONE setting per party kind rather than two,
 >   because the platform needs all of it or none — a supplier with a contact but no
 >   location fails exactly as hard as one with neither. Enforced ONCE, on the PARTY
->   record, by `checkPartyContactRequirement` (`settings/party-contact.server.ts`) at
+>   record, by `checkPartyContactRequirement` (`@carbon/lib/party-contact.server`) at
 >   the six release/post boundaries — PO and supplier-quote finalize, sales-order
 >   confirm, quote finalize, and both invoice posts — surfaced as a flash naming the
 >   party and the missing fact.

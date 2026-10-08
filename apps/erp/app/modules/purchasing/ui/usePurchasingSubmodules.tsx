@@ -65,7 +65,7 @@ export default function usePurchasingSubmodules() {
           name: t`Material Planning`,
           to: path.to.purchasingPlanning,
           icon: <LuListTodo />,
-          table: "purchase-planning"
+          table: "planning"
         }
       ]
     },

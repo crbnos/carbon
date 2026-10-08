@@ -57,7 +57,7 @@ Carbon tracks success and error counts and the latest timestamp for each outcome
 
 Webhook delivery is asynchronous and normally occurs a few seconds after the database change.
 
-Delivery is **at least once**. If the endpoint does not return a success status, Carbon retries with exponential backoff before marking the change as failed. Design for these conditions:
+Delivery is **at least once**. If the endpoint does not return a success status within 30 seconds, Carbon retries with exponential backoff before marking the change as failed. Design for these conditions:
 
 - **Handle duplicates.** A request can be retried after your service has processed it. De-duplicate on `eventId`, not `type` and `record.id`, because separate changes to the same record share the latter values.
 - **Reconcile after outages.** After retries are exhausted, Carbon drops the change and increments the error count. Query the API when complete event processing is required.

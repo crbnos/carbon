@@ -174,7 +174,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         cell: (item) => (
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
-        meta: { icon: <LuCalendar /> }
+        meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
       },
       {
         accessorKey: "amount",

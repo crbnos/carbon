@@ -22,6 +22,7 @@ import {
   useShortcutKeyMap,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import {
@@ -239,9 +240,14 @@ function PurchasingRFQLineBody({
           <span className="font-semibold line-clamp-1">
             {line.itemReadableId || line.description || "Item"}
           </span>
-          <span className="font-medium text-muted-foreground text-xs line-clamp-1">
-            {line.description}
-          </span>
+          {distinctItemText(
+            line.itemReadableId || line.description || "Item",
+            line.description
+          ) && (
+            <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+              {line.description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -288,9 +294,14 @@ function PurchasingRFQLineItem({
               <span className="font-semibold line-clamp-1">
                 {line.itemReadableId || line.description || "Item"}
               </span>
-              <span className="font-medium text-muted-foreground text-xs line-clamp-1">
-                {line.description}
-              </span>
+              {distinctItemText(
+                line.itemReadableId || line.description || "Item",
+                line.description
+              ) && (
+                <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+                  {line.description}
+                </span>
+              )}
             </VStack>
           </HStack>
           <div className="absolute right-2">

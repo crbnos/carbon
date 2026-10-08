@@ -9,6 +9,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { deleteChangeNotice } from "~/modules/items";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,7 +20,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deleteChangeNotice(client, id, companyId);
+  const mutation = await deleteChangeNotice(
+    client,
+    getDatabaseClient(),
+    id,
+    companyId
+  );
   if (mutation.error) {
     return data(
       { success: false },

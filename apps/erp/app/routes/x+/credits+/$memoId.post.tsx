@@ -5,11 +5,14 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "credits.post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -20,21 +23,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!memoId) {
     return { success: false, message: "Missing memoId" };
   }
-  try {
-    const result = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("post-memo", { type: "post", memoId });
-    if (result.error) {
-      const message = result.error.message || "Failed to post memo";
-      throw redirect(
-        path.to.memo(memoId),
-        await flash(request, error(result.error, message))
-      );
-    }
-  } catch (err) {
+  // `invoke` never throws: a refusal comes back as `result.error`, whose
+  // message says why (empty for a data-layer failure, hence the fallback).
+  const result = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-memo", { type: "post", memoId });
+  if (result.error) {
+    logger.error("memo post failed", {
+      companyId,
+      memoId,
+      error: result.error
+    });
     throw redirect(
       path.to.memo(memoId),
-      await flash(request, error(err, "Failed to post memo"))
+      await flash(
+        request,
+        error(result.error, result.error.message || "Failed to post memo")
+      )
     );
   }
 

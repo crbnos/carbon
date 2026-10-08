@@ -51,7 +51,15 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
   { label: "Getting started", slugs: ["onboarding", "keyboard-shortcuts"] },
   {
     label: "Sales",
-    slugs: ["quotes", "pricing", "sales-orders", "rmas", "customer-portal"],
+    slugs: [
+      "quotes",
+      "pricing",
+      "sales-orders",
+      "contracts",
+      "rental-agreements",
+      "rmas",
+      "customer-portal",
+    ],
   },
   {
     label: "Items & engineering",

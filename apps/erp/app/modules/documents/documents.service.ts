@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { storage } from "@carbon/files";
+import { imageTransformErrorMessage, storage } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -300,7 +300,10 @@ export async function insertUploadedDocument(
       return {
         data: null,
         error: new Error(
-          "Failed to convert the staged image — is image transformation enabled on this stack? The staged upload was left in place; re-register to retry."
+          imageTransformErrorMessage(
+            converted.error,
+            "Failed to convert the staged image — is image transformation enabled on this stack? The staged upload was left in place; re-register to retry."
+          )
         )
       };
     }

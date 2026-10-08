@@ -113,7 +113,7 @@ export default function QuoteMakeMethodRoute() {
   const { makeMethod, materials, operations, tags } = loaderData;
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <QuoteMakeMethodTools />
 
       <QuoteBillOfProcess

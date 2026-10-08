@@ -128,6 +128,9 @@ const GaugeCalibrationRecordsTable = memo(
           ),
           meta: {
             mobile: "P2",
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },

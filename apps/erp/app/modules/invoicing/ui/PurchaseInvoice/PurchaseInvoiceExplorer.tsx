@@ -25,7 +25,7 @@ import {
   useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import {
@@ -289,6 +289,13 @@ function PurchaseInvoiceLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const subtitle =
+    line.invoiceLineType === "G/L Account"
+      ? "G/L Account"
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -299,11 +306,11 @@ function PurchaseInvoiceLineBody({
               ? line.description || "Indirect Expense"
               : getItemReadableId(items, line.itemId)}
           </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.invoiceLineType === "G/L Account"
-              ? "G/L Account"
-              : line.description}
-          </span>
+          {subtitle && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {subtitle}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -331,6 +338,16 @@ function PurchaseInvoiceLineItem({
   const isSelected =
     location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
 
+  const subtitle =
+    line.invoiceLineType === "G/L Account"
+      ? "G/L Account"
+      : line.invoiceLineType === "Fixed Asset"
+        ? line.assetName || line.description
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
+
   return (
     <VStack spacing={0} className="border-b">
       <PrefetchLink
@@ -353,13 +370,11 @@ function PurchaseInvoiceLineItem({
                     ? (line as any).assetReadableId || "Fixed Asset"
                     : getItemReadableId(items, line.itemId)}
               </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.invoiceLineType === "G/L Account"
-                  ? "G/L Account"
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? line.assetName || line.description
-                    : line.description}
-              </span>
+              {subtitle && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {subtitle}
+                </span>
+              )}
             </VStack>
           </HStack>
           <div className="absolute right-2">

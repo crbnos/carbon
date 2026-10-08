@@ -52,6 +52,7 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
@@ -108,6 +109,9 @@ const SupplierQuoteLineForm = ({
   });
 
   const [itemType, setItemType] = useState(initialValues.itemType);
+  // The state is typed as a method item type, but an existing line (or a
+  // selected item) can be a Service at runtime.
+  const isService = (itemType as string) === "Service";
   const [itemData, setItemData] = useState<{
     supplierPartId: string;
     description: string;
@@ -167,17 +171,24 @@ const SupplierQuoteLineForm = ({
       return;
     }
 
+    // A service is always bought and "stocked" in EA, 1:1.
+    const isServiceItem = item.data?.type === "Service";
     const newItemData = {
       ...itemData,
       itemId,
       itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
-      inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-      purchaseUom:
-        supplierPart.data?.supplierUnitOfMeasureCode ??
-        item.data?.unitOfMeasureCode ??
-        "EA",
-      conversionFactor: supplierPart.data?.conversionFactor ?? 1
+      inventoryUom: isServiceItem
+        ? EACH_UNIT_OF_MEASURE_CODE
+        : (item.data?.unitOfMeasureCode ?? "EA"),
+      purchaseUom: isServiceItem
+        ? EACH_UNIT_OF_MEASURE_CODE
+        : (supplierPart.data?.supplierUnitOfMeasureCode ??
+          item.data?.unitOfMeasureCode ??
+          "EA"),
+      conversionFactor: isServiceItem
+        ? 1
+        : (supplierPart.data?.conversionFactor ?? 1)
     };
 
     if (supplierPart.data && !itemData.supplierPartId) {
@@ -297,8 +308,23 @@ const SupplierQuoteLineForm = ({
                     <Hidden name="supplierQuoteLineType" value={itemType} />
                     <Hidden
                       name="inventoryUnitOfMeasureCode"
-                      value={itemData?.inventoryUom}
+                      value={
+                        isService
+                          ? EACH_UNIT_OF_MEASURE_CODE
+                          : itemData?.inventoryUom
+                      }
                     />
+                    {/* A service is always bought in EA, so no unit of
+                        measure or conversion factor is asked for. */}
+                    {isService && (
+                      <>
+                        <Hidden
+                          name="purchaseUnitOfMeasureCode"
+                          value={EACH_UNIT_OF_MEASURE_CODE}
+                        />
+                        <Hidden name="conversionFactor" value={1} />
+                      </>
+                    )}
                     <VStack>
                       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                         <div className="col-span-2 max-md:col-span-full grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
@@ -345,33 +371,37 @@ const SupplierQuoteLineForm = ({
                             }}
                             onBlur={(e) => onSupplierPartChange(e.target.value)}
                           />
-                          <UnitOfMeasure
-                            name="purchaseUnitOfMeasureCode"
-                            label={t`Purchase Unit of Measure`}
-                            termId="item-purchasing-uom"
-                            value={itemData.purchaseUom}
-                            onChange={(newValue) => {
-                              if (newValue) {
-                                setItemData((d) => ({
-                                  ...d,
-                                  purchaseUom: newValue?.value as string
-                                }));
-                              }
-                            }}
-                          />
-                          <ConversionFactor
-                            name="conversionFactor"
-                            termId="conversion-factor"
-                            purchasingCode={itemData.purchaseUom}
-                            inventoryCode={itemData.inventoryUom}
-                            value={itemData.conversionFactor}
-                            onChange={(value) => {
-                              setItemData((d) => ({
-                                ...d,
-                                conversionFactor: value
-                              }));
-                            }}
-                          />
+                          {!isService && (
+                            <>
+                              <UnitOfMeasure
+                                name="purchaseUnitOfMeasureCode"
+                                label={t`Purchase Unit of Measure`}
+                                termId="item-purchasing-uom"
+                                value={itemData.purchaseUom}
+                                onChange={(newValue) => {
+                                  if (newValue) {
+                                    setItemData((d) => ({
+                                      ...d,
+                                      purchaseUom: newValue?.value as string
+                                    }));
+                                  }
+                                }}
+                              />
+                              <ConversionFactor
+                                name="conversionFactor"
+                                termId="conversion-factor"
+                                purchasingCode={itemData.purchaseUom}
+                                inventoryCode={itemData.inventoryUom}
+                                value={itemData.conversionFactor}
+                                onChange={(value) => {
+                                  setItemData((d) => ({
+                                    ...d,
+                                    conversionFactor: value
+                                  }));
+                                }}
+                              />
+                            </>
+                          )}
 
                           <CustomFormFields table="supplierQuoteLine" />
                         </div>

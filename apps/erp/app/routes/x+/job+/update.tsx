@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import {
   calculateJobPriority,
   isJobLocked,
+  makeToAssetItemError,
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Per-ID locked check
   const jobs = await client
     .from("job")
-    .select("id, status")
+    .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
     .in("id", ids as string[]);
 
   const lockedError = requireUnlockedBulk({
@@ -70,7 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
         client
           .from("item")
           .select(
-            "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
+            "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId, itemTrackingType"
           )
           .eq("id", value)
           .eq("companyId", companyId)
@@ -81,6 +82,19 @@ export async function action({ request }: ActionFunctionArgs) {
           .eq("itemId", value)
           .single()
       ]);
+
+      // A Make to Asset job keeps the item rule its form and release apply.
+      const lotSize = manufacturing?.data?.lotSize ?? 0;
+      for (const job of jobs.data ?? []) {
+        const itemError = makeToAssetItemError({
+          ...job,
+          itemTrackingType: item.data?.itemTrackingType,
+          quantity: lotSize === 0 ? job.quantity : lotSize
+        });
+        if (itemError) {
+          return { error: { message: itemError }, data: null };
+        }
+      }
 
       const [itemUpdate, makeMethodUpdate] = await Promise.all([
         client

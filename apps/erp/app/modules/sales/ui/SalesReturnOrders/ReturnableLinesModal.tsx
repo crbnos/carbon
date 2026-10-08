@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   Checkbox,
@@ -23,11 +24,11 @@ import {
   useDebounce,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { distinctItemText, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import { useFetcher, useParams, useRevalidator } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { loader as returnableLinesLoader } from "~/routes/x+/sales-return-order+/returnable-lines";
 import { path } from "~/utils/path";
 
@@ -292,9 +293,14 @@ const ReturnableLinesModal = ({
                               <span className="text-sm font-medium truncate">
                                 {line.itemReadableId}
                               </span>
-                              <span className="text-xs text-muted-foreground truncate">
-                                {line.itemName}
-                              </span>
+                              {distinctItemText(
+                                line.itemReadableId,
+                                line.itemName
+                              ) && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {line.itemName}
+                                </span>
+                              )}
                               <span className="text-xs text-muted-foreground">
                                 {line.shipmentReadableId}
                                 {line.salesOrderReadableId

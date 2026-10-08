@@ -14,6 +14,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { motion } from "motion/react";
 import { LuImage } from "react-icons/lu";
@@ -139,18 +140,24 @@ const PurchaseReturnOrderSummary = () => {
                             </Link>
                           </Button>
                         </HStack>
-                        <TruncatedTooltipText
-                          className="text-muted-foreground text-sm truncate w-full"
-                          tooltip={line.item?.name ?? ""}
-                        >
-                          {line.item?.name}
-                        </TruncatedTooltipText>
+                        {distinctItemText(
+                          line.item?.readableIdWithRevision,
+                          line.item?.name
+                        ) && (
+                          <TruncatedTooltipText
+                            className="text-muted-foreground text-sm truncate w-full"
+                            tooltip={line.item?.name ?? ""}
+                          >
+                            {line.item?.name}
+                          </TruncatedTooltipText>
+                        )}
                       </VStack>
                       <VStack
                         spacing={2}
                         className="flex-shrink-0 items-end w-auto"
                       >
                         <MotionMoney
+                          className="font-semibold text-xl whitespace-nowrap"
                           value={lineCredit}
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}

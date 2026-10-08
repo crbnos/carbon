@@ -12,15 +12,23 @@ import {
   cn,
   Heading,
   HStack,
+  RadioGroup,
+  RadioGroupItem,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
   TruncatedTooltipText,
   useViewport,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
-import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import {
@@ -33,6 +41,7 @@ import { SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
+  usePercentFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -47,23 +56,22 @@ import type {
 } from "../../types";
 import {
   deselectedLine,
-  getQuoteLineTotal,
-  LinePricingOptions,
-  type SelectedLine
-} from "./QuoteLinePricingOptions";
+  type SelectedLine,
+  selectQuoteLines
+} from "./quote-summary-selection";
 
 const LineItems = ({
   currencyCode,
   formatter,
   locale,
   selectedLines,
-  setSelectedLines
+  onSelectQuantity
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
   locale: string;
   selectedLines: Record<string, SelectedLine>;
-  setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
+  onSelectQuantity: (lineId: string, quantity: number) => void;
 }) => {
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -138,7 +146,16 @@ const LineItems = ({
         }
 
         const selectedLine = selectedLines[line.id] || deselectedLine;
-        const lineTotal = getQuoteLineTotal(selectedLine);
+        const lineTotal =
+          (selectedLine.convertedNetUnitPrice ?? 0) *
+            (selectedLine.quantity ?? 0) +
+          (selectedLine.convertedAddOn ?? 0) +
+          (selectedLine.convertedShippingCost ?? 0) +
+          ((selectedLine.convertedNetUnitPrice ?? 0) *
+            (selectedLine.quantity ?? 0) +
+            (selectedLine.convertedTaxableAddOn ?? 0) +
+            (selectedLine.convertedShippingCost ?? 0)) *
+            (selectedLine.taxPercent ?? 0);
         // The quantity-break picker: a tap on the line opens it.
         const pricingOptions = (
           <motion.div
@@ -160,7 +177,7 @@ const LineItems = ({
               shouldConvertCurrency={shouldConvertCurrency}
               locale={locale}
               selectedLine={selectedLine}
-              setSelectedLines={setSelectedLines}
+              onSelectQuantity={onSelectQuantity}
             />
           </motion.div>
         );
@@ -190,7 +207,10 @@ const LineItems = ({
                     <LuChevronRight className="size-4" />
                   </motion.span>
                 }
-                description={line.description}
+                description={distinctItemText(
+                  line.itemReadableId,
+                  line.description
+                )}
                 meta={
                   selectedLine.quantity > 0 ? (
                     <>
@@ -252,6 +272,7 @@ const LineItems = ({
                     </HStack>
                     <HStack spacing={4}>
                       <MotionMoney
+                        className="font-semibold text-xl whitespace-nowrap"
                         value={lineTotal}
                         currency={currencyCode}
                         decimalPlaces={currencyDecimals}
@@ -266,12 +287,14 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <TruncatedTooltipText
-                    className="text-muted-foreground text-sm truncate"
-                    tooltip={line.description}
-                  >
-                    {line.description}
-                  </TruncatedTooltipText>
+                  {distinctItemText(line.itemReadableId, line.description) && (
+                    <TruncatedTooltipText
+                      className="text-muted-foreground text-sm truncate"
+                      tooltip={line.description}
+                    >
+                      {line.description}
+                    </TruncatedTooltipText>
+                  )}
                 </div>
               </VStack>
             </HStack>
@@ -280,6 +303,348 @@ const LineItems = ({
           </motion.div>
         );
       })}
+    </VStack>
+  );
+};
+
+type LinePricingOptionsProps = {
+  line: QuotationLine;
+  options: QuotationPrice[];
+  quoteCurrency: string;
+  shouldConvertCurrency: boolean;
+  quoteExchangeRate: number;
+  locale: string;
+  formatter: Intl.NumberFormat;
+  selectedLine: SelectedLine;
+  onSelectQuantity: (lineId: string, quantity: number) => void;
+};
+
+const LinePricingOptions = ({
+  line,
+  options,
+  quoteCurrency,
+  shouldConvertCurrency,
+  quoteExchangeRate,
+  locale,
+  formatter,
+  selectedLine,
+  onSelectQuantity
+}: LinePricingOptionsProps) => {
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
+  const percentFormatter = usePercentFormatter();
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("Could not find quote id");
+  const routeData = useRouteData<{
+    quote: Quotation;
+    salesOrderLines: SalesOrderLine[];
+  }>(path.to.quote(quoteId));
+
+  const selectedValue = selectedLine.quantity.toString();
+
+  const additionalChargesByQuantity =
+    line.quantity?.reduce(
+      (acc, quantity) => {
+        const charges = Object.values(line.additionalCharges ?? {}).reduce(
+          (chargeAcc, charge) => {
+            const amount = charge.amounts?.[quantity];
+            return chargeAcc + amount;
+          },
+          0
+        );
+        acc[quantity] = charges;
+        return acc;
+      },
+      { 0: 0 } as Record<number, number>
+    ) ?? {};
+
+  const convertedAdditionalChargesByQuantity = Object.entries(
+    additionalChargesByQuantity
+  ).reduce<Record<number, number>>(
+    (acc, [quantity, amount]) => {
+      acc[Number(quantity)] = amount * quoteExchangeRate;
+      return acc;
+    },
+    { 0: 0 }
+  );
+
+  const additionalCharges: { name: string; amount: number }[] = [];
+  if (selectedLine.convertedShippingCost) {
+    additionalCharges.push({
+      name: "Shipping",
+      amount: selectedLine.convertedShippingCost
+    });
+  }
+  Object.entries(line.additionalCharges ?? {}).forEach(([name, charge]) => {
+    additionalCharges.push({
+      name: charge.description,
+      amount: charge.amounts?.[selectedLine.quantity] * quoteExchangeRate
+    });
+  });
+
+  const hasAnyShipping = options.some(
+    (option) => (option.convertedShippingCost ?? 0) > 0
+  );
+  const hasAnyFees = options.some(
+    (option) => (convertedAdditionalChargesByQuantity[option.quantity] ?? 0) > 0
+  );
+
+  return (
+    <VStack spacing={4}>
+      <RadioGroup
+        className="w-full"
+        value={selectedValue}
+        disabled={["Ordered", "Partial", "Expired", "Cancelled"].includes(
+          routeData?.quote.status ?? ""
+        )}
+        onValueChange={(value) => {
+          if (
+            value === "0" ||
+            options.some((opt) => opt.quantity.toString() === value)
+          ) {
+            onSelectQuantity(line.id!, Number(value));
+          }
+        }}
+      >
+        <Table>
+          <Thead>
+            <Tr>
+              <Th />
+              <Th>
+                <Trans>Quantity</Trans>
+              </Th>
+              <Th>
+                <Trans>Unit Price</Trans>
+              </Th>
+              <Th>
+                <Trans>Discount</Trans>
+              </Th>
+              {hasAnyShipping && (
+                <Th>
+                  <Trans>Shipping</Trans>
+                </Th>
+              )}
+              {hasAnyFees && (
+                <Th>
+                  <Trans>Fees</Trans>
+                </Th>
+              )}
+              <Th>
+                <Trans>Lead Time</Trans>
+              </Th>
+              <Th>
+                <Trans>Subtotal</Trans>
+              </Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {!Array.isArray(options) || options.length === 0 ? (
+              <Tr>
+                <Td
+                  colSpan={5 + (hasAnyShipping ? 1 : 0) + (hasAnyFees ? 1 : 0)}
+                  className="text-center py-8"
+                >
+                  No pricing options found
+                </Td>
+              </Tr>
+            ) : (
+              options.map(
+                (option, index) =>
+                  (line?.quantity?.includes(option.quantity) ||
+                    option.quantity === 0) && (
+                    <Tr key={index}>
+                      <Td>
+                        <RadioGroupItem
+                          value={option.quantity.toString()}
+                          id={`${line.id}:${option.quantity.toString()}`}
+                        />
+                        <label
+                          htmlFor={`${line.id}:${option.quantity.toString()}`}
+                          className="sr-only"
+                        >
+                          {option.quantity}
+                        </label>
+                      </Td>
+                      <Td>{option.quantity}</Td>
+                      <Td>
+                        {formatter.format(option.convertedUnitPrice ?? 0)}
+                      </Td>
+                      <Td>
+                        {option.discountPercent > 0
+                          ? percentFormatter.format(option.discountPercent)
+                          : "-"}
+                      </Td>
+                      {hasAnyShipping && (
+                        <Td>
+                          {(option.convertedShippingCost ?? 0) > 0
+                            ? formatter.format(
+                                option.convertedShippingCost ?? 0
+                              )
+                            : "-"}
+                        </Td>
+                      )}
+                      {hasAnyFees && (
+                        <Td>
+                          {(convertedAdditionalChargesByQuantity[
+                            option.quantity
+                          ] ?? 0) > 0
+                            ? formatter.format(
+                                convertedAdditionalChargesByQuantity[
+                                  option.quantity
+                                ]
+                              )
+                            : "-"}
+                        </Td>
+                      )}
+                      <Td>
+                        {new Intl.NumberFormat(locale, {
+                          style: "unit",
+                          unit: "day"
+                        }).format(option.leadTime)}
+                      </Td>
+                      <Td>
+                        {formatter.format(
+                          (option.convertedNetUnitPrice ?? 0) *
+                            option.quantity +
+                            convertedAdditionalChargesByQuantity[
+                              option.quantity
+                            ] +
+                            (option.convertedShippingCost ?? 0)
+                        )}
+                      </Td>
+                    </Tr>
+                  )
+              )
+            )}
+          </Tbody>
+        </Table>
+      </RadioGroup>
+
+      {selectedLine.quantity !== 0 && (
+        <div className="w-full">
+          <Table>
+            <Tbody>
+              <Tr key="extended-price" className="border-b border-border">
+                <Td>
+                  <Trans>Extended Price</Trans>
+                </Td>
+                <Td className="text-right">
+                  <MotionMoney
+                    value={
+                      (selectedLine.convertedUnitPrice ?? 0) *
+                      selectedLine.quantity
+                    }
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
+                  />
+                </Td>
+              </Tr>
+
+              {selectedLine.discountPercent > 0 && (
+                <Tr key="discount" className="border-b border-border">
+                  <Td>
+                    Discount (
+                    {percentFormatter.format(selectedLine.discountPercent)})
+                  </Td>
+                  <Td className="text-right">
+                    -
+                    <MotionMoney
+                      value={
+                        (selectedLine.convertedUnitPrice ?? 0) *
+                        selectedLine.quantity *
+                        selectedLine.discountPercent
+                      }
+                      currency={quoteCurrency}
+                      decimalPlaces={currencyDecimals}
+                    />
+                  </Td>
+                </Tr>
+              )}
+
+              {additionalCharges.length > 0 &&
+                additionalCharges.map((charge) => (
+                  <Tr
+                    key={charge.name}
+                    className={
+                      additionalCharges[additionalCharges.length - 1] === charge
+                        ? "border-b border-border"
+                        : ""
+                    }
+                  >
+                    <Td>{charge.name}</Td>
+                    <Td className="text-right">
+                      <MotionMoney
+                        value={charge.amount}
+                        currency={quoteCurrency}
+                        decimalPlaces={currencyDecimals}
+                      />
+                    </Td>
+                  </Tr>
+                ))}
+
+              <Tr key="subtotal">
+                <Td>
+                  <Trans>Subtotal</Trans>
+                </Td>
+                <Td className="text-right">
+                  <MotionMoney
+                    value={
+                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                      (selectedLine.convertedAddOn ?? 0) +
+                      (selectedLine.convertedShippingCost ?? 0)
+                    }
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
+                  />
+                </Td>
+              </Tr>
+
+              <Tr key="tax" className="border-b border-border">
+                <Td>
+                  Tax ({percentFormatter.format(selectedLine.taxPercent)})
+                </Td>
+                <Td className="text-right">
+                  <MotionMoney
+                    value={
+                      ((selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                        (selectedLine.convertedTaxableAddOn ?? 0) +
+                        (selectedLine.convertedShippingCost ?? 0)) *
+                      (selectedLine.taxPercent ?? 0)
+                    }
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
+                  />
+                </Td>
+              </Tr>
+
+              <Tr key="total" className="font-semibold">
+                <Td>
+                  <Trans>Total</Trans>
+                </Td>
+                <Td className="text-right">
+                  <MotionMoney
+                    value={
+                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                      (selectedLine.convertedAddOn ?? 0) +
+                      (selectedLine.convertedShippingCost ?? 0) +
+                      ((selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                        (selectedLine.convertedTaxableAddOn ?? 0) +
+                        (selectedLine.convertedShippingCost ?? 0)) *
+                        (selectedLine.taxPercent ?? 0)
+                    }
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
+                  />
+                </Td>
+              </Tr>
+            </Tbody>
+          </Table>
+        </div>
+      )}
     </VStack>
   );
 };
@@ -310,123 +675,38 @@ const QuoteSummary = ({
     routeData?.quote?.currencyCode ?? "USD"
   );
 
-  const [selectedLines, setSelectedLines] = useState<
-    Record<string, SelectedLine>
-  >(() => {
-    return (
-      routeData?.lines?.reduce<Record<string, SelectedLine>>((acc, line) => {
-        const salesOrderLine = routeData?.salesOrderLines?.find(
-          (salesOrderLine) => salesOrderLine.id === line.id
-        );
+  // Only what the user picked; everything else follows the quote's data.
+  const [picks, setPicks] = useState<Record<string, number>>({});
+  const selectedLines = useMemo(
+    () =>
+      selectQuoteLines({
+        lines: routeData?.lines,
+        prices: routeData?.prices,
+        salesOrderLines: routeData?.salesOrderLines,
+        exchangeRate: routeData?.quote.exchangeRate ?? 1,
+        picks
+      }),
+    [
+      routeData?.lines,
+      routeData?.prices,
+      routeData?.salesOrderLines,
+      routeData?.quote.exchangeRate,
+      picks
+    ]
+  );
+  const onSelectQuantity = useCallback(
+    (lineId: string, quantity: number) =>
+      setPicks((prev) => ({ ...prev, [lineId]: quantity })),
+    []
+  );
 
-        if (
-          Array.isArray(routeData?.salesOrderLines) &&
-          routeData?.salesOrderLines.length > 0 &&
-          !salesOrderLine
-        ) {
-          acc[line.id!] = deselectedLine;
-          return acc;
-        }
+  // The selection is seeded once, so a line deleted since then still has an
+  // entry — total only the lines the quote still has.
+  const currentLines = (routeData?.lines ?? []).flatMap((line) =>
+    line.id && selectedLines[line.id] ? [selectedLines[line.id]] : []
+  );
 
-        const price = salesOrderLine
-          ? routeData?.prices?.find(
-              (price) =>
-                price.quoteLineId === salesOrderLine.id &&
-                price.quantity === salesOrderLine.saleQuantity
-            )
-          : routeData?.prices?.find(
-              (price) =>
-                price.quoteLineId === line.id &&
-                line.quantity?.includes(price.quantity)
-            );
-        if (!line.id) {
-          return acc;
-        }
-
-        if (!price) {
-          acc[line.id] = deselectedLine;
-          return acc;
-        }
-
-        const additionalChargesByQuantity =
-          line.quantity?.reduce(
-            (acc, quantity) => {
-              const charges = Object.values(
-                line.additionalCharges ?? {}
-              ).reduce((chargeAcc, charge) => {
-                const amount = charge.amounts?.[quantity];
-                return chargeAcc + amount;
-              }, 0);
-              acc[quantity] = charges;
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        const convertedAdditionalChargesByQuantity =
-          Object.entries(additionalChargesByQuantity).reduce<
-            Record<number, number>
-          >(
-            (acc, [quantity, amount]) => {
-              acc[Number(quantity)] =
-                amount * (routeData?.quote.exchangeRate ?? 1);
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        const taxableAdditionalChargesByQuantity =
-          line.quantity?.reduce(
-            (acc, quantity) => {
-              const charges = Object.values(
-                line.additionalCharges ?? {}
-              ).reduce((chargeAcc, charge) => {
-                if (charge.taxable === false) return chargeAcc;
-                const amount = charge.amounts?.[quantity];
-                return chargeAcc + amount;
-              }, 0);
-              acc[quantity] = charges;
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        const convertedTaxableAdditionalChargesByQuantity =
-          Object.entries(taxableAdditionalChargesByQuantity).reduce<
-            Record<number, number>
-          >(
-            (acc, [quantity, amount]) => {
-              acc[Number(quantity)] =
-                amount * (routeData?.quote.exchangeRate ?? 1);
-              return acc;
-            },
-            {} as Record<number, number>
-          ) ?? {};
-
-        acc[line.id] = {
-          quantity: price.quantity ?? 0,
-          netUnitPrice: price.netUnitPrice ?? 0,
-          convertedNetUnitPrice: price.convertedNetUnitPrice ?? 0,
-          addOn: additionalChargesByQuantity[price.quantity] || 0,
-          convertedAddOn:
-            convertedAdditionalChargesByQuantity[price.quantity] || 0,
-          taxableAddOn: taxableAdditionalChargesByQuantity[price.quantity] || 0,
-          convertedTaxableAddOn:
-            convertedTaxableAdditionalChargesByQuantity[price.quantity] || 0,
-          leadTime: price.leadTime,
-          shippingCost: price.shippingCost ?? 0,
-          convertedShippingCost: price.convertedShippingCost ?? 0,
-          taxPercent: line.taxPercent ?? 0,
-          discountPercent: price.discountPercent ?? 0,
-          unitPrice: price.unitPrice ?? 0,
-          convertedUnitPrice: price.convertedUnitPrice ?? 0
-        };
-        return acc;
-      }, {}) ?? {}
-    );
-  });
-
-  const subtotal = Object.values(selectedLines).reduce((acc, line) => {
+  const subtotal = currentLines.reduce((acc, line) => {
     return (
       acc +
       (line.convertedNetUnitPrice ?? 0) * line.quantity +
@@ -434,7 +714,7 @@ const QuoteSummary = ({
       (line.convertedShippingCost ?? 0)
     );
   }, 0);
-  const totalDiscount = Object.values(selectedLines).reduce((acc, line) => {
+  const totalDiscount = currentLines.reduce((acc, line) => {
     return (
       acc +
       (line.convertedUnitPrice ?? 0) *
@@ -442,7 +722,7 @@ const QuoteSummary = ({
         (line.discountPercent ?? 0)
     );
   }, 0);
-  const tax = Object.values(selectedLines).reduce((acc, line) => {
+  const tax = currentLines.reduce((acc, line) => {
     return (
       acc +
       ((line.convertedNetUnitPrice ?? 0) * line.quantity +
@@ -490,7 +770,7 @@ const QuoteSummary = ({
           locale={locale}
           formatter={formatter}
           selectedLines={selectedLines}
-          setSelectedLines={setSelectedLines}
+          onSelectQuantity={onSelectQuantity}
         />
 
         <VStack spacing={2} className="mt-8">

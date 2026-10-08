@@ -35,7 +35,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, pluralize } from "@carbon/utils";
+import { distinctItemText, INPUT_FORMAT, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -463,12 +463,14 @@ const LinePricingForm = ({
                 the card edge. min-w-0 is what lets truncate bite. */}
             <VStack spacing={0} className="flex-1 min-w-0">
               <Heading className="min-w-0">{line.itemReadableId}</Heading>
-              <TruncatedTooltipText
-                className="text-muted-foreground text-base truncate"
-                tooltip={line.description}
-              >
-                {line.description}
-              </TruncatedTooltipText>
+              {distinctItemText(line.itemReadableId, line.description) && (
+                <TruncatedTooltipText
+                  className="text-muted-foreground text-base truncate"
+                  tooltip={line.description}
+                >
+                  {line.description}
+                </TruncatedTooltipText>
+              )}
             </VStack>
           </HStack>
           <LinePricingOptions

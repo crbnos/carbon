@@ -386,6 +386,7 @@ import { VStack } from "./VStack";
 
 export * from "./Acknowledge";
 export * from "./hooks";
+export * from "./RecordOutlet";
 export {
   Accordion,
   AccordionContent,

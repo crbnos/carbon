@@ -40,12 +40,14 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  distinctItemText,
   equals,
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
   round
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -146,6 +148,16 @@ const SalesOrderLineForm = ({
   const [items] = useItems();
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<SalesOrderLineType | "Item">(
+    "Item"
+  );
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
+  );
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
@@ -262,13 +274,15 @@ const SalesOrderLineForm = ({
       });
   }, [pricingRuleId, carbon]);
 
-  const onTypeChange = (t: SalesOrderLineType) => {
-    // @ts-expect-error
-    setLineType(t);
+  const onTypeChange = (t: SalesOrderLineType | "Item") => {
+    setItemFilter(t);
+    // "Item" is the "All Items" filter, always compatible with the selection.
+    if (t === "Item") return;
+    setLineType(t as typeof lineType);
     // Clear itemData only when the new filter excludes the currently selected
     // item — otherwise a stale itemId of the old type would post with the new
-    // salesOrderLineType. "Item" is the "All Items" filter, always compatible.
-    if (!itemData.itemId || t === ("Item" as SalesOrderLineType)) return;
+    // salesOrderLineType.
+    if (!itemData.itemId) return;
     const currentType = items.find((i) => i.id === itemData.itemId)?.type;
     if (currentType && currentType === t) return;
     setItemData({
@@ -284,6 +298,8 @@ const SalesOrderLineForm = ({
       priceTrace: null
     });
   };
+
+  const isService = lineType === "Service";
 
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
@@ -372,7 +388,7 @@ const SalesOrderLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -404,12 +420,19 @@ const SalesOrderLineForm = ({
       priceListId = result.priceListId;
     }
 
+    if (item.data?.type) {
+      setLineType(item.data.type as typeof lineType);
+    }
     setItemData({
       itemId,
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       unitPrice: resolvedPrice,
-      uom: item.data?.unitOfMeasureCode ?? "EA",
+      // A service is always sold in "EA"
+      uom:
+        item.data?.type === "Service"
+          ? "EA"
+          : (item.data?.unitOfMeasureCode ?? "EA"),
       storageUnitId: defaultStorageUnitId ?? "",
       modelUploadId: item.data?.modelUploadId ?? null,
       priceListId,
@@ -538,11 +561,16 @@ const SalesOrderLineForm = ({
                     <ModalCardDescription>
                       {isEditing ? (
                         <div className="flex flex-col items-start gap-1">
-                          <span>
-                            {isFixedAsset
-                              ? initialValues.assetName || assetData.description
-                              : itemData?.description}
-                          </span>
+                          {isFixedAsset ? (
+                            <span>
+                              {initialValues.assetName || assetData.description}
+                            </span>
+                          ) : (
+                            distinctItemText(
+                              getItemReadableId(items, itemData?.itemId),
+                              itemData?.description
+                            ) && <span>{itemData?.description}</span>
+                          )}
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="outline"
@@ -621,7 +649,11 @@ const SalesOrderLineForm = ({
                       name="priceTrace"
                       value={JSON.stringify(itemData?.priceTrace ?? null)}
                     />
-                    <Hidden name="unitOfMeasureCode" value={itemData.uom} />
+                    <Hidden name="salesOrderLineType" value={lineType} />
+                    <Hidden
+                      name="unitOfMeasureCode"
+                      value={isService ? "EA" : itemData.uom}
+                    />
                     <Hidden
                       name="configuration"
                       value={configuration ? JSON.stringify(configuration) : ""}
@@ -631,10 +663,11 @@ const SalesOrderLineForm = ({
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
-                          label={i18n._(itemTypeLabel(lineType as "Part"))}
-                          type={lineType as "Part"}
+                          label={i18n._(itemTypeLabel(itemFilter as "Part"))}
+                          type={itemFilter as "Part"}
                           validItemTypes={[...itemType]}
-                          typeFieldName="salesOrderLineType"
+                          // The line type is posted above; the filter is not it.
+                          typeFieldName="itemFilter"
                           value={itemData.itemId}
                           locationId={locationId}
                           onChange={(value) => {
@@ -738,11 +771,35 @@ const SalesOrderLineForm = ({
                                 }
                               />
                             </div>
-                            <DatePicker
-                              name="promisedDate"
-                              label={t`Promised Date`}
-                              termId="sales-order-line-promised-date"
-                            />
+                            {/* A service is promised for the day it starts, so
+                                the server copies the start date across. */}
+                            {!isService && (
+                              <DatePicker
+                                name="promisedDate"
+                                label={t`Promised Date`}
+                                termId="sales-order-line-promised-date"
+                              />
+                            )}
+                            {isService && (
+                              <>
+                                <DatePicker
+                                  name="serviceStartDate"
+                                  label={t`Service start`}
+                                  onChange={(date) =>
+                                    setServiceStartDate(date ?? undefined)
+                                  }
+                                />
+                                <DatePicker
+                                  name="serviceEndDate"
+                                  label={t`Service end`}
+                                  minValue={
+                                    serviceStartDate
+                                      ? parseDate(serviceStartDate)
+                                      : undefined
+                                  }
+                                />
+                              </>
+                            )}
                             {[
                               "Part",
                               "Material",

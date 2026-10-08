@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -34,7 +35,6 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
 import { LuDownload, LuEllipsisVertical, LuTrash } from "react-icons/lu";
-import { useRevalidator } from "react-router";
 import DocumentIcon from "~/components/DocumentIcon";
 import DocumentPreview from "~/components/DocumentPreview";
 import FileDropzone from "~/components/FileDropzone";
