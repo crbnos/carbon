@@ -29,7 +29,7 @@ The 16.9 KB is the rendered `NotificationEmail` for one job assignment with one 
 - [x] Task 5: Send the Slack and push events in chunks
 - [x] Task 6: Look up Slack users with the email in hand and bounded concurrency — skipped by the user, see the task
 - [x] Task 7: Use the shared `fetchAllByIds` in the production module
-- [ ] Task 8: Update the docs and the lessons
+- [x] Task 8: Update the docs and the lessons
 - [ ] Task 9: Run the gates and a large-group check
 
 ## Dependencies
