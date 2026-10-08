@@ -19,11 +19,11 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
   const [params] = useUrlParams();
   const filter = params.get("q") ?? undefined;
   const presentation = useSidebarPresentation();
+  const isActive = (route: Route) =>
+    location.pathname.includes(route.to) && route.q === filter;
 
   if (presentation === "title") {
-    const active = links.find(
-      (route) => location.pathname.includes(route.to) && route.q === filter
-    );
+    const active = links.find(isActive);
     return active ? <>{active.name}</> : null;
   }
 
@@ -36,9 +36,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
             to={route.to + (route.q ? `?q=${route.q}` : "")}
             icon={route.icon}
             label={route.name}
-            isActive={
-              location.pathname.includes(route.to) && route.q === filter
-            }
+            isActive={isActive(route)}
           />
         ))}
       </SheetNavGroup>
@@ -50,19 +48,17 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
       <VStack>
         <VStack spacing={1} className="p-2">
           {links.map((route) => {
-            const isActive =
-              location.pathname.includes(route.to) && route.q === filter;
+            const active = isActive(route);
             return (
               <Button
                 key={route.name}
                 asChild
                 leftIcon={route.icon}
-                variant={isActive ? "active" : "ghost"}
+                variant={active ? "active" : "ghost"}
                 data-nav-item=""
                 className={cn(
                   "w-full justify-start",
-                  !isActive &&
-                    "hover:bg-transparent hover:text-active-foreground"
+                  !active && "hover:bg-transparent hover:text-active-foreground"
                 )}
               >
                 <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>

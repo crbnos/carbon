@@ -44,7 +44,9 @@ import {
   BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
-  BottomSheetTrigger
+  BottomSheetTrigger,
+  SheetSectionLabel,
+  sheetRowClassName
 } from "./BottomSheet";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
@@ -624,6 +626,8 @@ export {
   SelectTrigger,
   SelectValue,
   Separator,
+  SheetSectionLabel,
+  sheetRowClassName,
   KeyboardKeys,
   MENU_ITEM_SHORTCUTS,
   SHORTCUTS,

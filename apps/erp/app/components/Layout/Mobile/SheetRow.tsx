@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { cn, sheetRowClassName } from "@carbon/react";
 import type { ComponentProps, ReactNode } from "react";
 import { forwardRef } from "react";
 import { LuArrowUpRight, LuCheck, LuChevronRight } from "react-icons/lu";
 
 /**
- * One 48pt row in a shell sheet (Create, Modules, Profile). The trailing
+ * One 48pt row in a shell sheet (Modules, Profile). The trailing
  * indicator: › drills in, ↗ leaves the app, ✓ marks the current.
  */
 export type SheetRowTrailing = "drill" | "external" | "check" | ReactNode;
@@ -56,9 +56,6 @@ export function SheetRowContent({
     </>
   );
 }
-
-export const sheetRowClassName =
-  "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-[15px] text-foreground outline-none active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50";
 
 export const SheetRowButton = forwardRef<
   HTMLButtonElement,

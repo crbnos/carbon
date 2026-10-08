@@ -18868,9 +18868,6 @@ msgstr "リソースと設定をセットアップする"
 msgid "Set Version {0} as Active Version?"
 msgstr "バージョン {0} をアクティブバージョンとして設定しますか？"
 
-msgid "Set when the unit was created"
-msgstr ""
-
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
 

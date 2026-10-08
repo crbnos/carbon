@@ -18868,9 +18868,6 @@ msgstr "设置您的资源和设置"
 msgid "Set Version {0} as Active Version?"
 msgstr "将版本 {0} 设置为启用版本？"
 
-msgid "Set when the unit was created"
-msgstr ""
-
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "在个人资料设置中设置默认地点以选择存储单元。"
 

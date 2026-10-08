@@ -8,7 +8,8 @@ import {
   BottomSheetContent,
   BottomSheetHeader,
   BottomSheetTitle,
-  PrefetchLink
+  PrefetchLink,
+  sheetRowClassName
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ModuleCard } from "~/components/ModuleCard";
@@ -17,7 +18,7 @@ import {
   ImplementationData
 } from "~/hooks/useImplementationNavItem";
 import { useModules, useSettingsModule } from "~/hooks/useModules";
-import { SheetRowContent, sheetRowClassName } from "./SheetRow";
+import { SheetRowContent } from "./SheetRow";
 
 /**
  * The tab bar's Modules sheet: the desktop rail's items in rail order —

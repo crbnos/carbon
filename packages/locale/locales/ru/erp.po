@@ -18868,9 +18868,6 @@ msgstr "Настройте ваши ресурсы и параметры"
 msgid "Set Version {0} as Active Version?"
 msgstr "Установить версию {0} как активную версию?"
 
-msgid "Set when the unit was created"
-msgstr ""
-
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Установите местоположение по умолчанию в настройках профиля, чтобы выбрать единицу хранения."
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { cn } from "@carbon/react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
@@ -21,9 +22,26 @@ type SummaryLineRowProps = {
 const rowClassName =
   "flex w-full min-w-0 flex-col gap-0.5 py-3 text-left active:bg-accent";
 
+/** Phones: the divided list that holds a summary card's SummaryLineRows. */
+export function SummaryLineList({
+  className,
+  children
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn("flex w-full flex-col divide-y divide-border", className)}
+    >
+      {children}
+    </div>
+  );
+}
+
 /**
- * Phones: one document line in a summary card (SO, PO, Quote). A link opens
- * the line's page; a button expands the line in place.
+ * Phones: one document line in a summary card. A link opens the line's page;
+ * a button expands the line in place.
  */
 export function SummaryLineRow(props: SummaryLineRowProps) {
   const content = (

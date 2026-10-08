@@ -18868,9 +18868,6 @@ msgstr "자원 및 설정 구성"
 msgid "Set Version {0} as Active Version?"
 msgstr "버전 {0}을(를) 활성 버전으로 설정하시겠습니까?"
 
-msgid "Set when the unit was created"
-msgstr ""
-
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "프로필 설정에서 기본 사업장을 설정하여 보관 단위를 선택하세요."
 

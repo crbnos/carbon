@@ -18868,9 +18868,6 @@ msgstr "Kaynaklarınızı ve ayarlarınızı ayarlayın"
 msgid "Set Version {0} as Active Version?"
 msgstr "Sürüm {0}\"ü Aktif Sürüm Olarak Ayarla?"
 
-msgid "Set when the unit was created"
-msgstr ""
-
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Bir depolama birimi seçmek için varsayılan konumunuzu profil ayarlarınızda belirleyin."
 

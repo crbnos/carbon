@@ -122,15 +122,28 @@ export function useCreate(): Route[] {
   return result.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-const CreateMenu = ({ trigger }: { trigger: React.ReactNode }) => {
+const CreateMenu = ({
+  trigger,
+  open,
+  onOpenChange
+}: {
+  trigger: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) => {
+  const { t } = useLingui();
   const createLinks = useCreate();
 
   if (!createLinks.length) return null;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="w-48">
+      <DropdownMenuContent
+        align="center"
+        className="w-48"
+        aria-label={t`Create`}
+      >
         {createLinks.map((link) => (
           <DropdownMenuItem key={link.to} asChild>
             <Link to={link.to}>

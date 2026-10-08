@@ -10,8 +10,6 @@ import {
   FormLabel,
   HStack,
   Input as InputBase,
-  InputGroup,
-  InputLeftElement,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -23,7 +21,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { PrintButton } from "~/components";
@@ -35,7 +32,6 @@ import {
   Submit,
   WorkCenter
 } from "~/components/Form";
-import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
 import { storageUnitValidator } from "~/modules/inventory";
 import { path } from "~/utils/path";
@@ -70,13 +66,9 @@ const StorageUnitForm = ({
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  // Phones, edit only: a full-screen sheet with Save in its header. The New
-  // sheet and the inline create modal stay as they are.
+  // Phones, edit only: a full-height sheet with Save in its header.
   const { isPhone } = useViewport();
   const isPhoneEdit = isEditing && isPhone;
-  const locations = useLocations();
-  const locationName =
-    locations.find((l) => l.value === initialValues.locationId)?.label ?? "";
 
   const saveButton = (
     <Submit isDisabled={isDisabled}>
@@ -108,13 +100,7 @@ const StorageUnitForm = ({
           if (!open) onClose?.();
         }}
       >
-        <ModalDrawerContent
-          className={
-            isPhoneEdit
-              ? "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)]"
-              : undefined
-          }
-        >
+        <ModalDrawerContent size={isPhoneEdit ? "full" : undefined}>
           <ValidatedForm
             validator={storageUnitValidator}
             method="post"
@@ -153,37 +139,15 @@ const StorageUnitForm = ({
 
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
-                {isPhoneEdit ? (
-                  <FormControl>
-                    <FormLabel htmlFor="locationId-readonly">
-                      {t`Location`}
-                    </FormLabel>
-                    <Hidden name="locationId" />
-                    <InputGroup>
-                      <InputLeftElement>
-                        <LuLock className="size-4 text-muted-foreground" />
-                      </InputLeftElement>
-                      <InputBase
-                        id="locationId-readonly"
-                        value={locationName}
-                        isReadOnly
-                        className="text-muted-foreground"
-                      />
-                    </InputGroup>
-                    <FormHelperText>{t`Set when the unit was created`}</FormHelperText>
-                  </FormControl>
-                ) : (
-                  <Location
-                    isReadOnly={isEditing}
-                    name="locationId"
-                    label={t`Location`}
-                  />
-                )}
+                <Location
+                  isReadOnly={isEditing}
+                  name="locationId"
+                  label={t`Location`}
+                />
                 <StorageUnitParentSelect
                   name="parentId"
                   label={t`Parent Storage Unit`}
-                  // Phones: the helper text under the field explains it.
-                  termId={isPhoneEdit ? undefined : "storage-unit-parent"}
+                  termId="storage-unit-parent"
                   locationId={locationId}
                   isOptional
                   helperText={t`Must be in the same location`}
@@ -212,9 +176,7 @@ const StorageUnitForm = ({
                   <WorkCenter
                     name="workCenterId"
                     label={t`Work Center`}
-                    termId={
-                      isPhoneEdit ? undefined : "storage-unit-work-center"
-                    }
+                    termId="storage-unit-work-center"
                     locationId={locationId}
                     isOptional
                     helperText={t`Assigns this storage unit to a work center (lineside)`}

@@ -59,7 +59,7 @@ import {
   MotionMoney
 } from "~/components";
 import { Confirm } from "~/components/Modals";
-import { SummaryLineRow } from "~/components/SummaryLineRow";
+import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -409,7 +409,7 @@ function LineItems({
   // badges and the breakdown stay on desktop).
   if (isPhone) {
     return (
-      <div className="flex w-full flex-col divide-y divide-border">
+      <SummaryLineList>
         {lines.map((line) =>
           line.id ? (
             <SummaryLineRow
@@ -442,7 +442,7 @@ function LineItems({
             />
           ) : null
         )}
-      </div>
+      </SummaryLineList>
     );
   }
 
@@ -476,12 +476,12 @@ function LineItems({
               {line.thumbnailPath ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg max-md:size-14"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4 max-md:size-14 max-md:p-3">
-                  <LuImage className="w-16 h-16 text-muted-foreground max-md:size-8" />
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                  <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
@@ -495,11 +495,8 @@ function LineItems({
                       children need w-full because VStack is items-start, which
                       sizes each child to its own content and leaves truncate
                       inert no matter how narrow the column gets. */}
-                  <div className="flex items-center justify-between w-full max-md:flex-wrap max-md:gap-y-2">
-                    <VStack
-                      spacing={0}
-                      className="flex-1 min-w-0 max-md:basis-full"
-                    >
+                  <div className="flex items-center justify-between w-full">
+                    <VStack spacing={0} className="flex-1 min-w-0">
                       <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">{title}</Heading>
                         <Button
@@ -524,7 +521,7 @@ function LineItems({
                     </VStack>
                     <VStack
                       spacing={2}
-                      className="flex-shrink-0 items-end w-auto max-md:basis-full max-md:items-start"
+                      className="flex-shrink-0 items-end w-auto"
                     >
                       <HStack spacing={4}>
                         <MotionMoney
@@ -572,7 +569,7 @@ function LineItems({
                       <Badge variant={jobVariant}>{jobLabel}</Badge>
                       {jobs.length > 0 && (
                         <Tooltip>
-                          <TooltipTrigger className="max-md:hit-area">
+                          <TooltipTrigger>
                             <Badge variant="secondary">
                               {jobs.length} <Trans>Jobs</Trans>
                               <LuEllipsisVertical className="w-3 h-3 ml-2" />

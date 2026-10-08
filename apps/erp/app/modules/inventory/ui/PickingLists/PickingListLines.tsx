@@ -3,11 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type {
+  ActionPresentation,
   TrackedEntityOption,
   TrackedEntityPickOrder,
   TrackedEntitySelection
 } from "@carbon/react";
 import {
+  ActionPresentationProvider,
   Badge,
   BarProgress,
   Button,
@@ -268,6 +270,11 @@ function PickingKitCard({
   );
 }
 
+const phoneActionCells: ActionPresentation = {
+  kind: "bar",
+  emphasis: "secondary"
+};
+
 function PickingListLineItem({
   line,
   pickingListId,
@@ -418,98 +425,95 @@ function PickingListLineItem({
     </Badge>
   );
 
-  // Phones: the line's buttons share their own row as equal 44pt halves.
-  const phoneButton = isPhone
-    ? { size: "lg" as const, className: "flex-1" }
-    : {};
-  const phoneButtonRow = isPhone ? "w-full gap-2 space-x-0" : undefined;
-
-  const actions = isLocked ? null : isTracked ? (
-    <HStack spacing={1} className={phoneButtonRow}>
-      {pickedLots.length === 1 ? (
-        <Button
-          variant="secondary"
-          leftIcon={<LuUndo2 />}
-          isDisabled={!canPick || isPending}
-          onClick={() => unpickTracked(pickedLots[0].trackedEntityId)}
-          {...phoneButton}
-        >
-          {pickedLots[0].trackedEntity?.readableId ? (
-            <Trans>Unpick {pickedLots[0].trackedEntity.readableId}</Trans>
-          ) : (
+  // Phones: the buttons fill their own row as equal 44pt cells.
+  const actions = isLocked ? null : (
+    <ActionPresentationProvider value={isPhone ? phoneActionCells : null}>
+      <HStack
+        spacing={1}
+        className="max-md:basis-full max-md:gap-2 max-md:space-x-0 max-md:[&>button]:min-w-fit max-md:[&>button]:flex-1"
+      >
+        {isTracked ? (
+          <>
+            {pickedLots.length === 1 ? (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                isDisabled={!canPick || isPending}
+                onClick={() => unpickTracked(pickedLots[0].trackedEntityId)}
+              >
+                {pickedLots[0].trackedEntity?.readableId ? (
+                  <Trans>Unpick {pickedLots[0].trackedEntity.readableId}</Trans>
+                ) : (
+                  <Trans>Unpick</Trans>
+                )}
+              </Button>
+            ) : pickedLots.length > 1 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuUndo2 />}
+                    rightIcon={<LuChevronDown />}
+                    isDisabled={!canPick || isPending}
+                  >
+                    <Trans>Unpick</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {pickedLots.map((lot) => (
+                    <DropdownMenuItem
+                      key={lot.trackedEntityId}
+                      onClick={() => unpickTracked(lot.trackedEntityId)}
+                    >
+                      <DropdownMenuIcon icon={<LuUndo2 />} />
+                      {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {!isPicked && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuQrCode />}
+                isDisabled={!canPick || isPending}
+                onClick={openPicker}
+              >
+                <Trans>Scan</Trans>
+              </Button>
+            )}
+          </>
+        ) : isPicked ? (
+          <Button
+            variant="secondary"
+            leftIcon={<LuUndo2 />}
+            isDisabled={!canPick || isPending}
+            isLoading={isPending}
+            onClick={() => pick(0)}
+          >
             <Trans>Unpick</Trans>
-          )}
-        </Button>
-      ) : pickedLots.length > 1 ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          </Button>
+        ) : (
+          <>
             <Button
               variant="secondary"
-              leftIcon={<LuUndo2 />}
-              rightIcon={<LuChevronDown />}
               isDisabled={!canPick || isPending}
-              {...phoneButton}
+              onClick={() => setShortOpen(true)}
             >
-              <Trans>Unpick</Trans>
+              <Trans>Short</Trans>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {pickedLots.map((lot) => (
-              <DropdownMenuItem
-                key={lot.trackedEntityId}
-                onClick={() => unpickTracked(lot.trackedEntityId)}
-              >
-                <DropdownMenuIcon icon={<LuUndo2 />} />
-                {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
-      {!isPicked && (
-        <Button
-          variant="secondary"
-          leftIcon={<LuQrCode />}
-          isDisabled={!canPick || isPending}
-          onClick={openPicker}
-          {...phoneButton}
-        >
-          <Trans>Scan</Trans>
-        </Button>
-      )}
-    </HStack>
-  ) : isPicked ? (
-    <Button
-      variant="secondary"
-      leftIcon={<LuUndo2 />}
-      isDisabled={!canPick || isPending}
-      isLoading={isPending}
-      onClick={() => pick(0)}
-      {...phoneButton}
-    >
-      <Trans>Unpick</Trans>
-    </Button>
-  ) : (
-    <HStack spacing={1} className={phoneButtonRow}>
-      <Button
-        variant="secondary"
-        isDisabled={!canPick || isPending}
-        onClick={() => setShortOpen(true)}
-        {...phoneButton}
-      >
-        <Trans>Short</Trans>
-      </Button>
-      <Button
-        variant={isPhone ? "secondary" : undefined}
-        leftIcon={<LuCirclePlus />}
-        isDisabled={!canPick || isPending}
-        isLoading={isPending}
-        onClick={() => pick(quantityToPick)}
-        {...phoneButton}
-      >
-        <Trans>Pick</Trans>
-      </Button>
-    </HStack>
+            <Button
+              leftIcon={<LuCirclePlus />}
+              isDisabled={!canPick || isPending}
+              isLoading={isPending}
+              onClick={() => pick(quantityToPick)}
+            >
+              <Trans>Pick</Trans>
+            </Button>
+          </>
+        )}
+      </HStack>
+    </ActionPresentationProvider>
   );
 
   return (
@@ -637,9 +641,8 @@ function PickingListLineItem({
         ) : (
           quantityBadge
         )}
-        {isPhone ? null : actions}
+        {actions}
       </div>
-      {isPhone && actions ? <div className="flex w-full">{actions}</div> : null}
 
       {shortOpen && (
         <ShortPickModal

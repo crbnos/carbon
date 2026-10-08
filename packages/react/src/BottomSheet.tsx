@@ -201,6 +201,26 @@ const BottomSheetDescription = forwardRef<
 ));
 BottomSheetDescription.displayName = "BottomSheetDescription";
 
+/** One 48pt row of a phone sheet: a menu item, an option or a link. */
+const sheetRowClassName =
+  "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[15px] text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
+
+/** The uppercase label over a section of sheet rows. */
+const SheetSectionLabel = forwardRef<
+  HTMLDivElement,
+  HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+));
+SheetSectionLabel.displayName = "SheetSectionLabel";
+
 export {
   BottomSheet,
   BottomSheetBack,
@@ -211,5 +231,7 @@ export {
   BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
-  BottomSheetTrigger
+  BottomSheetTrigger,
+  SheetSectionLabel,
+  sheetRowClassName
 };

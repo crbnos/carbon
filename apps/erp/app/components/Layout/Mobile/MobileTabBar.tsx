@@ -11,8 +11,8 @@ import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
+import CreateMenu from "../Topbar/CreateMenu";
 import { useBottomBarActive } from "./ChromeSlots";
-import { CreateSheet } from "./CreateSheet";
 import { ModulesSheet } from "./ModulesSheet";
 import { ProfileSheet } from "./ProfileSheet";
 import { useAppBar } from "./useAppBar";
@@ -58,11 +58,16 @@ export function MobileTabBar() {
           label={t`Search`}
           onClick={openSearchModal}
         />
-        <TabBarItem
-          icon={<LuSquarePen />}
-          label={t`Create`}
-          isActive={sheet === "create"}
-          onClick={() => setSheet("create")}
+        <CreateMenu
+          open={sheet === "create"}
+          onOpenChange={setOpen("create")}
+          trigger={
+            <TabBarItem
+              icon={<LuSquarePen />}
+              label={t`Create`}
+              isActive={sheet === "create"}
+            />
+          }
         />
         <TabBarItem
           icon={<LuLayoutGrid />}
@@ -83,7 +88,6 @@ export function MobileTabBar() {
           onClick={() => setSheet("profile")}
         />
       </TabBar>
-      <CreateSheet open={sheet === "create"} onOpenChange={setOpen("create")} />
       <ModulesSheet
         open={sheet === "modules"}
         onOpenChange={setOpen("modules")}

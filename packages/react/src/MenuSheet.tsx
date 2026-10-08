@@ -28,7 +28,9 @@ import {
   BottomSheetBody,
   BottomSheetContent,
   BottomSheetHeader,
-  BottomSheetTitle
+  BottomSheetTitle,
+  SheetSectionLabel,
+  sheetRowClassName
 } from "./BottomSheet";
 import type { PopperPositionProps } from "./PopupSheet";
 import { cn } from "./utils/cn";
@@ -195,9 +197,6 @@ export const MenuSheetContent = forwardRef<
 );
 MenuSheetContent.displayName = "MenuSheetContent";
 
-const rowClassName =
-  "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[15px] text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
-
 type ItemProps = Omit<ComponentPropsWithoutRef<"button">, "onSelect"> & {
   asChild?: boolean;
   disabled?: boolean;
@@ -248,7 +247,7 @@ export const MenuSheetItem = forwardRef<HTMLButtonElement, ItemProps>(
         disabled={asChild ? undefined : disabled}
         aria-disabled={disabled || undefined}
         className={cn(
-          rowClassName,
+          sheetRowClassName,
           destructive && "text-destructive",
           className
         )}
@@ -344,16 +343,7 @@ export const MenuSheetLabel = forwardRef<
 >(({ className, inset: _inset, ...props }, ref) => {
   const onPage = useOnPage();
   if (!onPage) return null;
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <SheetSectionLabel ref={ref} className={className} {...props} />;
 });
 MenuSheetLabel.displayName = "MenuSheetLabel";
 
@@ -413,7 +403,7 @@ export const MenuSheetSubTrigger = forwardRef<HTMLButtonElement, ItemProps>(
         role="menuitem"
         aria-haspopup="menu"
         disabled={disabled}
-        className={cn(rowClassName, className)}
+        className={cn(sheetRowClassName, className)}
         {...props}
         onClick={() => push({ id: subId, label: children })}
       >

@@ -12,11 +12,12 @@ import {
   BottomSheetTitle,
   Button,
   PrefetchLink,
-  Spinner
+  SheetSectionLabel,
+  Spinner,
+  sheetRowClassName
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   LuArrowDown,
@@ -30,17 +31,6 @@ import { useSavedViews } from "~/hooks/useSavedViews";
 import type { ColumnFilter, Option } from "../Filter/types";
 import { useFilters } from "../Filter/useFilters";
 import { useSort } from "../Sort/useSort";
-
-const rowClassName =
-  "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-[15px] text-foreground outline-none active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50";
-
-function Overline({ children }: { children: ReactNode }) {
-  return (
-    <div className="px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
-      {children}
-    </div>
-  );
-}
 
 /** The options of one filter column: static, fetched, or a custom picker. */
 function FilterOptions({
@@ -117,7 +107,7 @@ function FilterOptions({
             type="button"
             role={isExclusive ? "radio" : "checkbox"}
             aria-checked={checked}
-            className={rowClassName}
+            className={sheetRowClassName}
             onClick={() =>
               isExclusive && !checked
                 ? setFilter(filter.accessorKey, option.value)
@@ -224,14 +214,14 @@ export function FilterSortSheet({
             <>
               {views.length > 0 ? (
                 <>
-                  <Overline>
+                  <SheetSectionLabel>
                     <Trans>Saved views</Trans>
-                  </Overline>
+                  </SheetSectionLabel>
                   {views.map((v) => (
                     <PrefetchLink
                       key={v.id}
                       to={viewHref(v)}
-                      className={rowClassName}
+                      className={sheetRowClassName}
                       onClick={() => onOpenChange(false)}
                     >
                       <span className="min-w-0 flex-1 truncate">{v.name}</span>
@@ -244,9 +234,9 @@ export function FilterSortSheet({
               ) : null}
               {sortEntries.length > 0 ? (
                 <>
-                  <Overline>
+                  <SheetSectionLabel>
                     <Trans>Sort</Trans>
-                  </Overline>
+                  </SheetSectionLabel>
                   {sortEntries.map(([key, label]) => {
                     const direction = isSorted(key);
                     const isActive = direction !== null;
@@ -256,7 +246,7 @@ export function FilterSortSheet({
                         type="button"
                         role="checkbox"
                         aria-checked={isActive}
-                        className={rowClassName}
+                        className={sheetRowClassName}
                         onClick={() => setSort(key)}
                       >
                         <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -277,16 +267,16 @@ export function FilterSortSheet({
               ) : null}
               {filters.length > 0 ? (
                 <>
-                  <Overline>
+                  <SheetSectionLabel>
                     <Trans>Filters</Trans>
-                  </Overline>
+                  </SheetSectionLabel>
                   {filters.map((filter) => {
                     const applied = getFilter(filter.accessorKey);
                     return (
                       <button
                         key={filter.accessorKey}
                         type="button"
-                        className={rowClassName}
+                        className={sheetRowClassName}
                         onClick={() => setActiveFilter(filter)}
                       >
                         {filter.icon ? (

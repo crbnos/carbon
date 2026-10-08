@@ -14,6 +14,8 @@ import {
   cn,
   ItarDisclosure,
   PrefetchLink,
+  SheetSectionLabel,
+  sheetRowClassName,
   useMode
 } from "@carbon/react";
 import { themes } from "@carbon/utils";
@@ -33,12 +35,7 @@ import {
   useCompanySwitchRedirect
 } from "../Topbar/CompanySwitcher";
 import { NotificationsPanel } from "../Topbar/Notifications";
-import {
-  SheetRowButton,
-  SheetRowContent,
-  SheetRowGroup,
-  sheetRowClassName
-} from "./SheetRow";
+import { SheetRowButton, SheetRowContent, SheetRowGroup } from "./SheetRow";
 
 /** Consecutive items with the same `group`, as the desktop separators split them. */
 function groupItems(items: AccountMenuItem[]) {
@@ -316,9 +313,7 @@ export function ProfileSheet({
             {screen.id === "companies" &&
               companyGroups.map((group) => (
                 <SheetRowGroup key={group.name}>
-                  <div className="px-3 pt-2 pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
-                    {group.name}
-                  </div>
+                  <SheetSectionLabel>{group.name}</SheetSectionLabel>
                   {group.companies.map((company) => {
                     const logo =
                       mode === "dark"

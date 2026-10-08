@@ -13,7 +13,9 @@ import {
   BottomSheetContent,
   BottomSheetHeader,
   BottomSheetTitle,
-  BottomSheetTrigger
+  BottomSheetTrigger,
+  SheetSectionLabel,
+  sheetRowClassName
 } from "./BottomSheet";
 import { useIsomorphicLayoutEffect } from "./hooks/useIsomorphicLayoutEffect";
 import type { PopperPositionProps } from "./PopupSheet";
@@ -252,10 +254,7 @@ export const SelectSheetItem = forwardRef<
         role="option"
         aria-selected={checked}
         disabled={disabled}
-        className={cn(
-          "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[15px] text-foreground outline-none hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50",
-          className
-        )}
+        className={cn(sheetRowClassName, className)}
         onClick={() => sheet.select(value)}
         {...props}
       >
@@ -295,16 +294,7 @@ export const SelectSheetLabel = forwardRef<
 >(({ className, ...props }, ref) => {
   const registryOnly = useContext(RegistryContext);
   if (registryOnly) return null;
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <SheetSectionLabel ref={ref} className={className} {...props} />;
 });
 SelectSheetLabel.displayName = "SelectSheetLabel";
 

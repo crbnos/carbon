@@ -2,10 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, PrefetchLink } from "@carbon/react";
+import {
+  cn,
+  PrefetchLink,
+  SheetSectionLabel,
+  sheetRowClassName
+} from "@carbon/react";
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
-import { LuCheck } from "react-icons/lu";
+import { SheetRowContent } from "../Mobile/SheetRow";
 
 /**
  * Where a module sidebar renders: the desktop side panel, the compact section
@@ -43,18 +48,16 @@ export function SheetNavRow({
       to={to}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex min-h-12 items-center gap-3 rounded-lg px-3 text-[15px] text-foreground active:bg-accent",
+        sheetRowClassName,
         inset && "pl-11 text-sm text-muted-foreground",
         isActive && "font-medium"
       )}
     >
-      {icon ? (
-        <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground [&>svg]:size-5">
-          {icon}
-        </span>
-      ) : null}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {isActive ? <LuCheck className="size-5 shrink-0 text-primary" /> : null}
+      <SheetRowContent
+        icon={icon}
+        label={label}
+        trailing={isActive ? "check" : null}
+      />
     </PrefetchLink>
   );
 }
@@ -69,11 +72,7 @@ export function SheetNavGroup({
 }) {
   return (
     <div className="flex flex-col pb-2">
-      {title ? (
-        <div className="px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
-          {title}
-        </div>
-      ) : null}
+      {title ? <SheetSectionLabel>{title}</SheetSectionLabel> : null}
       {children}
     </div>
   );
