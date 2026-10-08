@@ -397,7 +397,8 @@ export async function createCustomerAccount(
       id: userId,
       email: email.toLowerCase(),
       firstName: firstName ?? "",
-      lastName: lastName ?? ""
+      lastName: lastName ?? "",
+      avatarUrl: null
     });
 
     if (createCarbonUser.error) {
@@ -569,7 +570,8 @@ export async function createEmployeeAccount(
       id: userId,
       email: email.toLowerCase(),
       firstName,
-      lastName
+      lastName,
+      avatarUrl: null
     });
 
     if (createCarbonUser.error) {
@@ -699,7 +701,8 @@ export async function createSupplierAccount(
       id: userId,
       email: email.toLowerCase(),
       firstName: firstName ?? "",
-      lastName: lastName ?? ""
+      lastName: lastName ?? "",
+      avatarUrl: null
     });
 
     if (createCarbonUser.error) {
@@ -759,11 +762,9 @@ export async function createSupplierAccount(
   return { success: true, code, userId, email };
 }
 
-// `avatarUrl` is left to the column default (a generated avatar). The auth
-// trigger has already inserted this row, and the upsert must not null it.
 async function createUser(
   client: SupabaseClient<Database>,
-  user: Omit<User, "fullName" | "avatarUrl">
+  user: Omit<User, "fullName">
 ) {
   const { data, error } = await insertUser(client, user);
 
@@ -973,7 +974,7 @@ async function insertSupplierAccount(
 
 async function insertUser(
   client: SupabaseClient<Database>,
-  user: Omit<User, "fullName" | "createdAt" | "avatarUrl">
+  user: Omit<User, "fullName" | "createdAt">
 ) {
   return client.from("user").upsert([user]).select("*");
 }
@@ -1020,6 +1021,7 @@ export async function createConsoleOperator(
       email: syntheticEmail,
       firstName,
       lastName,
+      avatarUrl: null,
       active: true,
       isConsoleOperator: true
     } as any)

@@ -19,6 +19,7 @@
 - Line-art avatars: black lines on white in both themes, no invert — user request — 2026-10-08
 - Background color: user picks one per avatar with the ERP `ColorPicker`; stored as an optional `:<rrggbb>` value segment; dark backgrounds switch the neutral line styles to white ink — user request — 2026-10-08
 - Server-drawn avatars: a public `/file/avatar/:value` route in each app renders the SVG with DiceBear and caches it as immutable; `Avatar` uses it, the picker still draws in the browser — user approved the route after a slow-refresh report — 2026-10-08
+- New users: no generated avatar by default; initials as before. the draft migration `20261008113405` is deleted (user: the PR is not merged, so no migration at all); a development database that ran it drops the default and its migration record by hand — user decision — 2026-10-08
 
 ## Phase log
 - spec: written at `.ai/specs/2026-10-08-dicebear-avatars.md`. All 4 questions answered by the user before writing. STE-80 pass done.

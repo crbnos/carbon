@@ -151783,8 +151783,6 @@ export default {
           type: "string"
         },
         avatarUrl: {
-          default:
-            "('dicebear:croodles-neutral:'::text || (gen_random_uuid())::text)",
           format: "text",
           type: "string"
         },

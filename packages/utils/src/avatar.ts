@@ -6,9 +6,9 @@
  * `user.avatarUrl` holds either a path in the public `avatars` bucket (an
  * uploaded photo) or a generated-avatar value: `dicebear:<style>:<seed>`, with
  * an optional `:<rrggbb>` background (none = the style's own). The
- * `@carbon/react` Avatar renders a generated value with DiceBear in the
- * browser. The column default (migration `20261008113405`) writes the default
- * style in the same format, so the two must change together.
+ * `@carbon/react` Avatar shows a generated value as an image the app draws on
+ * the server (`/file/avatar/:value`). A user only gets one by choosing it on
+ * their profile: a new user starts with no avatar and shows their initials.
  *
  * Every style here needs a loader in `@carbon/react`'s `generatedAvatar.ts`.
  * Removing a style stops existing values in it from rendering (they fall back
@@ -71,7 +71,7 @@ export function normalizeAvatarBackground(
 /**
  * Parses `dicebear:<style>:<seed>` or `dicebear:<style>:<seed>:<rrggbb>`. The
  * background segment is optional, so every value written before it existed
- * (and the column default) still parses.
+ * still parses.
  */
 export function parseGeneratedAvatar(
   value: string | null | undefined

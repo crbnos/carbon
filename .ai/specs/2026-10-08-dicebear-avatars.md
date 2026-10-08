@@ -6,14 +6,12 @@
 
 ## TLDR
 
-Each new user gets a random generated avatar in the DiceBear "Croodles
-Neutral" style. On the profile page, a user can choose one of 10 DiceBear
-styles and pick an avatar in it, or upload a photo as before. `user.avatarUrl`
-holds either a storage path (an uploaded photo) or a generated-avatar value
-(`dicebear:<style>:<seed>`, with an optional `:<rrggbb>` background). A column default creates the value, so
-every path that inserts a `user` row gets an avatar with no app code. The
-avatar renders in the browser from the bundled DiceBear library. No request
-goes to a third party.
+A new user starts with no avatar and shows their initials, as before. On the
+profile page, a user can choose one of 10 DiceBear styles and pick an avatar
+in it, or upload a photo as before. `user.avatarUrl` holds either a storage
+path (an uploaded photo) or a generated-avatar value (`dicebear:<style>:<seed>`,
+with an optional `:<rrggbb>` background). The app draws a generated avatar on
+the server from the bundled DiceBear library. No request goes to a third party.
 
 ## Overview diagram
 
@@ -26,11 +24,11 @@ flowchart LR
         B2 --> B5["public storage URL"]
     end
     subgraph After
-        A1["user row: column default"]:::hot --> A2["Avatar wrapper"]:::hot
-        A2 --> A3["DiceBear SVG data URI"]:::new
-        A4["avatarUrl = storage path"] --> A2
-        A2 --> A5["public storage URL"]
-        A6["Profile: choose avatar"]:::new --> A1
+        A1["user row: avatarUrl null"] --> A2["Avatar wrapper"]:::hot
+        A2 --> A0["initials on a color"]
+        A7["avatarUrl = dicebear value"]:::new --> A2
+        A2 --> A3["server-drawn SVG"]:::new
+        A6["Profile: choose avatar"]:::new --> A7
     end
     classDef hot stroke-width:3px
     classDef new stroke-dasharray:4 3
@@ -42,10 +40,10 @@ A user without an uploaded photo shows initials on a colored circle. Most users
 never upload a photo, so lists of people look the same and give no visual
 identity. The request is:
 
-1. Each new user gets a random avatar automatically.
-2. A user can choose a different generated avatar.
-3. A user can still upload a photo, as before.
-4. New users get DiceBear "Croodles Neutral".
+1. A user can choose a generated avatar on their profile.
+2. A user can still upload a photo, as before.
+3. A new user keeps the old behavior: no avatar, so the initials show.
+4. The picker opens on DiceBear "Croodles Neutral".
 5. The user can choose from 10 styles: Croodles Neutral, Notionists,
    Notionists Neutral, Lorelei, Lorelei Neutral, Loops, Pixel Art, Voxel Art,
    Voxel Bot and Planets.
@@ -137,8 +135,8 @@ background of its own, so it shows on `bg-muted`.
 | DiceBear major version | 10, pinned exactly | Loops, Voxel Art, Voxel Bot and Planets exist only in version 10. A new major version can give a different face for the same seed, so the versions are exact, not ranges. `@dicebear/core@10` needs Node 22, which every workflow in the repo uses |
 | Style list | Only ever add to `GENERATED_AVATAR_STYLES` | A removed style makes its existing values unparseable, and those avatars fall back to initials. The `Record` type of `STYLE_LOADERS` makes a style without a loader a type error |
 | Where the value is stored | In `user.avatarUrl` with the `dicebear:` prefix | 26 migrations put `avatarUrl` into views and RPCs. A new column would need a change to each of them. The prefix needs none |
-| How a new user gets a value | Column default on `user.avatarUrl` | One place covers all 6 insert paths: the `create_public_user` trigger, invites, console operators, `migrateUserToSso`, seed and bootstrap |
-| Seed of the default | `gen_random_uuid()::text` | The request is a random avatar. A random seed does not reveal the user id. The client uses `crypto.randomUUID()` for the same format |
+| What a new user gets | No avatar (`avatarUrl` null), so the initials show | User decision: keep the old behavior. A draft migration that set a generated column default was removed before merge, so the schema does not change |
+| Seed of a new avatar | `crypto.randomUUID()` | A random seed does not reveal the user id |
 | Existing users | No backfill | User answer. They keep initials until they choose an avatar |
 | Remove photo | Save a new random generated-avatar value | User answer. Every user who touches the profile ends with an avatar |
 | Delete of the replaced photo | The profile action deletes the old upload AFTER it saves the new value. It deletes only a path that `isOwnAvatarUpload` accepts and that differs from the new value | If the save fails, `avatarUrl` still points at a file that exists. A failed delete only leaves an orphan file, so the action logs it. The same step also removes an old upload with a different file extension |
@@ -153,16 +151,10 @@ background of its own, so it shows on `bg-muted`.
 
 ## Data Model Changes
 
-One migration. It changes only the column default. It writes no rows.
-
-```sql
-ALTER TABLE "user"
-  ALTER COLUMN "avatarUrl"
-  SET DEFAULT 'dicebear:croodles-neutral:' || gen_random_uuid()::text;
-```
-
-The generated types do not change, because `avatarUrl` is already nullable and
-optional on insert.
+None. `user.avatarUrl` keeps its type and stays without a default. A draft
+migration (`20261008113405`) that set a generated default was deleted before
+merge. A development database that ran the draft needs the default and the
+migration record removed by hand.
 
 ## API / Service Changes
 
@@ -195,8 +187,7 @@ style is under the grid.
 
 ## Acceptance Criteria
 
-- [ ] After the migration, `INSERT INTO "user" ("id","email","firstName","lastName","about") VALUES (…)` gives a row whose `avatarUrl` starts with `dicebear:croodles-neutral:`.
-- [ ] A new user from an employee invite has a `dicebear:croodles-neutral:` value after `createEmployeeAccount` returns.
+- [ ] After both migrations, a new user (sign-up or invite) has `avatarUrl` null and shows their initials.
 - [ ] A user with a generated-avatar value sees a Croodles avatar in the ERP top-right menu, in the people lists and in the MES user menu.
 - [ ] A user with an uploaded photo still sees the photo in the ERP.
 - [ ] On the profile page, Choose avatar → select an option → Save shows the new avatar after the redirect.
@@ -226,7 +217,8 @@ style is under the grid.
 ## Open Questions
 
 - [x] Should the avatar art come from the bundled library or the HTTP API? — **Answer:** the bundled library (user). This approves the 2 new production dependencies.
-- [x] Do existing users with no avatar get a generated avatar? — **Answer:** no backfill. Only new users (user).
+- [x] Do existing users with no avatar get a generated avatar? — **Answer:** no backfill (user).
+- [x] Do new users get a generated avatar automatically? — **Answer:** no. Changed by the user after the first build: new users keep the old initials; the column default is dropped.
 - [x] What does Remove do on an uploaded photo? — **Answer:** it saves a new random generated avatar (user).
 - [x] Which pipeline mode? — **Answer:** fully autonomous, spec → plan → execute → self-review, no browser test (user).
 - [x] Can a user set the background color? — **Answer:** yes, with a color picker; the default stays each style's own background (user).
@@ -244,4 +236,5 @@ style is under the grid.
 - 2026-10-08: Server-drawn avatars (user request, refresh was slow). `Avatar` renders a generated value as `<img src="/file/avatar/:value?v=1">`; each app serves that route with `generatedAvatarLoader` (`@carbon/react/GeneratedAvatar`), which draws the SVG on the server and caches it for a year as immutable. The avatar is in the first HTML instead of waiting for hydration and two client downloads. The picker keeps drawing previews in the browser (`GeneratedAvatarPreview`). `GENERATED_AVATAR_RENDER_VERSION` is in every URL; bump it when the drawing changes.
 - 2026-10-08: Fix: picker previews stayed grey. The style imports had a JSON import attribute for the server, which the browser rejected. The attribute is gone; each app's `vite.config.ts` bundles `@dicebear/styles` into the server build instead.
 - 2026-10-08: Self-review 4. `generatedAvatarUrl` and `generatedAvatarClassName` moved to `generatedAvatarImage.ts`, so `Avatar` no longer bundles the renderer. A test guards against JSON import attributes. The spec now describes the route.
+- 2026-10-08: New users no longer get a generated avatar (user decision). The draft migration `20261008113405` is deleted (the PR is not merged), so the branch has no schema change; `users.server.ts`, the Swagger schema and the backups manifest are back to `main`. New users show their initials, as before.
 - 2026-10-08: Implemented (uncommitted). The picker lives in the ERP account module. The account reference doc (`docs/content/docs/reference/account.mdx`) describes the new Photo behavior.

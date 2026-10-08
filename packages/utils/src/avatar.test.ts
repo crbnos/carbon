@@ -71,8 +71,9 @@ describe("generated avatars", () => {
     expect(first).not.toBe(second);
   });
 
-  it("accepts the format the column default writes", () => {
-    // 'dicebear:croodles-neutral:' || gen_random_uuid()::text
+  it("accepts values with a UUID seed", () => {
+    // The format a draft column default wrote during development; rows
+    // created then still hold it.
     expect(
       isGeneratedAvatar(
         "dicebear:croodles-neutral:3f2b8c4e-6a1d-4f7e-9b2c-5d8e1a0f7c63"
