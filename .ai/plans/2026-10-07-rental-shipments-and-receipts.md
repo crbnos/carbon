@@ -45,7 +45,7 @@ in spec → Open Questions.
 - [x] Task 21: Add Deliver and Return to the agreement header
 - [x] Task 22: Replace the `return` type with `release`
 - [x] Task 23: Repoint the unit actions and add Release unit
-- [ ] Task 24: Run the full verification sweep
+- [x] Task 24: Run the full verification sweep
 - [ ] Task 25: Extract and translate the new strings
 - [ ] Task 26: Update the docs
 - [ ] Task 27: Verify in the browser
