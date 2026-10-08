@@ -9,16 +9,8 @@ import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Loading,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
   NavRailItem,
   toast,
-  useDisclosure,
   useMount,
   useRouteData,
   VStack
@@ -31,10 +23,14 @@ import type { action as endShiftAction } from "~/routes/x+/end-shift";
 import { inventoryAdjustmentValidator } from "~/services/inventory.service";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ToolSurface, useToolSurface } from "./MoreSheet";
 
 export function AdjustInventory({ add }: { add: boolean }) {
   const { t } = useLingui();
-  const modal = useDisclosure();
+  const surface = useToolSurface(
+    add ? "add-inventory" : "remove-inventory",
+    add ? t`Add Inventory` : t`Remove Inventory`
+  );
   const fetcher = useFetcher<typeof endShiftAction>();
   const [items] = useItems();
   const [loading, setLoading] = useState(false);
@@ -91,7 +87,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === true) {
-      modal.onClose();
+      surface.done();
       toast.success(fetcher.data?.message ?? t`Inventory adjustment completed`);
     }
 
@@ -112,96 +108,81 @@ export function AdjustInventory({ add }: { add: boolean }) {
       }));
   }, [items]);
 
+  const title = add ? (
+    <Trans>Add Inventory</Trans>
+  ) : (
+    <Trans>Remove Inventory</Trans>
+  );
+  const description = add ? (
+    <Trans>Manually add items to inventory</Trans>
+  ) : (
+    <Trans>Manually remove items from inventory</Trans>
+  );
+  const fields = (
+    <>
+      <Hidden
+        name="entryType"
+        value={add ? "Positive Adjmt." : "Negative Adjmt."}
+      />
+      <Hidden name="locationId" value={routeData?.location ?? ""} />
+      <VStack spacing={4}>
+        <Loading isLoading={loading}>
+          <Combobox
+            label={t`Item`}
+            name="itemId"
+            onChange={onItemChange}
+            options={itemOptions}
+            itemHeight={44}
+          />
+          <Number label={t`Quantity`} name="quantity" />
+          <Combobox
+            label={t`Storage Unit`}
+            name="storageUnitId"
+            options={storageUnits}
+            value={selectedStorageUnit ?? ""}
+            onChange={(value) => setSelectedStorageUnit(value?.value ?? null)}
+          />
+        </Loading>
+      </VStack>
+    </>
+  );
+  const form = (children: ReactNode) => (
+    <ValidatedForm
+      method="post"
+      action={path.to.inventoryAdjustment}
+      validator={inventoryAdjustmentValidator}
+      defaultValues={{
+        itemId: "",
+        quantity: 1,
+        entryType: add ? "Positive Adjmt." : "Negative Adjmt."
+      }}
+      fetcher={fetcher}
+    >
+      {children}
+    </ValidatedForm>
+  );
+
   return (
     <>
       <NavRailItem
         icon={add ? <LuGitPullRequestCreateArrow /> : <LuGitBranchPlus />}
-        label={add ? t`Add Inventory` : t`Remove Inventory`}
-        onClick={modal.onOpen}
+        label={surface.title}
+        onClick={surface.open}
       />
-      {modal.isOpen && (
-        <Modal
-          open={modal.isOpen}
-          onOpenChange={(open) => !open && modal.onClose()}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              action={path.to.inventoryAdjustment}
-              validator={inventoryAdjustmentValidator}
-              defaultValues={{
-                itemId: "",
-                quantity: 1,
-                entryType: add ? "Positive Adjmt." : "Negative Adjmt."
-              }}
-              fetcher={fetcher}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  {add ? (
-                    <Trans>Add Inventory</Trans>
-                  ) : (
-                    <Trans>Remove Inventory</Trans>
-                  )}
-                </ModalTitle>
-                <ModalDescription>
-                  {add ? (
-                    <Trans>Manually add items to inventory</Trans>
-                  ) : (
-                    <Trans>Manually remove items from inventory</Trans>
-                  )}
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden
-                  name="entryType"
-                  value={add ? "Positive Adjmt." : "Negative Adjmt."}
-                />
-                <Hidden name="locationId" value={routeData?.location ?? ""} />
-                <VStack spacing={4}>
-                  <Loading isLoading={loading}>
-                    <Combobox
-                      label={t`Item`}
-                      name="itemId"
-                      onChange={onItemChange}
-                      options={itemOptions}
-                      itemHeight={44}
-                    />
-                    <Number label={t`Quantity`} name="quantity" />
-                    <Combobox
-                      label={t`Storage Unit`}
-                      name="storageUnitId"
-                      options={storageUnits}
-                      value={selectedStorageUnit ?? ""}
-                      onChange={(value) =>
-                        setSelectedStorageUnit(value?.value ?? null)
-                      }
-                    />
-                  </Loading>
-                </VStack>
-              </ModalBody>
-
-              <ModalFooter>
-                <Button
-                  type="button"
-                  onClick={modal.onClose}
-                  variant="secondary"
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-
-                <Submit>
-                  {add ? (
-                    <Trans>Add Inventory</Trans>
-                  ) : (
-                    <Trans>Remove Inventory</Trans>
-                  )}
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <ToolSurface
+        surface={surface}
+        description={description}
+        body={fields}
+        wrap={form}
+        footer={
+          <>
+            <Button type="button" onClick={surface.close} variant="secondary">
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit>{title}</Submit>
+          </>
+        }
+      />
     </>
   );
 }

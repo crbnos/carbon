@@ -38,6 +38,7 @@ import { useUser } from "~/hooks";
 import type { action } from "~/routes/x+/suggestion";
 import { suggestionValidator } from "~/services/models";
 import { path } from "~/utils/path";
+import { MorePage, useMorePage } from "./MoreSheet";
 
 // Lazy, not a static import: @emoji-mart/react is CommonJS, so under SSR its
 // default import is `{ default: Picker }` and dev React warns "type is
@@ -59,6 +60,10 @@ const Suggestion = () => {
   const fetcher = useFetcher<typeof action>();
   const location = useLocation();
   const popoverTriggerRef = useRef<HTMLButtonElement>(null);
+  // Phones: the form is a page of the More sheet, not a popover.
+  const morePage = useMorePage();
+  const close = () =>
+    morePage ? morePage.back() : popoverTriggerRef.current?.click();
   const [suggestion, setSuggestion] = useState("");
   const [emoji, setEmoji] = useState("💡");
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
@@ -75,6 +80,7 @@ const Suggestion = () => {
 
   const companyId = user.company.id;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per submission result
   useEffect(() => {
     if (fetcher.data?.success) {
       toast.success(fetcher.data.message);
@@ -83,7 +89,8 @@ const Suggestion = () => {
       setAttachment(null);
       setAnonymous(true);
       setSendToCarbon(CARBON_SLACK_ENABLED);
-      popoverTriggerRef.current?.click();
+      if (morePage) morePage.done();
+      else popoverTriggerRef.current?.click();
     } else if (fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
@@ -139,137 +146,150 @@ const Suggestion = () => {
     setEmojiPickerOpen(false);
   };
 
+  const form = (
+    <ValidatedForm
+      method="post"
+      action={path.to.suggestion}
+      validator={suggestionValidator}
+      fetcher={fetcher}
+    >
+      <Hidden name="path" value={location.pathname} />
+      <Hidden name="emoji" value={emoji} />
+      <Hidden name="attachmentPath" value={attachment?.path ?? ""} />
+      <Hidden name="userId" value={anonymous ? "" : user.id} />
+      <Hidden name="sendToCarbon" value={sendToCarbon ? "true" : ""} />
+      <VStack spacing={2}>
+        <VStack spacing={2} className="w-full">
+          <TextAreaControlled
+            name="suggestion"
+            label=""
+            value={suggestion}
+            onChange={(value) => setSuggestion(value)}
+            placeholder={t`Ideas, suggestions or problems?`}
+          />
+          {attachment && (
+            <Badge className="-mt-2 truncate" variant="secondary">
+              {attachment.name}
+              <BadgeCloseButton
+                type="button"
+                onClick={() => {
+                  setAttachment(null);
+                }}
+              />
+            </Badge>
+          )}
+        </VStack>
+        <HStack className="w-full justify-between">
+          <VStack spacing={2}>
+            <HStack spacing={2}>
+              <Checkbox
+                isChecked={anonymous}
+                onCheckedChange={(checked) => setAnonymous(checked === true)}
+              />
+              <span className="text-sm">
+                <Trans>Submit anonymously</Trans>
+              </span>
+            </HStack>
+            {CARBON_SLACK_ENABLED && (
+              <HStack spacing={2}>
+                <Checkbox
+                  isChecked={sendToCarbon}
+                  onCheckedChange={(checked) =>
+                    setSendToCarbon(checked === true)
+                  }
+                />
+                <span className="text-sm">
+                  <Trans>Send to Carbon</Trans>
+                </span>
+              </HStack>
+            )}
+          </VStack>
+          <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-md h-10 w-10 text-2xl hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0"
+              >
+                {emoji}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-0 border-0"
+              align="end"
+              sideOffset={8}
+            >
+              <Suspense>
+                <Picker
+                  data={data}
+                  onEmojiSelect={onEmojiSelect}
+                  theme={pickerTheme}
+                  previewPosition="none"
+                  skinTonePosition="none"
+                  navPosition="bottom"
+                  perLine={8}
+                />
+              </Suspense>
+            </PopoverContent>
+          </Popover>
+        </HStack>
+        <HStack className="w-full justify-between">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSuggestion("");
+              setEmoji("💡");
+              setAttachment(null);
+              close();
+            }}
+          >
+            <Trans>Cancel</Trans>
+          </Button>
+          <HStack spacing={1}>
+            <Button
+              isDisabled={suggestion.length === 0}
+              variant="secondary"
+              onClick={() => setSuggestion("")}
+            >
+              <Trans>Clear</Trans>
+            </Button>
+            <File
+              accept="image/*"
+              aria-label="Attach File"
+              className="px-2"
+              isDisabled={!!attachment}
+              variant="secondary"
+              onChange={uploadImage}
+            >
+              <LuImage />
+            </File>
+            <Submit isDisabled={suggestion.length < 3}>
+              <Trans>Send</Trans>
+            </Submit>
+          </HStack>
+        </HStack>
+      </VStack>
+    </ValidatedForm>
+  );
+
+  if (morePage) {
+    return (
+      <>
+        <NavRailItem
+          icon={<LuMailbox />}
+          label={t`Suggestion`}
+          onClick={() => morePage.open("suggestion", t`Suggestion`)}
+        />
+        <MorePage tool="suggestion">{form}</MorePage>
+      </>
+    );
+  }
+
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
         <NavRailItem icon={<LuMailbox />} label={t`Suggestion`} />
       </PopoverTrigger>
-      <PopoverContent className="w-[380px] ">
-        <ValidatedForm
-          method="post"
-          action={path.to.suggestion}
-          validator={suggestionValidator}
-          fetcher={fetcher}
-        >
-          <Hidden name="path" value={location.pathname} />
-          <Hidden name="emoji" value={emoji} />
-          <Hidden name="attachmentPath" value={attachment?.path ?? ""} />
-          <Hidden name="userId" value={anonymous ? "" : user.id} />
-          <Hidden name="sendToCarbon" value={sendToCarbon ? "true" : ""} />
-          <VStack spacing={2}>
-            <VStack spacing={2} className="w-full">
-              <TextAreaControlled
-                name="suggestion"
-                label=""
-                value={suggestion}
-                onChange={(value) => setSuggestion(value)}
-                placeholder={t`Ideas, suggestions or problems?`}
-              />
-              {attachment && (
-                <Badge className="-mt-2 truncate" variant="secondary">
-                  {attachment.name}
-                  <BadgeCloseButton
-                    type="button"
-                    onClick={() => {
-                      setAttachment(null);
-                    }}
-                  />
-                </Badge>
-              )}
-            </VStack>
-            <HStack className="w-full justify-between">
-              <VStack spacing={2}>
-                <HStack spacing={2}>
-                  <Checkbox
-                    isChecked={anonymous}
-                    onCheckedChange={(checked) =>
-                      setAnonymous(checked === true)
-                    }
-                  />
-                  <span className="text-sm">
-                    <Trans>Submit anonymously</Trans>
-                  </span>
-                </HStack>
-                {CARBON_SLACK_ENABLED && (
-                  <HStack spacing={2}>
-                    <Checkbox
-                      isChecked={sendToCarbon}
-                      onCheckedChange={(checked) =>
-                        setSendToCarbon(checked === true)
-                      }
-                    />
-                    <span className="text-sm">
-                      <Trans>Send to Carbon</Trans>
-                    </span>
-                  </HStack>
-                )}
-              </VStack>
-              <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center rounded-md h-10 w-10 text-2xl hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0"
-                  >
-                    {emoji}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-0 border-0"
-                  align="end"
-                  sideOffset={8}
-                >
-                  <Suspense>
-                    <Picker
-                      data={data}
-                      onEmojiSelect={onEmojiSelect}
-                      theme={pickerTheme}
-                      previewPosition="none"
-                      skinTonePosition="none"
-                      navPosition="bottom"
-                      perLine={8}
-                    />
-                  </Suspense>
-                </PopoverContent>
-              </Popover>
-            </HStack>
-            <HStack className="w-full justify-between">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setSuggestion("");
-                  setEmoji("💡");
-                  setAttachment(null);
-                  popoverTriggerRef.current?.click();
-                }}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <HStack spacing={1}>
-                <Button
-                  isDisabled={suggestion.length === 0}
-                  variant="secondary"
-                  onClick={() => setSuggestion("")}
-                >
-                  <Trans>Clear</Trans>
-                </Button>
-                <File
-                  accept="image/*"
-                  aria-label="Attach File"
-                  className="px-2"
-                  isDisabled={!!attachment}
-                  variant="secondary"
-                  onChange={uploadImage}
-                >
-                  <LuImage />
-                </File>
-                <Submit isDisabled={suggestion.length < 3}>
-                  <Trans>Send</Trans>
-                </Submit>
-              </HStack>
-            </HStack>
-          </VStack>
-        </ValidatedForm>
-      </PopoverContent>
+      <PopoverContent className="w-[380px] ">{form}</PopoverContent>
     </Popover>
   );
 };

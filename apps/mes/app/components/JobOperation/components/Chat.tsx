@@ -149,7 +149,7 @@ export function OperationChat({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--header-height)*2)]">
+    <div className="flex h-full min-h-0 flex-col">
       <ScrollArea className="flex-1 p-4">
         <Loading isLoading={isLoading}>
           <div className="flex flex-col gap-3">

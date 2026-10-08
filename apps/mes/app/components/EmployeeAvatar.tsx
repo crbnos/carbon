@@ -25,9 +25,9 @@ const EmployeeAvatar = ({
 
   if (employeeId === "system") {
     return (
-      <HStack className="truncate no-underline hover:no-underline">
+      <HStack className="min-w-0 truncate no-underline hover:no-underline">
         <Avatar size={size ?? "xs"} path={undefined} />
-        {withName && <span>System</span>}
+        {withName && <span className="truncate">System</span>}
       </HStack>
     );
   }
@@ -39,13 +39,13 @@ const EmployeeAvatar = ({
   }
 
   return (
-    <HStack className="truncate no-underline hover:no-underline">
+    <HStack className="min-w-0 truncate no-underline hover:no-underline">
       <Avatar
         size={size ?? "xs"}
         path={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
       />
-      {withName && <span>{person.name}</span>}
+      {withName && <span className="truncate">{person.name}</span>}
     </HStack>
   );
 };

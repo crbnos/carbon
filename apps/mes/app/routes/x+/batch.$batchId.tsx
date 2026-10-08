@@ -30,5 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.operation(firstMember.id));
+  throw redirect(
+    path.to.operation(firstMember.id) + new URL(request.url).search
+  );
 }

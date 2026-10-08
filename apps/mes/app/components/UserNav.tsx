@@ -30,7 +30,6 @@ import {
 } from "@carbon/react";
 import { modeValidator } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import { useRef } from "react";
 import {
   LuBuilding,
   LuChevronDown,
@@ -51,15 +50,7 @@ import type { Location } from "~/services/types";
 import type { PinnedInUser } from "~/types";
 import { path } from "~/utils/path";
 
-export function UserNav({
-  company,
-  companies,
-  consoleEnabled,
-  consoleMode,
-  location,
-  locations,
-  pinnedInUser
-}: {
+type UserNavProps = {
   company: Company;
   companies: Company[];
   consoleEnabled?: boolean;
@@ -67,15 +58,19 @@ export function UserNav({
   location: string;
   locations: Location[];
   pinnedInUser: PinnedInUser | null;
-}) {
+};
+
+/** The user menu's state and actions, shared by the rail menu and the phone More sheet. */
+export function useUserNav({
+  consoleMode,
+  location,
+  pinnedInUser
+}: Pick<UserNavProps, "consoleMode" | "location" | "pinnedInUser">) {
   const user = useUser();
   const stationName = `${user.firstName} ${user.lastName}`;
-  const { isMobile } = useSidebar();
 
   const mode = useMode();
   const modePreference = useModePreference();
-
-  const consoleSubmitRef = useRef<HTMLButtonElement>(null);
 
   const fetcher = useFetcher<typeof action>();
 
@@ -94,6 +89,25 @@ export function UserNav({
     fetcher.submit(formData, { method: "POST", action: path.to.location });
   };
 
+  const switchCompany = (companyId: string) => {
+    const form = new FormData();
+    form.append("companyId", companyId);
+    fetcher.submit(form, {
+      method: "post",
+      action: path.to.switchCompany(companyId)
+    });
+  };
+
+  const switchOperator = () => {
+    fetcher.submit(null, { method: "POST", action: path.to.consolePinOut });
+  };
+
+  const toggleConsoleMode = () => {
+    const formData = new FormData();
+    formData.append("consoleMode", consoleMode ? "false" : "true");
+    fetcher.submit(formData, { method: "post", action: path.to.consoleToggle });
+  };
+
   const optimisticLocation =
     (fetcher.formData?.get("location") as string | undefined) ?? location;
 
@@ -104,16 +118,62 @@ export function UserNav({
     path.to.authenticatedRoot
   );
   const sessionUserId = routeData?.user?.id;
-  const isOperatorPinnedIn =
+  const isOperatorPinnedIn = Boolean(
     consoleMode &&
-    pinnedInUser &&
-    sessionUserId &&
-    pinnedInUser.userId !== sessionUserId;
-  const showingOperator = consoleMode && pinnedInUser;
-  const displayName = showingOperator ? pinnedInUser.name : stationName;
+      pinnedInUser &&
+      sessionUserId &&
+      pinnedInUser.userId !== sessionUserId
+  );
+  const showingOperator = consoleMode && pinnedInUser ? pinnedInUser : null;
+  const displayName = showingOperator ? showingOperator.name : stationName;
   const displayAvatar = showingOperator
-    ? pinnedInUser.avatarUrl
+    ? showingOperator.avatarUrl
     : user.avatarUrl;
+
+  return {
+    stationName,
+    mode,
+    modePreference,
+    onModeChange,
+    updateLocation,
+    switchCompany,
+    switchOperator,
+    toggleConsoleMode,
+    optimisticLocation,
+    itarDisclosure,
+    isOperatorPinnedIn,
+    showingOperator,
+    displayName,
+    displayAvatar
+  };
+}
+
+export function UserNav({
+  company,
+  companies,
+  consoleEnabled,
+  consoleMode,
+  location,
+  locations,
+  pinnedInUser
+}: UserNavProps) {
+  const { isMobile } = useSidebar();
+  const {
+    stationName,
+    mode,
+    modePreference,
+    onModeChange,
+    updateLocation,
+    switchCompany,
+    switchOperator,
+    toggleConsoleMode,
+    optimisticLocation,
+    itarDisclosure,
+    isOperatorPinnedIn,
+    showingOperator,
+    displayName,
+    displayAvatar
+  } = useUserNav({ consoleMode, location, pinnedInUser });
 
   return (
     <>
@@ -140,16 +200,9 @@ export function UserNav({
           {/* Console mode with pinned-in operator: simplified menu */}
           {showingOperator ? (
             <>
-              <DropdownMenuLabel>{pinnedInUser.name}</DropdownMenuLabel>
+              <DropdownMenuLabel>{showingOperator.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => {
-                  fetcher.submit(null, {
-                    method: "POST",
-                    action: path.to.consolePinOut
-                  });
-                }}
-              >
+              <DropdownMenuItem onSelect={switchOperator}>
                 <DropdownMenuIcon icon={<LuUsers />} />
                 <Trans>Switch Operator</Trans>
               </DropdownMenuItem>
@@ -186,14 +239,7 @@ export function UserNav({
                         <DropdownMenuRadioItem
                           key={c.companyId}
                           value={c.companyId!}
-                          onSelect={() => {
-                            const form = new FormData();
-                            form.append("companyId", c.companyId!);
-                            fetcher.submit(form, {
-                              method: "post",
-                              action: path.to.switchCompany(c.companyId!)
-                            });
-                          }}
+                          onSelect={() => switchCompany(c.companyId!)}
                         >
                           <HStack>
                             <Avatar
@@ -283,30 +329,10 @@ export function UserNav({
                       <DropdownMenuIcon icon={<LuMonitor />} />
                       <Trans>Console Mode</Trans>
                     </div>
-                    <div>
-                      <Switch
-                        checked={consoleMode}
-                        onCheckedChange={() =>
-                          consoleSubmitRef.current?.click()
-                        }
-                      />
-                      <fetcher.Form
-                        action={path.to.consoleToggle}
-                        method="post"
-                        className="sr-only"
-                      >
-                        <input
-                          type="hidden"
-                          name="consoleMode"
-                          value={consoleMode ? "false" : "true"}
-                        />
-                        <button
-                          ref={consoleSubmitRef}
-                          className="sr-only"
-                          type="submit"
-                        />
-                      </fetcher.Form>
-                    </div>
+                    <Switch
+                      checked={consoleMode}
+                      onCheckedChange={toggleConsoleMode}
+                    />
                   </div>
                 </DropdownMenuItem>
               )}

@@ -38,6 +38,7 @@ import type {
   ProductionEvent,
   ProductionQuantity
 } from "~/services/types";
+import { OriginInput } from "~/utils/origin";
 import { path } from "~/utils/path";
 import ScrapReason from "./ScrapReason";
 
@@ -78,6 +79,7 @@ export function QuantityModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  // The action's redirect keeps the page the operation was opened from.
   const fetcher = useAction<ProductionQuantity>({
     onSettled: () => {
       if (submitted.current) {
@@ -204,6 +206,7 @@ export function QuantityModal({
             <Hidden name="setupProductionEventId" />
             <Hidden name="laborProductionEventId" />
             <Hidden name="machineProductionEventId" />
+            <OriginInput />
             <VStack spacing={2}>
               {hasUnissuedTrackedMaterials && type === "complete" && (
                 <Alert variant="destructive">

@@ -4,6 +4,7 @@
 
 import type { InputProps } from "@carbon/react";
 import {
+  cn,
   Input,
   InputGroup,
   InputLeftElement,
@@ -15,9 +16,17 @@ import { useUrlParams } from "~/hooks";
 
 type SearchFilterProps = InputProps & {
   param: string;
+  /** Classes for the input group (the outer box). */
+  groupClassName?: string;
 };
 
-const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
+const SearchFilter = ({
+  param,
+  size,
+  className,
+  groupClassName,
+  ...props
+}: SearchFilterProps) => {
   const [params, setParams] = useUrlParams();
   const [query, setQuery] = useState(params.get(param) || "");
   const debounceQuery = useDebounce((q: string) => {
@@ -25,7 +34,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
   }, 500);
 
   return (
-    <InputGroup size={size}>
+    <InputGroup size={size} className={groupClassName}>
       <InputLeftElement>
         <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
       </InputLeftElement>
@@ -35,7 +44,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
           setQuery(e.target.value);
           debounceQuery(e.target.value);
         }}
-        className="w-[100px] sm:w-[200px] text-sm"
+        className={cn("w-[100px] sm:w-[200px] text-sm", className)}
         {...props}
       />
     </InputGroup>

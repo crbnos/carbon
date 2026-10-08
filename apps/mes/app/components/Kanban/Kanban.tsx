@@ -64,6 +64,17 @@ const Kanban = ({
     return columns.map((col) => col.id);
   });
 
+  // A filter change brings in columns the order has never seen (clearing a
+  // work-center filter); add them at the end, or they never render.
+  useEffect(() => {
+    setColumnOrder((order) => {
+      const missing = columns
+        .filter((col) => !order.includes(col.id))
+        .map((col) => col.id);
+      return missing.length ? [...order, ...missing] : order;
+    });
+  }, [columns]);
+
   // Update localStorage when column order changes
   useEffect(() => {
     localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(columnOrder));

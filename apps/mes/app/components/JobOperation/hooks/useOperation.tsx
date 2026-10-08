@@ -90,7 +90,21 @@ export function useOperation({
   );
 
   const [activeTab, setActiveTab] = useState("details");
-  const [eventType, setEventType] = useState(() => {
+  // Opens on the timer that runs, so Pause shows for it. A Setup or Labor
+  // timer counts only when it is this user's; Machine counts for anyone
+  // (the same rule as `activeEvents` below). Else: Setup, Machine, Labor.
+  const [eventType, setEventType] = useState<string>(() => {
+    const isRunning = (type: string) =>
+      events.some(
+        (e) =>
+          e.type === type &&
+          e.endTime === null &&
+          (type === "Machine" || e.employeeId === user.id)
+      );
+    const running = (["Setup", "Machine", "Labor"] as const).find(isRunning);
+    if (running) {
+      return running;
+    }
     if (operation.setupDuration > 0) {
       return "Setup";
     }

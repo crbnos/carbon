@@ -7,10 +7,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { Heading, SidebarTrigger } from "@carbon/react";
 import { redirect } from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
 import { LuArrowLeft } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
+import { MesAppBar } from "~/components/MesAppBar";
 import {
   getJobOperationDependencies,
   getJobOperations
@@ -69,7 +71,14 @@ export default function JobDagRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card">
+      <MesAppBar
+        kind="pushed"
+        title={readableId}
+        subtitle={<Trans>Jobs</Trans>}
+        back={{ to: path.to.jobs }}
+        desktop={null}
+      />
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
           <Link

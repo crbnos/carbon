@@ -11,11 +11,21 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  ClientOnly,
+  cn,
   generateHTML,
   Heading,
   HStack,
   IconButton,
+  isRichTextEmpty,
   type JSONContent,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   SidebarTrigger,
   Status,
   useDisclosure,
@@ -23,7 +33,7 @@ import {
 } from "@carbon/react";
 import { groupBy, isUnaffectedByNavigation } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
 import { LuArrowLeft, LuCheck, LuCirclePlus, LuX } from "react-icons/lu";
@@ -41,6 +51,7 @@ import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { MaintenanceAddPartModal } from "~/components/MaintenanceDispatch";
 import MaintenanceOeeImpact from "~/components/MaintenanceOeeImpact";
 import MaintenanceSeverity from "~/components/MaintenanceSeverity";
+import { MesAppBar } from "~/components/MesAppBar";
 import {
   getActiveMaintenanceEventByEmployee,
   getMaintenanceDispatch,
@@ -213,6 +224,7 @@ export default function MaintenanceDetailRoute() {
   const fetcher = useFetcher();
   const deleteFetcher = useFetcher();
   const addPartModal = useDisclosure();
+  const [confirmComplete, setConfirmComplete] = useState(false);
   const [allItems] = useItems();
 
   // Create item options for the combobox
@@ -255,7 +267,14 @@ export default function MaintenanceDetailRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card">
+      <MesAppBar
+        kind="pushed"
+        title={dispatch.maintenanceDispatchId}
+        subtitle={<Trans>Maintenance</Trans>}
+        back={{ to: path.to.maintenance }}
+        desktop={null}
+      />
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
         <div className="flex items-center gap-2 px-2 w-full justify-between">
           <HStack>
             <SidebarTrigger />
@@ -277,15 +296,24 @@ export default function MaintenanceDetailRoute() {
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
         <VStack spacing={4} className="max-w-2xl mx-auto">
+          <div className="flex w-full items-center justify-between md:hidden">
+            <MaintenanceStatus status={dispatch.status} />
+            {getPriorityIcon(
+              dispatch.priority as (typeof maintenanceDispatchPriority)[number]
+            )}
+          </div>
           {/* Work Center & OEE Impact */}
           <Card className="w-full">
-            <CardHeader>
+            <CardHeader className="max-md:hidden">
               <CardTitle className="text-sm text-muted-foreground font-normal">
                 <Trans>Work Center</Trans>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <VStack spacing={2} className="items-start">
+                <span className="hidden text-xs text-muted-foreground max-md:block">
+                  <Trans>Work Center</Trans>
+                </span>
                 <span className="text-lg font-semibold">
                   {dispatch.workCenter?.name ?? t`Unknown`}
                 </span>
@@ -304,21 +332,33 @@ export default function MaintenanceDetailRoute() {
           {/* Description */}
           {dispatch.content &&
             Object.keys(dispatch.content as object).length > 0 && (
-              <Card className="w-full">
+              <Card
+                className={cn(
+                  "w-full",
+                  isRichTextEmpty(dispatch.content as JSONContent) &&
+                    "max-md:hidden"
+                )}
+              >
                 <CardHeader>
                   <CardTitle className="text-sm text-muted-foreground font-normal">
                     <Trans>Description</Trans>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    className="prose dark:prose-invert prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: generateHTML(
-                        (dispatch.content ?? {}) as JSONContent
-                      )
-                    }}
-                  />
+                  {/* generateHTML is empty on the server, and hydration keeps that
+                      empty markup, so the description renders on the client only. */}
+                  <ClientOnly fallback={null}>
+                    {() => (
+                      <div
+                        className="prose dark:prose-invert prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: generateHTML(
+                            (dispatch.content ?? {}) as JSONContent
+                          )
+                        }}
+                      />
+                    )}
+                  </ClientOnly>
                 </CardContent>
               </Card>
             )}
@@ -326,16 +366,22 @@ export default function MaintenanceDetailRoute() {
           {/* Time Tracking Controls */}
           {!isCompleted && (
             <Card className="w-full">
-              <CardHeader>
+              <CardHeader className="max-md:hidden">
                 <CardTitle>
                   <span className="text-sm text-muted-foreground">
                     <Trans>Time Worked: {formatDuration(totalDuration)}</Trans>
                   </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 max-md:pt-4">
+                <p className="mb-3 text-xs text-muted-foreground md:hidden">
+                  <Trans>Time Worked: {formatDuration(totalDuration)}</Trans>
+                </p>
                 <VStack spacing={4}>
-                  <HStack spacing={4} className="justify-center w-full">
+                  <HStack
+                    spacing={4}
+                    className="justify-center w-full max-md:flex-col max-md:space-x-0 max-md:gap-3"
+                  >
                     <ValidatedForm
                       method="post"
                       action={path.to.maintenanceEvent}
@@ -375,6 +421,8 @@ export default function MaintenanceDetailRoute() {
                       </button>
                     </ValidatedForm>
 
+                    {/* Desktop completes on click, as before; phones confirm
+                        first (the button below). */}
                     <ValidatedForm
                       method="post"
                       action={path.to.maintenanceEvent}
@@ -385,18 +433,30 @@ export default function MaintenanceDetailRoute() {
                         dispatchId: dispatch.id,
                         eventId: myActiveEvent?.id
                       }}
+                      className="max-md:hidden"
                     >
                       <Hidden name="dispatchId" value={dispatch.id} />
                       <Hidden name="eventId" value={myActiveEvent?.id ?? ""} />
                       <Hidden name="action" value="Complete" />
                       <button
                         type="submit"
+                        aria-label={t`Complete`}
                         disabled={fetcher.state !== "idle"}
                         className="group size-24 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-accent-foreground text-3xl disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30"
                       >
                         <FaCheck className="group-hover:scale-110" />
                       </button>
                     </ValidatedForm>
+                    <Button
+                      size="lg"
+                      variant="secondary"
+                      leftIcon={<LuCheck />}
+                      isDisabled={fetcher.state !== "idle"}
+                      onClick={() => setConfirmComplete(true)}
+                      className="hidden w-full max-md:flex max-md:h-12"
+                    >
+                      <Trans>Complete</Trans>
+                    </Button>
                   </HStack>
                 </VStack>
               </CardContent>
@@ -459,6 +519,7 @@ export default function MaintenanceDetailRoute() {
                   <Button
                     variant="secondary"
                     leftIcon={<LuCirclePlus />}
+                    className="max-md:h-11"
                     onClick={addPartModal.onOpen}
                   >
                     <Trans>Add</Trans>
@@ -492,6 +553,7 @@ export default function MaintenanceDetailRoute() {
                                 type="submit"
                                 aria-label={t`Remove part`}
                                 size="sm"
+                                className="max-md:size-11"
                                 variant="ghost"
                                 icon={<LuX className="h-4 w-4" />}
                                 isDisabled={deleteFetcher.state !== "idle"}
@@ -553,15 +615,19 @@ export default function MaintenanceDetailRoute() {
                   <span className="text-sm font-medium mb-2 block">
                     {(dispatch.procedure as any)?.name}
                   </span>
-                  <div
-                    className="prose dark:prose-invert prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: generateHTML(
-                        ((dispatch.procedure as any).content ??
-                          {}) as JSONContent
-                      )
-                    }}
-                  />
+                  <ClientOnly fallback={null}>
+                    {() => (
+                      <div
+                        className="prose dark:prose-invert prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: generateHTML(
+                            ((dispatch.procedure as any).content ??
+                              {}) as JSONContent
+                          )
+                        }}
+                      />
+                    )}
+                  </ClientOnly>
                 </CardContent>
               </Card>
             )}
@@ -592,6 +658,48 @@ export default function MaintenanceDetailRoute() {
           itemOptions={itemOptions}
           onClose={addPartModal.onClose}
         />
+      )}
+      {confirmComplete && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setConfirmComplete(false);
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{t`Complete ${dispatch.maintenanceDispatchId}?`}</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <Trans>This marks the dispatch as completed.</Trans>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmComplete(false)}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                onClick={() => {
+                  const formData = new FormData();
+                  formData.append("action", "Complete");
+                  formData.append("dispatchId", dispatch.id);
+                  formData.append("eventId", myActiveEvent?.id ?? "");
+                  fetcher.submit(formData, {
+                    method: "post",
+                    action: path.to.maintenanceEvent
+                  });
+                  setConfirmComplete(false);
+                }}
+              >
+                <Trans>Complete</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
     </div>
   );
