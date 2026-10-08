@@ -3424,8 +3424,21 @@ msgstr "Available hours"
 msgid "Available on the Business plan"
 msgstr "Available on the Business plan"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Avatar option {0}"
+
+msgid "Avatar style"
+msgstr "Avatar style"
+
 msgid "Avatar url"
 msgstr "Avatar url"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 
 msgid "Avg Days to Close"
 msgstr "Avg Days to Close"
@@ -3441,6 +3454,9 @@ msgstr "Back to traceability"
 
 msgid "Backflush"
 msgstr "Backflush"
+
+msgid "Background"
+msgstr "Background"
 
 msgid "Backup"
 msgstr "Backup"
@@ -4407,6 +4423,9 @@ msgstr "choose a supplier for {0} on the job"
 
 msgid "Choose another file"
 msgstr "Choose another file"
+
+msgid "Choose avatar"
+msgstr "Choose avatar"
 
 msgid "Choose how to add lines to this return."
 msgstr "Choose how to add lines to this return."
@@ -15023,9 +15042,6 @@ msgstr "Phone"
 msgid "Phone Number"
 msgstr "Phone Number"
 
-msgid "Photo removed successfully"
-msgstr "Photo removed successfully"
-
 msgid "Photo uploaded successfully"
 msgstr "Photo uploaded successfully"
 
@@ -15067,6 +15083,9 @@ msgstr "Pick a record type…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Pick a step from the list to edit its details, components, and materials."
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Pick a style and an avatar, or shuffle for new ones."
 
 msgid "Pick a target date to compare."
 msgstr "Pick a target date to compare."
@@ -19109,6 +19128,9 @@ msgstr "Shown to the customer on the invoice"
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
 
+msgid "Shuffle"
+msgstr "Shuffle"
+
 msgid "Sign in to Carbon"
 msgstr "Sign in to Carbon"
 
@@ -19672,6 +19694,9 @@ msgstr "Stripe has no customer for this Carbon customer yet. Confirming will cre
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+
+msgid "Style default"
+msgstr "Style default"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Style of kanban output to show in the Kanban table"

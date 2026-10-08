@@ -3424,8 +3424,21 @@ msgstr "利用可能時間"
 msgid "Available on the Business plan"
 msgstr "ビジネスプランで利用可能"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "アバターの候補 {0}"
+
+msgid "Avatar style"
+msgstr "アバターのスタイル"
+
 msgid "Avatar url"
 msgstr "アバターURL"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "アバターは {1} による <0>{0}</0> のもので、<1>{2}</1> でライセンスされています。"
 
 msgid "Avg Days to Close"
 msgstr "平均クローズ日数"
@@ -3441,6 +3454,9 @@ msgstr "トレーサビリティに戻る"
 
 msgid "Backflush"
 msgstr "バックフラッシュ"
+
+msgid "Background"
+msgstr "背景"
 
 msgid "Backup"
 msgstr "バックアップ"
@@ -4407,6 +4423,9 @@ msgstr "製造指図上の{0}の仕入先を選択してください"
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
+
+msgid "Choose avatar"
+msgstr "アバターを選択"
 
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
@@ -15023,9 +15042,6 @@ msgstr "電話"
 msgid "Phone Number"
 msgstr "電話番号"
 
-msgid "Photo removed successfully"
-msgstr "写真が正常に削除されました"
-
 msgid "Photo uploaded successfully"
 msgstr "写真が正常にアップロードされました"
 
@@ -15067,6 +15083,9 @@ msgstr "レコード種類を選択..."
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "リストからステップを選択して、その詳細、コンポーネント、および材料を編集します"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "スタイルとアバターを選ぶか、シャッフルして新しい候補を表示します。"
 
 msgid "Pick a target date to compare."
 msgstr "比較するターゲット日を選択してください。"
@@ -19109,6 +19128,9 @@ msgstr "請求書で顧客に表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Shuffle"
+msgstr "シャッフル"
+
 msgid "Sign in to Carbon"
 msgstr "Carbonにサインイン"
 
@@ -19672,6 +19694,9 @@ msgstr "StripeにはこのCarbon得意先用のカスタマーがまだありま
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
+
+msgid "Style default"
+msgstr "スタイルの既定"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "かんばんテーブルに表示するかんばん出力のスタイル"

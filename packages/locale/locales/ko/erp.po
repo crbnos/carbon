@@ -3424,8 +3424,21 @@ msgstr "가용 시간"
 msgid "Available on the Business plan"
 msgstr "Business 플랜에서 사용 가능"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "아바타 옵션 {0}"
+
+msgid "Avatar style"
+msgstr "아바타 스타일"
+
 msgid "Avatar url"
 msgstr "아바타 URL"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "아바타 출처: {1}의 <0>{0}</0>, <1>{2}</1> 라이선스."
 
 msgid "Avg Days to Close"
 msgstr "평균 마감 소요일"
@@ -3441,6 +3454,9 @@ msgstr "추적성으로 돌아가기"
 
 msgid "Backflush"
 msgstr "백플러시"
+
+msgid "Background"
+msgstr "배경"
 
 msgid "Backup"
 msgstr "백업"
@@ -4407,6 +4423,9 @@ msgstr "작업 지시의 {0}에 대한 공급업체를 선택하세요"
 
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
+
+msgid "Choose avatar"
+msgstr "아바타 선택"
 
 msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
@@ -15023,9 +15042,6 @@ msgstr "전화번호"
 msgid "Phone Number"
 msgstr "전화번호"
 
-msgid "Photo removed successfully"
-msgstr "사진이 삭제되었습니다"
-
 msgid "Photo uploaded successfully"
 msgstr "사진이 업로드되었습니다"
 
@@ -15067,6 +15083,9 @@ msgstr "레코드 유형 선택…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "목록에서 단계를 선택하여 세부 사항, 구성 요소 및 자재를 편집하세요."
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "스타일과 아바타를 선택하거나 섞어서 새 아바타를 보세요."
 
 msgid "Pick a target date to compare."
 msgstr "비교할 목표 날짜를 선택하세요."
@@ -19109,6 +19128,9 @@ msgstr "송장에서 고객에게 표시"
 msgid "Shown to the user when this rule fails."
 msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 
+msgid "Shuffle"
+msgstr "섞기"
+
 msgid "Sign in to Carbon"
 msgstr "Carbon에 로그인"
 
@@ -19672,6 +19694,9 @@ msgstr "Stripe에는 아직 이 Carbon 고객을 위한 고객이 없습니다. 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
+
+msgid "Style default"
+msgstr "스타일 기본값"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"

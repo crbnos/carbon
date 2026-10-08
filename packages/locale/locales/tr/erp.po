@@ -3424,8 +3424,21 @@ msgstr "Kullanılabilir saatler"
 msgid "Available on the Business plan"
 msgstr "Business planında kullanılabilir"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Avatar seçeneği {0}"
+
+msgid "Avatar style"
+msgstr "Avatar stili"
+
 msgid "Avatar url"
 msgstr "Avatar URL'si"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatarlar {1} tarafından <0>{0}</0> kaynağından alınmıştır, <1>{2}</1> ile lisanslanmıştır."
 
 msgid "Avg Days to Close"
 msgstr "Kapatma Ortalama Günler"
@@ -3441,6 +3454,9 @@ msgstr "İzlenebilirliğe geri dön"
 
 msgid "Backflush"
 msgstr "Geriye dönük tüketim"
+
+msgid "Background"
+msgstr "Arka plan"
 
 msgid "Backup"
 msgstr "Yedek"
@@ -4407,6 +4423,9 @@ msgstr "İş emirde {0} için bir tedarikçi seçin"
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
+
+msgid "Choose avatar"
+msgstr "Avatar seç"
 
 msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
@@ -15023,9 +15042,6 @@ msgstr "Telefon"
 msgid "Phone Number"
 msgstr "Telefon Numarası"
 
-msgid "Photo removed successfully"
-msgstr "Fotoğraf başarıyla kaldırıldı"
-
 msgid "Photo uploaded successfully"
 msgstr "Fotoğraf başarıyla yüklendi"
 
@@ -15067,6 +15083,9 @@ msgstr "Bir kayıt türü seçin…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Ayrıntılarını, bileşenlerini ve malzemelerini düzenlemek için listeden bir adım seçin."
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Bir stil ve bir avatar seçin veya yenilerini görmek için karıştırın."
 
 msgid "Pick a target date to compare."
 msgstr "Karşılaştırma için hedef bir tarih seçin."
@@ -19109,6 +19128,9 @@ msgstr "Müşteriye faturada gösterilir"
 msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
+msgid "Shuffle"
+msgstr "Karıştır"
+
 msgid "Sign in to Carbon"
 msgstr "Carbon'a giriş yapın"
 
@@ -19672,6 +19694,9 @@ msgstr "Stripe'ın henüz bu Carbon müşterisi için bir müşterisi yok. Onay 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Bu Carbon müşterisi için Stripe'da henüz müşteri yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacak."
+
+msgid "Style default"
+msgstr "Stil varsayılanı"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"

@@ -3424,8 +3424,21 @@ msgstr "Ore disponibili"
 msgid "Available on the Business plan"
 msgstr "Disponibile nel piano Business"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Opzione avatar {0}"
+
+msgid "Avatar style"
+msgstr "Stile avatar"
+
 msgid "Avatar url"
 msgstr "URL avatar"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatar da <0>{0}</0> di {1}, con licenza <1>{2}</1>."
 
 msgid "Avg Days to Close"
 msgstr "Giorni medi per chiudere"
@@ -3441,6 +3454,9 @@ msgstr "Torna alla tracciabilità"
 
 msgid "Backflush"
 msgstr "Backflush"
+
+msgid "Background"
+msgstr "Sfondo"
 
 msgid "Backup"
 msgstr "Backup"
@@ -4407,6 +4423,9 @@ msgstr "scegli un fornitore per {0} nell'ordine di produzione"
 
 msgid "Choose another file"
 msgstr "Scegli un altro file"
+
+msgid "Choose avatar"
+msgstr "Scegli avatar"
 
 msgid "Choose how to add lines to this return."
 msgstr "Scegli come aggiungere righe a questo reso."
@@ -15023,9 +15042,6 @@ msgstr "Telefono"
 msgid "Phone Number"
 msgstr "Numero di telefono"
 
-msgid "Photo removed successfully"
-msgstr "Foto rimossa con successo"
-
 msgid "Photo uploaded successfully"
 msgstr "Foto caricata con successo"
 
@@ -15067,6 +15083,9 @@ msgstr "Scegli un tipo di record…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Seleziona un passo dall'elenco per modificare i dettagli, i componenti e i materiali."
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Scegli uno stile e un avatar, o mescola per vederne di nuovi."
 
 msgid "Pick a target date to compare."
 msgstr "Seleziona una data di destinazione da confrontare."
@@ -19109,6 +19128,9 @@ msgstr "Mostrato al cliente sulla fattura"
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrato all'utente quando questa regola fallisce."
 
+msgid "Shuffle"
+msgstr "Mescola"
+
 msgid "Sign in to Carbon"
 msgstr "Accedi a Carbon"
 
@@ -19672,6 +19694,9 @@ msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La conferma n
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno sul tuo account collegato."
+
+msgid "Style default"
+msgstr "Predefinito dello stile"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stile dell'output kanban da mostrare nella tabella Kanban"

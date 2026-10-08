@@ -13,13 +13,16 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { isGeneratedAvatar, newGeneratedAvatar } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
+import { useState } from "react";
 import { useSubmit } from "react-router";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Account } from "../../types";
+import GeneratedAvatarPicker from "./GeneratedAvatarPicker";
 
 const logger = getLogger("erp", "profilephotoform");
 
@@ -34,6 +37,12 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
   const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  // `avatarUrl` is either an uploaded photo's storage path or a generated avatar.
+  const uploadedPhotoPath =
+    user.avatarUrl && !isGeneratedAvatar(user.avatarUrl)
+      ? user.avatarUrl
+      : null;
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
@@ -82,28 +91,21 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
     }
   };
 
-  const deleteImage = async () => {
-    if (carbon && user?.avatarUrl) {
-      const imageDelete = await carbon.storage
-        .from("avatars")
-        .remove([user.avatarUrl]);
+  // The profile action deletes the replaced photo from storage after it saves
+  // the new value, so neither of these touches storage.
 
-      if (imageDelete.error) {
-        const errorMessage =
-          imageDelete.error.message || "Failed to remove image";
-        toast.error(errorMessage);
-        return;
-      }
+  // Removing a photo falls back to a new generated avatar, never to none.
+  const removePhoto = () => submitAvatarUrl(newGeneratedAvatar());
 
-      toast.success(t`Photo removed successfully`);
-      submitAvatarUrl(null);
-    }
+  const saveGeneratedAvatar = (value: string) => {
+    setIsPickerOpen(false);
+    submitAvatarUrl(value);
   };
 
-  const submitAvatarUrl = (avatarPath: string | null) => {
+  const submitAvatarUrl = (avatarPath: string) => {
     const formData = new FormData();
     formData.append("intent", "photo");
-    if (avatarPath) formData.append("path", avatarPath);
+    formData.append("path", avatarPath);
     submit(formData, {
       method: "post",
       action: path.to.profile,
@@ -119,15 +121,25 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
         name={user?.fullName ?? undefined}
       />
       <FileUpload accept="image/*" onChange={uploadImage}>
-        {user.avatarUrl ? t`Change` : t`Upload`}
+        {uploadedPhotoPath ? t`Change` : t`Upload`}
       </FileUpload>
+      <Button variant="secondary" onClick={() => setIsPickerOpen(true)}>
+        <Trans>Choose avatar</Trans>
+      </Button>
 
-      {user.avatarUrl && (
-        <Button variant="secondary" onClick={deleteImage}>
+      {uploadedPhotoPath && (
+        <Button variant="secondary" onClick={removePhoto}>
           <Trans>Remove</Trans>
         </Button>
       )}
       <Badge variant="outline">{t`${maxSizeMB}MB limit`}</Badge>
+      {isPickerOpen && (
+        <GeneratedAvatarPicker
+          current={user.avatarUrl}
+          onClose={() => setIsPickerOpen(false)}
+          onSave={saveGeneratedAvatar}
+        />
+      )}
     </VStack>
   );
 };

@@ -3424,8 +3424,21 @@ msgstr "उपलब्ध घंटे"
 msgid "Available on the Business plan"
 msgstr "बिज़नेस प्लान पर उपलब्ध"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "अवतार विकल्प {0}"
+
+msgid "Avatar style"
+msgstr "अवतार शैली"
+
 msgid "Avatar url"
 msgstr "अवतार url"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "<0>{0}</0> से अवतार, {1} द्वारा, <1>{2}</1> के तहत लाइसेंस प्राप्त।"
 
 msgid "Avg Days to Close"
 msgstr "बंद करने के लिए औसत दिन"
@@ -3441,6 +3454,9 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
 msgid "Backflush"
 msgstr "बैकफ्लश"
+
+msgid "Background"
+msgstr "पृष्ठभूमि"
 
 msgid "Backup"
 msgstr "बैकअप"
@@ -4407,6 +4423,9 @@ msgstr "जॉब पर {0} के लिए एक आपूर्तिकर
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
+
+msgid "Choose avatar"
+msgstr "अवतार चुनें"
 
 msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
@@ -15023,9 +15042,6 @@ msgstr "फोन"
 msgid "Phone Number"
 msgstr "फोन नंबर"
 
-msgid "Photo removed successfully"
-msgstr "फ़ोटो सफलतापूर्वक हटा दी गई"
-
 msgid "Photo uploaded successfully"
 msgstr "फ़ोटो सफलतापूर्वक अपलोड हो गई"
 
@@ -15067,6 +15083,9 @@ msgstr "एक रिकॉर्ड प्रकार चुनें…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "सूची से एक चरण चुनें और उसके विवरण, घटक और सामग्री संपादित करें।"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "एक शैली और एक अवतार चुनें, या नए अवतारों के लिए शफ़ल करें।"
 
 msgid "Pick a target date to compare."
 msgstr "तुलना के लिए एक लक्ष्य तारीख चुनें।"
@@ -19109,6 +19128,9 @@ msgstr "चालान पर ग्राहक को दिखाया ज�
 msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तब उपयोगकर्ता को दिखाया जाता है।"
 
+msgid "Shuffle"
+msgstr "शफ़ल करें"
+
 msgid "Sign in to Carbon"
 msgstr "Carbon में साइन इन करें"
 
@@ -19672,6 +19694,9 @@ msgstr "Stripe के पास इस Carbon ग्राहक के लि�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
+
+msgid "Style default"
+msgstr "शैली का डिफ़ॉल्ट"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "कानबान तालिका में दिखाने के लिए कानबान आउटपुट की शैली"
