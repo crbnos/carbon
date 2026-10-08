@@ -1,6 +1,7 @@
 # Accounting Cutover & Activation
 
-> Status: in-progress
+> Status: archived (superseded)
+> Superseded by (2026-10-08): `.ai/specs/2026-10-08-accounting-cutover.md`. It keeps this spec's one-way activation, configuration locks, flag retirement and new-company path. It replaces the aggregate opening journal and the empty pre-cutover history with Provisional journals and per-document opening lines against Migration Clearing.
 > Author: Claude (with Brad Barbin)
 > Date: 2026-07-04
 > Tracking issue: crbnos/carbon#1057
