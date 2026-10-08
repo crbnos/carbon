@@ -2,33 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getCompanyTimeZone, type Json } from "@carbon/database";
 import { toJson } from "@carbon/database/json";
-import { round } from "@carbon/database/precision";
-import { getNextSequence } from "@carbon/database/sequence";
 import {
-  buildJournalLineDimensionInserts,
   buildLessorSchedule,
   datetime,
-  type ExistingBillingPeriod,
   generateRentalBillingPeriods,
   type PeriodSpec
 } from "@carbon/utils";
-import { sql, type Transaction } from "kysely";
-import { nanoid } from "nanoid";
+import { sql } from "kysely";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
-import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
-import { resolveInventoryAccount } from "../lib/get-posting-group";
 import {
-  bookAdjustment,
-  createAdjustmentJournal
-} from "../lib/post-adjustment";
+  type AgreementRow,
+  billingPeriodRow,
+  currencyDecimals,
+  type Db,
+  insertUnitActivity,
+  loadLeaseAccounting,
+  lockAgreement,
+  postLeaseJournal,
+  type Trx
+} from "./agreement";
 import {
   activationBillingThrough,
   buildCommencementLines,
-  buildResidualReturnLines,
   type ClassificationInputs,
   certainPurchaseOption,
   classifyRentalLine,
@@ -37,24 +35,23 @@ import {
   type LeasePaymentTerms,
   leaseClosingTarget,
   leasePaymentTerms,
-  netInvestmentAt,
-  type PostingLine,
   salesTypeRequirementError,
-  salesTypeReturnError,
   scheduleBillingPeriods,
   settledClassification
 } from "./lessor";
+import { returnRentalUnit } from "./return-unit";
 import {
   cancelBlocker,
   closeBlocker,
-  futureReturnError,
+  futureReleaseError,
   LIVE_LINE_STATUSES,
+  openRentalDocumentBlocker,
   payloadValidator,
   RENTABLE_ASSET_STATUSES,
-  RETURNABLE_LINE_STATUSES,
   type RentalAgreementPayload,
-  type ResidualDestination,
+  releaseBlocker,
   unitAvailabilityError,
+  unitLabel,
   unpricedUnitError
 } from "./validators";
 
@@ -69,327 +66,17 @@ import {
 //             'Lease' journal books net investment / COGS / lease revenue, and
 //             the effective-interest schedule plus its Interest recognition
 //             rows are written.
-//   return    a unit comes back, never after today: an operating line's
-//             billing is re-cut at the return date (later Pending periods
-//             dropped, the current one shortened, an advance-billed period
-//             credited), optionally straight to maintenance. A sales-type
-//             line's billing is its term and is left alone; the unit's closing
-//             net investment (the schedule's balance on the return date) moves
-//             into a new Rental Fleet asset or into stock.
+//   A unit comes back through a rental receipt (`post-receipt`), which calls `returnRentalUnit`.
+//   release   a Pending unit that never left the yard stops billing at the release date and is free again.
 //   close     Active → Closed once every unit is back and everything billed.
 //   cancel    Draft, or Active with nothing on rent / billed / recognized /
 //             commenced → Cancelled; the Pending lines are deleted so their
 //             units are free.
 
-type Db = Kysely<KyselyDatabase>;
-type Trx = Transaction<KyselyDatabase>;
-type Enums = Database["public"]["Enums"];
-
 // Business-validation failures are 400s (InvalidInputError) with the exact
 // message the app shows; a referenced record the caller's company does not own
 // is a 404 (NotFoundError); everything else is a 500 so real outages surface in
 // monitoring.
-
-type AgreementRow = {
-  id: string;
-  rentalAgreementId: string;
-  status: Enums["rentalAgreementStatus"];
-  customerId: string;
-  locationId: string;
-  startDate: string;
-  endDate: string | null;
-  billingCycle: Enums["rentalBillingCycle"];
-  billingTiming: Enums["rentalBillingTiming"];
-  currencyCode: string;
-  discountRate: number;
-  ownershipTransfers: boolean;
-  specializedAsset: boolean;
-  purchaseOptionAmount: number | null;
-  purchaseOptionReasonablyCertain: boolean;
-};
-
-// Re-read under the caller's company and lock: the id comes from the payload,
-// and the permission check proves nothing about it. The lock serializes two
-// actions on one agreement (a double-clicked Activate, a return racing a
-// cancel). DATE columns decode to JS Dates through the driver, so they are
-// selected as text — the billing math works on `YYYY-MM-DD` strings.
-async function lockAgreement(
-  trx: Trx,
-  companyId: string,
-  id: string
-): Promise<AgreementRow> {
-  const agreement = await trx
-    .selectFrom("rentalAgreement")
-    .select([
-      "id",
-      "rentalAgreementId",
-      "status",
-      "customerId",
-      "locationId",
-      sql<string>`"startDate"::text`.as("startDate"),
-      sql<string | null>`"endDate"::text`.as("endDate"),
-      "billingCycle",
-      "billingTiming",
-      "currencyCode",
-      "discountRate",
-      "ownershipTransfers",
-      "specializedAsset",
-      "purchaseOptionAmount",
-      "purchaseOptionReasonablyCertain"
-    ])
-    .where("id", "=", id)
-    .where("companyId", "=", companyId)
-    .forUpdate()
-    .executeTakeFirst();
-  if (!agreement) throw new NotFoundError("Rental agreement not found");
-  return {
-    ...agreement,
-    discountRate: Number(agreement.discountRate),
-    purchaseOptionAmount:
-      agreement.purchaseOptionAmount === null
-        ? null
-        : Number(agreement.purchaseOptionAmount)
-  };
-}
-
-// Billing periods are invoiced, so they are priced at the agreement
-// currency's settlement precision — the group's `currency.decimalPlaces`,
-// never a literal.
-async function currencyDecimals(
-  trx: Trx,
-  companyId: string,
-  currencyCode: string
-): Promise<number> {
-  const currency = await trx
-    .selectFrom("currency")
-    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
-    .select("currency.decimalPlaces")
-    .where("company.id", "=", companyId)
-    .where("currency.code", "=", currencyCode)
-    .executeTakeFirst();
-  if (!currency || currency.decimalPlaces === null) {
-    throw new InvalidInputError(
-      `Currency ${currencyCode} is not set up for this company`
-    );
-  }
-  return currency.decimalPlaces;
-}
-
-function billingPeriodRow(
-  spec: PeriodSpec,
-  rentalAgreementLineId: string,
-  companyId: string,
-  userId: string
-) {
-  return {
-    rentalAgreementLineId,
-    periodStart: spec.periodStart,
-    periodEnd: spec.periodEnd,
-    days: spec.days,
-    amount: spec.amount,
-    rateUnitApplied: spec.rateUnitApplied,
-    isAdjustment: spec.isAdjustment,
-    dueOn: spec.dueOn,
-    status: "Pending" as const,
-    companyId,
-    createdBy: userId
-  };
-}
-
-// What the 'Lease' journals need, resolved once per request inside the
-// transaction. The period resolver reuses the caller's transaction and locks
-// the period row, so a close cannot slip in between.
-type LeaseAccounting = {
-  accountingPeriodId: string;
-  accounts: {
-    netInvestmentInLeasesAccount: string;
-    leaseRevenueAccount: string;
-    leaseInterestIncomeAccount: string;
-    costOfGoodsSoldAccount: string;
-    finishedGoodsAccount: string;
-    rawMaterialsAccount: string;
-  };
-  // active dimensions for the company group, entityType → dimension id
-  dimensionMap: Map<string, string>;
-};
-
-async function loadLeaseAccounting(
-  trx: Trx,
-  args: { companyId: string; companyGroupId: string | null; today: string }
-): Promise<LeaseAccounting> {
-  const { companyId } = args;
-  const defaults = await trx
-    .selectFrom("accountDefault")
-    .select([
-      "netInvestmentInLeasesAccount",
-      "leaseRevenueAccount",
-      "leaseInterestIncomeAccount",
-      "costOfGoodsSoldAccount",
-      "finishedGoodsAccount",
-      "rawMaterialsAccount"
-    ])
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!defaults) throw new Error("Error getting account defaults");
-  const {
-    netInvestmentInLeasesAccount,
-    leaseRevenueAccount,
-    leaseInterestIncomeAccount
-  } = defaults;
-  if (
-    !netInvestmentInLeasesAccount ||
-    !leaseRevenueAccount ||
-    !leaseInterestIncomeAccount
-  ) {
-    throw new InvalidInputError(
-      "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale"
-    );
-  }
-
-  // Dimensions are configured per company group; a company outside one
-  // tags nothing.
-  const dimensions =
-    args.companyGroupId === null
-      ? []
-      : await trx
-          .selectFrom("dimension")
-          .select(["id", "entityType"])
-          .where("companyGroupId", "=", args.companyGroupId)
-          .where("active", "=", true)
-          .where("entityType", "in", ["Customer", "Item", "Location"])
-          .execute();
-
-  const accountingPeriodId = await getCurrentAccountingPeriod(
-    companyId,
-    trx,
-    args.today
-  );
-
-  return {
-    accountingPeriodId,
-    accounts: {
-      netInvestmentInLeasesAccount,
-      leaseRevenueAccount,
-      leaseInterestIncomeAccount,
-      costOfGoodsSoldAccount: defaults.costOfGoodsSoldAccount,
-      finishedGoodsAccount: defaults.finishedGoodsAccount,
-      rawMaterialsAccount: defaults.rawMaterialsAccount
-    },
-    dimensionMap: new Map(
-      dimensions.map((dimension) => [dimension.entityType, dimension.id])
-    )
-  };
-}
-
-// One posted 'Lease' journal from already-balanced lines. Every line carries
-// the agreement as its document and the agreement line as the line
-// reference, tagged with the Customer / Item / Location dimensions the
-// company group has active.
-async function postLeaseJournal(
-  trx: Trx,
-  args: {
-    accounting: LeaseAccounting;
-    companyId: string;
-    userId: string;
-    postingDate: string;
-    description: string;
-    lines: PostingLine[];
-    rentalAgreementId: string;
-    rentalAgreementLineId: string;
-    tags: { customerId: string; itemId: string; locationId: string };
-  }
-): Promise<string> {
-  const { accounting, companyId, userId } = args;
-  const journalId = await createAdjustmentJournal(trx, {
-    companyId,
-    accountingPeriodId: accounting.accountingPeriodId,
-    description: args.description,
-    postingDate: args.postingDate,
-    userId,
-    sourceType: "Lease"
-  });
-
-  const journalLineReference = nanoid();
-  const journalLines = await trx
-    .insertInto("journalLine")
-    .values(
-      args.lines.map((line) => ({
-        journalId,
-        accountId: line.accountId,
-        description: line.description,
-        amount: round(line.amount),
-        quantity: 1,
-        documentType: "Rental Agreement" as const,
-        documentId: args.rentalAgreementId,
-        documentLineReference: args.rentalAgreementLineId,
-        journalLineReference,
-        companyId
-      }))
-    )
-    .returning(["id"])
-    .execute();
-
-  const dimensionInserts = buildJournalLineDimensionInserts({
-    journalLineIds: journalLines.map((line) => line.id),
-    meta: journalLines.map(() => args.tags),
-    dimensionMap: accounting.dimensionMap,
-    companyId
-  });
-  if (dimensionInserts.length > 0) {
-    await trx
-      .insertInto("journalLineDimension")
-      .values(dimensionInserts)
-      .execute();
-  }
-
-  return journalId;
-}
-
-// The traceability graph records the lease as the consumer of the unit at
-// commencement, and as its producer when it comes back to stock.
-async function insertUnitActivity(
-  trx: Trx,
-  args: {
-    type: "Lease Commencement" | "Return to Inventory" | "Capitalize";
-    direction: "input" | "output";
-    sourceDocument: "Rental Agreement" | "Fixed Asset";
-    sourceDocumentId: string;
-    sourceDocumentReadableId: string;
-    attributes: Record<string, string>;
-    trackedEntityId: string;
-    companyId: string;
-    userId: string;
-  }
-): Promise<void> {
-  const activityId = nanoid();
-  await trx
-    .insertInto("trackedActivity")
-    .values({
-      id: activityId,
-      type: args.type,
-      sourceDocument: args.sourceDocument,
-      sourceDocumentId: args.sourceDocumentId,
-      sourceDocumentReadableId: args.sourceDocumentReadableId,
-      attributes: args.attributes,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
-  await trx
-    .insertInto(
-      args.direction === "input"
-        ? "trackedActivityInput"
-        : "trackedActivityOutput"
-    )
-    .values({
-      trackedActivityId: activityId,
-      trackedEntityId: args.trackedEntityId,
-      quantity: 1,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
-}
 
 type ActivationPlan = {
   lineId: string;
@@ -1040,15 +727,13 @@ async function commenceSalesTypeLines(
   return result;
 }
 
-async function returnUnit(
+async function releaseUnit(
   { db, companyId, userId }: Scope,
-  payload: Extract<RentalAgreementPayload, { type: "return" }>,
+  payload: Extract<RentalAgreementPayload, { type: "release" }>,
   today: string
 ): Promise<{ id: string }> {
-  const { returnedAt } = payload;
-  const future = futureReturnError(returnedAt, today);
+  const future = futureReleaseError(payload.returnedAt, today);
   if (future) throw new InvalidInputError(future);
-
   return db.transaction().execute(async (trx) => {
     const agreement = await lockAgreement(
       trx,
@@ -1057,601 +742,87 @@ async function returnUnit(
     );
     if (agreement.status !== "Active") {
       throw new InvalidInputError(
-        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are returned from an Active agreement`
+        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are released from an Active agreement`
       );
     }
 
     const line = await trx
       .selectFrom("rentalAgreementLine")
-      .select([
-        "id",
-        "status",
-        "fixedAssetId",
-        "itemId",
-        "trackedEntityId",
-        "rateUnit",
-        "rate",
-        "lessorClassification",
-        "initialNetInvestment",
-        sql<string | null>`"deliveredAt"::text`.as("deliveredAt")
-      ])
+      .select(["id", "status", "lessorClassification", "fixedAssetId"])
       .where("id", "=", payload.rentalAgreementLineId)
       .where("rentalAgreementId", "=", agreement.id)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirst();
     if (!line) throw new NotFoundError("Rental agreement line not found");
-    if (!RETURNABLE_LINE_STATUSES.has(line.status)) {
-      throw new InvalidInputError(
-        `The unit is ${line.status}; only a Pending or On Rent unit can be returned`
-      );
-    }
-    // `YYYY-MM-DD` compares chronologically as text.
-    if (returnedAt < agreement.startDate) {
-      throw new InvalidInputError(
-        `The return date is before the agreement starts (${agreement.startDate})`
-      );
-    }
-    if (line.deliveredAt && returnedAt < line.deliveredAt) {
-      throw new InvalidInputError(
-        `The return date is before the unit was delivered (${line.deliveredAt})`
-      );
-    }
-    // A sales-type unit is off the books until it comes back: where it goes
-    // (fleet or stock) is the caller's choice and has to be made. An
-    // operating return ignores the destination.
-    const salesTypeProblem = salesTypeReturnError({
-      classification: line.lessorClassification,
-      residualDestination: payload.residualDestination,
-      returnedAt,
-      endDate: agreement.endDate,
-      takeOutOfService: !!payload.takeOutOfService
-    });
-    if (salesTypeProblem) throw new InvalidInputError(salesTypeProblem);
-    const salesType = line.lessorClassification === "Sale";
-    if (salesType && line.initialNetInvestment === null) {
-      throw new InvalidInputError(
-        "This line is treated as a sale but has no commencement booked; it cannot be returned"
-      );
-    }
 
-    const now = datetime.timestamp();
-
-    // A sales-type line's billing is its term, cut in full at activation, and
-    // the unit comes back only on or after the end date — there is nothing to
-    // re-cut. Regenerating would cut holdover periods past the end date that
-    // bill rent against a net investment the schedule has already closed.
-    if (!salesType) {
-      const existingRows = await trx
-        .selectFrom("rentalBillingPeriod")
-        .select([
-          sql<string>`"periodStart"::text`.as("periodStart"),
-          sql<string>`"periodEnd"::text`.as("periodEnd"),
-          "amount",
-          "status",
-          "isAdjustment"
-        ])
-        .where("rentalAgreementLineId", "=", line.id)
-        .where("companyId", "=", companyId)
-        .forUpdate()
-        .execute();
-      const existing: ExistingBillingPeriod[] = existingRows.map((row) => ({
-        periodStart: row.periodStart,
-        periodEnd: row.periodEnd,
-        amount: Number(row.amount),
-        status: row.status,
-        isAdjustment: row.isAdjustment
-      }));
-
-      const plan = generateRentalBillingPeriods({
-        cycle: agreement.billingCycle,
-        timing: agreement.billingTiming,
-        rateUnit: line.rateUnit,
-        rate: Number(line.rate),
-        startDate: agreement.startDate,
-        endDate: agreement.endDate,
-        returnedAt,
-        through: returnedAt,
-        existing,
-        decimals: await currencyDecimals(trx, companyId, agreement.currencyCode)
-      });
-
-      // The generation stops at the return, so every unbilled period starting
-      // after it is gone. An invoiced one is credited through `adjustments`.
-      await trx
-        .deleteFrom("rentalBillingPeriod")
-        .where("rentalAgreementLineId", "=", line.id)
-        .where("companyId", "=", companyId)
-        .where("status", "=", "Pending")
-        .where("isAdjustment", "=", false)
-        .where("periodStart", ">", returnedAt)
-        .execute();
-
-      // The unbilled period the return falls inside ends on the return date.
-      for (const recut of plan.recut) {
-        await trx
-          .updateTable("rentalBillingPeriod")
-          .set({
-            periodEnd: recut.periodEnd,
-            days: recut.days,
-            amount: recut.amount,
-            rateUnitApplied: recut.rateUnitApplied,
-            dueOn: recut.dueOn,
-            updatedBy: userId,
-            updatedAt: now
-          })
-          .where("rentalAgreementLineId", "=", line.id)
-          .where("companyId", "=", companyId)
-          .where("periodStart", "=", recut.periodStart)
-          .where("isAdjustment", "=", false)
-          .where("status", "=", "Pending")
-          .execute();
-      }
-
-      // `create` is non-empty when the return falls in a period not generated
-      // yet; `adjustments` credits advance billing past the return.
-      const inserts = [...plan.create, ...plan.adjustments].map((spec) =>
-        billingPeriodRow(spec, line.id, companyId, userId)
-      );
-      if (inserts.length > 0) {
-        await trx.insertInto("rentalBillingPeriod").values(inserts).execute();
-      }
-    }
-
-    await trx
-      .updateTable("rentalAgreementLine")
-      .set({
-        status: "Returned",
-        returnedAt,
-        meterIn: payload.meterIn ?? null,
-        returnNotes: payload.returnNotes ?? null,
-        updatedBy: userId,
-        updatedAt: now
-      })
-      .where("id", "=", line.id)
-      .where("companyId", "=", companyId)
-      .execute();
-
-    // A sales-type unit's closing net investment moves back onto the books
-    // — as a new Rental Fleet asset or into stock. The asset the line names
-    // was disposed at commencement, so a fleet return's unit is the new one.
-    let fleetAssetId = line.fixedAssetId;
-    if (salesType) {
-      const residual = await returnResidual(trx, {
-        agreement,
-        line: {
-          id: line.id,
-          itemId: line.itemId,
-          fixedAssetId: line.fixedAssetId,
-          trackedEntityId: line.trackedEntityId,
-          initialNetInvestment: Number(line.initialNetInvestment)
-        },
-        destination: payload.residualDestination as ResidualDestination,
-        returnedAt,
-        companyId,
-        userId,
-        today
-      });
-      fleetAssetId = residual.fixedAssetId;
-    }
-
-    // Straight to maintenance: the fleet status reads In Maintenance and the
-    // unit cannot go back on rent until it is returned to service.
-    if (payload.takeOutOfService && fleetAssetId) {
-      await trx
-        .updateTable("fixedAsset")
-        .set({
-          outOfServiceSince: returnedAt,
-          outOfServiceReason: (payload.outOfServiceReason ?? "").trim(),
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", fleetAssetId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
-
-    return { id: agreement.id };
-  });
-}
-
-/**
- * End of a sales-type term with the unit coming back (spec §4): the closing
- * net investment — the schedule's balance on the return date
- * (`netInvestmentAt`: the closing of the last schedule line dated on or
- * before it, which at or after the end date is the closing target; the
- * initial NI when the line has no schedule) — leaves Net Investment in
- * Leases for either
- *
- *   Fleet      a new asset in the class named "Rental Fleet" (else the class
- *              the unit left at commencement) at that amount, with a Posted
- *              Capitalization transfer; Dr class asset / Cr net investment.
- *              The unit is consumed into the new asset.
- *   Inventory  stock at that unit cost (`bookAdjustment` +1, no variance
- *              journal); Dr the item's inventory account / Cr net investment.
- *              The unit is Available again.
- *
- * The schedule lines and Interest rows dated on or before the return stay,
- * posted or not: they are the term the lease ran, the closing already counts
- * them, and their interest posts through recognition runs after the return,
- * bringing Net Investment in Leases to zero. Only what is dated AFTER the
- * return is dropped — nothing accrues on a lease that has ended (normally
- * nothing, since a unit comes back on or after the end date). With
- * accounting off, the asset / stock moves identically and no journal is
- * posted.
- */
-async function returnResidual(
-  trx: Trx,
-  args: {
-    agreement: AgreementRow;
-    line: {
-      id: string;
-      itemId: string;
-      fixedAssetId: string | null;
-      trackedEntityId: string | null;
-      initialNetInvestment: number;
-    };
-    destination: ResidualDestination;
-    returnedAt: string;
-    companyId: string;
-    userId: string;
-    today: string;
-  }
-): Promise<{ fixedAssetId: string | null }> {
-  const { agreement, line, destination, returnedAt, companyId, userId, today } =
-    args;
-
-  // A Draft recognition run that already claimed interest dated after the
-  // return would be left pointing at deleted rows. Interest on or before the
-  // return is kept, so a run holding it is no obstacle.
-  const claimed = await trx
-    .selectFrom("revenueRecognitionSchedule")
-    .select(sql<number>`count(*)::int`.as("count"))
-    .where("rentalAgreementLineId", "=", line.id)
-    .where("companyId", "=", companyId)
-    .where("type", "=", "Interest")
-    .where("status", "=", "Planned")
-    .where("scheduledDate", ">", returnedAt)
-    .where("runLineId", "is not", null)
-    .executeTakeFirstOrThrow();
-  if (Number(claimed.count) > 0) {
-    throw new InvalidInputError(
-      "A draft revenue recognition run includes this lease's interest; post or delete the run before returning the unit"
-    );
-  }
-
-  const schedule = await trx
-    .selectFrom("rentalLeaseScheduleLine")
-    .select([
-      sql<string>`"periodDate"::text`.as("periodDate"),
-      "closingNetInvestment"
-    ])
-    .where("rentalAgreementLineId", "=", line.id)
-    .where("companyId", "=", companyId)
-    .execute();
-  const closing = netInvestmentAt({
-    initialNetInvestment: line.initialNetInvestment,
-    schedule: schedule.map((row) => ({
-      periodDate: row.periodDate,
-      closingNetInvestment: Number(row.closingNetInvestment)
-    })),
-    asOf: returnedAt
-  });
-  if (closing < 0) {
-    throw new InvalidInputError(
-      `The lease's closing net investment is negative (${closing})`
-    );
-  }
-
-  // Sequential on purpose: one transaction is one connection.
-  const company = await trx
-    .selectFrom("company")
-    .select("companyGroupId")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
-  const settings = await trx
-    .selectFrom("companySettings")
-    .select("accountingEnabled")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
-  const item = await trx
-    .selectFrom("item")
-    .select([
-      "id",
-      "name",
-      "readableId",
-      "itemTrackingType",
-      "replenishmentSystem"
-    ])
-    .where("id", "=", line.itemId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  const itemCost = await trx
-    .selectFrom("itemCost")
-    .select(["costingMethod", "unitCost", "standardCost", "itemPostingGroupId"])
-    .where("itemId", "=", line.itemId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  // The serial left the line's asset at commencement when the line named
-  // only the asset (as `commenceSalesTypeLines` resolves it), so a line
-  // without its own serial takes the disposed asset's.
-  const disposedAsset =
-    !line.trackedEntityId && line.fixedAssetId
+    const asset = line.fixedAssetId
       ? await trx
           .selectFrom("fixedAsset")
-          .select("trackedEntityId")
+          .select(["fixedAssetId", "name"])
           .where("id", "=", line.fixedAssetId)
           .where("companyId", "=", companyId)
           .executeTakeFirst()
       : undefined;
-  const trackedEntityId =
-    line.trackedEntityId ?? disposedAsset?.trackedEntityId ?? null;
-  const entity = trackedEntityId
-    ? await trx
-        .selectFrom("trackedEntity")
-        .select(["id", "readableId"])
-        .where("id", "=", trackedEntityId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst()
-    : undefined;
-  if (!item) throw new NotFoundError("Item not found");
-  const serial = entity?.readableId ?? item.readableId;
-  const accounting = settings.accountingEnabled
-    ? await loadLeaseAccounting(trx, {
-        companyId,
-        companyGroupId: company.companyGroupId,
-        today
-      })
-    : null;
-  const tags = {
-    customerId: agreement.customerId,
-    itemId: line.itemId,
-    locationId: agreement.locationId
-  };
-  const description = `Lease return ${agreement.rentalAgreementId} ${serial}`;
 
-  let fixedAssetId: string | null = null;
-  if (destination === "Fleet") {
-    // The class the fleet register and capitalization default to; a company
-    // that renamed it falls back to the class the unit was leased out of.
-    const byName = await trx
-      .selectFrom("fixedAssetClass")
-      .select([
-        "id",
-        "assetAccountId",
-        "depreciationMethod",
-        "usefulLifeMonths",
-        "residualValuePercent"
-      ])
-      .where("companyId", "=", companyId)
-      .where("name", "=", "Rental Fleet")
-      .where("isConstructionInProgress", "=", false)
+    // A unit an open rental document still holds would be Returned while
+    // the document names it (plan decision P2).
+    const openShipment = await trx
+      .selectFrom("shipment as s")
+      .innerJoin("shipmentFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.shipmentId", "=", "s.id")
+          .onRef("l.companyId", "=", "s.companyId")
+      )
+      .select("s.shipmentId")
+      .where("s.companyId", "=", companyId)
+      .where("s.sourceDocument", "=", "Rental Agreement")
+      .where("s.sourceDocumentId", "=", agreement.id)
+      .where("s.status", "in", ["Draft", "Pending"])
+      .where("l.rentalAgreementLineId", "=", line.id)
+      .orderBy("s.createdAt")
       .executeTakeFirst();
-    const original =
-      byName || !line.fixedAssetId
-        ? undefined
-        : await trx
-            .selectFrom("fixedAsset as fa")
-            .innerJoin("fixedAssetClass as fac", (join) =>
-              join
-                .onRef("fac.id", "=", "fa.fixedAssetClassId")
-                .onRef("fac.companyId", "=", "fa.companyId")
-            )
-            .select([
-              "fac.id",
-              "fac.assetAccountId",
-              "fac.depreciationMethod",
-              "fac.usefulLifeMonths",
-              "fac.residualValuePercent"
-            ])
-            .where("fa.id", "=", line.fixedAssetId)
-            .where("fa.companyId", "=", companyId)
-            .where("fac.isConstructionInProgress", "=", false)
-            .executeTakeFirst();
-    const assetClass = byName ?? original;
-    if (!assetClass) {
-      throw new InvalidInputError(
-        "No Rental Fleet asset class to return the unit into; create one or return the unit to inventory"
-      );
-    }
+    const openReceipt = await trx
+      .selectFrom("receipt as r")
+      .innerJoin("receiptFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.receiptId", "=", "r.id")
+          .onRef("l.companyId", "=", "r.companyId")
+      )
+      .select("r.receiptId")
+      .where("r.companyId", "=", companyId)
+      .where("r.sourceDocument", "=", "Rental Agreement")
+      .where("r.sourceDocumentId", "=", agreement.id)
+      .where("r.status", "in", ["Draft", "Pending"])
+      .where("l.rentalAgreementLineId", "=", line.id)
+      .orderBy("r.createdAt")
+      .executeTakeFirst();
+    const openDocument = openShipment
+      ? `shipment ${openShipment.shipmentId}`
+      : openReceipt
+        ? `receipt ${openReceipt.receiptId}`
+        : null;
 
-    let journalId: string | null = null;
-    if (accounting && closing > 0) {
-      journalId = await postLeaseJournal(trx, {
-        accounting,
-        companyId,
-        userId,
-        postingDate: today,
-        description,
-        lines: buildResidualReturnLines({
-          closing,
-          debitAccountId: assetClass.assetAccountId,
-          debitDescription: "Fixed Asset Acquisition",
-          netInvestmentInLeasesAccountId:
-            accounting.accounts.netInvestmentInLeasesAccount
-        }),
-        rentalAgreementId: agreement.id,
-        rentalAgreementLineId: line.id,
-        tags
-      });
-    }
-
-    const assetReadableId = await getNextSequence(trx, "fixedAsset", companyId);
-    const asset = await trx
-      .insertInto("fixedAsset")
-      .values({
-        fixedAssetId: assetReadableId,
-        fixedAssetClassId: assetClass.id,
-        name: `${item.name} ${serial}`,
-        itemId: line.itemId,
-        trackedEntityId,
-        serialNumber: entity?.readableId ?? null,
-        locationId: agreement.locationId,
-        quantity: 1,
-        acquisitionCost: closing,
-        acquisitionDate: today,
-        depreciationStartDate: today,
-        depreciationMethod: assetClass.depreciationMethod,
-        usefulLifeMonths: assetClass.usefulLifeMonths,
-        residualValuePercent: assetClass.residualValuePercent,
-        status: "Active",
-        companyId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
-    fixedAssetId = asset.id;
-
-    const transferId = await getNextSequence(
-      trx,
-      "fixedAssetTransfer",
-      companyId
-    );
-    const now = datetime.timestamp();
-    await trx
-      .insertInto("fixedAssetTransfer")
-      .values({
-        transferId,
-        type: "Capitalization",
-        sourceType: "Inventory",
-        fixedAssetId: asset.id,
-        itemId: line.itemId,
-        trackedEntityId,
-        locationId: agreement.locationId,
-        quantity: 1,
-        transferDate: today,
-        amount: closing,
-        journalId,
-        status: "Posted",
-        postedAt: now,
-        postedBy: userId,
-        companyId,
-        createdBy: userId
-      })
-      .execute();
-
-    if (trackedEntityId) {
-      await trx
-        .updateTable("trackedEntity")
-        .set({
-          status: "Consumed",
-          attributes: sql<Json>`(COALESCE("attributes", '{}'::jsonb) - 'Rental Agreement' - 'Customer') || jsonb_build_object('Fixed Asset', ${asset.id}::text)`
-        })
-        .where("id", "=", trackedEntityId)
-        .where("companyId", "=", companyId)
-        .execute();
-      await insertUnitActivity(trx, {
-        type: "Capitalize",
-        direction: "input",
-        sourceDocument: "Fixed Asset",
-        sourceDocumentId: asset.id,
-        sourceDocumentReadableId: assetReadableId,
-        attributes: { "Fixed Asset": asset.id },
-        trackedEntityId,
-        companyId,
-        userId
-      });
-    }
-  } else {
-    if (!itemCost) throw new NotFoundError("Item cost not found");
-    // Into stock at the closing net investment: a cost layer at that amount,
-    // so the unit is later sold like any other stock. accounting: null keeps
-    // the core from posting a variance journal; the lease journal is below.
-    await bookAdjustment(trx, {
-      ledger: {
-        postingDate: today,
-        itemId: line.itemId,
-        quantity: 1,
-        locationId: agreement.locationId,
-        storageUnitId: null,
-        trackedEntityId,
-        entryType: "Positive Adjmt.",
-        documentType: "Rental Agreement",
-        documentId: agreement.id,
-        companyId,
-        createdBy: userId
-      },
-      item: {
-        itemTrackingType: item.itemTrackingType,
-        replenishmentSystem: item.replenishmentSystem,
-        itemPostingGroupId: itemCost.itemPostingGroupId
-      },
-      itemCost: {
-        costingMethod: itemCost.costingMethod,
-        unitCost: itemCost.unitCost,
-        standardCost: itemCost.standardCost
-      },
-      accounting: null,
-      fixedUnitCost: closing
+    const blocker = releaseBlocker({
+      label: unitLabel(asset, line.id),
+      status: line.status,
+      classification: line.lessorClassification,
+      openDocument
     });
+    if (blocker) throw new InvalidInputError(blocker);
 
-    if (accounting && closing > 0) {
-      const inventoryAccount = resolveInventoryAccount(
-        item.replenishmentSystem,
-        accounting.accounts
-      );
-      await postLeaseJournal(trx, {
-        accounting,
-        companyId,
-        userId,
-        postingDate: today,
-        description,
-        lines: buildResidualReturnLines({
-          closing,
-          debitAccountId: inventoryAccount.account,
-          debitDescription: inventoryAccount.description,
-          netInvestmentInLeasesAccountId:
-            accounting.accounts.netInvestmentInLeasesAccount
-        }),
-        rentalAgreementId: agreement.id,
+    await returnRentalUnit(trx, {
+      agreement,
+      unit: {
         rentalAgreementLineId: line.id,
-        tags
-      });
-    }
-
-    if (trackedEntityId) {
-      await trx
-        .updateTable("trackedEntity")
-        .set({
-          status: "Available",
-          attributes: sql<Json>`COALESCE("attributes", '{}'::jsonb) - 'Rental Agreement' - 'Customer'`
-        })
-        .where("id", "=", trackedEntityId)
-        .where("companyId", "=", companyId)
-        .execute();
-      await insertUnitActivity(trx, {
-        type: "Return to Inventory",
-        direction: "output",
-        sourceDocument: "Rental Agreement",
-        sourceDocumentId: agreement.id,
-        sourceDocumentReadableId: agreement.rentalAgreementId,
-        attributes: { "Rental Agreement": agreement.id },
-        trackedEntityId,
-        companyId,
-        userId
-      });
-    }
-  }
-
-  // The lease has ended: nothing dated after the return will ever accrue.
-  // Everything on or before it stays and posts through recognition runs.
-  await trx
-    .deleteFrom("revenueRecognitionSchedule")
-    .where("rentalAgreementLineId", "=", line.id)
-    .where("companyId", "=", companyId)
-    .where("type", "=", "Interest")
-    .where("status", "=", "Planned")
-    .where("scheduledDate", ">", returnedAt)
-    .execute();
-  await trx
-    .deleteFrom("rentalLeaseScheduleLine")
-    .where("rentalAgreementLineId", "=", line.id)
-    .where("companyId", "=", companyId)
-    .where("postedAt", "is", null)
-    .where("periodDate", ">", returnedAt)
-    .execute();
-
-  return { fixedAssetId };
+        returnedAt: payload.returnedAt
+      },
+      companyId,
+      userId,
+      today
+    });
+    return { id: agreement.id };
+  });
 }
 
 // Everything close and cancel decide on, in three reads.
@@ -1737,6 +908,41 @@ async function close(
         `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; only an Active agreement can be closed`
       );
     }
+
+    // A rental document still open holds units the close would strand.
+    const openShipment = await trx
+      .selectFrom("shipment as s")
+      .innerJoin("shipmentFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.shipmentId", "=", "s.id")
+          .onRef("l.companyId", "=", "s.companyId")
+      )
+      .select("s.shipmentId")
+      .where("s.companyId", "=", companyId)
+      .where("s.sourceDocument", "=", "Rental Agreement")
+      .where("s.sourceDocumentId", "=", agreement.id)
+      .where("s.status", "in", ["Draft", "Pending"])
+      .orderBy("s.createdAt")
+      .executeTakeFirst();
+    const openReceipt = await trx
+      .selectFrom("receipt as r")
+      .innerJoin("receiptFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.receiptId", "=", "r.id")
+          .onRef("l.companyId", "=", "r.companyId")
+      )
+      .select("r.receiptId")
+      .where("r.companyId", "=", companyId)
+      .where("r.sourceDocument", "=", "Rental Agreement")
+      .where("r.sourceDocumentId", "=", agreement.id)
+      .where("r.status", "in", ["Draft", "Pending"])
+      .orderBy("r.createdAt")
+      .executeTakeFirst();
+    const openDocument = openRentalDocumentBlocker({
+      shipmentId: openShipment?.shipmentId ?? null,
+      receiptId: openReceipt?.receiptId ?? null
+    });
+    if (openDocument) throw new InvalidInputError(openDocument);
 
     const state = await loadSettlementState(trx, companyId, agreement.id);
     const blocker = closeBlocker({
@@ -1846,7 +1052,7 @@ async function cancel(
 export const postRentalAgreementInput = payloadValidator;
 export type PostRentalAgreementInput = RentalAgreementPayload;
 
-/** Activates, returns a unit of, closes or cancels a rental agreement, per
+/** Activates, releases a unit of, closes or cancels a rental agreement, per
  *  `type` — each one transaction that locks the agreement row first. */
 const postRentalAgreement = defineServerFn({
   name: "post-rental-agreement",
@@ -1863,11 +1069,11 @@ const postRentalAgreement = defineServerFn({
           .toString();
         return activate(scope, payload, today);
       }
-      case "return": {
+      case "release": {
         const today = datetime
           .today(await getCompanyTimeZone(db, companyId))
           .toString();
-        return returnUnit(scope, payload, today);
+        return releaseUnit(scope, payload, today);
       }
       case "close":
         return close(scope, payload);

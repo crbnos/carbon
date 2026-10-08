@@ -304,6 +304,7 @@ const PlanningTable = memo(
               supplierId
             ),
             supplierId,
+            item: row,
             itemReadableId: item?.readableIdWithRevision,
             description: item?.name,
             unitOfMeasureCode: item?.unitOfMeasureCode

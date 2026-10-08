@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`an early return of an Advance unit re-cuts its periods 1`] = `
+{
+  "line": {
+    "returnedAt": "2026-09-20",
+    "status": "Returned",
+  },
+  "periods": [
+    {
+      "amount": 300,
+      "days": 30,
+      "dueOn": "2026-09-01",
+      "isAdjustment": false,
+      "periodEnd": "2026-09-30",
+      "periodStart": "2026-09-01",
+      "rateUnitApplied": null,
+      "status": "Invoiced",
+    },
+    {
+      "amount": -100,
+      "days": 20,
+      "dueOn": "2026-09-20",
+      "isAdjustment": true,
+      "periodEnd": "2026-09-30",
+      "periodStart": "2026-09-01",
+      "rateUnitApplied": "Month",
+      "status": "Pending",
+    },
+  ],
+}
+`;

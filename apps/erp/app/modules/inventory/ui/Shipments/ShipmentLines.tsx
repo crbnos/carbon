@@ -72,6 +72,7 @@ import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem,
   ItemTracking,
+  RentalShipmentLine,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking
@@ -80,6 +81,7 @@ import { splitValidator } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { RentalUnitRow } from "./RentalUnitRow";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -102,6 +104,7 @@ const ShipmentLines = () => {
       shipped: boolean;
       serialNumber: string | null;
     }[];
+    rentalLines: RentalShipmentLine[];
   }>(path.to.shipment(shipmentId));
 
   const shipmentsById = new Map<string, ShipmentLine>(
@@ -232,71 +235,76 @@ const ShipmentLines = () => {
   const isPosted = routeData?.shipment?.status === "Posted";
   const isVoided = routeData?.shipment?.status === "Voided";
   const isReadOnly = isPosted || isVoided;
+  const isRental = routeData?.shipment?.sourceDocument === "Rental Agreement";
 
   return (
     <>
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>
-              <Trans>Shipment Lines</Trans>
-            </CardTitle>
-          </CardHeader>
-        </HStack>
+      {!isRental && (
+        <Card>
+          <HStack className="justify-between items-start">
+            <CardHeader>
+              <CardTitle>
+                <Trans>Shipment Lines</Trans>
+              </CardTitle>
+            </CardHeader>
+          </HStack>
 
-        <CardContent>
-          <div className="border rounded-lg">
-            {shipmentLines.length === 0 ? (
-              <Empty className="py-6" />
-            ) : (
-              shipmentLines
-                .map((line) => ({
-                  ...line,
-                  itemReadableId: getItemReadableId(items, line.itemId) ?? ""
-                }))
-                .sort((a, b) =>
-                  a.itemReadableId.localeCompare(b.itemReadableId)
-                )
-                .map((line, index) => {
-                  const tracking = routeData?.shipmentLineTracking?.find(
-                    (t) => {
-                      const attributes =
-                        t.attributes as TrackedEntityAttributes;
-                      return attributes["Shipment Line"] === line.id;
-                    }
-                  );
-                  return (
-                    <ShipmentLineItem
-                      key={line.id}
-                      line={line}
-                      shipment={routeData?.shipment}
-                      hasTrackingLabel={
-                        routeData?.shipmentLineTracking?.some((t) => {
-                          const attributes =
-                            t.attributes as TrackedEntityAttributes;
-                          return attributes["Shipment Line"] === line.id;
-                        }) ?? false
+          <CardContent>
+            <div className="border rounded-lg">
+              {shipmentLines.length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                shipmentLines
+                  .map((line) => ({
+                    ...line,
+                    itemReadableId: getItemReadableId(items, line.itemId) ?? ""
+                  }))
+                  .sort((a, b) =>
+                    a.itemReadableId.localeCompare(b.itemReadableId)
+                  )
+                  .map((line, index) => {
+                    const tracking = routeData?.shipmentLineTracking?.find(
+                      (t) => {
+                        const attributes =
+                          t.attributes as TrackedEntityAttributes;
+                        return attributes["Shipment Line"] === line.id;
                       }
-                      isReadOnly={isReadOnly}
-                      onUpdate={onUpdateShipmentLine}
-                      className={
-                        index === shipmentLines.length - 1 ? "border-none" : ""
-                      }
-                      serialNumbers={serialNumbersByLineId[line.id!] || []}
-                      onSerialNumbersChange={(newSerialNumbers) => {
-                        setSerialNumbersByLineId((prev) => ({
-                          ...prev,
-                          [line.id!]: newSerialNumbers
-                        }));
-                      }}
-                      tracking={tracking}
-                    />
-                  );
-                })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                    );
+                    return (
+                      <ShipmentLineItem
+                        key={line.id}
+                        line={line}
+                        shipment={routeData?.shipment}
+                        hasTrackingLabel={
+                          routeData?.shipmentLineTracking?.some((t) => {
+                            const attributes =
+                              t.attributes as TrackedEntityAttributes;
+                            return attributes["Shipment Line"] === line.id;
+                          }) ?? false
+                        }
+                        isReadOnly={isReadOnly}
+                        onUpdate={onUpdateShipmentLine}
+                        className={
+                          index === shipmentLines.length - 1
+                            ? "border-none"
+                            : ""
+                        }
+                        serialNumbers={serialNumbersByLineId[line.id!] || []}
+                        onSerialNumbersChange={(newSerialNumbers) => {
+                          setSerialNumbersByLineId((prev) => ({
+                            ...prev,
+                            [line.id!]: newSerialNumbers
+                          }));
+                        }}
+                        tracking={tracking}
+                      />
+                    );
+                  })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {routeData?.fixedAssetLines && routeData.fixedAssetLines.length > 0 && (
         <Card>
           <CardHeader>
@@ -318,6 +326,35 @@ const ShipmentLines = () => {
                   }
                 />
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Rental Units</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg">
+              {(routeData?.rentalLines ?? []).length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                routeData!.rentalLines.map((line, index) => (
+                  <ShipmentRentalLineItem
+                    key={line.id}
+                    line={line}
+                    isReadOnly={isReadOnly}
+                    className={
+                      index < routeData!.rentalLines.length - 1
+                        ? "border-b"
+                        : ""
+                    }
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -389,6 +426,43 @@ function ShipmentFixedAssetLineItem({
             updateField("serialNumber", serialNumber);
           }
         }}
+      />
+    </div>
+  );
+}
+
+function ShipmentRentalLineItem({
+  line,
+  isReadOnly,
+  className
+}: {
+  line: RentalShipmentLine;
+  isReadOnly: boolean;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher();
+
+  const updateField = (field: string, value: string) => {
+    const formData = new FormData();
+    formData.append("id", line.id);
+    formData.append("field", field);
+    formData.append("value", value);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.shipmentFixedAssetLineUpdate
+    });
+  };
+
+  return (
+    <div className={cn("@container p-6", className)}>
+      <RentalUnitRow
+        line={line}
+        checked={line.shipped}
+        checkedLabel={t`Shipped`}
+        isReadOnly={isReadOnly}
+        onCheckedChange={(checked) => updateField("shipped", String(checked))}
+        onMeterChange={(meter) => updateField("meter", meter)}
       />
     </div>
   );

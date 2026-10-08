@@ -33,6 +33,7 @@ const ReceiptHeader = () => {
     receiptLines: ReceiptLine[];
     receiptLineTracking: ItemTracking[];
     fixedAssetLines: { id: string; received: boolean }[];
+    rentalLines: { id: string; received: boolean }[];
   }>(path.to.receipt(receiptId));
 
   const permissions = usePermissions();
@@ -57,9 +58,13 @@ const ReceiptHeader = () => {
   const hasReceivableFaLines = (routeData?.fixedAssetLines ?? []).some(
     (line) => line.received
   );
+  const hasReceivableRentalLines = (routeData?.rentalLines ?? []).some(
+    (line) => line.received
+  );
   const canPost =
     receiptLines.some((line) => (line.receivedQuantity ?? 0) !== 0) ||
-    hasReceivableFaLines;
+    hasReceivableFaLines ||
+    hasReceivableRentalLines;
 
   const hasTrackingLabels = (routeData?.receiptLineTracking ?? []).length > 0;
 

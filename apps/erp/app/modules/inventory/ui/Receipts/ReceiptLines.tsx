@@ -4,7 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { isPreviewableDocumentType, storage } from "@carbon/files";
-import { Number, Submit, ValidatedForm } from "@carbon/form";
+import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
@@ -34,6 +34,9 @@ import {
   ModalTitle,
   NumberField,
   NumberInput,
+  RadioGroup,
+  RadioGroupItem,
+  Textarea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -63,6 +66,7 @@ import {
   useParams,
   useSubmit
 } from "react-router";
+import { z } from "zod";
 import {
   DocumentPreview,
   Empty,
@@ -80,7 +84,8 @@ import type {
   BatchProperty,
   ItemTracking,
   Receipt,
-  ReceiptLine
+  ReceiptLine,
+  RentalReceiptLine
 } from "~/modules/inventory";
 import { splitValidator } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
@@ -90,6 +95,7 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { RentalUnitRow } from "../Shipments/RentalUnitRow";
 import { ReturnEntityForm } from "./ReturnEntityForm";
 
 const ReceiptLines = () => {
@@ -112,6 +118,7 @@ const ReceiptLines = () => {
       received: boolean;
       serialNumber: string | null;
     }[];
+    rentalLines: RentalReceiptLine[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -243,61 +250,65 @@ const ReceiptLines = () => {
   const isPosted =
     routeData?.receipt.status === "Posted" ||
     routeData?.receipt.status === "Voided";
+  const isRental = routeData?.receipt?.sourceDocument === "Rental Agreement";
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Receipt Lines</Trans>
-          </CardTitle>
-        </CardHeader>
+      {!isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Receipt Lines</Trans>
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <div className="border rounded-lg">
-            {receiptLines.length === 0 ? (
-              <Empty className="py-6" />
-            ) : (
-              receiptLines.map((line, index) => {
-                const trackingCandidates =
-                  routeData?.receiptLineTracking?.filter((t) => {
-                    const attributes = t.attributes as TrackedEntityAttributes;
-                    return attributes["Receipt Line"] === line.id;
-                  }) ?? [];
-                const tracking =
-                  trackingCandidates.find((t) => t.expirationDate) ??
-                  trackingCandidates[0];
-                return (
-                  <ReceiptLineItem
-                    key={line.id}
-                    line={line}
-                    receipt={routeData?.receipt}
-                    isReadOnly={isPosted}
-                    onUpdate={onUpdateReceiptLine}
-                    files={routeData?.receiptFiles}
-                    className={
-                      index === receiptLines.length - 1 ? "border-none" : ""
-                    }
-                    serialNumbers={serialNumbersByLineId[line.id!] || []}
-                    getPath={(file) => getPath(file, line.id!)}
-                    onSerialNumbersChange={(newSerialNumbers) => {
-                      setSerialNumbersByLineId((prev) => ({
-                        ...prev,
-                        [line.id!]: newSerialNumbers
-                      }));
-                    }}
-                    batchProperties={routeData?.batchProperties}
-                    itemShelfLife={routeData?.itemShelfLife}
-                    tracking={tracking}
-                    upload={(files) => upload(files, line.id!)}
-                    deleteFile={(file) => deleteFile(file, line.id!)}
-                  />
-                );
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent>
+            <div className="border rounded-lg">
+              {receiptLines.length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                receiptLines.map((line, index) => {
+                  const trackingCandidates =
+                    routeData?.receiptLineTracking?.filter((t) => {
+                      const attributes =
+                        t.attributes as TrackedEntityAttributes;
+                      return attributes["Receipt Line"] === line.id;
+                    }) ?? [];
+                  const tracking =
+                    trackingCandidates.find((t) => t.expirationDate) ??
+                    trackingCandidates[0];
+                  return (
+                    <ReceiptLineItem
+                      key={line.id}
+                      line={line}
+                      receipt={routeData?.receipt}
+                      isReadOnly={isPosted}
+                      onUpdate={onUpdateReceiptLine}
+                      files={routeData?.receiptFiles}
+                      className={
+                        index === receiptLines.length - 1 ? "border-none" : ""
+                      }
+                      serialNumbers={serialNumbersByLineId[line.id!] || []}
+                      getPath={(file) => getPath(file, line.id!)}
+                      onSerialNumbersChange={(newSerialNumbers) => {
+                        setSerialNumbersByLineId((prev) => ({
+                          ...prev,
+                          [line.id!]: newSerialNumbers
+                        }));
+                      }}
+                      batchProperties={routeData?.batchProperties}
+                      itemShelfLife={routeData?.itemShelfLife}
+                      tracking={tracking}
+                      upload={(files) => upload(files, line.id!)}
+                      deleteFile={(file) => deleteFile(file, line.id!)}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {routeData?.fixedAssetLines && routeData.fixedAssetLines.length > 0 && (
         <Card>
           <CardHeader>
@@ -319,6 +330,35 @@ const ReceiptLines = () => {
                   }
                 />
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Rental Units</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg">
+              {(routeData?.rentalLines ?? []).length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                routeData!.rentalLines.map((line, index) => (
+                  <ReceiptRentalLineItem
+                    key={line.id}
+                    line={line}
+                    isReadOnly={isPosted}
+                    className={
+                      index < routeData!.rentalLines.length - 1
+                        ? "border-b"
+                        : ""
+                    }
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -391,6 +431,155 @@ function ReceiptFixedAssetLineItem({
           }
         }}
       />
+    </div>
+  );
+}
+
+function ReceiptRentalLineItem({
+  line,
+  isReadOnly,
+  className
+}: {
+  line: RentalReceiptLine;
+  isReadOnly: boolean;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher();
+  const [notes, setNotes] = useState(line.notes ?? "");
+  const [takeOutOfService, setTakeOutOfService] = useState(
+    line.takeOutOfService
+  );
+  const [outOfServiceReason, setOutOfServiceReason] = useState(
+    line.outOfServiceReason ?? ""
+  );
+  // Unique per line: the switch's id is its field name.
+  const outOfServiceField = `takeOutOfService-${line.id}`;
+
+  const updateField = (field: string, value: string) => {
+    const formData = new FormData();
+    formData.append("id", line.id);
+    formData.append("field", field);
+    formData.append("value", value);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.receiptFixedAssetLineUpdate
+    });
+  };
+
+  return (
+    <div className={cn("@container flex flex-col gap-6 p-6", className)}>
+      <RentalUnitRow
+        line={line}
+        checked={line.received}
+        checkedLabel={t`Received`}
+        isReadOnly={isReadOnly}
+        onCheckedChange={(checked) => updateField("received", String(checked))}
+        onMeterChange={(meter) => updateField("meter", meter)}
+      />
+      <VStack spacing={4}>
+        <VStack spacing={1}>
+          <label className="text-xs text-muted-foreground">
+            <Trans>Notes</Trans>
+          </label>
+          <Textarea
+            aria-label={t`Notes`}
+            value={notes}
+            disabled={isReadOnly}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              if (notes !== (line.notes ?? "")) {
+                updateField("notes", notes);
+              }
+            }}
+          />
+        </VStack>
+        <VStack spacing={2}>
+          {/* A form only for the field's context: the switch saves through
+              updateField like every other field on the line. */}
+          <ValidatedForm
+            defaultValues={{ [outOfServiceField]: line.takeOutOfService }}
+            validator={z.object({ [outOfServiceField]: z.any() })}
+            className="w-full"
+          >
+            <Boolean
+              name={outOfServiceField}
+              label={t`Take out of service`}
+              bordered
+              value={takeOutOfService}
+              isDisabled={isReadOnly}
+              onChange={(isTicked) => {
+                setTakeOutOfService(isTicked);
+                if (!isTicked) {
+                  setOutOfServiceReason("");
+                  updateField("outOfService", "");
+                }
+              }}
+            />
+          </ValidatedForm>
+          {takeOutOfService && (
+            <>
+              <Input
+                aria-label={t`Reason`}
+                placeholder={t`Reason`}
+                value={outOfServiceReason}
+                isDisabled={isReadOnly}
+                onChange={(e) => setOutOfServiceReason(e.target.value)}
+                onBlur={() => {
+                  const reason = outOfServiceReason.trim();
+                  if (reason && reason !== (line.outOfServiceReason ?? "")) {
+                    updateField("outOfService", reason);
+                  }
+                }}
+              />
+              {!line.outOfServiceReason && (
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Enter a reason to take the unit out of service</Trans>
+                </span>
+              )}
+            </>
+          )}
+          {line.lessorClassification === "Sale" && (
+            <VStack spacing={1} className="pt-2">
+              <label className="text-xs text-muted-foreground">
+                <Trans>Return To</Trans>
+              </label>
+              <RadioGroup
+                value={line.residualDestination ?? ""}
+                disabled={isReadOnly}
+                onValueChange={(value) =>
+                  updateField("residualDestination", value)
+                }
+              >
+                <HStack spacing={2}>
+                  <RadioGroupItem
+                    value="Fleet"
+                    id={`${line.id}:residualDestination:Fleet`}
+                  />
+                  <label
+                    htmlFor={`${line.id}:residualDestination:Fleet`}
+                    className="text-sm"
+                  >
+                    <Trans>Rental fleet, as a new fleet asset</Trans>
+                  </label>
+                </HStack>
+                <HStack spacing={2}>
+                  <RadioGroupItem
+                    value="Inventory"
+                    id={`${line.id}:residualDestination:Inventory`}
+                  />
+                  <label
+                    htmlFor={`${line.id}:residualDestination:Inventory`}
+                    className="text-sm"
+                  >
+                    <Trans>Inventory, as finished goods</Trans>
+                  </label>
+                </HStack>
+              </RadioGroup>
+            </VStack>
+          )}
+        </VStack>
+      </VStack>
     </div>
   );
 }

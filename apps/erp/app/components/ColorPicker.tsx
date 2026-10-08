@@ -29,11 +29,15 @@ const SWATCHES = [
 
 export function ColorPicker({
   value,
-  onChange
+  onChange,
+  placeholder
 }: {
+  /** A hex color, or `""` for no color (pass `placeholder` to label it). */
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }) {
+  const isEmpty = value === "";
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -42,18 +46,25 @@ export function ColorPicker({
           className="flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <span
-            className="size-5 shrink-0 rounded ring-1 ring-inset ring-black/10"
-            style={{ backgroundColor: value }}
+            className={cn(
+              "size-5 shrink-0 rounded ring-1 ring-inset ring-black/10",
+              isEmpty && "bg-muted"
+            )}
+            style={isEmpty ? undefined : { backgroundColor: value }}
           />
-          <span className="font-mono text-xs uppercase text-foreground">
-            {value}
-          </span>
+          {isEmpty ? (
+            <span className="text-xs text-muted-foreground">{placeholder}</span>
+          ) : (
+            <span className="font-mono text-xs uppercase text-foreground">
+              {value}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[232px] p-3">
         <div className="flex flex-col gap-3">
           <HexColorPicker
-            color={value}
+            color={isEmpty ? "#ffffff" : value}
             onChange={onChange}
             style={{ width: "100%", height: 150 }}
           />

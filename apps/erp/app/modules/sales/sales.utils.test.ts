@@ -14,6 +14,8 @@ import {
   previewLeaseClassification,
   readLeaseClassification,
   reconcileQuantityBreaks,
+  rentalEquipmentStatus,
+  rentalLineDocuments,
   repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
@@ -677,5 +679,88 @@ describe("repricedUnitPrice", () => {
   it("is today's price at the line's precision when it differs", () => {
     expect(repricedUnitPrice(current(104.5678), 110, 2)).toBe(104.57);
     expect(repricedUnitPrice(current(104.5678), 110, 4)).toBe(104.5678);
+  });
+});
+
+describe("rentalEquipmentStatus", () => {
+  const lines = (
+    ...statuses: ("Pending" | "On Rent" | "Returned" | "Sold")[]
+  ) => statuses.map((status) => ({ status }));
+
+  it("has no status without units", () => {
+    expect(rentalEquipmentStatus([])).toBeNull();
+  });
+
+  it("is To Deliver while every unit is in the yard", () => {
+    expect(rentalEquipmentStatus(lines("Pending", "Pending"))).toBe(
+      "To Deliver"
+    );
+  });
+
+  it("is Partially Delivered while any unit is still to deliver", () => {
+    expect(rentalEquipmentStatus(lines("Pending", "On Rent"))).toBe(
+      "Partially Delivered"
+    );
+    expect(rentalEquipmentStatus(lines("Pending", "Returned"))).toBe(
+      "Partially Delivered"
+    );
+  });
+
+  it("is On Rent when every unit is out", () => {
+    expect(rentalEquipmentStatus(lines("On Rent", "On Rent"))).toBe("On Rent");
+  });
+
+  it("is Partially Returned when some units are back", () => {
+    expect(rentalEquipmentStatus(lines("On Rent", "Returned"))).toBe(
+      "Partially Returned"
+    );
+    expect(rentalEquipmentStatus(lines("On Rent", "Sold"))).toBe(
+      "Partially Returned"
+    );
+  });
+
+  it("is Returned when every unit is back or sold", () => {
+    expect(rentalEquipmentStatus(lines("Returned", "Sold"))).toBe("Returned");
+  });
+});
+
+describe("rentalLineDocuments", () => {
+  const shipment = (
+    status: string,
+    lines: { rentalAgreementLineId: string | null; shipped: boolean }[]
+  ) => ({
+    id: `shp-${status}`,
+    shipmentId: `SHP-${status}`,
+    status,
+    shipmentFixedAssetLine: lines
+  });
+
+  it("finds nothing when the agreement has no documents", () => {
+    expect(rentalLineDocuments("ral1", [], [])).toEqual({
+      shipment: null,
+      receipt: null
+    });
+  });
+
+  it("finds the Posted shipment that delivered the unit", () => {
+    const result = rentalLineDocuments(
+      "ral1",
+      [shipment("Posted", [{ rentalAgreementLineId: "ral1", shipped: true }])],
+      []
+    );
+    expect(result.shipment).toEqual({
+      id: "shp-Posted",
+      shipmentId: "SHP-Posted"
+    });
+    expect(result.receipt).toBeNull();
+  });
+
+  it("ignores a Draft shipment", () => {
+    const result = rentalLineDocuments(
+      "ral1",
+      [shipment("Draft", [{ rentalAgreementLineId: "ral1", shipped: true }])],
+      []
+    );
+    expect(result.shipment).toBeNull();
   });
 });

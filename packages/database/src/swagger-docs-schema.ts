@@ -120589,13 +120589,13 @@ export default {
           type: "string"
         },
         type: {
-          enum: ["Capitalization", "Return to Inventory"],
+          enum: ["Capitalization", "Return to Inventory", "Cost Adjustment"],
           format: 'public."fixedAssetTransferType"',
           type: "string"
         },
         sourceType: {
           default: "Inventory",
-          enum: ["Inventory", "Job", "Construction in Progress"],
+          enum: ["Inventory", "Job", "Construction in Progress", "Manual"],
           format: 'public."fixedAssetTransferSourceType"',
           type: "string"
         },

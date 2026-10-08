@@ -295,11 +295,12 @@ const ProductionPlanningTable = ({
         data.map((row) => [
           row.id,
           productionOrdersFromActions(
-            openNewSupplyActions(actionsByItemId.get(row.id), "Make")
+            openNewSupplyActions(actionsByItemId.get(row.id), "Make"),
+            { item: row, todayDate: locationToday }
           )
         ])
       ),
-    [data, actionsByItemId]
+    [data, actionsByItemId, locationToday]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -405,6 +406,17 @@ const ProductionPlanningTable = ({
     },
     []
   );
+
+  // Planning a Draft job re-runs MRP: the item's draft list is stale, so the
+  // drawer re-seeds from the new suggestions.
+  const dropOrders = useCallback((item: ProductionPlanningItem) => {
+    if (!item.id) return;
+    setOrdersMap((prev) => {
+      if (!(item.id! in prev)) return prev;
+      const { [item.id!]: _dropped, ...rest } = prev;
+      return rest;
+    });
+  }, []);
 
   // The drawer's own Planning Horizon control: the same on-screen override as
   // the grid cell, for the row the drawer is open on.
@@ -786,6 +798,7 @@ const ProductionPlanningTable = ({
           actions={selectedActions}
           actionHandlers={actionHandlers}
           setOrders={setOrders}
+          onSuggestionsStale={dropOrders}
           periods={periods}
           isOpen={isDrawerOpen}
           onClose={closeDrawer}

@@ -9594,6 +9594,38 @@ export async function getRentalAgreementDeposits(
     .order("paymentDate", { ascending: true });
 }
 
+/** @mcp read */
+export async function getRentalAgreementRelatedDocuments(
+  client: SupabaseClient<Database>,
+  rentalAgreementId: string,
+  companyId: string
+) {
+  const [shipments, receipts] = await Promise.all([
+    client
+      .from("shipment")
+      .select(
+        "id, shipmentId, status, postingDate, shipmentFixedAssetLine(rentalAgreementLineId, shipped)"
+      )
+      .eq("sourceDocument", "Rental Agreement")
+      .eq("sourceDocumentId", rentalAgreementId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("receipt")
+      .select(
+        "id, receiptId, status, postingDate, receiptFixedAssetLine(rentalAgreementLineId, received)"
+      )
+      .eq("sourceDocument", "Rental Agreement")
+      .eq("sourceDocumentId", rentalAgreementId)
+      .eq("companyId", companyId)
+      .order("createdAt")
+  ]);
+  return {
+    data: { shipments: shipments.data ?? [], receipts: receipts.data ?? [] },
+    error: shipments.error ?? receipts.error
+  };
+}
+
 // ----------------------------------------------------------------------
 // Customer contracts (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III). Confirm, schedule
 // edits, amend, cancel and revert go through the `post-customer-contract`

@@ -52752,10 +52752,16 @@ export type Database = {
           createdAt: string
           createdBy: string
           id: string
-          purchaseOrderLineId: string
+          meter: number | null
+          notes: string | null
+          outOfServiceReason: string | null
+          purchaseOrderLineId: string | null
           receiptId: string
           received: boolean
+          rentalAgreementLineId: string | null
+          residualDestination: string | null
           serialNumber: string | null
+          takeOutOfService: boolean
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -52764,10 +52770,16 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
-          purchaseOrderLineId: string
+          meter?: number | null
+          notes?: string | null
+          outOfServiceReason?: string | null
+          purchaseOrderLineId?: string | null
           receiptId: string
           received?: boolean
+          rentalAgreementLineId?: string | null
+          residualDestination?: string | null
           serialNumber?: string | null
+          takeOutOfService?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -52776,10 +52788,16 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
-          purchaseOrderLineId?: string
+          meter?: number | null
+          notes?: string | null
+          outOfServiceReason?: string | null
+          purchaseOrderLineId?: string | null
           receiptId?: string
           received?: boolean
+          rentalAgreementLineId?: string | null
+          residualDestination?: string | null
           serialNumber?: string | null
+          takeOutOfService?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -52881,6 +52899,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "receipts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptFixedAssetLine_rentalAgreementLineId_fkey"
+            columns: ["rentalAgreementLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreementLine"
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }
@@ -61015,7 +61040,9 @@ export type Database = {
           createdAt: string
           createdBy: string
           id: string
-          salesOrderLineId: string
+          meter: number | null
+          rentalAgreementLineId: string | null
+          salesOrderLineId: string | null
           serialNumber: string | null
           shipmentId: string
           shipped: boolean
@@ -61027,7 +61054,9 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
-          salesOrderLineId: string
+          meter?: number | null
+          rentalAgreementLineId?: string | null
+          salesOrderLineId?: string | null
           serialNumber?: string | null
           shipmentId: string
           shipped?: boolean
@@ -61039,7 +61068,9 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
-          salesOrderLineId?: string
+          meter?: number | null
+          rentalAgreementLineId?: string | null
+          salesOrderLineId?: string | null
           serialNumber?: string | null
           shipmentId?: string
           shipped?: boolean
@@ -61109,6 +61140,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentFixedAssetLine_rentalAgreementLineId_fkey"
+            columns: ["rentalAgreementLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreementLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "shipmentFixedAssetLine_salesOrderLineId_fkey"
@@ -92542,7 +92580,11 @@ export type Database = {
         | "Inventory"
         | "Job"
         | "Construction in Progress"
-      fixedAssetTransferType: "Capitalization" | "Return to Inventory"
+        | "Manual"
+      fixedAssetTransferType:
+        | "Capitalization"
+        | "Return to Inventory"
+        | "Cost Adjustment"
       fulfillmentType: "Inventory" | "Job"
       gaugeCalibrationStatus:
         | "Pending"
@@ -92952,6 +92994,7 @@ export type Database = {
         | "Outbound Transfer"
         | "Manufacturing Consumption"
         | "Manufacturing Output"
+        | "Rental Agreement"
       receiptStatus: "Draft" | "Pending" | "Posted" | "Voided"
       reimbursementStatus: "Draft" | "Posted" | "Voided"
       rentalAgreementLineStatus: "Pending" | "On Rent" | "Returned" | "Sold"
@@ -93040,6 +93083,7 @@ export type Database = {
         | "Purchase Return Order"
         | "Inbound Transfer"
         | "Outbound Transfer"
+        | "Rental Agreement"
       shipmentStatus: "Draft" | "Pending" | "Posted" | "Voided"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       sourcingType: "Specified" | "Drop Ship" | "Ship from Inventory"
@@ -94033,8 +94077,13 @@ export const Constants = {
         "Inventory",
         "Job",
         "Construction in Progress",
+        "Manual",
       ],
-      fixedAssetTransferType: ["Capitalization", "Return to Inventory"],
+      fixedAssetTransferType: [
+        "Capitalization",
+        "Return to Inventory",
+        "Cost Adjustment",
+      ],
       fulfillmentType: ["Inventory", "Job"],
       gaugeCalibrationStatus: [
         "Pending",
@@ -94480,6 +94529,7 @@ export const Constants = {
         "Outbound Transfer",
         "Manufacturing Consumption",
         "Manufacturing Output",
+        "Rental Agreement",
       ],
       receiptStatus: ["Draft", "Pending", "Posted", "Voided"],
       reimbursementStatus: ["Draft", "Posted", "Voided"],
@@ -94575,6 +94625,7 @@ export const Constants = {
         "Purchase Return Order",
         "Inbound Transfer",
         "Outbound Transfer",
+        "Rental Agreement",
       ],
       shipmentStatus: ["Draft", "Pending", "Posted", "Voided"],
       shippingCarrier: ["UPS", "FedEx", "USPS", "DHL", "Other"],

@@ -1434,6 +1434,50 @@ export async function getShipmentTracking(
 }
 
 /** @mcp read */
+export async function getRentalShipmentLines(
+  client: SupabaseClient<Database>,
+  shipmentId: string,
+  companyId: string
+) {
+  return (
+    client
+      .from("shipmentFixedAssetLine")
+      .select(
+        "id, shipped, meter, rentalAgreementLineId, rentalAgreementLine!shipmentFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision, thumbnailPath, type), trackedEntity(readableId))"
+      )
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId)
+      .not("rentalAgreementLineId", "is", null)
+      // A document's units are inserted in one statement and share a createdAt;
+      // without a tie-breaker an update reorders them.
+      .order("createdAt")
+      .order("id")
+  );
+}
+
+/** @mcp read */
+export async function getRentalReceiptLines(
+  client: SupabaseClient<Database>,
+  receiptId: string,
+  companyId: string
+) {
+  return (
+    client
+      .from("receiptFixedAssetLine")
+      .select(
+        "id, received, meter, notes, takeOutOfService, outOfServiceReason, residualDestination, rentalAgreementLineId, rentalAgreementLine!receiptFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision, thumbnailPath, type), trackedEntity(readableId))"
+      )
+      .eq("receiptId", receiptId)
+      .eq("companyId", companyId)
+      .not("rentalAgreementLineId", "is", null)
+      // A document's units are inserted in one statement and share a createdAt;
+      // without a tie-breaker an update reorders them.
+      .order("createdAt")
+      .order("id")
+  );
+}
+
+/** @mcp read */
 export async function getShipmentLineTracking(
   client: SupabaseClient<Database>,
   shipmentLineId: string,
@@ -1510,6 +1554,42 @@ export async function getShippingTermsList(
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
+}
+
+/** What each serial unit of an item on hand would leave stock at — the
+ *  `preview-serial-unit-costs` server function, valued the way a shipment or
+ *  a capitalization would relieve it. Keyed by tracked entity id. */
+export async function getSerialUnitCosts(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    itemId: string;
+    locationId?: string | null;
+  }
+) {
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("preview-serial-unit-costs", input);
+}
+
+/** Recost one serial unit in stock — the `recost-serial-unit` server
+ *  function: re-books the unit's layer at `unitCost` and posts the
+ *  difference against the offset account. Requires accounting update. */
+export async function recostSerialUnit(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: ServerFnInput<"recost-serial-unit"> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("recost-serial-unit", input);
 }
 
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed

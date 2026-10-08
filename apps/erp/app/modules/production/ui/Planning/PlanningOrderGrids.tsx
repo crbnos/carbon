@@ -344,6 +344,9 @@ type OpenOrdersGridProps = PlanningActionHandlers & {
     value: number | string
   ) => Promise<boolean>;
   onRowsChange: (rows: OpenOrderRow[]) => void;
+  /** A command for an order no planning action targets — the production
+   *  drawer's Plan on a Draft job. Rendered in the Suggestion column. */
+  renderRowCommand?: (row: OpenOrderRow) => ReactNode;
 };
 
 const QUANTITY_ACTION_TYPES: ReadonlySet<string> = new Set([
@@ -369,6 +372,7 @@ export function OpenOrdersGrid({
   renderStatusIcon,
   onSave,
   onRowsChange,
+  renderRowCommand,
   ...handlers
 }: OpenOrdersGridProps) {
   const { t } = useLingui();
@@ -485,6 +489,8 @@ export function OpenOrdersGrid({
         cell: ({ row }) => {
           const { action, suggestedQuantity, purchaseOrder } = row.original;
           if (!action) {
+            const command = renderRowCommand?.(row.original);
+            if (command) return command;
             return purchaseOrder && handlers.purchaseOrderMenuItems ? (
               <OrderOnlyMenu
                 order={purchaseOrder}
@@ -539,6 +545,7 @@ export function OpenOrdersGrid({
       documentHeader,
       quantityHeader,
       renderStatusIcon,
+      renderRowCommand,
       formatQuantity,
       locale,
       todayIso,

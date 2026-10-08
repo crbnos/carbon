@@ -128,6 +128,58 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
+    case "Rental Agreement":
+      // One open draft per agreement: Deliver or Return again goes to the
+      // existing draft instead of stacking up duplicates.
+      const existingRentalReceipt = await client
+        .from("receipt")
+        .select("id")
+        .eq("sourceDocument", "Rental Agreement")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingRentalReceipt.error) {
+        throw redirect(
+          path.to.rentalAgreementDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingRentalReceipt.error,
+              "Failed to check for an existing receipt"
+            )
+          )
+        );
+      }
+      if (existingRentalReceipt.data) {
+        throw redirect(path.to.receiptDetails(existingRentalReceipt.data.id));
+      }
+
+      const rentalAgreementReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
+          type: "receiptFromRentalAgreement",
+          rentalAgreementId: sourceDocumentId
+        });
+      if (!rentalAgreementReceipt.data || rentalAgreementReceipt.error) {
+        throw redirect(
+          path.to.rentalAgreementDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              rentalAgreementReceipt.error,
+              getErrorMessage(
+                rentalAgreementReceipt.error,
+                "Failed to create receipt"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.receiptDetails(rentalAgreementReceipt.data.id));
     default:
       const defaultReceipt = await serverFns
         .system({ db: getDatabaseClient(), companyId, userId })

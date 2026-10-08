@@ -11,8 +11,9 @@ DECLARE
   has_subs BOOLEAN;
   current_actor_id TEXT;
   current_workflow_run_id TEXT;
-  pk_column TEXT;
+  pk_columns TEXT[];
   pk_join TEXT;
+  record_id_expr TEXT;
   query_text TEXT;
   did_enqueue BOOLEAN := FALSE;
   ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];
@@ -44,13 +45,31 @@ BEGIN
 
   -- Looked up only once a subscription exists: almost no company subscribes
   -- to most tables, and this catalog read ran on every write statement.
-  pk_column := public.get_primary_key_column(TG_TABLE_NAME);
+  pk_columns := public.get_primary_key_columns(TG_TABLE_NAME);
 
   -- Pair UPDATE rows on the full key: single-column pairing cross-joins rows
   -- on tables with composite identity.
   SELECT string_agg(format('n.%I = o.%I', col, col), ' AND ')
     INTO pk_join
-  FROM unnest(public.get_primary_key_columns(TG_TABLE_NAME)) AS col;
+  FROM unnest(pk_columns) AS col;
+
+  -- recordId names one row. "id" does that wherever it is part of the key
+  -- ((id, companyId) tables); a primary key without one is every column joined
+  -- by ':', since a single column of it is shared by many rows. A table with no
+  -- primary key keeps the one column it always sent: the audit log files
+  -- itemPlanning (unique on itemId + locationId) under its itemId.
+  -- %1$s is the row alias.
+  IF 'id' = ANY(pk_columns) THEN
+    record_id_expr := '%1$s."id"::TEXT';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_index WHERE indrelid = TG_RELID AND indisprimary
+  ) THEN
+    SELECT 'concat_ws('':'', ' || string_agg(format('%%1$s.%I::TEXT', col), ', ') || ')'
+      INTO record_id_expr
+    FROM unnest(pk_columns) AS col;
+  ELSE
+    record_id_expr := format('%%1$s.%I::TEXT', public.get_primary_key_column(TG_TABLE_NAME));
+  END IF;
 
   FOR sub IN
     SELECT * FROM "eventSystemSubscription"
@@ -76,7 +95,7 @@ BEGIN
                     ''event'', jsonb_build_object(
                         ''table'', $7,
                         ''operation'', $8,
-                        ''recordId'', t.%I::TEXT,
+                        ''recordId'', %s,
                         ''new'', row_to_json(t)::jsonb,
                         ''old'', null,
                         ''timestamp'', clock_timestamp()
@@ -86,7 +105,7 @@ BEGIN
             FROM batched_new t
             WHERE t."companyId" = $5
               AND ($9 = ''{}''::jsonb OR row_to_json(t)::jsonb @> $9)
-        ', pk_column);
+        ', format(record_id_expr, 't'));
 
         EXECUTE query_text INTO msg_batch
         USING sub.id, TG_LEVEL, sub."handlerType", sub."config", rec_company_id,
@@ -107,7 +126,7 @@ BEGIN
                     ''event'', jsonb_build_object(
                         ''table'', $7,
                         ''operation'', $8,
-                        ''recordId'', t.%I::TEXT,
+                        ''recordId'', %s,
                         ''new'', null,
                         ''old'', row_to_json(t)::jsonb,
                         ''timestamp'', clock_timestamp()
@@ -117,7 +136,7 @@ BEGIN
             FROM batched_old t
             WHERE t."companyId" = $5
               AND ($9 = ''{}''::jsonb OR row_to_json(t)::jsonb @> $9)
-        ', pk_column);
+        ', format(record_id_expr, 't'));
 
         EXECUTE query_text INTO msg_batch
         USING sub.id, TG_LEVEL, sub."handlerType", sub."config", rec_company_id,
@@ -138,7 +157,7 @@ BEGIN
                     ''event'', jsonb_build_object(
                         ''table'', $7,
                         ''operation'', $8,
-                        ''recordId'', n.%I::TEXT,
+                        ''recordId'', %s,
                         ''new'', row_to_json(n)::jsonb,
                         ''old'', row_to_json(o)::jsonb,
                         ''timestamp'', clock_timestamp()
@@ -150,7 +169,7 @@ BEGIN
             WHERE n."companyId" = $5
               AND ($9 = ''{}''::jsonb OR row_to_json(n)::jsonb @> $9)
               AND (NOT $11 OR (to_jsonb(n) - $12) IS DISTINCT FROM (to_jsonb(o) - $12))
-        ', pk_column, pk_join);
+        ', format(record_id_expr, 'n'), pk_join);
 
         EXECUTE query_text INTO msg_batch
         USING sub.id, TG_LEVEL, sub."handlerType", sub."config", rec_company_id,
