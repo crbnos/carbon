@@ -9,6 +9,7 @@ import {
   LuClipboardCheck,
   LuContainer,
   LuCreditCard,
+  LuKeyRound,
   LuShoppingCart,
   LuSquareUser,
   LuTruck,
@@ -94,6 +95,14 @@ function useSourceDocument(receipt?: Receipt): DocumentLink | null {
             label: t`Sales Return`
           }
         : null;
+    case "Rental Agreement":
+      return permissions.can("view", "sales")
+        ? {
+            to: path.to.rentalAgreementDetails(id),
+            icon: <LuKeyRound />,
+            label: t`Rental Agreement`
+          }
+        : null;
     default:
       return null;
   }
@@ -163,6 +172,9 @@ const ReceiptDocuments = () => {
   if (!receipt) return null;
 
   const isSalesReturn = receipt.sourceDocument === "Sales Return Order";
+  // A rental receipt has no supplier, and `receipt` has no customer.
+  const hidesSupplier =
+    isSalesReturn || receipt.sourceDocument === "Rental Agreement";
   const inspections = permissions.can("view", "quality")
     ? (routeData?.receiptInspections ?? [])
     : [];
@@ -171,7 +183,7 @@ const ReceiptDocuments = () => {
   const receiptFiles = routeData?.receiptFiles;
 
   const supplierRow =
-    !isSalesReturn && supplierParty ? (
+    !hidesSupplier && supplierParty ? (
       <RelatedDocument
         to={supplierParty.to}
         icon={supplierParty.icon}
