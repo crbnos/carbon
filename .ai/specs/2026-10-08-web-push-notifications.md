@@ -14,6 +14,13 @@ The `notify` job sends one push for each notification it creates. The job uses t
 
 ## Overview diagram
 
+![Sequence of messages between the browser, the push worker, the ERP routes, the pushSubscription table, the notify job, the send-push job and the push service, in 3 phases: enable, deliver, and sign out then sign in.](./2026-10-08-web-push-notifications.svg)
+
+Read the picture from top to bottom, one band at a time. Band 2 is the delivery path, and it runs with no Carbon tab open.
+
+<details>
+<summary>The same sequence as Mermaid</summary>
+
 ```mermaid
 sequenceDiagram
     participant U as Browser
@@ -34,6 +41,8 @@ sequenceDiagram
     ERP->>DB: delete rows of the endpoint
     U->>ERP: next sign-in, the bell re-saves the row
 ```
+
+</details>
 
 ## Problem Statement
 
@@ -87,8 +96,8 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 
 | Field | Value |
 |---|---|
-| `title` | `getNotificationEmailHeading(event)`, for example "Job assigned to you" |
-| `body` | the notification `description`, for example "Job J00105 assigned to you" |
+| `title` | `getNotificationEmailHeading(event)`, for example "Job assigned to you". A workflow notification uses its author's subject (the `description`). |
+| `body` | the notification `description`, for example "Job J00105 assigned to you". A workflow notification uses its author's message, with each `[label](url)` reduced to its label. |
 | `url` | `buildNotificationLink(event, documentId, companyId, documentType)`; `/api/link` switches the company first |
 | `tag` | `` `${event}:${primaryDocumentId}` ``; the worker closes an older notification with the same tag before it shows the new one |
 
@@ -262,7 +271,7 @@ The table holds no business data, so the demo datasets need no change. `wipe.ts`
 1. `install`: `skipWaiting()`. `activate`: `clients.claim()`.
 2. `push`: parse the JSON payload. If it has a `tag`, close the shown notifications whose `data.tag` matches. Call `showNotification(title, { body, icon: "/carbon-mark-dark.png", data: { url, tag } })`.
 3. `notificationclick`: close the notification. Find a window client on the same origin, then focus it and navigate it to `data.url`. If no client exists, call `clients.openWindow(data.url)`.
-4. `pushsubscriptionchange`: subscribe again with `event.oldSubscription.options.applicationServerKey`. Then `PUT /api/push-subscription` with the new subscription and `oldEndpoint`.
+4. `pushsubscriptionchange`: take `event.newSubscription`, else the registration's current subscription, else subscribe again with the old subscription's key. If none exists, stop. `PUT /api/push-subscription` the result, with `oldEndpoint` only when an old subscription exists.
 
 The icon is `/carbon-mark-dark.png`, the file that the ERP's `site.webmanifest` names.
 
@@ -397,4 +406,10 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 - 2026-10-08: From the third self-review:
   1. `carbon/send-push` carries the recipient's `userId`, and `send-push` sends only when the row still belongs to that user. The guarantee "only the recipient's browser" is now a check, not a result of how ids are assigned.
   2. The 2 unreleased migrations are one: `20261008002726` creates `pushSubscription` with `UNIQUE ("endpoint")`.
+- 2026-10-08: From the CodeRabbit review of PR #1867:
+  1. `pushsubscriptionchange` no longer gives up when `oldSubscription` is null. The Push API makes both subscriptions nullable.
+  2. `endBrowserPush` builds the service-role client inside its `try`, so sign-out still clears its cookies when the client cannot be built.
+  3. A workflow push takes its author's subject as the title and their message as the body.
+  4. `packages/database/AGENTS.md` documents the user-owned preference rows (`notificationPreference`, `userModulePreference`, `pushSubscription`) as an exception to the table template.
+- 2026-10-08: The overview now shows the picture from the `/explain` page (`2026-10-08-web-push-notifications.svg`, kept beside the spec). The Mermaid version of the same sequence sits under it in a collapsed block. If the spec moves to `implemented/`, move the `.svg` and the `.html` with it.
 
