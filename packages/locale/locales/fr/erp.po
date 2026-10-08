@@ -9050,6 +9050,9 @@ msgstr "Impossible de charger les entités suivies"
 msgid "Failed to move account: {0}"
 msgstr "Impossible de déplacer le compte : {0}"
 
+msgid "Failed to plan job"
+msgstr "Impossible de planifier l'ordre de fabrication"
+
 msgid "Failed to record gauge"
 msgstr "Échec de l'enregistrement de l'instrument de mesure"
 
@@ -14475,6 +14478,9 @@ msgstr "Date de commande"
 
 msgid "Order Multiple"
 msgstr "Multiplicateur de commande"
+
+msgid "Order Multiple:"
+msgstr "Multiple de commande :"
 
 msgid "Order Parts"
 msgstr "Commander des pièces"

@@ -86,6 +86,114 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
 // after the status flip (purchase orders) the job is released, and the caller
 // must still schedule it and say so.
 // Validation (getJobReleaseReadiness) is the caller's, BEFORE this runs.
+/**
+ * Re-plan after an item's planning inputs change: its reordering policy, order
+ * multiple, minimum / maximum order quantity, batch size, lead time. The
+ * planning pages list MRP's stored suggestions, so without a run they kept
+ * the old sizing until the next scheduled one (every 3 hours) — an order
+ * multiple saved now read as ignored. A failed run never fails the save.
+ */
+export async function replanAfterItemChange(
+  db: Kysely<KyselyDatabase>,
+  args: { itemId: string; companyId: string; userId: string }
+) {
+  const mrp = await runMRP(getCarbonServiceRole(), db, {
+    type: "item",
+    id: args.itemId,
+    companyId: args.companyId,
+    userId: args.userId
+  });
+  if (mrp.error) {
+    logger.error("MRP failed after an item's planning settings changed", {
+      companyId: args.companyId,
+      itemId: args.itemId,
+      error: mrp.error
+    });
+  }
+}
+
+/**
+ * Promote a Draft make-to-stock job to Planned from the planning drawer. MRP
+ * does not count a Draft job as supply, so a Draft job and a Make suggestion
+ * for the same need sat side by side and could both be built. In order, as
+ * `releaseJobs` does: the requirements recalculation (a failure stops here,
+ * with the job still Draft, so MRP never counts a job whose requirements are
+ * stale), the guarded status flip (only from Draft), then MRP — which now
+ * counts the job, so the Make suggestion shrinks by it. No scheduler notice:
+ * the scheduler places only released jobs (`activeJobStatuses`), and a Planned
+ * job's dates and priority are unchanged. The caller has checked the job's
+ * location and that no sales order owns it.
+ */
+export async function planDraftJob({
+  client,
+  db,
+  jobId,
+  companyId,
+  userId
+}: {
+  client: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  jobId: string;
+  companyId: string;
+  userId: string;
+}): Promise<{ updated: boolean; error?: string; warning?: string }> {
+  const serviceRole = getCarbonServiceRole();
+  const recalc = await recalculateJobRequirements(serviceRole, db, {
+    id: jobId,
+    companyId,
+    userId
+  });
+  if (recalc.error) {
+    logger.error("Failed to recalculate a Draft job before planning it", {
+      companyId,
+      jobId,
+      error: recalc.error
+    });
+    return {
+      updated: false,
+      error:
+        "The job's materials and operations could not be recalculated, so it was not planned. Recalculate the job and try again."
+    };
+  }
+
+  const flipped = await updateJobStatus(client, {
+    id: jobId,
+    companyId,
+    status: "Planned",
+    updatedBy: userId,
+    fromStatuses: ["Draft"]
+  });
+  if (flipped.error) {
+    logger.error("Failed to plan a Draft job from planning", {
+      companyId,
+      jobId,
+      error: flipped.error
+    });
+    return { updated: false, error: "Failed to plan the job" };
+  }
+  if (!flipped.updated) return { updated: false };
+
+  const mrp = await runMRP(serviceRole, db, {
+    type: "job",
+    id: jobId,
+    companyId,
+    userId
+  });
+  if (mrp.error) {
+    logger.error("MRP failed after planning a Draft job", {
+      companyId,
+      jobId,
+      error: mrp.error
+    });
+    return {
+      updated: true,
+      warning:
+        "The job is Planned, but the suggestions were not refreshed. Press Recalculate."
+    };
+  }
+  return { updated: true };
+}
+
 export async function releaseJobs({
   client,
   db,

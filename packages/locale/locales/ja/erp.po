@@ -9050,6 +9050,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
+msgid "Failed to plan job"
+msgstr "製造指図を計画できませんでした"
+
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
 
@@ -14475,6 +14478,9 @@ msgstr "注文日"
 
 msgid "Order Multiple"
 msgstr "発注倍数"
+
+msgid "Order Multiple:"
+msgstr "発注倍数:"
 
 msgid "Order Parts"
 msgstr "部品を注文"

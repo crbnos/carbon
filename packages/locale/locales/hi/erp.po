@@ -9050,6 +9050,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to plan job"
+msgstr "जॉब को प्लान करने में विफल"
+
 msgid "Failed to record gauge"
 msgstr "गेज रिकॉर्ड करने में विफल"
 
@@ -14475,6 +14478,9 @@ msgstr "ऑर्डर तारीख"
 
 msgid "Order Multiple"
 msgstr "ऑर्डर गुणज"
+
+msgid "Order Multiple:"
+msgstr "ऑर्डर गुणज:"
 
 msgid "Order Parts"
 msgstr "पार्ट्स ऑर्डर करें"

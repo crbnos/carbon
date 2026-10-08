@@ -420,6 +420,26 @@ never offered a Cancel, Defer or Expedite.
   Increase on a PO line are rounded up to the purchase multiple, and a line
   already at it gets no action. An Increase names the PO line's supplier, not
   the item's preferred one.
+- **A frozen order is never Expedited, Increased or Decreased**
+  (`isOrderFrozen`): its due date less the item's lead time is before today —
+  every overdue order, and one due sooner than a lead time away. It is already
+  being made or shipped, so none of the three can be carried out. A shortfall
+  it would have absorbed stays a new Order / Make (`convertOrdersToIncreases`
+  skips it), and a frozen order late beyond the tolerance is left where it
+  lands in the sizing projection (`firstNeedPeriodByOrder`'s `frozen`
+  argument), so the need it misses gets new supply instead of a silent gap.
+  Defer, Cancel and Release are unchanged. Before this an overdue job got
+  "Increase from 111 to 131" beside a Make for the same week.
+- **Change actions keep the policy's order rules** (`orderSizingRules`, the
+  same definition the page split reads). A Decrease keeps the policy's
+  minimum and lands on its whole multiples — `orderMultiple`, a Fixed Reorder
+  Quantity order's fixed quantity, a Maximum Quantity order's lot size
+  (`reducedOrderQuantity`, `orderRules` on `deriveChangeActions`). A new-supply
+  suggestion folds into an open order only when the result fits the policy's
+  `maximum` — a batch or the max order quantity, the fixed reorder quantity
+  (`maximumPerOrder` on `convertOrdersToIncreases`); otherwise it stays a new
+  Order / Make. Before this a 50-unit batch job was offered "Increase to 100"
+  and a 40 on a multiple of 10 "Decrease to 37".
 - `deriveChangeActions` claims the policy floor (safety stock, reorder point,
   minimum reserve) FIRST — from on-hand, then the earliest orders — and an
   order holding part of it is never Cancelled, Decreased or Deferred. The floor
@@ -477,10 +497,24 @@ never offered a Cancel, Defer or Expedite.
   and a bulk order for rows never opened all read the item's OPEN new-supply
   actions (`openNewSupplyActions` + `plannedOrdersFromActions` /
   `productionOrdersFromActions`, `ui/Planning/planned-orders-from-actions.ts`,
-  tested by `apps/erp/test/planned-orders-from-actions.test.ts`): one row per
-  action, on the action's own week, in purchase units for a PO (rounded up by
-  the chosen supplier part's factor). They used to be sized again in the
-  browser from the weekly projections (`calculateOrders`), which missed what
+  tested by `apps/erp/test/planned-orders-from-actions.test.ts`): each action
+  split back into the orders its policy sized, on the action's own week, in
+  purchase units for a PO (rounded up by the chosen supplier part's factor).
+  MRP sums the orders a week needs into one action (the natural key), so
+  `splitIntoOrders` + `orderSizingRules` (`@carbon/utils`, by the action's
+  `policyName`) restore them: Demand-Based Reorder one per batch (`lotSize`)
+  spread across the week, Fixed Reorder Quantity one of that quantity per
+  day, Maximum Quantity one of at most `maximumOrderQuantity` per day; Stock
+  Only one order. A round-trip test pins the split to `computePlanningOrders`.
+  One order per action turned a 120 on a batch size of 50 into one job of
+  120 and three fixed reorders of 100 into one order of 300. Each suggested
+  job carries the action's `policyName` / `reason` / `triggerValues` (the
+  chart's order popover reads them), and its `isASAP` is judged per job
+  against the page's `locationToday` from its OWN start date — the action's
+  flag is one per week as of the run (Maximum Quantity keeps the run's flag
+  as a condition, since only the run knows the stock was short). It becomes
+  the created job's `deadlineType`. They
+  used to be sized again in the browser from the weekly projections (`calculateOrders`), which missed what
   MRP does after sizing — moving expedited supply, folding a shortfall into
   an open order as an Increase, summing each week into one action — so the
   drawer showed daily 10s against weekly 50s and offered a new order for the
@@ -685,6 +719,17 @@ never offered a Cancel, Defer or Expedite.
     amount is stored. A failed follow-up on a saved job edit (recalculating
     requirements, telling the scheduler) is reported as a warning, never a
     revert — the edit stands.
+    A Draft job (listed, editable, charted as new supply, but NOT MRP supply)
+    shows a **Plan** button when no action targets it (`renderRowCommand`):
+    `planning.update` `planJob` checks the location, that no sales order owns
+    it and that it is Draft, then `planDraftJob` (`production.server.ts`) recalculates
+    its requirements (a failure leaves it Draft, as `releaseJobs` does), flips
+    it to Planned (`updateJobStatus` `fromStatuses: ["Draft"]`) and runs MRP —
+    after the flip, so the run counts it and the Make suggestion shrinks by
+    it. No scheduler notice: only released jobs are scheduled. The drawer then drops the item's draft
+    list to re-seed. Before this a Draft job and a Make for the same need sat
+    side by side and could both be built (the pre-#1601 drawer promoted
+    Drafts through `order`, which now refuses existing jobs).
     Locked rows render as plain cells
     (`Grid isRowEditable`). Each row carries the planning action that targets
     it — type, suggested value, reason, Apply / Review — so there is no
