@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "{unitName}の返却先を選択"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "このアグリーメントでレンタルするフリート個を選択してください。各個の初期レートはファイルに設定されています。グリッドで変更してください。"
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "配送済"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "配送日"
 
 msgid "Delivery Date"
 msgstr "納期"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "ユニットを使用停止にする理由を入力"
 
 msgid "Enter an item and quantity yourself."
 msgstr "品目と数量を手動で入力してください。"
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "メタデータ"
 
 msgid "Meter"
-msgstr ""
+msgstr "メーター"
 
 msgid "Method"
 msgstr "方法"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "未設定"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "未配送"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "リリース"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "{unitLabel}をリリース"
 
 msgid "Release Batch"
 msgstr "バッチをリリース"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "リリース管理"
 
 msgid "Release date"
-msgstr ""
+msgstr "リリース日"
 
 msgid "Release Job"
 msgstr "ジョブをリリース"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "発注書{target}を{date}までにリリース"
 
 msgid "Release unit"
-msgstr ""
+msgstr "ユニットをリリース"
 
 msgid "Released"
 msgstr "リリース済み"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "レンタル拠点"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "レンタルユニット"
 
 msgid "Rental Utilization"
 msgstr "レンタル資産利用率"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "返品商品は在庫にゼロ価値で再入庫されます"
 
 msgid "Returned on"
-msgstr ""
+msgstr "返却日"
 
 msgid "Returned serial numbers"
 msgstr "返品シリアル番号"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "当該品目は在庫から出庫され、在庫で計上していた原価で固定資産化されます。"
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "ユニットはヤードから出ていません。リリース日に請求が停止し、ユニットは再び利用可能になります。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "購入時のアイテムの単価"

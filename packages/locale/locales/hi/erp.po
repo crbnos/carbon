@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "{unitName} के लिए रिटर्न स्थान चुनें"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "उन फ्लीट इकाइयों को चुनें जो यह समझौता किराए पर देता है। प्रत्येक आवृत्ति के लिए फ़ाइल पर अपनी दर से शुरू होता है; इसे ग्रिड में बदलें।"
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "डिलीवर किया गया"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "को डिलीवर किया गया"
 
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1 और {0} के बीच मात्रा दर्ज करें।"
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "इकाई को सेवा से बाहर निकालने का कारण दर्ज करें"
 
 msgid "Enter an item and quantity yourself."
 msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "मेटाडेटा"
 
 msgid "Meter"
-msgstr ""
+msgstr "मीटर"
 
 msgid "Method"
 msgstr "तरीका"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "डिलीवर नहीं किया गया"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "जारी करें"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "{unitLabel} को जारी करें"
 
 msgid "Release Batch"
 msgstr "बैच जारी करें"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "नियंत्रण जारी करें"
 
 msgid "Release date"
-msgstr ""
+msgstr "जारी करने की तारीख"
 
 msgid "Release Job"
 msgstr "जॉब जारी करें"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "क्रय आदेश {target} को {date} तक जारी करें"
 
 msgid "Release unit"
-msgstr ""
+msgstr "इकाई को जारी करें"
 
 msgid "Released"
 msgstr "जारी किया गया"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "किराया स्थल"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "किराये की इकाइयाँ"
 
 msgid "Rental Utilization"
 msgstr "किराया उपयोग"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "रिटर्न किए गए सामान शून्य मूल्य पर इन्वेंटरी में फिर से प्रवेश करते हैं"
 
 msgid "Returned on"
-msgstr ""
+msgstr "को वापस किया गया"
 
 msgid "Returned serial numbers"
 msgstr "लौटाए गए सीरियल नंबर"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "इकाई स्टॉक से निकलती है और इन्वेंटरी में दर्ज लागत पर संपत्ति बन जाती है।"
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "इकाई कभी यार्ड नहीं छोड़ी। जारी करने की तारीख पर बिलिंग बंद हो जाती है, और इकाई फिर से मुक्त है।"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "खरीद के समय आइटम की इकाई मूल्य"

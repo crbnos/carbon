@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "{unitName} için İade Yeri Seçin"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki oranında başlar; ızgarada değiştirin."
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "Teslim Edildi"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "Teslim Tarihi"
 
 msgid "Delivery Date"
 msgstr "Teslimat Tarihi"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1 ile {0} arasında bir miktar girin."
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "Üniteyi hizmet dışı bırakmak için bir neden girin"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Bir stok kartı ve miktar kendiniz girin."
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "Meta Veri"
 
 msgid "Meter"
-msgstr ""
+msgstr "Sayaç"
 
 msgid "Method"
 msgstr "Yöntem"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "Teslim Edilmedi"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "Serbest Bırakma"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "{unitLabel}'ı Serbest Bırak"
 
 msgid "Release Batch"
 msgstr "Partiyi Serbest Bırak"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "Serbest Bırakma Kontrolü"
 
 msgid "Release date"
-msgstr ""
+msgstr "Serbest Bırakma Tarihi"
 
 msgid "Release Job"
 msgstr "İş emrini serbest bırak"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "{target} satın alma siparişini {date}'ye kadar serbest bırak"
 
 msgid "Release unit"
-msgstr ""
+msgstr "Üniteyi Serbest Bırak"
 
 msgid "Released"
 msgstr "Yayınlandı"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "Kiralama Alanı"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "Kiralık Üniteler"
 
 msgid "Rental Utilization"
 msgstr "Kiralama Kullanım Oranı"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "İade Edilen Mallar Stoka Sıfır Değerle Geri Girer"
 
 msgid "Returned on"
-msgstr ""
+msgstr "İade Tarihi"
 
 msgid "Returned serial numbers"
 msgstr "İade Edilen Seri Numaraları"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "Adet stoktan çıkar ve envanter tarafından taşınan maliyette bir varlık haline gelir."
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "Ünite sahadan hiç ayrılmadı. Faturalama serbest bırakma tarihinde durur ve ünite yeniden müsait olur."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Satın alma zamanındaki birim fiyat"

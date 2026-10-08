@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "{unitName}을(를) 반환할 위치 선택"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위는 빈도에 따라 파일에 저장된 요율부터 시작됩니다. 그리드에서 변경할 수 있습니다."
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "배송됨"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "배송일"
 
 msgid "Delivery Date"
 msgstr "납기일"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1과 {0} 사이의 수량을 입력하세요."
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "장비를 운영 중단하는 이유를 입력하세요"
 
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "메타데이터"
 
 msgid "Meter"
-msgstr ""
+msgstr "계량기"
 
 msgid "Method"
 msgstr "제조방법"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "미설정"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "배송되지 않음"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "릴리스"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "{unitLabel} 릴리스"
 
 msgid "Release Batch"
 msgstr "배치 릴리스"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "릴리스 제어"
 
 msgid "Release date"
-msgstr ""
+msgstr "릴리스 날짜"
 
 msgid "Release Job"
 msgstr "작업 지시 릴리스"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "발주서 {target}을(를) {date}까지 릴리스"
 
 msgid "Release unit"
-msgstr ""
+msgstr "장비 릴리스"
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "임차 현장"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "렌탈 장비"
 
 msgid "Rental Utilization"
 msgstr "임차 자산 이용률"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "반품된 상품은 0 가치로 재입고됩니다"
 
 msgid "Returned on"
-msgstr ""
+msgstr "반환일"
 
 msgid "Returned serial numbers"
 msgstr "반환된 시리얼 번호"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "개가 재고에서 떠나 재고에 기록된 원가로 자산이 됩니다."
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "장비가 사업소를 떠나지 않았습니다. 릴리스 날짜에 청구가 중단되며, 장비는 다시 대여 가능합니다."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "구매 시점의 품목 단가"

@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "为 {unitName} 选择返还至"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；在网格中更改。"
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "已交付"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "交付于"
 
 msgid "Delivery Date"
 msgstr "交货日期"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "输入停用该设备的原因"
 
 msgid "Enter an item and quantity yourself."
 msgstr "自己输入物料和数量。"
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "元数据"
 
 msgid "Meter"
-msgstr ""
+msgstr "仪表读数"
 
 msgid "Method"
 msgstr "方法"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "未配置"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "未交付"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "下达"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "释放 {unitLabel}"
 
 msgid "Release Batch"
 msgstr "下达生产批次"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "下达控制"
 
 msgid "Release date"
-msgstr ""
+msgstr "释放日期"
 
 msgid "Release Job"
 msgstr "下达工单"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "下达采购订单 {target} 至 {date}"
 
 msgid "Release unit"
-msgstr ""
+msgstr "释放设备"
 
 msgid "Released"
 msgstr "已下达"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "租赁场所"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "出租设备"
 
 msgid "Rental Utilization"
 msgstr "租赁设备利用率"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "退回的货物以零价值重新进入库存"
 
 msgid "Returned on"
-msgstr ""
+msgstr "返还于"
 
 msgid "Returned serial numbers"
 msgstr "退货序列号"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "该件离开库存，并以库存的成本作为资产进行记账。"
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "该设备从未离开场地。计费在释放日期停止，该设备重新可用。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "购买时该商品的单价"

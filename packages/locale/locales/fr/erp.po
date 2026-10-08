@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Choisissez comment ajouter des lignes à ce retour."
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "Choisir la destination de retour pour {unitName}"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Choisissez les unités de parc que cet accord loue. Chacune commence à son taux en file pour la fréquence ; changez-le dans la grille."
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "Livré"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "Livré le"
 
 msgid "Delivery Date"
 msgstr "Date de livraison"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "Entrez une quantité entre 1 et {0}."
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "Entrez une raison pour retirer l'unité du service"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Entrez un article et une quantité vous-même."
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "Métadonnées"
 
 msgid "Meter"
-msgstr ""
+msgstr "Compteur"
 
 msgid "Method"
 msgstr "Méthode"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "Non configuré"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "Non livré"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Pas assez d'ordres de fabrication pour couvrir la quantité"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "Lancer"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "Libérer {unitLabel}"
 
 msgid "Release Batch"
 msgstr "Lancer le lot de production"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "Contrôle de lancement"
 
 msgid "Release date"
-msgstr ""
+msgstr "Date de libération"
 
 msgid "Release Job"
 msgstr "Lancer le travail"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "Lancer le bon de commande {target} avant le {date}"
 
 msgid "Release unit"
-msgstr ""
+msgstr "Libérer l'unité"
 
 msgid "Released"
 msgstr "Libéré"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "Site de location"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "Unités de location"
 
 msgid "Rental Utilization"
 msgstr "Utilisation de la location"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "Les marchandises retournées réintègrent l'inventaire à valeur zéro"
 
 msgid "Returned on"
-msgstr ""
+msgstr "Retourné le"
 
 msgid "Returned serial numbers"
 msgstr "Numéros de série retournés"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "L'unité quitte le stock et devient une immobilisation au coût auquel le stock la porte."
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "L'unité n'a jamais quitté le parc. La facturation s'arrête à la date de libération, et l'unité est de nouveau disponible."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Le prix unitaire de l'article au moment de l'achat"

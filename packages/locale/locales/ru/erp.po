@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "Выберите место возврата для {unitName}"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Выберите единицы флота, которые арендует это соглашение. Каждая начинается со своей ставки по файлу для частоты; измените ее в сетке."
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "Доставлено"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "Доставлено"
 
 msgid "Delivery Date"
 msgstr "Дата поставки"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "Введите количество от 1 до {0}."
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "Введите причину вывода единицы из эксплуатации"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Введите номенклатуру и количество самостоятельно."
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "Метаданные"
 
 msgid "Meter"
-msgstr ""
+msgstr "Счетчик"
 
 msgid "Method"
 msgstr "Метод"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "Не настроено"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "Не доставлено"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "Запустить в работу"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "Освободить {unitLabel}"
 
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "Управление запуском в работу"
 
 msgid "Release date"
-msgstr ""
+msgstr "Дата освобождения"
 
 msgid "Release Job"
 msgstr "Запустить производственный заказ в работу"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "Запустить заказ поставщику {target} к {date}"
 
 msgid "Release unit"
-msgstr ""
+msgstr "Освободить единицу"
 
 msgid "Released"
 msgstr "Выпущено"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "Объект аренды"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "Единицы в аренде"
 
 msgid "Rental Utilization"
 msgstr "Использование арендованного оборудования"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "Возвращенные товары повторно входят в инвентарь с нулевой стоимостью"
 
 msgid "Returned on"
-msgstr ""
+msgstr "Возвращено"
 
 msgid "Returned serial numbers"
 msgstr "Возвращенные серийные номера"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "Единица выводится из запасов и переводится в активы по их балансовой стоимости."
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "Единица так и не покинула площадку. Выставление счетов прекращается в дату освобождения, и единица снова доступна."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Цена за единицу товара на момент покупки"

@@ -4406,7 +4406,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Wählen Sie, wie Sie Positionen zu dieser Rückgabe hinzufügen möchten."
 
 msgid "Choose Return To for {unitName}"
-msgstr ""
+msgstr "Wählen Sie Rückgabeziel für {unitName}"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Wählen Sie die Flotteneinheiten, die diese Vereinbarung mietet. Jede beginnt mit ihrem Satz in der Datei für die Häufigkeit; ändern Sie ihn im Raster."
@@ -6959,7 +6959,7 @@ msgid "Delivered"
 msgstr "Geliefert"
 
 msgid "Delivered on"
-msgstr ""
+msgstr "Geliefert am"
 
 msgid "Delivery Date"
 msgstr "Liefertermin"
@@ -8289,7 +8289,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
 
 msgid "Enter a reason to take the unit out of service"
-msgstr ""
+msgstr "Geben Sie einen Grund an, um die Einheit außer Betrieb zu nehmen"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Geben Sie einen Artikel und eine Menge selbst ein."
@@ -12276,7 +12276,7 @@ msgid "Metadata"
 msgstr "Metadaten"
 
 msgid "Meter"
-msgstr ""
+msgstr "Zählerstand"
 
 msgid "Method"
 msgstr "Methode"
@@ -13789,7 +13789,7 @@ msgid "Not Configured"
 msgstr "Nicht konfiguriert"
 
 msgid "Not delivered"
-msgstr ""
+msgstr "Nicht geliefert"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
@@ -16677,7 +16677,7 @@ msgid "Release"
 msgstr "Freigeben"
 
 msgid "Release {unitLabel}"
-msgstr ""
+msgstr "Freigeben {unitLabel}"
 
 msgid "Release Batch"
 msgstr "Los freigeben"
@@ -16697,7 +16697,7 @@ msgid "Release Control"
 msgstr "Freigabenkontrolle"
 
 msgid "Release date"
-msgstr ""
+msgstr "Freigabedatum"
 
 msgid "Release Job"
 msgstr "Auftrag freigeben"
@@ -16712,7 +16712,7 @@ msgid "Release purchase order {target} by {date}"
 msgstr "Bestellung {target} bis {date} freigeben"
 
 msgid "Release unit"
-msgstr ""
+msgstr "Einheit freigeben"
 
 msgid "Released"
 msgstr "Freigegeben"
@@ -16917,7 +16917,7 @@ msgid "Rental Site"
 msgstr "Vermietungsstandort"
 
 msgid "Rental Units"
-msgstr ""
+msgstr "Mieteinheiten"
 
 msgid "Rental Utilization"
 msgstr "Leihauslastung"
@@ -17331,7 +17331,7 @@ msgid "Returned goods re-enter inventory at zero value"
 msgstr "Zurückgegebene Waren treten mit Nullwert wieder in den Bestand"
 
 msgid "Returned on"
-msgstr ""
+msgstr "Zurückgegeben am"
 
 msgid "Returned serial numbers"
 msgstr "Zurückgegebene Seriennummern"
@@ -21182,7 +21182,7 @@ msgid "The unit leaves stock and becomes an asset at the cost inventory carries 
 msgstr "Die Einheit verlässt den Bestand und wird zu einem Anlagevermögen mit den Kosten, zu denen sie im Bestand erfasst ist."
 
 msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
-msgstr ""
+msgstr "Die Einheit hat das Gelände nie verlassen. Die Abrechnung endet am Freigabedatum, und die Einheit ist wieder frei."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Der Einzelpreis des Artikels zum Zeitpunkt des Kaufs"
