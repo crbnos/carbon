@@ -43,8 +43,9 @@ import { useCompanyToday, usePermissions } from "~/hooks";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { path } from "~/utils/path";
+import { rentalEquipmentStatus } from "../../sales.utils";
 import { RentalCommencementPreview } from "./RentalLeaseClassification";
-import RentalStatus from "./RentalStatus";
+import RentalStatus, { RentalEquipmentStatusBadge } from "./RentalStatus";
 import type { RentalAgreementRouteData } from "./types";
 
 type RentalAgreementHeaderProps = Pick<
@@ -217,6 +218,11 @@ const RentalAgreementHeader = ({
               </DropdownMenuContent>
             </DropdownMenu>
             <RentalStatus status={status} />
+            {isActive && (
+              <RentalEquipmentStatusBadge
+                status={rentalEquipmentStatus(lines)}
+              />
+            )}
             {isPastEndDate && (
               <Badge variant="orange">
                 <Trans>Past end date</Trans>
