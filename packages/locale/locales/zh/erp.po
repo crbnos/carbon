@@ -9694,9 +9694,6 @@ msgstr "开始使用"
 msgid "Get your Carbon notifications as they happen."
 msgstr "实时获取您的 Carbon 通知。"
 
-msgid "Get your Carbon notifications in this browser."
-msgstr "在此浏览器中获取您的 Carbon 通知。"
-
 msgid "Gets the summary for every agreement"
 msgstr "获取每个协议的汇总"
 

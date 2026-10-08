@@ -9694,9 +9694,6 @@ msgstr "Começar"
 msgid "Get your Carbon notifications as they happen."
 msgstr "Receba suas notificações do Carbon assim que acontecerem."
 
-msgid "Get your Carbon notifications in this browser."
-msgstr "Receba suas notificações do Carbon neste navegador."
-
 msgid "Gets the summary for every agreement"
 msgstr "Obtém o resumo de cada acordo"
 

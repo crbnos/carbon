@@ -181,9 +181,7 @@ export default function AccountNotifications() {
                 </CardTitle>
                 <CardDescription>
                   {device.state === "off" && (
-                    <Trans>
-                      Get your Carbon notifications in this browser.
-                    </Trans>
+                    <Trans>Get your Carbon notifications as they happen.</Trans>
                   )}
                   {device.state === "on" && (
                     <Trans>

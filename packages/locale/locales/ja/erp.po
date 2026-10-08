@@ -9694,9 +9694,6 @@ msgstr "はじめる"
 msgid "Get your Carbon notifications as they happen."
 msgstr "Carbonからの通知がリアルタイムで届きます。"
 
-msgid "Get your Carbon notifications in this browser."
-msgstr "このブラウザーでCarbonの通知を受け取ります。"
-
 msgid "Gets the summary for every agreement"
 msgstr "すべての協定のサマリーを取得します"
 

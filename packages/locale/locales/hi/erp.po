@@ -9694,9 +9694,6 @@ msgstr "शुरुआत करें"
 msgid "Get your Carbon notifications as they happen."
 msgstr "अपनी Carbon सूचनाएँ तुरंत प्राप्त करें।"
 
-msgid "Get your Carbon notifications in this browser."
-msgstr "इस ब्राउज़र में अपनी Carbon सूचनाएँ प्राप्त करें।"
-
 msgid "Gets the summary for every agreement"
 msgstr "प्रत्येक समझौते के लिए सारांश प्राप्त करता है"
 
