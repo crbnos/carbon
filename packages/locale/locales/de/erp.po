@@ -4405,6 +4405,9 @@ msgstr "Wählen Sie eine andere Datei"
 msgid "Choose how to add lines to this return."
 msgstr "Wählen Sie, wie Sie Positionen zu dieser Rückgabe hinzufügen möchten."
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Wählen Sie die Flotteneinheiten, die diese Vereinbarung mietet. Jede beginnt mit ihrem Satz in der Datei für die Häufigkeit; ändern Sie ihn im Raster."
 
@@ -8287,6 +8290,9 @@ msgstr "Geben Sie eine Losnummer ein, bevor Sie das Verfallsdatum festlegen"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "Geben Sie einen Artikel und eine Menge selbst ein."
@@ -13791,6 +13797,9 @@ msgstr "Nicht konfiguriert"
 msgid "Not Configured"
 msgstr "Nicht konfiguriert"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
 
@@ -17332,6 +17341,9 @@ msgstr "Zurückgegebene Charge"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "Zurückgegebene Waren treten mit Nullwert wieder in den Bestand"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "Zurückgegebene Seriennummern"

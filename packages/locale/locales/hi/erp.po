@@ -4405,6 +4405,9 @@ msgstr "दूसरी फ़ाइल चुनें"
 msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "उन फ्लीट इकाइयों को चुनें जो यह समझौता किराए पर देता है। प्रत्येक आवृत्ति के लिए फ़ाइल पर अपनी दर से शुरू होता है; इसे ग्रिड में बदलें।"
 
@@ -8287,6 +8290,9 @@ msgstr "समाप्ति तिथि सेट करने से पह�
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1 और {0} के बीच मात्रा दर्ज करें।"
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
@@ -13791,6 +13797,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
@@ -17332,6 +17341,9 @@ msgstr "रिटर्न किया गया बैच"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "रिटर्न किए गए सामान शून्य मूल्य पर इन्वेंटरी में फिर से प्रवेश करते हैं"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "लौटाए गए सीरियल नंबर"

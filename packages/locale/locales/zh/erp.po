@@ -4405,6 +4405,9 @@ msgstr "选择另一个文件"
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；在网格中更改。"
 
@@ -8287,6 +8290,9 @@ msgstr "在设置到期日期前输入生产批次号"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "自己输入物料和数量。"
@@ -13791,6 +13797,9 @@ msgstr "未配置"
 msgid "Not Configured"
 msgstr "未配置"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
@@ -17332,6 +17341,9 @@ msgstr "已退货批次"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "退回的货物以零价值重新进入库存"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "退货序列号"

@@ -4405,6 +4405,9 @@ msgstr "別のファイルを選択"
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "このアグリーメントでレンタルするフリート個を選択してください。各個の初期レートはファイルに設定されています。グリッドで変更してください。"
 
@@ -8287,6 +8290,9 @@ msgstr "有効期限を設定する前にバッチ番号を入力してくださ
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "品目と数量を手動で入力してください。"
@@ -13791,6 +13797,9 @@ msgstr "未設定"
 msgid "Not Configured"
 msgstr "未設定"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
@@ -17332,6 +17341,9 @@ msgstr "返品バッチ"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "返品商品は在庫にゼロ価値で再入庫されます"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "返品シリアル番号"

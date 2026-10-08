@@ -4405,6 +4405,9 @@ msgstr "Başka bir dosya seç"
 msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki oranında başlar; ızgarada değiştirin."
 
@@ -8287,6 +8290,9 @@ msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1 ile {0} arasında bir miktar girin."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "Bir stok kartı ve miktar kendiniz girin."
@@ -13791,6 +13797,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
 
@@ -17332,6 +17341,9 @@ msgstr "İade Edilen Parti"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "İade Edilen Mallar Stoka Sıfır Değerle Geri Girer"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "İade Edilen Seri Numaraları"

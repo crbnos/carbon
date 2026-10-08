@@ -4405,6 +4405,9 @@ msgstr "Choose another file"
 msgid "Choose how to add lines to this return."
 msgstr "Choose how to add lines to this return."
 
+msgid "Choose Return To for {unitName}"
+msgstr "Choose Return To for {unitName}"
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 
@@ -8287,6 +8290,9 @@ msgstr "Enter a batch number before setting the expiration date"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Enter a quantity between 1 and {0}."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr "Enter a reason to take the unit out of service"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Enter an item and quantity yourself."
@@ -13791,6 +13797,9 @@ msgstr "Not configured"
 msgid "Not Configured"
 msgstr "Not Configured"
 
+msgid "Not delivered"
+msgstr "Not delivered"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
@@ -17332,6 +17341,9 @@ msgstr "Returned batch"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "Returned goods re-enter inventory at zero value"
+
+msgid "Returned on"
+msgstr "Returned on"
 
 msgid "Returned serial numbers"
 msgstr "Returned serial numbers"

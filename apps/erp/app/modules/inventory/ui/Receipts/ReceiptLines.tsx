@@ -7,6 +7,7 @@ import { isPreviewableDocumentType, storage } from "@carbon/files";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -34,6 +35,9 @@ import {
   ModalTitle,
   NumberField,
   NumberInput,
+  RadioGroup,
+  RadioGroupItem,
+  Textarea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -42,6 +46,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -80,7 +85,8 @@ import type {
   BatchProperty,
   ItemTracking,
   Receipt,
-  ReceiptLine
+  ReceiptLine,
+  RentalReceiptLine
 } from "~/modules/inventory";
 import { splitValidator } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
@@ -112,6 +118,7 @@ const ReceiptLines = () => {
       received: boolean;
       serialNumber: string | null;
     }[];
+    rentalLines: RentalReceiptLine[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -243,61 +250,65 @@ const ReceiptLines = () => {
   const isPosted =
     routeData?.receipt.status === "Posted" ||
     routeData?.receipt.status === "Voided";
+  const isRental = routeData?.receipt?.sourceDocument === "Rental Agreement";
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Receipt Lines</Trans>
-          </CardTitle>
-        </CardHeader>
+      {!isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Receipt Lines</Trans>
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <div className="border rounded-lg">
-            {receiptLines.length === 0 ? (
-              <Empty className="py-6" />
-            ) : (
-              receiptLines.map((line, index) => {
-                const trackingCandidates =
-                  routeData?.receiptLineTracking?.filter((t) => {
-                    const attributes = t.attributes as TrackedEntityAttributes;
-                    return attributes["Receipt Line"] === line.id;
-                  }) ?? [];
-                const tracking =
-                  trackingCandidates.find((t) => t.expirationDate) ??
-                  trackingCandidates[0];
-                return (
-                  <ReceiptLineItem
-                    key={line.id}
-                    line={line}
-                    receipt={routeData?.receipt}
-                    isReadOnly={isPosted}
-                    onUpdate={onUpdateReceiptLine}
-                    files={routeData?.receiptFiles}
-                    className={
-                      index === receiptLines.length - 1 ? "border-none" : ""
-                    }
-                    serialNumbers={serialNumbersByLineId[line.id!] || []}
-                    getPath={(file) => getPath(file, line.id!)}
-                    onSerialNumbersChange={(newSerialNumbers) => {
-                      setSerialNumbersByLineId((prev) => ({
-                        ...prev,
-                        [line.id!]: newSerialNumbers
-                      }));
-                    }}
-                    batchProperties={routeData?.batchProperties}
-                    itemShelfLife={routeData?.itemShelfLife}
-                    tracking={tracking}
-                    upload={(files) => upload(files, line.id!)}
-                    deleteFile={(file) => deleteFile(file, line.id!)}
-                  />
-                );
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent>
+            <div className="border rounded-lg">
+              {receiptLines.length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                receiptLines.map((line, index) => {
+                  const trackingCandidates =
+                    routeData?.receiptLineTracking?.filter((t) => {
+                      const attributes =
+                        t.attributes as TrackedEntityAttributes;
+                      return attributes["Receipt Line"] === line.id;
+                    }) ?? [];
+                  const tracking =
+                    trackingCandidates.find((t) => t.expirationDate) ??
+                    trackingCandidates[0];
+                  return (
+                    <ReceiptLineItem
+                      key={line.id}
+                      line={line}
+                      receipt={routeData?.receipt}
+                      isReadOnly={isPosted}
+                      onUpdate={onUpdateReceiptLine}
+                      files={routeData?.receiptFiles}
+                      className={
+                        index === receiptLines.length - 1 ? "border-none" : ""
+                      }
+                      serialNumbers={serialNumbersByLineId[line.id!] || []}
+                      getPath={(file) => getPath(file, line.id!)}
+                      onSerialNumbersChange={(newSerialNumbers) => {
+                        setSerialNumbersByLineId((prev) => ({
+                          ...prev,
+                          [line.id!]: newSerialNumbers
+                        }));
+                      }}
+                      batchProperties={routeData?.batchProperties}
+                      itemShelfLife={routeData?.itemShelfLife}
+                      tracking={tracking}
+                      upload={(files) => upload(files, line.id!)}
+                      deleteFile={(file) => deleteFile(file, line.id!)}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {routeData?.fixedAssetLines && routeData.fixedAssetLines.length > 0 && (
         <Card>
           <CardHeader>
@@ -319,6 +330,35 @@ const ReceiptLines = () => {
                   }
                 />
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Rental Units</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg">
+              {(routeData?.rentalLines ?? []).length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                routeData!.rentalLines.map((line, index) => (
+                  <ReceiptRentalLineItem
+                    key={line.id}
+                    line={line}
+                    isReadOnly={isPosted}
+                    className={
+                      index < routeData!.rentalLines.length - 1
+                        ? "border-b"
+                        : ""
+                    }
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -392,6 +432,188 @@ function ReceiptFixedAssetLineItem({
         }}
       />
     </div>
+  );
+}
+
+function ReceiptRentalLineItem({
+  line,
+  isReadOnly,
+  className
+}: {
+  line: RentalReceiptLine;
+  isReadOnly: boolean;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher();
+  const [notes, setNotes] = useState(line.notes ?? "");
+  const [takeOutOfService, setTakeOutOfService] = useState(
+    line.takeOutOfService
+  );
+  const [outOfServiceReason, setOutOfServiceReason] = useState(
+    line.outOfServiceReason ?? ""
+  );
+
+  const updateField = (field: string, value: string) => {
+    const formData = new FormData();
+    formData.append("id", line.id);
+    formData.append("field", field);
+    formData.append("value", value);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.receiptFixedAssetLineUpdate
+    });
+  };
+
+  return (
+    <VStack spacing={4} className={cn("p-6", className)}>
+      <div className="flex items-center gap-4 w-full">
+        <Checkbox
+          isChecked={line.received}
+          disabled={isReadOnly}
+          onCheckedChange={(checked) =>
+            updateField("received", String(checked === true))
+          }
+        />
+        <VStack spacing={0} className="flex-1 min-w-0">
+          <HStack spacing={2}>
+            <span className="text-sm font-medium">{line.unitName}</span>
+            {line.lineStatus === "Pending" && (
+              <Badge variant="secondary">
+                <Trans>Not delivered</Trans>
+              </Badge>
+            )}
+          </HStack>
+          {(line.assetReadableId || line.serialNumber) && (
+            <span className="text-xs text-muted-foreground">
+              {[line.assetReadableId, line.serialNumber]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          )}
+        </VStack>
+        <VStack spacing={1}>
+          <label className="text-xs text-muted-foreground">
+            <Trans>Meter</Trans>
+          </label>
+          {/* react-aria commits on blur (or Enter); an emptied field commits NaN. */}
+          <NumberField
+            aria-label={t`Meter`}
+            defaultValue={line.meter ?? undefined}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+            minValue={0}
+            isDisabled={isReadOnly}
+            onChange={(value) => {
+              const next = value == null || isNaN(value) ? null : value;
+              if (next === line.meter) return;
+              updateField("meter", next === null ? "" : String(next));
+            }}
+          >
+            <NumberInput size="sm" className="w-32" />
+          </NumberField>
+        </VStack>
+      </div>
+      <div className="grid grid-cols-1 @3xl:grid-cols-2 gap-4 w-full pl-8">
+        <VStack spacing={1}>
+          <label className="text-xs text-muted-foreground">
+            <Trans>Notes</Trans>
+          </label>
+          <Textarea
+            aria-label={t`Notes`}
+            value={notes}
+            disabled={isReadOnly}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              if (notes !== (line.notes ?? "")) {
+                updateField("notes", notes);
+              }
+            }}
+          />
+        </VStack>
+        <VStack spacing={2}>
+          <HStack spacing={2}>
+            <Checkbox
+              id={`${line.id}:outOfService`}
+              isChecked={takeOutOfService}
+              disabled={isReadOnly}
+              onCheckedChange={(checked) => {
+                const isTicked = checked === true;
+                setTakeOutOfService(isTicked);
+                if (!isTicked) {
+                  setOutOfServiceReason("");
+                  updateField("outOfService", "");
+                }
+              }}
+            />
+            <label htmlFor={`${line.id}:outOfService`} className="text-sm">
+              <Trans>Take out of service</Trans>
+            </label>
+          </HStack>
+          {takeOutOfService && (
+            <>
+              <Input
+                aria-label={t`Reason`}
+                placeholder={t`Reason`}
+                value={outOfServiceReason}
+                isDisabled={isReadOnly}
+                onChange={(e) => setOutOfServiceReason(e.target.value)}
+                onBlur={() => {
+                  const reason = outOfServiceReason.trim();
+                  if (reason && reason !== (line.outOfServiceReason ?? "")) {
+                    updateField("outOfService", reason);
+                  }
+                }}
+              />
+              {!line.outOfServiceReason && (
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Enter a reason to take the unit out of service</Trans>
+                </span>
+              )}
+            </>
+          )}
+          {line.lessorClassification === "Sale" && (
+            <VStack spacing={1} className="pt-2">
+              <label className="text-xs text-muted-foreground">
+                <Trans>Return To</Trans>
+              </label>
+              <RadioGroup
+                value={line.residualDestination ?? ""}
+                disabled={isReadOnly}
+                onValueChange={(value) =>
+                  updateField("residualDestination", value)
+                }
+              >
+                <HStack spacing={2}>
+                  <RadioGroupItem
+                    value="Fleet"
+                    id={`${line.id}:residualDestination:Fleet`}
+                  />
+                  <label
+                    htmlFor={`${line.id}:residualDestination:Fleet`}
+                    className="text-sm"
+                  >
+                    <Trans>Rental fleet, as a new fleet asset</Trans>
+                  </label>
+                </HStack>
+                <HStack spacing={2}>
+                  <RadioGroupItem
+                    value="Inventory"
+                    id={`${line.id}:residualDestination:Inventory`}
+                  />
+                  <label
+                    htmlFor={`${line.id}:residualDestination:Inventory`}
+                    className="text-sm"
+                  >
+                    <Trans>Inventory, as finished goods</Trans>
+                  </label>
+                </HStack>
+              </RadioGroup>
+            </VStack>
+          )}
+        </VStack>
+      </div>
+    </VStack>
   );
 }
 

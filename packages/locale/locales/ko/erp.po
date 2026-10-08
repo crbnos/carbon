@@ -4405,6 +4405,9 @@ msgstr "다른 파일을 선택하세요"
 msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위는 빈도에 따라 파일에 저장된 요율부터 시작됩니다. 그리드에서 변경할 수 있습니다."
 
@@ -8287,6 +8290,9 @@ msgstr "만료일을 설정하기 전에 배치 번호를 입력하세요."
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1과 {0} 사이의 수량을 입력하세요."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
@@ -13791,6 +13797,9 @@ msgstr "구성되지 않음"
 msgid "Not Configured"
 msgstr "미설정"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
@@ -17332,6 +17341,9 @@ msgstr "반품된 배치"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "반품된 상품은 0 가치로 재입고됩니다"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "반환된 시리얼 번호"

@@ -4405,6 +4405,9 @@ msgstr "Выбрать другой файл"
 msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
 
+msgid "Choose Return To for {unitName}"
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Выберите единицы флота, которые арендует это соглашение. Каждая начинается со своей ставки по файлу для частоты; измените ее в сетке."
 
@@ -8287,6 +8290,9 @@ msgstr "Введите номер серии перед установкой д�
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Введите количество от 1 до {0}."
+
+msgid "Enter a reason to take the unit out of service"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "Введите номенклатуру и количество самостоятельно."
@@ -13791,6 +13797,9 @@ msgstr "Не настроено"
 msgid "Not Configured"
 msgstr "Не настроено"
 
+msgid "Not delivered"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
@@ -17332,6 +17341,9 @@ msgstr "Возвращенная партия"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "Возвращенные товары повторно входят в инвентарь с нулевой стоимостью"
+
+msgid "Returned on"
+msgstr ""
 
 msgid "Returned serial numbers"
 msgstr "Возвращенные серийные номера"
