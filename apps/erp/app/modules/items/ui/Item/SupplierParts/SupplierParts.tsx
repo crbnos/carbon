@@ -29,6 +29,22 @@ type Part = Pick<
   | "customFields"
 >;
 
+/** A supplier part's price is in its supplier's currency (the company's base
+ *  currency when the supplier has none), so each one formats with its own. */
+export function SupplierPrice({
+  value,
+  currency
+}: {
+  value: number | null;
+  currency: string | null | undefined;
+}) {
+  const formatter = useCurrencyFormatter({
+    rate: true,
+    currency: currency ?? undefined
+  });
+  return <>{formatter.format(value ?? 0)}</>;
+}
+
 type SupplierPartsProps = {
   supplierParts: Part[];
   compact?: boolean;
@@ -52,9 +68,12 @@ const SupplierParts = ({
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "parts") && !isReadOnly;
   const canDelete = permissions.can("delete", "parts") && !isReadOnly;
-  const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
+  const currencyBySupplier = useMemo(
+    () => new Map((suppliers ?? []).map((s) => [s.id, s.currencyCode])),
+    [suppliers]
+  );
 
   const [deleteTarget, setDeleteTarget] = useState<Part | null>(null);
 
@@ -82,11 +101,12 @@ const SupplierParts = ({
       {
         accessorKey: "unitPrice",
         header: t`Unit Price`,
-        cell: (item) => formatter.format(item.getValue<number>()),
-        meta: {
-          formatter: formatter.format,
-          renderTotal: true
-        }
+        cell: ({ row }) => (
+          <SupplierPrice
+            value={row.original.unitPrice}
+            currency={currencyBySupplier.get(row.original.supplierId)}
+          />
+        )
       },
       {
         accessorKey: "supplierUnitOfMeasureCode",
@@ -129,7 +149,7 @@ const SupplierParts = ({
     }
 
     return cols;
-  }, [customColumns, formatter, t, canDelete, deleteSupplierPath]);
+  }, [customColumns, currencyBySupplier, t, canDelete, deleteSupplierPath]);
 
   return (
     <>

@@ -60,8 +60,10 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
+import { SupplierPrice } from "./SupplierParts/SupplierParts";
 
 type PriceBreak = {
   quantity: number;
@@ -79,12 +81,13 @@ type PriceBreakRow = {
 type PurchaseHistoryItem = {
   id: string;
   purchaseQuantity: number | null;
-  unitPrice: number | null;
+  supplierUnitPrice: number | null;
   purchaseOrderId: string;
   purchaseOrder: {
     purchaseOrderId: string;
     supplierId: string;
     orderDate: string | null;
+    currencyCode: string | null;
   };
 };
 
@@ -110,7 +113,14 @@ const SupplierPartForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
+
+  // Prices are entered in the supplier's own currency, so the fields follow
+  // whichever supplier is picked. Nothing is converted when it changes.
+  const [suppliers] = useSuppliers();
+  const [supplierId, setSupplierId] = useState(initialValues.supplierId);
+  const currency =
+    suppliers?.find((s) => s.id === supplierId)?.currencyCode ?? baseCurrency;
+  const currencyDecimals = useCurrencyDecimals(currency);
 
   let { itemId } = useParams();
 
@@ -179,7 +189,11 @@ const SupplierPartForm = ({
 
             <VStack spacing={4}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-                <Supplier name="supplierId" label={t`Supplier`} />
+                <Supplier
+                  name="supplierId"
+                  label={t`Supplier`}
+                  onChange={(value) => setSupplierId(value?.value ?? "")}
+                />
                 <Input
                   name="supplierPartId"
                   label={t`Supplier Part ID`}
@@ -189,10 +203,7 @@ const SupplierPartForm = ({
                   name="unitPrice"
                   label={t`Unit Price`}
                   minValue={0}
-                  formatOptions={INPUT_FORMAT.rate(
-                    baseCurrency,
-                    currencyDecimals
-                  )}
+                  formatOptions={INPUT_FORMAT.rate(currency, currencyDecimals)}
                 />
                 <UnitOfMeasure
                   name="supplierUnitOfMeasureCode"
@@ -225,13 +236,10 @@ const SupplierPartForm = ({
               <PriceBreaks
                 priceBreaks={priceBreaks}
                 onChange={setPriceBreaks}
-                baseCurrency={baseCurrency}
+                currency={currency}
                 isDisabled={isDisabled}
               />
-              <PurchaseHistory
-                history={purchasingHistory}
-                baseCurrency={baseCurrency}
-              />
+              <PurchaseHistory history={purchasingHistory} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>
@@ -258,18 +266,8 @@ const SupplierPartForm = ({
   );
 };
 
-function PurchaseHistory({
-  history,
-  baseCurrency
-}: {
-  history: PurchaseHistoryItem[];
-  baseCurrency: string;
-}) {
+function PurchaseHistory({ history }: { history: PurchaseHistoryItem[] }) {
   const { t } = useLingui();
-  const priceFormatter = useCurrencyFormatter({
-    rate: true,
-    currency: baseCurrency
-  });
   if (history.length === 0) return null;
 
   return (
@@ -328,7 +326,10 @@ function PurchaseHistory({
                           <Tr>
                             <Td>{line.purchaseQuantity}</Td>
                             <Td>
-                              {priceFormatter.format(line.unitPrice ?? 0)}
+                              <SupplierPrice
+                                value={line.supplierUnitPrice}
+                                currency={line.purchaseOrder.currencyCode}
+                              />
                             </Td>
                           </Tr>
                         </Tbody>
@@ -354,18 +355,18 @@ function PurchaseHistory({
 function PriceBreaks({
   priceBreaks,
   onChange,
-  baseCurrency,
+  currency,
   isDisabled
 }: {
   priceBreaks: PriceBreakRow[];
   onChange: React.Dispatch<React.SetStateAction<PriceBreakRow[]>>;
-  baseCurrency: string;
+  currency: string;
   isDisabled: boolean;
 }) {
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const currencyDecimals = useCurrencyDecimals(currency);
   const { t } = useLingui();
   // unitPrice is a RATE, not a settlement amount — see numeric-precision.md
-  const formatter = useCurrencyFormatter({ rate: true });
+  const formatter = useCurrencyFormatter({ rate: true, currency });
 
   const removeRow = useCallback(
     (index: number) => {
@@ -395,10 +396,10 @@ function PriceBreaks({
     () => ({
       quantity: EditableNumber(noOpMutation),
       unitPrice: EditableNumber(noOpMutation, {
-        formatOptions: INPUT_FORMAT.rate(baseCurrency, currencyDecimals)
+        formatOptions: INPUT_FORMAT.rate(currency, currencyDecimals)
       })
     }),
-    [noOpMutation, baseCurrency, currencyDecimals]
+    [noOpMutation, currency, currencyDecimals]
   );
 
   const columns = useMemo<ColumnDef<PriceBreakRow>[]>(() => {

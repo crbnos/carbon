@@ -11,9 +11,10 @@ export type Supplier = Omit<ListItem, "readableId"> & {
   website?: string | null;
   supplierStatus?: string | null;
   readableId?: string | null;
+  currencyCode?: string | null;
 };
 
-const COLUMNS = "id, name, website, supplierStatus, readableId";
+const COLUMNS = "id, name, website, supplierStatus, readableId, currencyCode";
 
 export const suppliersList: LiveList<Supplier> = {
   name: "suppliers",

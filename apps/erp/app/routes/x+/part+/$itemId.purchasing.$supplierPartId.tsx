@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchasingHistory = await client
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseQuantity, unitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate)"
+      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
     )
     .eq("itemId", supplierPart.itemId)
     .eq("purchaseOrder.supplierId", supplierPart.supplierId)

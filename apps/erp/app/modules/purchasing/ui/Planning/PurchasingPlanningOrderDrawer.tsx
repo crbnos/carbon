@@ -41,11 +41,12 @@ import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
+import { useQuantityFormatter } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
+import { SupplierPrice } from "~/modules/items/ui/Item/SupplierParts/SupplierParts";
 import type { PlanningAction } from "~/modules/production";
 import {
   type PlanningActionHandlers,
@@ -68,6 +69,7 @@ import {
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
+import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import type {
   PlannedOrder,
@@ -160,8 +162,12 @@ export const PurchasingPlanningOrderDrawer = memo(
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
-    const formatter = useCurrencyFormatter();
     const formatQuantity = useQuantityFormatter();
+    const [suppliers] = useSuppliers();
+    const currencyBySupplier = useMemo(
+      () => new Map((suppliers ?? []).map((s) => [s.id, s.currencyCode])),
+      [suppliers]
+    );
     const unitOfMeasureOptions = useUnitOfMeasure();
 
     const [activeTab, setActiveTab] = useState("ordering");
@@ -661,7 +667,14 @@ export const PurchasingPlanningOrderDrawer = memo(
                               }
                             </Td>
                             <Td>{part.conversionFactor}</Td>
-                            <Td>{formatter.format(part.unitPrice ?? 0)}</Td>
+                            <Td>
+                              <SupplierPrice
+                                value={part.unitPrice}
+                                currency={currencyBySupplier.get(
+                                  part.supplierId
+                                )}
+                              />
+                            </Td>
                             <Td className="text-end">
                               <Button
                                 variant="secondary"
