@@ -385,21 +385,28 @@ own message.
 
 - **`RentalAgreementHeader`**: Deliver and Return buttons. After the first
   document they become the Shipments and Receipts dropdowns. They show only on
-  an `Active` agreement.
+  an `Active` agreement. Next to the agreement's status, an `Active` agreement
+  shows where its units are: To Deliver, Partially Delivered, On Rent,
+  Partially Returned or Returned (`rentalEquipmentStatus`; a Sold unit counts
+  as back).
 - **`useRentalLineActions`**: Deliver and Return open the per-unit shortcut
   routes. A `Pending` unit also offers Return and **Release unit**. The Deliver
   confirm dialog and `RentalAgreementReturnForm` go away. Release unit opens a
   date modal that posts to a new route `$id.$lineId.release.tsx`.
 - **`ShipmentLines`**: on a rental shipment, a sibling component
   `ShipmentRentalLineItem` shows the unit name, serial number, the shipped checkbox and a Meter field. It
-  shows no storage unit picker and no serial tracking form.
+  shows no storage unit picker and no serial tracking form. Both rental line
+  components draw the unit through the shared `RentalUnitRow` (thumbnail, name,
+  asset id and serial, Meter). The units are sorted by asset id. On a posted
+  document the Meter is text, and `fixed-asset-lines.update` refuses an edit
+  to a line whose document is not Draft.
 - **`ReceiptLines`**: on a rental receipt, a sibling component
   `ReceiptRentalLineItem` shows the received checkbox and these fields. The
   existing fixed-asset components require an order line id, so the rental
   lines load under their own key, `rentalLines`.
   1. Meter
   2. Notes
-  3. Take out of service, with its reason. The tick and the reason save
+  3. Take out of service (a switch), with its reason. The switch and the reason save
      together as one field, so the CHECK never sees a tick without a reason.
   4. Return To (Fleet / Inventory), only for a `Sale` line
 - **`ShipmentPostModal` / `ReceiptPostModal`**: show the date field as
@@ -410,7 +417,9 @@ own message.
 heading is a literal in `HeaderBlock.tsx`, so `PackingSlipData` gains a
 `title` field.
 - **`RentalAgreementSummary` / `RentalAgreementLineSummary`**: each unit links to
-  the shipment and receipt that moved it.
+  the shipment and receipt that moved it. The summary has no per-unit Deliver
+  or Return: the header starts a document for the agreement, and the unit's
+  page keeps the per-unit shortcuts.
 
 ## Acceptance Criteria
 
@@ -527,3 +536,7 @@ heading is a literal in `HeaderBlock.tsx`, so `PackingSlipData` gains a
 - 2026-10-08: Planning corrections. The void also refuses an `Accrual` row
   claimed by a Draft run. The Close check runs first. Rental lines get their
   own components. Q7 and Q8 resolved with Brad.
+- 2026-10-08: Browser-test polish. The header shows the units' equipment
+  status. The agreement summary drops its per-unit Deliver and Return. Rental
+  unit rows share `RentalUnitRow` and sort by asset id. A posted document's
+  unit lines are read-only, in the UI and in `fixed-asset-lines.update`.
