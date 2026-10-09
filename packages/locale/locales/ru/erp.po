@@ -204,6 +204,15 @@ msgstr "{0} строк для сопоставления"
 msgid "{0} months"
 msgstr "{0} месяцев"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -1621,6 +1630,10 @@ msgstr "Активность"
 
 msgid "Actual"
 msgstr "Фактическое"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr ""
 
 msgid "Actual Cost"
 msgstr "Фактическая себестоимость"
@@ -4739,6 +4752,11 @@ msgstr "Правила совместимости"
 msgid "Complete"
 msgstr "Завершить"
 
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Завершить все"
 
@@ -6974,6 +6992,9 @@ msgstr "Удалить счет от {0}"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Удалить ценовую шкалу для количества {0}? Это не может быть отменено."
 
+msgid "Delete this line?"
+msgstr ""
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "Удалить эту подсборку и все ее шаги? Это не может быть отменено."
 
@@ -7539,7 +7560,7 @@ msgstr "Срок (к сроку выполнения)"
 msgid "due {0}"
 msgstr "срок {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -8505,11 +8526,18 @@ msgstr "Эскалация"
 msgid "Est. Duration"
 msgstr "Прибл. Длительность"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimated"
 msgstr "Расчетный"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Приблизительно — нет резервирования мощности"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "Предполагаемая продолжительность"
@@ -10813,9 +10841,6 @@ msgstr "Кол-во в инвентаре"
 
 msgid "Inventory Quantities"
 msgstr "Количество в запасах"
-
-msgid "Inventory Tracking"
-msgstr "Отслеживание запасов"
 
 msgid "Inventory Unit of Measure"
 msgstr "Единица измерения запасов"
@@ -13730,6 +13755,9 @@ msgstr "Никакие возвратные строки не соответст
 msgid "No revenue to recognize for this period."
 msgstr "Нет выручки для признания в этом периоде."
 
+msgid "No risks"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Нет строк здесь."
 
@@ -13879,9 +13907,6 @@ msgstr "Несоответствия"
 
 msgid "Non-Inventory"
 msgstr "Нескладской"
-
-msgid "Non-Inventory Tracking"
-msgstr "Отслеживание нескладского"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Счёт прочих расходов, дебетуемый при продаже или списании актива данного класса по цене ниже его остаточной стоимости."
@@ -14699,6 +14724,9 @@ msgstr "Готовая продукция никогда не превышает
 
 msgid "Outside operation"
 msgstr "Отклонение косвенных затрат"
+
+msgid "Outside Processing"
+msgstr ""
 
 msgid "Outstanding"
 msgstr "Неоплаченные"
@@ -16139,6 +16167,9 @@ msgid "Qty"
 msgstr "Кол-во"
 
 msgid "Qty {jobQuantity}"
+msgstr ""
+
+msgid "Qty {quantity}"
 msgstr ""
 
 msgid "Qty On Hand"
@@ -18225,6 +18256,10 @@ msgstr "Области"
 msgid "Scrap"
 msgstr "Брак"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr ""
+
 msgid "Scrap / Cost of Quality"
 msgstr "Брак / Себестоимость качества"
 
@@ -19800,6 +19835,9 @@ msgstr "В Stripe еще нет покупателя для этого поку�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
+
+msgid "Structure"
+msgstr ""
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
@@ -21510,6 +21548,9 @@ msgstr "Эта резервная копия еще не была провере
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Это нельзя изменить позже — {integrationName} позволяет подключить только одну систему учета, поэтому выбор определяет, что Carbon может делать. Чтобы переключиться, вам нужно удалить и переподключить интеграцию."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."

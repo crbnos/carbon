@@ -204,6 +204,15 @@ msgstr "{0} righe da mappare"
 msgid "{0} months"
 msgstr "{0} mesi"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -1621,6 +1630,10 @@ msgstr "Attività"
 
 msgid "Actual"
 msgstr "Effettivo"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr ""
 
 msgid "Actual Cost"
 msgstr "Costo Effettivo"
@@ -4739,6 +4752,11 @@ msgstr "Regole di Compatibilità"
 msgid "Complete"
 msgstr "Completa"
 
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Completa Tutto"
 
@@ -6974,6 +6992,9 @@ msgstr "Elimina la fattura del {0}"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Eliminare lo scaglione di prezzo per la quantità {0}? Questa azione non può essere annullata."
 
+msgid "Delete this line?"
+msgstr ""
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "Eliminare questo sottoassembly e tutti i suoi passi? Questa azione non può essere annullata."
 
@@ -7539,7 +7560,7 @@ msgstr "Scadenza (per data di scadenza)"
 msgid "due {0}"
 msgstr "dovuto {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Scadenza {0}"
 
@@ -8505,11 +8526,18 @@ msgstr "Escalation"
 msgid "Est. Duration"
 msgstr "Durata stimata"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimated"
 msgstr "Stimato"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Stimato — nessuna prenotazione di capacità"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "Durata Stimata"
@@ -10813,9 +10841,6 @@ msgstr "Quantità Inventario"
 
 msgid "Inventory Quantities"
 msgstr "Quantità magazzino"
-
-msgid "Inventory Tracking"
-msgstr "Tracciamento Inventario"
 
 msgid "Inventory Unit of Measure"
 msgstr "Unità di Misura Inventario"
@@ -13730,6 +13755,9 @@ msgstr "Nessuna riga restituibile corrisponde alla tua ricerca"
 msgid "No revenue to recognize for this period."
 msgstr "Nessun ricavo da riconoscere per questo periodo."
 
+msgid "No risks"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Nessuna riga qui."
 
@@ -13879,9 +13907,6 @@ msgstr "Non conformità"
 
 msgid "Non-Inventory"
 msgstr "Non a magazzino"
-
-msgid "Non-Inventory Tracking"
-msgstr "Tracciamento non a magazzino"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Conto spese non operative addebitato quando un cespite di questa classe viene venduto o demolito al di sotto del suo valore contabile netto."
@@ -14699,6 +14724,9 @@ msgstr "L'output non supera mai le sue materie prime. Ricade alla durata fissa q
 
 msgid "Outside operation"
 msgstr "Varianza Indiretta"
+
+msgid "Outside Processing"
+msgstr ""
 
 msgid "Outstanding"
 msgstr "In sospeso"
@@ -16139,6 +16167,9 @@ msgid "Qty"
 msgstr "Qtà"
 
 msgid "Qty {jobQuantity}"
+msgstr ""
+
+msgid "Qty {quantity}"
 msgstr ""
 
 msgid "Qty On Hand"
@@ -18225,6 +18256,10 @@ msgstr "Ambiti"
 msgid "Scrap"
 msgstr "Scarto"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr ""
+
 msgid "Scrap / Cost of Quality"
 msgstr "Scarto / Costo della Qualità"
 
@@ -19800,6 +19835,9 @@ msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La conferma n
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno sul tuo account collegato."
+
+msgid "Structure"
+msgstr ""
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stile dell'output kanban da mostrare nella tabella Kanban"
@@ -21510,6 +21548,9 @@ msgstr "Questo backup non è stato ancora verificato. Le eventuali differenze ve
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Non può essere modificato in seguito — {integrationName} consente un solo sistema contabile connesso, quindi la scelta determina cosa Carbon è autorizzato a fare. Per cambiare, dovresti disinstallare e riconnettere."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "A questa istanza di Carbon mancano le credenziali OAuth di Onshape. Chiedi a un amministratore di configurarle."

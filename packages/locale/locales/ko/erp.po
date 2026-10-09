@@ -204,6 +204,15 @@ msgstr "매핑할 라인 {0}개"
 msgid "{0} months"
 msgstr "{0}개월"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -1621,6 +1630,10 @@ msgstr "활동"
 
 msgid "Actual"
 msgstr "실제"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr ""
 
 msgid "Actual Cost"
 msgstr "실제원가"
@@ -4739,6 +4752,11 @@ msgstr "호환성 규칙"
 msgid "Complete"
 msgstr "완료"
 
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "모두 완료"
 
@@ -6974,6 +6992,9 @@ msgstr "{0} 송장 삭제"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "수량 {0}에 대한 가격 구간을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Delete this line?"
+msgstr ""
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "이 하위 조립품과 그 모든 단계를 삭제하시겠습니까? 실행 취소할 수 없습니다."
 
@@ -7539,7 +7560,7 @@ msgstr "마감 (마감일 기준)"
 msgid "due {0}"
 msgstr "{0} 예정"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "기한 {0}"
 
@@ -8505,11 +8526,18 @@ msgstr "에스컬레이션"
 msgid "Est. Duration"
 msgstr "예상 소요시간"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimated"
 msgstr "예상"
 
 msgid "Estimated — no capacity reservation"
 msgstr "예상 — 용량 예약 없음"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "예상 소요시간"
@@ -10813,9 +10841,6 @@ msgstr "재고 수량"
 
 msgid "Inventory Quantities"
 msgstr "재고 수량"
-
-msgid "Inventory Tracking"
-msgstr "재고 추적"
 
 msgid "Inventory Unit of Measure"
 msgstr "재고 측정 단위"
@@ -13730,6 +13755,9 @@ msgstr "검색과 일치하는 반품 가능한 라인이 없습니다."
 msgid "No revenue to recognize for this period."
 msgstr "이 기간에 인식할 매출이 없습니다."
 
+msgid "No risks"
+msgstr ""
+
 msgid "No rows here."
 msgstr "행이 없습니다."
 
@@ -13879,9 +13907,6 @@ msgstr "부적합"
 
 msgid "Non-Inventory"
 msgstr "비재고"
-
-msgid "Non-Inventory Tracking"
-msgstr "비재고 추적"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "이 자산군에 속한 자산이 순장부가액보다 낮은 가격으로 판매되거나 폐기될 때 차감되는 영업외비용 계정입니다."
@@ -14699,6 +14724,9 @@ msgstr "산출물은 절대 원자재를 초과할 수 없습니다. 입력물�
 
 msgid "Outside operation"
 msgstr "외주 공정작업"
+
+msgid "Outside Processing"
+msgstr ""
 
 msgid "Outstanding"
 msgstr "미해결"
@@ -16139,6 +16167,9 @@ msgid "Qty"
 msgstr "수량"
 
 msgid "Qty {jobQuantity}"
+msgstr ""
+
+msgid "Qty {quantity}"
 msgstr ""
 
 msgid "Qty On Hand"
@@ -18225,6 +18256,10 @@ msgstr "범위"
 msgid "Scrap"
 msgstr "스크랩"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr ""
+
 msgid "Scrap / Cost of Quality"
 msgstr "스크랩 / 품질 원가"
 
@@ -19800,6 +19835,9 @@ msgstr "Stripe에는 아직 이 Carbon 고객을 위한 고객이 없습니다. 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
+
+msgid "Structure"
+msgstr ""
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"
@@ -21510,6 +21548,9 @@ msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 �
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "이후에는 변경할 수 없습니다 — {integrationName}은(는) 연결된 회계 시스템을 하나만 허용하므로, 선택에 따라 Carbon이 수행할 수 있는 작업이 결정됩니다. 전환하려면 제거한 후 다시 연결해야 합니다."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."

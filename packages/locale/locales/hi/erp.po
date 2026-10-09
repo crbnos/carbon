@@ -204,6 +204,15 @@ msgstr "{0} लाइनें मैप करने के लिए"
 msgid "{0} months"
 msgstr "{0} महीने"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -1621,6 +1630,10 @@ msgstr "गतिविधि"
 
 msgid "Actual"
 msgstr "वास्तविक"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr ""
 
 msgid "Actual Cost"
 msgstr "वास्तविक लागत"
@@ -4739,6 +4752,11 @@ msgstr "अनुकूलता नियम"
 msgid "Complete"
 msgstr "पूर्ण करें"
 
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
@@ -6974,6 +6992,9 @@ msgstr "चालान {0} को हटाएँ"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य स्तर हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
 
+msgid "Delete this line?"
+msgstr ""
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "इस उप-विधानसभा और इसके सभी चरणों को हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
 
@@ -7539,7 +7560,7 @@ msgstr "देय (नियत तिथि के अनुसार)।"
 msgid "due {0}"
 msgstr "देय {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -8505,11 +8526,18 @@ msgstr "संवर्धन"
 msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimated"
 msgstr "अनुमानित"
 
 msgid "Estimated — no capacity reservation"
 msgstr "अनुमानित — कोई क्षमता आरक्षण नहीं"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "अनुमानित अवधि"
@@ -10813,9 +10841,6 @@ msgstr "इन्वेंटरी मात्रा"
 
 msgid "Inventory Quantities"
 msgstr "इन्वेंटरी मात्राएं"
-
-msgid "Inventory Tracking"
-msgstr "इन्वेंटरी ट्रैकिंग"
 
 msgid "Inventory Unit of Measure"
 msgstr "इन्वेंटरी माप की इकाई"
@@ -13730,6 +13755,9 @@ msgstr "कोई रिटर्न योग्य पंक्तियाँ
 msgid "No revenue to recognize for this period."
 msgstr "इस अवधि के लिए मान्य करने के लिए कोई राजस्व नहीं है।"
 
+msgid "No risks"
+msgstr ""
+
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
 
@@ -13879,9 +13907,6 @@ msgstr "गैर-अनुरूपताएँ"
 
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"
-
-msgid "Non-Inventory Tracking"
-msgstr "गैर-इन्वेंटरी ट्रैकिंग"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "गैर-संचालन व्यय खाता डेबिट किया जाता है जब इस वर्ग की एक संपत्ति इसके शुद्ध बही मूल्य से कम पर बेची या नष्ट की जाती है।"
@@ -14699,6 +14724,9 @@ msgstr "आउटपुट कभी भी इसके कच्चे मा�
 
 msgid "Outside operation"
 msgstr "ओवरहेड विचरण"
+
+msgid "Outside Processing"
+msgstr ""
 
 msgid "Outstanding"
 msgstr "बकाया"
@@ -16139,6 +16167,9 @@ msgid "Qty"
 msgstr "मात्रा"
 
 msgid "Qty {jobQuantity}"
+msgstr ""
+
+msgid "Qty {quantity}"
 msgstr ""
 
 msgid "Qty On Hand"
@@ -18225,6 +18256,10 @@ msgstr "स्कोप"
 msgid "Scrap"
 msgstr "स्क्रैप"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr ""
+
 msgid "Scrap / Cost of Quality"
 msgstr "स्क्रैप / गुणवत्ता की लागत"
 
@@ -19800,6 +19835,9 @@ msgstr "Stripe के पास इस Carbon ग्राहक के लि�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
+
+msgid "Structure"
+msgstr ""
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "कानबान तालिका में दिखाने के लिए कानबान आउटपुट की शैली"
@@ -21510,6 +21548,9 @@ msgstr "इस बैकअप की अभी जांच नहीं की
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "यह बाद में नहीं बदला जा सकता — {integrationName} केवल एक जुड़े हुए लेखांकन प्रणाली की अनुमति देता है, इसलिए यह विकल्प तय करता है कि Carbon क्या करने के लिए अनुमत है। स्विच करने के लिए, आप अनइंस्टॉल करेंगे और फिर से कनेक्ट करेंगे।"
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "इस Carbon इंस्टेंस में Onshape OAuth क्रेडेंशियल नहीं हैं। किसी व्यवस्थापक से उन्हें सेट करने के लिए कहें।"

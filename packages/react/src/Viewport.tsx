@@ -35,14 +35,24 @@ const subscribe = (onChange: () => void) => {
   };
 };
 
+const noSubscription = () => () => undefined;
+
 /**
- * Seeds `useViewport` with the server's hint so the first render matches the
- * device, and records every size change in the hint cookie for the next request.
+ * Reads the viewport once for the whole tree, so every consumer sees the same
+ * size in a render: a menu root and its trigger read separately could disagree
+ * mid-resize and render a phone root around a desktop trigger. Seeds the first
+ * render with the server's hint and records each change in the hint cookie.
  */
 export const ViewportProvider = ({
   initialViewport,
   children
 }: ViewportProviderProps) => {
+  const viewport = useSyncExternalStore(
+    subscribe,
+    readViewport,
+    () => initialViewport
+  );
+
   useEffect(() => {
     const write = () => {
       document.cookie = viewportHintCookie(readViewport());
@@ -51,9 +61,7 @@ export const ViewportProvider = ({
     return subscribe(write);
   }, []);
 
-  return (
-    <Context.Provider value={initialViewport}>{children}</Context.Provider>
-  );
+  return <Context.Provider value={viewport}>{children}</Context.Provider>;
 };
 
 /**
@@ -67,12 +75,14 @@ export function useViewport(): {
   isTablet: boolean;
   isDesktop: boolean;
 } {
-  const initialViewport = useContext(Context);
-  const viewport = useSyncExternalStore(
-    subscribe,
-    readViewport,
-    () => initialViewport ?? "desktop"
+  const provided = useContext(Context);
+  // Without a provider (tests, embeds), read the media queries directly.
+  const own = useSyncExternalStore(
+    provided ? noSubscription : subscribe,
+    provided ? () => provided : readViewport,
+    () => provided ?? "desktop"
   );
+  const viewport = provided ?? own;
   return useMemo(
     () => ({
       isPhone: viewport === "phone",

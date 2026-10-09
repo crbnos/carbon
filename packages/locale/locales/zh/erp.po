@@ -204,6 +204,15 @@ msgstr "{0} 行待映射"
 msgid "{0} months"
 msgstr "{0} 个月"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -1621,6 +1630,10 @@ msgstr "活动"
 
 msgid "Actual"
 msgstr "实际"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr ""
 
 msgid "Actual Cost"
 msgstr "实际成本"
@@ -4739,6 +4752,11 @@ msgstr "兼容性规则"
 msgid "Complete"
 msgstr "完成"
 
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "全部完成"
 
@@ -6974,6 +6992,9 @@ msgstr "删除 {0} 发票"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "删除数量{0}的价格阶梯？此操作无法撤销。"
 
+msgid "Delete this line?"
+msgstr ""
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "删除此子装配及其所有步骤？这无法撤销。"
 
@@ -7539,7 +7560,7 @@ msgstr "截止期限（按截止日期）"
 msgid "due {0}"
 msgstr "截止 {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "截止日期 {0}"
 
@@ -8505,11 +8526,18 @@ msgstr "升级"
 msgid "Est. Duration"
 msgstr "预计时长"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimated"
 msgstr "估计的"
 
 msgid "Estimated — no capacity reservation"
 msgstr "估计 — 无产能预留"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "预计时长"
@@ -10813,9 +10841,6 @@ msgstr "库存数量"
 
 msgid "Inventory Quantities"
 msgstr "库存数量"
-
-msgid "Inventory Tracking"
-msgstr "库存跟踪"
 
 msgid "Inventory Unit of Measure"
 msgstr "库存计量单位"
@@ -13730,6 +13755,9 @@ msgstr "没有可退货的行与您的搜索匹配"
 msgid "No revenue to recognize for this period."
 msgstr "此期间无收入要确认。"
 
+msgid "No risks"
+msgstr ""
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
@@ -13879,9 +13907,6 @@ msgstr "不合格项"
 
 msgid "Non-Inventory"
 msgstr "非库存"
-
-msgid "Non-Inventory Tracking"
-msgstr "非库存追踪"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "本类资产出售或报废价值低于账面净值时计入的非营业费用账户"
@@ -14699,6 +14724,9 @@ msgstr "产出的有效期永远不会超过其原材料的有效期。当没有
 
 msgid "Outside operation"
 msgstr "间接费用差异"
+
+msgid "Outside Processing"
+msgstr ""
 
 msgid "Outstanding"
 msgstr "未清结"
@@ -16139,6 +16167,9 @@ msgid "Qty"
 msgstr "数量"
 
 msgid "Qty {jobQuantity}"
+msgstr ""
+
+msgid "Qty {quantity}"
 msgstr ""
 
 msgid "Qty On Hand"
@@ -18225,6 +18256,10 @@ msgstr "范围"
 msgid "Scrap"
 msgstr "报废"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr ""
+
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
 
@@ -19800,6 +19835,9 @@ msgstr "Stripe还没有为此Carbon客户创建对应的客户。确认将在您
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
+
+msgid "Structure"
+msgstr ""
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -21510,6 +21548,9 @@ msgstr "此备份尚未检查。还原运行时将发现任何差异。"
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "这无法在之后更改 — {integrationName} 仅允许一个连接的会计系统，因此您的选择决定了 Carbon 被允许执行的操作。要切换，您需要卸载并重新连接。"
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"

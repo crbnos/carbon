@@ -204,6 +204,15 @@ msgstr "{0}件のラインをマップします"
 msgid "{0} months"
 msgstr "{0} ヶ月"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -1621,6 +1630,10 @@ msgstr "アクティビティ"
 
 msgid "Actual"
 msgstr "実際"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr ""
 
 msgid "Actual Cost"
 msgstr "実際原価"
@@ -4739,6 +4752,11 @@ msgstr "互換性ルール"
 msgid "Complete"
 msgstr "完了"
 
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "すべて完了"
 
@@ -6974,6 +6992,9 @@ msgstr "{0}の請求書を削除"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "数量{0}の価格スケールを削除しますか？この操作は取り消せません。"
 
+msgid "Delete this line?"
+msgstr ""
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "このサブアセンブリとそのすべてのステップを削除しますか？この操作は取り消せません。"
 
@@ -7539,7 +7560,7 @@ msgstr "期限内（期日まで）"
 msgid "due {0}"
 msgstr "納期 {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "期限 {0}"
 
@@ -8505,11 +8526,18 @@ msgstr "エスカレーション"
 msgid "Est. Duration"
 msgstr "推定期間"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimated"
 msgstr "推定"
 
 msgid "Estimated — no capacity reservation"
 msgstr "推定 — 容量予約なし"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "推定期間"
@@ -10813,9 +10841,6 @@ msgstr "在庫数量"
 
 msgid "Inventory Quantities"
 msgstr "在庫数量"
-
-msgid "Inventory Tracking"
-msgstr "在庫追跡"
 
 msgid "Inventory Unit of Measure"
 msgstr "在庫単位"
@@ -13730,6 +13755,9 @@ msgstr "検索条件に一致する返品対象の明細がありません。"
 msgid "No revenue to recognize for this period."
 msgstr "この期間に認識する売上高はありません。"
 
+msgid "No risks"
+msgstr ""
+
 msgid "No rows here."
 msgstr "ここに行はありません。"
 
@@ -13879,9 +13907,6 @@ msgstr "不適合"
 
 msgid "Non-Inventory"
 msgstr "非在庫"
-
-msgid "Non-Inventory Tracking"
-msgstr "非在庫追跡"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "このクラスの資産が未償却残高以下で売却または廃棄されたとき、営業外費用勘定が借記されます。"
@@ -14699,6 +14724,9 @@ msgstr "製品は原材料より長く保持されることはありません。
 
 msgid "Outside operation"
 msgstr "間接費差異"
+
+msgid "Outside Processing"
+msgstr ""
 
 msgid "Outstanding"
 msgstr "未払い"
@@ -16139,6 +16167,9 @@ msgid "Qty"
 msgstr "数量"
 
 msgid "Qty {jobQuantity}"
+msgstr ""
+
+msgid "Qty {quantity}"
 msgstr ""
 
 msgid "Qty On Hand"
@@ -18225,6 +18256,10 @@ msgstr "スコープ"
 msgid "Scrap"
 msgstr "スクラップ"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr ""
+
 msgid "Scrap / Cost of Quality"
 msgstr "スクラップ/品質原価"
 
@@ -19800,6 +19835,9 @@ msgstr "StripeにはこのCarbon得意先用のカスタマーがまだありま
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
+
+msgid "Structure"
+msgstr ""
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "かんばんテーブルに表示するかんばん出力のスタイル"
@@ -21510,6 +21548,9 @@ msgstr "このバックアップはまだチェックされていません。違
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "これは後で変更することはできません — {integrationName}は接続できる会計システムが1つだけに限定されているため、この選択はCarbonが実行できることを決定します。切り替えるには、アンインストールして再度接続する必要があります。"
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
