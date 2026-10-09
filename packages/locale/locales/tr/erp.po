@@ -4357,6 +4357,18 @@ msgstr "Durum değiştir"
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Stok kartı türünü değiştir (örn. Parça, Malzeme, Takım, vb.)"
 
+msgid "Change the labels (the open or selected element)"
+msgstr ""
+
+msgid "Change the owner (the open or selected element)"
+msgstr ""
+
+msgid "Change the priority (the open or selected element)"
+msgstr ""
+
+msgid "Change the state (the open or selected element)"
+msgstr ""
+
 msgid "Change type"
 msgstr "Türü değiştir"
 
@@ -11221,6 +11233,9 @@ msgstr ""
 msgid "Issue Material"
 msgstr ""
 
+msgid "Issue material (the open element)"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "Sorun bulunamadı"
 
@@ -12003,6 +12018,9 @@ msgid "Log time"
 msgstr ""
 
 msgid "Log Time"
+msgstr ""
+
+msgid "Log time (the open element)"
 msgstr ""
 
 msgid "Login or create a new account"
@@ -13102,6 +13120,9 @@ msgstr "Yeni Departman"
 
 msgid "New Dimension"
 msgstr "Yeni Boyut"
+
+msgid "New element"
+msgstr ""
 
 msgid "New element name"
 msgstr ""
@@ -16111,6 +16132,9 @@ msgstr "İlerleme"
 
 msgid "Project"
 msgstr "Proje"
+
+msgid "Project elements"
+msgstr ""
 
 msgid "Project Expense"
 msgstr ""

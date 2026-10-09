@@ -21,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   Switch,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -37,6 +38,7 @@ import { SearchFilter } from "~/components";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
+import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import type { ProjectElementType } from "../../projects.models";
 import { projectElementTypes } from "../../projects.models";
 import type {
@@ -68,7 +70,8 @@ type ElementsHeaderProps = {
   filters: ColumnFilter[];
   display: ElementDisplay;
   onDisplayChange: (property: ElementDisplayProperty, shown: boolean) => void;
-  onNew: (type: ProjectElementType) => void;
+  /** Focuses the quick-add input, with a type or the current one. */
+  onNew: (type?: ProjectElementType) => void;
   canCreate: boolean;
   /** The Table layout's grouping; the Display popover offers it when set. */
   grouping?: ElementGrouping;
@@ -89,6 +92,18 @@ export function ElementsHeader({
 }: ElementsHeaderProps) {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
+  useShortcutKeyMap(
+    [
+      {
+        shortcut: PROJECT_SHORTCUTS.create,
+        action: (event) => {
+          event.preventDefault();
+          onNew();
+        }
+      }
+    ],
+    { disabled: !canCreate }
+  );
   const typeLabels = useElementTypeLabels();
   const displayLabels = useElementDisplayLabels();
   const groupingLabels = useElementGroupingLabels();

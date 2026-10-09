@@ -4357,6 +4357,18 @@ msgstr "Change status"
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Change the item type (e.g. Part, Material, Tool, etc.)"
 
+msgid "Change the labels (the open or selected element)"
+msgstr "Change the labels (the open or selected element)"
+
+msgid "Change the owner (the open or selected element)"
+msgstr "Change the owner (the open or selected element)"
+
+msgid "Change the priority (the open or selected element)"
+msgstr "Change the priority (the open or selected element)"
+
+msgid "Change the state (the open or selected element)"
+msgstr "Change the state (the open or selected element)"
+
 msgid "Change type"
 msgstr "Change type"
 
@@ -11221,6 +11233,9 @@ msgstr "Issue material"
 msgid "Issue Material"
 msgstr "Issue Material"
 
+msgid "Issue material (the open element)"
+msgstr "Issue material (the open element)"
+
 msgid "Issue not found"
 msgstr "Issue not found"
 
@@ -12004,6 +12019,9 @@ msgstr "Log time"
 
 msgid "Log Time"
 msgstr "Log Time"
+
+msgid "Log time (the open element)"
+msgstr "Log time (the open element)"
 
 msgid "Login or create a new account"
 msgstr "Login or create a new account"
@@ -13102,6 +13120,9 @@ msgstr "New Department"
 
 msgid "New Dimension"
 msgstr "New Dimension"
+
+msgid "New element"
+msgstr "New element"
 
 msgid "New element name"
 msgstr "New element name"
@@ -16111,6 +16132,9 @@ msgstr "Progress"
 
 msgid "Project"
 msgstr "Project"
+
+msgid "Project elements"
+msgstr "Project elements"
 
 msgid "Project Expense"
 msgstr "Project Expense"

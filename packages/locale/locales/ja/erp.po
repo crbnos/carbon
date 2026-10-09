@@ -4357,6 +4357,18 @@ msgstr "ステータスを変更"
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "品目タイプを変更します（例：部品、材料、工具など）"
 
+msgid "Change the labels (the open or selected element)"
+msgstr ""
+
+msgid "Change the owner (the open or selected element)"
+msgstr ""
+
+msgid "Change the priority (the open or selected element)"
+msgstr ""
+
+msgid "Change the state (the open or selected element)"
+msgstr ""
+
 msgid "Change type"
 msgstr "種類を変更"
 
@@ -11221,6 +11233,9 @@ msgstr ""
 msgid "Issue Material"
 msgstr ""
 
+msgid "Issue material (the open element)"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "問題が見つかりません"
 
@@ -12003,6 +12018,9 @@ msgid "Log time"
 msgstr ""
 
 msgid "Log Time"
+msgstr ""
+
+msgid "Log time (the open element)"
 msgstr ""
 
 msgid "Login or create a new account"
@@ -13102,6 +13120,9 @@ msgstr "新しい部門"
 
 msgid "New Dimension"
 msgstr "新しいディメンション"
+
+msgid "New element"
+msgstr ""
 
 msgid "New element name"
 msgstr ""
@@ -16111,6 +16132,9 @@ msgstr "進捗"
 
 msgid "Project"
 msgstr "プロジェクト"
+
+msgid "Project elements"
+msgstr ""
 
 msgid "Project Expense"
 msgstr ""

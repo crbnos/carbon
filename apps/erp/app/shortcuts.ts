@@ -55,6 +55,21 @@ export const PROJECT_TAB_SHORTCUTS = {
   details: DETAIL_TAB_SHORTCUTS.details
 } as const satisfies Record<string, ShortcutInput>;
 
+/**
+ * Project Elements page and element page. Single letters, so they are bound
+ * only while one of those pages is mounted and never while typing in a
+ * field (the keyboard shortcuts spec rules out global single letters).
+ */
+export const PROJECT_SHORTCUTS = {
+  create: "c",
+  state: "s",
+  owner: "a",
+  priority: "p",
+  labels: "l",
+  logTime: "t",
+  issueMaterial: "i"
+} as const satisfies Record<string, ShortcutInput>;
+
 /** Document-line explorer actions (Quote, SO, PO, invoices, procedures…). */
 export const EXPLORER_SHORTCUTS = {
   addLine: "mod+shift+l",

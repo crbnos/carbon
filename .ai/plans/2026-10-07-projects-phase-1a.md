@@ -79,7 +79,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 40: Build the MES timesheet
 - [x] Task 41: Add charge numbers to the job, PO line and purchase invoice line forms
 - [x] Task 42: Add the account defaults and project settings UI
-- [ ] Task 43: Add keyboard shortcuts for the Elements page and element page
+- [x] Task 43: Add keyboard shortcuts for the Elements page and element page
 - [ ] Task 44: Register the MCP namespace and regenerate tools
 - [ ] Task 45: Add projects to the demo datasets
 - [ ] Task 46: Write the module AGENTS.md, the rule file and the docs page
@@ -2557,3 +2557,8 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 41: the PO line form shows **Charge Number** on the item tab (not for outside processing, whose job decides the charge, Task 21) and next to Cost Center on the G/L Account tab, not on the Fixed Asset tab. The purchase invoice line form shows it on the item tab and next to Cost Center. `getChargeNumbers` rows gain `costTreatment` (plan step 4).
 - Task 42: both account defaults are optional in the validators (`z.string().optional()`, as `scrapAccount` is), because the columns are nullable and a company with no project accounts must still save its defaults. **Project WIP** sits after Work in Progress in the Inventory group, **Project Expense** after Maintenance Expense in Operating Expenses. Neither has a glossary `termId` yet (no glossary entry exists).
 - Task 42: the settings page is `x+/settings+/projects.tsx` (`path.to.projectsSettings`, new), two cards with a `Switch` each, as `settings+/items.tsx`. Each switch posts `intent` (`timesheetApproval`, `requireElement`) and `enabled`; the action validates the one field with `projectSettingsValidator.pick(...)` and calls `updateProjectSettings(client, companyId, values)` (`settings.service.ts`, `@mcp update`, a partial update). **Projects** is in the settings Modules group after Production.
+- Task 43: the keys use `useShortcutKeyMap`, not `useShortcutKeys` (the precedent the plan names). It binds several keys in one call and also skips an open dialog and menu or listbox typeahead, so `s` typed in an open state menu or `t` with the Log time modal open does nothing. Neither hook fires while focus is in a field.
+- Task 43: a pill opens through a small context in `ElementProperties.tsx`: `usePillShortcutRequest` holds `{ elementId, field }` for one commit and `PillShortcutProvider` passes it down; `StatePill`, `OwnerPill`, `PriorityPill` and `LabelsPill` open when the request names them. State and Priority became controlled `DropdownMenu`s for it. A hidden copy of a pill (the List row's narrow and wide state pills) has no box and stays closed. `ElementView` wraps its sidebar in a provider, and `ElementList` its rows.
+- Task 43: on the List layout, `s`/`a`/`p`/`l` act on the one checked row, and only while no element is open (the open element's page answers then). A pill the Display settings hide cannot open. `t` and `i` work on the element page (peek and full page) only: Log time and Issue material need the labor categories and the element page's data, which the list does not load. `c` (in `ElementsHeader`) focuses the quick-add input on every layout.
+- Task 43: `g` then a letter still goes to a module: the go-to listener handles the second key and the page then unmounts, so a pill that opened for the same key closes with it.
+- Task 43: `ShortcutHelp` lists the seven keys under **Project elements**.

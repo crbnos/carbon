@@ -22,7 +22,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -41,6 +42,7 @@ import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type { CostTotals } from "../../projects.models";
 import { rollUpCostSummary } from "../../projects.models";
@@ -51,7 +53,12 @@ import type {
   ProjectMilestone,
   ProjectState
 } from "../../types";
-import { useElementField } from "../Elements/ElementProperties";
+import type { PillShortcutField } from "../Elements/ElementProperties";
+import {
+  PillShortcutProvider,
+  useElementField,
+  usePillShortcutRequest
+} from "../Elements/ElementProperties";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import { ElementChildren } from "./ElementChildren";
 import { ElementComments } from "./ElementComments";
@@ -116,6 +123,36 @@ export function ElementView({
     canCharge &&
     permissions.can("update", "inventory") &&
     permissions.can("update", "projects");
+  // s / a / p / l open the sidebar's pills; t and i open Log time and Issue
+  // material. Never while typing or with a dialog open (useShortcutKeyMap).
+  const [pillRequest, setPillRequest] = usePillShortcutRequest();
+  const openPill = (field: PillShortcutField) => (event: KeyboardEvent) => {
+    event.preventDefault();
+    setPillRequest({ elementId: element.id, field });
+  };
+  useShortcutKeyMap([
+    { shortcut: PROJECT_SHORTCUTS.state, action: openPill("state") },
+    { shortcut: PROJECT_SHORTCUTS.owner, action: openPill("owner") },
+    { shortcut: PROJECT_SHORTCUTS.priority, action: openPill("priority") },
+    { shortcut: PROJECT_SHORTCUTS.labels, action: openPill("labels") },
+    {
+      shortcut: PROJECT_SHORTCUTS.logTime,
+      action: (event) => {
+        if (!canLogTime) return;
+        event.preventDefault();
+        setLoggingTime(true);
+      }
+    },
+    {
+      shortcut: PROJECT_SHORTCUTS.issueMaterial,
+      action: (event) => {
+        if (!canIssue) return;
+        event.preventDefault();
+        setIssuing(true);
+      }
+    }
+  ]);
+
   const chargeActions = (
     <TimeAndMaterialsActions
       canLogTime={canLogTime}
@@ -282,15 +319,17 @@ export function ElementView({
             />
           </Section>
         </div>
-        <ElementSidebar
-          projectId={projectId}
-          element={element}
-          states={states}
-          labels={labels}
-          milestones={milestones}
-          isDisabled={!canUpdate}
-          className="shrink-0 border-t border-border px-4 py-5 @min-[56rem]:w-80 @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
-        />
+        <PillShortcutProvider value={pillRequest}>
+          <ElementSidebar
+            projectId={projectId}
+            element={element}
+            states={states}
+            labels={labels}
+            milestones={milestones}
+            isDisabled={!canUpdate}
+            className="shrink-0 border-t border-border px-4 py-5 @min-[56rem]:w-80 @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
+          />
+        </PillShortcutProvider>
       </div>
 
       {loggingTime && (

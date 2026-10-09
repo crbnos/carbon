@@ -28,7 +28,8 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  toast
+  toast,
+  useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
@@ -49,6 +50,7 @@ import { Link, useFetcher, useParams } from "react-router";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type {
   ProjectElementPriority,
@@ -58,12 +60,14 @@ import { buildElementTree, projectElementTypes } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import { StateIcon } from "../Project/StateIcon";
-import type { ElementDisplay } from "./ElementProperties";
+import type { ElementDisplay, PillShortcutField } from "./ElementProperties";
 import {
   ElementPriorityIcon,
   ElementProperties,
+  PillShortcutProvider,
   StatePill,
   sortStates,
+  usePillShortcutRequest,
   usePriorityLabels
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
@@ -125,6 +129,24 @@ export function ElementList({
   const selection = selected.filter((id) => byId.has(id));
   const parent = selection.length === 1 ? byId.get(selection[0]) : undefined;
 
+  // With one row selected and no element open (the open element's page
+  // answers then), s / a / p / l open that row's pill.
+  const [pillRequest, setPillRequest] = usePillShortcutRequest();
+  const openPill = (field: PillShortcutField) => (event: KeyboardEvent) => {
+    if (!parent) return;
+    event.preventDefault();
+    setPillRequest({ elementId: parent.id, field });
+  };
+  useShortcutKeyMap(
+    [
+      { shortcut: PROJECT_SHORTCUTS.state, action: openPill("state") },
+      { shortcut: PROJECT_SHORTCUTS.owner, action: openPill("owner") },
+      { shortcut: PROJECT_SHORTCUTS.priority, action: openPill("priority") },
+      { shortcut: PROJECT_SHORTCUTS.labels, action: openPill("labels") }
+    ],
+    { disabled: !parent || !!openElementId }
+  );
+
   const { nodes, getTreeProps, getNodeProps, toggleExpandNode, virtualizer } =
     useTree<ProjectElementListItem, undefined>({
       tree,
@@ -146,166 +168,168 @@ export function ElementList({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {selection.length > 0 && (
-        <SelectionBar
-          projectId={projectId}
-          ids={selection}
-          states={states}
-          canUpdate={canUpdate}
-          onClear={() => setSelected([])}
-        />
-      )}
-      {tree.length === 0 ? (
-        <div className="flex-1">
-          <Empty>
-            {canCreate && (
-              <Button leftIcon={<LuPlus />} onClick={onCreateFirst}>
-                <Trans>Create the first element</Trans>
-              </Button>
-            )}
-          </Empty>
-        </div>
-      ) : (
-        <TreeView<ProjectElementListItem>
-          tree={tree}
-          nodes={nodes}
-          getTreeProps={getTreeProps}
-          getNodeProps={getNodeProps}
-          virtualizer={virtualizer}
-          parentRef={parentRef}
-          parentClassName="flex-1 min-h-0"
-          renderNode={({ node, state }) => {
-            const element = node.data;
-            const isOpen = element.id === openElementId;
-            const isChecked = selection.includes(element.id);
-            return (
-              <div
-                className={cn(
-                  "@container group/row flex h-11 items-center gap-2 border-b border-border/60 pr-2 pl-2 text-sm",
-                  isOpen || state.selected
-                    ? "bg-accent/70"
-                    : "hover:bg-accent/40"
-                )}
-              >
-                <Checkbox
-                  aria-label={t`Select ${element.readableId}`}
-                  isChecked={isChecked}
-                  onCheckedChange={() => toggleSelected(element.id)}
+    <PillShortcutProvider value={pillRequest}>
+      <div className="flex h-full min-h-0 flex-col">
+        {selection.length > 0 && (
+          <SelectionBar
+            projectId={projectId}
+            ids={selection}
+            states={states}
+            canUpdate={canUpdate}
+            onClear={() => setSelected([])}
+          />
+        )}
+        {tree.length === 0 ? (
+          <div className="flex-1">
+            <Empty>
+              {canCreate && (
+                <Button leftIcon={<LuPlus />} onClick={onCreateFirst}>
+                  <Trans>Create the first element</Trans>
+                </Button>
+              )}
+            </Empty>
+          </div>
+        ) : (
+          <TreeView<ProjectElementListItem>
+            tree={tree}
+            nodes={nodes}
+            getTreeProps={getTreeProps}
+            getNodeProps={getNodeProps}
+            virtualizer={virtualizer}
+            parentRef={parentRef}
+            parentClassName="flex-1 min-h-0"
+            renderNode={({ node, state }) => {
+              const element = node.data;
+              const isOpen = element.id === openElementId;
+              const isChecked = selection.includes(element.id);
+              return (
+                <div
                   className={cn(
-                    "shrink-0 transition-opacity",
-                    isChecked
-                      ? "opacity-100"
-                      : "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100"
+                    "@container group/row flex h-11 items-center gap-2 border-b border-border/60 pr-2 pl-2 text-sm",
+                    isOpen || state.selected
+                      ? "bg-accent/70"
+                      : "hover:bg-accent/40"
                   )}
-                />
-                <div className="flex h-11 shrink-0 items-center">
-                  {Array.from({ length: node.level }).map((_, index) => (
-                    <LevelLine
-                      key={index}
-                      isSelected={isOpen}
-                      className="h-11"
-                    />
-                  ))}
-                </div>
-                <Link
-                  to={path.to.projectElement(projectId, element.id)}
-                  tabIndex={-1}
-                  className="flex shrink-0 items-center gap-2 self-stretch"
                 >
-                  <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-                    {element.readableId}
-                  </span>
-                  <ElementTypeIcon type={element.type} />
-                </Link>
-                {node.hasChildren && (
-                  <button
-                    type="button"
-                    aria-label={state.expanded ? t`Collapse` : t`Expand`}
-                    className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-accent"
-                    onClick={() => toggleExpandNode(node.id)}
-                  >
-                    {state.expanded ? (
-                      <LuChevronDown className="size-4 text-muted-foreground" />
-                    ) : (
-                      <LuChevronRight className="size-4 text-muted-foreground" />
+                  <Checkbox
+                    aria-label={t`Select ${element.readableId}`}
+                    isChecked={isChecked}
+                    onCheckedChange={() => toggleSelected(element.id)}
+                    className={cn(
+                      "shrink-0 transition-opacity",
+                      isChecked
+                        ? "opacity-100"
+                        : "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100"
                     )}
-                  </button>
-                )}
-                <Link
-                  to={path.to.projectElement(projectId, element.id)}
-                  className="flex min-w-0 flex-1 items-center self-stretch"
-                >
-                  <span className="truncate font-medium">{element.name}</span>
-                </Link>
-                <ElementProperties
-                  projectId={projectId}
-                  element={element}
-                  display={display}
-                  states={states}
-                  labels={labels}
-                  milestones={milestones}
-                  actual={actualByElement.get(element.id) ?? 0}
-                  isDisabled={!canUpdate}
-                  className="hidden shrink-0 flex-nowrap justify-end @min-[40rem]:flex"
-                />
-                {display.state && (
-                  <div className="shrink-0 @min-[40rem]:hidden">
-                    <StatePill
-                      projectId={projectId}
-                      elementId={element.id}
-                      stateId={element.stateId}
-                      states={states}
-                      isDisabled={!canUpdate}
-                    />
+                  />
+                  <div className="flex h-11 shrink-0 items-center">
+                    {Array.from({ length: node.level }).map((_, index) => (
+                      <LevelLine
+                        key={index}
+                        isSelected={isOpen}
+                        className="h-11"
+                      />
+                    ))}
                   </div>
-                )}
-                <ElementRowMenu
-                  projectId={projectId}
-                  element={element}
-                  canUpdate={canUpdate}
-                  canCreate={canCreate}
-                  canDelete={canDelete}
-                  onAddChild={() => addChild(element.id)}
-                  onMove={() => setMoving(element)}
-                  onDelete={() => setDeleting(element)}
-                />
-              </div>
-            );
-          }}
-        />
-      )}
-      {canCreate && (
-        <QuickAddRow
-          projectId={projectId}
-          identifier={identifier}
-          type={newType}
-          onTypeChange={onNewTypeChange}
-          parent={
-            parent ? { id: parent.id, readableId: parent.readableId } : null
-          }
-          onClearParent={() => setSelected([])}
-          inputRef={quickAddRef}
-        />
-      )}
-      {moving && (
-        <MoveElementModal
-          projectId={projectId}
-          element={moving}
-          elements={elements}
-          onClose={() => setMoving(null)}
-        />
-      )}
-      {deleting && (
-        <ConfirmDelete
-          action={path.to.deleteProjectElement(projectId, deleting.id)}
-          name={deleting.readableId}
-          text={t`Delete ${deleting.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
-        />
-      )}
-    </div>
+                  <Link
+                    to={path.to.projectElement(projectId, element.id)}
+                    tabIndex={-1}
+                    className="flex shrink-0 items-center gap-2 self-stretch"
+                  >
+                    <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                      {element.readableId}
+                    </span>
+                    <ElementTypeIcon type={element.type} />
+                  </Link>
+                  {node.hasChildren && (
+                    <button
+                      type="button"
+                      aria-label={state.expanded ? t`Collapse` : t`Expand`}
+                      className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-accent"
+                      onClick={() => toggleExpandNode(node.id)}
+                    >
+                      {state.expanded ? (
+                        <LuChevronDown className="size-4 text-muted-foreground" />
+                      ) : (
+                        <LuChevronRight className="size-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  )}
+                  <Link
+                    to={path.to.projectElement(projectId, element.id)}
+                    className="flex min-w-0 flex-1 items-center self-stretch"
+                  >
+                    <span className="truncate font-medium">{element.name}</span>
+                  </Link>
+                  <ElementProperties
+                    projectId={projectId}
+                    element={element}
+                    display={display}
+                    states={states}
+                    labels={labels}
+                    milestones={milestones}
+                    actual={actualByElement.get(element.id) ?? 0}
+                    isDisabled={!canUpdate}
+                    className="hidden shrink-0 flex-nowrap justify-end @min-[40rem]:flex"
+                  />
+                  {display.state && (
+                    <div className="shrink-0 @min-[40rem]:hidden">
+                      <StatePill
+                        projectId={projectId}
+                        elementId={element.id}
+                        stateId={element.stateId}
+                        states={states}
+                        isDisabled={!canUpdate}
+                      />
+                    </div>
+                  )}
+                  <ElementRowMenu
+                    projectId={projectId}
+                    element={element}
+                    canUpdate={canUpdate}
+                    canCreate={canCreate}
+                    canDelete={canDelete}
+                    onAddChild={() => addChild(element.id)}
+                    onMove={() => setMoving(element)}
+                    onDelete={() => setDeleting(element)}
+                  />
+                </div>
+              );
+            }}
+          />
+        )}
+        {canCreate && (
+          <QuickAddRow
+            projectId={projectId}
+            identifier={identifier}
+            type={newType}
+            onTypeChange={onNewTypeChange}
+            parent={
+              parent ? { id: parent.id, readableId: parent.readableId } : null
+            }
+            onClearParent={() => setSelected([])}
+            inputRef={quickAddRef}
+          />
+        )}
+        {moving && (
+          <MoveElementModal
+            projectId={projectId}
+            element={moving}
+            elements={elements}
+            onClose={() => setMoving(null)}
+          />
+        )}
+        {deleting && (
+          <ConfirmDelete
+            action={path.to.deleteProjectElement(projectId, deleting.id)}
+            name={deleting.readableId}
+            text={t`Delete ${deleting.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
+            onCancel={() => setDeleting(null)}
+            onSubmit={() => setDeleting(null)}
+          />
+        )}
+      </div>
+    </PillShortcutProvider>
   );
 }
 

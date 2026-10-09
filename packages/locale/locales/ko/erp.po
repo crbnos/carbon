@@ -4357,6 +4357,18 @@ msgstr "상태 변경"
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "품목 유형을 변경하세요(예: 품목, 자재, 공구 등)"
 
+msgid "Change the labels (the open or selected element)"
+msgstr ""
+
+msgid "Change the owner (the open or selected element)"
+msgstr ""
+
+msgid "Change the priority (the open or selected element)"
+msgstr ""
+
+msgid "Change the state (the open or selected element)"
+msgstr ""
+
 msgid "Change type"
 msgstr "변경 유형"
 
@@ -11221,6 +11233,9 @@ msgstr ""
 msgid "Issue Material"
 msgstr ""
 
+msgid "Issue material (the open element)"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "이슈를 찾을 수 없습니다"
 
@@ -12003,6 +12018,9 @@ msgid "Log time"
 msgstr ""
 
 msgid "Log Time"
+msgstr ""
+
+msgid "Log time (the open element)"
 msgstr ""
 
 msgid "Login or create a new account"
@@ -13102,6 +13120,9 @@ msgstr "신규 부서"
 
 msgid "New Dimension"
 msgstr "신규 차원"
+
+msgid "New element"
+msgstr ""
 
 msgid "New element name"
 msgstr ""
@@ -16111,6 +16132,9 @@ msgstr "진행 상황"
 
 msgid "Project"
 msgstr "프로젝트"
+
+msgid "Project elements"
+msgstr ""
 
 msgid "Project Expense"
 msgstr ""

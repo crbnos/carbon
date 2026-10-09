@@ -4357,6 +4357,18 @@ msgstr "स्थिति बदलें"
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "आइटम प्रकार बदलें (जैसे भाग, सामग्री, उपकरण, आदि)"
 
+msgid "Change the labels (the open or selected element)"
+msgstr ""
+
+msgid "Change the owner (the open or selected element)"
+msgstr ""
+
+msgid "Change the priority (the open or selected element)"
+msgstr ""
+
+msgid "Change the state (the open or selected element)"
+msgstr ""
+
 msgid "Change type"
 msgstr "प्रकार परिवर्तित करें"
 
@@ -11221,6 +11233,9 @@ msgstr ""
 msgid "Issue Material"
 msgstr ""
 
+msgid "Issue material (the open element)"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "समस्या नहीं मिली"
 
@@ -12003,6 +12018,9 @@ msgid "Log time"
 msgstr ""
 
 msgid "Log Time"
+msgstr ""
+
+msgid "Log time (the open element)"
 msgstr ""
 
 msgid "Login or create a new account"
@@ -13102,6 +13120,9 @@ msgstr "नया विभाग"
 
 msgid "New Dimension"
 msgstr "नया आयाम"
+
+msgid "New element"
+msgstr ""
 
 msgid "New element name"
 msgstr ""
@@ -16111,6 +16132,9 @@ msgstr "प्रगति"
 
 msgid "Project"
 msgstr "प्रोजेक्ट"
+
+msgid "Project elements"
+msgstr ""
 
 msgid "Project Expense"
 msgstr ""
