@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#日}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {Carbon が仕訳を記録する前に転記された # 件の文書に仕訳がありません。} other {Carbon が仕訳を記録する前に転記された # 件の文書に仕訳がありません。}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "欠落した仕訳を記入"
 
 msgid "Write-Down Account"
 msgstr "評価減勘定"

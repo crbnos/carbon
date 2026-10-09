@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#天}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {在 Carbon 记录凭证前过账的 # 份文件没有凭证。} other {在 Carbon 记录凭证前过账的 # 份文件没有凭证。}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "编制缺失凭证"
 
 msgid "Write-Down Account"
 msgstr "减值账户"

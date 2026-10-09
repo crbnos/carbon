@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# दिन} other {# दिन}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# दस्तावेज़ को Carbon द्वारा जर्नल कीप करने से पहले पोस्ट किया गया था और इसका कोई जर्नल नहीं है।} other {# दस्तावेज़ को Carbon द्वारा जर्नल कीप करने से पहले पोस्ट किए गए थे और इनके पास कोई जर्नल नहीं है।}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "लापता जर्नल लिखें"
 
 msgid "Write-Down Account"
 msgstr "अवमूल्यन खाता"

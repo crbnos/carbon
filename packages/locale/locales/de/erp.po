@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# Tag} other {# Tage}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# Dokument, das vor der Carbon-Journalverwaltung gebucht wurde, hat keinen Buchungssatz.} other {# Dokumente, die vor der Carbon-Journalverwaltung gebucht wurden, haben keinen Buchungssatz.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# Zeile} other {# Zeilen}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "Schlechteste Maschinen"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "Fehlende Buchungssätze erstellen"
 
 msgid "Write-Down Account"
 msgstr "Abwertungskonto"

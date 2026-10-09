@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# gün} other {# gün}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# belge Carbon muhasebe fişi tutmaya başlamadan önce muhasebeleştirilmiş ve muhasebe fişi kaydı yok.} other {# belgeler Carbon muhasebe fişi tutmaya başlamadan önce muhasebeleştirilmiş ve muhasebe fişi kaydı yok.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "En kötü performans gösteren makineler"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "Eksik muhasebe fişlerini oluştur"
 
 msgid "Write-Down Account"
 msgstr "Değer Düşüklüğü Hesabı"

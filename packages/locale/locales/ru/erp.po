@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# документ, проведённый до начала ведения операций в Carbon, не имеет операции.} few {# документа, проведённых до начала ведения операций в Carbon, не имеют операций.} many {# документов, проведённых до начала ведения операций в Carbon, не имеют операций.} other {# документа, проведённых до начала ведения операций в Carbon, не имеют операций.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "Худшие станки"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "Записать недостающие операции"
 
 msgid "Write-Down Account"
 msgstr "Счет уценки"

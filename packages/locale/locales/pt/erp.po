@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# dia} other {# dias}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# documento contabilizado antes de o Carbon manter diários não tem diário.} other {# documentos contabilizados antes de o Carbon manter diários não têm diário.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linha} other {# linhas}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "Máquinas com Pior Desempenho"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "Escrever diários faltantes"
 
 msgid "Write-Down Account"
 msgstr "Conta de desvalorização"

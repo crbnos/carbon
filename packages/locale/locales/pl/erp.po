@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# dokument zaksięgowany przed wprowadzeniem systemowych dowodów w Carbon nie ma powiązanego dowodu.} other {# dokumentów zaksięgowanych przed wprowadzeniem systemowych dowodów w Carbon nie mają powiązanych dowodów.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linia} other {# linii}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "Maszyny o najgorszych wynikach"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "Utwórz brakujące dowody księgowe"
 
 msgid "Write-Down Account"
 msgstr "Konto odpisu aktualizującego"

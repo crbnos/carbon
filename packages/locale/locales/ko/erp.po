@@ -440,7 +440,7 @@ msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#일}}"
 
 msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
-msgstr ""
+msgstr "{legacyDocumentCount, plural, one {# 문서는 Carbon이 전표를 관리하기 전에 전기되었으며 전표가 없습니다.} other {# 문서는 Carbon이 전표를 관리하기 전에 전기되었으며 전표가 없습니다.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
@@ -24115,7 +24115,7 @@ msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
 
 msgid "Write missing journals"
-msgstr ""
+msgstr "누락된 전표 작성"
 
 msgid "Write-Down Account"
 msgstr "평가감 계정"
