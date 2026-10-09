@@ -139,8 +139,11 @@ function FixedAssetDepreciationRow({ asset }: { asset: CutoverFixedAsset }) {
             company.baseCurrencyCode,
             currencyDecimals
           )}
+          // A disposal after the cutover cleared what it found.
           isDisabled={
-            !permissions.can("update", "accounting") || save.isPending
+            !permissions.can("update", "accounting") ||
+            save.isPending ||
+            asset.status === "Disposed"
           }
           onChange={(value) => {
             if (

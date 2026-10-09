@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 /** `save-asset`: one asset's accumulated depreciation at the cutover. */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -81,8 +81,14 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
+    const { cutoverDate } = await getActivationCutover(
+      client,
+      companyId,
+      request
+    );
     await updateCutoverAccumulatedDepreciation(getDatabaseClient(), {
       companyId,
+      cutoverDate,
       userId,
       fixedAssetId: validation.data.fixedAssetId,
       accumulatedDepreciation: validation.data.accumulatedDepreciation

@@ -132,7 +132,10 @@ databaseTest(
         maintenanceConsumptions: 0,
         jobConsumptions: 0,
         jobOutputs: 0,
-        movementCostRows: 0
+        movementCostRows: 0,
+        depreciationRuns: 0,
+        assetDisposals: 0,
+        revenueRecognitionRuns: 0
       });
 
       // The same journals, now Posted.
@@ -282,7 +285,10 @@ databaseTest(
         maintenanceConsumptions: 0,
         jobConsumptions: 0,
         jobOutputs: 0,
-        movementCostRows: 0
+        movementCostRows: 0,
+        depreciationRuns: 0,
+        assetDisposals: 0,
+        revenueRecognitionRuns: 0
       });
 
       // The same journals, now Posted, with no Provisional left.
@@ -449,7 +455,10 @@ databaseTest(
         maintenanceConsumptions: 0,
         jobConsumptions: 0,
         jobOutputs: 0,
-        movementCostRows: 0
+        movementCostRows: 0,
+        depreciationRuns: 0,
+        assetDisposals: 0,
+        revenueRecognitionRuns: 0
       });
 
       // The same journals, now Posted. The re-cost found nothing to move:

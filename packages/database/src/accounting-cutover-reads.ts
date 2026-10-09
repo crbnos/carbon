@@ -1185,8 +1185,9 @@ async function getWorkInProgressItems(
 }
 
 /**
- * Deferred revenue: the Planned Deferral rows dated on or after the cutover
- * of sales invoices posted before it, per invoice line. The balance sits on
+ * Deferred revenue: the Deferral rows dated on or after the cutover of sales
+ * invoices posted before it, per invoice line, that were still deferred the
+ * day before the cutover. The balance sits on
  * the row's DEBIT account (the deferred revenue liability the run debits);
  * its credit account is the revenue the run credits.
  */
@@ -1216,7 +1217,19 @@ async function getDeferredRevenueItems(
     ])
     .where("schedule.companyId", "=", companyId)
     .where("schedule.type", "=", "Deferral")
-    .where("schedule.status", "=", "Planned")
+    // Still deferred the day before the cutover: Planned, or Posted by a run
+    // whose journal the reset deleted. The enable writes that run's journal
+    // again (activate-accounting/legacy/runs.ts), and it debits this balance.
+    .where((eb) =>
+      eb.or([
+        eb("schedule.status", "=", "Planned"),
+        eb.and([
+          eb("schedule.status", "=", "Posted"),
+          eb("schedule.journalId", "is", null),
+          eb("schedule.runLineId", "is not", null)
+        ])
+      ])
+    )
     .where("schedule.scheduledDate", ">=", cutoverDate)
     .where("invoice.postingDate", "<", cutoverDate)
     .where("invoice.status", "not in", ["Draft", "Pending", "Voided"])
@@ -1251,8 +1264,11 @@ async function getDeferredRevenueItems(
 
 /**
  * Lease net investment: per rental agreement, the closing net investment of
- * each commenced lease line's last schedule line before the cutover, or its
- * initial net investment when no schedule line falls before it.
+ * each lease line commenced before the cutover at its last schedule line
+ * before the cutover, or its initial net investment when no schedule line
+ * falls before it. Read from the lease rows, not the commencement journal:
+ * a lease commenced before the reset has none. Commencement sells the unit
+ * to the lease, so the date is its asset's disposal date.
  */
 async function getLeaseNetInvestmentItems(
   db: CutoverDb,
@@ -1267,10 +1283,10 @@ async function getLeaseNetInvestmentItems(
         .onRef("agreement.id", "=", "line.rentalAgreementId")
         .onRef("agreement.companyId", "=", "line.companyId")
     )
-    .innerJoin("journal", (join) =>
+    .innerJoin("fixedAsset as asset", (join) =>
       join
-        .onRef("journal.id", "=", "line.commencementJournalId")
-        .onRef("journal.companyId", "=", "line.companyId")
+        .onRef("asset.id", "=", "line.fixedAssetId")
+        .onRef("asset.companyId", "=", "line.companyId")
     )
     .select([
       "line.id",
@@ -1279,8 +1295,9 @@ async function getLeaseNetInvestmentItems(
       "agreement.exchangeRate"
     ])
     .where("line.companyId", "=", companyId)
-    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-    .where("journal.postingDate", "<", cutoverDate)
+    .where("line.lessorClassification", "=", "Sale")
+    .where("line.initialNetInvestment", "is not", null)
+    .where("asset.disposalDate", "<", cutoverDate)
     .execute();
   if (leaseLines.length === 0) return [];
 
@@ -1563,50 +1580,152 @@ export type CutoverFixedAsset = {
   status: string;
   fixedAssetClassId: string;
   cost: number;
+  /** As of the day before the cutover. */
   accumulatedDepreciation: number;
   assetAccountId: string;
   accumulatedDepreciationAccountId: string;
 };
 
-/** Assets not disposed and acquired before the cutover, with their class accounts. */
-export async function getCutoverFixedAssets(
+/** The disposal `postDisposal` writes. The enable writes its journal again. */
+export const REBUILT_DISPOSAL_METHOD = "Scrapping" as const;
+
+/**
+ * Assets disposed on or after the cutover whose disposal has no journal and
+ * gets none at the enable: a sale, a return to inventory or a lease
+ * commencement posted before the reset, whose journal the reset deleted. The
+ * enable rebuilds only the scrap (`REBUILT_DISPOSAL_METHOD`); a disposal
+ * posted after the reset keeps its own journal (`fixedAssetDisposal.journalId`).
+ * Such an asset leaves the books with no journal, so it is not in the opening
+ * fixed assets, and its depreciation after the cutover is not rebuilt.
+ */
+export async function getAssetsLeavingWithoutJournal(
   db: CutoverDb,
   { companyId, cutoverDate }: CutoverArgs
-): Promise<CutoverFixedAsset[]> {
+): Promise<Set<string>> {
   const rows = await db
     .selectFrom("fixedAsset as asset")
-    .innerJoin("fixedAssetClass as class", (join) =>
+    .select("asset.id")
+    .where("asset.companyId", "=", companyId)
+    .where("asset.status", "=", "Disposed")
+    .where("asset.disposalDate", ">=", cutoverDate)
+    .where((eb) =>
+      eb.or([
+        eb("asset.disposalMethod", "is", null),
+        eb("asset.disposalMethod", "!=", REBUILT_DISPOSAL_METHOD)
+      ])
+    )
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("fixedAssetDisposal as disposal")
+            .select("disposal.id")
+            .whereRef("disposal.fixedAssetId", "=", "asset.id")
+            .whereRef("disposal.companyId", "=", "asset.companyId")
+            .where("disposal.journalId", "is not", null)
+        )
+      )
+    )
+    .execute();
+  return new Set(rows.map((row) => row.id));
+}
+
+/**
+ * Per asset, the depreciation that Posted runs booked for months on or after
+ * the cutover. The asset's `accumulatedDepreciation` includes it; the enable
+ * writes those runs' journals again (activate-accounting/legacy/runs.ts), so
+ * the opening balance takes it out.
+ */
+export async function getDepreciationAfterCutover(
+  db: CutoverDb,
+  { companyId, cutoverDate }: CutoverArgs
+): Promise<Map<string, number>> {
+  const rows = await db
+    .selectFrom("depreciationRunLine as line")
+    .innerJoin("depreciationRun as run", (join) =>
       join
-        .onRef("class.id", "=", "asset.fixedAssetClassId")
-        .onRef("class.companyId", "=", "asset.companyId")
+        .onRef("run.id", "=", "line.depreciationRunId")
+        .onRef("run.companyId", "=", "line.companyId")
     )
     .select([
-      "asset.id",
-      "asset.fixedAssetId",
-      "asset.name",
-      "asset.status",
-      "asset.fixedAssetClassId",
-      "asset.acquisitionCost",
-      "asset.accumulatedDepreciation",
-      "class.assetAccountId",
-      "class.accumulatedDepreciationAccountId"
+      "line.fixedAssetId",
+      sql<number>`sum("line"."amount")`.as("amount")
     ])
-    .where("asset.companyId", "=", companyId)
-    .where("asset.status", "!=", "Disposed")
-    .where("asset.acquisitionDate", "<", cutoverDate)
-    .orderBy("asset.fixedAssetId")
+    .where("line.companyId", "=", companyId)
+    .where("run.status", "=", "Posted")
+    // A line from before per-month lines has no month: it is the run's.
+    .where(
+      sql<string>`coalesce("line"."periodEnd", "run"."periodEnd")`,
+      ">=",
+      cutoverDate
+    )
+    .groupBy("line.fixedAssetId")
     .execute();
-  return rows.map((row) => ({
-    id: row.id,
-    fixedAssetId: row.fixedAssetId,
-    name: row.name,
-    status: row.status,
-    fixedAssetClassId: row.fixedAssetClassId,
-    cost: Number(row.acquisitionCost),
-    accumulatedDepreciation: Number(row.accumulatedDepreciation),
-    assetAccountId: row.assetAccountId,
-    accumulatedDepreciationAccountId: row.accumulatedDepreciationAccountId
-  }));
+  return new Map(
+    rows.map((row) => [row.fixedAssetId, round(Number(row.amount))])
+  );
+}
+
+/**
+ * The fixed assets on the books the day before the cutover, with their class
+ * accounts: acquired before the cutover, and not disposed, or disposed on or
+ * after it by a disposal that carries a journal after the enable (see
+ * `getAssetsLeavingWithoutJournal`). `accumulatedDepreciation` is as of the
+ * day before the cutover: the asset's own less what runs booked for months
+ * on or after it.
+ */
+export async function getCutoverFixedAssets(
+  db: CutoverDb,
+  args: CutoverArgs
+): Promise<CutoverFixedAsset[]> {
+  const { companyId, cutoverDate } = args;
+  const [rows, leavingWithoutJournal, depreciationAfter] = await Promise.all([
+    db
+      .selectFrom("fixedAsset as asset")
+      .innerJoin("fixedAssetClass as class", (join) =>
+        join
+          .onRef("class.id", "=", "asset.fixedAssetClassId")
+          .onRef("class.companyId", "=", "asset.companyId")
+      )
+      .select([
+        "asset.id",
+        "asset.fixedAssetId",
+        "asset.name",
+        "asset.status",
+        "asset.fixedAssetClassId",
+        "asset.acquisitionCost",
+        "asset.accumulatedDepreciation",
+        "class.assetAccountId",
+        "class.accumulatedDepreciationAccountId"
+      ])
+      .where("asset.companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([
+          eb("asset.status", "!=", "Disposed"),
+          eb("asset.disposalDate", ">=", cutoverDate)
+        ])
+      )
+      .where("asset.acquisitionDate", "<", cutoverDate)
+      .orderBy("asset.fixedAssetId")
+      .execute(),
+    getAssetsLeavingWithoutJournal(db, args),
+    getDepreciationAfterCutover(db, args)
+  ]);
+  return rows
+    .filter((row) => !leavingWithoutJournal.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      fixedAssetId: row.fixedAssetId,
+      name: row.name,
+      status: row.status,
+      fixedAssetClassId: row.fixedAssetClassId,
+      cost: Number(row.acquisitionCost),
+      accumulatedDepreciation: round(
+        Number(row.accumulatedDepreciation) -
+          (depreciationAfter.get(row.id) ?? 0)
+      ),
+      assetAccountId: row.assetAccountId,
+      accumulatedDepreciationAccountId: row.accumulatedDepreciationAccountId
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -1945,16 +2064,24 @@ export async function saveOpeningTrialBalance(
   });
 }
 
-/** Sets an asset's accumulated depreciation at the cutover, before the enable. */
+/**
+ * Sets an asset's accumulated depreciation as of the day before the cutover,
+ * before the enable. The asset keeps what runs booked for months on or after
+ * the cutover on top of it, so the stored value is the entered one plus that
+ * (see `getDepreciationAfterCutover`). Returns the value as of the day
+ * before the cutover.
+ */
 export async function updateCutoverAccumulatedDepreciation(
   db: CutoverDb,
   {
     companyId,
+    cutoverDate,
     fixedAssetId,
     accumulatedDepreciation,
     userId
   }: {
     companyId: string;
+    cutoverDate: string;
     fixedAssetId: string;
     accumulatedDepreciation: number;
     userId?: string;
@@ -1977,9 +2104,18 @@ export async function updateCutoverAccumulatedDepreciation(
       .executeTakeFirst();
     if (!asset) throw new Error("Fixed asset not found");
     if (asset.status === "Disposed") {
-      throw new Error("A disposed asset has no accumulated depreciation");
+      // A disposal after the cutover cleared the accumulated depreciation it
+      // found; changing it now would part the asset from its disposal.
+      throw new Error(
+        "A disposed asset keeps the accumulated depreciation its disposal cleared"
+      );
     }
-    if (accumulatedDepreciation > Number(asset.acquisitionCost) + EPSILON) {
+    const after =
+      (await getDepreciationAfterCutover(trx, { companyId, cutoverDate })).get(
+        fixedAssetId
+      ) ?? 0;
+    const stored = round(accumulatedDepreciation + after);
+    if (stored > Number(asset.acquisitionCost) + EPSILON) {
       throw new Error(
         "Accumulated depreciation cannot exceed the asset's cost"
       );
@@ -1987,7 +2123,7 @@ export async function updateCutoverAccumulatedDepreciation(
     const updated = await trx
       .updateTable("fixedAsset")
       .set({
-        accumulatedDepreciation: round(accumulatedDepreciation),
+        accumulatedDepreciation: stored,
         ...(userId ? { updatedBy: userId, updatedAt: sql`now()` } : {})
       })
       .where("id", "=", fixedAssetId)
@@ -1996,7 +2132,9 @@ export async function updateCutoverAccumulatedDepreciation(
       .executeTakeFirstOrThrow();
     return {
       id: updated.id,
-      accumulatedDepreciation: Number(updated.accumulatedDepreciation)
+      accumulatedDepreciation: round(
+        Number(updated.accumulatedDepreciation) - after
+      )
     };
   });
 }

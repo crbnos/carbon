@@ -59,7 +59,7 @@
 - [x] Task 40: Write the journals of legacy memos, payments, charges and reimbursements
 - [x] Task 41: Write the journals of legacy movements that stored a cost row
 - [x] Task 42: Write the cost rows and journals of legacy movements that stored none
-- [ ] Task 43: Write the journals of legacy asset and revenue runs again
+- [x] Task 43: Write the journals of legacy asset and revenue runs again
 - [ ] Task 44: Show the legacy journals in the wizard and update the docs
 - [ ] Task 45: Verify the legacy window in the browser
 

@@ -36,7 +36,12 @@ export const ACCOUNTS = [
   { name: "migration-clearing", class: "Equity" },
   { name: "sales", class: "Revenue" },
   { name: "cogs", class: "Expense" },
-  { name: "scrap", class: "Expense" }
+  { name: "scrap", class: "Expense" },
+  { name: "fixed-assets", class: "Asset" },
+  { name: "accumulated-depreciation", class: "Asset" },
+  { name: "depreciation", class: "Expense" },
+  { name: "loss-on-disposal", class: "Expense" },
+  { name: "deferred-revenue", class: "Liability" }
 ] as const;
 
 export type AccountName = (typeof ACCOUNTS)[number]["name"];

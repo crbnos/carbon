@@ -14,7 +14,9 @@
 // receipts, return receipts, shipments with their sale cost row, return
 // shipments, the movements of the adjustment core, then job issues and job
 // completions. The inventory reset and re-cost after this step find their
-// inventory lines.
+// inventory lines. Then the asset and revenue runs (runs.ts): depreciation
+// runs, scrap disposals and revenue recognition runs, kept out of provider
+// sync.
 
 import type { KyselyTx } from "@carbon/database/client";
 import { buildLegacyAdjustmentJournals } from "./adjustment";
@@ -28,6 +30,7 @@ import {
   buildLegacySalesReturnReceiptJournals
 } from "./receipt";
 import { buildLegacyReimbursementJournals } from "./reimbursement";
+import { journalLegacyRuns, type LegacyRunCounts } from "./runs";
 import { buildLegacySalesInvoiceJournals } from "./sales-invoice";
 import {
   buildLegacyReturnShipmentJournals,
@@ -41,7 +44,7 @@ import {
 } from "./write";
 
 /** The documents the enable wrote a journal for, per family. */
-export type LegacyJournalCounts = {
+export type LegacyJournalCounts = LegacyRunCounts & {
   salesInvoices: number;
   purchaseInvoices: number;
   memos: number;
@@ -174,6 +177,15 @@ export async function journalLegacyDocuments(
     ]
   });
 
+  // No other journal reads them, and the re-cost never touches them.
+  const runs = await journalLegacyRuns(trx, {
+    companyId,
+    companyGroupId,
+    userId,
+    cutoverDate,
+    defaults
+  });
+
   // A zero-value document writes no journal, as its posting writes none.
   const written = (journals: { lines: unknown[] }[]) =>
     journals.filter((journal) => journal.lines.length > 0).length;
@@ -194,6 +206,7 @@ export async function journalLegacyDocuments(
     maintenanceConsumptions: written(adjustments.maintenanceConsumptions),
     jobConsumptions: written(movementCosts.jobConsumptions),
     jobOutputs: written(movementCosts.jobOutputs),
-    movementCostRows: movementCosts.costRows
+    movementCostRows: movementCosts.costRows,
+    ...runs
   };
 }
