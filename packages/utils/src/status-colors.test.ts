@@ -26,3 +26,15 @@ describe("return order status colors", () => {
     });
   });
 });
+
+describe("project status colors", () => {
+  it("registers the project lifecycle for the docs status widget", () => {
+    expect(maps.project).toEqual({
+      Draft: "gray",
+      Released: "blue",
+      "On Hold": "orange",
+      "Technically Complete": "green",
+      Closed: "gray"
+    });
+  });
+});
