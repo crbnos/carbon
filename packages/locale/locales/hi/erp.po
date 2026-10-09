@@ -15673,6 +15673,9 @@ msgstr "प्रोजेक्ट प्लान"
 msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
 
+msgid "Project Time"
+msgstr ""
+
 msgid "Projected"
 msgstr "अनुमानित"
 

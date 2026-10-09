@@ -61,7 +61,7 @@ Phase 1c gets baselines and change requests.
 - [ ] Task 22: Route purchase invoice lines to the project account
 - [ ] Task 23: Route charges and reimbursements to the project account
 - [ ] Task 24: Add Project and Project Element to the journal dimension builder
-- [ ] Task 25: Add the new enum values to the TS mirrors
+- [x] Task 25: Add the new enum values to the TS mirrors
 - [ ] Task 26: Move the accounting Projects screens into the new module
 - [ ] Task 27: Add module navigation, layout and paths
 - [ ] Task 28: Build the project list and the new-project form
@@ -2406,3 +2406,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 9: `projectLedger` also lists `laborCategoryId` and `supplierId` in `ID_REF_COLUMNS`. Both hold tenant row ids with no FK, which is the rule the file states; the plan listed only five columns.
 - Tasks 9–10 Verify: `turbo run typecheck` for `@carbon/jobs` and `@carbon/server-functions` fails on one error only, `POSTING_POLICY` in `packages/ee/src/accounting/core/models.ts` missing `Project Issue` and `Timesheet`. Task 1's enum values cause it and Task 25 fixes it, so it stays until Task 25 (the plan orders it that way). With `--continue`, `erp` also shows only the Task 25 enum-mirror errors (`JournalEntriesTable.tsx`, `JournalEntryDocuments.tsx`, `dimensions.$dimensionId.tsx`). No other errors remain in `erp`, `mes`, `@carbon/jobs`, `@carbon/server-functions`, `@carbon/planning` or `@carbon/api`.
 - Task 10: `seed-company` and the dataset `bootstrap.ts` both map every `accountDefaults` key generically, so neither changed. The two new keys sit next to `workInProgressAccount`. `db:check:datasets` passes ×4.
+- Task 25: `getJournalEntryRelatedItems` lists a `Project Issue` line as kind `project` (the line's `documentId` is the project id, because `bookAdjustment` copies the itemLedger `documentId`). It lists a `Timesheet` line as kind `projectTime`, read through `timesheetEntry` → `project`. Both open `path.to.project` for now, because `path.to.projectTime` does not exist until Task 27. Task 27 must re-point `projectTime` in `JournalEntryDocuments.tsx` to `path.to.projectTime`.
+- Task 25: `DIMENSION_LABEL_SOURCES` takes one label column, so `ProjectElement` uses `readableId`. The ERP dimension picker shows `readableId name` and lists chargeable elements only.
+- Task 25: `pnpm exec turbo run typecheck --filter=@carbon/ee --filter=erp` is green (3/3). `@carbon/ee` tests pass (1928).
+- Task 25 onwards: the overnight brief names Biome and the scoped typecheck as the gates. The `/translate` fill for new UI strings (`Project`, `Project Time`) is left for one pass at the end of the plan.

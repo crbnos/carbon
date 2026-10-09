@@ -4906,6 +4906,22 @@ function getEntityDimensionValues(
         .eq("companyId", companyId)
         .eq("active", true)
         .order("name");
+    case "ProjectElement":
+      // Only chargeable elements take a charge, so only they are options.
+      // The label is the element's readable id and name ("ST-12 Optics").
+      return client
+        .from("projectElement")
+        .select("id, readableId, name")
+        .eq("companyId", companyId)
+        .eq("isChargeable", true)
+        .order("readableId")
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     // Customer / Supplier / Item are high-cardinality: intentionally NOT
     // eager-loaded here. The DimensionSelector sources their options lazily
     // from the client stores (useCustomers / useSuppliers / useItems).
@@ -5035,6 +5051,18 @@ function getEntityValuesByIds(
       return client.from("scrapReason").select("id, name").in("id", ids);
     case "Project":
       return client.from("project").select("id, name").in("id", ids);
+    case "ProjectElement":
+      return client
+        .from("projectElement")
+        .select("id, readableId, name")
+        .in("id", ids)
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     case "FixedAssetClass":
       return client.from("fixedAssetClass").select("id, name").in("id", ids);
     case "Customer":
@@ -5714,6 +5742,8 @@ export type JournalSourceDocument = {
     | "fixedAsset"
     | "inventoryCount"
     | "maintenanceDispatch"
+    | "project"
+    | "projectTime"
     | "nonConformance"
     | "inspection"
     | "charge"
@@ -5923,6 +5953,45 @@ export async function getJournalEntryRelatedItems(
               id: r.id,
               readableId: r.maintenanceDispatchId
             }))
+          )
+      : none,
+    // A "Project Issue" line holds the project's id (the itemLedger
+    // documentId of the issue).
+    idsOf("Project Issue").length > 0
+      ? client
+          .from("project")
+          .select("id, identifier, name")
+          .in("id", idsOf("Project Issue"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "project" as const,
+              id: r.id,
+              readableId: r.identifier ?? r.name
+            }))
+          )
+      : none,
+    // A "Timesheet" line holds a timesheetEntry id; list the entry's project.
+    idsOf("Timesheet").length > 0
+      ? client
+          .from("timesheetEntry")
+          .select(
+            "project:project!timesheetEntry_project_fkey(id, identifier, name)"
+          )
+          .in("id", idsOf("Timesheet"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.project
+                ? [
+                    {
+                      kind: "projectTime" as const,
+                      id: r.project.id,
+                      readableId: r.project.identifier ?? r.project.name
+                    }
+                  ]
+                : []
+            )
           )
       : none,
     idsOf("Non-Conformance").length > 0

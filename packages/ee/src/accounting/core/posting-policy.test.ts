@@ -77,7 +77,11 @@ describe("POSTING_POLICY", () => {
         "Charge",
         // Added post-v2 with maintenance labor: time on a maintenance dispatch
         // posts Dr maintenance / Cr labor absorption, like Production Event.
-        "Maintenance Event"
+        "Maintenance Event",
+        // Added with Projects: project time and project material issues post
+        // like maintenance labor.
+        "Timesheet",
+        "Project Issue"
       ].sort()
     );
 

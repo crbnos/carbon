@@ -66,7 +66,8 @@ export const itemLedgerDocumentTypes = [
   "Purchase Order",
   "Maintenance Consumption",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Project Issue"
 ] as const;
 
 export const trackedEntityStatus = [

@@ -15673,6 +15673,9 @@ msgstr "プロジェクト計画"
 msgid "Project start"
 msgstr "プロジェクト開始"
 
+msgid "Project Time"
+msgstr ""
+
 msgid "Projected"
 msgstr "予測"
 

@@ -527,7 +527,10 @@ const DIMENSION_LABEL_SOURCES: Record<string, LabelSource> = {
   Item: { table: "item", labelColumn: "readableIdWithRevision" },
   WorkCenter: { table: "workCenter", labelColumn: "name" },
   Process: { table: "process", labelColumn: "name" },
-  Project: { table: "project", labelColumn: "name" }
+  Project: { table: "project", labelColumn: "name" },
+  // One label column only: the readable id ("ST-12") is the stable, short
+  // label for an element in an external ledger.
+  ProjectElement: { table: "projectElement", labelColumn: "readableId" }
 };
 
 /**

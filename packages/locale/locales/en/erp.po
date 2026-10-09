@@ -15673,6 +15673,9 @@ msgstr "Project Plan"
 msgid "Project start"
 msgstr "Project start"
 
+msgid "Project Time"
+msgstr "Project Time"
+
 msgid "Projected"
 msgstr "Projected"
 

@@ -525,6 +525,19 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // Project time and project material issues post like maintenance labor:
+  // often, in small amounts, Dr the project account / Cr absorption or
+  // inventory. Spec: .ai/specs/2026-10-03-projects.md.
+  Timesheet: {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Project Issue": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,
