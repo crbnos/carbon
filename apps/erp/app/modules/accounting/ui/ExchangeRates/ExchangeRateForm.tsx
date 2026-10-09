@@ -65,8 +65,8 @@ import {
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
-  currencyValidator,
-  exchangeRateOverrideValidator
+  currencyFormValidator,
+  type currencyValidator
 } from "../../accounting.models";
 import ExchangeRateSourceBadge from "./ExchangeRateSourceBadge";
 
@@ -161,67 +161,48 @@ const CurrencyForm = ({
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
-            {isEditing && (
-              <ValidatedForm
-                validator={exchangeRateOverrideValidator}
-                method="post"
-                action={path.to.exchangeRate(initialValues.id!)}
-                defaultValues={{
-                  currencyCode: initialValues.code,
-                  rate: rate ?? undefined
-                }}
-                className="w-full mb-6"
-              >
-                <Hidden name="intent" value="override" />
-                <Hidden name="currencyCode" value={initialValues.code} />
-                <VStack spacing={4}>
-                  <NumberField
-                    name="rate"
-                    label={t`Exchange Rate`}
-                    termId="exchange-rate"
-                    minValue={0}
-                    step={INPUT_STEP.exchangeRate}
-                    formatOptions={INPUT_FORMAT.exchangeRate}
-                    helperText={exchangeRateHelperText}
-                    isDisabled={isBaseCurrency}
-                  />
-                  <HStack className="w-full justify-between">
-                    <ExchangeRateSourceBadge source={rateSource} />
-                    {!isBaseCurrency && (
-                      <HStack>
-                        {rateSource === "override" && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            isDisabled={isDisabled}
-                            isLoading={resetFetcher.state !== "idle"}
-                            onClick={onResetToMarketRate}
-                          >
-                            {t`Reset to market rate`}
-                          </Button>
-                        )}
-                        <Submit isDisabled={isDisabled}>{t`Save Rate`}</Submit>
-                      </HStack>
-                    )}
-                  </HStack>
-                </VStack>
-              </ValidatedForm>
-            )}
-
             <ValidatedForm
               id={CONFIG_FORM_ID}
-              validator={currencyValidator}
+              validator={currencyFormValidator}
               method="post"
               action={
                 isEditing
                   ? path.to.exchangeRate(initialValues.id!)
                   : path.to.newExchangeRate
               }
-              defaultValues={initialValues}
+              defaultValues={{ ...initialValues, rate: rate ?? undefined }}
               className="w-full"
             >
               <Hidden name="id" />
               <VStack spacing={4}>
+                {isEditing && (
+                  <>
+                    <NumberField
+                      name="rate"
+                      label={t`Exchange Rate`}
+                      termId="exchange-rate"
+                      minValue={0}
+                      step={INPUT_STEP.exchangeRate}
+                      formatOptions={INPUT_FORMAT.exchangeRate}
+                      helperText={exchangeRateHelperText}
+                      isDisabled={isBaseCurrency}
+                    />
+                    <HStack className="w-full justify-between">
+                      <ExchangeRateSourceBadge source={rateSource} />
+                      {!isBaseCurrency && rateSource === "override" && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          isDisabled={isDisabled}
+                          isLoading={resetFetcher.state !== "idle"}
+                          onClick={onResetToMarketRate}
+                        >
+                          {t`Reset to market rate`}
+                        </Button>
+                      )}
+                    </HStack>
+                  </>
+                )}
                 <Input name="name" label={t`Name`} isReadOnly />
                 <Input name="code" label={t`Code`} isReadOnly />
                 <NumberField

@@ -6,11 +6,11 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import {
-  currencyValidator,
+  currencyFormValidator,
   deleteExchangeRateOverride,
   exchangeRateOverrideValidator,
   getCurrency,
@@ -146,13 +146,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const validation = await validator(currencyValidator).validate(formData);
+  const validation = await validator(currencyFormValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { id, ...d } = validation.data;
+  const { id, rate, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
   const updateCurrency = await upsertCurrency(client, {
@@ -171,6 +171,35 @@ export async function action({ request }: ActionFunctionArgs) {
         error(updateCurrency.error, "Failed to update currency")
       )
     );
+  }
+
+  // The rate field is disabled (so not posted) for the base currency. Pin it
+  // only when it differs from the rate in effect, compared at the scale the
+  // input shows — otherwise saving the config would freeze the market rate.
+  if (rate !== undefined) {
+    const current = await getExchangeRates(client, companyId);
+    const resolved = current.data?.find((r) => r.currencyCode === d.code);
+    if (
+      resolved?.source !== "base" &&
+      (resolved?.rate == null || round(Number(resolved.rate)) !== round(rate))
+    ) {
+      const upsertOverride = await upsertExchangeRateOverride(client, {
+        companyId,
+        currencyCode: d.code,
+        rate,
+        createdBy: userId,
+        updatedBy: userId
+      });
+      if (upsertOverride.error) {
+        return data(
+          {},
+          await flash(
+            request,
+            error(upsertOverride.error, "Failed to update exchange rate")
+          )
+        );
+      }
+    }
   }
 
   throw redirect(

@@ -37,7 +37,7 @@ export default function ChangeNoticeNewSupplierPartRoute() {
     itemId: affected.draftItemId,
     supplierId: "",
     supplierPartId: "",
-    unitPrice: 0,
+    supplierUnitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     orderMultiple: 1,

@@ -13743,6 +13743,12 @@ msgstr "Nessuna unità di stoccaggio o numero di tracciamento corrisponde."
 msgid "No Supplier"
 msgstr "Nessun fornitore"
 
+msgid "No supplier parts have been added yet."
+msgstr ""
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "Nessun fornitore ancora"
 
@@ -15010,6 +15016,9 @@ msgstr "al giorno"
 
 msgid "per month"
 msgstr "al mese"
+
+msgid "Per purchase unit"
+msgstr "Per unità di acquisto"
 
 msgid "per quarter"
 msgstr "per trimestre"
@@ -18041,9 +18050,6 @@ msgstr "Salva bozza"
 msgid "Save Method"
 msgstr "Salva Metodo"
 
-msgid "Save Rate"
-msgstr "Salva tasso"
-
 msgid "Save the form you're editing"
 msgstr "Salva il modulo che stai modificando"
 
@@ -18289,6 +18295,9 @@ msgstr "Cerca elementi correlati..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Cerca unità di stoccaggio e numeri di tracciamento"
+
+msgid "Search supplier parts"
+msgstr ""
 
 msgid "Search suppliers..."
 msgstr "Cerca fornitori..."
@@ -19974,6 +19983,9 @@ msgstr "Panoramica Fornitore"
 
 msgid "Supplier Part"
 msgstr "Parte Fornitore"
+
+msgid "Supplier part actions"
+msgstr ""
 
 msgid "Supplier Part ID"
 msgstr "Codice articolo fornitore"
@@ -23068,6 +23080,9 @@ msgstr "Visualizza nel piano del progetto"
 
 msgid "View Issue"
 msgstr "Visualizza Problema"
+
+msgid "View Item"
+msgstr ""
 
 msgid "View Item Master"
 msgstr "Visualizza Anagrafica Articolo"

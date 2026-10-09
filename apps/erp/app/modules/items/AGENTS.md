@@ -53,7 +53,7 @@ pnpm --filter @carbon/erp test
 | `itemPostingGroup` | Maps item categories to GL accounts |
 | `unitOfMeasure` | UoM definitions |
 | `configurationParameter` / `configurationRule` / `configurationParameterGroup` | Product configurator |
-| `supplierPart` / `supplierPartPrice` | Supplier-item pricing with conversion factors and price breaks |
+| `supplierPart` / `supplierPartPrice` | Supplier-item pricing with conversion factors and price breaks. `supplierUnitPrice` is per purchase unit in `supplierPart.currencyCode` (NULL = base); readers convert at today's rate (`.claude/rules/purchasing-conversion-factors.md`) |
 | `pickMethod` | Default storage unit and pick strategy per item/location |
 | `itemShelfLife` | Shelf life tracking configuration per item |
 | `itemSupersession` | Item replacement chains |
@@ -70,7 +70,7 @@ pnpm --filter @carbon/erp test
 - `createRevision(client, db, args)` / `activateMethodVersion` — revision and version management; the revision's item row and the planning and purchasing setup it inherits from the source are written in one Kysely transaction, gated by `assert_company_access(companyId, 'parts_create')` through the caller's client
 - `updateItemMethodAndSourcing` — cascades replenishment/sourcing changes to Draft method materials
 - `getItemCost` / `getItemQuantities` / `getItemDemand` / `getItemSupply` — cost and planning reads
-- `getSupplierParts` / `getSupplierPriceBreaksForItems` / `lookupBuyPrice` — vendor pricing
+- `getSupplierParts` / `getSupplierPriceBreaksForItems` / `lookupBuyPrice` — vendor pricing (the latter two in base per inventory unit, for costing); `getSupplierPartPricing` — a part's price + breaks with its currency's current rate, for `resolveSupplierPrice` on a purchase document
 - `upsertPickMethodWithShelfLife` — pick method with shelf life configuration
 - `getConfigurationParameters` / `getConfigurationRules` — product configurator
 - `createItemDocumentUploadUrl` — MCP file upload (step 1): presigned URL for an item document (`parts/{itemId}` folder); pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"

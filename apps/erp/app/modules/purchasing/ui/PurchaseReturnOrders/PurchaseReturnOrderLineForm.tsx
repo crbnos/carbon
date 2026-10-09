@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import type { TrackedEntityOption } from "@carbon/react";
 import {
@@ -54,6 +55,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { getSupplierPartPricing } from "~/modules/items";
 import { path } from "~/utils/path";
 import {
   isPurchaseReturnOrderLocked,
@@ -193,7 +195,9 @@ const PurchaseReturnOrderLineForm = ({
       supplierId
         ? carbon
             .from("supplierPart")
-            .select("unitPrice, conversionFactor")
+            .select(
+              "id, companyId, currencyCode, supplierUnitPrice, conversionFactor"
+            )
             .eq("itemId", itemId)
             .eq("supplierId", supplierId)
             .eq("companyId", company.id)
@@ -206,14 +210,35 @@ const PurchaseReturnOrderLineForm = ({
       return;
     }
 
-    // supplierPart prices are per purchase unit — the line stores inventory
-    // units, so divide by the conversion factor.
+    // supplierPart prices are per purchase unit, in the part's currency — the
+    // line stores inventory units in the return's currency, so convert at
+    // today's rate and divide by the conversion factor.
     const part = supplierPart.data?.[0];
     const conversionFactor = part?.conversionFactor ?? 1;
+    const pricing = part
+      ? await getSupplierPartPricing(
+          carbon,
+          part,
+          company.baseCurrencyCode,
+          currencyCode
+        )
+      : null;
+    if (pricing?.error) toast.error(pricing.error.message);
+    const purchaseUnitPrice =
+      pricing?.data?.supplierUnitPrice != null
+        ? convertUnitPrice(
+            pricing.data.supplierUnitPrice,
+            pricing.data.currency,
+            {
+              currencyCode,
+              exchangeRate: routeData?.purchaseReturnOrder?.exchangeRate ?? 1
+            }
+          )
+        : 0;
     const unitPrice =
       conversionFactor > 0
-        ? (part?.unitPrice ?? 0) / conversionFactor
-        : (part?.unitPrice ?? 0);
+        ? purchaseUnitPrice / conversionFactor
+        : purchaseUnitPrice;
 
     setItemData({
       itemId,

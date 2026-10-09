@@ -13743,6 +13743,12 @@ msgstr "Aucune unité de stockage ou numéro de suivi ne correspond."
 msgid "No Supplier"
 msgstr "Aucun fournisseur"
 
+msgid "No supplier parts have been added yet."
+msgstr ""
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "Aucun fournisseur pour le moment"
 
@@ -15010,6 +15016,9 @@ msgstr "par jour"
 
 msgid "per month"
 msgstr "par mois"
+
+msgid "Per purchase unit"
+msgstr "Par unité d'achat"
 
 msgid "per quarter"
 msgstr "par trimestre"
@@ -18041,9 +18050,6 @@ msgstr "Enregistrer le brouillon"
 msgid "Save Method"
 msgstr "Enregistrer la méthode"
 
-msgid "Save Rate"
-msgstr "Enregistrer le taux"
-
 msgid "Save the form you're editing"
 msgstr "Enregistrer le formulaire que vous modifiez"
 
@@ -18289,6 +18295,9 @@ msgstr "Rechercher les articles associés..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Rechercher les unités de stockage et numéros de suivi"
+
+msgid "Search supplier parts"
+msgstr ""
 
 msgid "Search suppliers..."
 msgstr "Rechercher des fournisseurs..."
@@ -19974,6 +19983,9 @@ msgstr "Aperçu du fournisseur"
 
 msgid "Supplier Part"
 msgstr "Pièce Fournisseur"
+
+msgid "Supplier part actions"
+msgstr ""
 
 msgid "Supplier Part ID"
 msgstr "Référence fournisseur"
@@ -23068,6 +23080,9 @@ msgstr "Afficher dans le plan du projet"
 
 msgid "View Issue"
 msgstr "Afficher le problème"
+
+msgid "View Item"
+msgstr ""
 
 msgid "View Item Master"
 msgstr "Afficher la fiche article"

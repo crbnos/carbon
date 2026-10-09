@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -45,6 +46,7 @@ import { DateTime } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import {
   ConversionFactor,
+  Currency,
   CustomFormFields,
   Hidden,
   Input,
@@ -65,26 +67,31 @@ import { supplierPartValidator } from "../../items.models";
 
 type PriceBreak = {
   quantity: number;
-  unitPrice: number;
+  supplierUnitPrice: number;
+  leadTime: number;
   sourceType: string;
   sourceDocumentId: string | null;
   createdAt: string;
 };
 
+// leadTime is not edited here, but rides along so saving the drawer (which
+// rewrites every break) keeps the lead times a quote or order recorded.
 type PriceBreakRow = {
   quantity: number;
-  unitPrice: number;
+  supplierUnitPrice: number;
+  leadTime: number;
 };
 
 type PurchaseHistoryItem = {
   id: string;
   purchaseQuantity: number | null;
-  unitPrice: number | null;
+  supplierUnitPrice: number | null;
   purchaseOrderId: string;
   purchaseOrder: {
     purchaseOrderId: string;
     supplierId: string;
     orderDate: string | null;
+    currencyCode: string | null;
   };
 };
 
@@ -107,10 +114,31 @@ const SupplierPartForm = ({
 }: SupplierPartFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const { carbon } = useCarbon();
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
+
+  // The price and its breaks are in this currency — the supplier's own by
+  // default, so a price is entered exactly as the supplier quoted it.
+  const [currencyCode, setCurrencyCode] = useState<string>(
+    initialValues.currencyCode ?? baseCurrency
+  );
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
+
+  const onSupplierChange = async (supplierId: string | undefined) => {
+    if (!supplierId || !carbon) return;
+    const { data, error } = await carbon
+      .from("supplier")
+      .select("currencyCode")
+      .eq("id", supplierId)
+      .single();
+    if (error) {
+      toast.error(t`Error fetching supplier data`);
+      return;
+    }
+    setCurrencyCode(data.currencyCode ?? baseCurrency);
+  };
 
   let { itemId } = useParams();
 
@@ -125,12 +153,13 @@ const SupplierPartForm = ({
   const [priceBreaks, setPriceBreaks] = useState<PriceBreakRow[]>(
     initialPriceBreaks.map((pb) => ({
       quantity: pb.quantity,
-      unitPrice: pb.unitPrice
+      supplierUnitPrice: pb.supplierUnitPrice,
+      leadTime: pb.leadTime
     }))
   );
 
   const hasInvalidPriceBreaks = priceBreaks.some(
-    (pb) => pb.quantity <= 0 || pb.unitPrice <= 0
+    (pb) => pb.quantity <= 0 || pb.supplierUnitPrice <= 0
   );
 
   const isEditing = initialValues.id !== undefined;
@@ -179,18 +208,31 @@ const SupplierPartForm = ({
 
             <VStack spacing={4}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-                <Supplier name="supplierId" label={t`Supplier`} />
+                <Supplier
+                  name="supplierId"
+                  label={t`Supplier`}
+                  onChange={(value) => onSupplierChange(value?.value)}
+                />
                 <Input
                   name="supplierPartId"
                   label={t`Supplier Part ID`}
                   termId="supplier-part-id"
                 />
+                <Currency
+                  name="currencyCode"
+                  label={t`Currency`}
+                  value={currencyCode}
+                  onChange={(value) => {
+                    if (value?.value) setCurrencyCode(value.value);
+                  }}
+                />
                 <Number
-                  name="unitPrice"
+                  name="supplierUnitPrice"
                   label={t`Unit Price`}
+                  helperText={t`Per purchase unit`}
                   minValue={0}
                   formatOptions={INPUT_FORMAT.rate(
-                    baseCurrency,
+                    currencyCode,
                     currencyDecimals
                   )}
                 />
@@ -225,7 +267,7 @@ const SupplierPartForm = ({
               <PriceBreaks
                 priceBreaks={priceBreaks}
                 onChange={setPriceBreaks}
-                baseCurrency={baseCurrency}
+                currencyCode={currencyCode}
                 isDisabled={isDisabled}
               />
               <PurchaseHistory
@@ -266,10 +308,6 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
-  const priceFormatter = useCurrencyFormatter({
-    rate: true,
-    currency: baseCurrency
-  });
   if (history.length === 0) return null;
 
   return (
@@ -328,7 +366,13 @@ function PurchaseHistory({
                           <Tr>
                             <Td>{line.purchaseQuantity}</Td>
                             <Td>
-                              {priceFormatter.format(line.unitPrice ?? 0)}
+                              <PurchaseHistoryPrice
+                                price={line.supplierUnitPrice ?? 0}
+                                currencyCode={
+                                  line.purchaseOrder.currencyCode ??
+                                  baseCurrency
+                                }
+                              />
                             </Td>
                           </Tr>
                         </Tbody>
@@ -351,21 +395,39 @@ function PurchaseHistory({
   );
 }
 
+// What the order paid, in the order's own currency.
+function PurchaseHistoryPrice({
+  price,
+  currencyCode
+}: {
+  price: number;
+  currencyCode: string;
+}) {
+  const formatter = useCurrencyFormatter({
+    rate: true,
+    currency: currencyCode
+  });
+  return <>{formatter.format(price)}</>;
+}
+
 function PriceBreaks({
   priceBreaks,
   onChange,
-  baseCurrency,
+  currencyCode,
   isDisabled
 }: {
   priceBreaks: PriceBreakRow[];
   onChange: React.Dispatch<React.SetStateAction<PriceBreakRow[]>>;
-  baseCurrency: string;
+  currencyCode: string;
   isDisabled: boolean;
 }) {
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { t } = useLingui();
-  // unitPrice is a RATE, not a settlement amount — see numeric-precision.md
-  const formatter = useCurrencyFormatter({ rate: true });
+  // supplierUnitPrice is a RATE, not a settlement amount — see numeric-precision.md
+  const formatter = useCurrencyFormatter({
+    rate: true,
+    currency: currencyCode
+  });
 
   const removeRow = useCallback(
     (index: number) => {
@@ -375,7 +437,10 @@ function PriceBreaks({
   );
 
   const addRow = useCallback(() => {
-    onChange((prev) => [...prev, { quantity: 0, unitPrice: 0 }]);
+    onChange((prev) => [
+      ...prev,
+      { quantity: 0, supplierUnitPrice: 0, leadTime: 0 }
+    ]);
   }, [onChange]);
 
   const noOpMutation = useCallback(
@@ -394,11 +459,11 @@ function PriceBreaks({
   const editableComponents = useMemo(
     () => ({
       quantity: EditableNumber(noOpMutation),
-      unitPrice: EditableNumber(noOpMutation, {
-        formatOptions: INPUT_FORMAT.rate(baseCurrency, currencyDecimals)
+      supplierUnitPrice: EditableNumber(noOpMutation, {
+        formatOptions: INPUT_FORMAT.rate(currencyCode, currencyDecimals)
       })
     }),
-    [noOpMutation, baseCurrency, currencyDecimals]
+    [noOpMutation, currencyCode, currencyDecimals]
   );
 
   const columns = useMemo<ColumnDef<PriceBreakRow>[]>(() => {
@@ -411,9 +476,9 @@ function PriceBreaks({
         )
       },
       {
-        accessorKey: "unitPrice",
+        accessorKey: "supplierUnitPrice",
         header: t`Unit Price`,
-        cell: ({ row }) => formatter.format(row.original.unitPrice)
+        cell: ({ row }) => formatter.format(row.original.supplierUnitPrice)
       }
     ];
 

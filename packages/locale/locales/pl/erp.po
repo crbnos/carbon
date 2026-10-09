@@ -13743,6 +13743,12 @@ msgstr "Brak zgodnych jednostek magazynowych ani numerów śledzenia."
 msgid "No Supplier"
 msgstr "Brak dostawcy"
 
+msgid "No supplier parts have been added yet."
+msgstr ""
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "Brak dostawców"
 
@@ -15010,6 +15016,9 @@ msgstr "na dzień"
 
 msgid "per month"
 msgstr "na miesiąc"
+
+msgid "Per purchase unit"
+msgstr "Za jednostkę zakupu"
 
 msgid "per quarter"
 msgstr "za kwartał"
@@ -18041,9 +18050,6 @@ msgstr "Zapisz wersję roboczą"
 msgid "Save Method"
 msgstr "Zapisz metodę"
 
-msgid "Save Rate"
-msgstr "Zapisz kurs"
-
 msgid "Save the form you're editing"
 msgstr "Zapisz formularz, który edytujesz"
 
@@ -18289,6 +18295,9 @@ msgstr "Szukaj powiązanych elementów..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Szukaj jednostek magazynowych i numerów śledzenia"
+
+msgid "Search supplier parts"
+msgstr ""
 
 msgid "Search suppliers..."
 msgstr "Szukaj dostawców..."
@@ -19974,6 +19983,9 @@ msgstr "Przegląd dostawcy"
 
 msgid "Supplier Part"
 msgstr "Część dostawcy"
+
+msgid "Supplier part actions"
+msgstr ""
 
 msgid "Supplier Part ID"
 msgstr "Numer artykułu dostawcy"
@@ -23068,6 +23080,9 @@ msgstr "Wyświetl w planie projektu"
 
 msgid "View Issue"
 msgstr "Wyświetl Problem"
+
+msgid "View Item"
+msgstr ""
 
 msgid "View Item Master"
 msgstr "Wyświetl Główny Katalog Pozycji"

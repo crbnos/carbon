@@ -410,6 +410,15 @@ export const currencyValidator = z.object({
   )
 });
 
+// The currency drawer saves its config and its exchange rate with one button.
+// The rate is pinned as an override only when it differs from the rate in
+// effect, so saving the config never freezes the market rate.
+export const currencyFormValidator = currencyValidator.extend({
+  rate: zfd.numeric(
+    z.number().positive({ message: "Rate must be positive" }).optional()
+  )
+});
+
 export const exchangeRateOverrideValidator = z.object({
   currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
   rate: zfd.numeric(z.number().positive({ message: "Rate must be positive" }))

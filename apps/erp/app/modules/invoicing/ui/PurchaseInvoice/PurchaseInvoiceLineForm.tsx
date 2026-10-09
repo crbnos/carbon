@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   Combobox,
   DatePicker,
@@ -31,6 +32,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  toast,
   useDisclosure,
   useMount,
   VStack
@@ -73,12 +75,13 @@ import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
 import {
   EACH_UNIT_OF_MEASURE_CODE,
-  getSupplierPartPriceBreaks
+  getSupplierPartPricing
 } from "~/modules/items";
 import {
   type ItemType,
   itemType,
-  resolveSupplierPrice
+  resolveSupplierPrice,
+  type SupplierPartPricing
 } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -150,7 +153,9 @@ const PurchaseInvoiceLineForm = ({
     minimumOrderQuantity?: number;
     taxAmount: number;
     taxPercent: number;
-    priceBreaks: Array<{ quantity: number; unitPrice: number }>;
+    pricing: SupplierPartPricing | null;
+    // In the INVOICE's currency: the price used when the supplier part has
+    // none for the quantity.
     fallbackUnitPrice: number;
   }>({
     itemId: initialValues.itemId ?? "",
@@ -165,13 +170,15 @@ const PurchaseInvoiceLineForm = ({
     minimumOrderQuantity: undefined,
     taxAmount: initialValues.supplierTaxAmount ?? 0,
     taxPercent: initialValues.taxPercent ?? 0,
-    priceBreaks: [],
-    // fallbackUnitPrice is BASE currency, matching what resolveSupplierPrice
-    // expects. initialValues.supplierUnitPrice is the SUPPLIER's, so divide.
-    fallbackUnitPrice:
-      (initialValues.supplierUnitPrice ?? 0) /
-      (routeData?.purchaseInvoice?.exchangeRate || 1)
+    pricing: null,
+    fallbackUnitPrice: initialValues.supplierUnitPrice ?? 0
   });
+
+  // The invoice's currency and rate: what a supplier part's price converts into.
+  const invoiceCurrencyRate = {
+    currencyCode: invoiceCurrency,
+    exchangeRate: routeData?.purchaseInvoice?.exchangeRate ?? 1
+  };
 
   // Re-derive the tax amount when the line's base changes — never on mount, so
   // a saved manual override survives being reopened.
@@ -272,7 +279,8 @@ const PurchaseInvoiceLineForm = ({
       setIndirectData((d) => ({ ...d, taxPercent: percent, taxAmount: amount }))
   });
 
-  // Load price breaks
+  // Load price breaks. The part's own price is left out: below every break
+  // the line keeps the price it already has.
   useMount(() => {
     if (!isEditing || !initialValues.itemId) return;
     const supplierId = routeData?.purchaseInvoice?.supplierId;
@@ -281,18 +289,25 @@ const PurchaseInvoiceLineForm = ({
     (async () => {
       const supplierPart = await carbon
         .from("supplierPart")
-        .select("id")
+        .select("id, companyId, currencyCode, supplierUnitPrice")
         .eq("itemId", initialValues.itemId!)
         .eq("companyId", company.id)
         .eq("supplierId", supplierId)
         .maybeSingle();
 
       if (supplierPart?.data?.id) {
-        const breaks = await getSupplierPartPriceBreaks(
+        const pricing = await getSupplierPartPricing(
           carbon,
-          supplierPart.data.id
+          supplierPart.data,
+          company.baseCurrencyCode,
+          invoiceCurrency
         );
-        setItemData((d) => ({ ...d, priceBreaks: breaks }));
+        if (pricing.data) {
+          setItemData((d) => ({
+            ...d,
+            pricing: { ...pricing.data, supplierUnitPrice: null }
+          }));
+        }
       }
     })();
   });
@@ -335,7 +350,7 @@ const PurchaseInvoiceLineForm = ({
       minimumOrderQuantity: undefined,
       taxAmount: 0,
       taxPercent: 0,
-      priceBreaks: [],
+      pricing: null,
       fallbackUnitPrice: 0
     });
   };
@@ -379,24 +394,32 @@ const PurchaseInvoiceLineForm = ({
 
         const itemCost = item?.data?.itemCost?.[0];
         const itemReplenishment = item?.data?.itemReplenishment;
-        const exchangeRate = routeData?.purchaseInvoice?.exchangeRate ?? 1;
         const initialQty = supplierPart?.data?.minimumOrderQuantity ?? 1;
-        // BASE currency: supplierPart.unitPrice and itemCost.unitCost are both
-        // stored in base. resolveSupplierPrice converts to the supplier's.
-        const baseFallback =
-          supplierPart?.data?.unitPrice !== null &&
-          supplierPart?.data?.unitPrice !== undefined
-            ? supplierPart.data.unitPrice
-            : (itemCost?.unitCost ?? 0);
+        // The item's cost is in BASE currency; the line wants the invoice's.
+        const fallbackUnitPrice = convertUnitPrice(
+          itemCost?.unitCost ?? 0,
+          { currencyCode: company.baseCurrencyCode, exchangeRate: 1 },
+          invoiceCurrencyRate
+        );
 
-        const breaks = supplierPart?.data?.id
-          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
-          : [];
+        // The supplier's price is in the supplier part's currency, converted
+        // into the invoice's at the current rate.
+        const pricing = supplierPart?.data
+          ? await getSupplierPartPricing(
+              carbon,
+              supplierPart.data,
+              company.baseCurrencyCode,
+              invoiceCurrency
+            )
+          : null;
+        if (pricing?.error) {
+          toast.error(pricing.error.message);
+        }
         const resolvedPrice = resolveSupplierPrice(
-          breaks,
+          pricing?.data ?? null,
           initialQty,
-          baseFallback,
-          exchangeRate
+          invoiceCurrencyRate,
+          fallbackUnitPrice
         );
 
         // A service is always bought and "stocked" in EA, 1:1.
@@ -424,8 +447,8 @@ const PurchaseInvoiceLineForm = ({
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           taxAmount: 0,
           taxPercent: 0,
-          priceBreaks: breaks,
-          fallbackUnitPrice: baseFallback
+          pricing: pricing?.data ?? null,
+          fallbackUnitPrice
         });
 
         if (item.data?.type) {
@@ -654,16 +677,14 @@ const PurchaseInvoiceLineForm = ({
                             label={t`Quantity`}
                             value={itemData.quantity}
                             onChange={(value) => {
-                              const exchangeRate =
-                                routeData?.purchaseInvoice?.exchangeRate ?? 1;
                               setItemData((d) => ({
                                 ...d,
                                 quantity: value,
                                 supplierUnitPrice: resolveSupplierPrice(
-                                  d.priceBreaks,
+                                  d.pricing,
                                   value,
-                                  d.fallbackUnitPrice,
-                                  exchangeRate
+                                  invoiceCurrencyRate,
+                                  d.fallbackUnitPrice
                                 )
                               }));
                             }}

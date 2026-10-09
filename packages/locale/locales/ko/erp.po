@@ -13743,6 +13743,12 @@ msgstr "일치하는 보관 단위 또는 추적 번호가 없습니다."
 msgid "No Supplier"
 msgstr "공급업체 없음"
 
+msgid "No supplier parts have been added yet."
+msgstr ""
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
 
@@ -15010,6 +15016,9 @@ msgstr "일당"
 
 msgid "per month"
 msgstr "월당"
+
+msgid "Per purchase unit"
+msgstr "구매 단위당"
 
 msgid "per quarter"
 msgstr "분기당"
@@ -18041,9 +18050,6 @@ msgstr "초안 저장"
 msgid "Save Method"
 msgstr "저장 방법"
 
-msgid "Save Rate"
-msgstr "환율 저장"
-
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
@@ -18289,6 +18295,9 @@ msgstr "관련 품목 검색..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "보관 단위 및 추적 번호 검색"
+
+msgid "Search supplier parts"
+msgstr ""
 
 msgid "Search suppliers..."
 msgstr "공급업체 검색..."
@@ -19974,6 +19983,9 @@ msgstr "공급업체 개요"
 
 msgid "Supplier Part"
 msgstr "공급업체 부품"
+
+msgid "Supplier part actions"
+msgstr ""
 
 msgid "Supplier Part ID"
 msgstr "공급업체 품번"
@@ -23068,6 +23080,9 @@ msgstr "프로젝트 계획에서 보기"
 
 msgid "View Issue"
 msgstr "이슈 보기"
+
+msgid "View Item"
+msgstr ""
 
 msgid "View Item Master"
 msgstr "품목 마스터 보기"
