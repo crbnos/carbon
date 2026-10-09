@@ -373,6 +373,10 @@ msgstr "{assetCount} Immobilisations"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Envisagez de pointer cette pièce directement vers le successeur final."
 
+#. placeholder {0}: children.length
+msgid "{completed} of {0}"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# composant} other {# composants}}"
 
@@ -1774,6 +1778,9 @@ msgstr "Ajouter un opérateur console"
 msgid "Add Contractor"
 msgstr "Ajouter Prestataire"
 
+msgid "Add Cost"
+msgstr ""
+
 msgid "Add cost center"
 msgstr "Ajouter un centre de coûts"
 
@@ -1807,6 +1814,9 @@ msgstr "Ajouter un article"
 msgid "Add Label"
 msgstr ""
 
+msgid "Add Labor"
+msgstr ""
+
 msgid "Add Line"
 msgstr "Ajouter une ligne"
 
@@ -1827,6 +1837,9 @@ msgstr "Ajouter manuellement"
 
 msgid "Add match"
 msgstr "Ajouter une correspondance"
+
+msgid "Add Material"
+msgstr ""
 
 msgid "Add Model"
 msgstr "Ajouter un modèle"
@@ -4377,6 +4390,12 @@ msgstr "Frais"
 msgid "Charge Date"
 msgstr "Date de la Charge"
 
+msgid "Charge number"
+msgstr ""
+
+msgid "Chargeable"
+msgstr ""
+
 msgid "Charged on each rent invoice line"
 msgstr "Facturé sur chaque ligne de facture de location"
 
@@ -4421,6 +4440,9 @@ msgstr "Point de contrôle ·"
 
 msgid "Checkpoints"
 msgstr "Points de contrôle"
+
+msgid "Children"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "Choisir une sauvegarde"
@@ -5263,6 +5285,9 @@ msgstr "Copier le numéro de lot de production"
 
 msgid "Copy change notice unique identifier"
 msgstr "Copier l'identifiant unique de l'avis de modification"
+
+msgid "Copy charge number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Copier l'identifiant unique de la Société"
@@ -6678,6 +6703,7 @@ msgid "Delete {0}"
 msgstr "Supprimer {0}"
 
 #. placeholder {0}: deleting.readableId
+#. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr ""
 
@@ -6731,6 +6757,9 @@ msgstr "Supprimer l'avis de modification"
 
 msgid "Delete charge"
 msgstr "Supprimer la charge"
+
+msgid "Delete comment"
+msgstr ""
 
 #. placeholder {0}: unit.name
 msgid "Delete component group {0}"
@@ -7858,6 +7887,9 @@ msgstr "Modifier le contact"
 msgid "Edit Contractor"
 msgstr "Modifier le prestataire"
 
+msgid "Edit Cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "Modifier le centre de coûts"
 
@@ -7943,6 +7975,9 @@ msgid "Edit Kanban"
 msgstr "Modifier Kanban"
 
 msgid "Edit Label"
+msgstr ""
+
+msgid "Edit Labor"
 msgstr ""
 
 msgid "Edit Line"
@@ -8555,6 +8590,9 @@ msgstr "Escalade"
 
 msgid "Est. Duration"
 msgstr "Durée est."
+
+msgid "Estimate at completion"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Estimé"
@@ -10172,6 +10210,9 @@ msgstr "Heures supposées selon les équipes du site"
 msgid "Hours at this station"
 msgstr "Heures à cette station"
 
+msgid "Hours estimate"
+msgstr ""
+
 msgid "Hours Estimated"
 msgstr ""
 
@@ -11403,6 +11444,9 @@ msgstr "Écart de main-d'œuvre et machine (par défaut)"
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor Category"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Coûts de Main-d'œuvre"
 
@@ -11729,6 +11773,9 @@ msgstr "La quantité d'entité liée ({0}) ne correspond pas à la quantité de 
 
 msgid "Linked Issue"
 msgstr "Problème lié"
+
+msgid "Linked part"
+msgstr ""
 
 msgid "Linked PO"
 msgstr "Bon de commande lié"
@@ -13374,6 +13421,9 @@ msgstr "Aucune modification pour le moment."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Aucun frais. Les frais de kilométrage, dommages, livraison ou nettoyage seront reportés sur la facture suivante."
 
+msgid "No child elements"
+msgstr ""
+
 msgid "No clauses yet. Use Add clause above."
 msgstr "Pas encore de clauses. Utilisez Ajouter une clause ci-dessus."
 
@@ -13382,6 +13432,9 @@ msgstr "Aucun chemin clair"
 
 msgid "No collision-free path"
 msgstr "Pas de chemin sans collision"
+
+msgid "No comments yet"
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Aucun commentaire pour le moment. Soyez le premier à ajouter un commentaire."
@@ -13430,6 +13483,9 @@ msgstr "Aucune pièce jointe par défaut pour le moment."
 
 msgid "No deposit has been received for this agreement."
 msgstr "Aucun acompte n'a été reçu pour cet accord."
+
+msgid "No description"
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Aucun emplacement d'axe analytique configuré"
@@ -13695,6 +13751,9 @@ msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Aucune source parent enregistrée pour le moment. Cliquez sur Recalculer sur la page de planification pour actualiser l'attribution."
+
+msgid "No part"
+msgstr ""
 
 msgid "No part ID"
 msgstr "Aucun ID de pièce"
@@ -14078,6 +14137,9 @@ msgstr "Rien n'est synchronisé jusqu'à ce que vous activiez la synchronisation
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Rien n'est synchronisé tant que vous n'activez pas la synchronisation. Chaque compte obligatoire est mappé."
 
+msgid "Nothing planned yet"
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Rien de programmé — ajoutez une station ci-dessous."
 
@@ -14383,6 +14445,9 @@ msgstr "Comptes fournisseurs ouverts"
 
 msgid "Open AR"
 msgstr "Comptes clients ouverts"
+
+msgid "Open as a page"
+msgstr ""
 
 msgid "Open Audit Log"
 msgstr "Ouvrir le journal d'audit"
@@ -14722,6 +14787,9 @@ msgstr "Comptage initial"
 
 msgid "Other"
 msgstr "Autre"
+
+msgid "Other Costs"
+msgstr ""
 
 msgid "Other Expense"
 msgstr "Autre charge"
@@ -16956,6 +17024,10 @@ msgstr "Retirer {0} de {1}"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "Retirer {0} du lot de production"
+
+#. placeholder {0}: deleting.name
+msgid "Remove {0} from the plan?"
+msgstr ""
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -21612,6 +21684,9 @@ msgstr "Le tarif de ce client"
 msgid "This download link is invalid or has been tampered with."
 msgstr "Ce lien de téléchargement est invalide ou a été modifié."
 
+msgid "This element"
+msgstr ""
+
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Ce fichier n'est plus disponible, ou vous n'avez pas l'autorisation de le télécharger."
 
@@ -23986,6 +24061,9 @@ msgstr "Fenêtre :"
 
 msgid "WIP"
 msgstr "En-cours"
+
+msgid "With children"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Sans liste de prélèvement, les opérateurs prélèvent la matière à partir de l'onglet Scanner."

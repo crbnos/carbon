@@ -1,0 +1,230 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Combobox, Copy, cn, Subheading, Switch } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
+import { useMemo } from "react";
+import { useItems } from "~/stores";
+import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
+import {
+  DatePill,
+  LabelsPill,
+  MilestonePill,
+  NumberPill,
+  OwnerPill,
+  PriorityPill,
+  StatePill,
+  useElementField
+} from "../Elements/ElementProperties";
+import {
+  ElementTypeIcon,
+  useElementTypeLabels
+} from "../Elements/ElementTypeIcon";
+
+type Element = ProjectElementPage["element"];
+
+/** One property row: a 120 px label column and the value's ghost editor. */
+function Property({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-h-8 items-center gap-2">
+      <span className="w-[120px] shrink-0 text-xs text-muted-foreground">
+        {label}
+      </span>
+      <div className="flex min-w-0 flex-1 items-center">{children}</div>
+    </div>
+  );
+}
+
+export function ElementSidebar({
+  projectId,
+  element,
+  states,
+  labels,
+  milestones,
+  isDisabled,
+  className
+}: {
+  projectId: string;
+  element: Element;
+  states: ProjectState[];
+  labels: ProjectLabel[];
+  milestones: ProjectMilestone[];
+  isDisabled: boolean;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const typeLabels = useElementTypeLabels();
+  const common = {
+    projectId,
+    elementId: element.id,
+    isDisabled,
+    variant: "ghost" as const
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-1 text-sm", className)}>
+      <Subheading as="h3" variant="light" className="mb-2">
+        <Trans>Properties</Trans>
+      </Subheading>
+      <Property label={t`Type`}>
+        <span className="inline-flex h-8 items-center gap-2 px-2">
+          <ElementTypeIcon type={element.type} />
+          {typeLabels[element.type]}
+        </span>
+      </Property>
+      <Property label={t`State`}>
+        <StatePill {...common} stateId={element.stateId} states={states} />
+      </Property>
+      <Property label={t`Owner`}>
+        <OwnerPill {...common} ownerId={element.ownerId} />
+      </Property>
+      <Property label={t`Priority`}>
+        <PriorityPill {...common} priority={element.priority} />
+      </Property>
+      <Property label={t`Labels`}>
+        <LabelsPill
+          {...common}
+          labelIds={(element.labels ?? []).map((l) => l.projectLabelId)}
+          labels={labels}
+        />
+      </Property>
+      <Property label={t`Start date`}>
+        <DatePill {...common} field="startDate" date={element.startDate} />
+      </Property>
+      <Property label={t`Target date`}>
+        <DatePill
+          {...common}
+          field="targetDate"
+          date={element.targetDate}
+          isComplete={!!element.completedAt}
+        />
+      </Property>
+      <Property label={t`Milestone`}>
+        <MilestonePill
+          {...common}
+          milestoneId={element.milestoneId}
+          milestones={milestones}
+        />
+      </Property>
+      <Property label={t`Charge number`}>
+        <span className="inline-flex h-8 items-center gap-1 px-2">
+          <span className="whitespace-nowrap font-mono text-sm">
+            {element.readableId}
+          </span>
+          <Copy
+            text={element.readableId}
+            label={t`Copy charge number`}
+            variant="ghost"
+          />
+        </span>
+      </Property>
+      <Property label={t`Chargeable`}>
+        <ChargeableSwitch
+          projectId={projectId}
+          elementId={element.id}
+          isChargeable={element.isChargeable}
+          isDisabled={isDisabled || element.type === "Parameter"}
+        />
+      </Property>
+      <Property label={t`Budget`}>
+        <NumberPill {...common} field="budget" number={element.budget} />
+      </Property>
+      <Property label={t`Hours estimate`}>
+        <NumberPill
+          {...common}
+          field="estimatedHours"
+          number={element.estimatedHours}
+        />
+      </Property>
+      {element.type === "System" && (
+        <Property label={t`Linked part`}>
+          <LinkedPart
+            projectId={projectId}
+            elementId={element.id}
+            itemId={element.itemId}
+            isDisabled={isDisabled}
+          />
+        </Property>
+      )}
+    </div>
+  );
+}
+
+function ChargeableSwitch({
+  projectId,
+  elementId,
+  isChargeable,
+  isDisabled
+}: {
+  projectId: string;
+  elementId: string;
+  isChargeable: boolean;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const { pending, submit } = useElementField(
+    projectId,
+    elementId,
+    "isChargeable"
+  );
+  const checked = pending === undefined ? isChargeable : pending === "true";
+  return (
+    <div className="px-2">
+      <Switch
+        variant="small"
+        aria-label={t`Chargeable`}
+        checked={checked}
+        disabled={isDisabled}
+        onCheckedChange={(next) => submit(next ? "true" : "false")}
+      />
+    </div>
+  );
+}
+
+function LinkedPart({
+  projectId,
+  elementId,
+  itemId,
+  isDisabled
+}: {
+  projectId: string;
+  elementId: string;
+  itemId: string | null;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  const { pending, submit } = useElementField(projectId, elementId, "itemId");
+  const value = pending === undefined ? itemId : pending;
+  const options = useMemo(
+    () =>
+      items
+        .filter((item) => item.active || item.id === value)
+        .map((item) => ({
+          value: item.id,
+          label: item.readableIdWithRevision,
+          helper: item.name
+        })),
+    [items, value]
+  );
+
+  return (
+    <div className="w-full">
+      <Combobox
+        asButton
+        size="sm"
+        value={value ?? ""}
+        options={options}
+        isClearable
+        isReadOnly={isDisabled}
+        placeholder={t`No part`}
+        onChange={(next) => {
+          if ((next || null) !== value) submit(next || null);
+        }}
+      />
+    </div>
+  );
+}

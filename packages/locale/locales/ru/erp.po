@@ -373,6 +373,10 @@ msgstr "{assetCount} Активы"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
+#. placeholder {0}: children.length
+msgid "{completed} of {0}"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# компонент} other {# компонентов}}"
 
@@ -1774,6 +1778,9 @@ msgstr "Добавить оператора консоли"
 msgid "Add Contractor"
 msgstr "Добавить подрядчика"
 
+msgid "Add Cost"
+msgstr ""
+
 msgid "Add cost center"
 msgstr "Добавить центр затрат"
 
@@ -1807,6 +1814,9 @@ msgstr "Добавить элемент"
 msgid "Add Label"
 msgstr ""
 
+msgid "Add Labor"
+msgstr ""
+
 msgid "Add Line"
 msgstr "Добавить строку"
 
@@ -1827,6 +1837,9 @@ msgstr "Добавить вручную"
 
 msgid "Add match"
 msgstr "Добавить совпадение"
+
+msgid "Add Material"
+msgstr ""
 
 msgid "Add Model"
 msgstr "Добавить модель"
@@ -4377,6 +4390,12 @@ msgstr "Начисление"
 msgid "Charge Date"
 msgstr "Дата платежа"
 
+msgid "Charge number"
+msgstr ""
+
+msgid "Chargeable"
+msgstr ""
+
 msgid "Charged on each rent invoice line"
 msgstr "Начисляется на каждую строку счета-фактуры аренды"
 
@@ -4421,6 +4440,9 @@ msgstr "Контрольная точка ·"
 
 msgid "Checkpoints"
 msgstr "Контрольные точки"
+
+msgid "Children"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "Выберите резервную копию"
@@ -5263,6 +5285,9 @@ msgstr "Копировать номер серии"
 
 msgid "Copy change notice unique identifier"
 msgstr "Скопировать уникальный идентификатор извещения об изменении"
+
+msgid "Copy charge number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Скопировать уникальный идентификатор организации"
@@ -6678,6 +6703,7 @@ msgid "Delete {0}"
 msgstr "Удалить {0}"
 
 #. placeholder {0}: deleting.readableId
+#. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr ""
 
@@ -6731,6 +6757,9 @@ msgstr "Удалить извещение об изменении"
 
 msgid "Delete charge"
 msgstr "Удалить плату"
+
+msgid "Delete comment"
+msgstr ""
 
 #. placeholder {0}: unit.name
 msgid "Delete component group {0}"
@@ -7858,6 +7887,9 @@ msgstr "Изменить контактное лицо"
 msgid "Edit Contractor"
 msgstr "Изменить подрядчика"
 
+msgid "Edit Cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "Изменить центр затрат"
 
@@ -7943,6 +7975,9 @@ msgid "Edit Kanban"
 msgstr "Изменить канбан"
 
 msgid "Edit Label"
+msgstr ""
+
+msgid "Edit Labor"
 msgstr ""
 
 msgid "Edit Line"
@@ -8555,6 +8590,9 @@ msgstr "Эскалация"
 
 msgid "Est. Duration"
 msgstr "Прибл. Длительность"
+
+msgid "Estimate at completion"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Расчетный"
@@ -10172,6 +10210,9 @@ msgstr "Часы предполагаются на основе смен в ме
 msgid "Hours at this station"
 msgstr "Часы на этом рабочем месте"
 
+msgid "Hours estimate"
+msgstr ""
+
 msgid "Hours Estimated"
 msgstr ""
 
@@ -11403,6 +11444,9 @@ msgstr "Отклонение трудозатрат и времени станк
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor Category"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
@@ -11729,6 +11773,9 @@ msgstr "Количество связанной сущности ({0}) не со
 
 msgid "Linked Issue"
 msgstr "Связанная проблема"
+
+msgid "Linked part"
+msgstr ""
 
 msgid "Linked PO"
 msgstr "Связанный ПО"
@@ -13374,6 +13421,9 @@ msgstr "Пока нет изменений."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
 
+msgid "No child elements"
+msgstr ""
+
 msgid "No clauses yet. Use Add clause above."
 msgstr "Пока нет условий. Используйте добавление условия выше."
 
@@ -13382,6 +13432,9 @@ msgstr "Нет четкого пути"
 
 msgid "No collision-free path"
 msgstr "Нет пути без столкновений"
+
+msgid "No comments yet"
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
@@ -13430,6 +13483,9 @@ msgstr "Пока нет вложений по умолчанию."
 
 msgid "No deposit has been received for this agreement."
 msgstr "Авансовый платеж не получен по этому соглашению."
+
+msgid "No description"
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
@@ -13695,6 +13751,9 @@ msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Родительские источники еще не записаны. Нажмите \"Пересчитать\" на странице планирования, чтобы обновить атрибуцию."
+
+msgid "No part"
+msgstr ""
 
 msgid "No part ID"
 msgstr "Нет ID детали"
@@ -14078,6 +14137,9 @@ msgstr "Ничего не синхронизируется, пока вы не �
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Ничего не синхронизируется, пока вы не включите синхронизацию. Каждый требуемый счет распределен."
 
+msgid "Nothing planned yet"
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
 
@@ -14383,6 +14445,9 @@ msgstr "Открытые кредиторские задолженности"
 
 msgid "Open AR"
 msgstr "Открытая дебиторская задолженность"
+
+msgid "Open as a page"
+msgstr ""
 
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
@@ -14722,6 +14787,9 @@ msgstr "Исходный подсчет"
 
 msgid "Other"
 msgstr "Прочее"
+
+msgid "Other Costs"
+msgstr ""
 
 msgid "Other Expense"
 msgstr "Прочие расходы"
@@ -16956,6 +17024,10 @@ msgstr "Убрать {0} из {1}"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "Убрать {0} из серии"
+
+#. placeholder {0}: deleting.name
+msgid "Remove {0} from the plan?"
+msgstr ""
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -21612,6 +21684,9 @@ msgstr "Ставка этого покупателя"
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."
 
+msgid "This element"
+msgstr ""
+
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Этот файл больше не доступен или у вас нет прав доступа для его скачивания."
 
@@ -23986,6 +24061,9 @@ msgstr "Окно:"
 
 msgid "WIP"
 msgstr "Незавершенное производство"
+
+msgid "With children"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Без листа отбора операторы отбирают материал со вкладки Сканирование."

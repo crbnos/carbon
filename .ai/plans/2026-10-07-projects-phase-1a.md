@@ -71,7 +71,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 32: Build the Elements page with the List layout
 - [x] Task 33: Add the Board layout
 - [x] Task 34: Add the Table layout
-- [ ] Task 35: Build the element page (peek and full page)
+- [x] Task 35: Build the element page (peek and full page)
 - [ ] Task 36: Add Log time and Issue material to the element page
 - [ ] Task 37: Build the Milestones tab
 - [ ] Task 38: Build the Costs tab and the Time & materials tab
@@ -2512,3 +2512,11 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 34: **Remaining** is the element's own budget less the subtree's committed and actual. It shows a dash when the element has no budget, and red when negative.
 - Task 34: the Display popover shows **Group by** (none, state, type, owner, milestone) only on the Table layout, stored per project in `project-group-{projectId}`. The rows sort by the group key with a stable sort, so each group keeps the tree order; rows with no owner or milestone go last.
 - Task 34: the Table layout has the quick-add row under the grid, so **+ New** works there too.
+- Task 35: both element routes load through `getProjectElementPage` (`projects.server.ts`): the element, every element of the project (children, parent pickers, subtree roll-up), comments, plan lines, the project cost summary and the active labor categories, in parallel. It returns no data when the element belongs to another project.
+- Task 35: **Attachments** and the **Attach** button are left out. `RecordDocuments` takes only a Supplier or Customer source, so it has no project element source.
+- Task 35: the sidebar moves under the content by a container query (`@min-[56rem]`), not `useIsMobile`. The peek is about half the screen, so it also shows the sidebar under the content; the full page shows it at the side. The sidebar uses the `ghost` pills of Task 32. Type is read-only there, because `type` is not an editable field.
+- Task 35: comments are written in a plain `Textarea` and stored as the editor's JSON document (one paragraph per line); ⌘/Ctrl+Enter sends. `deleteProjectElementComment` now takes the user id and deletes only the author's own comment (a refusal otherwise).
+- Task 35: the plan lines are three small tables (`TableBase`) with an Add button each; a line opens in a modal form (the module's validators) to add or edit, and a delete asks for confirmation. A `Grid` with inline cells would need every required field on each cell save, so the modal is simpler.
+- Task 35: the Budget section shows this element and the element with its children. Remaining is the budget (else the plan) less committed and actual. Estimate at completion is the plan, or committed plus actual when they exceed it. The subtree budget adds the budgets set in the subtree.
+- Task 35: the delete route redirects to the element list with a flash; a refusal stays on the page with its reason. Delete sits in the element header's ⋯ menu and in the list row menu (Task 32).
+- Task 35: the full page sets its breadcrumb to the element's readable id.

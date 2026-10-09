@@ -373,6 +373,10 @@ msgstr "{assetCount} 자산"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
+#. placeholder {0}: children.length
+msgid "{completed} of {0}"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# 구성품} other {# 구성품}}"
 
@@ -1774,6 +1778,9 @@ msgstr "콘솔 작업자 추가"
 msgid "Add Contractor"
 msgstr "외주 인력 추가"
 
+msgid "Add Cost"
+msgstr ""
+
 msgid "Add cost center"
 msgstr "원가 센터 추가"
 
@@ -1807,6 +1814,9 @@ msgstr "품목 추가"
 msgid "Add Label"
 msgstr ""
 
+msgid "Add Labor"
+msgstr ""
+
 msgid "Add Line"
 msgstr "라인 추가"
 
@@ -1827,6 +1837,9 @@ msgstr "수동으로 추가"
 
 msgid "Add match"
 msgstr "일치 추가"
+
+msgid "Add Material"
+msgstr ""
 
 msgid "Add Model"
 msgstr "모델 추가"
@@ -4377,6 +4390,12 @@ msgstr "비용"
 msgid "Charge Date"
 msgstr "청구 날짜"
 
+msgid "Charge number"
+msgstr ""
+
+msgid "Chargeable"
+msgstr ""
+
 msgid "Charged on each rent invoice line"
 msgstr "각 렌트 송장 라인에서 청구됩니다"
 
@@ -4421,6 +4440,9 @@ msgstr "체크포인트 ·"
 
 msgid "Checkpoints"
 msgstr "체크포인트"
+
+msgid "Children"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "백업 선택"
@@ -5263,6 +5285,9 @@ msgstr "배치 번호 복사"
 
 msgid "Copy change notice unique identifier"
 msgstr "변경 통지 고유 식별자 복사"
+
+msgid "Copy charge number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "회사 고유 식별자 복사"
@@ -6678,6 +6703,7 @@ msgid "Delete {0}"
 msgstr "{0} 삭제"
 
 #. placeholder {0}: deleting.readableId
+#. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr ""
 
@@ -6731,6 +6757,9 @@ msgstr "변경 통지 삭제"
 
 msgid "Delete charge"
 msgstr "요금 삭제"
+
+msgid "Delete comment"
+msgstr ""
 
 #. placeholder {0}: unit.name
 msgid "Delete component group {0}"
@@ -7858,6 +7887,9 @@ msgstr "담당자 편집"
 msgid "Edit Contractor"
 msgstr "외주 인력 편집"
 
+msgid "Edit Cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "원가 센터 편집"
 
@@ -7943,6 +7975,9 @@ msgid "Edit Kanban"
 msgstr "칸반 편집"
 
 msgid "Edit Label"
+msgstr ""
+
+msgid "Edit Labor"
 msgstr ""
 
 msgid "Edit Line"
@@ -8555,6 +8590,9 @@ msgstr "에스컬레이션"
 
 msgid "Est. Duration"
 msgstr "예상 소요시간"
+
+msgid "Estimate at completion"
+msgstr ""
 
 msgid "Estimated"
 msgstr "예상"
@@ -10172,6 +10210,9 @@ msgstr "사업장 교대조에서 가정한 시간"
 msgid "Hours at this station"
 msgstr "이 스테이션의 시간"
 
+msgid "Hours estimate"
+msgstr ""
+
 msgid "Hours Estimated"
 msgstr ""
 
@@ -11403,6 +11444,9 @@ msgstr "노무 및 기계 차이(기본값)"
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor Category"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "노무 비용"
 
@@ -11729,6 +11773,9 @@ msgstr "연결된 개체 수량({0})이 행 수량({1})과 일치하지 않습�
 
 msgid "Linked Issue"
 msgstr "연결된 이슈"
+
+msgid "Linked part"
+msgstr ""
 
 msgid "Linked PO"
 msgstr "연결된 구매주문"
@@ -13374,6 +13421,9 @@ msgstr "아직 변경사항이 없습니다."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "요금이 없습니다. 주행 거리, 손상, 배송 또는 청소 요금은 다음 송장에 포함됩니다."
 
+msgid "No child elements"
+msgstr ""
+
 msgid "No clauses yet. Use Add clause above."
 msgstr "아직 절이 없습니다. 위의 절 추가를 사용하세요."
 
@@ -13382,6 +13432,9 @@ msgstr "명확한 경로 없음"
 
 msgid "No collision-free path"
 msgstr "충돌 없는 경로 없음"
+
+msgid "No comments yet"
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
@@ -13430,6 +13483,9 @@ msgstr "기본 첨부 파일이 아직 없습니다."
 
 msgid "No deposit has been received for this agreement."
 msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
+
+msgid "No description"
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "구성된 차원 슬롯이 없습니다"
@@ -13695,6 +13751,9 @@ msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "아직 기록된 상위 소스가 없습니다. 계획 페이지에서 재계산을 클릭하여 귀속 정보를 새로고침하세요."
+
+msgid "No part"
+msgstr ""
 
 msgid "No part ID"
 msgstr "품목 ID 없음"
@@ -14078,6 +14137,9 @@ msgstr "동기화를 활성화할 때까지 아무것도 동기화되지 않습�
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "동기화를 켜야 동기화됩니다. 필요한 모든 계정이 매핑되었습니다."
 
+msgid "Nothing planned yet"
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
 
@@ -14383,6 +14445,9 @@ msgstr "미결 매입채무"
 
 msgid "Open AR"
 msgstr "미결 매출채권"
+
+msgid "Open as a page"
+msgstr ""
 
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
@@ -14722,6 +14787,9 @@ msgstr "원본 계산"
 
 msgid "Other"
 msgstr "기타"
+
+msgid "Other Costs"
+msgstr ""
 
 msgid "Other Expense"
 msgstr "영업외비용"
@@ -16956,6 +17024,10 @@ msgstr "{0}을(를) {1}에서 제거"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "배치에서 {0} 제거"
+
+#. placeholder {0}: deleting.name
+msgid "Remove {0} from the plan?"
+msgstr ""
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -21612,6 +21684,9 @@ msgstr "이 고객의 요금"
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
 
+msgid "This element"
+msgstr ""
+
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "이 파일은 더 이상 사용할 수 없거나 다운로드할 권한이 없습니다."
 
@@ -23986,6 +24061,9 @@ msgstr "구간:"
 
 msgid "WIP"
 msgstr "재공품"
+
+msgid "With children"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "피킹 리스트가 없으면 작업자는 스캔 탭에서 자재를 피킹합니다."

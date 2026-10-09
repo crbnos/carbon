@@ -1180,19 +1180,27 @@ export async function insertProjectElementComment(
 }
 
 /**
- * Deletes a comment on an element.
+ * Deletes a comment on an element. Only its author can delete it.
  * @mcp delete
  */
 export async function deleteProjectElementComment(
   client: Client,
   id: string,
-  companyId: string
+  companyId: string,
+  userId: string
 ) {
-  return client
+  const deleted = await client
     .from("projectElementComment")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("createdBy", userId)
+    .select("id");
+  if (deleted.error) return { data: null, error: deleted.error };
+  if ((deleted.data ?? []).length === 0) {
+    return refusal("Only the author can delete a comment");
+  }
+  return { data: deleted.data, error: null };
 }
 
 // --- Plan lines --------------------------------------------------------------

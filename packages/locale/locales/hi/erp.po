@@ -373,6 +373,10 @@ msgstr "{assetCount} अचल संपत्तियाँ"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
+#. placeholder {0}: children.length
+msgid "{completed} of {0}"
+msgstr ""
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# घटक} other {# घटक}}"
 
@@ -1774,6 +1778,9 @@ msgstr "कंसोल ऑपरेटर जोड़ें"
 msgid "Add Contractor"
 msgstr "ठेकेदार जोड़ें"
 
+msgid "Add Cost"
+msgstr ""
+
 msgid "Add cost center"
 msgstr "लागत केंद्र जोड़ें"
 
@@ -1807,6 +1814,9 @@ msgstr "आइटम जोड़ें"
 msgid "Add Label"
 msgstr ""
 
+msgid "Add Labor"
+msgstr ""
+
 msgid "Add Line"
 msgstr "लाइन जोड़ें"
 
@@ -1827,6 +1837,9 @@ msgstr "मैन्युअल रूप से जोड़ें"
 
 msgid "Add match"
 msgstr "मिलान जोड़ें"
+
+msgid "Add Material"
+msgstr ""
 
 msgid "Add Model"
 msgstr "मॉडल जोड़ें"
@@ -4377,6 +4390,12 @@ msgstr "प्रभार"
 msgid "Charge Date"
 msgstr "शुल्क की तारीख"
 
+msgid "Charge number"
+msgstr ""
+
+msgid "Chargeable"
+msgstr ""
+
 msgid "Charged on each rent invoice line"
 msgstr "प्रत्येक किराया चालान पंक्ति पर लगाया गया"
 
@@ -4421,6 +4440,9 @@ msgstr "चेकपॉइंट ·"
 
 msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
+
+msgid "Children"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "एक बैकअप चुनें"
@@ -5263,6 +5285,9 @@ msgstr "बैच नंबर कॉपी करें"
 
 msgid "Copy change notice unique identifier"
 msgstr "परिवर्तन सूचना की विशिष्ट पहचान नकल करें"
+
+msgid "Copy charge number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "कंपनी के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
@@ -6678,6 +6703,7 @@ msgid "Delete {0}"
 msgstr "{0} हटाएं"
 
 #. placeholder {0}: deleting.readableId
+#. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr ""
 
@@ -6731,6 +6757,9 @@ msgstr "परिवर्तन सूचना हटाएं"
 
 msgid "Delete charge"
 msgstr "शुल्क हटाएँ"
+
+msgid "Delete comment"
+msgstr ""
 
 #. placeholder {0}: unit.name
 msgid "Delete component group {0}"
@@ -7858,6 +7887,9 @@ msgstr "संपर्क संपादित करें"
 msgid "Edit Contractor"
 msgstr "ठेकेदार संपादित करें"
 
+msgid "Edit Cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "लागत केंद्र संपादित करें"
 
@@ -7943,6 +7975,9 @@ msgid "Edit Kanban"
 msgstr "कानबान संपादित करें"
 
 msgid "Edit Label"
+msgstr ""
+
+msgid "Edit Labor"
 msgstr ""
 
 msgid "Edit Line"
@@ -8555,6 +8590,9 @@ msgstr "संवर्धन"
 
 msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
+
+msgid "Estimate at completion"
+msgstr ""
 
 msgid "Estimated"
 msgstr "अनुमानित"
@@ -10172,6 +10210,9 @@ msgstr "स्थान शिफ्ट से मानी गई घंटे�
 msgid "Hours at this station"
 msgstr "इस स्टेशन पर घंटे"
 
+msgid "Hours estimate"
+msgstr ""
+
 msgid "Hours Estimated"
 msgstr ""
 
@@ -11403,6 +11444,9 @@ msgstr "श्रम और मशीन विचलन (डिफ़ॉल्�
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor Category"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "श्रम लागत"
 
@@ -11729,6 +11773,9 @@ msgstr "लिंक किया गया इकाई मात्रा ({0}
 
 msgid "Linked Issue"
 msgstr "जुड़ी समस्या"
+
+msgid "Linked part"
+msgstr ""
 
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
@@ -13374,6 +13421,9 @@ msgstr "अभी तक कोई परिवर्तन नहीं।"
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "कोई शुल्क नहीं। माइलेज, क्षति, डिलीवरी या सफाई शुल्क अगले चालान में शामिल होंगे।"
 
+msgid "No child elements"
+msgstr ""
+
 msgid "No clauses yet. Use Add clause above."
 msgstr "अभी तक कोई खंड नहीं है। ऊपर ‟खंड जोड़ें„ का उपयोग करें।"
 
@@ -13382,6 +13432,9 @@ msgstr "कोई स्पष्ट पथ नहीं"
 
 msgid "No collision-free path"
 msgstr "कोई टकराव-मुक्त पथ नहीं"
+
+msgid "No comments yet"
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
@@ -13430,6 +13483,9 @@ msgstr "अभी तक कोई डिफ़ॉल्ट अनुलग्�
 
 msgid "No deposit has been received for this agreement."
 msgstr "इस समझौते के लिए कोई जमा राशि प्राप्त नहीं हुई है।"
+
+msgid "No description"
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
@@ -13695,6 +13751,9 @@ msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "अभी तक कोई मूल स्रोत दर्ज नहीं किया गया है। एट्रिब्यूशन को रीफ्रेश करने के लिए योजना पृष्ठ पर पुनः गणना करें पर क्लिक करें।"
+
+msgid "No part"
+msgstr ""
 
 msgid "No part ID"
 msgstr "कोई भाग ID नहीं"
@@ -14078,6 +14137,9 @@ msgstr "जब तक आप सिंक को चालू नहीं क�
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "जब तक आप सिंक चालू नहीं करते, कुछ भी सिंक नहीं होता है। हर आवश्यक खाता मैप किया गया है।"
 
+msgid "Nothing planned yet"
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "कुछ भी शेड्यूल नहीं किया गया — नीचे एक स्टेशन जोड़ें।"
 
@@ -14383,6 +14445,9 @@ msgstr "खुले देय खाते"
 
 msgid "Open AR"
 msgstr "खुले प्राप्य खाते"
+
+msgid "Open as a page"
+msgstr ""
 
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
@@ -14722,6 +14787,9 @@ msgstr "मूल गणना"
 
 msgid "Other"
 msgstr "अन्य"
+
+msgid "Other Costs"
+msgstr ""
 
 msgid "Other Expense"
 msgstr "अन्य व्यय"
@@ -16956,6 +17024,10 @@ msgstr "{1} से {0} निकालें"
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "बैच से {0} निकालें"
+
+#. placeholder {0}: deleting.name
+msgid "Remove {0} from the plan?"
+msgstr ""
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -21612,6 +21684,9 @@ msgstr "इस ग्राहक की दर"
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
 
+msgid "This element"
+msgstr ""
+
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "यह फाइल अब उपलब्ध नहीं है, या आपके पास इसे डाउनलोड करने की अनुमति नहीं है।"
 
@@ -23986,6 +24061,9 @@ msgstr "विंडो:"
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "With children"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "पिकिंग सूची के बिना, ऑपरेटर Scan टैब से सामग्री पिकिंग करते हैं।"

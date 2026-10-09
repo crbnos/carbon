@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
 import type {
@@ -11,6 +13,14 @@ import type {
   projectValidator
 } from "./projects.models";
 import { chargeableByDefault, defaultProjectStates } from "./projects.models";
+import {
+  getLaborCategoriesList,
+  getProjectCostSummary,
+  getProjectElement,
+  getProjectElementComments,
+  getProjectElementPlanLines,
+  getProjectElements
+} from "./projects.service";
 
 /**
  * Creates a project with its six default states, in one transaction. A new
@@ -328,3 +338,53 @@ export async function getProjectCostTotals(
     ])
   );
 }
+
+/**
+ * Everything the element page (the peek and the full page) shows, read in
+ * parallel: the element, every element of its project (for the children,
+ * the parent pickers and the subtree roll-up), its comments, its plan lines,
+ * the project's cost summary and the active labor categories. Returns null
+ * when the element does not exist or belongs to another project.
+ */
+export async function getProjectElementPage(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; projectId: string; elementId: string }
+) {
+  const [element, elements, comments, planLines, costSummary, laborCategories] =
+    await Promise.all([
+      getProjectElement(client, args.elementId, args.companyId),
+      getProjectElements(client, args.projectId, args.companyId),
+      getProjectElementComments(client, args.elementId, args.companyId),
+      getProjectElementPlanLines(client, args.elementId, args.companyId),
+      getProjectCostSummary(client, args.projectId, args.companyId),
+      getLaborCategoriesList(client, args.companyId)
+    ]);
+
+  const error =
+    element.error ??
+    elements.error ??
+    comments.error ??
+    planLines.error ??
+    costSummary.error ??
+    laborCategories.error;
+  if (error) return { data: null, error };
+  if (!element.data || element.data.projectId !== args.projectId) {
+    return { data: null, error: null };
+  }
+
+  return {
+    data: {
+      element: element.data,
+      elements: elements.data ?? [],
+      comments: comments.data ?? [],
+      planLines: planLines.data ?? { materials: [], labor: [], costs: [] },
+      costSummary: costSummary.data ?? [],
+      laborCategories: laborCategories.data ?? []
+    },
+    error: null
+  };
+}
+
+export type ProjectElementPage = NonNullable<
+  Awaited<ReturnType<typeof getProjectElementPage>>["data"]
+>;
