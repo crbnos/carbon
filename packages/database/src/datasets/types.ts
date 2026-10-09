@@ -4,6 +4,7 @@
 
 import type { CalendarDate } from "@internationalized/date";
 import type { PoolClient } from "pg";
+import type { Database } from "../types.ts";
 import { maybeOne, one } from "./sql.ts";
 
 /** Signed days relative to the dataset anchor. Negative = in the past. */
@@ -1843,7 +1844,13 @@ export type ProjectMilestoneSpec = {
 export type ProjectElementSpec = {
   /** Unique within the project; registered as `projectElement:<project>:<key>`. */
   key: string;
-  type: "System" | "Requirement" | "Function" | "Task" | "Test Case";
+  type:
+    | "System"
+    | "Requirement"
+    | "Function"
+    | "Task"
+    | "Test Case"
+    | "Parameter";
   name: string;
   /** An element listed EARLIER in the same project (parents come first). */
   parentKey?: string;
@@ -1852,6 +1859,49 @@ export type ProjectElementSpec = {
   milestone?: string;
   estimatedHours?: number;
   budget?: number;
+  /** The linked part, by readable id. Never on a Parameter. */
+  item?: string;
+  /** A Capitalize project's final asset. Never on a Parameter. */
+  isFinalAsset?: boolean;
+  /** Requirement only. */
+  requirement?: {
+    category: Database["public"]["Enums"]["requirementCategory"];
+    operator: Database["public"]["Enums"]["requirementTargetOperator"];
+    target: number;
+    /** Range only. */
+    upperTarget?: number;
+    unit?: string;
+    verificationMethod?: Database["public"]["Enums"]["requirementVerificationMethod"];
+    /** A Parameter key listed EARLIER in the same project. */
+    actualParameter?: string;
+  };
+  /** Test Case only; any verdict but Not Run is stamped as given yesterday. */
+  verdict?: Database["public"]["Enums"]["testCaseVerdict"];
+  /** Parameter only. */
+  parameter?: {
+    source: Database["public"]["Enums"]["parameterSource"];
+    /** Manual only. */
+    value?: number;
+    unit?: string;
+    /**
+     * Formula only: `= {supply} - {load}`, where `{key}` names a Parameter
+     * of the same project. The tier writes its readable id and the `feeds`
+     * links.
+     */
+    formula?: string;
+    /** As people write it: 30 means 30 %. */
+    allocationPercent?: number;
+    /** As people write it: 10 means 10 %. */
+    contingencyPercent?: number;
+  };
+};
+
+/** A trace link between two elements of one project. `feeds` comes from formulas. */
+export type ProjectElementLinkSpec = {
+  /** Element keys of the same project. */
+  from: string;
+  to: string;
+  type: Exclude<Database["public"]["Enums"]["projectElementLinkType"], "feeds">;
 };
 
 export type ProjectSpec = {
@@ -1861,12 +1911,17 @@ export type ProjectSpec = {
   description: string;
   /** Element ids are `<identifier>-<n>`; `^[A-Z][A-Z0-9]{1,5}$`, unique per company. */
   identifier: string;
-  /** Capitalize is Phase 1b; the app offers these three. */
-  costTreatment: "Statistical" | "Expense" | "Contract";
+  costTreatment: "Statistical" | "Expense" | "Contract" | "Capitalize";
+  /**
+   * Capitalize only: the CIP fixed asset class, by name (bootstrap seeds
+   * "Construction in Progress"). No asset is seeded: release creates them.
+   */
+  fixedAssetClass?: string;
   status: "Draft" | "Released" | "On Hold" | "Technically Complete" | "Closed";
   milestones: ProjectMilestoneSpec[];
   /** Parent-first order; `readableId` follows this order. */
   elements: ProjectElementSpec[];
+  links?: ProjectElementLinkSpec[];
   /** The purchase invoice line this project's charge number codes. */
   purchaseInvoiceLine?: { invoiceKey: string; item: string };
 };

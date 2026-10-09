@@ -541,6 +541,7 @@ export const PROJECTS: ProjectSpec[] = [
         key: "cell",
         type: "System",
         name: "End-of-line dyno cell",
+        item: "MTR-4500",
         state: "In Progress",
         budget: 75000
       },
@@ -617,7 +618,102 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-guard",
         state: "Backlog",
         estimatedHours: 6
+      },
+      {
+        key: "p-mass",
+        type: "Parameter",
+        name: "Test cycle time",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: { source: "Sum", unit: "s" }
+      },
+      {
+        key: "p-mass-a",
+        type: "Parameter",
+        name: "Load step time",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 45, unit: "s" }
+      },
+      {
+        key: "p-mass-b",
+        type: "Parameter",
+        name: "Measurement time",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 30, unit: "s" }
+      },
+      {
+        key: "req-mass-budget",
+        type: "Requirement",
+        name: "Test cycle at most 90 s",
+        parentKey: "cell",
+        state: "In Review",
+        requirement: {
+          category: "Performance",
+          operator: "≤",
+          target: 90,
+          unit: "s",
+          verificationMethod: "Test",
+          actualParameter: "p-mass"
+        }
+      },
+      {
+        key: "tc-mass",
+        type: "Test Case",
+        name: "Time a full test profile",
+        parentKey: "req-mass-budget",
+        state: "Done",
+        verdict: "Pass"
+      },
+      {
+        key: "p-supply",
+        type: "Parameter",
+        name: "Absorber capacity",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 55, unit: "kW" }
+      },
+      {
+        key: "p-load",
+        type: "Parameter",
+        name: "Motor test load",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 45, unit: "kW" }
+      },
+      {
+        key: "p-margin",
+        type: "Parameter",
+        name: "Absorber margin",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: {
+          source: "Formula",
+          formula: "= {p-supply} - {p-load}",
+          unit: "kW"
+        }
+      },
+      {
+        key: "req-margin",
+        type: "Requirement",
+        name: "Absorber margin stays positive",
+        parentKey: "cell",
+        state: "Todo",
+        requirement: {
+          category: "Design Constraint",
+          operator: "≥",
+          target: 0,
+          unit: "kW",
+          verificationMethod: "Analysis",
+          actualParameter: "p-margin"
+        }
       }
+    ],
+    links: [
+      { from: "cell", to: "req-mass-budget", type: "satisfies" },
+      { from: "tc-mass", to: "req-mass-budget", type: "verifies" },
+      { from: "task-script", to: "tc-profile", type: "precedes" }
     ]
   }
 ];

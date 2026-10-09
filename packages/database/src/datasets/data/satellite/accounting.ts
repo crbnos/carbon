@@ -546,6 +546,7 @@ export const PROJECTS: ProjectSpec[] = [
         key: "structure",
         type: "System",
         name: "Gen-3 primary structure",
+        item: "BUS-STR-001",
         state: "In Progress",
         budget: 120000
       },
@@ -612,7 +613,200 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-thermal",
         state: "Backlog",
         estimatedHours: 8
+      },
+      {
+        key: "p-mass",
+        type: "Parameter",
+        name: "Primary structure mass",
+        parentKey: "structure",
+        state: "In Progress",
+        parameter: { source: "Sum", unit: "kg" }
+      },
+      {
+        key: "p-mass-a",
+        type: "Parameter",
+        name: "Panel mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 42, unit: "kg" }
+      },
+      {
+        key: "p-mass-b",
+        type: "Parameter",
+        name: "Fitting mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 18, unit: "kg" }
+      },
+      {
+        key: "req-mass-budget",
+        type: "Requirement",
+        name: "Primary structure mass at most 65 kg",
+        parentKey: "structure",
+        state: "In Review",
+        requirement: {
+          category: "Performance",
+          operator: "≤",
+          target: 65,
+          unit: "kg",
+          verificationMethod: "Test",
+          actualParameter: "p-mass"
+        }
+      },
+      {
+        key: "tc-mass",
+        type: "Test Case",
+        name: "Weigh the qualification structure",
+        parentKey: "req-mass-budget",
+        state: "Done",
+        verdict: "Pass"
+      },
+      {
+        key: "p-supply",
+        type: "Parameter",
+        name: "Heater power available",
+        parentKey: "structure",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 30, unit: "W" }
+      },
+      {
+        key: "p-load",
+        type: "Parameter",
+        name: "Heater power demand",
+        parentKey: "structure",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 26, unit: "W" }
+      },
+      {
+        key: "p-margin",
+        type: "Parameter",
+        name: "Heater power margin",
+        parentKey: "structure",
+        state: "In Progress",
+        parameter: {
+          source: "Formula",
+          formula: "= {p-supply} - {p-load}",
+          unit: "W"
+        }
+      },
+      {
+        key: "req-margin",
+        type: "Requirement",
+        name: "Heater power margin stays positive",
+        parentKey: "structure",
+        state: "Todo",
+        requirement: {
+          category: "Design Constraint",
+          operator: "≥",
+          target: 0,
+          unit: "W",
+          verificationMethod: "Analysis",
+          actualParameter: "p-margin"
+        }
       }
+    ],
+    links: [
+      { from: "structure", to: "req-mass-budget", type: "satisfies" },
+      { from: "tc-mass", to: "req-mass-budget", type: "verifies" },
+      { from: "task-fem", to: "tc-sine", type: "precedes" }
+    ]
+  },
+  {
+    key: "cleanroom",
+    name: "Integration Clean Room",
+    description:
+      "An ISO 7 clean room for satellite integration, built in house and capitalized",
+    identifier: "ICR",
+    costTreatment: "Capitalize",
+    fixedAssetClass: "Construction in Progress",
+    status: "Draft",
+    milestones: [
+      {
+        key: "design",
+        name: "Design Complete",
+        startOffset: 5,
+        endOffset: 35
+      },
+      {
+        key: "certified",
+        name: "Room Certified",
+        startOffset: 36,
+        endOffset: 120
+      }
+    ],
+    elements: [
+      {
+        key: "room",
+        type: "System",
+        name: "ISO 7 clean room",
+        state: "Todo",
+        isFinalAsset: true,
+        budget: 240000
+      },
+      {
+        key: "req-class",
+        type: "Requirement",
+        name: "Meet ISO 14644-1 Class 7 at rest",
+        parentKey: "room",
+        state: "Todo",
+        milestone: "certified"
+      },
+      {
+        key: "task-hvac",
+        type: "Task",
+        name: "Specify the HEPA fan filter units",
+        parentKey: "req-class",
+        state: "Todo",
+        milestone: "design",
+        estimatedHours: 24
+      },
+      {
+        key: "tc-particle",
+        type: "Test Case",
+        name: "Particle count certification",
+        parentKey: "req-class",
+        state: "Backlog",
+        milestone: "certified",
+        estimatedHours: 8
+      },
+      {
+        key: "shell",
+        type: "System",
+        name: "Wall and ceiling panels",
+        parentKey: "room",
+        state: "Todo",
+        budget: 90000
+      },
+      {
+        key: "task-panels",
+        type: "Task",
+        name: "Order the modular wall panels",
+        parentKey: "shell",
+        state: "Backlog",
+        milestone: "design",
+        estimatedHours: 6
+      },
+      {
+        key: "gowning",
+        type: "System",
+        name: "Gowning room",
+        parentKey: "room",
+        state: "Backlog",
+        budget: 30000
+      },
+      {
+        key: "task-layout",
+        type: "Task",
+        name: "Lay out the gowning room benches",
+        parentKey: "gowning",
+        state: "Backlog",
+        estimatedHours: 4
+      }
+    ],
+    links: [
+      { from: "room", to: "req-class", type: "satisfies" },
+      { from: "tc-particle", to: "req-class", type: "verifies" },
+      { from: "task-panels", to: "task-layout", type: "precedes" }
     ]
   }
 ];

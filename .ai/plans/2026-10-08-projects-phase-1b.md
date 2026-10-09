@@ -65,7 +65,7 @@
 - [x] Task 27: Add part links and item values
 - [x] Task 28: Add Build from part
 - [x] Task 29: Add the element history by part
-- [ ] Task 30: Extend the demo datasets
+- [x] Task 30: Extend the demo datasets
 - [ ] Task 31: Update the rule file, module AGENTS.md, docs and spec
 - [ ] Task 32: Verify in the browser
 
@@ -1555,3 +1555,8 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 28: a test that imports `projects.server.ts` needs `@lingui/core/macro` mocked. The import chain reaches the docs glossary (`msg`), which the vitest config does not compile.
 - Task 29: migration `20261009131946_element-history-by-item.sql` is the plan's function as written. `getElementHistoryByItem` (`projects.service.ts`) calls it with `.single()`. `getProjectElementPage` reads it in its second parallel batch, only for an element with an `itemId`, and logs a failure without failing the page. The Budget section shows the line above its table. The average counts the element itself when it has ledger rows, as the function has no element argument.
 - Before Task 30 (a fix outside the plan's tasks): `insertProjectElement` and `moveProjectElement` refused every child of a Parameter, a Phase 1a rule. The spec says a Parameter's children must be Parameters, and Sum, Min, Max and allocation read child Parameters. `ElementChildren` already offers only Parameter children under a Parameter, so the server refused what the page offered. Both functions now refuse only a child that is not a Parameter.
+- Task 30: the R&D project is the Expense project of each dataset (NSG3, CG2, FAX, DCA). Its new elements come after the existing ones, so no existing readable id or timesheet entry moves. The existing top System element links the part (`BUS-STR-001`, `ARM-BASE-001`, `FAB-BASE-WLD`, `MTR-4500`). Every Requirement passes: for example satellite 42 + 18 = 60 kg ≤ 65 kg, and a margin of 30 − 26 = 4 W ≥ 0 W.
+- Task 30: a dataset formula names Parameters as `{key}`, and tier 09 writes the readable ids. The tier also writes the `feeds` links from the formula refs, as the formula save does, so `ProjectElementLinkSpec` excludes `feeds`. Percent fields are written as people write them (30 means 30 %), and the tier divides by 100. A Parameter is inserted with `isChargeable` false, and a non-Not Run verdict is stamped yesterday by the applying user.
+- Task 30: the satellite Capitalize project (ICR, "Integration Clean Room") is a Draft with the bootstrap class "Construction in Progress", found by name. It has 8 elements, 3 levels deep, because the validator requires that of every project. Its final asset is the top System element.
+- Task 30: `validate.ts` gains `projectElementChecks`. It checks Parameter children and part links, type-specific fields, the refs (item, actual Parameter, formula, link ends against a copy of `allowedLinkEnds`) and the CIP class of a Capitalize project. It refuses the Item source, because a dataset seeds no part custom field.
+- Task 30: measured counts: `projectElementLink` 8 / 5 / 5 / 5, `projectElement` 36 / 29 / 29 / 29. The floors are `projectElementLink: 5` and `projectElement: 23` (0.8 of 29, as for the other volume tables; it was 15).

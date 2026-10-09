@@ -42,6 +42,7 @@ import type {
   Ctx,
   JournalEntrySpec,
   JournalLineSpec,
+  ProjectElementSpec,
   ProjectStateName
 } from "../types.ts";
 
@@ -803,6 +804,25 @@ const PROJECT_STATES: {
   { name: "Cancelled", group: "Cancelled", color: "#9AA4BC", isDefault: true }
 ];
 
+/** A Requirement's target columns; `actualParameterId` resolves its key. */
+function requirementColumns(
+  requirement: ProjectElementSpec["requirement"],
+  parameterId: (key: string) => string
+) {
+  if (!requirement) return {};
+  return {
+    requirementCategory: requirement.category,
+    targetOperator: requirement.operator,
+    targetValue: requirement.target,
+    targetUpperValue: requirement.upperTarget ?? null,
+    targetUnit: requirement.unit ?? null,
+    verificationMethod: requirement.verificationMethod ?? null,
+    actualParameterId: requirement.actualParameter
+      ? parameterId(requirement.actualParameter)
+      : null
+  };
+}
+
 /**
  * Labor categories and their rates, then each project with its states,
  * milestones and elements, then the applying user's timesheet. An element's
@@ -836,14 +856,30 @@ async function seedProjects(ctx: Ctx): Promise<void> {
     );
   }
 
+  const cipClasses = await rows<{ id: string; name: string }>(
+    ctx.client,
+    `SELECT id, name FROM "fixedAssetClass"
+     WHERE "companyId" = $1 AND "isConstructionInProgress" = true`,
+    [companyId]
+  );
+
   const elementIds: Record<string, string> = {};
   for (const spec of data.projects) {
     ctx.log(`project ${spec.name}`);
+    const fixedAssetClassId = spec.fixedAssetClass
+      ? cipClasses.find((c) => c.name === spec.fixedAssetClass)?.id
+      : null;
+    if (spec.fixedAssetClass && !fixedAssetClassId) {
+      throw new Error(
+        `Seed: project "${spec.key}" names CIP class "${spec.fixedAssetClass}", which does not exist`
+      );
+    }
     const projectId = await insertId(ctx, "project", {
       name: spec.name,
       description: spec.description,
       identifier: spec.identifier,
       costTreatment: spec.costTreatment,
+      fixedAssetClassId: fixedAssetClassId ?? null,
       status: spec.status,
       ownerId: userId,
       locationId: ctx.locationId,
@@ -878,6 +914,20 @@ async function seedProjects(ctx: Ctx): Promise<void> {
       });
     }
 
+    // A formula names Parameters by `{key}`; the row stores readable ids.
+    const readableIds = new Map(
+      spec.elements.map((element, index) => [
+        element.key,
+        `${spec.identifier}-${index + 1}`
+      ])
+    );
+    const formulaText = (formula: string) =>
+      formula.replace(/\{([^}]+)\}/g, (_, key: string) =>
+        need(Object.fromEntries(readableIds), key, "formula parameter")
+      );
+    const percent = (value: number | undefined) =>
+      value === undefined ? null : round(value / 100);
+
     const siblingCount: Record<string, number> = {};
     for (const [index, element] of spec.elements.entries()) {
       const parentId = element.parentKey
@@ -905,11 +955,68 @@ async function seedProjects(ctx: Ctx): Promise<void> {
             ? resolveTimestamp(anchor, -1, "16:00:00")
             : null,
           estimatedHours: element.estimatedHours ?? null,
-          isChargeable: true,
+          // A Parameter takes no charges.
+          isChargeable: element.type !== "Parameter",
           budget: element.budget ?? null,
-          sortOrder: siblingCount[siblings]
+          sortOrder: siblingCount[siblings],
+          itemId: element.item
+            ? need(ctx.refs.items, element.item, "item").id
+            : null,
+          isFinalAsset: element.isFinalAsset ?? false,
+          ...requirementColumns(element.requirement, (key) =>
+            need(elementIds, `${spec.key}:${key}`, "actual parameter")
+          ),
+          ...(element.verdict
+            ? {
+                verdict: element.verdict,
+                verdictAt:
+                  element.verdict === "Not Run"
+                    ? null
+                    : resolveTimestamp(anchor, -1, "15:00:00"),
+                verdictBy: element.verdict === "Not Run" ? null : userId
+              }
+            : {}),
+          ...(element.parameter
+            ? {
+                parameterSource: element.parameter.source,
+                parameterValue: element.parameter.value ?? null,
+                parameterUnit: element.parameter.unit ?? null,
+                parameterFormula: element.parameter.formula
+                  ? formulaText(element.parameter.formula)
+                  : null,
+                allocationPercent: percent(element.parameter.allocationPercent),
+                parameterContingencyPercent: percent(
+                  element.parameter.contingencyPercent
+                )
+              }
+            : {})
         }
       );
+    }
+
+    // Trace links, then the `feeds` link from each Parameter a formula names
+    // to the formula's Parameter, as the formula save writes them.
+    const elementId = (key: string) =>
+      need(elementIds, `${spec.key}:${key}`, "linked element");
+    const links = [
+      ...(spec.links ?? []).map((link) => ({
+        from: link.from,
+        to: link.to,
+        type: link.type as string
+      })),
+      ...spec.elements.flatMap((element) =>
+        [...(element.parameter?.formula ?? "").matchAll(/\{([^}]+)\}/g)].map(
+          (match) => ({ from: match[1]!, to: element.key, type: "feeds" })
+        )
+      )
+    ];
+    for (const link of links) {
+      await insertRow(ctx, "projectElementLink", {
+        projectId,
+        fromElementId: elementId(link.from),
+        toElementId: elementId(link.to),
+        linkType: link.type
+      });
     }
   }
 

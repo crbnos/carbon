@@ -64,6 +64,8 @@ import type {
   JournalEntrySpec,
   JournalLineSpec,
   MakeMethodSpec,
+  ProjectElementLinkSpec,
+  ProjectSpec,
   ReturnCreditSpec,
   RuleConditionValue,
   RuleOperator,
@@ -4880,6 +4882,131 @@ type InvoiceFacts = {
   currencyCode: string;
 };
 
+/** The element types each end of a seeded link may have (ERP `allowedLinkEnds`). */
+const LINK_ENDS: Record<
+  ProjectElementLinkSpec["type"] | "feeds",
+  { from: string[] | null; to: string[] | null }
+> = {
+  satisfies: { from: ["System", "Function"], to: ["Requirement"] },
+  verifies: { from: ["Test Case"], to: ["Requirement"] },
+  derives: { from: ["Requirement"], to: ["Requirement"] },
+  implements: { from: ["Task"], to: ["System", "Function", "Requirement"] },
+  blocks: { from: null, to: null },
+  precedes: { from: null, to: null },
+  "relates to": { from: null, to: null },
+  feeds: { from: ["Parameter"], to: ["Parameter"] }
+};
+
+/**
+ * The Phase 1b element fields of one project: a Parameter's children are
+ * Parameters and it links no part, type-specific fields sit on their type,
+ * refs (item, actual Parameter, formula, links) resolve, a Capitalize
+ * project names its CIP class.
+ */
+function projectElementChecks(
+  ctx: ValidationCtx,
+  project: ProjectSpec,
+  where: string
+): void {
+  const { ix, fail } = ctx;
+  const typeOf = new Map(project.elements.map((e) => [e.key, e.type]));
+  const listed = new Set<string>();
+  for (const element of project.elements) {
+    const at = `${where} element "${element.key}"`;
+    const parentType = element.parentKey
+      ? typeOf.get(element.parentKey)
+      : undefined;
+    if (parentType === "Parameter" && element.type !== "Parameter") {
+      fail(`${at}: a Parameter's children must be Parameters`);
+    }
+    if (
+      element.type === "Parameter" &&
+      (element.item || element.isFinalAsset)
+    ) {
+      fail(`${at}: a Parameter links no part and is never a final asset`);
+    }
+    if (element.item && !ix.refs.item.has(element.item)) {
+      fail(`${at}: unknown item "${element.item}"`);
+    }
+    if (element.isFinalAsset && project.costTreatment !== "Capitalize") {
+      fail(`${at}: a final asset needs a Capitalize project`);
+    }
+    if (element.requirement && element.type !== "Requirement") {
+      fail(`${at}: requirement fields on a ${element.type}`);
+    }
+    if (element.verdict && element.type !== "Test Case") {
+      fail(`${at}: a verdict on a ${element.type}`);
+    }
+    if (element.parameter && element.type !== "Parameter") {
+      fail(`${at}: parameter fields on a ${element.type}`);
+    }
+    const requirement = element.requirement;
+    if (
+      requirement?.operator === "Range" &&
+      requirement.upperTarget === undefined
+    ) {
+      fail(`${at}: a Range target needs an upper target`);
+    }
+    if (
+      requirement?.actualParameter !== undefined &&
+      !(
+        listed.has(requirement.actualParameter) &&
+        typeOf.get(requirement.actualParameter) === "Parameter"
+      )
+    ) {
+      fail(
+        `${at}: actual parameter "${requirement.actualParameter}" is not a Parameter listed before it`
+      );
+    }
+    const parameter = element.parameter;
+    if (parameter?.source === "Formula") {
+      const refs = [...(parameter.formula ?? "").matchAll(/\{([^}]+)\}/g)];
+      if (refs.length === 0) fail(`${at}: a Formula Parameter needs a formula`);
+      for (const [, key] of refs) {
+        if (typeOf.get(key!) !== "Parameter" || key === element.key) {
+          fail(`${at}: formula ref "${key}" is not another Parameter`);
+        }
+      }
+    }
+    if (parameter?.source === "Item") {
+      fail(`${at}: the Item source is not seeded (it needs a custom field)`);
+    }
+    for (const value of [
+      parameter?.allocationPercent,
+      parameter?.contingencyPercent
+    ]) {
+      if (value !== undefined && (value < 0 || value > 100)) {
+        fail(`${at}: a percent outside 0–100`);
+      }
+    }
+    listed.add(element.key);
+  }
+  if (project.costTreatment === "Capitalize" && !project.fixedAssetClass) {
+    fail(`${where}: a Capitalize project needs its CIP fixedAssetClass`);
+  }
+  const linkKeys = new Set<string>();
+  for (const link of project.links ?? []) {
+    const at = `${where} link ${link.from} ${link.type} ${link.to}`;
+    const from = typeOf.get(link.from);
+    const to = typeOf.get(link.to);
+    if (!from || !to) {
+      fail(`${at}: unknown element`);
+      continue;
+    }
+    if (link.from === link.to) fail(`${at}: links an element to itself`);
+    const ends = LINK_ENDS[link.type];
+    if (
+      (ends.from && !ends.from.includes(from)) ||
+      (ends.to && !ends.to.includes(to))
+    ) {
+      fail(`${at}: a ${link.type} link cannot run from a ${from} to a ${to}`);
+    }
+    const key = `${link.from} ${link.type} ${link.to}`;
+    if (linkKeys.has(key)) fail(`${at}: duplicate link`);
+    linkKeys.add(key);
+  }
+}
+
 export function accounting(ctx: ValidationCtx): void {
   const { dataset, ix, fail } = ctx;
   const customers = ix.refs.customer;
@@ -5009,6 +5136,7 @@ export function accounting(ctx: ValidationCtx): void {
       keys.add(element.key);
     }
     elementKeys.set(project.key, keys);
+    projectElementChecks(ctx, project, where);
     if (project.elements.length < 8) {
       fail(`${where}: expected at least 8 elements`);
     }

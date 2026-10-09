@@ -550,6 +550,7 @@ export const PROJECTS: ProjectSpec[] = [
         key: "cell",
         type: "System",
         name: "Second 5-axis cell",
+        item: "FAB-BASE-WLD",
         state: "In Progress",
         budget: 160000
       },
@@ -626,7 +627,102 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-tools",
         state: "Backlog",
         estimatedHours: 6
+      },
+      {
+        key: "p-mass",
+        type: "Parameter",
+        name: "Pallet load",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: { source: "Sum", unit: "kg" }
+      },
+      {
+        key: "p-mass-a",
+        type: "Parameter",
+        name: "Fixture mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 120, unit: "kg" }
+      },
+      {
+        key: "p-mass-b",
+        type: "Parameter",
+        name: "Workpiece mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 85, unit: "kg" }
+      },
+      {
+        key: "req-mass-budget",
+        type: "Requirement",
+        name: "Pallet load at most 250 kg",
+        parentKey: "cell",
+        state: "In Review",
+        requirement: {
+          category: "Performance",
+          operator: "≤",
+          target: 250,
+          unit: "kg",
+          verificationMethod: "Test",
+          actualParameter: "p-mass"
+        }
+      },
+      {
+        key: "tc-mass",
+        type: "Test Case",
+        name: "Weigh a loaded pallet",
+        parentKey: "req-mass-budget",
+        state: "Done",
+        verdict: "Pass"
+      },
+      {
+        key: "p-supply",
+        type: "Parameter",
+        name: "Spindle power available",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 30, unit: "kW" }
+      },
+      {
+        key: "p-load",
+        type: "Parameter",
+        name: "Cutting power demand",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 24, unit: "kW" }
+      },
+      {
+        key: "p-margin",
+        type: "Parameter",
+        name: "Spindle power margin",
+        parentKey: "cell",
+        state: "In Progress",
+        parameter: {
+          source: "Formula",
+          formula: "= {p-supply} - {p-load}",
+          unit: "kW"
+        }
+      },
+      {
+        key: "req-margin",
+        type: "Requirement",
+        name: "Spindle power margin stays positive",
+        parentKey: "cell",
+        state: "Todo",
+        requirement: {
+          category: "Design Constraint",
+          operator: "≥",
+          target: 0,
+          unit: "kW",
+          verificationMethod: "Analysis",
+          actualParameter: "p-margin"
+        }
       }
+    ],
+    links: [
+      { from: "cell", to: "req-mass-budget", type: "satisfies" },
+      { from: "tc-mass", to: "req-mass-budget", type: "verifies" },
+      { from: "task-pallet", to: "tc-lights-out", type: "precedes" }
     ]
   }
 ];

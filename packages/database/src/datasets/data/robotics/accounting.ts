@@ -545,6 +545,7 @@ export const PROJECTS: ProjectSpec[] = [
         key: "arm",
         type: "System",
         name: "Gen-2 arm",
+        item: "ARM-BASE-001",
         state: "In Progress",
         budget: 140000
       },
@@ -621,7 +622,102 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-api",
         state: "Backlog",
         estimatedHours: 10
+      },
+      {
+        key: "p-mass",
+        type: "Parameter",
+        name: "Arm mass",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: { source: "Sum", unit: "kg" }
+      },
+      {
+        key: "p-mass-a",
+        type: "Parameter",
+        name: "Link mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 9.5, unit: "kg" }
+      },
+      {
+        key: "p-mass-b",
+        type: "Parameter",
+        name: "Joint drive mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 6, unit: "kg" }
+      },
+      {
+        key: "req-mass-budget",
+        type: "Requirement",
+        name: "Arm mass at most 18 kg",
+        parentKey: "arm",
+        state: "In Review",
+        requirement: {
+          category: "Performance",
+          operator: "≤",
+          target: 18,
+          unit: "kg",
+          verificationMethod: "Test",
+          actualParameter: "p-mass"
+        }
+      },
+      {
+        key: "tc-mass",
+        type: "Test Case",
+        name: "Weigh the beta arm",
+        parentKey: "req-mass-budget",
+        state: "Done",
+        verdict: "Pass"
+      },
+      {
+        key: "p-supply",
+        type: "Parameter",
+        name: "Controller power available",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 400, unit: "W" }
+      },
+      {
+        key: "p-load",
+        type: "Parameter",
+        name: "Joint drive power draw",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 340, unit: "W" }
+      },
+      {
+        key: "p-margin",
+        type: "Parameter",
+        name: "Controller power margin",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: {
+          source: "Formula",
+          formula: "= {p-supply} - {p-load}",
+          unit: "W"
+        }
+      },
+      {
+        key: "req-margin",
+        type: "Requirement",
+        name: "Controller power margin stays positive",
+        parentKey: "arm",
+        state: "Todo",
+        requirement: {
+          category: "Design Constraint",
+          operator: "≥",
+          target: 0,
+          unit: "W",
+          verificationMethod: "Analysis",
+          actualParameter: "p-margin"
+        }
       }
+    ],
+    links: [
+      { from: "arm", to: "req-mass-budget", type: "satisfies" },
+      { from: "tc-mass", to: "req-mass-budget", type: "verifies" },
+      { from: "task-sensor", to: "tc-contact", type: "precedes" }
     ]
   }
 ];

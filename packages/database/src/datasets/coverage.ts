@@ -173,7 +173,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   productionEvent: 19, // min 24
   productionQuantity: 11,
   project: 2,
-  projectElement: 15, // min 19
+  projectElement: 23, // min 29
+  projectElementLink: 5,
   projectMilestone: 4,
   projectState: 12,
   purchaseInvoice: 7,
