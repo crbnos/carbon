@@ -6,10 +6,12 @@ import type {
   AccountingData,
   FixedAssetSpec,
   JournalEntrySpec,
+  LaborCategorySpec,
   MemoSpec,
   PaymentSpec,
   PeriodCloseTaskSpec,
-  ProjectSpec
+  ProjectSpec,
+  TimesheetEntrySpec
 } from "../../types.ts";
 
 export const FIXED_ASSETS: FixedAssetSpec[] = [
@@ -418,12 +420,309 @@ export const PROJECTS: ProjectSpec[] = [
     name: "Solstice Surgical Fixture Program",
     description:
       "Validated fixture family for Solstice Medical's instrument line",
-    purchaseInvoiceLine: { invoiceKey: "paid", item: "BRG-DBL-6205" }
+    identifier: "SSF",
+    costTreatment: "Contract",
+    status: "Released",
+    purchaseInvoiceLine: { invoiceKey: "paid", item: "BRG-DBL-6205" },
+    milestones: [
+      {
+        key: "fai",
+        name: "First Article Inspection",
+        startOffset: -45,
+        endOffset: -6
+      },
+      {
+        key: "validation",
+        name: "Validation Lots Shipped",
+        startOffset: -5,
+        endOffset: 50
+      }
+    ],
+    elements: [
+      {
+        key: "fixture",
+        type: "System",
+        name: "Fixture family",
+        state: "In Progress",
+        budget: 110000
+      },
+      {
+        key: "req-repeat",
+        type: "Requirement",
+        name: "Repeat the part location within 0.01 mm",
+        parentKey: "fixture",
+        state: "In Progress",
+        milestone: "fai"
+      },
+      {
+        key: "task-datum",
+        type: "Task",
+        name: "Grind the datum pins to final size",
+        parentKey: "req-repeat",
+        state: "Done",
+        milestone: "fai",
+        estimatedHours: 18
+      },
+      {
+        key: "tc-gage",
+        type: "Test Case",
+        name: "Gage R&R on 10 parts with 3 operators",
+        parentKey: "req-repeat",
+        state: "In Review",
+        milestone: "fai",
+        estimatedHours: 10
+      },
+      {
+        key: "req-clean",
+        type: "Requirement",
+        name: "Pass the cleanroom particle test",
+        parentKey: "fixture",
+        state: "Todo",
+        milestone: "validation"
+      },
+      {
+        key: "task-passivate",
+        type: "Task",
+        name: "Passivate the stainless components",
+        parentKey: "req-clean",
+        state: "In Progress",
+        milestone: "validation",
+        estimatedHours: 8
+      },
+      {
+        key: "tc-particle",
+        type: "Test Case",
+        name: "Particle count after the wash cycle",
+        parentKey: "req-clean",
+        state: "Todo",
+        milestone: "validation",
+        estimatedHours: 4
+      },
+      {
+        key: "docs",
+        type: "System",
+        name: "Validation documents",
+        state: "Todo",
+        milestone: "validation",
+        budget: 25000
+      },
+      {
+        key: "req-iq",
+        type: "Requirement",
+        name: "Installation qualification signed by Solstice",
+        parentKey: "docs",
+        state: "Backlog",
+        milestone: "validation"
+      },
+      {
+        key: "task-iq",
+        type: "Task",
+        name: "Write the IQ protocol",
+        parentKey: "req-iq",
+        state: "Backlog",
+        estimatedHours: 12
+      }
+    ]
   },
   {
     key: "five-axis-expansion",
     name: "Five-Axis Capacity Expansion",
-    description: "Second 5-axis cell with pallet automation"
+    description: "Second 5-axis cell with pallet automation",
+    identifier: "FAX",
+    costTreatment: "Expense",
+    status: "Released",
+    milestones: [
+      {
+        key: "install",
+        name: "Machine Installed",
+        startOffset: -35,
+        endOffset: -4
+      },
+      {
+        key: "runoff",
+        name: "Production Runoff",
+        startOffset: -3,
+        endOffset: 60
+      }
+    ],
+    elements: [
+      {
+        key: "cell",
+        type: "System",
+        name: "Second 5-axis cell",
+        state: "In Progress",
+        budget: 160000
+      },
+      {
+        key: "req-pallet",
+        type: "Requirement",
+        name: "Run 12 pallets unattended overnight",
+        parentKey: "cell",
+        state: "In Progress",
+        milestone: "install"
+      },
+      {
+        key: "task-pallet",
+        type: "Task",
+        name: "Commission the pallet changer",
+        parentKey: "req-pallet",
+        state: "In Progress",
+        milestone: "runoff",
+        estimatedHours: 32
+      },
+      {
+        key: "tc-lights-out",
+        type: "Test Case",
+        name: "Lights-out run of 12 pallets",
+        parentKey: "req-pallet",
+        state: "Todo",
+        milestone: "runoff",
+        estimatedHours: 10
+      },
+      {
+        key: "req-accuracy",
+        type: "Requirement",
+        name: "Hold 0.005 mm positional accuracy",
+        parentKey: "cell",
+        state: "Done",
+        milestone: "install"
+      },
+      {
+        key: "task-ballbar",
+        type: "Task",
+        name: "Ballbar the machine after leveling",
+        parentKey: "req-accuracy",
+        state: "Done",
+        milestone: "install",
+        estimatedHours: 6
+      },
+      {
+        key: "tc-cut",
+        type: "Test Case",
+        name: "Cut and inspect the NAS 979 test part",
+        parentKey: "req-accuracy",
+        state: "Todo",
+        milestone: "runoff",
+        estimatedHours: 8
+      },
+      {
+        key: "tooling",
+        type: "System",
+        name: "Tooling package",
+        state: "Backlog",
+        budget: 30000
+      },
+      {
+        key: "req-tools",
+        type: "Requirement",
+        name: "Stock tools for the five top part families",
+        parentKey: "tooling",
+        state: "Backlog"
+      },
+      {
+        key: "task-presetter",
+        type: "Task",
+        name: "Load tool offsets from the presetter",
+        parentKey: "req-tools",
+        state: "Backlog",
+        estimatedHours: 6
+      }
+    ]
+  }
+];
+
+export const LABOR_CATEGORIES: LaborCategorySpec[] = [
+  {
+    name: "Manufacturing Engineer",
+    description: "Plans processes and fixtures",
+    costRate: 82
+  },
+  {
+    name: "Machinist",
+    description: "Runs and proves out machines",
+    costRate: 54
+  },
+  {
+    name: "Quality Engineer",
+    description: "Runs validation and gage studies",
+    costRate: 78
+  }
+];
+
+// Draft this week, Submitted last week: the timesheet and the approvals queue.
+export const TIMESHEET_ENTRIES: TimesheetEntrySpec[] = [
+  {
+    project: "solstice-fixture",
+    element: "task-passivate",
+    laborCategory: "Machinist",
+    week: -1,
+    weekday: 0,
+    hours: 6,
+    status: "Submitted",
+    note: "First passivation batch"
+  },
+  {
+    project: "solstice-fixture",
+    element: "tc-gage",
+    laborCategory: "Quality Engineer",
+    week: -1,
+    weekday: 1,
+    hours: 5,
+    status: "Submitted"
+  },
+  {
+    project: "five-axis-expansion",
+    element: "task-pallet",
+    laborCategory: "Manufacturing Engineer",
+    week: -1,
+    weekday: 2,
+    hours: 7,
+    status: "Submitted"
+  },
+  {
+    project: "five-axis-expansion",
+    element: "task-ballbar",
+    laborCategory: "Machinist",
+    week: -1,
+    weekday: 3,
+    hours: 4,
+    status: "Submitted"
+  },
+  {
+    project: "solstice-fixture",
+    element: "task-passivate",
+    laborCategory: "Machinist",
+    week: 0,
+    weekday: 0,
+    hours: 4,
+    status: "Draft"
+  },
+  {
+    project: "solstice-fixture",
+    element: "tc-particle",
+    laborCategory: "Quality Engineer",
+    week: 0,
+    weekday: 1,
+    hours: 2,
+    status: "Draft"
+  },
+  {
+    project: "five-axis-expansion",
+    element: "task-pallet",
+    laborCategory: "Manufacturing Engineer",
+    week: 0,
+    weekday: 0,
+    hours: 6,
+    status: "Draft"
+  },
+  {
+    project: "five-axis-expansion",
+    element: "tc-cut",
+    laborCategory: "Machinist",
+    week: 0,
+    weekday: 2,
+    hours: 3,
+    status: "Draft"
   }
 ];
 
@@ -447,6 +746,8 @@ export const precisionAccounting: AccountingData = {
   payments: PAYMENTS,
   memos: MEMOS,
   projects: PROJECTS,
+  laborCategories: LABOR_CATEGORIES,
+  timesheetEntries: TIMESHEET_ENTRIES,
   customDimension: {
     name: "Work Cell",
     values: ["Swiss Turning", "5-Axis Milling"]

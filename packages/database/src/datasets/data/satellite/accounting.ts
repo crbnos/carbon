@@ -6,10 +6,12 @@ import type {
   AccountingData,
   FixedAssetSpec,
   JournalEntrySpec,
+  LaborCategorySpec,
   MemoSpec,
   PaymentSpec,
   PeriodCloseTaskSpec,
-  ProjectSpec
+  ProjectSpec,
+  TimesheetEntrySpec
 } from "../../types.ts";
 
 export const FIXED_ASSETS: FixedAssetSpec[] = [
@@ -417,12 +419,296 @@ export const PROJECTS: ProjectSpec[] = [
     key: "orbsec-block2",
     name: "ORBSEC Constellation Block 2",
     description: "Eight-satellite follow-on build for ORBSEC Defense",
-    purchaseInvoiceLine: { invoiceKey: "paid", item: "BAT-LIION-48V" }
+    identifier: "OB2",
+    costTreatment: "Contract",
+    status: "Released",
+    purchaseInvoiceLine: { invoiceKey: "paid", item: "BAT-LIION-48V" },
+    milestones: [
+      {
+        key: "cdr",
+        name: "Critical Design Review",
+        startOffset: -60,
+        endOffset: -10
+      },
+      {
+        key: "flight-acceptance",
+        name: "Flight Acceptance",
+        startOffset: -9,
+        endOffset: 45
+      }
+    ],
+    elements: [
+      {
+        key: "bus",
+        type: "System",
+        name: "Satellite bus",
+        state: "In Progress",
+        budget: 180000
+      },
+      {
+        key: "req-power",
+        type: "Requirement",
+        name: "Bus supplies 1.2 kW at end of life",
+        parentKey: "bus",
+        state: "Done",
+        milestone: "cdr"
+      },
+      {
+        key: "task-array",
+        type: "Task",
+        name: "Size the solar array for end-of-life output",
+        parentKey: "req-power",
+        state: "Done",
+        milestone: "cdr",
+        estimatedHours: 24
+      },
+      {
+        key: "tc-power",
+        type: "Test Case",
+        name: "Thermal-vacuum power balance test",
+        parentKey: "req-power",
+        state: "Todo",
+        milestone: "flight-acceptance",
+        estimatedHours: 16
+      },
+      {
+        key: "req-mass",
+        type: "Requirement",
+        name: "Bus dry mass under 180 kg",
+        parentKey: "bus",
+        state: "In Review"
+      },
+      {
+        key: "task-mass",
+        type: "Task",
+        name: "Update the mass budget after the harness redesign",
+        parentKey: "req-mass",
+        state: "In Progress",
+        estimatedHours: 12
+      },
+      {
+        key: "payload",
+        type: "System",
+        name: "Payload integration",
+        state: "Todo",
+        milestone: "flight-acceptance",
+        budget: 95000
+      },
+      {
+        key: "req-pointing",
+        type: "Requirement",
+        name: "Payload pointing within 0.05 degrees",
+        parentKey: "payload",
+        state: "Todo"
+      },
+      {
+        key: "task-alignment",
+        type: "Task",
+        name: "Align the star tracker to the payload boresight",
+        parentKey: "req-pointing",
+        state: "Backlog",
+        milestone: "flight-acceptance",
+        estimatedHours: 20
+      },
+      {
+        key: "tc-pointing",
+        type: "Test Case",
+        name: "Pointing accuracy test on the air-bearing table",
+        parentKey: "req-pointing",
+        state: "Backlog",
+        estimatedHours: 10
+      }
+    ]
   },
   {
     key: "novasat-gen3",
     name: "NovaSat Gen-3 Bus Qualification",
-    description: "Qualification campaign for the next-generation bus structure"
+    description: "Qualification campaign for the next-generation bus structure",
+    identifier: "NSG3",
+    costTreatment: "Expense",
+    status: "Released",
+    milestones: [
+      {
+        key: "qual-plan",
+        name: "Qualification Plan Approved",
+        startOffset: -45,
+        endOffset: -5
+      },
+      {
+        key: "qual-complete",
+        name: "Qualification Complete",
+        startOffset: -4,
+        endOffset: 75
+      }
+    ],
+    elements: [
+      {
+        key: "structure",
+        type: "System",
+        name: "Gen-3 primary structure",
+        state: "In Progress",
+        budget: 120000
+      },
+      {
+        key: "req-loads",
+        type: "Requirement",
+        name: "Survive a 14 g quasi-static launch load",
+        parentKey: "structure",
+        state: "In Progress",
+        milestone: "qual-plan"
+      },
+      {
+        key: "task-fem",
+        type: "Task",
+        name: "Correlate the finite element model to the modal survey",
+        parentKey: "req-loads",
+        state: "In Progress",
+        milestone: "qual-complete",
+        estimatedHours: 40
+      },
+      {
+        key: "tc-sine",
+        type: "Test Case",
+        name: "Sine vibration qualification run",
+        parentKey: "req-loads",
+        state: "Todo",
+        milestone: "qual-complete",
+        estimatedHours: 16
+      },
+      {
+        key: "req-stiffness",
+        type: "Requirement",
+        name: "First lateral mode above 45 Hz",
+        parentKey: "structure",
+        state: "Todo"
+      },
+      {
+        key: "tc-modal",
+        type: "Test Case",
+        name: "Modal survey on the qualification unit",
+        parentKey: "req-stiffness",
+        state: "Todo",
+        milestone: "qual-complete",
+        estimatedHours: 12
+      },
+      {
+        key: "thermal",
+        type: "System",
+        name: "Thermal control",
+        state: "Backlog",
+        budget: 40000
+      },
+      {
+        key: "req-thermal",
+        type: "Requirement",
+        name: "Keep the battery between 0 and 30 °C",
+        parentKey: "thermal",
+        state: "Backlog"
+      },
+      {
+        key: "task-heater",
+        type: "Task",
+        name: "Size the battery heater circuit",
+        parentKey: "req-thermal",
+        state: "Backlog",
+        estimatedHours: 8
+      }
+    ]
+  }
+];
+
+export const LABOR_CATEGORIES: LaborCategorySpec[] = [
+  {
+    name: "Systems Engineer",
+    description: "Owns requirements and system budgets",
+    costRate: 92
+  },
+  {
+    name: "Test Technician",
+    description: "Runs environmental and functional tests",
+    costRate: 58
+  },
+  {
+    name: "Design Engineer",
+    description: "Designs and analyses structures and subsystems",
+    costRate: 85
+  }
+];
+
+// Draft this week, Submitted last week: the timesheet and the approvals queue.
+export const TIMESHEET_ENTRIES: TimesheetEntrySpec[] = [
+  {
+    project: "orbsec-block2",
+    element: "task-mass",
+    laborCategory: "Systems Engineer",
+    week: -1,
+    weekday: 0,
+    hours: 6,
+    status: "Submitted",
+    note: "Harness mass update"
+  },
+  {
+    project: "orbsec-block2",
+    element: "task-array",
+    laborCategory: "Design Engineer",
+    week: -1,
+    weekday: 1,
+    hours: 4,
+    status: "Submitted"
+  },
+  {
+    project: "novasat-gen3",
+    element: "task-fem",
+    laborCategory: "Design Engineer",
+    week: -1,
+    weekday: 2,
+    hours: 7.5,
+    status: "Submitted"
+  },
+  {
+    project: "novasat-gen3",
+    element: "tc-sine",
+    laborCategory: "Test Technician",
+    week: -1,
+    weekday: 3,
+    hours: 5,
+    status: "Submitted"
+  },
+  {
+    project: "orbsec-block2",
+    element: "task-mass",
+    laborCategory: "Systems Engineer",
+    week: 0,
+    weekday: 0,
+    hours: 4,
+    status: "Draft"
+  },
+  {
+    project: "orbsec-block2",
+    element: "tc-power",
+    laborCategory: "Test Technician",
+    week: 0,
+    weekday: 1,
+    hours: 3,
+    status: "Draft"
+  },
+  {
+    project: "novasat-gen3",
+    element: "task-fem",
+    laborCategory: "Design Engineer",
+    week: 0,
+    weekday: 0,
+    hours: 6,
+    status: "Draft"
+  },
+  {
+    project: "novasat-gen3",
+    element: "tc-modal",
+    laborCategory: "Test Technician",
+    week: 0,
+    weekday: 2,
+    hours: 2,
+    status: "Draft"
   }
 ];
 
@@ -446,6 +732,8 @@ export const satelliteAccounting: AccountingData = {
   payments: PAYMENTS,
   memos: MEMOS,
   projects: PROJECTS,
+  laborCategories: LABOR_CATEGORIES,
+  timesheetEntries: TIMESHEET_ENTRIES,
   customDimension: {
     name: "Mission Phase",
     values: ["Design & Qualification", "Integration & Test"]

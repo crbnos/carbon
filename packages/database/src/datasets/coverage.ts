@@ -111,6 +111,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   journalLine: 64, // min 80
   journalLineDimension: 2,
   kanban: 5,
+  laborCategory: 3,
+  laborCategoryRate: 3,
   location: 2,
   maintenanceDispatch: 11,
   maintenanceDispatchComment: 4,
@@ -171,6 +173,9 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   productionEvent: 19, // min 24
   productionQuantity: 11,
   project: 2,
+  projectElement: 15, // min 19
+  projectMilestone: 4,
+  projectState: 12,
   purchaseInvoice: 7,
   purchaseInvoiceDelivery: 7,
   purchaseInvoiceLine: 8,
@@ -246,6 +251,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierType: 6,
   tag: 5,
   timeCardEntry: 6,
+  timesheetEntry: 6, // min 8
   tool: 2,
   trackedActivity: 7,
   trackedActivityInput: 6,

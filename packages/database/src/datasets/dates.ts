@@ -81,3 +81,24 @@ export function weekRangesFrom(
     };
   });
 }
+
+/** Seeded labor rates start a year back, before every seeded timesheet day. */
+export const LABOR_RATE_EFFECTIVE_OFFSET = -365;
+
+/**
+ * A timesheet day: `weekday` (0 = Monday) of the Monday-start week `week`
+ * weeks from the anchor's, as the timesheet's `weekStartOf` counts weeks. A
+ * day after the anchor is pulled back to the anchor, so no seeded hours are
+ * in the future.
+ */
+export function resolveTimesheetDay(
+  anchor: CalendarDate,
+  week: number,
+  weekday: number
+): string {
+  const day = startOfWeek(anchor, "en-GB").add({
+    weeks: week,
+    days: weekday
+  });
+  return (day.compare(anchor) > 0 ? anchor : day).toString();
+}

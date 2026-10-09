@@ -5,10 +5,12 @@
 import { round } from "../../precision.ts";
 import {
   CLOSED_PERIOD_MONTHS_BACK,
+  LABOR_RATE_EFFECTIVE_OFFSET,
   LOCKED_PERIOD_MONTHS_BACK,
   monthBack,
   previousMonthEnd,
   resolveDate,
+  resolveTimesheetDay,
   resolveTimestamp,
   SEEDED_PERIOD_MONTHS
 } from "../dates.ts";
@@ -39,7 +41,8 @@ import type {
   BillingAddressSpec,
   Ctx,
   JournalEntrySpec,
-  JournalLineSpec
+  JournalLineSpec,
+  ProjectStateName
 } from "../types.ts";
 
 // Mirrors get-accounting-period.ts so seeded periods get the same (fiscalYear,
@@ -120,13 +123,9 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   const periods = await seedAccountingPeriods(ctx);
   const posting = await loadPostingContext(ctx, periods);
 
+  await seedProjects(ctx);
   for (const spec of data.projects) {
-    ctx.log(`project ${spec.name}`);
-    const projectId = await insertId(ctx, "project", {
-      name: spec.name,
-      description: spec.description
-    });
-    ctx.refs.misc[`project:${spec.key}`] = projectId;
+    const projectId = need(ctx.refs.misc, `project:${spec.key}`, "project");
     if (spec.purchaseInvoiceLine) {
       const invoiceId = need(
         ctx.refs.misc,
@@ -786,4 +785,154 @@ async function upsertBillingAddress(
        email = EXCLUDED.email, "updatedBy" = EXCLUDED."updatedBy"`,
     [ctx.companyId, ...values, ctx.userId]
   );
+}
+
+// Mirrors `defaultProjectStates` (ERP `projects.models.ts`), the six states
+// `createProject` gives every new project. The backfill migration seeds the same.
+const PROJECT_STATES: {
+  name: ProjectStateName;
+  group: "Backlog" | "Unstarted" | "Started" | "Completed" | "Cancelled";
+  color: string;
+  isDefault: boolean;
+}[] = [
+  { name: "Backlog", group: "Backlog", color: "#60646C", isDefault: true },
+  { name: "Todo", group: "Unstarted", color: "#60646C", isDefault: true },
+  { name: "In Progress", group: "Started", color: "#F59E0B", isDefault: true },
+  { name: "In Review", group: "Started", color: "#3B82F6", isDefault: false },
+  { name: "Done", group: "Completed", color: "#46A758", isDefault: true },
+  { name: "Cancelled", group: "Cancelled", color: "#9AA4BC", isDefault: true }
+];
+
+/**
+ * Labor categories and their rates, then each project with its states,
+ * milestones and elements, then the applying user's timesheet. An element's
+ * `readableId` is `<identifier>-<n>` in list order, as `insertProjectElement`
+ * numbers them, and the project's `nextElementSequence` continues after it.
+ */
+async function seedProjects(ctx: Ctx): Promise<void> {
+  const { companyId, userId, anchor } = ctx;
+  const data = ctx.dataset.accounting;
+
+  const laborCategoryIds: Record<string, string> = {};
+  for (const category of data.laborCategories) {
+    const id = await insertId(ctx, "laborCategory", {
+      name: category.name,
+      description: category.description,
+      active: true
+    });
+    laborCategoryIds[category.name] = id;
+    await insertRow(ctx, "laborCategoryRate", {
+      laborCategoryId: id,
+      effectiveFrom: resolveDate(anchor, LABOR_RATE_EFFECTIVE_OFFSET),
+      costRate: category.costRate
+    });
+  }
+  const userCategory = data.laborCategories[0];
+  if (userCategory) {
+    await ctx.client.query(
+      `UPDATE "employeeJob" SET "laborCategoryId" = $1
+       WHERE id = $2 AND "companyId" = $3`,
+      [laborCategoryIds[userCategory.name], userId, companyId]
+    );
+  }
+
+  const elementIds: Record<string, string> = {};
+  for (const spec of data.projects) {
+    ctx.log(`project ${spec.name}`);
+    const projectId = await insertId(ctx, "project", {
+      name: spec.name,
+      description: spec.description,
+      identifier: spec.identifier,
+      costTreatment: spec.costTreatment,
+      status: spec.status,
+      ownerId: userId,
+      locationId: ctx.locationId,
+      nextElementSequence: spec.elements.length + 1
+    });
+    ctx.refs.misc[`project:${spec.key}`] = projectId;
+
+    const stateIds: Record<string, string> = {};
+    for (const [index, state] of PROJECT_STATES.entries()) {
+      stateIds[state.name] = await insertId(ctx, "projectState", {
+        projectId,
+        name: state.name,
+        group: state.group,
+        color: state.color,
+        sortOrder: index + 1,
+        isDefault: state.isDefault
+      });
+    }
+
+    const milestoneIds: Record<string, string> = {};
+    for (const [index, milestone] of spec.milestones.entries()) {
+      milestoneIds[milestone.key] = await insertId(ctx, "projectMilestone", {
+        projectId,
+        name: milestone.name,
+        startDate: resolveDate(anchor, milestone.startOffset),
+        endDate: resolveDate(anchor, milestone.endOffset),
+        completedAt:
+          milestone.endOffset < 0
+            ? resolveTimestamp(anchor, milestone.endOffset, "17:00:00")
+            : null,
+        sortOrder: index + 1
+      });
+    }
+
+    const siblingCount: Record<string, number> = {};
+    for (const [index, element] of spec.elements.entries()) {
+      const parentId = element.parentKey
+        ? need(elementIds, `${spec.key}:${element.parentKey}`, "parent element")
+        : null;
+      const siblings = element.parentKey ?? "";
+      siblingCount[siblings] = (siblingCount[siblings] ?? 0) + 1;
+      const completed =
+        element.state === "Done" || element.state === "Cancelled";
+      elementIds[`${spec.key}:${element.key}`] = await insertId(
+        ctx,
+        "projectElement",
+        {
+          projectId,
+          readableId: `${spec.identifier}-${index + 1}`,
+          sequence: index + 1,
+          type: element.type,
+          parentId,
+          name: element.name,
+          stateId: need(stateIds, element.state, "project state"),
+          milestoneId: element.milestone
+            ? need(milestoneIds, element.milestone, "milestone")
+            : null,
+          completedAt: completed
+            ? resolveTimestamp(anchor, -1, "16:00:00")
+            : null,
+          estimatedHours: element.estimatedHours ?? null,
+          isChargeable: true,
+          budget: element.budget ?? null,
+          sortOrder: siblingCount[siblings]
+        }
+      );
+    }
+  }
+
+  for (const entry of data.timesheetEntries) {
+    const submitted = entry.status === "Submitted";
+    await insertRow(ctx, "timesheetEntry", {
+      employeeId: userId,
+      entryDate: resolveTimesheetDay(anchor, entry.week, entry.weekday),
+      projectId: need(ctx.refs.misc, `project:${entry.project}`, "project"),
+      projectElementId: need(
+        elementIds,
+        `${entry.project}:${entry.element}`,
+        "project element"
+      ),
+      laborCategoryId: need(
+        laborCategoryIds,
+        entry.laborCategory,
+        "labor category"
+      ),
+      hours: entry.hours,
+      note: entry.note ?? null,
+      status: entry.status,
+      submittedAt: submitted ? resolveTimestamp(anchor, -2, "17:00:00") : null
+    });
+  }
 }

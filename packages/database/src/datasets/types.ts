@@ -1823,13 +1823,78 @@ export type MemoSpec = {
   notes: string;
 };
 
+/** One of the six states `createProject` seeds (`defaultProjectStates`). */
+export type ProjectStateName =
+  | "Backlog"
+  | "Todo"
+  | "In Progress"
+  | "In Review"
+  | "Done"
+  | "Cancelled";
+
+export type ProjectMilestoneSpec = {
+  /** Unique within the project; an element names it in `milestone`. */
+  key: string;
+  name: string;
+  startOffset: DayOffset;
+  endOffset: DayOffset;
+};
+
+export type ProjectElementSpec = {
+  /** Unique within the project; registered as `projectElement:<project>:<key>`. */
+  key: string;
+  type: "System" | "Requirement" | "Function" | "Task" | "Test Case";
+  name: string;
+  /** An element listed EARLIER in the same project (parents come first). */
+  parentKey?: string;
+  state: ProjectStateName;
+  /** A `milestones` key of the same project. */
+  milestone?: string;
+  estimatedHours?: number;
+  budget?: number;
+};
+
 export type ProjectSpec = {
   /** Registered in ctx.refs.misc as `project:<key>`. */
   key: string;
   name: string;
   description: string;
-  /** job has no projectId, so project coding lives on purchaseInvoiceLine. */
+  /** Element ids are `<identifier>-<n>`; `^[A-Z][A-Z0-9]{1,5}$`, unique per company. */
+  identifier: string;
+  /** Capitalize is Phase 1b; the app offers these three. */
+  costTreatment: "Statistical" | "Expense" | "Contract";
+  status: "Draft" | "Released" | "On Hold" | "Technically Complete" | "Closed";
+  milestones: ProjectMilestoneSpec[];
+  /** Parent-first order; `readableId` follows this order. */
+  elements: ProjectElementSpec[];
+  /** The purchase invoice line this project's charge number codes. */
   purchaseInvoiceLine?: { invoiceKey: string; item: string };
+};
+
+/** One rate per category, effective from `LABOR_RATE_EFFECTIVE_OFFSET`. */
+export type LaborCategorySpec = {
+  name: string;
+  description: string;
+  costRate: number;
+};
+
+/**
+ * The applying user's timesheet. Week 0 is the anchor's own Monday-start week
+ * (the timesheet's week); a week-0 day after the anchor is pulled back to the
+ * anchor, so no entry is in the future.
+ */
+export type TimesheetEntrySpec = {
+  project: string;
+  element: string;
+  laborCategory: string;
+  /** 0 = this week, -1 = last week. */
+  week: 0 | -1;
+  /** 0 = Monday … 4 = Friday. */
+  weekday: 0 | 1 | 2 | 3 | 4;
+  hours: number;
+  /** Posting needs the server functions, which the seed cannot run. */
+  status: "Draft" | "Submitted";
+  note?: string;
 };
 
 export type CustomDimensionSpec = {
@@ -1872,6 +1937,9 @@ export type AccountingData = {
   payments: PaymentSpec[];
   memos: MemoSpec[];
   projects: ProjectSpec[];
+  /** The first is the applying user's `employeeJob.laborCategoryId`. */
+  laborCategories: LaborCategorySpec[];
+  timesheetEntries: TimesheetEntrySpec[];
   customDimension: CustomDimensionSpec;
   closeTasks: PeriodCloseTaskSpec[];
   exchangeRateOverrides: ExchangeRateOverrideSpec[];

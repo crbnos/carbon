@@ -4952,6 +4952,113 @@ export function accounting(ctx: ValidationCtx): void {
     }
   }
   if (a.projects.length < 2) fail("accounting.projects: expected at least 2");
+
+  // The workspace: identifiers, milestones, the element tree and the timesheet.
+  const identifiers = new Set<string>();
+  const elementKeys = new Map<string, Set<string>>();
+  const projectStatus = new Map<string, string>();
+  for (const project of a.projects) {
+    const where = `accounting.projects "${project.key}"`;
+    projectStatus.set(project.key, project.status);
+    if (!/^[A-Z][A-Z0-9]{1,5}$/.test(project.identifier)) {
+      fail(`${where}: identifier "${project.identifier}" is not 2–6 capitals`);
+    }
+    if (identifiers.has(project.identifier)) {
+      fail(`${where}: duplicate identifier "${project.identifier}"`);
+    }
+    identifiers.add(project.identifier);
+
+    const milestoneKeys = new Set<string>();
+    for (const milestone of project.milestones) {
+      if (milestoneKeys.has(milestone.key)) {
+        fail(`${where}: duplicate milestone "${milestone.key}"`);
+      }
+      milestoneKeys.add(milestone.key);
+      if (milestone.endOffset < milestone.startOffset) {
+        fail(`${where}: milestone "${milestone.key}" ends before it starts`);
+      }
+    }
+    if (project.milestones.length < 2) {
+      fail(`${where}: expected at least 2 milestones`);
+    }
+
+    const keys = new Set<string>();
+    const depth = new Map<string, number>();
+    for (const element of project.elements) {
+      const at = `${where} element "${element.key}"`;
+      if (keys.has(element.key)) fail(`${at}: duplicate key`);
+      if (element.parentKey !== undefined) {
+        const parentDepth = depth.get(element.parentKey);
+        if (parentDepth === undefined) {
+          fail(`${at}: parent "${element.parentKey}" is not listed before it`);
+        } else {
+          depth.set(element.key, parentDepth + 1);
+        }
+      } else {
+        depth.set(element.key, 1);
+      }
+      if (
+        element.milestone !== undefined &&
+        !milestoneKeys.has(element.milestone)
+      ) {
+        fail(`${at}: unknown milestone "${element.milestone}"`);
+      }
+      if ((element.budget ?? 0) < 0 || (element.estimatedHours ?? 0) < 0) {
+        fail(`${at}: negative budget or estimated hours`);
+      }
+      keys.add(element.key);
+    }
+    elementKeys.set(project.key, keys);
+    if (project.elements.length < 8) {
+      fail(`${where}: expected at least 8 elements`);
+    }
+    if (Math.max(0, ...depth.values()) < 3) {
+      fail(`${where}: expected an element tree 3 levels deep`);
+    }
+  }
+
+  const laborCategoryNames = new Set<string>();
+  for (const category of a.laborCategories) {
+    if (laborCategoryNames.has(category.name)) {
+      fail(`accounting.laborCategories "${category.name}": duplicate name`);
+    }
+    laborCategoryNames.add(category.name);
+    if (category.costRate < 0) {
+      fail(`accounting.laborCategories "${category.name}": negative cost rate`);
+    }
+  }
+  if (a.laborCategories.length === 0) {
+    fail("accounting.laborCategories: must not be empty");
+  }
+
+  // A week-0 day after the anchor is pulled back to the anchor, so two
+  // week-0 entries on one timesheet row could land in one cell.
+  const timesheetCells = new Set<string>();
+  for (const [index, entry] of a.timesheetEntries.entries()) {
+    const where = `accounting.timesheetEntries[${index}]`;
+    if (!elementKeys.get(entry.project)?.has(entry.element)) {
+      fail(`${where}: unknown element "${entry.project}:${entry.element}"`);
+    }
+    if (projectStatus.get(entry.project) !== "Released") {
+      fail(`${where}: project "${entry.project}" is not Released`);
+    }
+    if (!laborCategoryNames.has(entry.laborCategory)) {
+      fail(`${where}: unknown labor category "${entry.laborCategory}"`);
+    }
+    if (entry.hours <= 0) fail(`${where}: hours must be positive`);
+    const row = `${entry.project}:${entry.element}:${entry.laborCategory}`;
+    const cell =
+      entry.week === 0 ? `0:${row}` : `${entry.week}:${entry.weekday}:${row}`;
+    if (timesheetCells.has(cell)) {
+      fail(`${where}: shares a timesheet cell with an earlier entry`);
+    }
+    timesheetCells.add(cell);
+  }
+  for (const status of ["Draft", "Submitted"] as const) {
+    if (!a.timesheetEntries.some((entry) => entry.status === status)) {
+      fail(`accounting.timesheetEntries: no ${status} entry`);
+    }
+  }
   if (!a.projects.some((p) => p.purchaseInvoiceLine)) {
     fail("accounting.projects: no project codes a purchase invoice line");
   }
