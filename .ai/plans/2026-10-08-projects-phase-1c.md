@@ -33,7 +33,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 
 ## Progress
 
-- [ ] Task 1: Create the Phase 1c enum migration
+- [x] Task 1: Create the Phase 1c enum migration
 - [ ] Task 2: Create the baselines and change requests migration
 - [ ] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Move the diff engine to `modules/shared`
@@ -670,3 +670,9 @@ ls .ai/playbooks/projects-phase-1c.md
 ```
 
 **Out of scope:** Phase 2 (project stock).
+
+## Execution notes
+
+- Prerequisite check: the Phase 1a and 1b artifacts this plan names exist. Every 1a and 1b task is committed except the two browser checks, which the overnight run defers.
+- Task 1: the migration was applied with `pnpm db:migrate`, and its regenerated types were committed with it, as in Phases 1a and 1b.
+- Task 1: the new `approvalDocumentType` value broke 2 checks at once, so this commit fixes both. The first is the `@carbon/ee` typecheck: `approvalDocumentTypeLabel` is a `Record` over the enum, and `service.ts` passes the enum to `z.enum(approvalDocumentType)`. So the `models.ts` part of Task 10 step 1 moved here: the value joins `approvalDocumentType` and `approvalDocumentTypeLabel` ("Project change request"), not `approvalDocumentTypesWithAmounts`. The second is the dataset validator, which requires every enum value in the demo data. `validate.ts` now excepts `projectChangeRequest`, because no dataset seeds a change request.

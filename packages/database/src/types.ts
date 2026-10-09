@@ -95479,7 +95479,11 @@ export type Database = {
         | "Other Expense"
         | "Tax"
         | "Investments"
-      approvalDocumentType: "purchaseOrder" | "qualityDocument" | "supplier"
+      approvalDocumentType:
+        | "purchaseOrder"
+        | "qualityDocument"
+        | "supplier"
+        | "projectChangeRequest"
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
@@ -96036,6 +96040,15 @@ export type Database = {
         | "Inspection"
       productionEventType: "Setup" | "Labor" | "Machine"
       productionQuantityType: "Rework" | "Scrap" | "Production"
+      projectBaselineSource: "Manual" | "Milestone" | "Change Request"
+      projectChangeOperation: "Add" | "Update" | "Delete"
+      projectChangeRequestStatus:
+        | "Draft"
+        | "In Review"
+        | "Approved"
+        | "Rejected"
+        | "Applied"
+        | "Cancelled"
       projectCostTreatment:
         | "Statistical"
         | "Expense"
@@ -96071,6 +96084,12 @@ export type Database = {
         | "Test Case"
         | "Parameter"
       projectLayout: "list" | "board" | "table" | "tree" | "timeline" | "reader"
+      projectPlanTable:
+        | "projectElement"
+        | "projectElementLink"
+        | "projectElementMaterial"
+        | "projectElementLabor"
+        | "projectElementCost"
       projectStateGroup:
         | "Backlog"
         | "Unstarted"
@@ -97025,7 +97044,12 @@ export const Constants = {
         "Tax",
         "Investments",
       ],
-      approvalDocumentType: ["purchaseOrder", "qualityDocument", "supplier"],
+      approvalDocumentType: [
+        "purchaseOrder",
+        "qualityDocument",
+        "supplier",
+        "projectChangeRequest",
+      ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],
@@ -97632,6 +97656,16 @@ export const Constants = {
       ],
       productionEventType: ["Setup", "Labor", "Machine"],
       productionQuantityType: ["Rework", "Scrap", "Production"],
+      projectBaselineSource: ["Manual", "Milestone", "Change Request"],
+      projectChangeOperation: ["Add", "Update", "Delete"],
+      projectChangeRequestStatus: [
+        "Draft",
+        "In Review",
+        "Approved",
+        "Rejected",
+        "Applied",
+        "Cancelled",
+      ],
       projectCostTreatment: [
         "Statistical",
         "Expense",
@@ -97671,6 +97705,13 @@ export const Constants = {
         "Parameter",
       ],
       projectLayout: ["list", "board", "table", "tree", "timeline", "reader"],
+      projectPlanTable: [
+        "projectElement",
+        "projectElementLink",
+        "projectElementMaterial",
+        "projectElementLabor",
+        "projectElementCost",
+      ],
       projectStateGroup: [
         "Backlog",
         "Unstarted",

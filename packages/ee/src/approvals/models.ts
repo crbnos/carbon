@@ -17,7 +17,8 @@ export const approvalDecisionValidator = z.object({
 export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
-  "supplier"
+  "supplier",
+  "projectChangeRequest"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -26,7 +27,8 @@ export type ApprovalDocumentType =
 export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
-  supplier: "Supplier"
+  supplier: "Supplier",
+  projectChangeRequest: "Project change request"
 };
 
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
