@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { methodType } from "../shared/shared.models";
@@ -456,4 +457,165 @@ export function buildElementTree<
 
   walk(null, 0);
   return result;
+}
+
+/**
+ * The labor rate in effect on `date`: the rate with the latest
+ * `effectiveFrom` on or before it, else null. Dates are `YYYY-MM-DD`
+ * strings, so string order is date order.
+ */
+export function rateOn<T extends { effectiveFrom: string }>(
+  rates: T[],
+  date: string
+): T | null {
+  let best: T | null = null;
+  for (const rate of rates) {
+    if (rate.effectiveFrom > date) continue;
+    if (!best || rate.effectiveFrom > best.effectiveFrom) best = rate;
+  }
+  return best;
+}
+
+/** The Monday of the ISO week that holds `date` (`YYYY-MM-DD`). */
+export function weekStartOf(date: string): string {
+  return startOfWeek(parseDate(date), "en-GB").toString();
+}
+
+export type TimesheetCell = {
+  entryId: string;
+  hours: number;
+  status: TimesheetEntryStatus;
+};
+
+export type TimesheetRow<T> = {
+  key: string;
+  projectId: string;
+  projectElementId: string | null;
+  laborCategoryId: string;
+  /** The first entry of the row, for its display fields. */
+  entry: T;
+  cells: Record<string, TimesheetCell>;
+  total: number;
+};
+
+/**
+ * Groups timesheet entries into grid rows: one row per project, element and
+ * labor category, with one cell per date. Two entries on the same date (a
+ * correction and its reversal) add up in one cell; the cell names the Draft
+ * entry when there is one, because that is the entry a user can edit.
+ */
+export function groupTimesheetRows<
+  T extends {
+    id: string;
+    projectId: string;
+    projectElementId: string | null;
+    laborCategoryId: string;
+    entryDate: string;
+    hours: number;
+    status: TimesheetEntryStatus;
+  }
+>(entries: T[]): TimesheetRow<T>[] {
+  const rows = new Map<string, TimesheetRow<T>>();
+  for (const entry of entries) {
+    const key = [
+      entry.projectId,
+      entry.projectElementId ?? "",
+      entry.laborCategoryId
+    ].join("\u001f");
+    let row = rows.get(key);
+    if (!row) {
+      row = {
+        key,
+        projectId: entry.projectId,
+        projectElementId: entry.projectElementId,
+        laborCategoryId: entry.laborCategoryId,
+        entry,
+        cells: {},
+        total: 0
+      };
+      rows.set(key, row);
+    }
+    const hours = Number(entry.hours);
+    const cell = row.cells[entry.entryDate];
+    if (!cell) {
+      row.cells[entry.entryDate] = {
+        entryId: entry.id,
+        hours,
+        status: entry.status
+      };
+    } else {
+      cell.hours += hours;
+      if (entry.status === "Draft") {
+        cell.entryId = entry.id;
+        cell.status = entry.status;
+      }
+    }
+    row.total += hours;
+  }
+  return [...rows.values()];
+}
+
+export type CostTotals = {
+  plan: number;
+  committed: number;
+  actual: number;
+  hours: number;
+};
+
+/**
+ * Rolls the per-element cost summary (`get_project_cost_summary`) up the
+ * element tree. Each element's totals are its own row plus the rows of all
+ * its descendants. The project total adds every row, including the row with
+ * no element (charges to the project itself).
+ */
+export function rollUpCostSummary(
+  tree: { id: string; parentId?: string | null }[],
+  rows: {
+    projectElementId: string | null;
+    planMaterial: number;
+    planLabor: number;
+    planOther: number;
+    committed: number;
+    actual: number;
+    actualHours: number;
+  }[]
+): { byElement: Map<string, CostTotals>; project: CostTotals } {
+  const parentOf = new Map<string, string | null>();
+  const byElement = new Map<string, CostTotals>();
+  for (const element of tree) {
+    parentOf.set(element.id, element.parentId ?? null);
+    byElement.set(element.id, { plan: 0, committed: 0, actual: 0, hours: 0 });
+  }
+
+  const project: CostTotals = { plan: 0, committed: 0, actual: 0, hours: 0 };
+  const add = (into: CostTotals, from: CostTotals) => {
+    into.plan += from.plan;
+    into.committed += from.committed;
+    into.actual += from.actual;
+    into.hours += from.hours;
+  };
+
+  for (const row of rows) {
+    const own: CostTotals = {
+      plan:
+        Number(row.planMaterial) +
+        Number(row.planLabor) +
+        Number(row.planOther),
+      committed: Number(row.committed),
+      actual: Number(row.actual),
+      hours: Number(row.actualHours)
+    };
+    add(project, own);
+
+    // Walk up from the element, adding its own row to it and each ancestor.
+    const seen = new Set<string>();
+    let id = row.projectElementId;
+    while (id && byElement.has(id) && !seen.has(id)) {
+      seen.add(id);
+      add(byElement.get(id)!, own);
+      id = parentOf.get(id) ?? null;
+    }
+  }
+
+  return { byElement, project };
 }

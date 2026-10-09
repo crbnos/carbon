@@ -13,7 +13,10 @@ import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  laborCategoryRateValidator,
+  laborCategoryValidator,
   ProjectCostTreatment,
+  ProjectCostType,
   ProjectElementEditableField,
   ProjectElementType,
   ProjectStateGroup,
@@ -24,8 +27,10 @@ import type {
   projectLabelValidator,
   projectMilestoneValidator,
   projectStateValidator,
-  projectValidator
+  projectValidator,
+  timesheetCellValidator
 } from "./projects.models";
+import { weekStartOf } from "./projects.models";
 
 type Client = SupabaseClient<Database>;
 
@@ -1312,4 +1317,538 @@ export async function deleteProjectElementCost(
     .delete()
     .eq("id", id)
     .eq("companyId", companyId);
+}
+
+// --- Labor categories --------------------------------------------------------
+
+/**
+ * Lists the labor categories of the company.
+ * @mcp read
+ */
+export async function getLaborCategories(
+  client: Client,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("laborCategory")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+/**
+ * Lists the active labor categories of the company, for a picker.
+ * @mcp read
+ */
+export async function getLaborCategoriesList(
+  client: Client,
+  companyId: string
+) {
+  return client
+    .from("laborCategory")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+type LaborCategoryFields = Omit<z.infer<typeof laborCategoryValidator>, "id">;
+
+/**
+ * Creates or updates a labor category.
+ * @mcp upsert
+ */
+export async function upsertLaborCategory(
+  client: Client,
+  category:
+    | (LaborCategoryFields & { companyId: string; createdBy: string })
+    | (LaborCategoryFields & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  const fields = {
+    name: category.name,
+    description: category.description ?? null,
+    active: category.active ?? true
+  };
+  if ("createdBy" in category) {
+    return client
+      .from("laborCategory")
+      .insert([
+        {
+          ...fields,
+          companyId: category.companyId,
+          createdBy: category.createdBy
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("laborCategory")
+    .update({
+      ...fields,
+      updatedBy: category.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", category.id)
+    .eq("companyId", category.companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Lists the cost rates of a labor category, newest first.
+ * @mcp read
+ */
+export async function getLaborCategoryRates(
+  client: Client,
+  laborCategoryId: string,
+  companyId: string
+) {
+  return client
+    .from("laborCategoryRate")
+    .select("*")
+    .eq("laborCategoryId", laborCategoryId)
+    .eq("companyId", companyId)
+    .order("effectiveFrom", { ascending: false });
+}
+
+type LaborCategoryRateFields = Omit<
+  z.infer<typeof laborCategoryRateValidator>,
+  "id"
+>;
+
+/**
+ * Creates or updates an effective-dated cost rate of a labor category.
+ * @mcp upsert
+ */
+export async function upsertLaborCategoryRate(
+  client: Client,
+  rate:
+    | (LaborCategoryRateFields & { companyId: string; createdBy: string })
+    | (LaborCategoryRateFields & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in rate) {
+    return client
+      .from("laborCategoryRate")
+      .insert([
+        {
+          laborCategoryId: rate.laborCategoryId,
+          effectiveFrom: rate.effectiveFrom,
+          costRate: rate.costRate,
+          companyId: rate.companyId,
+          createdBy: rate.createdBy
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("laborCategoryRate")
+    .update({
+      effectiveFrom: rate.effectiveFrom,
+      costRate: rate.costRate,
+      updatedBy: rate.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", rate.id)
+    .eq("companyId", rate.companyId)
+    .select("id")
+    .single();
+}
+
+// --- Timesheets --------------------------------------------------------------
+
+const TIMESHEET_ENTRY_COLUMNS =
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+
+/**
+ * Gets an employee's timesheet entries between two dates (inclusive), with
+ * the project, element and labor category names.
+ * @mcp read
+ */
+export async function getTimesheetWeek(
+  client: Client,
+  args: { companyId: string; employeeId: string; from: string; to: string }
+) {
+  return client
+    .from("timesheetEntry")
+    .select(TIMESHEET_ENTRY_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .gte("entryDate", args.from)
+    .lte("entryDate", args.to)
+    .order("entryDate", { ascending: true })
+    .order("createdAt", { ascending: true });
+}
+
+/**
+ * Saves one cell of the timesheet grid. A Draft entry is updated, or deleted
+ * when the hours are 0. A Rejected entry goes back to Draft with the new
+ * hours. A Submitted, Approved or Posted entry is refused: a posted entry
+ * changes only through a correction.
+ * @mcp action destructive
+ */
+export async function upsertTimesheetCell(
+  client: Client,
+  args: Omit<z.infer<typeof timesheetCellValidator>, "projectElementId"> & {
+    projectElementId?: string | null;
+    companyId: string;
+    employeeId: string;
+    userId: string;
+  }
+) {
+  let existing = client
+    .from("timesheetEntry")
+    .select("id, status")
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("entryDate", args.entryDate)
+    .eq("projectId", args.projectId)
+    .eq("laborCategoryId", args.laborCategoryId)
+    .is("reversalOfId", null);
+  existing = args.projectElementId
+    ? existing.eq("projectElementId", args.projectElementId)
+    : existing.is("projectElementId", null);
+  const entries = await existing;
+  if (entries.error) return { data: null, error: entries.error };
+
+  const rows = entries.data ?? [];
+  const editable =
+    rows.find((row) => row.status === "Draft") ??
+    rows.find((row) => row.status === "Rejected");
+
+  if (!editable) {
+    if (rows.some((row) => row.status === "Posted")) {
+      return refusal(
+        "This time is posted. Use a correction to change posted hours."
+      );
+    }
+    if (rows.length > 0) {
+      return refusal(
+        "This time is submitted. It can change only after it is rejected."
+      );
+    }
+    if (args.hours === 0) return { data: null, error: null };
+    return client
+      .from("timesheetEntry")
+      .insert([
+        {
+          companyId: args.companyId,
+          employeeId: args.employeeId,
+          entryDate: args.entryDate,
+          projectId: args.projectId,
+          projectElementId: args.projectElementId ?? null,
+          laborCategoryId: args.laborCategoryId,
+          hours: args.hours,
+          note: args.note ?? null,
+          status: "Draft",
+          createdBy: args.userId
+        }
+      ])
+      .select("id")
+      .single();
+  }
+
+  if (args.hours === 0) {
+    return client
+      .from("timesheetEntry")
+      .delete()
+      .eq("id", editable.id)
+      .eq("companyId", args.companyId)
+      .in("status", ["Draft", "Rejected"])
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("timesheetEntry")
+    .update({
+      hours: args.hours,
+      note: args.note ?? null,
+      status: "Draft",
+      rejectionNote: null,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", editable.id)
+    .eq("companyId", args.companyId)
+    .in("status", ["Draft", "Rejected"])
+    .select("id")
+    .single();
+}
+
+/**
+ * Submits an employee's Draft entries between two dates (inclusive).
+ * Returns the ids it submitted.
+ * @mcp action
+ */
+export async function submitTimesheetEntries(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    from: string;
+    to: string;
+    userId: string;
+  }
+) {
+  const now = datetime.timestamp();
+  const rows = await db
+    .updateTable("timesheetEntry")
+    .set({
+      status: "Submitted",
+      submittedAt: now,
+      updatedBy: args.userId,
+      updatedAt: now
+    })
+    .where("companyId", "=", args.companyId)
+    .where("employeeId", "=", args.employeeId)
+    .where("status", "=", "Draft")
+    .where("entryDate", ">=", args.from)
+    .where("entryDate", "<=", args.to)
+    .returning("id")
+    .execute();
+  return rows.map((row) => row.id);
+}
+
+/**
+ * Rejects Submitted entries with a note. The employee can edit them again.
+ * @mcp action
+ */
+export async function rejectTimesheetEntries(
+  client: Client,
+  args: { ids: string[]; companyId: string; note: string; updatedBy: string }
+) {
+  return client
+    .from("timesheetEntry")
+    .update({
+      status: "Rejected",
+      rejectionNote: args.note,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .eq("status", "Submitted")
+    .select("id");
+}
+
+/**
+ * Corrects a Posted entry: a Submitted reversal of the original hours and,
+ * when `hours` is not 0, a Submitted replacement. Both carry the reason.
+ * Returns the reversal id and the replacement id (or null).
+ * @mcp action
+ */
+export async function createTimesheetCorrection(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    timesheetEntryId: string;
+    hours: number;
+    correctionReason: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const original = await trx
+      .selectFrom("timesheetEntry")
+      .selectAll()
+      .where("id", "=", args.timesheetEntryId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!original) throw new Error("The timesheet entry does not exist");
+    if (original.status !== "Posted") {
+      throw new Error("Only a posted entry needs a correction");
+    }
+    if (original.reversalOfId) {
+      throw new Error("A reversal cannot be corrected");
+    }
+
+    const reversed = await trx
+      .selectFrom("timesheetEntry")
+      .select("id")
+      .where("reversalOfId", "=", original.id)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (reversed) throw new Error("This entry is already corrected");
+
+    const now = datetime.timestamp();
+    const shared = {
+      companyId: args.companyId,
+      employeeId: original.employeeId,
+      entryDate: original.entryDate,
+      projectId: original.projectId,
+      projectElementId: original.projectElementId,
+      laborCategoryId: original.laborCategoryId,
+      note: original.note,
+      correctionReason: args.correctionReason,
+      status: "Submitted" as const,
+      submittedAt: now,
+      createdBy: args.userId
+    };
+
+    const reversal = await trx
+      .insertInto("timesheetEntry")
+      .values({
+        ...shared,
+        hours: -Number(original.hours),
+        reversalOfId: original.id
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    let replacementId: string | null = null;
+    if (args.hours !== 0) {
+      const replacement = await trx
+        .insertInto("timesheetEntry")
+        .values({ ...shared, hours: args.hours, reversalOfId: null })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      replacementId = replacement.id;
+    }
+
+    return { reversalId: reversal.id, replacementId };
+  });
+}
+
+/**
+ * Lists Submitted entries, grouped by employee and week (Monday). When
+ * `ownerId` is set, only entries on projects that user owns are listed;
+ * pass null for a user with `projects_update`.
+ * @mcp read
+ */
+export async function getTimesheetApprovals(
+  client: Client,
+  companyId: string,
+  args: { ownerId: string | null }
+) {
+  const entries = await fetchAll<TimesheetApprovalEntry>(() => {
+    let query = client
+      .from("timesheetEntry")
+      .select(TIMESHEET_APPROVAL_COLUMNS)
+      .eq("companyId", companyId)
+      .eq("status", "Submitted")
+      .order("employeeId", { ascending: true })
+      .order("entryDate", { ascending: true })
+      .order("id", { ascending: true });
+    if (args.ownerId) {
+      query = query.eq("project.ownerId", args.ownerId);
+    }
+    return query;
+  });
+  if (entries.error) {
+    return { data: null, error: entries.error as unknown as PostgrestError };
+  }
+
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      employeeId: string;
+      employee: TimesheetApprovalEntry["employee"];
+      weekStart: string;
+      entries: TimesheetApprovalEntry[];
+      totalHours: number;
+    }
+  >();
+  for (const entry of entries.data ?? []) {
+    const weekStart = weekStartOf(entry.entryDate);
+    const key = `${entry.employeeId}:${weekStart}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        key,
+        employeeId: entry.employeeId,
+        employee: entry.employee,
+        weekStart,
+        entries: [],
+        totalHours: 0
+      };
+      groups.set(key, group);
+    }
+    group.entries.push(entry);
+    group.totalHours += Number(entry.hours);
+  }
+
+  return { data: [...groups.values()], error: null };
+}
+
+const TIMESHEET_APPROVAL_COLUMNS =
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, reversalOfId, correctionReason, employee:user!timesheetEntry_employeeId_fkey(id, fullName, avatarUrl), project:project!timesheetEntry_project_fkey!inner(id, identifier, name, ownerId), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+
+function timesheetApprovalsQuery(client: Client) {
+  return client.from("timesheetEntry").select(TIMESHEET_APPROVAL_COLUMNS);
+}
+
+type TimesheetApprovalEntry = NonNullable<
+  Awaited<ReturnType<typeof timesheetApprovalsQuery>>["data"]
+>[number];
+
+// --- Project ledger and costs ------------------------------------------------
+
+/**
+ * Lists project ledger rows. Filters are the project, element ids and cost
+ * type.
+ * @mcp read
+ */
+export async function getProjectLedger(
+  client: Client,
+  companyId: string,
+  args: GenericQueryFilters & {
+    projectId: string;
+    projectElementIds?: string[] | null;
+    costType?: ProjectCostType | null;
+  }
+) {
+  let query = client
+    .from("projectLedger")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId)
+    .eq("projectId", args.projectId);
+
+  if (args.projectElementIds && args.projectElementIds.length > 0) {
+    query = query.in("projectElementId", args.projectElementIds);
+  }
+  if (args.costType) {
+    query = query.eq("costType", args.costType);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "postingDate", ascending: false }
+  ]);
+  return query;
+}
+
+/**
+ * Gets plan, committed, actual and hours per element of a project, plus one
+ * row with no element for charges to the project itself.
+ * @mcp read
+ */
+export async function getProjectCostSummary(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client.rpc("get_project_cost_summary", {
+    p_project_id: projectId,
+    p_company_id: companyId
+  });
 }

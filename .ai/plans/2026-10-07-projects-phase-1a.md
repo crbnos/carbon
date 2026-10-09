@@ -50,7 +50,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 11: Add the projects module models
 - [x] Task 12: Add the project and workspace service functions
 - [x] Task 13: Add the element service functions
-- [ ] Task 14: Add the time, labor category and ledger service functions
+- [x] Task 14: Add the time, labor category and ledger service functions
 - [ ] Task 15: Add the pure project posting helpers and tests
 - [ ] Task 16: Add the `post-timesheet` server function
 - [ ] Task 17: Add the `post-project-issue` server function
@@ -2422,3 +2422,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 13: when no `stateId` is given, the insert takes the default Unstarted state, else the first Unstarted state by `sortOrder`.
 - Task 13: `getProjectElements` resolves the `labelId` filter with one `projectElementLabel` query, then one `.in("id", …)`, so the embedded label list keeps every label. `getProjectElement` reads the parent with a second query, because a self-referencing embed is ambiguous.
 - Task 13: a throwaway vitest run against this worktree's database created a project, inserted 3 elements (`STG-1`…`STG-3`), refused a move under a descendant, moved one element to the top level and started an Unstarted element (Todo → In Progress). The test project was then deleted. The script was not committed.
+- Task 14: `upsertTimesheetCell` treats a Rejected entry as editable. A save puts it back to Draft and clears `rejectionNote`, so a rejected week can be fixed and submitted again. Submitted, Approved and Posted entries are refused; the Posted message points to a correction.
+- Task 14: `createTimesheetCorrection` also refuses an entry that is already corrected (a reversal exists) and a reversal itself.
+- Task 14: `getTimesheetApprovals` takes `{ ownerId: string | null }`. The route passes null when the user has `projects_update`, else the user id; the service cannot read permissions. The week is the Monday from `weekStartOf` (models).
+- Task 14: a throwaway vitest run against this worktree's database submitted one Draft entry, then corrected it after a manual Posted stamp: a −6 h reversal and a 4 h replacement, both Submitted. A second correction was refused. The rows were deleted. Importing `projects.service.ts` in a plain vitest run needs `~/utils/query` and `~/utils/supabase` mocked, because they reach the glossary's Lingui macros.
