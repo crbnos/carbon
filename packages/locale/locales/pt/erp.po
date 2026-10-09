@@ -2480,8 +2480,15 @@ msgstr "Aparência"
 msgid "Applied"
 msgstr "Aplicado"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Montante aplicado para {0}"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Os valores aplicados estão na moeda base da empresa ({baseCurrency})."
+
+msgid "Applied Date"
+msgstr "Data Aplicada"
 
 msgid "Applied To"
 msgstr "Aplicado a"
@@ -2530,10 +2537,6 @@ msgstr "Aplicar sugestões"
 
 msgid "Apply To"
 msgstr "Aplicar a"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "Aplicar à fatura"
@@ -7286,6 +7289,10 @@ msgstr "Dias de Desconto após {selectedCalculationMethod}"
 msgid "Discount Ends On"
 msgstr "Desconto Termina Em"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "Desconto para {0}"
+
 msgid "Discount Percent"
 msgstr "Percentual de Desconto"
 
@@ -9676,9 +9683,6 @@ msgstr "Totalmente Depreciado"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "FX Gain/Loss"
-msgstr ""
-
 msgid "FY {year}"
 msgstr "AF {year}"
 
@@ -10801,6 +10805,9 @@ msgstr "Observações Internas"
 msgid "inv"
 msgstr "inv"
 
+msgid "Inv Rate"
+msgstr "Taxa da Fatura"
+
 msgid "Invalid applications"
 msgstr "Aplicações inválidas"
 
@@ -10941,9 +10948,6 @@ msgstr "Local da Fatura"
 
 msgid "Invoice Number"
 msgstr "Número da Fatura"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "Cronograma de faturamento"
@@ -12964,6 +12968,9 @@ msgstr "Nova Linha"
 msgid "New Line"
 msgstr "Nova Linha"
 
+msgid "New Line Item"
+msgstr "Novo Item de Linha"
+
 msgid "New Location"
 msgstr "Nova Localização"
 
@@ -14344,9 +14351,6 @@ msgstr "Oops! O link que está tentando acessar não é válido."
 msgid "Open"
 msgstr "Abrir"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "Abrir um aviso de alteração"
 
@@ -15022,6 +15026,9 @@ msgstr "Pagar"
 msgid "Pay expense"
 msgstr "Pagar despesa"
 
+msgid "Pay Rate"
+msgstr "Taxa de Pagamento"
+
 msgid "Payables"
 msgstr "Contas a Pagar (padrão)"
 
@@ -15048,9 +15055,6 @@ msgstr "Pagamento do Cliente"
 
 msgid "Payment ID"
 msgstr "ID de Pagamento"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "condição de pagamento"
@@ -22505,6 +22509,9 @@ msgstr "Não aplicado"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "O caixa não aplicado é mantido como adiantamento de cliente para este documento em vez de crédito em conta."
 
+msgid "Unapplied:"
+msgstr "Não Aplicado:"
+
 msgid "Unapproved Supplier"
 msgstr "Fornecedor Não Aprovado"
 
@@ -24128,6 +24135,10 @@ msgstr "Baixa contábil"
 
 msgid "Write-Off Account"
 msgstr "Conta de baixa contábil"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "Baixa contábil para {0}"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Baixa contábil de estoque refugado ou devolvido via rejeições de inspeção e disposições de NCR"

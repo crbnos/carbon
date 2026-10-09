@@ -2480,8 +2480,15 @@ msgstr "外観"
 msgid "Applied"
 msgstr "適用"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "{0} に適用した金額"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
+
+msgid "Applied Date"
+msgstr "適用日"
 
 msgid "Applied To"
 msgstr "適用先"
@@ -2530,10 +2537,6 @@ msgstr "提案を適用"
 
 msgid "Apply To"
 msgstr "適用対象"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "請求書に適用"
@@ -7286,6 +7289,10 @@ msgstr "{selectedCalculationMethod}後の値引日数"
 msgid "Discount Ends On"
 msgstr "値引終了日"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "{0} の値引"
+
 msgid "Discount Percent"
 msgstr "値引率"
 
@@ -9676,9 +9683,6 @@ msgstr "完全償却済み"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "FX Gain/Loss"
-msgstr ""
-
 msgid "FY {year}"
 msgstr "FY {year}"
 
@@ -10801,6 +10805,9 @@ msgstr "社内メモ"
 msgid "inv"
 msgstr "在庫"
 
+msgid "Inv Rate"
+msgstr "請求為替レート"
+
 msgid "Invalid applications"
 msgstr "無効な適用"
 
@@ -10941,9 +10948,6 @@ msgstr "請求書の場所"
 
 msgid "Invoice Number"
 msgstr "請求書番号"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "請求スケジュール"
@@ -12964,6 +12968,9 @@ msgstr "新規明細"
 msgid "New Line"
 msgstr "新しい行"
 
+msgid "New Line Item"
+msgstr "新規明細"
+
 msgid "New Location"
 msgstr "新しい場所"
 
@@ -14344,9 +14351,6 @@ msgstr "申し訳ございません。アクセスしようとしているリン
 msgid "Open"
 msgstr "開く"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "変更通知を開く"
 
@@ -15022,6 +15026,9 @@ msgstr "支払う"
 msgid "Pay expense"
 msgstr "費用を支払う"
 
+msgid "Pay Rate"
+msgstr "支払為替レート"
+
 msgid "Payables"
 msgstr "買掛金（デフォルト）"
 
@@ -15048,9 +15055,6 @@ msgstr "得意先からの支払"
 
 msgid "Payment ID"
 msgstr "支払いID"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "支払条件"
@@ -22505,6 +22509,9 @@ msgstr "未適用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "適用されていない現金はこの文書の得意先前払金として保有され、掛上与信として保有されません。"
 
+msgid "Unapplied:"
+msgstr "未充当:"
+
 msgid "Unapproved Supplier"
 msgstr "未承認の仕入先"
 
@@ -24128,6 +24135,10 @@ msgstr "償却"
 
 msgid "Write-Off Account"
 msgstr "償却勘定"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0} の償却"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "検査却下およびNCR処置によってスクラップされたまたは返却された在庫の償却。"

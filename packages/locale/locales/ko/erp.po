@@ -2480,8 +2480,15 @@ msgstr "모양"
 msgid "Applied"
 msgstr "적용됨"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "{0}에 대한 적용 금액"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "적용 금액은 회사 기본 통화({baseCurrency})입니다."
+
+msgid "Applied Date"
+msgstr "적용 일자"
 
 msgid "Applied To"
 msgstr "적용 대상"
@@ -2530,10 +2537,6 @@ msgstr "제안 적용"
 
 msgid "Apply To"
 msgstr "적용 대상"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "송장에 적용"
@@ -7286,6 +7289,10 @@ msgstr "{selectedCalculationMethod} 이후 할인 일수"
 msgid "Discount Ends On"
 msgstr "할인 종료일"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "{0}에 대한 할인"
+
 msgid "Discount Percent"
 msgstr "할인율"
 
@@ -9676,9 +9683,6 @@ msgstr "상각 완료"
 msgid "FX G/L"
 msgstr "외환 손익"
 
-msgid "FX Gain/Loss"
-msgstr ""
-
 msgid "FY {year}"
 msgstr "FY {year}"
 
@@ -10801,6 +10805,9 @@ msgstr "내부 메모"
 msgid "inv"
 msgstr "재고"
 
+msgid "Inv Rate"
+msgstr "청구서 비율"
+
 msgid "Invalid applications"
 msgstr "잘못된 적용"
 
@@ -10941,9 +10948,6 @@ msgstr "송장 사업장"
 
 msgid "Invoice Number"
 msgstr "송장 번호"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "송장 일정"
@@ -12964,6 +12968,9 @@ msgstr "새로운 라인"
 msgid "New Line"
 msgstr "새 라인"
 
+msgid "New Line Item"
+msgstr "새로운 라인"
+
 msgid "New Location"
 msgstr "새 위치"
 
@@ -14344,9 +14351,6 @@ msgstr "이런! 접근하려는 링크가 유효하지 않습니다."
 msgid "Open"
 msgstr "열림"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "변경 통지 열기"
 
@@ -15022,6 +15026,9 @@ msgstr "지불"
 msgid "Pay expense"
 msgstr "비용 지불"
 
+msgid "Pay Rate"
+msgstr "결제 비율"
+
 msgid "Payables"
 msgstr "매입채무"
 
@@ -15048,9 +15055,6 @@ msgstr "고객 지불"
 
 msgid "Payment ID"
 msgstr "지불 ID"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "지불 조건"
@@ -22505,6 +22509,9 @@ msgstr "미적용"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "미적용 현금은 계정 대변 대신 이 문서에 대한 고객 선급금으로 유지됩니다."
 
+msgid "Unapplied:"
+msgstr "미적용:"
+
 msgid "Unapproved Supplier"
 msgstr "미승인 공급업체"
 
@@ -24128,6 +24135,10 @@ msgstr "대손 처리"
 
 msgid "Write-Off Account"
 msgstr "대손 처리 계정"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0}에 대한 대손 처리"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 재고의 대손 처리"

@@ -2480,8 +2480,15 @@ msgstr "Внешний вид"
 msgid "Applied"
 msgstr "Применено"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Примененная сумма для {0}"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
+
+msgid "Applied Date"
+msgstr "Дата применения"
 
 msgid "Applied To"
 msgstr "Применено к"
@@ -2530,10 +2537,6 @@ msgstr "Применить предложения"
 
 msgid "Apply To"
 msgstr "Применить к"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "Применить к счет-фактуре"
@@ -7286,6 +7289,10 @@ msgstr "Дни скидки после {selectedCalculationMethod}"
 msgid "Discount Ends On"
 msgstr "Скидка действует до"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "Скидка для {0}"
+
 msgid "Discount Percent"
 msgstr "Процент скидки"
 
@@ -9676,9 +9683,6 @@ msgstr "Полностью амортизирован"
 msgid "FX G/L"
 msgstr "Прибыль/убыток по курсу"
 
-msgid "FX Gain/Loss"
-msgstr ""
-
 msgid "FY {year}"
 msgstr "Финансовый год {year}"
 
@@ -10801,6 +10805,9 @@ msgstr "Внутренние примечания"
 msgid "inv"
 msgstr "инв"
 
+msgid "Inv Rate"
+msgstr "Курс счета"
+
 msgid "Invalid applications"
 msgstr "Недействительные применения"
 
@@ -10941,9 +10948,6 @@ msgstr "Площадка счета-фактуры"
 
 msgid "Invoice Number"
 msgstr "Номер счета-фактуры"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "График выставления счетов"
@@ -12964,6 +12968,9 @@ msgstr "Новая строка"
 msgid "New Line"
 msgstr "Новая строка"
 
+msgid "New Line Item"
+msgstr "Новая позиция"
+
 msgid "New Location"
 msgstr "Новое местоположение"
 
@@ -14344,9 +14351,6 @@ msgstr "Упс! Ссылка, которую вы пытаетесь откры�
 msgid "Open"
 msgstr "Открыть"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "Открыть Извещение об изменении"
 
@@ -15022,6 +15026,9 @@ msgstr "Оплатить"
 msgid "Pay expense"
 msgstr "Оплатить расход"
 
+msgid "Pay Rate"
+msgstr "Курс платежа"
+
 msgid "Payables"
 msgstr "Кредиторская задолженность (по умолчанию)"
 
@@ -15048,9 +15055,6 @@ msgstr "Платеж от Покупателя"
 
 msgid "Payment ID"
 msgstr "ID платежа"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "условия оплаты"
@@ -22505,6 +22509,9 @@ msgstr "Неприменённые"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Неприменные денежные средства удерживаются в качестве предоплаты покупателя за этот документ вместо кредита в счет на счета."
 
+msgid "Unapplied:"
+msgstr "Не применено:"
+
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
 
@@ -24128,6 +24135,10 @@ msgstr "Списание"
 
 msgid "Write-Off Account"
 msgstr "Счет списания"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "Списание для {0}"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Списание запасов, забракованных или возвращенных по результатам контроля и решениям по NCR"
