@@ -2597,6 +2597,9 @@ msgstr "승인"
 msgid "Approve"
 msgstr "승인"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "승인자"
 
@@ -3881,6 +3884,9 @@ msgstr "일괄 가져오기"
 msgid "Bulk Jobs"
 msgstr "대량 작업 지시"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "비즈니스 순간"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "청구 날짜"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "원가 계산 방법"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "신용권 발행"
 msgid "Issue description"
 msgstr "이슈 설명"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "이슈를 찾을 수 없습니다"
 
@@ -11126,6 +11144,12 @@ msgstr "이슈 템플릿"
 
 msgid "Issue title"
 msgstr "이슈 제목"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "이슈 추이"
@@ -11884,6 +11908,12 @@ msgstr "잠금은 기간을 운영 문서(입고, 출하, 송장)에 대해 읽�
 msgid "Log nonconformances and drive a CAPA"
 msgstr "부적합을 기록하고 CAPA를 진행하세요"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "로그인 또는 새 계정 생성"
 
@@ -12377,6 +12407,9 @@ msgstr "자재 사용차이"
 
 msgid "Material Usage Variance (default)"
 msgstr "자재 사용차이(기본값)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "자재"
@@ -13463,6 +13496,9 @@ msgstr "이 자산에 대해 아직 기록된 원가가 없습니다."
 msgid "No cost history found"
 msgstr "원가 이력이 없습니다"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "아직 신용권 없음"
 
@@ -13711,6 +13747,9 @@ msgstr "미결 환급금 없음"
 
 msgid "No open sales order lines"
 msgstr "미결 수주 라인이 없습니다."
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "공정을 찾을 수 없습니다."
@@ -14791,6 +14830,9 @@ msgstr "기타"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "영업외비용"
 
@@ -14848,6 +14890,9 @@ msgstr "산출물은 절대 원자재를 초과할 수 없습니다. 입력물�
 msgid "Outside operation"
 msgstr "외주 공정작업"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "미해결"
 
@@ -14859,6 +14904,9 @@ msgstr "전체 결과"
 
 msgid "Overdue"
 msgstr "기한 초과"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "간접비 배부"
@@ -15121,6 +15169,9 @@ msgstr "매입채무(기본값)"
 
 msgid "Payables aging"
 msgstr "매입채무 연령분석"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "지불"
@@ -16206,6 +16257,9 @@ msgstr "구매 단위:"
 
 msgid "Purchased"
 msgstr "구매됨"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "구매"
@@ -17600,6 +17654,9 @@ msgstr "재고로 반환"
 
 msgid "Return to Service"
 msgstr "서비스 재개"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "반납 개"
@@ -19991,6 +20048,9 @@ msgstr "승인을 위해 제출"
 msgid "Submit Inspection"
 msgstr "검사 제출"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "제출자"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "자산 및 클래스별 임차 자산의 시간 및 달러 이용률"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "하루 중 시간"

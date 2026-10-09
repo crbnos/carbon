@@ -72,7 +72,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 33: Add the Board layout
 - [x] Task 34: Add the Table layout
 - [x] Task 35: Build the element page (peek and full page)
-- [ ] Task 36: Add Log time and Issue material to the element page
+- [x] Task 36: Add Log time and Issue material to the element page
 - [ ] Task 37: Build the Milestones tab
 - [ ] Task 38: Build the Costs tab and the Time & materials tab
 - [ ] Task 39: Build My Timesheet and Approvals in the ERP
@@ -2520,3 +2520,11 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 35: the Budget section shows this element and the element with its children. Remaining is the budget (else the plan) less committed and actual. Estimate at completion is the plan, or committed plus actual when they exceed it. The subtree budget adds the budgets set in the subtree.
 - Task 35: the delete route redirects to the element list with a flash; a refusal stays on the page with its reason. Delete sits in the element header's ⋯ menu and in the list row menu (Task 32).
 - Task 35: the full page sets its breadcrumb to the element's readable id.
+- Task 36: Log time inserts the entry as Submitted in one Kysely write (`logTimesheetEntry`, `projects.server.ts`), not Draft then Submitted. The employee's own RLS branch accepts only Draft rows (Task 8 note), and one write is the same end state. With `timesheetApprovalRequired` off the route then calls `postTimesheetEntries`; if posting refuses, the entry stays Submitted and the modal shows "The time is logged but did not post: …".
+- Task 36: `getProjectElementPage` now also reads the subtree's `projectLedger` rows and its timesheet entries that are not Posted (`getElementTimeAndMaterials`: two Kysely queries that walk the subtree in SQL, newest 200 each, so no id list leaves the database), and the user's `employeeJob.laborCategoryId` for the Log time default. Its arguments gain `userId`.
+- Task 36: `requirePermissions` accepts an array and requires every module, so the issue route uses `update: ["inventory", "projects"]` (step 7 was not needed).
+- Task 36: both modals show a posting refusal (`ProjectChargeError` and the other 4xx messages from the server functions) in a destructive `Alert` inside the modal, which stays open; success closes it with a flash.
+- Task 36: the Issue modal lists stocked items only (a `whitelist` of active items that are not Non-Inventory). For a Serial or Batch item it shows a tracked-entity select: on hand in the chosen storage unit for an Issue (`get_item_quantities_by_tracking_id`), the item's Consumed entities for a Return. Both are read with the browser client, so RLS applies.
+- Task 36: Inventory → **Issue to Project** links to `/x/projects/issue`, whose default export renders the same modal with the `ChargeNumber` picker; closing it goes to Inventory → Quantities. The page sits under the Projects layout, so it shows the Projects sidebar.
+- Task 36: Log time and Issue material need a chargeable element of a project that is not Closed; the buttons are disabled otherwise (the server functions refuse the other states with their reason). They show in the action row and at the top of the Time & materials section.
+- Task 36: `@carbon/utils` `status-colors.ts` gains `TIMESHEET_ENTRY_STATUS_COLOR_MAP` (Draft gray, Submitted yellow, Approved blue, Posted green, Rejected red), rendered by `ui/Element/TimesheetEntryStatus.tsx`. Task 39 can reuse both.

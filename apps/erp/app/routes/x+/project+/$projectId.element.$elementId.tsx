@@ -31,7 +31,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "projects"
   });
 
@@ -42,7 +42,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const page = await getProjectElementPage(client, {
     companyId,
     projectId,
-    elementId
+    elementId,
+    userId
   });
   if (page.error || !page.data) {
     logger.error("Failed to load project element", {

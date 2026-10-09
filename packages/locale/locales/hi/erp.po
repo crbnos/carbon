@@ -2597,6 +2597,9 @@ msgstr "अनुमोदन"
 msgid "Approve"
 msgstr "अनुमोदित करें"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "द्वारा अनुमोदित"
 
@@ -3881,6 +3884,9 @@ msgstr "बल्क आयात"
 msgid "Bulk Jobs"
 msgstr "बल्क जॉब्स"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "व्यावसायिक क्षण"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "शुल्क की तारीख"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "लागत निर्धारण विधि"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "क्रेडिट जारी करें"
 msgid "Issue description"
 msgstr "समस्या विवरण"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "समस्या नहीं मिली"
 
@@ -11126,6 +11144,12 @@ msgstr "समस्या टेम्पलेट"
 
 msgid "Issue title"
 msgstr "समस्या शीर्षक"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "समस्या प्रवृत्ति"
@@ -11884,6 +11908,12 @@ msgstr "लॉक करने से अवधि ऑपरेशनल दस�
 msgid "Log nonconformances and drive a CAPA"
 msgstr "गैर-अनुरूपताओं को लॉग करें और CAPA चलाएं"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "लॉगिन करें या नया खाता बनाएं"
 
@@ -12377,6 +12407,9 @@ msgstr "सामग्री उपयोग विचलन"
 
 msgid "Material Usage Variance (default)"
 msgstr "सामग्री उपयोग विचलन (डिफ़ॉल्ट)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "सामग्रियां"
@@ -13463,6 +13496,9 @@ msgstr "अभी तक इस संपत्ति के विरुद्�
 msgid "No cost history found"
 msgstr "कोई लागत इतिहास नहीं मिला"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "अभी कोई क्रेडिट नहीं"
 
@@ -13711,6 +13747,9 @@ msgstr "कोई खुली प्रतिपूर्ति नहीं"
 
 msgid "No open sales order lines"
 msgstr "कोई खुली विक्रय आदेश पंक्ति नहीं"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "कोई ऑपरेशन नहीं मिला।"
@@ -14791,6 +14830,9 @@ msgstr "अन्य"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "अन्य व्यय"
 
@@ -14848,6 +14890,9 @@ msgstr "आउटपुट कभी भी इसके कच्चे मा�
 msgid "Outside operation"
 msgstr "ओवरहेड विचरण"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "बकाया"
 
@@ -14859,6 +14904,9 @@ msgstr "समग्र परिणाम"
 
 msgid "Overdue"
 msgstr "अतिदेय"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "उपरिव्यय अवशोषण"
@@ -15121,6 +15169,9 @@ msgstr "देय राशि (डिफ़ॉल्ट)"
 
 msgid "Payables aging"
 msgstr "देय राशि की आयु"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "भुगतान"
@@ -16206,6 +16257,9 @@ msgstr "खरीद इकाई:"
 
 msgid "Purchased"
 msgstr "खरीदा गया"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "खरीद"
@@ -17600,6 +17654,9 @@ msgstr "इन्वेंटरी में वापसी"
 
 msgid "Return to Service"
 msgstr "सेवा में वापसी"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "रिटर्न इकाई"
@@ -19991,6 +20048,9 @@ msgstr "अनुमोदन के लिए सबमिट करें"
 msgid "Submit Inspection"
 msgstr "निरीक्षण सबमिट करें"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "द्वारा प्रस्तुत"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "संपत्ति और वर्ग द्वारा किराया बेड़े का समय और डॉलर उपयोग"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "दिन का समय"

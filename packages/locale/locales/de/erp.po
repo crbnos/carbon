@@ -2597,6 +2597,9 @@ msgstr "Genehmigungen"
 msgid "Approve"
 msgstr "Genehmigen"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Genehmigt von"
 
@@ -3881,6 +3884,9 @@ msgstr "Massen-Import"
 msgid "Bulk Jobs"
 msgstr "Massen-Fertigungsaufträge"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "Geschäftsereignis"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "Gebührendatum"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "Kalkulationsmethode"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "Gutschrift ausstellen"
 msgid "Issue description"
 msgstr "Problembeschreibung"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "Problem nicht gefunden"
 
@@ -11126,6 +11144,12 @@ msgstr "Problemvorlage"
 
 msgid "Issue title"
 msgstr "Problemtitel"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "Problemtrend"
@@ -11884,6 +11908,12 @@ msgstr "Das Sperren macht die Periode für Betriebsdokumente (Wareneingänge, Li
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Nichtkonformitäten protokollieren und CAPA einleiten"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "Anmelden oder neues Konto erstellen"
 
@@ -12377,6 +12407,9 @@ msgstr "Materialverbrauchsabweichung"
 
 msgid "Material Usage Variance (default)"
 msgstr "Materialverbrauchsabweichung (Standard)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "Materialien"
@@ -13463,6 +13496,9 @@ msgstr "Gegen diesen Vermögenswert wurden bisher keine Kosten verbucht."
 msgid "No cost history found"
 msgstr "Kein Kostenverlauf gefunden"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "Noch keine Gutschriften"
 
@@ -13711,6 +13747,9 @@ msgstr "Keine offenen Kostenerstattungen"
 
 msgid "No open sales order lines"
 msgstr "Keine offenen Kundenauftragsposition"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "Keine Arbeitsgänge gefunden."
@@ -14791,6 +14830,9 @@ msgstr "Sonstiges"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "Sonstige Aufwendungen"
 
@@ -14848,6 +14890,9 @@ msgstr "Die Ausgabe überlebt ihre Rohstoffe nie. Fällt auf die feste Dauer zur
 msgid "Outside operation"
 msgstr "Gemeinkostenabweichung"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "Ausstehend"
 
@@ -14859,6 +14904,9 @@ msgstr "Gesamtergebnis"
 
 msgid "Overdue"
 msgstr "Überfällig"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "Gemeinkostenverrechnung"
@@ -15121,6 +15169,9 @@ msgstr "Verbindlichkeiten (Standard)"
 
 msgid "Payables aging"
 msgstr "Verbindlichkeiten nach Fälligkeit"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "Zahlung"
@@ -16206,6 +16257,9 @@ msgstr "Kaufeinheit:"
 
 msgid "Purchased"
 msgstr "Gekauft"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "Käufe"
@@ -17600,6 +17654,9 @@ msgstr "Zurück in Bestände"
 
 msgid "Return to Service"
 msgstr "Wieder in Betrieb nehmen"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "Rückgabeeinheit"
@@ -19991,6 +20048,9 @@ msgstr "Zur Genehmigung einreichen"
 msgid "Submit Inspection"
 msgstr "Prüfung einreichen"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "Eingereicht von"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Zeit- und Kostenauslastung der Leihflotte nach Anlage und Klasse"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "Tageszeit"

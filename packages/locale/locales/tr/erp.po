@@ -2597,6 +2597,9 @@ msgstr "Onaylar"
 msgid "Approve"
 msgstr "Onayla"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Onaylayan"
 
@@ -3881,6 +3884,9 @@ msgstr "Toplu İçe Aktarma"
 msgid "Bulk Jobs"
 msgstr "Toplu İş Emirleri"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "İş anı"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "Ücret Tarihi"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "Maliyetlendirme Yöntemi"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "Kredi Sorunu"
 msgid "Issue description"
 msgstr "Açıklama"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "Sorun bulunamadı"
 
@@ -11126,6 +11144,12 @@ msgstr "Sorun Şablonu"
 
 msgid "Issue title"
 msgstr "Sorun başlığı"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "Sorun Eğilimi"
@@ -11884,6 +11908,12 @@ msgstr "Dönemin kilitlenmesi, işletme belgelerine (makbuzlar, sevkiyatlar, fat
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Uygunsuzlukları kaydedin ve CAPA başlatın"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "Oturum açın veya yeni bir hesap oluşturun"
 
@@ -12377,6 +12407,9 @@ msgstr "Malzeme Kullanım Sapması"
 
 msgid "Material Usage Variance (default)"
 msgstr "Malzeme Kullanım Sapması (varsayılan)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "Malzemeler"
@@ -13463,6 +13496,9 @@ msgstr "Bu varlık için henüz maliyet kaydı yapılmamıştır."
 msgid "No cost history found"
 msgstr "Hiç maliyet geçmişi bulunamadı"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "Henüz kredi yok"
 
@@ -13711,6 +13747,9 @@ msgstr "Açık Gider Talebileri Yok"
 
 msgid "No open sales order lines"
 msgstr "Açık satış sipariş satırı yok"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "Operasyon bulunamadı."
@@ -14791,6 +14830,9 @@ msgstr "Diğer"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "Diğer Gider"
 
@@ -14848,6 +14890,9 @@ msgstr "Ürün asla hammaddelerinden daha uzun sürmez. Hiçbir girdinin son kul
 msgid "Outside operation"
 msgstr "Genel Gider Sapması"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "Ödenmemiş"
 
@@ -14859,6 +14904,9 @@ msgstr "Genel sonuç"
 
 msgid "Overdue"
 msgstr "Gecikmiş"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "Genel üretim gideri dağıtımı"
@@ -15121,6 +15169,9 @@ msgstr "Borçlar (varsayılan)"
 
 msgid "Payables aging"
 msgstr "Borçlar yaşlandırması"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "Ödeme"
@@ -16206,6 +16257,9 @@ msgstr "Satın Alma Birimi:"
 
 msgid "Purchased"
 msgstr "Satın Alındı"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "Satın almalar"
@@ -17600,6 +17654,9 @@ msgstr "Envantera Döndür"
 
 msgid "Return to Service"
 msgstr "Hizmete Döndür"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "İade Adetı"
@@ -19991,6 +20048,9 @@ msgstr "Onay için gönder"
 msgid "Submit Inspection"
 msgstr "Muayeneyi Gönder"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "Gönderen"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "Günün saati"

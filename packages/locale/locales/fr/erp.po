@@ -2597,6 +2597,9 @@ msgstr "Approbations"
 msgid "Approve"
 msgstr "Approuver"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Approuvé par"
 
@@ -3881,6 +3884,9 @@ msgstr "Importation en masse"
 msgid "Bulk Jobs"
 msgstr "Ordres de fabrication en masse"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "Moment métier"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "Date de la Charge"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "Méthode de calcul des coûts"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "Émettre un crédit"
 msgid "Issue description"
 msgstr "Description du problème"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "Problème non trouvé"
 
@@ -11126,6 +11144,12 @@ msgstr "Modèle de Problème"
 
 msgid "Issue title"
 msgstr "Titre du problème"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "Tendance des problèmes"
@@ -11884,6 +11908,12 @@ msgstr "Le verrouillage rend la période en lecture seule pour les documents op�
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Enregistrer les non-conformités et piloter une CAPA"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "Connectez-vous ou créez un nouveau compte"
 
@@ -12377,6 +12407,9 @@ msgstr "Écart d'utilisation de matériel"
 
 msgid "Material Usage Variance (default)"
 msgstr "Écart d'utilisation de matériel (par défaut)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "Matériaux"
@@ -13463,6 +13496,9 @@ msgstr "Aucun coût n'a été enregistré pour cet actif pour le moment."
 msgid "No cost history found"
 msgstr "Aucun historique de coûts trouvé"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "Pas encore de crédits"
 
@@ -13711,6 +13747,9 @@ msgstr "Aucun remboursement ouvert"
 
 msgid "No open sales order lines"
 msgstr "Aucune ligne de commande client ouverte"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "Aucune opération trouvée."
@@ -14791,6 +14830,9 @@ msgstr "Autre"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "Autre charge"
 
@@ -14848,6 +14890,9 @@ msgstr "La production n'a jamais une durée plus longue que ses matières premi�
 msgid "Outside operation"
 msgstr "Écart de Frais Généraux"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "En attente"
 
@@ -14859,6 +14904,9 @@ msgstr "Résultat global"
 
 msgid "Overdue"
 msgstr "En retard"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "Imputation des frais généraux"
@@ -15121,6 +15169,9 @@ msgstr "Dettes fournisseurs (par défaut)"
 
 msgid "Payables aging"
 msgstr "Ancienneté des dettes fournisseurs"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "Paiement"
@@ -16206,6 +16257,9 @@ msgstr "Unité d'achat :"
 
 msgid "Purchased"
 msgstr "Acheté"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "Achats"
@@ -17600,6 +17654,9 @@ msgstr "Retour aux stocks"
 
 msgid "Return to Service"
 msgstr "Retour en service"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "Unité de retour"
@@ -19991,6 +20048,9 @@ msgstr "Soumettre pour approbation"
 msgid "Submit Inspection"
 msgstr "Soumettre le contrôle"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "Soumis par"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Utilisation en temps et en dollars de la flotte de location par actif et classe"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "Heure du jour"

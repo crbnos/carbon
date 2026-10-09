@@ -58,6 +58,12 @@ import { ElementComments } from "./ElementComments";
 import { ElementDescription } from "./ElementDescription";
 import { ElementPlanLines } from "./ElementPlanLines";
 import { ElementSidebar } from "./ElementSidebar";
+import {
+  ElementTimeAndMaterials,
+  TimeAndMaterialsActions
+} from "./ElementTimeAndMaterials";
+import { IssueMaterialModal } from "./IssueMaterialModal";
+import { LogTimeModal } from "./LogTimeModal";
 
 type ElementViewProps = ProjectElementPage & {
   projectId: string;
@@ -67,9 +73,6 @@ type ElementViewProps = ProjectElementPage & {
   milestones: ProjectMilestone[];
   /** `peek` sits beside the list with close and open-full buttons. */
   variant: "peek" | "page";
-  /** Rendered in the action row and as a section (Task 36). */
-  actions?: ReactNode;
-  timeAndMaterials?: ReactNode;
 };
 
 const NO_COST: CostTotals = { plan: 0, committed: 0, actual: 0, hours: 0 };
@@ -83,12 +86,13 @@ export function ElementView({
   planLines,
   costSummary,
   laborCategories,
+  defaultLaborCategoryId,
+  ledger,
+  openTime,
   states,
   labels,
   milestones,
-  variant,
-  actions,
-  timeAndMaterials
+  variant
 }: ElementViewProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -97,11 +101,29 @@ export function ElementView({
   const childQuickAddRef = useRef<HTMLInputElement>(null);
   const [childrenOpen, setChildrenOpen] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [loggingTime, setLoggingTime] = useState(false);
+  const [issuing, setIssuing] = useState(false);
 
   const isClosed = project?.status === "Closed";
   const canUpdate = permissions.can("update", "projects") && !isClosed;
   const canCreate = permissions.can("create", "projects") && !isClosed;
   const canDelete = permissions.can("delete", "projects") && !isClosed;
+  // Charges need a chargeable element of an open project; the posting
+  // functions refuse anything else with the reason.
+  const canCharge = element.isChargeable && !isClosed;
+  const canLogTime = canCharge && permissions.is("employee");
+  const canIssue =
+    canCharge &&
+    permissions.can("update", "inventory") &&
+    permissions.can("update", "projects");
+  const chargeActions = (
+    <TimeAndMaterialsActions
+      canLogTime={canLogTime}
+      canIssue={canIssue}
+      onLogTime={() => setLoggingTime(true)}
+      onIssue={() => setIssuing(true)}
+    />
+  );
 
   const children = useMemo(
     () =>
@@ -209,7 +231,7 @@ export function ElementView({
             >
               <Trans>Add child</Trans>
             </Button>
-            {actions}
+            {chargeActions}
           </div>
 
           <Section
@@ -238,9 +260,13 @@ export function ElementView({
               isDisabled={!canUpdate}
             />
           </Section>
-          {timeAndMaterials && (
-            <Section title={t`Time & materials`}>{timeAndMaterials}</Section>
-          )}
+          <Section title={t`Time & materials`}>
+            <ElementTimeAndMaterials
+              ledger={ledger}
+              openTime={openTime}
+              actions={chargeActions}
+            />
+          </Section>
           <Section title={t`Budget`}>
             <ElementBudget
               element={element}
@@ -267,6 +293,23 @@ export function ElementView({
         />
       </div>
 
+      {loggingTime && (
+        <LogTimeModal
+          projectId={projectId}
+          element={element}
+          laborCategories={laborCategories}
+          defaultLaborCategoryId={defaultLaborCategoryId}
+          onClose={() => setLoggingTime(false)}
+        />
+      )}
+      {issuing && (
+        <IssueMaterialModal
+          projectId={projectId}
+          element={element}
+          defaultLocationId={project?.locationId}
+          onClose={() => setIssuing(false)}
+        />
+      )}
       {deleting && (
         <ConfirmDelete
           action={path.to.deleteProjectElement(projectId, element.id)}

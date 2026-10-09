@@ -2597,6 +2597,9 @@ msgstr "Approvals"
 msgid "Approve"
 msgstr "Approve"
 
+msgid "Approved"
+msgstr "Approved"
+
 msgid "Approved By"
 msgstr "Approved By"
 
@@ -3881,6 +3884,9 @@ msgstr "Bulk Import"
 msgid "Bulk Jobs"
 msgstr "Bulk Jobs"
 
+msgid "Burden"
+msgstr "Burden"
+
 msgid "Business moment"
 msgstr "Business moment"
 
@@ -4392,6 +4398,9 @@ msgstr "Charge Date"
 
 msgid "Charge number"
 msgstr "Charge number"
+
+msgid "Charge Number"
+msgstr "Charge Number"
 
 msgid "Chargeable"
 msgstr "Chargeable"
@@ -5585,6 +5594,9 @@ msgstr "Costing Method"
 
 msgid "Costs"
 msgstr "Costs"
+
+msgid "Costs posted"
+msgstr "Costs posted"
 
 msgid "Could not analyze cropped region"
 msgstr "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "Issue Credit"
 msgid "Issue description"
 msgstr "Issue description"
 
+msgid "Issue material"
+msgstr "Issue material"
+
+msgid "Issue Material"
+msgstr "Issue Material"
+
 msgid "Issue not found"
 msgstr "Issue not found"
 
@@ -11126,6 +11144,12 @@ msgstr "Issue Template"
 
 msgid "Issue title"
 msgstr "Issue title"
+
+msgid "Issue to Project"
+msgstr "Issue to Project"
+
+msgid "Issue to the project"
+msgstr "Issue to the project"
 
 msgid "Issue Trend"
 msgstr "Issue Trend"
@@ -11884,6 +11908,12 @@ msgstr "Locking makes the period read-only for operational documents (receipts, 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Log nonconformances and drive a CAPA"
 
+msgid "Log time"
+msgstr "Log time"
+
+msgid "Log Time"
+msgstr "Log Time"
+
 msgid "Login or create a new account"
 msgstr "Login or create a new account"
 
@@ -12377,6 +12407,9 @@ msgstr "Material Usage Variance"
 
 msgid "Material Usage Variance (default)"
 msgstr "Material Usage Variance (default)"
+
+msgid "Material Variance"
+msgstr "Material Variance"
 
 msgid "materials"
 msgstr "materials"
@@ -13463,6 +13496,9 @@ msgstr "No cost has been recorded against this asset yet."
 msgid "No cost history found"
 msgstr "No cost history found"
 
+msgid "No costs posted yet"
+msgstr "No costs posted yet"
+
 msgid "No credits yet"
 msgstr "No credits yet"
 
@@ -13711,6 +13747,9 @@ msgstr "No open reimbursements"
 
 msgid "No open sales order lines"
 msgstr "No open sales order lines"
+
+msgid "No open time"
+msgstr "No open time"
 
 msgid "No operations found."
 msgstr "No operations found."
@@ -14791,6 +14830,9 @@ msgstr "Other"
 msgid "Other Costs"
 msgstr "Other Costs"
 
+msgid "Other Direct"
+msgstr "Other Direct"
+
 msgid "Other Expense"
 msgstr "Other Expense"
 
@@ -14848,6 +14890,9 @@ msgstr "Output never outlasts its raw materials. Falls back to the fixed duratio
 msgid "Outside operation"
 msgstr "Outside operation"
 
+msgid "Outside Processing"
+msgstr "Outside Processing"
+
 msgid "Outstanding"
 msgstr "Outstanding"
 
@@ -14859,6 +14904,9 @@ msgstr "Overall result"
 
 msgid "Overdue"
 msgstr "Overdue"
+
+msgid "Overhead"
+msgstr "Overhead"
 
 msgid "Overhead Absorption"
 msgstr "Overhead Absorption"
@@ -15121,6 +15169,9 @@ msgstr "Payables (default)"
 
 msgid "Payables aging"
 msgstr "Payables aging"
+
+msgid "Payback Variance"
+msgstr "Payback Variance"
 
 msgid "Payment"
 msgstr "Payment"
@@ -16206,6 +16257,9 @@ msgstr "Purchase Unit:"
 
 msgid "Purchased"
 msgstr "Purchased"
+
+msgid "Purchased Service"
+msgstr "Purchased Service"
 
 msgid "Purchases"
 msgstr "Purchases"
@@ -17600,6 +17654,9 @@ msgstr "Return to Inventory"
 
 msgid "Return to Service"
 msgstr "Return to Service"
+
+msgid "Return to stock"
+msgstr "Return to stock"
 
 msgid "Return Unit"
 msgstr "Return Unit"
@@ -19991,6 +20048,9 @@ msgstr "Submit for approval"
 msgid "Submit Inspection"
 msgstr "Submit Inspection"
 
+msgid "Submitted"
+msgstr "Submitted"
+
 msgid "Submitted By"
 msgstr "Submitted By"
 
@@ -22058,6 +22118,9 @@ msgstr "Time & materials"
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
+
+msgid "Time not posted yet"
+msgstr "Time not posted yet"
 
 msgid "Time of day"
 msgstr "Time of day"

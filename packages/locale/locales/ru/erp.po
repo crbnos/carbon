@@ -2597,6 +2597,9 @@ msgstr "Утверждения"
 msgid "Approve"
 msgstr "Утвердить"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Одобрено"
 
@@ -3881,6 +3884,9 @@ msgstr "Массовый импорт"
 msgid "Bulk Jobs"
 msgstr "Массовые производственные заказы"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "Бизнес-момент"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "Дата платежа"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "Метод калькуляции"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "Выдать кредит"
 msgid "Issue description"
 msgstr "Описание проблемы"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "Проблема не найдена"
 
@@ -11126,6 +11144,12 @@ msgstr "Шаблон проблемы"
 
 msgid "Issue title"
 msgstr "Название проблемы"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "Тренд проблем"
@@ -11884,6 +11908,12 @@ msgstr "Блокировка делает период доступным тол
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Регистрируйте несоответствия и инициируйте CAPA"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "Войдите или создайте новый аккаунт"
 
@@ -12377,6 +12407,9 @@ msgstr "Отклонение использования материала"
 
 msgid "Material Usage Variance (default)"
 msgstr "Отклонение использования материала (по умолчанию)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "Материалы"
@@ -13463,6 +13496,9 @@ msgstr "Никакие расходы еще не зафиксированы п�
 msgid "No cost history found"
 msgstr "История себестоимости не найдена"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "Никаких кредитов еще нет"
 
@@ -13711,6 +13747,9 @@ msgstr "Нет открытых возмещений"
 
 msgid "No open sales order lines"
 msgstr "Нет открытых строк заказов покупателя"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "Операции не найдены."
@@ -14791,6 +14830,9 @@ msgstr "Прочее"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "Прочие расходы"
 
@@ -14848,6 +14890,9 @@ msgstr "Готовая продукция никогда не превышает
 msgid "Outside operation"
 msgstr "Отклонение косвенных затрат"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "Неоплаченные"
 
@@ -14859,6 +14904,9 @@ msgstr "Общий результат"
 
 msgid "Overdue"
 msgstr "Просрочено"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "Распределение накладных расходов"
@@ -15121,6 +15169,9 @@ msgstr "Кредиторская задолженность (по умолчан
 
 msgid "Payables aging"
 msgstr "Старение кредиторской задолженности"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "Платеж"
@@ -16206,6 +16257,9 @@ msgstr "Единица покупки:"
 
 msgid "Purchased"
 msgstr "Закупленный"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "Покупки"
@@ -17600,6 +17654,9 @@ msgstr "Вернуть в запасы"
 
 msgid "Return to Service"
 msgstr "Вернуть в эксплуатацию"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "Возвращаемая единица"
@@ -19991,6 +20048,9 @@ msgstr "Отправить на утверждение"
 msgid "Submit Inspection"
 msgstr "Отправить контроль"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "Отправлено"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Использование арендного парка по времени и стоимости по активам и классам"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "Время суток"

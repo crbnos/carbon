@@ -2597,6 +2597,9 @@ msgstr "承認"
 msgid "Approve"
 msgstr "承認"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "承認者"
 
@@ -3881,6 +3884,9 @@ msgstr "一括インポート"
 msgid "Bulk Jobs"
 msgstr "一括製造指図"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "ビジネスモーメント"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "料金日付"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "原価計算方法"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "クレジット発行"
 msgid "Issue description"
 msgstr "課題の説明"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "問題が見つかりません"
 
@@ -11126,6 +11144,12 @@ msgstr "問題テンプレート"
 
 msgid "Issue title"
 msgstr "課題のタイトル"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "問題トレンド"
@@ -11884,6 +11908,12 @@ msgstr "ロック中にすると期間が営業文書（入荷、出荷、請求
 msgid "Log nonconformances and drive a CAPA"
 msgstr "不適合を記録し、CAPAを推進する"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "ログインするか新しいアカウントを作成してください"
 
@@ -12377,6 +12407,9 @@ msgstr "材料使用量差異"
 
 msgid "Material Usage Variance (default)"
 msgstr "材料使用量差異 (デフォルト)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "材料"
@@ -13463,6 +13496,9 @@ msgstr "このアセットに対してまだ原価が記録されていません
 msgid "No cost history found"
 msgstr "原価の履歴が見つかりません"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "クレジットはまだありません"
 
@@ -13711,6 +13747,9 @@ msgstr "オープンな払戻がありません"
 
 msgid "No open sales order lines"
 msgstr "オープン受注明細がありません"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "工程が見つかりません。"
@@ -14791,6 +14830,9 @@ msgstr "その他"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "営業外費用"
 
@@ -14848,6 +14890,9 @@ msgstr "製品は原材料より長く保持されることはありません。
 msgid "Outside operation"
 msgstr "間接費差異"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "未払い"
 
@@ -14859,6 +14904,9 @@ msgstr "総合結果"
 
 msgid "Overdue"
 msgstr "期限超過"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "間接費配賦"
@@ -15121,6 +15169,9 @@ msgstr "買掛金 (デフォルト)"
 
 msgid "Payables aging"
 msgstr "買掛金経過日数"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "支払い"
@@ -16206,6 +16257,9 @@ msgstr "購入単位:"
 
 msgid "Purchased"
 msgstr "購入済み"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "購買"
@@ -17600,6 +17654,9 @@ msgstr "在庫に返却"
 
 msgid "Return to Service"
 msgstr "使用再開"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "返却資産"
@@ -19991,6 +20048,9 @@ msgstr "承認のため提出"
 msgid "Submit Inspection"
 msgstr "検査を提出"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "提出者"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "時間"

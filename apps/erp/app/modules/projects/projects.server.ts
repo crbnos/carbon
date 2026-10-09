@@ -4,12 +4,17 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
+import { getDatabaseClient } from "~/services/database.server";
 import type {
+  logTimeValidator,
   projectElementValidator,
+  projectIssueValidator,
   projectValidator
 } from "./projects.models";
 import { chargeableByDefault, defaultProjectStates } from "./projects.models";
@@ -343,22 +348,43 @@ export async function getProjectCostTotals(
  * Everything the element page (the peek and the full page) shows, read in
  * parallel: the element, every element of its project (for the children,
  * the parent pickers and the subtree roll-up), its comments, its plan lines,
- * the project's cost summary and the active labor categories. Returns null
- * when the element does not exist or belongs to another project.
+ * the project's cost summary, the active labor categories, the subtree's
+ * ledger rows and open time, and the user's default labor category. Returns
+ * no data when the element does not exist or belongs to another project.
  */
 export async function getProjectElementPage(
   client: SupabaseClient<Database>,
-  args: { companyId: string; projectId: string; elementId: string }
+  args: {
+    companyId: string;
+    projectId: string;
+    elementId: string;
+    userId: string;
+  }
 ) {
-  const [element, elements, comments, planLines, costSummary, laborCategories] =
-    await Promise.all([
-      getProjectElement(client, args.elementId, args.companyId),
-      getProjectElements(client, args.projectId, args.companyId),
-      getProjectElementComments(client, args.elementId, args.companyId),
-      getProjectElementPlanLines(client, args.elementId, args.companyId),
-      getProjectCostSummary(client, args.projectId, args.companyId),
-      getLaborCategoriesList(client, args.companyId)
-    ]);
+  const [
+    element,
+    elements,
+    comments,
+    planLines,
+    costSummary,
+    laborCategories,
+    employeeJob,
+    timeAndMaterials
+  ] = await Promise.all([
+    getProjectElement(client, args.elementId, args.companyId),
+    getProjectElements(client, args.projectId, args.companyId),
+    getProjectElementComments(client, args.elementId, args.companyId),
+    getProjectElementPlanLines(client, args.elementId, args.companyId),
+    getProjectCostSummary(client, args.projectId, args.companyId),
+    getLaborCategoriesList(client, args.companyId),
+    client
+      .from("employeeJob")
+      .select("laborCategoryId")
+      .eq("id", args.userId)
+      .eq("companyId", args.companyId)
+      .maybeSingle(),
+    getElementTimeAndMaterials(getDatabaseClient(), args)
+  ]);
 
   const error =
     element.error ??
@@ -366,7 +392,8 @@ export async function getProjectElementPage(
     comments.error ??
     planLines.error ??
     costSummary.error ??
-    laborCategories.error;
+    laborCategories.error ??
+    employeeJob.error;
   if (error) return { data: null, error };
   if (!element.data || element.data.projectId !== args.projectId) {
     return { data: null, error: null };
@@ -379,7 +406,10 @@ export async function getProjectElementPage(
       comments: comments.data ?? [],
       planLines: planLines.data ?? { materials: [], labor: [], costs: [] },
       costSummary: costSummary.data ?? [],
-      laborCategories: laborCategories.data ?? []
+      laborCategories: laborCategories.data ?? [],
+      defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
+      ledger: timeAndMaterials.ledger,
+      openTime: timeAndMaterials.openTime
     },
     error: null
   };
@@ -388,3 +418,188 @@ export async function getProjectElementPage(
 export type ProjectElementPage = NonNullable<
   Awaited<ReturnType<typeof getProjectElementPage>>["data"]
 >;
+
+const logger = getLogger("erp", "projects");
+
+/**
+ * Posts Submitted timesheet entries through the `post-timesheet` server
+ * function. Returns an error message for the caller's flash, or null.
+ * System: the caller has already authorized the change.
+ */
+export async function postTimesheetEntries(args: {
+  timesheetEntryIds: string[];
+  companyId: string;
+  userId: string;
+}): Promise<string | null> {
+  if (args.timesheetEntryIds.length === 0) return null;
+  const { timesheetEntryIds, companyId, userId } = args;
+  const posting = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-timesheet", { timesheetEntryIds });
+  if (posting.error) {
+    logger.error("Failed to post timesheet entries", {
+      companyId,
+      timesheetEntryIds,
+      error: posting.error
+    });
+    return posting.error.message || "Failed to post the time";
+  }
+  return null;
+}
+
+/**
+ * Issues stock to a project, or returns it, through the `post-project-issue`
+ * server function. Returns an error message (a `ProjectChargeError` refusal
+ * reads as its own message), or null.
+ */
+export async function postProjectIssue(
+  args: z.infer<typeof projectIssueValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<string | null> {
+  const { companyId, userId, ...input } = args;
+  const posting = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-project-issue", {
+      ...input,
+      projectElementId: input.projectElementId ?? null,
+      storageUnitId: input.storageUnitId ?? null,
+      trackedEntityId: input.trackedEntityId ?? null
+    });
+  if (posting.error) {
+    logger.error("Failed to post project issue", {
+      companyId,
+      projectId: input.projectId,
+      error: posting.error
+    });
+    return posting.error.message || "Failed to issue the material";
+  }
+  return null;
+}
+
+/**
+ * Logs time for one employee as a new timesheet entry: Submitted when it
+ * goes straight to posting or waits for approval. A Kysely write, because
+ * the employee's own RLS branch accepts only Draft rows.
+ */
+export async function logTimesheetEntry(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof logTimeValidator> & {
+    companyId: string;
+    employeeId: string;
+    userId: string;
+  }
+): Promise<string> {
+  const now = datetime.timestamp();
+  const row = await db
+    .insertInto("timesheetEntry")
+    .values({
+      companyId: args.companyId,
+      employeeId: args.employeeId,
+      entryDate: args.entryDate,
+      projectId: args.projectId,
+      projectElementId: args.projectElementId ?? null,
+      laborCategoryId: args.laborCategoryId,
+      hours: args.hours,
+      note: args.note ?? null,
+      status: "Submitted",
+      submittedAt: now,
+      createdBy: args.userId,
+      createdAt: now
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return row.id;
+}
+
+export type ElementLedgerRow = {
+  id: string;
+  postingDate: string;
+  costType: string;
+  documentType: string;
+  documentId: string;
+  quantity: number | null;
+  unitOfMeasureCode: string | null;
+  amount: number;
+  readableId: string | null;
+};
+
+export type ElementOpenTimeRow = {
+  id: string;
+  entryDate: string;
+  employeeId: string;
+  hours: number;
+  status: string;
+  readableId: string | null;
+};
+
+/** The most recent rows each list of the Time & materials section shows. */
+const TIME_AND_MATERIALS_LIMIT = 200;
+
+/**
+ * The project ledger rows and the timesheet entries that are not Posted, of
+ * an element and every element below it, newest first. Two queries, each
+ * walking the subtree in SQL, so no id list leaves the database.
+ */
+export async function getElementTimeAndMaterials(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string; elementId: string }
+): Promise<{ ledger: ElementLedgerRow[]; openTime: ElementOpenTimeRow[] }> {
+  const subtree = sql`
+    WITH RECURSIVE subtree AS (
+      SELECT "id" FROM "projectElement"
+      WHERE "id" = ${args.elementId}
+        AND "projectId" = ${args.projectId}
+        AND "companyId" = ${args.companyId}
+      UNION
+      SELECT e."id" FROM "projectElement" e
+      JOIN subtree s ON e."parentId" = s."id"
+      WHERE e."projectId" = ${args.projectId}
+        AND e."companyId" = ${args.companyId}
+    )
+  `;
+
+  const [ledger, openTime] = await Promise.all([
+    sql<ElementLedgerRow>`
+      ${subtree}
+      SELECT l."id", l."postingDate", l."costType", l."documentType",
+        l."documentId", l."quantity", l."unitOfMeasureCode", l."amount",
+        e."readableId"
+      FROM "projectLedger" l
+      JOIN subtree s ON s."id" = l."projectElementId"
+      LEFT JOIN "projectElement" e
+        ON e."id" = l."projectElementId" AND e."companyId" = l."companyId"
+      WHERE l."companyId" = ${args.companyId}
+        AND l."projectId" = ${args.projectId}
+      ORDER BY l."postingDate" DESC, l."createdAt" DESC
+      LIMIT ${TIME_AND_MATERIALS_LIMIT}
+    `.execute(db),
+    sql<ElementOpenTimeRow>`
+      ${subtree}
+      SELECT t."id", t."entryDate", t."employeeId", t."hours", t."status",
+        e."readableId"
+      FROM "timesheetEntry" t
+      JOIN subtree s ON s."id" = t."projectElementId"
+      LEFT JOIN "projectElement" e
+        ON e."id" = t."projectElementId" AND e."companyId" = t."companyId"
+      WHERE t."companyId" = ${args.companyId}
+        AND t."projectId" = ${args.projectId}
+        AND t."status" <> 'Posted'
+      ORDER BY t."entryDate" DESC, t."createdAt" DESC
+      LIMIT ${TIME_AND_MATERIALS_LIMIT}
+    `.execute(db)
+  ]);
+
+  return {
+    ledger: ledger.rows.map((row) => ({
+      ...row,
+      quantity: row.quantity === null ? null : Number(row.quantity),
+      amount: Number(row.amount)
+    })),
+    openTime: openTime.rows.map((row) => ({
+      ...row,
+      hours: Number(row.hours)
+    }))
+  };
+}

@@ -200,6 +200,17 @@ export const PROJECT_STATUS_COLOR_MAP = {
   Closed: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// A timesheet entry: Draft is open, Submitted waits on approval like a
+// pending review, Approved is accepted but not yet costed, Posted is done and
+// Rejected goes back to its owner.
+export const TIMESHEET_ENTRY_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Submitted: "yellow",
+  Approved: "blue",
+  Posted: "green",
+  Rejected: "red"
+} as const satisfies Record<string, StatusColor>;
+
 // Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
 export const RENTAL_AGREEMENT_STATUS_COLOR_MAP = {
   Draft: "gray",

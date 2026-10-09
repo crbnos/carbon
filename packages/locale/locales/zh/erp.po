@@ -2597,6 +2597,9 @@ msgstr "审批"
 msgid "Approve"
 msgstr "审批"
 
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "批准人"
 
@@ -3881,6 +3884,9 @@ msgstr "批量导入"
 msgid "Bulk Jobs"
 msgstr "批量工单"
 
+msgid "Burden"
+msgstr ""
+
 msgid "Business moment"
 msgstr "业务时刻"
 
@@ -4391,6 +4397,9 @@ msgid "Charge Date"
 msgstr "费用 日期"
 
 msgid "Charge number"
+msgstr ""
+
+msgid "Charge Number"
 msgstr ""
 
 msgid "Chargeable"
@@ -5584,6 +5593,9 @@ msgid "Costing Method"
 msgstr "成本核算方法"
 
 msgid "Costs"
+msgstr ""
+
+msgid "Costs posted"
 msgstr ""
 
 msgid "Could not analyze cropped region"
@@ -11112,6 +11124,12 @@ msgstr "发放信用"
 msgid "Issue description"
 msgstr "问题描述"
 
+msgid "Issue material"
+msgstr ""
+
+msgid "Issue Material"
+msgstr ""
+
 msgid "Issue not found"
 msgstr "问题未找到"
 
@@ -11126,6 +11144,12 @@ msgstr "问题模板"
 
 msgid "Issue title"
 msgstr "问题标题"
+
+msgid "Issue to Project"
+msgstr ""
+
+msgid "Issue to the project"
+msgstr ""
 
 msgid "Issue Trend"
 msgstr "问题趋势"
@@ -11884,6 +11908,12 @@ msgstr "锁定使该期间对运营凭证（收货、发货、发票）为只读
 msgid "Log nonconformances and drive a CAPA"
 msgstr "记录不合格并推动 CAPA"
 
+msgid "Log time"
+msgstr ""
+
+msgid "Log Time"
+msgstr ""
+
 msgid "Login or create a new account"
 msgstr "登录或创建新账户"
 
@@ -12377,6 +12407,9 @@ msgstr "原材料使用差异"
 
 msgid "Material Usage Variance (default)"
 msgstr "原材料使用差异(默认)"
+
+msgid "Material Variance"
+msgstr ""
 
 msgid "materials"
 msgstr "原材料"
@@ -13463,6 +13496,9 @@ msgstr "尚未针对此资产记录任何成本。"
 msgid "No cost history found"
 msgstr "未找到成本历史记录"
 
+msgid "No costs posted yet"
+msgstr ""
+
 msgid "No credits yet"
 msgstr "尚无信用"
 
@@ -13711,6 +13747,9 @@ msgstr "没有未结报销单"
 
 msgid "No open sales order lines"
 msgstr "没有未结销售订单行"
+
+msgid "No open time"
+msgstr ""
 
 msgid "No operations found."
 msgstr "未找到工序。"
@@ -14791,6 +14830,9 @@ msgstr "其他"
 msgid "Other Costs"
 msgstr ""
 
+msgid "Other Direct"
+msgstr ""
+
 msgid "Other Expense"
 msgstr "营业外支出"
 
@@ -14848,6 +14890,9 @@ msgstr "产出的有效期永远不会超过其原材料的有效期。当没有
 msgid "Outside operation"
 msgstr "间接费用差异"
 
+msgid "Outside Processing"
+msgstr ""
+
 msgid "Outstanding"
 msgstr "未清结"
 
@@ -14859,6 +14904,9 @@ msgstr "总体结果"
 
 msgid "Overdue"
 msgstr "已逾期"
+
+msgid "Overhead"
+msgstr ""
 
 msgid "Overhead Absorption"
 msgstr "制造费用分配"
@@ -15121,6 +15169,9 @@ msgstr "应付款项（默认）"
 
 msgid "Payables aging"
 msgstr "应付款项账龄"
+
+msgid "Payback Variance"
+msgstr ""
 
 msgid "Payment"
 msgstr "付款"
@@ -16206,6 +16257,9 @@ msgstr "采购单位："
 
 msgid "Purchased"
 msgstr "已购买"
+
+msgid "Purchased Service"
+msgstr ""
 
 msgid "Purchases"
 msgstr "采购"
@@ -17600,6 +17654,9 @@ msgstr "返回库存"
 
 msgid "Return to Service"
 msgstr "恢复服务"
+
+msgid "Return to stock"
+msgstr ""
 
 msgid "Return Unit"
 msgstr "退还单位"
@@ -19991,6 +20048,9 @@ msgstr "提交以审批"
 msgid "Submit Inspection"
 msgstr "提交检验"
 
+msgid "Submitted"
+msgstr ""
+
 msgid "Submitted By"
 msgstr "提交者"
 
@@ -22058,6 +22118,9 @@ msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "按资产和类别统计的租赁设备的时间和成本利用率"
+
+msgid "Time not posted yet"
+msgstr ""
 
 msgid "Time of day"
 msgstr "一天中的时间"
