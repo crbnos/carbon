@@ -427,6 +427,17 @@ export const auditConfig = {
       }
     },
 
+    projectElement: {
+      label: "Project Element",
+      tables: {
+        projectElement: { role: "root" },
+        projectElementLabel: { entityIdColumn: "projectElementId" },
+        projectElementMaterial: { entityIdColumn: "projectElementId" },
+        projectElementLabor: { entityIdColumn: "projectElementId" },
+        projectElementCost: { entityIdColumn: "projectElementId" }
+      }
+    },
+
     employee: {
       label: "Employee",
       tables: {
