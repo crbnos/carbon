@@ -5,6 +5,10 @@
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
+import {
   inOrder,
   many,
   maybeSingle,
@@ -59,8 +63,8 @@ async function currentEntityStatus(
 // semantics — Set Quantity resolution, storage-unit transfers, serial/batch
 // stock-target resolution, tracked-entity creation/updates — and books every
 // movement through the shared posting core in ONE transaction: item ledger +
-// cost layers + (when companySettings.accountingEnabled) a balanced journal
-// against the inventory adjustment variance account. Storage-unit transfers
+// cost layers + a balanced journal (Provisional before the accounting
+// cutover, Posted after it) against the inventory adjustment variance account. Storage-unit transfers
 // move value-neutral stock and never post to the GL.
 export const postInventoryAdjustmentInput = z
   .object({
@@ -85,8 +89,8 @@ export const postInventoryAdjustmentInput = z
     originalStorageUnitId: z.string().optional().nullable(),
     expirationDate: z.string().optional().nullable(),
     comment: z.string().optional().nullable(),
-    // Required for Scrap (enforced below) — lands on the itemLedger row and,
-    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // Required for Scrap (enforced below) — lands on the itemLedger row and
+    // as a ScrapReason journal dimension. Unscrap
     // omits it: the reason is inherited from the original scrap movement.
     scrapReasonId: z.string().optional().nullable(),
     // Unscrap: the original scrap itemLedger row to reverse against. Optional —
@@ -178,62 +182,50 @@ const postInventoryAdjustment = defineServerFn({
       .toString();
     const nowIso = datetime.timestamp();
 
-    const [
-      storageUnitQuantities,
-      itemResult,
-      itemCostResult,
-      accountingSettings,
-      shelfLife
-    ] = await inOrder([
-      () =>
-        rpcRows(db, "get_item_quantities_by_tracking_id", {
-          item_id: itemId,
-          company_id: companyId,
-          location_id: locationId ?? ""
-        }),
-      () =>
-        single(
-          db,
-          "item",
-          { id: itemId, companyId },
-          {
-            columns: [
-              "id",
-              "itemTrackingType",
-              "replenishmentSystem",
-              "readableIdWithRevision"
-            ]
-          }
-        ),
-      () =>
-        single(
-          db,
-          "itemCost",
-          { itemId, companyId },
-          {
-            columns: [
-              "costingMethod",
-              "unitCost",
-              "standardCost",
-              "itemPostingGroupId"
-            ]
-          }
-        ),
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
-        ),
-      () =>
-        maybeSingle(
-          db,
-          "itemShelfLife",
-          { itemId, companyId },
-          { columns: ["mode", "days"] }
-        )
-    ]);
+    const [storageUnitQuantities, itemResult, itemCostResult, shelfLife] =
+      await inOrder([
+        () =>
+          rpcRows(db, "get_item_quantities_by_tracking_id", {
+            item_id: itemId,
+            company_id: companyId,
+            location_id: locationId ?? ""
+          }),
+        () =>
+          single(
+            db,
+            "item",
+            { id: itemId, companyId },
+            {
+              columns: [
+                "id",
+                "itemTrackingType",
+                "replenishmentSystem",
+                "readableIdWithRevision"
+              ]
+            }
+          ),
+        () =>
+          single(
+            db,
+            "itemCost",
+            { itemId, companyId },
+            {
+              columns: [
+                "costingMethod",
+                "unitCost",
+                "standardCost",
+                "itemPostingGroupId"
+              ]
+            }
+          ),
+        () =>
+          maybeSingle(
+            db,
+            "itemShelfLife",
+            { itemId, companyId },
+            { columns: ["mode", "days"] }
+          )
+      ]);
 
     if (itemResult.error) throw new Error("Failed to fetch item");
     if (itemCostResult.error) throw new Error("Failed to fetch item cost");
@@ -251,28 +243,19 @@ const postInventoryAdjustment = defineServerFn({
     };
     const itemCost = itemCostResult.data;
 
-    // The accountingEnabled flag gates ALL journal writes: when false the
-    // posting core receives accounting = null and books ledger + layers only.
-    // Fail closed: a failed settings read must not silently post without GL.
-    if (accountingSettings.error) {
-      throw new Error("Failed to fetch company settings");
-    }
-    const accountingEnabled =
-      accountingSettings.data?.accountingEnabled ?? false;
-    const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(db, companyId)
-      : null;
-    if (
-      accountingEnabled &&
-      (accountDefaults?.error || !accountDefaults?.data)
-    ) {
+    // Every adjustment that carries value posts a journal: Provisional before
+    // the company's accounting cutover, Posted after it. Read here to decide
+    // whether to resolve a period, and again inside the transaction.
+    const postingStatus = await journalPostingStatus(db, companyId);
+    const accountDefaults = await getDefaultPostingGroup(db, companyId);
+    if (accountDefaults.error || !accountDefaults.data) {
       throw new Error("Error getting account defaults");
     }
 
     // Active dimensions for the company group (post-shipment precedent) —
     // journal lines get Item / ItemPostingGroup / Location tags.
     const dimensionMap: Record<string, string> = {};
-    if (accountingEnabled) {
+    {
       const companyRecord = await single(
         db,
         "company",
@@ -304,27 +287,26 @@ const postInventoryAdjustment = defineServerFn({
       }
     }
     // Resolved before the posting transaction opens: given `db`, it runs and
-    // commits its own short transaction.
-    const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(companyId, db, today)
-      : null;
-    const accounting =
-      accountingEnabled && accountDefaults?.data && accountingPeriodId
-        ? {
-            accountingPeriodId,
-            accountDefaults: {
-              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
-              inventoryAdjustmentVarianceAccount:
-                accountDefaults.data.inventoryAdjustmentVarianceAccount
-            },
-            description: comment?.trim()
-              ? `Inventory Adjustment — ${comment.trim()}`
-              : "Inventory Adjustment",
-            userId,
-            dimensions: dimensionMap
-          }
+    // commits its own short transaction. A Provisional journal has no period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, today)
         : null;
+    const accounting = {
+      postingStatus,
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.data.inventoryAdjustmentVarianceAccount
+      },
+      description: comment?.trim()
+        ? `Inventory Adjustment — ${comment.trim()}`
+        : "Inventory Adjustment",
+      userId,
+      dimensions: dimensionMap
+    };
 
     // get_item_quantities_by_tracking_id rows (scoped to item + location);
     // only the fields this function reads.
@@ -433,27 +415,45 @@ const postInventoryAdjustment = defineServerFn({
       originalStorageUnitId &&
       originalStorageUnitId !== storageUnitId;
 
-    // Scrap/Unscrap offset to the company's scrapAccount (fallback per the
-    // 20260726012013 seed comment) so cost of quality is separable on the P&L;
-    // analysis slices by dimension (ScrapReason / Employee + the standard trio)
-    // instead of by account.
-    const scrapAccounting = accounting
-      ? {
-          ...accounting,
-          offsetAccount:
-            accountDefaults?.data?.scrapAccount ??
-            accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
-          offsetDescription: "Scrap Account",
-          extraDimensions: [
-            ...(scrapReasonId
-              ? [{ entityType: "ScrapReason", valueId: scrapReasonId }]
-              : []),
-            { entityType: "Employee", valueId: userId }
-          ]
-        }
-      : null;
+    // Scrap/Unscrap offset to the company's scrapAccount so cost of quality is
+    // separable on the P&L; analysis slices by dimension (ScrapReason /
+    // Employee + the standard trio) instead of by account. Resolved only for a
+    // Scrap or Unscrap: before the cutover an empty scrapAccount becomes a
+    // stand-in line; after it, an empty scrapAccount falls back to the
+    // variance account, as it always has.
+    const scrapAccountingFor = (description: string) => {
+      const scrapOffset = resolveDefaultAccount(
+        {
+          ...accountDefaults.data,
+          scrapAccount:
+            accountDefaults.data.scrapAccount ??
+            (postingStatus === "Posted"
+              ? accountDefaults.data.inventoryAdjustmentVarianceAccount
+              : null)
+        },
+        "scrapAccount",
+        postingStatus
+      );
+      return {
+        ...accounting,
+        offsetAccount: scrapOffset.accountId,
+        offsetAccountDefaultRole: scrapOffset.accountDefaultRole,
+        offsetDescription: "Scrap Account",
+        description,
+        extraDimensions: [
+          ...(scrapReasonId
+            ? [{ entityType: "ScrapReason", valueId: scrapReasonId }]
+            : []),
+          { entityType: "Employee", valueId: userId }
+        ]
+      };
+    };
 
     await db.transaction().execute(async (trx) => {
+      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
+        throw new Error("Accounting was just set up. Post the document again.");
+      }
+
       if (adjustmentType === "Scrap") {
         const scrapLedgerBase = {
           ...ledgerBase,
@@ -461,14 +461,9 @@ const postInventoryAdjustment = defineServerFn({
           scrapReasonId,
           entryType: "Negative Adjmt." as const
         };
-        const accountingForScrap = scrapAccounting
-          ? {
-              ...scrapAccounting,
-              description: comment?.trim()
-                ? `Scrap — ${comment.trim()}`
-                : "Scrap"
-            }
-          : null;
+        const accountingForScrap = scrapAccountingFor(
+          comment?.trim() ? `Scrap — ${comment.trim()}` : "Scrap"
+        );
 
         if (trackedEntityId) {
           const entity = await trx
@@ -666,14 +661,9 @@ const postInventoryAdjustment = defineServerFn({
           scrapReasonId,
           entryType: "Positive Adjmt." as const
         };
-        const accountingForUnscrap = scrapAccounting
-          ? {
-              ...scrapAccounting,
-              description: comment?.trim()
-                ? `Unscrap — ${comment.trim()}`
-                : "Unscrap"
-            }
-          : null;
+        const accountingForUnscrap = scrapAccountingFor(
+          comment?.trim() ? `Unscrap — ${comment.trim()}` : "Unscrap"
+        );
 
         if (trackedEntityId) {
           const entity = await trx
@@ -728,22 +718,20 @@ const postInventoryAdjustment = defineServerFn({
           // back to any payload reason, then null (untracked/legacy rows).
           const resolvedScrapReasonId =
             scrapMovement?.scrapReasonId ?? scrapReasonId ?? null;
-          const accountingForTrackedUnscrap = accountingForUnscrap
-            ? {
-                ...accountingForUnscrap,
-                extraDimensions: [
-                  ...(resolvedScrapReasonId
-                    ? [
-                        {
-                          entityType: "ScrapReason",
-                          valueId: resolvedScrapReasonId
-                        }
-                      ]
-                    : []),
-                  { entityType: "Employee", valueId: userId }
-                ]
-              }
-            : null;
+          const accountingForTrackedUnscrap = {
+            ...accountingForUnscrap,
+            extraDimensions: [
+              ...(resolvedScrapReasonId
+                ? [
+                    {
+                      entityType: "ScrapReason",
+                      valueId: resolvedScrapReasonId
+                    }
+                  ]
+                : []),
+              { entityType: "Employee", valueId: userId }
+            ]
+          };
 
           // Reverse at the ORIGINAL scrapped cost when the scrap movement's
           // cost rows are resolvable (costLedger.documentId = the scrap

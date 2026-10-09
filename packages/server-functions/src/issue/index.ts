@@ -9,6 +9,7 @@ import {
   journalReference
 } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import {
   allocateAcrossBudgets,
   getOperationLinesideBin,
@@ -1196,12 +1197,9 @@ async function valueMaintenanceMovements(
   const itemIds = [...new Set(movements.map((m) => m.itemId))];
   const hasReturns = movements.some((m) => Number(m.quantity) > 0);
 
-  const [settings, items, itemCosts, bookedRows] = await Promise.all([
-    trx
-      .selectFrom("companySettings")
-      .select("accountingEnabled")
-      .where("id", "=", companyId)
-      .executeTakeFirst(),
+  // Provisional before the company's accounting cutover, Posted after it.
+  const postingStatus = await journalPostingStatus(trx, companyId);
+  const [items, itemCosts, bookedRows] = await Promise.all([
     trx
       .selectFrom("item")
       .select(["id", "itemTrackingType", "replenishmentSystem"])
@@ -1244,8 +1242,8 @@ async function valueMaintenanceMovements(
     bookedByItem.set(row.itemId as string, list);
   }
 
-  let accounting: Parameters<typeof valueMovement>[1]["accounting"] = null;
-  if (settings?.accountingEnabled) {
+  let accounting: Parameters<typeof valueMovement>[1]["accounting"];
+  {
     const accountDefaults = await trx
       .selectFrom("accountDefault")
       .selectAll()
@@ -1271,13 +1269,23 @@ async function valueMaintenanceMovements(
       ])
       .execute();
 
-    const accountingPeriodId = (
-      await resolveAccountingPeriod(trx, companyId, postingDate, "current")
-    ).id;
+    // A Provisional journal has no accounting period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? (
+            await resolveAccountingPeriod(
+              trx,
+              companyId,
+              postingDate,
+              "current"
+            )
+          ).id
+        : null;
     const description = `Maintenance Consumption ${dispatch.maintenanceDispatchId}`;
     let journalId: string | null = null;
 
     accounting = {
+      postingStatus,
       accountingPeriodId,
       accountDefaults: {
         rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
@@ -1301,6 +1309,7 @@ async function valueMaintenanceMovements(
         journalId ??= await createAdjustmentJournal(trx, {
           companyId,
           accountingPeriodId,
+          status: postingStatus,
           description,
           postingDate,
           userId
@@ -3644,6 +3653,8 @@ const issue = defineServerFn({
                 accountDefaultsScrap?.data &&
                 accountingPeriodIdScrap
                   ? {
+                      // Task 18 switches the job paths to postingStatus.
+                      postingStatus: "Posted" as const,
                       accountingPeriodId: accountingPeriodIdScrap,
                       accountDefaults: {
                         rawMaterialsAccount:

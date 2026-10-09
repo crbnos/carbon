@@ -4,7 +4,10 @@
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
-import { single } from "@carbon/database/rows";
+import {
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import { credit, datetime, debit, indexBy } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -38,21 +41,14 @@ const postMaintenanceEvent = defineServerFn({
     const { db, companyId, userId } = ctx;
     const dispatchIds = [...new Set(maintenanceDispatchIds)];
 
-    const settings = await single(
-      db,
-      "companySettings",
-      { id: companyId },
-      { columns: ["accountingEnabled"] }
-    );
-    if (!settings.data?.accountingEnabled) {
-      return { success: true, journalIds: [] as string[] };
-    }
-
     const postingDate = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
     const journalIds = await db.transaction().execute(async (trx) => {
+      // Provisional before the company's accounting cutover, Posted after it.
+      const postingStatus = await journalPostingStatus(trx, companyId);
+
       // Row locks: two reconciles of one dispatch must not both post the same
       // difference.
       const dispatches = await trx
@@ -102,7 +98,11 @@ const postMaintenanceEvent = defineServerFn({
             .execute(),
           trx
             .selectFrom("accountDefault")
-            .select(["maintenanceAccount", "laborAbsorptionAccount"])
+            .select([
+              "maintenanceAccount",
+              "laborAbsorptionAccount",
+              "retainedEarningsAccount"
+            ])
             .where("companyId", "=", companyId)
             .executeTakeFirst(),
           trx
@@ -123,6 +123,11 @@ const postMaintenanceEvent = defineServerFn({
             .execute()
         ]);
       if (!accountDefaults) throw new Error("Error getting account defaults");
+      // Resolved on the first event that carries cost: before the cutover an
+      // empty laborAbsorptionAccount becomes a stand-in line, after it the
+      // posting is refused.
+      let laborAbsorption: ReturnType<typeof resolveDefaultAccount> | null =
+        null;
 
       const ended = events.filter((e) => e.endTime && Number(e.duration) > 0);
       const workCenterIds = [...new Set(ended.map((e) => e.workCenterId))];
@@ -169,11 +174,11 @@ const postMaintenanceEvent = defineServerFn({
           workCenter?.laborRate
         );
         if (cost <= 0) continue;
-        if (!accountDefaults.laborAbsorptionAccount) {
-          throw new Error(
-            "laborAbsorptionAccount not configured in account defaults"
-          );
-        }
+        laborAbsorption ??= resolveDefaultAccount(
+          accountDefaults,
+          "laborAbsorptionAccount",
+          postingStatus
+        );
         const reference = journalReference.to.maintenanceEvent(event.id);
         const eventDimensions: LaborDimension[] = [
           ...tag("Employee", event.employeeId),
@@ -190,7 +195,7 @@ const postMaintenanceEvent = defineServerFn({
           },
           {
             reference,
-            accountId: accountDefaults.laborAbsorptionAccount,
+            accountId: laborAbsorption.accountId,
             dimensions: eventDimensions,
             amount: credit("expense", cost)
           }
@@ -229,12 +234,21 @@ const postMaintenanceEvent = defineServerFn({
         );
         if (delta.length === 0) continue;
 
-        accountingPeriodId ??= (
-          await resolveAccountingPeriod(trx, companyId, postingDate, "current")
-        ).id;
+        // A Provisional journal has no accounting period.
+        if (postingStatus === "Posted") {
+          accountingPeriodId ??= (
+            await resolveAccountingPeriod(
+              trx,
+              companyId,
+              postingDate,
+              "current"
+            )
+          ).id;
+        }
         const journalId = await createAdjustmentJournal(trx, {
           companyId,
           accountingPeriodId,
+          status: postingStatus,
           description: `Maintenance Labor ${dispatch.maintenanceDispatchId}${
             prior.length > 0 ? " (Adjustment)" : ""
           }`,
@@ -247,15 +261,25 @@ const postMaintenanceEvent = defineServerFn({
         // RETURNING does not promise insert order.
         const journalLineReference = nanoid();
         for (const group of delta) {
+          const isMaintenanceLine =
+            group.accountId === accountDefaults.maintenanceAccount;
           const line = await trx
             .insertInto("journalLine")
             .values({
               journalId,
               accountId: group.accountId,
-              description:
-                group.accountId === accountDefaults.maintenanceAccount
-                  ? "Maintenance Labor"
-                  : "Labor Absorption",
+              description: isMaintenanceLine
+                ? "Maintenance Labor"
+                : "Labor Absorption",
+              // A Provisional absorption line on Retained Earnings is a
+              // stand-in, the new one or the reversal of a prior one; the
+              // enable re-points it.
+              accountDefaultRole:
+                postingStatus === "Provisional" &&
+                !isMaintenanceLine &&
+                group.accountId === accountDefaults.retainedEarningsAccount
+                  ? "laborAbsorptionAccount"
+                  : null,
               amount: group.amount,
               quantity: 1,
               documentType: "Maintenance Event",

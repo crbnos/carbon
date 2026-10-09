@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { many, notNull, single } from "@carbon/database/rows";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
@@ -45,8 +46,8 @@ class SerialQuantityError extends InvalidLinesError {
 // `counted - live on-hand`. This preserves any stock movements that posted between
 // the snapshot and the post (a receipt/shipment isn't clobbered; the correction is
 // applied on top of it). Each variance books through the shared posting core:
-// item ledger + cost layers + (when companySettings.accountingEnabled) a GL
-// journal against the inventory adjustment variance account.
+// item ledger + cost layers + a GL journal (Provisional before the accounting
+// cutover, Posted after it) against the inventory adjustment variance account.
 // A count posts exactly once (Posted is terminal). Fixing a posted movement
 // happens per-movement via the correct-stock-movement server function, which
 // links the fix through itemLedger.correctionOfItemLedgerId.
@@ -162,38 +163,25 @@ const postInventoryCount = defineServerFn({
     // Reconcile against the frozen snapshot — no live on-hand read needed.
     const { planned } = planInventoryCountPost(countedLines);
 
-    // The accountingEnabled flag gates ALL journal writes; cost layers are
-    // maintained either way. Resolve settings + period BEFORE the transaction
-    // (REST hops mid-transaction park the size-1 pool in idle-in-transaction).
-    const accountingSettings = await single(
-      db,
-      "companySettings",
-      { id: companyId },
-      { columns: ["accountingEnabled"] }
-    );
-    // Fail closed: a failed settings read must not silently post without GL.
-    if (accountingSettings.error) {
-      throw new Error("Failed to fetch company settings");
-    }
-    const accountingEnabled =
-      accountingSettings.data?.accountingEnabled ?? false;
-    const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(db, companyId)
-      : null;
-    if (
-      accountingEnabled &&
-      (accountDefaults?.error || !accountDefaults?.data)
-    ) {
+    // Every variance that carries value posts to ONE journal: Provisional
+    // before the company's accounting cutover, Posted after it. Resolve the
+    // status + period BEFORE the transaction (REST hops mid-transaction park
+    // the size-1 pool in idle-in-transaction); the status is read again inside.
+    const postingStatus = await journalPostingStatus(db, companyId);
+    const accountDefaults = await getDefaultPostingGroup(db, companyId);
+    if (accountDefaults.error || !accountDefaults.data) {
       throw new Error("Error getting account defaults");
     }
-    const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(companyId, db, today)
-      : null;
+    // A Provisional journal has no accounting period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, today)
+        : null;
 
     // Active dimensions for the company group (post-shipment precedent) —
     // journal lines get Item / ItemPostingGroup / Location tags.
     const dimensionMap: Record<string, string> = {};
-    if (accountingEnabled) {
+    {
       const companyRecord = await single(
         db,
         "company",
@@ -218,21 +206,19 @@ const postInventoryCount = defineServerFn({
       }
     }
 
-    const accounting =
-      accountingEnabled && accountDefaults?.data && accountingPeriodId
-        ? {
-            accountingPeriodId,
-            accountDefaults: {
-              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
-              inventoryAdjustmentVarianceAccount:
-                accountDefaults.data.inventoryAdjustmentVarianceAccount
-            },
-            description: comment,
-            userId,
-            dimensions: dimensionMap
-          }
-        : null;
+    const accounting = {
+      postingStatus,
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.data.inventoryAdjustmentVarianceAccount
+      },
+      description: comment,
+      userId,
+      dimensions: dimensionMap
+    };
 
     await db.transaction().execute(async (trx) => {
       // Concurrency guard: lock the header and re-assert it is still Pending so
@@ -251,27 +237,29 @@ const postInventoryCount = defineServerFn({
       if (locked.status !== "Pending") {
         throw new Error("Inventory count is no longer pending");
       }
+      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
+        throw new Error("Accounting was just set up. Post the document again.");
+      }
 
       // ONE journal per count post: created lazily on the first variance that
       // carries value, then shared by every line's journal-line pair.
       let sharedJournalId: string | null = null;
-      const accountingForLines = accounting
-        ? {
-            ...accounting,
-            getJournalId: async () => {
-              if (!sharedJournalId) {
-                sharedJournalId = await createAdjustmentJournal(trx, {
-                  companyId,
-                  accountingPeriodId: accounting.accountingPeriodId,
-                  description: accounting.description,
-                  postingDate: today,
-                  userId
-                });
-              }
-              return sharedJournalId;
-            }
+      const accountingForLines = {
+        ...accounting,
+        getJournalId: async () => {
+          if (!sharedJournalId) {
+            sharedJournalId = await createAdjustmentJournal(trx, {
+              companyId,
+              accountingPeriodId: accounting.accountingPeriodId,
+              status: postingStatus,
+              description: accounting.description,
+              postingDate: today,
+              userId
+            });
           }
-        : null;
+          return sharedJournalId;
+        }
+      };
 
       // Post the reviewed variance for each line as an inventory adjustment,
       // booked through the shared core (ledger + cost layers + journal).

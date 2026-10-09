@@ -19,7 +19,7 @@
 - [x] Task 10: Change the journal counts in the ERP period services
 
 ### Phase B — Post journals for every company
-- [ ] Task 11: Always post in the shared adjustment journal and its callers
+- [x] Task 11: Always post in the shared adjustment journal and its callers
 - [ ] Task 12: Always post in `post-receipt`
 - [ ] Task 13: Always post in `post-shipment`
 - [ ] Task 14: Always post in `post-sales-invoice`
@@ -1400,6 +1400,8 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 - Task 1 widened `journalEntryStatus`; the ERP typecheck then failed in the status badge and the provider journal schema. That fix (labels, colors, `journalEntryStatuses`, `core/models.ts`) is committed with Task 10, ahead of Task 36. Task 36 keeps the journal list filter and the document panels.
 - Shared step 2 amended while executing: a status read before the transaction is re-read under the lock inside it, and a mismatch throws. Most posting functions resolve the period before the transaction.
 - Task 21 copies both functions from `pg_get_functiondef` (the live definition). Its labor-absorption journal is still skipped when `laborAbsorptionAccount` or `overheadAbsorptionAccount` is empty, as before; it uses no stand-in line.
+- Task 11: after the cutover an empty `scrapAccount` still falls back to `inventoryAdjustmentVarianceAccount`, as it did before; only before the cutover does it become a stand-in line. `recost-serial-unit` now always needs an offset account, so the recost form must always show that field (Task 32).
+- The full server-functions suite can fail 1-2 database tests under parallel load (`rows.test.ts`, `post-charge-transaction.test.ts`); rerun them alone before treating a failure as real.
 - New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.

@@ -4,6 +4,10 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
+import type {
+  AutomaticJournalStatus,
+  OptionalDefaultRole
+} from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
@@ -58,9 +62,13 @@ export interface BookAdjustmentArgs {
     itemPostingGroupId?: string | null;
   };
   itemCost: AdjustmentItemCost;
-  // null ⇒ accounting disabled: ledger + cost layers only, no journal
+  // null ⇒ no journal: ledger + cost layers only (asset transfers and rental
+  // returns value the movement inside a journal of their own)
   accounting: {
-    accountingPeriodId: string;
+    // Provisional before the company's accounting cutover, Posted after it
+    // (journalPostingStatus). A Provisional journal has no accounting period.
+    postingStatus: AutomaticJournalStatus;
+    accountingPeriodId: string | null;
     accountDefaults: {
       rawMaterialsAccount: string;
       finishedGoodsAccount: string;
@@ -71,6 +79,9 @@ export interface BookAdjustmentArgs {
     // write-offs pass the company's scrapAccount so cost of quality is separable
     // on the P&L.
     offsetAccount?: string | null;
+    // The optional account default the offset account stands in for, when
+    // resolveDefaultAccount returned a stand-in (journalLine.accountDefaultRole).
+    offsetAccountDefaultRole?: OptionalDefaultRole | null;
     offsetDescription?: string;
     // journal.sourceType for a header this call creates (default
     // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
@@ -111,7 +122,9 @@ export interface BookAdjustmentResult {
 
 export interface CreateAdjustmentJournalArgs {
   companyId: string;
-  accountingPeriodId: string;
+  // null for a Provisional journal: it has no accounting period
+  accountingPeriodId: string | null;
+  status: AutomaticJournalStatus;
   description: string;
   postingDate: string;
   userId: string;
@@ -119,7 +132,7 @@ export interface CreateAdjustmentJournalArgs {
 }
 
 // One journal header for adjustment postings ('Inventory Adjustment' source,
-// posted immediately). Manual adjustments create one per movement; inventory
+// Provisional before the accounting cutover, Posted after it). Manual adjustments create one per movement; inventory
 // counts share ONE journal per count post via accounting.getJournalId.
 export async function createAdjustmentJournal(
   trx: Transaction<DB>,
@@ -139,7 +152,7 @@ export async function createAdjustmentJournal(
       postingDate: args.postingDate,
       companyId: args.companyId,
       sourceType: args.sourceType ?? "Inventory Adjustment",
-      status: "Posted",
+      status: args.status,
       postedAt: datetime.timestamp(),
       postedBy: args.userId,
       createdBy: args.userId
@@ -305,9 +318,9 @@ export interface ValueMovementArgs {
 
 // Value a stock movement whose item ledger row the caller has already written:
 // cost-layer maintenance (consume via calculateCOGS on decreases, open a layer
-// at current cost — or `fixedUnitCost` — on increases) and, when accounting is
-// enabled and the movement carries value, a balanced journal of the inventory
-// account against the offset account. `bookAdjustment` is this plus the ledger
+// at current cost — or `fixedUnitCost` — on increases) and, when the caller
+// passes `accounting` and the movement carries value, a balanced journal of
+// the inventory account against the offset account. `bookAdjustment` is this plus the ledger
 // row; maintenance consumption calls it directly because its ledger rows are
 // written alongside tracked-entity splits.
 export async function valueMovement(
@@ -421,30 +434,36 @@ export async function valueMovement(
     : await createAdjustmentJournal(trx, {
         companyId,
         accountingPeriodId: accounting.accountingPeriodId,
+        status: accounting.postingStatus,
         description: accounting.description,
         postingDate: movement.postingDate,
         userId: accounting.userId,
         sourceType: accounting.sourceType
       });
 
+  const [inventoryLine, offsetLine] = buildAdjustmentJournalLines({
+    journalId,
+    documentId,
+    documentType: movement.documentType,
+    journalLineReference: nanoid(),
+    isGain: movement.quantity > 0,
+    cost,
+    quantity: absQuantity,
+    replenishmentSystem: item.replenishmentSystem,
+    accountDefaults: accounting.accountDefaults,
+    offsetAccount: accounting.offsetAccount,
+    offsetDescription: accounting.offsetDescription,
+    companyId
+  });
   const journalLines = await trx
     .insertInto("journalLine")
-    .values(
-      buildAdjustmentJournalLines({
-        journalId,
-        documentId,
-        documentType: movement.documentType,
-        journalLineReference: nanoid(),
-        isGain: movement.quantity > 0,
-        cost,
-        quantity: absQuantity,
-        replenishmentSystem: item.replenishmentSystem,
-        accountDefaults: accounting.accountDefaults,
-        offsetAccount: accounting.offsetAccount,
-        offsetDescription: accounting.offsetDescription,
-        companyId
-      })
-    )
+    .values([
+      inventoryLine,
+      {
+        ...offsetLine,
+        accountDefaultRole: accounting.offsetAccountDefaultRole ?? null
+      }
+    ])
     .returning(["id"])
     .execute();
 

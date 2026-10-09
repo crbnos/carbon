@@ -237,6 +237,8 @@ export async function postLeaseJournal(
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
     accountingPeriodId: accounting.accountingPeriodId,
+    // Posted until this flow's own task switches it to postingStatus.
+    status: "Posted",
     description: args.description,
     postingDate: args.postingDate,
     userId,

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import {
   inOrder,
   many,
@@ -130,51 +131,40 @@ const correctStockMovement = defineServerFn({
       comment?.trim() ||
       `Corrected from ${effectiveQuantity} to ${correctedQuantity}`;
 
-    const [itemResult, itemCostResult, accountingSettings, trackingQuantities] =
-      await inOrder([
-        () =>
-          single(
-            db,
-            "item",
-            { id: root.itemId, companyId },
-            { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
-          ),
-        () =>
-          single(
-            db,
-            "itemCost",
-            { itemId: root.itemId, companyId },
-            {
-              columns: [
-                "costingMethod",
-                "unitCost",
-                "standardCost",
-                "itemPostingGroupId"
-              ]
-            }
-          ),
-        () =>
-          single(
-            db,
-            "companySettings",
-            { id: companyId },
-            { columns: ["accountingEnabled"] }
-          ),
-        () =>
-          root.locationId
-            ? rpcRows(db, "get_item_quantities_by_tracking_id", {
-                item_id: root.itemId,
-                company_id: companyId,
-                location_id: root.locationId
-              })
-            : Promise.resolve({ data: null, error: null })
-      ]);
+    const [itemResult, itemCostResult, trackingQuantities] = await inOrder([
+      () =>
+        single(
+          db,
+          "item",
+          { id: root.itemId, companyId },
+          { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+        ),
+      () =>
+        single(
+          db,
+          "itemCost",
+          { itemId: root.itemId, companyId },
+          {
+            columns: [
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ]
+          }
+        ),
+      () =>
+        root.locationId
+          ? rpcRows(db, "get_item_quantities_by_tracking_id", {
+              item_id: root.itemId,
+              company_id: companyId,
+              location_id: root.locationId
+            })
+          : Promise.resolve({ data: null, error: null })
+    ]);
 
     if (itemResult.error) throw new Error("Failed to fetch item");
     if (itemCostResult.error) throw new Error("Failed to fetch item cost");
-    if (accountingSettings.error) {
-      throw new Error("Failed to fetch company settings");
-    }
     // Fail closed: a failed quantity read must abort, not read as "no stock".
     if (trackingQuantities.error) {
       throw new Error("Failed to fetch current quantities");
@@ -258,20 +248,17 @@ const correctStockMovement = defineServerFn({
       }
     }
 
-    const accountingEnabled =
-      accountingSettings.data?.accountingEnabled ?? false;
-    const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(db, companyId)
-      : null;
-    if (
-      accountingEnabled &&
-      (accountDefaults?.error || !accountDefaults?.data)
-    ) {
+    // A correction that carries value posts a journal: Provisional before the
+    // company's accounting cutover, Posted after it. Read here to decide
+    // whether to resolve a period, and again inside the transaction.
+    const postingStatus = await journalPostingStatus(db, companyId);
+    const accountDefaults = await getDefaultPostingGroup(db, companyId);
+    if (accountDefaults.error || !accountDefaults.data) {
       throw new Error("Error getting account defaults");
     }
 
     const dimensionMap: Record<string, string> = {};
-    if (accountingEnabled) {
+    {
       const companyRecord = await single(
         db,
         "company",
@@ -301,29 +288,33 @@ const correctStockMovement = defineServerFn({
     // Resolve the accounting period BEFORE opening the Kysely transaction —
     // the REST client mid-transaction parks the (size 1) pool. The period is
     // the one containing the ORIGINAL movement's postingDate; Locked/Closed
-    // periods throw here with a user-facing message.
-    const accountingPeriodId = accountingEnabled
-      ? await getAccountingPeriodForDate(companyId, db, root.postingDate)
-      : null;
-    const accounting =
-      accountingEnabled && accountDefaults?.data && accountingPeriodId
-        ? {
-            accountingPeriodId,
-            accountDefaults: {
-              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
-              inventoryAdjustmentVarianceAccount:
-                accountDefaults.data.inventoryAdjustmentVarianceAccount
-            },
-            description: `Stock Movement Correction — ${resolvedComment}`,
-            userId,
-            dimensions: dimensionMap
-          }
+    // periods throw here with a user-facing message. A Provisional journal has
+    // no accounting period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await getAccountingPeriodForDate(companyId, db, root.postingDate)
         : null;
+    const accounting = {
+      postingStatus,
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.data.inventoryAdjustmentVarianceAccount
+      },
+      description: `Stock Movement Correction — ${resolvedComment}`,
+      userId,
+      dimensions: dimensionMap
+    };
 
     let resultLedgerId: string | null = null;
 
     await db.transaction().execute(async (trx) => {
+      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
+        throw new Error("Accounting was just set up. Post the document again.");
+      }
+
       if (root.trackedEntityId) {
         const updated = await trx
           .updateTable("trackedEntity")
