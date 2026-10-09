@@ -63,6 +63,10 @@ msgstr "{0, plural, one {# 日のスラック} other {# 日のスラック}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
@@ -153,6 +157,10 @@ msgstr "{0}件の下書き仕訳"
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} 行"
 msgid "{0} scrapped"
 msgstr "{0}廃棄"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0} 件選択"
@@ -1726,6 +1735,9 @@ msgstr "少なくとも1つの外注サービスを追加してください。"
 msgid "Add at least one unit."
 msgstr "少なくとも1個追加してください。"
 
+msgid "Add at the top level"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "認証器アプリを追加"
 
@@ -1737,6 +1749,9 @@ msgstr "特性を追加"
 
 msgid "Add Charge"
 msgstr "料金を追加"
+
+msgid "Add child"
+msgstr ""
 
 msgid "Add Child Storage Unit"
 msgstr "子保管ユニットを追加"
@@ -4263,8 +4278,14 @@ msgstr "変更文書"
 msgid "Change Inspection Plan"
 msgstr "検査計画を変更"
 
+msgid "Change labels"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "修正で明細を変更"
+
+msgid "Change milestone"
+msgstr ""
 
 msgid "Change notice"
 msgstr "変更通知"
@@ -4286,6 +4307,15 @@ msgstr "変更通知を読み込めませんでした。新しいバージョン
 
 msgid "Change order"
 msgstr "変更指示"
+
+msgid "Change owner"
+msgstr ""
+
+msgid "Change priority"
+msgstr ""
+
+msgid "Change state"
+msgstr ""
 
 msgid "Change status"
 msgstr "ステータスを変更"
@@ -4425,6 +4455,9 @@ msgstr "この返品に明細を追加する方法を選択してください。
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "このアグリーメントでレンタルするフリート個を選択してください。各個の初期レートはファイルに設定されています。グリッドで変更してください。"
+
+msgid "Choose the new parent"
+msgstr ""
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "このコントラクトが請求する外注サービスを選択してください。各サービスは、グリッドで価格設定できる繰り返し明細として追加されます。"
@@ -5197,6 +5230,10 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
 
@@ -5253,6 +5290,9 @@ msgstr "文書名をコピー"
 
 msgid "Copy document unique identifier"
 msgstr "文書の識別子をコピー"
+
+msgid "Copy id"
+msgstr ""
 
 msgid "Copy ID"
 msgstr "IDをコピー"
@@ -5746,6 +5786,9 @@ msgstr "実行を作成"
 
 msgid "Create Supplier Return"
 msgstr "仕入先返品を作成"
+
+msgid "Create the first element"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "移動を作成"
@@ -6634,6 +6677,10 @@ msgstr "削除"
 msgid "Delete {0}"
 msgstr "{0} を削除"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name}を削除"
 
@@ -7284,6 +7331,9 @@ msgstr "保全指示の優先度"
 
 msgid "Dispatches"
 msgstr "保全指示"
+
+msgid "Display"
+msgstr ""
 
 msgid "Display Settings"
 msgstr "表示設定"
@@ -8102,6 +8152,10 @@ msgstr "編集済み"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr ""
+
 msgid "Elements"
 msgstr ""
 
@@ -8510,6 +8564,9 @@ msgstr "推定期間"
 
 msgid "Estimated Duration (minutes)"
 msgstr "推定所要時間（分）"
+
+msgid "Estimated hours"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "推定スクラップ数量"
@@ -8994,6 +9051,9 @@ msgstr "ストレージタイプの作成に失敗しました: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "仕入先を作成できませんでした: {0}"
+
+msgid "Failed to create the element"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "フリートユニット"
 msgid "Fleet Units"
 msgstr "フリート個"
 
+msgid "Folder"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "用<0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "完全なセットアップとマイグレーション"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
+
+msgid "Function"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -11658,6 +11724,9 @@ msgstr "リンク済み問題"
 msgid "Linked PO"
 msgstr "リンク済みPO"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "リストオプション"
 
@@ -12389,6 +12458,9 @@ msgstr "データを移行"
 msgid "Migrating from another system?"
 msgstr "別のシステムから移行していますか？"
 
+msgid "Milestone"
+msgstr ""
+
 msgid "Milestones"
 msgstr ""
 
@@ -12571,6 +12643,10 @@ msgstr "モーション"
 msgid "Move"
 msgstr "移動"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr ""
+
 msgid "Move {accountName}"
 msgstr "{accountName} を移動"
 
@@ -12603,6 +12679,9 @@ msgstr "グループに移動"
 
 msgid "Move to Trash"
 msgstr "ゴミ箱に移動"
+
+msgid "Move to…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "名前"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "意思決定権を持つ社内プロジェクト責任者を指定する"
+
+msgid "Name the new element, then press Enter"
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名前はハブ全体でそれらのロールが参照されている場所に入力されます。"
@@ -12840,6 +12922,9 @@ msgstr "新しい部門"
 
 msgid "New Dimension"
 msgstr "新しいディメンション"
+
+msgid "New element name"
+msgstr ""
 
 msgid "New Employee Type"
 msgstr "新しい従業員タイプ"
@@ -13466,6 +13551,12 @@ msgstr "製造指図は作成されませんでした"
 msgid "No journal lines in scope for this period"
 msgstr "この期間の対象仕訳明細がありません"
 
+msgid "No labels"
+msgstr ""
+
+msgid "No labels in this project"
+msgstr ""
+
 msgid "No labels yet."
 msgstr ""
 
@@ -13507,6 +13598,9 @@ msgstr "一致する工程がありません"
 
 msgid "No materials"
 msgstr "物料がありません"
+
+msgid "No milestone"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -13578,6 +13672,9 @@ msgstr "未実施の教育訓練がありません"
 msgid "No overtime scheduled"
 msgstr "残業予定なし"
 
+msgid "No owner"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "親ソースはまだ記録されていません。計画ページの「再計算」をクリックして属性を更新してください。"
 
@@ -13622,6 +13719,9 @@ msgstr "プリンターが設定されていません"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "プリンターが設定されていません。「プリンターを追加」をクリックして作成してください。"
+
+msgid "No priority"
+msgstr ""
 
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
@@ -14746,6 +14846,9 @@ msgstr "責任者"
 msgid "Owner (cost center)"
 msgstr "責任者 (原価センター)"
 
+msgid "Owners"
+msgstr ""
+
 msgid "Ownership"
 msgstr "所有権"
 
@@ -14779,6 +14882,9 @@ msgstr "支払日"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "前払いされ、受け取ったら支払として記録してください。"
+
+msgid "Parameter"
+msgstr ""
 
 msgid "Parameters"
 msgstr "パラメータ"
@@ -18328,6 +18434,10 @@ msgstr "得意先の価格設定と条件を決定するセグメント"
 msgid "Select"
 msgstr "選択"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr ""
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz バックアップを選択"
 
@@ -19153,6 +19263,9 @@ msgstr "金額別上位 1,000 グループを表示中"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 
+msgid "Shown properties"
+msgstr ""
+
 msgid "Shown to the customer on the invoice"
 msgstr "請求書で顧客に表示されます"
 
@@ -19499,6 +19612,9 @@ msgstr "開始中…"
 
 msgid "Starts"
 msgstr "開始"
+
+msgid "State"
+msgstr ""
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -20371,6 +20487,9 @@ msgstr "利用規約"
 
 msgid "Test"
 msgstr "テスト"
+
+msgid "Test Case"
+msgstr ""
 
 msgid "Test run"
 msgstr "テストラン"
@@ -21994,6 +22113,9 @@ msgstr "ツール"
 msgid "Tools"
 msgstr "ツール"
 
+msgid "Top level"
+msgstr ""
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "トップレベルの分類（資産/負債/純資産/売上高/費用）；ルートグループにのみ設定され、子に継承されます。"
 
@@ -22746,6 +22868,9 @@ msgstr "アップロード中…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "変換をクリックすると、以下の社内部品番号で部品が作成されます："
+
+msgid "Urgent"
+msgstr ""
 
 msgid "URL"
 msgstr "URL"

@@ -63,6 +63,10 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr "{0, plural, one {# label} other {# labels}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -153,6 +157,10 @@ msgstr "{0} draft journal entries"
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} entries to recognize · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr "{0} h"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} rows"
 msgid "{0} scrapped"
 msgstr "{0} scrapped"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0} selected"
@@ -1726,6 +1735,9 @@ msgstr "Add at least one service."
 msgid "Add at least one unit."
 msgstr "Add at least one unit."
 
+msgid "Add at the top level"
+msgstr "Add at the top level"
+
 msgid "Add Authenticator App"
 msgstr "Add Authenticator App"
 
@@ -1737,6 +1749,9 @@ msgstr "Add Characteristic"
 
 msgid "Add Charge"
 msgstr "Add Charge"
+
+msgid "Add child"
+msgstr "Add child"
 
 msgid "Add Child Storage Unit"
 msgstr "Add Child Storage Unit"
@@ -4263,8 +4278,14 @@ msgstr "Change Document"
 msgid "Change Inspection Plan"
 msgstr "Change Inspection Plan"
 
+msgid "Change labels"
+msgstr "Change labels"
+
 msgid "Change lines with Amend."
 msgstr "Change lines with Amend."
+
+msgid "Change milestone"
+msgstr "Change milestone"
 
 msgid "Change notice"
 msgstr "Change notice"
@@ -4286,6 +4307,15 @@ msgstr "Change notices could not be loaded, so new versions and revisions are bl
 
 msgid "Change order"
 msgstr "Change order"
+
+msgid "Change owner"
+msgstr "Change owner"
+
+msgid "Change priority"
+msgstr "Change priority"
+
+msgid "Change state"
+msgstr "Change state"
 
 msgid "Change status"
 msgstr "Change status"
@@ -4425,6 +4455,9 @@ msgstr "Choose how to add lines to this return."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
+
+msgid "Choose the new parent"
+msgstr "Choose the new parent"
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
@@ -5197,6 +5230,10 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr "Copied {0}"
+
 msgid "Copied link to clipboard"
 msgstr "Copied link to clipboard"
 
@@ -5253,6 +5290,9 @@ msgstr "Copy document name"
 
 msgid "Copy document unique identifier"
 msgstr "Copy document unique identifier"
+
+msgid "Copy id"
+msgstr "Copy id"
 
 msgid "Copy ID"
 msgstr "Copy ID"
@@ -5746,6 +5786,9 @@ msgstr "Create Run"
 
 msgid "Create Supplier Return"
 msgstr "Create Supplier Return"
+
+msgid "Create the first element"
+msgstr "Create the first element"
 
 msgid "Create Transfer"
 msgstr "Create Transfer"
@@ -6634,6 +6677,10 @@ msgstr "Delete"
 msgid "Delete {0}"
 msgstr "Delete {0}"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+
 msgid "Delete {name}"
 msgstr "Delete {name}"
 
@@ -7284,6 +7331,9 @@ msgstr "Dispatch priority"
 
 msgid "Dispatches"
 msgstr "Dispatches"
+
+msgid "Display"
+msgstr "Display"
 
 msgid "Display Settings"
 msgstr "Display Settings"
@@ -8102,6 +8152,10 @@ msgstr "Edited"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr "Element ids start with the identifier, so it cannot change"
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr "Element type: {0}"
+
 msgid "Elements"
 msgstr "Elements"
 
@@ -8510,6 +8564,9 @@ msgstr "Estimated Duration"
 
 msgid "Estimated Duration (minutes)"
 msgstr "Estimated Duration (minutes)"
+
+msgid "Estimated hours"
+msgstr "Estimated hours"
 
 msgid "Estimated Scrap Quantity"
 msgstr "Estimated Scrap Quantity"
@@ -8994,6 +9051,9 @@ msgstr "Failed to create storage type: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Failed to create supplier: {0}"
+
+msgid "Failed to create the element"
+msgstr "Failed to create the element"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "Fleet Unit"
 msgid "Fleet Units"
 msgstr "Fleet Units"
 
+msgid "Folder"
+msgstr "Folder"
+
 msgid "For <0/>"
 msgstr "For <0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "Full setup and migrations"
 
 msgid "Fully Depreciated"
 msgstr "Fully Depreciated"
+
+msgid "Function"
+msgstr "Function"
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -11658,6 +11724,9 @@ msgstr "Linked Issue"
 msgid "Linked PO"
 msgstr "Linked PO"
 
+msgid "List"
+msgstr "List"
+
 msgid "List Options"
 msgstr "List Options"
 
@@ -12389,6 +12458,9 @@ msgstr "Migrate data"
 msgid "Migrating from another system?"
 msgstr "Migrating from another system?"
 
+msgid "Milestone"
+msgstr "Milestone"
+
 msgid "Milestones"
 msgstr "Milestones"
 
@@ -12571,6 +12643,10 @@ msgstr "Motion"
 msgid "Move"
 msgstr "Move"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr "Move {0}"
+
 msgid "Move {accountName}"
 msgstr "Move {accountName}"
 
@@ -12603,6 +12679,9 @@ msgstr "Move to Group"
 
 msgid "Move to Trash"
 msgstr "Move to Trash"
+
+msgid "Move to…"
+msgstr "Move to…"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "Name"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Name an internal project owner with decision authority"
+
+msgid "Name the new element, then press Enter"
+msgstr "Name the new element, then press Enter"
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Names fill in wherever those roles are referenced across the hub."
@@ -12840,6 +12922,9 @@ msgstr "New Department"
 
 msgid "New Dimension"
 msgstr "New Dimension"
+
+msgid "New element name"
+msgstr "New element name"
 
 msgid "New Employee Type"
 msgstr "New Employee Type"
@@ -13466,6 +13551,12 @@ msgstr "No jobs were created"
 msgid "No journal lines in scope for this period"
 msgstr "No journal lines in scope for this period"
 
+msgid "No labels"
+msgstr "No labels"
+
+msgid "No labels in this project"
+msgstr "No labels in this project"
+
 msgid "No labels yet."
 msgstr "No labels yet."
 
@@ -13507,6 +13598,9 @@ msgstr "No matching operations"
 
 msgid "No materials"
 msgstr "No materials"
+
+msgid "No milestone"
+msgstr "No milestone"
 
 msgid "No new notifications"
 msgstr "No new notifications"
@@ -13578,6 +13672,9 @@ msgstr "No outstanding trainings"
 msgid "No overtime scheduled"
 msgstr "No overtime scheduled"
 
+msgid "No owner"
+msgstr "No owner"
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 
@@ -13622,6 +13719,9 @@ msgstr "No printer configured"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "No printers configured. Click \"Add Printer\" to create one."
+
+msgid "No priority"
+msgstr "No priority"
 
 msgid "No process selected"
 msgstr "No process selected"
@@ -14746,6 +14846,9 @@ msgstr "Owner"
 msgid "Owner (cost center)"
 msgstr "Owner (cost center)"
 
+msgid "Owners"
+msgstr "Owners"
+
 msgid "Ownership"
 msgstr "Ownership"
 
@@ -14779,6 +14882,9 @@ msgstr "Paid Date"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Paid up front; record it as a payment once received"
+
+msgid "Parameter"
+msgstr "Parameter"
 
 msgid "Parameters"
 msgstr "Parameters"
@@ -18328,6 +18434,10 @@ msgstr "Segments that drive customer pricing and terms"
 msgid "Select"
 msgstr "Select"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr "Select {0}"
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Select a .carbon.tar.gz backup"
 
@@ -19153,6 +19263,9 @@ msgstr "Showing the top 1,000 groups by amount"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Shown as a faint background behind every page of generated PDFs"
 
+msgid "Shown properties"
+msgstr "Shown properties"
+
 msgid "Shown to the customer on the invoice"
 msgstr "Shown to the customer on the invoice"
 
@@ -19499,6 +19612,9 @@ msgstr "Starting…"
 
 msgid "Starts"
 msgstr "Starts"
+
+msgid "State"
+msgstr "State"
 
 msgid "State / Province"
 msgstr "State / Province"
@@ -20371,6 +20487,9 @@ msgstr "Terms of Service"
 
 msgid "Test"
 msgstr "Test"
+
+msgid "Test Case"
+msgstr "Test Case"
 
 msgid "Test run"
 msgstr "Test run"
@@ -21994,6 +22113,9 @@ msgstr "tools"
 msgid "Tools"
 msgstr "Tools"
 
+msgid "Top level"
+msgstr "Top level"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 
@@ -22746,6 +22868,9 @@ msgstr "Uploading…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Upon clicking Convert, parts will be created with the following internal part numbers:"
+
+msgid "Urgent"
+msgstr "Urgent"
 
 msgid "URL"
 msgstr "URL"

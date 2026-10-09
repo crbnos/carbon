@@ -63,6 +63,10 @@ msgstr "{0, plural, one {# giorno di margine} other {# giorni di margine}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# giorno di ritardo} other {# giorni di ritardo}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operazione senza standard di tempo} other {# operazioni senza standard di tempo}}"
@@ -153,6 +157,10 @@ msgstr "{0} bozze di prima nota"
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} scritture da riconoscere · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} righe"
 msgid "{0} scrapped"
 msgstr "{0} scartato"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0} selezionati"
@@ -1726,6 +1735,9 @@ msgstr "Aggiungi almeno un servizio."
 msgid "Add at least one unit."
 msgstr "Aggiungi almeno un'unità."
 
+msgid "Add at the top level"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Aggiungi app autenticatore"
 
@@ -1737,6 +1749,9 @@ msgstr "Aggiungi Caratteristica"
 
 msgid "Add Charge"
 msgstr "Aggiungi Addebito"
+
+msgid "Add child"
+msgstr ""
 
 msgid "Add Child Storage Unit"
 msgstr "Aggiungi un'unità di stoccaggio secondaria"
@@ -4263,8 +4278,14 @@ msgstr "Modifica Documento"
 msgid "Change Inspection Plan"
 msgstr "Modifica Piano di controllo"
 
+msgid "Change labels"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "Modifica le righe con Amend."
+
+msgid "Change milestone"
+msgstr ""
 
 msgid "Change notice"
 msgstr "Avviso di modifica"
@@ -4286,6 +4307,15 @@ msgstr "Non è stato possibile caricare gli avvisi di modifica, quindi le nuove 
 
 msgid "Change order"
 msgstr "Ordine di modifica"
+
+msgid "Change owner"
+msgstr ""
+
+msgid "Change priority"
+msgstr ""
+
+msgid "Change state"
+msgstr ""
 
 msgid "Change status"
 msgstr "Cambia stato"
@@ -4425,6 +4455,9 @@ msgstr "Scegli come aggiungere righe a questo reso."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Scegli le unità flotta che questo accordo noleggia. Ogni unità inizia al suo tasso nei registri per la frequenza; modificalo nella griglia."
+
+msgid "Choose the new parent"
+msgstr ""
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Scegli i servizi che questo contratto fattura. Ognuno viene aggiunto come una riga ricorrente che puoi quotare nella griglia."
@@ -5197,6 +5230,10 @@ msgstr "Conversione in corso…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte l'unità di acquisto di un fornitore nella tua unità di inventario su una linea di ordine, ricevuta o fattura — acquista in scatole di 12, stoccaggio in unità singole."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied link to clipboard"
 msgstr "Collegamento copiato negli appunti"
 
@@ -5253,6 +5290,9 @@ msgstr "Copia nome documento"
 
 msgid "Copy document unique identifier"
 msgstr "Copia identificatore univoco documento"
+
+msgid "Copy id"
+msgstr ""
 
 msgid "Copy ID"
 msgstr "Copia ID"
@@ -5746,6 +5786,9 @@ msgstr "Crea Esecuzione"
 
 msgid "Create Supplier Return"
 msgstr "Crea Reso Fornitore"
+
+msgid "Create the first element"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "Crea trasferimento"
@@ -6634,6 +6677,10 @@ msgstr "Elimina"
 msgid "Delete {0}"
 msgstr "Elimina {0}"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "Elimina {name}"
 
@@ -7284,6 +7331,9 @@ msgstr "Priorità intervento di manutenzione"
 
 msgid "Dispatches"
 msgstr "Interventi di manutenzione"
+
+msgid "Display"
+msgstr ""
 
 msgid "Display Settings"
 msgstr "Impostazioni di visualizzazione"
@@ -8102,6 +8152,10 @@ msgstr "Modificato"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr ""
+
 msgid "Elements"
 msgstr ""
 
@@ -8510,6 +8564,9 @@ msgstr "Durata Stimata"
 
 msgid "Estimated Duration (minutes)"
 msgstr "Durata Stimata (minuti)"
+
+msgid "Estimated hours"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "Quantità di Scarto Stimata"
@@ -8994,6 +9051,9 @@ msgstr "Impossibile creare il tipo di archiviazione: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Impossibile creare il fornitore: {0}"
+
+msgid "Failed to create the element"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "Unità della flotta"
 msgid "Fleet Units"
 msgstr "Unità flotta"
 
+msgid "Folder"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "Per <0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "Configurazione completa e migrazioni"
 
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
+
+msgid "Function"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "Utile/Perdita Cambi"
@@ -11658,6 +11724,9 @@ msgstr "Problema Collegato"
 msgid "Linked PO"
 msgstr "PO collegato"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "Opzioni Elenco"
 
@@ -12389,6 +12458,9 @@ msgstr "Migra dati"
 msgid "Migrating from another system?"
 msgstr "Migrazione da un altro sistema?"
 
+msgid "Milestone"
+msgstr ""
+
 msgid "Milestones"
 msgstr ""
 
@@ -12571,6 +12643,10 @@ msgstr "Movimento"
 msgid "Move"
 msgstr "Sposta"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr ""
+
 msgid "Move {accountName}"
 msgstr "Sposta {accountName}"
 
@@ -12603,6 +12679,9 @@ msgstr "Sposta in Gruppo"
 
 msgid "Move to Trash"
 msgstr "Sposta nel Cestino"
+
+msgid "Move to…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "Nome"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Nomina un responsabile interno del progetto con autorità decisionale"
+
+msgid "Name the new element, then press Enter"
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "I nomi vengono compilati ovunque questi ruoli siano referenziati in tutto l'hub."
@@ -12840,6 +12922,9 @@ msgstr "Nuovo reparto"
 
 msgid "New Dimension"
 msgstr "Nuova Dimensione"
+
+msgid "New element name"
+msgstr ""
 
 msgid "New Employee Type"
 msgstr "Nuovo Tipo di Dipendente"
@@ -13466,6 +13551,12 @@ msgstr "Non sono stati creati ordini di produzione"
 msgid "No journal lines in scope for this period"
 msgstr "Nessuna riga di prima nota per questo periodo"
 
+msgid "No labels"
+msgstr ""
+
+msgid "No labels in this project"
+msgstr ""
+
 msgid "No labels yet."
 msgstr ""
 
@@ -13507,6 +13598,9 @@ msgstr "Nessuna operazione corrispondente"
 
 msgid "No materials"
 msgstr "Nessun materiale"
+
+msgid "No milestone"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "Nessuna nuova notifica"
@@ -13578,6 +13672,9 @@ msgstr "Nessun corso di formazione in sospeso"
 msgid "No overtime scheduled"
 msgstr "Nessun straordinario programmato"
 
+msgid "No owner"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Nessuna fonte padre registrata ancora. Fai clic su Ricalcola nella pagina di pianificazione per aggiornare l'attribuzione."
 
@@ -13622,6 +13719,9 @@ msgstr "Nessuna stampante configurata"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Nessuna stampante configurata. Fai clic su \"Aggiungi stampante\" per crearne una."
+
+msgid "No priority"
+msgstr ""
 
 msgid "No process selected"
 msgstr "Nessun processo selezionato"
@@ -14746,6 +14846,9 @@ msgstr "Responsabile"
 msgid "Owner (cost center)"
 msgstr "Responsabile (Centro di costo)"
 
+msgid "Owners"
+msgstr ""
+
 msgid "Ownership"
 msgstr "Proprietà"
 
@@ -14779,6 +14882,9 @@ msgstr "Data di Pagamento"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Pagato in anticipo; registralo come pagamento una volta ricevuto"
+
+msgid "Parameter"
+msgstr ""
 
 msgid "Parameters"
 msgstr "Parametri"
@@ -18328,6 +18434,10 @@ msgstr "Segmenti che determinano i prezzi e le condizioni dei clienti"
 msgid "Select"
 msgstr "Seleziona"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr ""
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Seleziona un backup .carbon.tar.gz"
 
@@ -19153,6 +19263,9 @@ msgstr "Visualizzazione dei primi 1.000 gruppi per importo"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Mostrato come sfondo tenue dietro ogni pagina dei PDF generati"
 
+msgid "Shown properties"
+msgstr ""
+
 msgid "Shown to the customer on the invoice"
 msgstr "Mostrato al cliente sulla fattura"
 
@@ -19499,6 +19612,9 @@ msgstr "Avvio in corso…"
 
 msgid "Starts"
 msgstr "Inizia"
+
+msgid "State"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Stato / Provincia"
@@ -20371,6 +20487,9 @@ msgstr "Termini di Servizio"
 
 msgid "Test"
 msgstr "Prova"
+
+msgid "Test Case"
+msgstr ""
 
 msgid "Test run"
 msgstr "Esecuzione di prova"
@@ -21994,6 +22113,9 @@ msgstr "Strumenti"
 msgid "Tools"
 msgstr "Strumenti"
 
+msgid "Top level"
+msgstr ""
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Classificazione di primo livello (attivo/passivo/patrimonio netto/ricavi/spese); impostato solo su gruppi radice, ereditato dai figli."
 
@@ -22746,6 +22868,9 @@ msgstr "Caricamento in corso…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Facendo clic su Converti, i componenti verranno creati con i seguenti numeri di parte interni:"
+
+msgid "Urgent"
+msgstr ""
 
 msgid "URL"
 msgstr "URL"

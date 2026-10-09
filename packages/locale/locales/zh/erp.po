@@ -63,6 +63,10 @@ msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
@@ -153,6 +157,10 @@ msgstr "{0}个草稿凭证"
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} 行"
 msgid "{0} scrapped"
 msgstr "{0} 报废"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0} 已选择"
@@ -1726,6 +1735,9 @@ msgstr "至少添加一项服务。"
 msgid "Add at least one unit."
 msgstr "至少添加一件。"
 
+msgid "Add at the top level"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "添加身份验证器应用"
 
@@ -1737,6 +1749,9 @@ msgstr "添加特性"
 
 msgid "Add Charge"
 msgstr "添加 费用"
+
+msgid "Add child"
+msgstr ""
 
 msgid "Add Child Storage Unit"
 msgstr "添加子存储单元"
@@ -4263,8 +4278,14 @@ msgstr "变更文件"
 msgid "Change Inspection Plan"
 msgstr "更改检验计划"
 
+msgid "Change labels"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "通过修订更改行"
+
+msgid "Change milestone"
+msgstr ""
 
 msgid "Change notice"
 msgstr "变更通知"
@@ -4286,6 +4307,15 @@ msgstr "无法加载变更通知，因此新版本和修订版被阻止。重新
 
 msgid "Change order"
 msgstr "变更单"
+
+msgid "Change owner"
+msgstr ""
+
+msgid "Change priority"
+msgstr ""
+
+msgid "Change state"
+msgstr ""
 
 msgid "Change status"
 msgstr "更改状态"
@@ -4425,6 +4455,9 @@ msgstr "选择如何向此退货添加行。"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；在网格中更改。"
+
+msgid "Choose the new parent"
+msgstr ""
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "选择此合同开票的服务。每个作为循环行添加，您可以在网格中定价"
@@ -5197,6 +5230,10 @@ msgstr "转换中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
 
@@ -5253,6 +5290,9 @@ msgstr "复制文件名"
 
 msgid "Copy document unique identifier"
 msgstr "复制文件唯一标识符"
+
+msgid "Copy id"
+msgstr ""
 
 msgid "Copy ID"
 msgstr "复制 ID"
@@ -5746,6 +5786,9 @@ msgstr "创建凭证"
 
 msgid "Create Supplier Return"
 msgstr "创建供应商退货"
+
+msgid "Create the first element"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "创建转移"
@@ -6634,6 +6677,10 @@ msgstr "删除"
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "删除 {name}"
 
@@ -7284,6 +7331,9 @@ msgstr "维护工单优先级"
 
 msgid "Dispatches"
 msgstr "维护工单"
+
+msgid "Display"
+msgstr ""
 
 msgid "Display Settings"
 msgstr "显示设置"
@@ -8102,6 +8152,10 @@ msgstr "已编辑"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr ""
+
 msgid "Elements"
 msgstr ""
 
@@ -8510,6 +8564,9 @@ msgstr "预计时长"
 
 msgid "Estimated Duration (minutes)"
 msgstr "预计时长（分钟）"
+
+msgid "Estimated hours"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "估计报废数量"
@@ -8994,6 +9051,9 @@ msgstr "创建存储类型失败：{0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "创建供应商失败：{0}"
+
+msgid "Failed to create the element"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "租赁单位"
 msgid "Fleet Units"
 msgstr "租赁设备"
 
+msgid "Folder"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "对于 <0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "已提足折旧"
+
+msgid "Function"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "外汇损益"
@@ -11658,6 +11724,9 @@ msgstr "关联问题"
 msgid "Linked PO"
 msgstr "关联采购订单"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "列表选项"
 
@@ -12389,6 +12458,9 @@ msgstr "迁移数据"
 msgid "Migrating from another system?"
 msgstr "从另一个系统迁移？"
 
+msgid "Milestone"
+msgstr ""
+
 msgid "Milestones"
 msgstr ""
 
@@ -12571,6 +12643,10 @@ msgstr "运动"
 msgid "Move"
 msgstr "移动"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr ""
+
 msgid "Move {accountName}"
 msgstr "移动 {accountName}"
 
@@ -12603,6 +12679,9 @@ msgstr "移动到组"
 
 msgid "Move to Trash"
 msgstr "移动到垃圾箱"
+
+msgid "Move to…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "名称"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "指定具有决策权的内部项目负责人"
+
+msgid "Name the new element, then press Enter"
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名称会在整个中心内引用这些角色的任何地方填入。"
@@ -12840,6 +12922,9 @@ msgstr "新部门"
 
 msgid "New Dimension"
 msgstr "新维度"
+
+msgid "New element name"
+msgstr ""
 
 msgid "New Employee Type"
 msgstr "新员工类型"
@@ -13466,6 +13551,12 @@ msgstr "没有创建工单"
 msgid "No journal lines in scope for this period"
 msgstr "此期间范围内没有凭证行"
 
+msgid "No labels"
+msgstr ""
+
+msgid "No labels in this project"
+msgstr ""
+
 msgid "No labels yet."
 msgstr ""
 
@@ -13507,6 +13598,9 @@ msgstr "没有匹配的操作"
 
 msgid "No materials"
 msgstr "无物料"
+
+msgid "No milestone"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -13578,6 +13672,9 @@ msgstr "没有未完成的培训"
 msgid "No overtime scheduled"
 msgstr "没有安排加班"
 
+msgid "No owner"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以刷新归因。"
 
@@ -13622,6 +13719,9 @@ msgstr "未配置打印机"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
+
+msgid "No priority"
+msgstr ""
 
 msgid "No process selected"
 msgstr "未选择工艺"
@@ -14746,6 +14846,9 @@ msgstr "负责人"
 msgid "Owner (cost center)"
 msgstr "负责人（成本中心）"
 
+msgid "Owners"
+msgstr ""
+
 msgid "Ownership"
 msgstr "所有权"
 
@@ -14779,6 +14882,9 @@ msgstr "支付日期"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "预付款；收到后将其记录为付款"
+
+msgid "Parameter"
+msgstr ""
 
 msgid "Parameters"
 msgstr "参数"
@@ -18328,6 +18434,10 @@ msgstr "驱动客户定价和条款的细分市场"
 msgid "Select"
 msgstr "选择"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr ""
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr "选择一个 .carbon.tar.gz 备份"
 
@@ -19153,6 +19263,9 @@ msgstr "按金额显示前1,000个分组"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 
+msgid "Shown properties"
+msgstr ""
+
 msgid "Shown to the customer on the invoice"
 msgstr "在发票上向客户显示"
 
@@ -19499,6 +19612,9 @@ msgstr "正在启动…"
 
 msgid "Starts"
 msgstr "开始"
+
+msgid "State"
+msgstr ""
 
 msgid "State / Province"
 msgstr "州/省"
@@ -20371,6 +20487,9 @@ msgstr "服务条款"
 
 msgid "Test"
 msgstr "测试"
+
+msgid "Test Case"
+msgstr ""
 
 msgid "Test run"
 msgstr "测试运行"
@@ -21994,6 +22113,9 @@ msgstr "工具"
 msgid "Tools"
 msgstr "工具"
 
+msgid "Top level"
+msgstr ""
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "顶级分类（资产/负债/所有者权益/收入/费用）；仅在根组上设置，由子项继承。"
 
@@ -22746,6 +22868,9 @@ msgstr "上传中…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "点击转换后，将使用以下内部零件编号创建零件："
+
+msgid "Urgent"
+msgstr ""
 
 msgid "URL"
 msgstr "网址"

@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
+import type { ActionFunctionArgs } from "react-router";
+import {
+  getProject,
+  projectElementFieldUpdateValidator,
+  setProjectElementLabels,
+  updateProjectElementField
+} from "~/modules/projects";
+
+const logger = getLogger("erp", "project-element-update");
+
+/**
+ * Saves one field on one or more elements: the pills of the List and Board
+ * layouts, the cells of the Table layout and the element sidebar post here.
+ * `labelIds` replaces the labels of one element (a comma-separated list).
+ */
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "projects"
+  });
+
+  const { projectId } = params;
+  if (!projectId) throw new Error("Could not find projectId");
+
+  const project = await getProject(client, companyId, projectId);
+  if (project.error || !project.data) {
+    logger.error("Failed to load project", {
+      companyId,
+      projectId,
+      error: project.error
+    });
+    return { error: { message: "Failed to load the project" } };
+  }
+  if (project.data.status === "Closed") {
+    return { error: { message: "A Closed project cannot change" } };
+  }
+
+  const formData = await request.formData();
+
+  if (formData.get("field") === "labelIds") {
+    const ids = formData.getAll("ids").filter((id) => typeof id === "string");
+    if (ids.length !== 1) {
+      return {
+        error: { message: "Change the labels of one element at a time" }
+      };
+    }
+    const value = formData.get("value");
+    const labelIds =
+      typeof value === "string" && value.length > 0 ? value.split(",") : [];
+    const result = await setProjectElementLabels(client, {
+      projectElementId: ids[0] as string,
+      labelIds,
+      companyId,
+      createdBy: userId
+    });
+    if (result.error) {
+      logger.error("Failed to set element labels", {
+        companyId,
+        projectId,
+        error: result.error
+      });
+      return { error: { message: "Failed to save the labels" } };
+    }
+    return { success: true };
+  }
+
+  const validation = await validator(
+    projectElementFieldUpdateValidator
+  ).validate(formData);
+  if (validation.error) {
+    return { error: { message: "Invalid form data" } };
+  }
+
+  const { ids, field, value } = validation.data;
+  const result = await updateProjectElementField(client, {
+    ids,
+    field,
+    value,
+    companyId,
+    updatedBy: userId
+  });
+  if (result.error) {
+    logger.error("Failed to update element field", {
+      companyId,
+      projectId,
+      field,
+      error: result.error
+    });
+    return {
+      error: { message: result.error.message ?? "Failed to save the change" }
+    };
+  }
+
+  return { success: true };
+}

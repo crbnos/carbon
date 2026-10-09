@@ -63,6 +63,10 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
@@ -153,6 +157,10 @@ msgstr "{0}개의 초안 전표"
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}개의 인식할 항목 · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} 행"
 msgid "{0} scrapped"
 msgstr "{0} 폐기됨"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0}개 선택됨"
@@ -1726,6 +1735,9 @@ msgstr "최소 1개의 서비스를 추가하세요."
 msgid "Add at least one unit."
 msgstr "최소한 하나의 단위를 추가하세요."
 
+msgid "Add at the top level"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
@@ -1737,6 +1749,9 @@ msgstr "특성 추가"
 
 msgid "Add Charge"
 msgstr "요금 추가"
+
+msgid "Add child"
+msgstr ""
 
 msgid "Add Child Storage Unit"
 msgstr "하위 보관 단위 추가"
@@ -4263,8 +4278,14 @@ msgstr "문서 변경"
 msgid "Change Inspection Plan"
 msgstr "검사 계획 변경"
 
+msgid "Change labels"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "수정으로 라인 변경"
+
+msgid "Change milestone"
+msgstr ""
 
 msgid "Change notice"
 msgstr "변경 통지"
@@ -4286,6 +4307,15 @@ msgstr "변경 통지를 로드할 수 없으므로 새 버전과 리비전이 �
 
 msgid "Change order"
 msgstr "변경 오더"
+
+msgid "Change owner"
+msgstr ""
+
+msgid "Change priority"
+msgstr ""
+
+msgid "Change state"
+msgstr ""
 
 msgid "Change status"
 msgstr "상태 변경"
@@ -4425,6 +4455,9 @@ msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위는 빈도에 따라 파일에 저장된 요율부터 시작됩니다. 그리드에서 변경할 수 있습니다."
+
+msgid "Choose the new parent"
+msgstr ""
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "이 계약이 청구하는 서비스를 선택하세요. 각 서비스는 그리드에서 가격을 책정할 수 있는 반복 라인으로 추가됩니다."
@@ -5197,6 +5230,10 @@ msgstr "변환 중…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
 
@@ -5253,6 +5290,9 @@ msgstr "문서 이름 복사"
 
 msgid "Copy document unique identifier"
 msgstr "문서 고유 식별자 복사"
+
+msgid "Copy id"
+msgstr ""
 
 msgid "Copy ID"
 msgstr "ID 복사"
@@ -5746,6 +5786,9 @@ msgstr "실행 생성"
 
 msgid "Create Supplier Return"
 msgstr "공급업체 반품 생성"
+
+msgid "Create the first element"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "이전 생성"
@@ -6634,6 +6677,10 @@ msgstr "삭제"
 msgid "Delete {0}"
 msgstr "{0} 삭제"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name} 삭제"
 
@@ -7284,6 +7331,9 @@ msgstr "유지보수 지시 우선순위"
 
 msgid "Dispatches"
 msgstr "유지보수 지시"
+
+msgid "Display"
+msgstr ""
 
 msgid "Display Settings"
 msgstr "표시 설정"
@@ -8102,6 +8152,10 @@ msgstr "수정됨"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr ""
+
 msgid "Elements"
 msgstr ""
 
@@ -8510,6 +8564,9 @@ msgstr "예상 소요시간"
 
 msgid "Estimated Duration (minutes)"
 msgstr "예상 소요시간(분)"
+
+msgid "Estimated hours"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "예상 스크랩 수량"
@@ -8994,6 +9051,9 @@ msgstr "저장 유형 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "공급업체 생성 실패: {0}"
+
+msgid "Failed to create the element"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "플릿 단위"
 msgid "Fleet Units"
 msgstr "플릿 단위"
 
+msgid "Folder"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "대상 <0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "완전한 셋업 및 마이그레이션"
 
 msgid "Fully Depreciated"
 msgstr "상각 완료"
+
+msgid "Function"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "외환 손익"
@@ -11658,6 +11724,9 @@ msgstr "연결된 이슈"
 msgid "Linked PO"
 msgstr "연결된 구매주문"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "목록 옵션"
 
@@ -12389,6 +12458,9 @@ msgstr "데이터 마이그레이션"
 msgid "Migrating from another system?"
 msgstr "다른 시스템에서 마이그레이션 중입니까?"
 
+msgid "Milestone"
+msgstr ""
+
 msgid "Milestones"
 msgstr ""
 
@@ -12571,6 +12643,10 @@ msgstr "모션"
 msgid "Move"
 msgstr "이동"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr ""
+
 msgid "Move {accountName}"
 msgstr "{accountName} 이동"
 
@@ -12603,6 +12679,9 @@ msgstr "그룹으로 이동"
 
 msgid "Move to Trash"
 msgstr "휴지통으로 이동"
+
+msgid "Move to…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "이름"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "결정 권한이 있는 내부 프로젝트 책임자를 지정하십시오."
+
+msgid "Name the new element, then press Enter"
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "허브 전체에서 해당 역할이 참조되는 곳마다 이름이 자동으로 채워집니다."
@@ -12840,6 +12922,9 @@ msgstr "신규 부서"
 
 msgid "New Dimension"
 msgstr "신규 차원"
+
+msgid "New element name"
+msgstr ""
 
 msgid "New Employee Type"
 msgstr "신규 직원 유형"
@@ -13466,6 +13551,12 @@ msgstr "생성된 작업 지시가 없음"
 msgid "No journal lines in scope for this period"
 msgstr "이 기간의 범위 내 전표 라인이 없음"
 
+msgid "No labels"
+msgstr ""
+
+msgid "No labels in this project"
+msgstr ""
+
 msgid "No labels yet."
 msgstr ""
 
@@ -13507,6 +13598,9 @@ msgstr "일치하는 공정이 없습니다"
 
 msgid "No materials"
 msgstr "자재 없음"
+
+msgid "No milestone"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -13578,6 +13672,9 @@ msgstr "미완료 교육이 없습니다"
 msgid "No overtime scheduled"
 msgstr "예정된 초과근무가 없습니다"
 
+msgid "No owner"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "아직 기록된 상위 소스가 없습니다. 계획 페이지에서 재계산을 클릭하여 귀속 정보를 새로고침하세요."
 
@@ -13622,6 +13719,9 @@ msgstr "설정된 프린터가 없습니다"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하여 생성하세요."
+
+msgid "No priority"
+msgstr ""
 
 msgid "No process selected"
 msgstr "프로세스를 선택하지 않았습니다"
@@ -14746,6 +14846,9 @@ msgstr "책임자"
 msgid "Owner (cost center)"
 msgstr "책임자 (원가 센터)"
 
+msgid "Owners"
+msgstr ""
+
 msgid "Ownership"
 msgstr "담당"
 
@@ -14779,6 +14882,9 @@ msgstr "지급일"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "선금으로 지불되며, 받으면 지불로 기록하세요."
+
+msgid "Parameter"
+msgstr ""
 
 msgid "Parameters"
 msgstr "파라미터"
@@ -18328,6 +18434,10 @@ msgstr "고객 가격 책정과 계약 조건을 좌우하는 구분 항목"
 msgid "Select"
 msgstr "선택"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr ""
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz 백업 선택"
 
@@ -19153,6 +19263,9 @@ msgstr "금액별 상위 1,000개 그룹을 표시하고 있습니다"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
 
+msgid "Shown properties"
+msgstr ""
+
 msgid "Shown to the customer on the invoice"
 msgstr "송장에서 고객에게 표시"
 
@@ -19499,6 +19612,9 @@ msgstr "시작 중…"
 
 msgid "Starts"
 msgstr "시작"
+
+msgid "State"
+msgstr ""
 
 msgid "State / Province"
 msgstr "주/도"
@@ -20371,6 +20487,9 @@ msgstr "이용약관"
 
 msgid "Test"
 msgstr "테스트"
+
+msgid "Test Case"
+msgstr ""
 
 msgid "Test run"
 msgstr "테스트 실행"
@@ -21994,6 +22113,9 @@ msgstr "공구"
 msgid "Tools"
 msgstr "공구"
 
+msgid "Top level"
+msgstr ""
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "최상위 분류 (자산 / 부채 / 자본 / 매출 / 비용); 루트 그룹에만 설정되며 자식이 상속합니다."
 
@@ -22746,6 +22868,9 @@ msgstr "업로드 중…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "전환을 클릭하면 다음의 내부 부품 번호로 부품이 생성됩니다:"
+
+msgid "Urgent"
+msgstr ""
 
 msgid "URL"
 msgstr "URL"

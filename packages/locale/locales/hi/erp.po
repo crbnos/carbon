@@ -63,6 +63,10 @@ msgstr "{0, plural, one {# दिन का अतिरिक्त समय} 
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# दिन की कमी} other {# दिन की कमी}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
@@ -153,6 +157,10 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} प्रविष्टियों को पहचानने के लिए · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} पंक्तियाँ"
 msgid "{0} scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0} चुने गए"
@@ -1726,6 +1735,9 @@ msgstr "कम से कम एक सेवा जोड़ें।"
 msgid "Add at least one unit."
 msgstr "कम से कम एक इकाई जोड़ें।"
 
+msgid "Add at the top level"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
@@ -1737,6 +1749,9 @@ msgstr "विशेषता जोड़ें"
 
 msgid "Add Charge"
 msgstr "शुल्क जोड़ें"
+
+msgid "Add child"
+msgstr ""
 
 msgid "Add Child Storage Unit"
 msgstr "बाल भंडारण इकाई जोड़ें"
@@ -4263,8 +4278,14 @@ msgstr "परिवर्तन दस्तावेज़"
 msgid "Change Inspection Plan"
 msgstr "निरीक्षण योजना बदलें"
 
+msgid "Change labels"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "संशोधन से पंक्तियाँ बदलें"
+
+msgid "Change milestone"
+msgstr ""
 
 msgid "Change notice"
 msgstr "परिवर्तन सूचना"
@@ -4286,6 +4307,15 @@ msgstr "परिवर्तन सूचना को लोड नहीं �
 
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
+
+msgid "Change owner"
+msgstr ""
+
+msgid "Change priority"
+msgstr ""
+
+msgid "Change state"
+msgstr ""
 
 msgid "Change status"
 msgstr "स्थिति बदलें"
@@ -4425,6 +4455,9 @@ msgstr "इस रिटर्न में पंक्तियाँ कै�
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "उन फ्लीट इकाइयों को चुनें जो यह समझौता किराए पर देता है। प्रत्येक आवृत्ति के लिए फ़ाइल पर अपनी दर से शुरू होता है; इसे ग्रिड में बदलें।"
+
+msgid "Choose the new parent"
+msgstr ""
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "उन सेवाओं को चुनें जिनका यह अनुबंध बिल करता है। प्रत्येक को एक आवर्ती पंक्ति के रूप में जोड़ा जाता है जिसे आप ग्रिड में मूल्य निर्धारित कर सकते हैं।"
@@ -5197,6 +5230,10 @@ msgstr "परिवर्तित कर रहे हैं…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied link to clipboard"
 msgstr "क्लिपबोर्ड में लिंक कॉपी किया गया"
 
@@ -5253,6 +5290,9 @@ msgstr "दस्तावेज़ का नाम कॉपी करें"
 
 msgid "Copy document unique identifier"
 msgstr "दस्तावेज़ की अद्वितीय पहचान की प्रतिलिपि बनाएँ"
+
+msgid "Copy id"
+msgstr ""
 
 msgid "Copy ID"
 msgstr "आईडी कॉपी करें"
@@ -5746,6 +5786,9 @@ msgstr "रन बनाएँ"
 
 msgid "Create Supplier Return"
 msgstr "आपूर्तिकर्ता रिटर्न बनाएं"
+
+msgid "Create the first element"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "ट्रांसफर बनाएं"
@@ -6634,6 +6677,10 @@ msgstr "हटाएं"
 msgid "Delete {0}"
 msgstr "{0} हटाएं"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name} को हटाएं"
 
@@ -7284,6 +7331,9 @@ msgstr "रखरखाव कार्य की प्राथमिकता
 
 msgid "Dispatches"
 msgstr "रखरखाव कार्य"
+
+msgid "Display"
+msgstr ""
 
 msgid "Display Settings"
 msgstr "प्रदर्शन सेटिंग्स"
@@ -8102,6 +8152,10 @@ msgstr "संपादित"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr ""
+
 msgid "Elements"
 msgstr ""
 
@@ -8510,6 +8564,9 @@ msgstr "अनुमानित अवधि"
 
 msgid "Estimated Duration (minutes)"
 msgstr "अनुमानित अवधि (मिनट)"
+
+msgid "Estimated hours"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "अनुमानित स्क्रैप मात्रा"
@@ -8994,6 +9051,9 @@ msgstr "स्टोरेज प्रकार बनाने में व�
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "आपूर्तिकर्ता बनाने में विफल: {0}"
+
+msgid "Failed to create the element"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "बेड़े की इकाई"
 msgid "Fleet Units"
 msgstr "फ्लीट इकाई"
 
+msgid "Folder"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "के लिए <0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "पूर्ण सेटअप और माइग्रेशन"
 
 msgid "Fully Depreciated"
 msgstr "पूर्ण मूल्यह्रासित"
+
+msgid "Function"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -11658,6 +11724,9 @@ msgstr "जुड़ी समस्या"
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "सूची विकल्प"
 
@@ -12389,6 +12458,9 @@ msgstr "डेटा माइग्रेट करें"
 msgid "Migrating from another system?"
 msgstr "दूसरे सिस्टम से माइग्रेट कर रहे हैं?"
 
+msgid "Milestone"
+msgstr ""
+
 msgid "Milestones"
 msgstr ""
 
@@ -12571,6 +12643,10 @@ msgstr "गति"
 msgid "Move"
 msgstr "स्थानांतरित करें"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr ""
+
 msgid "Move {accountName}"
 msgstr "{accountName} को स्थानांतरित करें"
 
@@ -12603,6 +12679,9 @@ msgstr "समूह में ले जाएँ"
 
 msgid "Move to Trash"
 msgstr "ट्रैश में स्थानांतरित करें"
+
+msgid "Move to…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "नाम"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "निर्णय लेने के अधिकार के साथ एक आंतरिक परियोजना मालिक का नाम रखें"
+
+msgid "Name the new element, then press Enter"
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "नाम हब भर में जहां भी उन भूमिकाओं का संदर्भ दिया जाता है वहां भरे जाते हैं।"
@@ -12840,6 +12922,9 @@ msgstr "नया विभाग"
 
 msgid "New Dimension"
 msgstr "नया आयाम"
+
+msgid "New element name"
+msgstr ""
 
 msgid "New Employee Type"
 msgstr "नया कर्मचारी प्रकार"
@@ -13466,6 +13551,12 @@ msgstr "कोई जॉब नहीं बनाया गया"
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
 
+msgid "No labels"
+msgstr ""
+
+msgid "No labels in this project"
+msgstr ""
+
 msgid "No labels yet."
 msgstr ""
 
@@ -13507,6 +13598,9 @@ msgstr "कोई मेल खाने वाला ऑपरेशन नह�
 
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
+
+msgid "No milestone"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -13578,6 +13672,9 @@ msgstr "कोई बकाया प्रशिक्षण नहीं"
 msgid "No overtime scheduled"
 msgstr "कोई ओवरटाइम शेड्यूल नहीं है"
 
+msgid "No owner"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "अभी तक कोई मूल स्रोत दर्ज नहीं किया गया है। एट्रिब्यूशन को रीफ्रेश करने के लिए योजना पृष्ठ पर पुनः गणना करें पर क्लिक करें।"
 
@@ -13622,6 +13719,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया है। ‟प्रिंटर जोड़ें„ पर क्लिक करें।"
+
+msgid "No priority"
+msgstr ""
 
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
@@ -14746,6 +14846,9 @@ msgstr "स्वामी"
 msgid "Owner (cost center)"
 msgstr "स्वामी (लागत केंद्र)"
 
+msgid "Owners"
+msgstr ""
+
 msgid "Ownership"
 msgstr "स्वामित्व"
 
@@ -14779,6 +14882,9 @@ msgstr "भुगतान की गई तारीख"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "अग्रिम भुगतान; इसे प्राप्त होने के बाद भुगतान के रूप में दर्ज करें"
+
+msgid "Parameter"
+msgstr ""
 
 msgid "Parameters"
 msgstr "पैरामीटर"
@@ -18328,6 +18434,10 @@ msgstr "ऐसे सेगमेंट जो ग्राहक मूल्�
 msgid "Select"
 msgstr "चुनें"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr ""
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz बैकअप चुनें"
 
@@ -19153,6 +19263,9 @@ msgstr "राशि द्वारा शीर्ष 1,000 समूह द�
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
 
+msgid "Shown properties"
+msgstr ""
+
 msgid "Shown to the customer on the invoice"
 msgstr "चालान पर ग्राहक को दिखाया जाता है"
 
@@ -19499,6 +19612,9 @@ msgstr "शुरू हो रहा है…"
 
 msgid "Starts"
 msgstr "शुरू होता है"
+
+msgid "State"
+msgstr ""
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -20371,6 +20487,9 @@ msgstr "सेवा की शर्तें"
 
 msgid "Test"
 msgstr "परीक्षण"
+
+msgid "Test Case"
+msgstr ""
 
 msgid "Test run"
 msgstr "परीक्षण चलाएं"
@@ -21994,6 +22113,9 @@ msgstr "उपकरण"
 msgid "Tools"
 msgstr "उपकरण"
 
+msgid "Top level"
+msgstr ""
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "शीर्ष-स्तर वर्गीकरण (संपत्ति / देयता / इक्विटी / राजस्व / व्यय); केवल मूल समूहों पर सेट, बच्चों द्वारा विरासत में।"
 
@@ -22746,6 +22868,9 @@ msgstr "अपलोड हो रहा है…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "परिवर्तित करें क्लिक करने पर, पार्ट्स निम्नलिखित आंतरिक पार्ट संख्या के साथ बनाए जाएंगे:"
+
+msgid "Urgent"
+msgstr ""
 
 msgid "URL"
 msgstr "यूआरएल"

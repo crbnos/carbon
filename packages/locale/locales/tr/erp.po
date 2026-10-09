@@ -63,6 +63,10 @@ msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
+#. placeholder {0}: selected.length
+msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
@@ -153,6 +157,10 @@ msgstr "{0} taslak muhasebe fişi"
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} muhasebeleştirilecek kayıt · {amount}"
+
+#. placeholder {0}: formatQuantity(value)
+msgid "{0} h"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -268,6 +276,7 @@ msgstr "{0} satır"
 msgid "{0} scrapped"
 msgstr "{0} hurdaya alındı"
 
+#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 msgid "{0} selected"
 msgstr "{0} seçildi"
@@ -1726,6 +1735,9 @@ msgstr "En az bir hizmet ekleyin."
 msgid "Add at least one unit."
 msgstr "En az bir adet ekleyin."
 
+msgid "Add at the top level"
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 
@@ -1737,6 +1749,9 @@ msgstr "Özellik Ekle"
 
 msgid "Add Charge"
 msgstr "Ücret Ekle"
+
+msgid "Add child"
+msgstr ""
 
 msgid "Add Child Storage Unit"
 msgstr "Alt Depolama Birimi Ekle"
@@ -4263,8 +4278,14 @@ msgstr "Belgeyi Değiştir"
 msgid "Change Inspection Plan"
 msgstr "Kontrol Planını Değiştir"
 
+msgid "Change labels"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "Satırları Değişiklikleri Yap ile Değiştir"
+
+msgid "Change milestone"
+msgstr ""
 
 msgid "Change notice"
 msgstr "Değişiklik bildirisi"
@@ -4286,6 +4307,15 @@ msgstr "Değişiklik Bildirimleri yüklenemedi, bu nedenle yeni sürümler ve re
 
 msgid "Change order"
 msgstr "Değişim emri"
+
+msgid "Change owner"
+msgstr ""
+
+msgid "Change priority"
+msgstr ""
+
+msgid "Change state"
+msgstr ""
 
 msgid "Change status"
 msgstr "Durum değiştir"
@@ -4425,6 +4455,9 @@ msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki oranında başlar; ızgarada değiştirin."
+
+msgid "Choose the new parent"
+msgstr ""
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Bu sözleşmenin faturaladığı hizmetleri seçin. Her biri, ızgarada fiyatlandırabileceğiniz yinelenen bir satır olarak eklenir."
@@ -5197,6 +5230,10 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
 
@@ -5253,6 +5290,9 @@ msgstr "Belge adını kopyala"
 
 msgid "Copy document unique identifier"
 msgstr "Belge benzersiz tanımlayıcısını kopyala"
+
+msgid "Copy id"
+msgstr ""
 
 msgid "Copy ID"
 msgstr "Kimliği kopyala"
@@ -5746,6 +5786,9 @@ msgstr "Çalıştırma Oluştur"
 
 msgid "Create Supplier Return"
 msgstr "Tedarikçi İadesi Oluştur"
+
+msgid "Create the first element"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "Transfer Oluştur"
@@ -6634,6 +6677,10 @@ msgstr "Sil"
 msgid "Delete {0}"
 msgstr "{0} Sil"
 
+#. placeholder {0}: deleting.readableId
+msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name} sil"
 
@@ -7284,6 +7331,9 @@ msgstr "Bakım emri önceliği"
 
 msgid "Dispatches"
 msgstr "Bakım emirleri"
+
+msgid "Display"
+msgstr ""
 
 msgid "Display Settings"
 msgstr "Görüntü Ayarları"
@@ -8102,6 +8152,10 @@ msgstr "Düzenlendi"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+#. placeholder {0}: typeLabels[type]
+msgid "Element type: {0}"
+msgstr ""
+
 msgid "Elements"
 msgstr ""
 
@@ -8510,6 +8564,9 @@ msgstr "Tahmini Süre"
 
 msgid "Estimated Duration (minutes)"
 msgstr "Tahmini Süre (dakika)"
+
+msgid "Estimated hours"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "Tahmini Fire Miktarı"
@@ -8994,6 +9051,9 @@ msgstr "Depolama türü oluşturulamadı: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Tedarikçi oluşturulamadı: {0}"
+
+msgid "Failed to create the element"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -9499,6 +9559,9 @@ msgstr "Filo Birimi"
 msgid "Fleet Units"
 msgstr "Filo Adetleri"
 
+msgid "Folder"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "İçin <0/>"
 
@@ -9609,6 +9672,9 @@ msgstr "Tam kurulum ve göçler"
 
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
+
+msgid "Function"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "FX K/Z"
@@ -11658,6 +11724,9 @@ msgstr "Bağlı Sorun"
 msgid "Linked PO"
 msgstr "Bağlantılı Sipariş"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "Liste Seçenekleri"
 
@@ -12389,6 +12458,9 @@ msgstr "Verileri Taşı"
 msgid "Migrating from another system?"
 msgstr "Başka bir sistemden taşınıyor mu?"
 
+msgid "Milestone"
+msgstr ""
+
 msgid "Milestones"
 msgstr ""
 
@@ -12571,6 +12643,10 @@ msgstr "Hareket"
 msgid "Move"
 msgstr "Taşış"
 
+#. placeholder {0}: element.readableId
+msgid "Move {0}"
+msgstr ""
+
 msgid "Move {accountName}"
 msgstr "{accountName} Taşı"
 
@@ -12603,6 +12679,9 @@ msgstr "Gruba Taşı"
 
 msgid "Move to Trash"
 msgstr "Çöp Sepetine Taşı"
+
+msgid "Move to…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -12666,6 +12745,9 @@ msgstr "Adı"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Karar verme yetkisine sahip bir dahili proje sahibi belirleyin"
+
+msgid "Name the new element, then press Enter"
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Adlar, bu rollerin hub genelinde referans verildiği her yerde doldurulur."
@@ -12840,6 +12922,9 @@ msgstr "Yeni Departman"
 
 msgid "New Dimension"
 msgstr "Yeni Boyut"
+
+msgid "New element name"
+msgstr ""
 
 msgid "New Employee Type"
 msgstr "Yeni Çalışan Türü"
@@ -13466,6 +13551,12 @@ msgstr "İş emri oluşturulmadı"
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde muhasebe fişi satırı yok"
 
+msgid "No labels"
+msgstr ""
+
+msgid "No labels in this project"
+msgstr ""
+
 msgid "No labels yet."
 msgstr ""
 
@@ -13507,6 +13598,9 @@ msgstr "Eşleşen operasyon yok"
 
 msgid "No materials"
 msgstr "Malzeme yok"
+
+msgid "No milestone"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
@@ -13578,6 +13672,9 @@ msgstr "Bekleyen eğitim yok"
 msgid "No overtime scheduled"
 msgstr "Planlanmış fazla mesai yok"
 
+msgid "No owner"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Henüz üst kaynaklar kaydedilmedi. Atıfı yenilemek için planlama sayfasındaki Yeniden Hesapla düğmesine tıklayın."
 
@@ -13622,6 +13719,9 @@ msgstr "Yazıcı yapılandırılmadı"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı Ekle\"'ye tıklayın."
+
+msgid "No priority"
+msgstr ""
 
 msgid "No process selected"
 msgstr "Hiçbir işlem seçilmedi"
@@ -14746,6 +14846,9 @@ msgstr "Sahip"
 msgid "Owner (cost center)"
 msgstr "Sahip (Maliyet merkezi)"
 
+msgid "Owners"
+msgstr ""
+
 msgid "Ownership"
 msgstr "Sahiplik"
 
@@ -14779,6 +14882,9 @@ msgstr "Ödeme Tarihi"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Peşin ödenen; alındığında bir ödeme olarak kaydedin"
+
+msgid "Parameter"
+msgstr ""
 
 msgid "Parameters"
 msgstr "Parametreler"
@@ -18328,6 +18434,10 @@ msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
 msgid "Select"
 msgstr "Seç"
 
+#. placeholder {0}: element.readableId
+msgid "Select {0}"
+msgstr ""
+
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Bir .carbon.tar.gz yedeklemesi seçin"
 
@@ -19153,6 +19263,9 @@ msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
 
+msgid "Shown properties"
+msgstr ""
+
 msgid "Shown to the customer on the invoice"
 msgstr "Müşteriye faturada gösterilir"
 
@@ -19499,6 +19612,9 @@ msgstr "Başlanıyor…"
 
 msgid "Starts"
 msgstr "Başlar"
+
+msgid "State"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
@@ -20371,6 +20487,9 @@ msgstr "Hizmet Şartları"
 
 msgid "Test"
 msgstr "Test"
+
+msgid "Test Case"
+msgstr ""
 
 msgid "Test run"
 msgstr "Test çalıştırması"
@@ -21994,6 +22113,9 @@ msgstr "Araçlar"
 msgid "Tools"
 msgstr "Araçlar"
 
+msgid "Top level"
+msgstr ""
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Üst düzey sınıflandırma (varlık / yükümlülük / özkaynak / hasılat / gider); yalnızca kök gruplar üzerinde ayarlayın, alt gruplar tarafından devralınır."
 
@@ -22746,6 +22868,9 @@ msgstr "Yükleniyor…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Dönüştür'e tıklanması durumunda parçalar aşağıdaki dahili parça numaralarıyla oluşturulacaktır:"
+
+msgid "Urgent"
+msgstr ""
 
 msgid "URL"
 msgstr "URL"

@@ -68,7 +68,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 29: Build the project page shell and the Details tab
 - [x] Task 30: Build the project Settings tab (states and labels)
 - [x] Task 31: Build the `ChargeNumberSelect` picker and its API route
-- [ ] Task 32: Build the Elements page with the List layout
+- [x] Task 32: Build the Elements page with the List layout
 - [ ] Task 33: Add the Board layout
 - [ ] Task 34: Add the Table layout
 - [ ] Task 35: Build the element page (peek and full page)
@@ -2494,3 +2494,11 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 31: `getChargeNumbers` runs 3 reads in parallel, not 2: the Released projects, the chargeable elements (inner embeds of `project` and `projectState` filter on status, `active` and the state group), and `companySettings.requireProjectElement`. Both lists page with `fetchAll`. It returns `ChargeNumber` rows (`value`, `projectId`, `projectElementId`, `readableId`, `name`, `projectName`); a project row's helper is empty, an element row's helper is its project name.
 - Task 31: the picker is exported as `ChargeNumber` (and `useChargeNumbers`) from `~/components/Form`; the task title's `ChargeNumberSelect` is the same component. Its Combobox field is named `projectId__projectElementId`, which the zod validators strip. The two hidden inputs default to `projectId` and `projectElementId` and take other names through `projectName` / `projectElementName`. `chargeNumberValue` and `splitChargeNumber` convert between the pair and the picker value.
 - Task 31: the API route exports `clientLoader = cachedClientLoader<typeof loader>()`, as the other list routes do. On a read error it logs and returns `{ data: [] }`.
+- Task 32: the Elements header does not repeat the breadcrumb; the app topbar already shows Projects › identifier. The header shows the title, the count chip and the type filter on the left.
+- Task 32: **+ New** sets the quick-add row's type and focuses its input; the quick-add row has a type picker (default Task). There is no separate create modal. **Create the first element** in the empty state focuses the same input.
+- Task 32: every pill saves through `useElementField` (`ElementProperties.tsx`) with the fetcher key `element:{id}:{field}`, so the List, Board, Table and element sidebar read one pending value. Pills take a `variant` (`pill`, 20 px; `ghost`, for the sidebar in Task 35).
+- Task 32: the loader also reads `getProjectCostSummary` for every layout, because the Display popover offers the **actual** pill (subtree actual from `rollUpCostSummary`).
+- Task 32: the update, new and move routes refuse a Closed project; the page disables its controls for one. The update route handles `field=labelIds` before the validator (it is not an editable column), one element at a time, as a comma-separated list. The move route reads the new parent's last `sortOrder` (one query) and places the element after it.
+- Task 32: the row checkbox selects rows. With one row selected, the quick-add row adds under it (shown as a parent chip). With any selection, a bar offers **Update › State / Priority** for all of them (one post with `ids[]`). **Add child** in the row menu selects the row and focuses the quick-add input.
+- Task 32: a row narrower than 40rem (container query) shows only the state pill; the other pills show from 40rem.
+- Task 32: the row menu's **Delete** posts to `path.to.deleteProjectElement`, whose route Task 35 adds.
