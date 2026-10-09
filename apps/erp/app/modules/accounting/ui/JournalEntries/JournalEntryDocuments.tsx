@@ -100,7 +100,7 @@ const JournalEntryDocuments = () => {
     },
     projectTime: {
       label: t`Project Time`,
-      to: path.to.project,
+      to: path.to.projectTime,
       icon: "Timesheet"
     },
     nonConformance: {

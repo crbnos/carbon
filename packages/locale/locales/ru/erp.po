@@ -11259,6 +11259,9 @@ msgstr "Отклонение трудозатрат и времени станк
 msgid "Labor & Machine Variance (default)"
 msgstr "Отклонение трудозатрат и времени станка (по умолчанию)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
@@ -12582,6 +12585,9 @@ msgstr "Мои документы"
 
 msgid "My Saved View"
 msgstr "Мой сохраненный вид"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "Имя"

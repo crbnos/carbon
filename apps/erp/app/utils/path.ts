@@ -189,6 +189,7 @@ export const path = {
         generatePath(`${api}/kanban/complete/${id}`),
       kanbanJobLink: (id: string) => generatePath(`${api}/kanban/link/${id}`),
       kanbanStart: (id: string) => generatePath(`${api}/kanban/start/${id}`),
+      laborCategories: `${api}/projects/labor-categories`,
       linearCreateIssue: `${api}/integrations/linear/issue/create`,
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
@@ -248,6 +249,7 @@ export const path = {
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
+      projectChargeNumbers: `${api}/projects/charge-numbers`,
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
       purchaseOrderFinalize: (id: string) =>
@@ -905,6 +907,8 @@ export const path = {
       generatePath(`${x}/job/methods/quantity/delete/${id}`),
     deleteProject: (id: string) =>
       generatePath(`${x}/accounting/projects/delete/${id}`),
+    deleteProjectElement: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/delete`),
     deletePurchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/delete`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
@@ -1492,6 +1496,9 @@ export const path = {
       `/api/accounting/journal-line-dimensions/${lineId}`,
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
+    laborCategories: `${x}/projects/labor-categories`,
+    laborCategory: (id: string) =>
+      generatePath(`${x}/projects/labor-categories/${id}`),
     leaseNetInvestment: `${x}/reports/lease-net-investment`,
     legal: {
       privacyPolicy: "https://carbon.ms/privacy",
@@ -1704,6 +1711,7 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLaborCategory: `${x}/projects/labor-categories/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>
@@ -1747,7 +1755,9 @@ export const path = {
     newProcedureStep: (id: string) =>
       generatePath(`${x}/procedure/${id}/steps/new`),
     newProcess: `${x}/resources/processes/new`,
-    newProject: `${x}/accounting/projects/new`,
+    newProject: `${x}/projects/new`,
+    newProjectElement: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/new`),
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/new`),
@@ -1963,8 +1973,34 @@ export const path = {
       generatePath(`${x}/production/planning/${itemId}`),
     productionSettings: `${x}/settings/production`,
     profile: `${x}/account/profile`,
-    project: (id: string) => generatePath(`${x}/accounting/projects/${id}`),
-    projects: `${x}/accounting/projects`,
+    project: (id: string) => generatePath(`${x}/project/${id}`),
+    projectCosts: (id: string) => generatePath(`${x}/project/${id}/costs`),
+    projectDetails: (id: string) => generatePath(`${x}/project/${id}/details`),
+    projectElement: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}`),
+    projectElementComments: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/comments`),
+    projectElementFull: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/element/${elementId}`),
+    projectElementMove: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/move`),
+    projectElementPlan: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/plan`),
+    projectElements: (id: string) =>
+      generatePath(`${x}/project/${id}/elements`),
+    projectElementUpdate: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/update`),
+    projectIssue: `${x}/projects/issue`,
+    projectLogTime: `${x}/projects/log-time`,
+    projectMilestones: (id: string) =>
+      generatePath(`${x}/project/${id}/milestones`),
+    projectSettings: (id: string) =>
+      generatePath(`${x}/project/${id}/settings`),
+    projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),
+    projects: `${x}/projects`,
+    projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
+    projectTimesheet: `${x}/projects/timesheet`,
+    projectTimesheetApprovals: `${x}/projects/approvals`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>

@@ -12,6 +12,7 @@ import {
   LuFactory,
   LuFiles,
   LuFolderCheck,
+  LuFolderKanban,
   LuLandmark,
   LuSettings,
   LuShield,
@@ -99,6 +100,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Production`,
       to: path.to.production,
       icon: LuFactory
+    },
+    {
+      key: "projects",
+      permission: "projects",
+      name: t`Projects`,
+      to: path.to.projects,
+      icon: LuFolderKanban
     },
     {
       key: "purchasing",

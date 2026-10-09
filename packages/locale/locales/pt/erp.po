@@ -11259,6 +11259,9 @@ msgstr "Variância de Mão de Obra e Máquina"
 msgid "Labor & Machine Variance (default)"
 msgstr "Variância de Mão de Obra e Máquina (padrão)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Custos de mão de obra"
 
@@ -12582,6 +12585,9 @@ msgstr "Meus Documentos"
 
 msgid "My Saved View"
 msgstr "Minha Visualização Salva"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "Nome"

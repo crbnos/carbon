@@ -11259,6 +11259,9 @@ msgstr "Écart de main-d'œuvre et machine"
 msgid "Labor & Machine Variance (default)"
 msgstr "Écart de main-d'œuvre et machine (par défaut)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Coûts de Main-d'œuvre"
 
@@ -12582,6 +12585,9 @@ msgstr "Mes Documents"
 
 msgid "My Saved View"
 msgstr "Ma vue enregistrée"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "Nom"

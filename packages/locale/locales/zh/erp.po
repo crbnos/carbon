@@ -11259,6 +11259,9 @@ msgstr "人工机器差异"
 msgid "Labor & Machine Variance (default)"
 msgstr "人工机器差异（默认）"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "人工成本"
 
@@ -12582,6 +12585,9 @@ msgstr "我的文档"
 
 msgid "My Saved View"
 msgstr "我的保存视图"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "名称"

@@ -11259,6 +11259,9 @@ msgstr "Robocizna i odchylenie maszyn"
 msgid "Labor & Machine Variance (default)"
 msgstr "Robocizna i odchylenie maszyn (domyślnie)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Koszty robocizny"
 
@@ -12582,6 +12585,9 @@ msgstr "Moje dokumenty"
 
 msgid "My Saved View"
 msgstr "Mój zapisany widok"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "Nazwa"

@@ -11259,6 +11259,9 @@ msgstr "労務・機械差異"
 msgid "Labor & Machine Variance (default)"
 msgstr "労務・機械差異（デフォルト）"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "労務費"
 
@@ -12582,6 +12585,9 @@ msgstr "マイドキュメント"
 
 msgid "My Saved View"
 msgstr "マイ保存ビュー"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "名前"

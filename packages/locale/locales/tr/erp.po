@@ -11259,6 +11259,9 @@ msgstr "İşçilik ve Makine Sapması"
 msgid "Labor & Machine Variance (default)"
 msgstr "İşçilik ve Makine Sapması (varsayılan)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "İşçilik Maliyetleri"
 
@@ -12582,6 +12585,9 @@ msgstr "Belgelerim"
 
 msgid "My Saved View"
 msgstr "Kaydedilmiş Görünümüm"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "Adı"

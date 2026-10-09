@@ -11259,6 +11259,9 @@ msgstr "श्रम और मशीन विचलन"
 msgid "Labor & Machine Variance (default)"
 msgstr "श्रम और मशीन विचलन (डिफ़ॉल्ट)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "श्रम लागत"
 
@@ -12582,6 +12585,9 @@ msgstr "मेरे दस्तावेज़"
 
 msgid "My Saved View"
 msgstr "मेरा सहेजा गया दृश्य"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "नाम"

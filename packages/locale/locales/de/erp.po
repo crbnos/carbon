@@ -11259,6 +11259,9 @@ msgstr "Personal- & Maschinenabweichung"
 msgid "Labor & Machine Variance (default)"
 msgstr "Personal- & Maschinenabweichung (Standard)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Personalkosten"
 
@@ -12582,6 +12585,9 @@ msgstr "Meine Dokumente"
 
 msgid "My Saved View"
 msgstr "Meine gespeicherte Ansicht"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "Name"

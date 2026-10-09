@@ -11259,6 +11259,9 @@ msgstr "노무 및 기계 차이"
 msgid "Labor & Machine Variance (default)"
 msgstr "노무 및 기계 차이(기본값)"
 
+msgid "Labor Categories"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "노무 비용"
 
@@ -12582,6 +12585,9 @@ msgstr "내 문서"
 
 msgid "My Saved View"
 msgstr "내 저장된 보기"
+
+msgid "My Timesheet"
+msgstr ""
 
 msgid "Name"
 msgstr "이름"

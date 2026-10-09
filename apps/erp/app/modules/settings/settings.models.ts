@@ -55,6 +55,7 @@ export const apiKeyPermissionModules = {
   parts: ["view", "create", "update", "delete"],
   people: ["view", "create", "update", "delete"],
   production: ["view", "create", "update", "delete"],
+  projects: ["view", "create", "update", "delete"],
   purchasing: ["view", "create", "update", "delete"],
   quality: ["view", "create", "update", "delete"],
   resources: ["view", "create", "update", "delete"],

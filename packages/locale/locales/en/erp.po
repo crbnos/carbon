@@ -11259,6 +11259,9 @@ msgstr "Labor & Machine Variance"
 msgid "Labor & Machine Variance (default)"
 msgstr "Labor & Machine Variance (default)"
 
+msgid "Labor Categories"
+msgstr "Labor Categories"
+
 msgid "Labor Costs"
 msgstr "Labor Costs"
 
@@ -12582,6 +12585,9 @@ msgstr "My Documents"
 
 msgid "My Saved View"
 msgstr "My Saved View"
+
+msgid "My Timesheet"
+msgstr "My Timesheet"
 
 msgid "Name"
 msgstr "Name"

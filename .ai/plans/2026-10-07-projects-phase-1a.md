@@ -63,7 +63,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 24: Add Project and Project Element to the journal dimension builder
 - [x] Task 25: Add the new enum values to the TS mirrors
 - [ ] Task 26: Move the accounting Projects screens into the new module
-- [ ] Task 27: Add module navigation, layout and paths
+- [x] Task 27: Add module navigation, layout and paths
 - [ ] Task 28: Build the project list and the new-project form
 - [ ] Task 29: Build the project page shell and the Details tab
 - [ ] Task 30: Build the project Settings tab (states and labels)
@@ -2467,3 +2467,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 23: the sign follows the charge type: a Charge adds cost, a Credit or a Repayment (both credit the line account) writes a negative row. Rows are written whether or not accounting is on (the amount is known), with `journalLineId` when a journal exists. A reimbursement row carries the employee. The ProjectElement tag is written wherever a line has an element and the group has the dimension; a missing ProjectElement dimension is skipped, not refused.
 - Task 23 (not in the plan): voiding a charge or a reimbursement reverses its `projectLedger` rows. The project test fixture's cleanup resets charges and reimbursements to Draft before the company delete, as the charge fixture does.
 - Task 18 follow-up (fix commit after Task 23): scrap of a consume-to-project job now relieves the project account instead of WIP, in both scrap paths of `issue`: `jobOperationScrap` (Dr scrap / Cr the project account for the backflush plus prior-operation material) and `scrapTrackedEntity` for a Consumed part. The credit line carries the Project and ProjectElement tags, and a negative `Material` row with `documentType: "Scrap"` (`documentId` = the job) takes the scrapped material off the project, so the project account and `projectLedger` both net to the material actually kept. Every other job still credits WIP. `project-issue.test.ts` covers `jobOperationScrap` (red before the fix, green after).
+- Task 27: the old `deleteProject` path stays until Task 26. The accounting projects table and delete route still use it, and Task 26 deletes both. Between the two commits, the accounting project drawers point at the new paths, which have no routes yet.
+- Task 27: `JournalEntryDocuments.tsx` now opens a `projectTime` line at `path.to.projectTime` (the Task 25 note).
+- Task 27: the Projects submodule has its own `isActive`. It is active on `/x/projects/**` except the timesheet, approvals and labor categories pages, and on every `/x/project/**` page.
+- Task 27: the new module shifted type-check order, and `x+/purchase-return-order+/$id.$lineId.details.tsx` hit TS2589 on a bare `purchaseOrder(...)` embed from `purchaseOrderLine`. It now names the FK (`purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey`).
