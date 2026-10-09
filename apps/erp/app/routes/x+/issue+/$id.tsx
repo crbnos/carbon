@@ -39,6 +39,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "issue-detail");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Issue`,
   realtime: [
     { table: "nonConformance", column: "id", param: "id" },
     {
@@ -123,6 +124,7 @@ export default function IssueRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Associations`}
               explorer={
                 <Suspense fallback={<IssueAssociationsSkeleton />}>
                   <Await resolve={associations}>

@@ -180,7 +180,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
             onExtractionComplete={handleExtractionComplete}
           />
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               !isDraft ||

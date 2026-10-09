@@ -213,7 +213,7 @@ const PriceOverrideForm = ({
                   companyId={company?.id}
                 />
 
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full max-md:grid-cols-1">
                   <BooleanField
                     name="active"
                     label={t`Active`}
@@ -227,7 +227,7 @@ const PriceOverrideForm = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full max-md:grid-cols-1">
                   <DatePicker name="validFrom" label={t`Valid From`} />
                   <DatePicker
                     name="validTo"

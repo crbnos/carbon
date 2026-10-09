@@ -4,14 +4,18 @@
 
 import {
   Button,
+  DropdownMenuContent,
+  DropdownMenuItem,
   HStack,
   Input,
   InputGroup,
   InputLeftElement
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuSearch, LuWallet, LuX } from "react-icons/lu";
+import { LuCheckCheck, LuPlus, LuSearch, LuWallet, LuX } from "react-icons/lu";
+import { Link } from "react-router";
 import { New, PeriodSelector } from "~/components";
+import { AppBarAction } from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 
 type ChartOfAccountsTableFiltersProps = {
@@ -40,11 +44,13 @@ const ChartOfAccountsTableFilters = ({
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const permissions = usePermissions();
+  const newGroupTo = `new-group?${params.toString()}`;
+  const newAccountTo = `new?${params.toString()}`;
 
   return (
-    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-      <HStack>
-        <InputGroup size="sm" className="w-64">
+    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:flex-wrap max-md:gap-y-1 max-md:space-x-0 max-md:px-0 max-md:py-1.5">
+      <HStack className="max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
+        <InputGroup size="sm" className="w-64 max-md:w-48">
           <InputLeftElement>
             <LuSearch className="h-4 w-4 text-muted-foreground" />
           </InputLeftElement>
@@ -70,7 +76,7 @@ const ChartOfAccountsTableFilters = ({
           </Button>
         )}
       </HStack>
-      <HStack>
+      <HStack className="max-md:ml-auto max-md:mr-4">
         {openingBalanceMode ? (
           // Entering opening balances: Add Group / Add Account are hidden; only
           // Cancel + Post remain.
@@ -90,10 +96,25 @@ const ChartOfAccountsTableFilters = ({
         ) : (
           <>
             {permissions.can("create", "accounting") && (
-              <>
-                <New label={t`Group`} to={`new-group?${params.toString()}`} />
-                <New label={t`Account`} to={`new?${params.toString()}`} />
-              </>
+              // Phones: one app bar "+" opens both Add actions, instead of
+              // two identical "+" icons.
+              <AppBarAction
+                icon={<LuPlus />}
+                label={t`Add`}
+                menu={
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to={newGroupTo}>{t`Add Group`}</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={newAccountTo}>{t`Add Account`}</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                }
+              >
+                <New label={t`Group`} to={newGroupTo} />
+                <New label={t`Account`} to={newAccountTo} />
+              </AppBarAction>
             )}
             {canEnterOpeningBalances && (
               <Button

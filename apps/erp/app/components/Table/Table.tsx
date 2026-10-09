@@ -25,6 +25,7 @@ import {
   useEscape,
   useMount,
   useOutsideClick,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
@@ -87,6 +88,8 @@ import {
   usePagination,
   useSort
 } from "./components";
+import { CompactList } from "./components/Compact";
+import { CompactToolbar } from "./components/Compact/CompactToolbar";
 import type { ColumnFilter } from "./components/Filter/types";
 import { useFilters } from "./components/Filter/useFilters";
 import type { ColumnSizeMap } from "./types";
@@ -167,6 +170,12 @@ interface TableProps<T extends object> {
     key: (row: T) => string;
     header: (rows: T[]) => ReactNode;
   };
+  // Phones: "list" (default) renders 3-line rows from the columns'
+  // `meta.mobile` priorities; "table" keeps the grid, scrolling sideways with
+  // a sticky first column (inline-editing grids, comparison tables).
+  mobileLayout?: "list" | "table";
+  /** Phones: extra items first in the list toolbar ⋯ (e.g. Recalculate). */
+  mobileMenuItems?: ReactNode;
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -317,7 +326,9 @@ const Table = <T extends object>({
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
-  groupRowsBy
+  groupRowsBy,
+  mobileLayout = "list",
+  mobileMenuItems
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -617,16 +628,25 @@ const Table = <T extends object>({
     focusOnSelectedCell();
   });
 
+  const { isPhone } = useViewport();
   // Clicking outside the table clears the selected cell (and ends any edit). A
   // cell's editable input commits on blur first, so the value is saved before
-  // this runs. Portaled dropdowns (e.g. a cell's combobox popover) render
-  // outside the container but belong to an active edit — ignore clicks in them.
+  // this runs. Portaled dropdowns (e.g. a cell's combobox popover, or its
+  // bottom sheet on phones) render outside the container but belong to an
+  // active edit — ignore clicks in them.
   useOutsideClick({
     ref: tableContainerRef,
     enabled: selectedCell != null,
     handler: (e) => {
       const target = e.target as HTMLElement | null;
-      if (target?.closest("[data-radix-popper-content-wrapper]")) return;
+      if (
+        target?.closest(
+          isPhone
+            ? "[data-radix-popper-content-wrapper],[role=dialog]"
+            : "[data-radix-popper-content-wrapper]"
+        )
+      )
+        return;
       setIsEditing(false);
       setSelectedCell(null);
     }
@@ -1102,64 +1122,153 @@ const Table = <T extends object>({
     params.getAll("sort").filter(Boolean).length === 0 &&
     !params.get("search")?.trim();
 
+  // Phones export from the toolbar's ⋯ (list and grid alike); desktop keeps
+  // the toolbar's Download button.
+  const csvExport = withCsvExport
+    ? {
+        data,
+        columnAccessors,
+        exportValues,
+        exportOnlyColumns,
+        columnOrder,
+        columnVisibility
+      }
+    : undefined;
+
+  if (isPhone && mobileLayout === "list") {
+    return (
+      <CompactList
+        titleBadge={titleBadge}
+        table={table}
+        count={count}
+        title={currentView?.name ?? title}
+        tableName={tableName}
+        filters={filters}
+        sortKeyToLabel={sortKeyToLabel}
+        withSearch={withSearch}
+        withSort={sort !== null}
+        withPagination={withPagination}
+        pagination={pagination}
+        withSelectableRows={withSelectableRows}
+        headerActions={headerActions}
+        primaryAction={primaryAction}
+        mobileMenuItems={mobileMenuItems}
+        emptyState={emptyState}
+        isLoading={isLoading}
+        isTableEmpty={isTableEmpty}
+        hasFilters={hasFilters}
+        clearFilters={clearFilters}
+        csvExport={csvExport}
+        importCSV={importCSV}
+        renderContextMenu={renderContextMenu}
+        renderActions={renderActions}
+        renderExpandedRow={renderExpandedRow}
+        canExpandRow={canExpandRow}
+        groupStarts={groupStarts}
+        groupHeader={groupRowsBy?.header}
+        totals={table
+          .getAllLeafColumns()
+          .filter((column) => column.columnDef.meta?.renderTotal)
+          .map((column) => ({
+            id: column.id,
+            label:
+              typeof column.columnDef.header === "string"
+                ? column.columnDef.header
+                : (column.columnDef.meta?.filterHeader ?? column.id),
+            value: aggregateForCol(table, column.id, "sum"),
+            formatter: column.columnDef.meta?.formatter
+          }))}
+      />
+    );
+  }
+
+  // The empty-state ("No data exists") renders `primaryAction` too. When it
+  // will, omit it from the header so only ONE copy mounts — a second mount of
+  // the same `New` trips its `isSoleNew` guard and silently drops the keyboard
+  // shortcut badge + binding on both.
+  const headerPrimaryAction =
+    rows.length === 0 && !isLoading && !emptyState && !hasFilters
+      ? undefined
+      : primaryAction;
+
   return (
     <VStack
       key={view ?? tableName ?? ""}
       spacing={0}
       className={cn(
         "h-full bg-card",
-        !compact && "flex flex-col w-full px-0 md:px-4 lg:px-6"
+        !compact && "flex flex-col w-full px-0 md:px-4 lg:px-6",
+        // Phones (grid mode): the toolbar spans the full width.
+        "max-md:items-stretch"
       )}
     >
-      <TableHeader
-        columnAccessors={columnAccessors}
-        exportValues={exportValues}
-        exportOnlyColumns={exportOnlyColumns}
-        sortKeyToLabel={sortKeyToLabel}
-        columnOrder={columnOrder}
-        columnPinning={columnPinning}
-        columnVisibility={columnVisibility}
-        columns={table.getAllLeafColumns()}
-        compact={compact}
-        data={data}
-        editMode={editMode}
-        filters={filters}
-        isEmpty={isTableEmpty}
-        importCSV={importCSV}
-        pagination={pagination}
-        primaryAction={
-          // The empty-state ("No data exists") renders `primaryAction` too. When
-          // it will, omit it from the header so only ONE copy mounts — a second
-          // mount of the same `New` trips its `isSoleNew` guard and silently
-          // drops the keyboard shortcut badge + binding on both.
-          rows.length === 0 && !isLoading && !emptyState && !hasFilters
-            ? undefined
-            : primaryAction
-        }
-        headerActions={headerActions}
-        renderActions={renderActions}
-        selectedRows={selectedRows}
-        setColumnOrder={setColumnOrder}
-        setEditMode={setEditMode}
-        table={tableName}
-        title={title}
-        titleBadge={titleBadge}
-        withInlineEditing={withInlineEditing}
-        forceEditMode={forceEditMode}
-        withPagination={withPagination}
-        withSavedView={withSavedView}
-        withSearch={withSearch}
-        withSelectableRows={withSelectableRows}
-        withSidebarTrigger={withSidebarTrigger}
-        withColumnOrdering={withColumnOrdering}
-        withCsvExport={withCsvExport}
-        sort={sort}
-      />
+      {isPhone ? (
+        <CompactToolbar
+          title={currentView?.name ?? title}
+          tableName={tableName}
+          count={count}
+          filters={filters}
+          sortKeyToLabel={sortKeyToLabel}
+          withSearch={withSearch}
+          withSort={sort !== null}
+          headerActions={
+            <>
+              {headerPrimaryAction}
+              {headerActions}
+            </>
+          }
+          csvExport={csvExport}
+          titleBadge={titleBadge}
+          importCSV={importCSV}
+          hideControls={isTableEmpty}
+        />
+      ) : (
+        <TableHeader
+          columnAccessors={columnAccessors}
+          exportValues={exportValues}
+          exportOnlyColumns={exportOnlyColumns}
+          sortKeyToLabel={sortKeyToLabel}
+          columnOrder={columnOrder}
+          columnPinning={columnPinning}
+          columnVisibility={columnVisibility}
+          columns={table.getAllLeafColumns()}
+          compact={compact}
+          data={data}
+          editMode={editMode}
+          filters={filters}
+          isEmpty={isTableEmpty}
+          importCSV={importCSV}
+          pagination={pagination}
+          primaryAction={headerPrimaryAction}
+          headerActions={headerActions}
+          renderActions={renderActions}
+          selectedRows={selectedRows}
+          setColumnOrder={setColumnOrder}
+          setEditMode={setEditMode}
+          table={tableName}
+          title={title}
+          titleBadge={titleBadge}
+          withInlineEditing={withInlineEditing}
+          forceEditMode={forceEditMode}
+          withPagination={withPagination}
+          withSavedView={withSavedView}
+          withSearch={withSearch}
+          withSelectableRows={withSelectableRows}
+          withSidebarTrigger={withSidebarTrigger}
+          withColumnOrdering={withColumnOrdering}
+          withCsvExport={withCsvExport}
+          sort={sort}
+        />
+      )}
 
       <div
         id="table-container"
         className={cn(
-          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          // Phones, grids kept as grids: sideways scroll with an
+          // edge fade, 16pt inset, and a sticky first column of at most 150pt.
+          mobileLayout === "table" &&
+            "max-md:scroll-fade-x max-md:px-4 max-md:[&_tr>*:first-child]:sticky max-md:[&_tr>*:first-child]:left-0 max-md:[&_tr>*:first-child]:z-10 max-md:[&_tr>*:first-child]:max-w-[150px] max-md:[&_tr>*:first-child]:bg-card"
         )}
         style={{ contain: "strict" }}
         ref={tableContainerRef}
@@ -1312,7 +1421,7 @@ const Table = <T extends object>({
                                       ) : (
                                         <LuArrowUpDown
                                           aria-hidden="true"
-                                          className="text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
+                                          className="text-muted-foreground/50 md:opacity-0 transition-opacity group-hover:opacity-100"
                                         />
                                       )}
                                     </span>

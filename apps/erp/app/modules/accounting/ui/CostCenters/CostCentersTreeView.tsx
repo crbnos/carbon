@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useViewport } from "@carbon/react";
 import {
   Background,
   BackgroundVariant,
@@ -70,6 +71,7 @@ export function CostCentersTreeView({
     return { initialNodes: layoutedNodes, initialEdges: layoutedEdges };
   }, [costCenters, onEdit, onDelete, onAddChild]);
 
+  const { isPhone } = useViewport();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -79,7 +81,7 @@ export function CostCentersTreeView({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   return (
-    <div className="h-[calc(100dvh-(var(--header-height))-61px)] w-full overflow-hidden bg-card">
+    <div className="h-[calc(100dvh-(var(--header-height))-61px)] w-full overflow-hidden max-md:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px)-61px)] bg-card">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -91,7 +93,8 @@ export function CostCentersTreeView({
         fitViewOptions={{
           padding: 0.3,
           maxZoom: 1.2,
-          minZoom: 0.3
+          // Phones: never fit below a readable size; the user pans instead.
+          minZoom: isPhone ? 0.75 : 0.3
         }}
         nodesDraggable={false}
         nodesConnectable={false}
@@ -104,7 +107,7 @@ export function CostCentersTreeView({
       >
         <Controls
           showInteractive={false}
-          className="!bg-card !border-border !shadow-sm [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-accent"
+          className="!bg-card !border-border !shadow-sm max-md:!left-auto max-md:!right-0 max-md:[&>button]:!size-11 [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-accent"
         />
         <Background
           variant={BackgroundVariant.Dots}

@@ -123,13 +123,14 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
             {row.original.memoId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "direction",
         header: t`Direction`,
         cell: ({ row }) => <Enumerable value={row.original.direction} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -153,6 +154,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
             <CustomerAvatar customerId={row.original.customerId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -183,6 +185,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -215,6 +218,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <MemoStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",

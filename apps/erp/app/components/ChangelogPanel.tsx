@@ -34,7 +34,7 @@ export default function ChangelogPanel({
           animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
           exit={{ opacity: 0, y: 10, scale: 0.95, filter: "blur(4px)" }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed bottom-4 right-4 w-[calc(100vw-2rem)] max-w-[380px] rounded-lg border bg-background shadow-lg z-40 overflow-hidden"
+          className="fixed bottom-4 right-4 w-[calc(100vw-2rem)] max-w-[380px] rounded-lg border bg-background shadow-lg z-40 overflow-hidden max-md:inset-0 max-md:z-[60] max-md:w-full max-md:max-w-none max-md:overflow-y-auto max-md:rounded-none max-md:border-0 max-md:pt-safe max-md:pb-safe"
         >
           <div className="px-4 pt-4 pb-3 space-y-2">
             <div className="flex items-center justify-between">

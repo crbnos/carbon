@@ -27,7 +27,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  useViewport
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import {
@@ -250,6 +251,7 @@ export default function QualityDashboard() {
 
   const { t } = useLingui();
   const { locale } = useLocale();
+  const { isPhone } = useViewport();
 
   const localizedChartConfig = useMemo(
     () =>
@@ -385,7 +387,7 @@ export default function QualityDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
       {/* KPI Cards */}
-      <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuCircleAlert />}
           title={<Trans>Open Issues</Trans>}
@@ -420,9 +422,9 @@ export default function QualityDashboard() {
 
       {/* Unified Chart Card */}
       <Card>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-start max-md:gap-2">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -452,7 +454,7 @@ export default function QualityDashboard() {
                 onChange={setIssueTypeId}
                 options={typeOptions}
                 size="sm"
-                className="font-medium text-sm min-w-[160px]"
+                className="font-medium text-sm min-w-[160px] max-md:text-sm"
               />
             </div>
           </CardHeader>
@@ -487,7 +489,7 @@ export default function QualityDashboard() {
           </CardAction>
         </HStack>
         <CardContent className="flex-col gap-4">
-          <div className="h-[30dvw] md:h-[23dvw] min-h-[300px]">
+          <div className="h-[30dvw] md:h-[23dvw] min-h-[300px] max-md:h-[200px] max-md:min-h-0">
             {selectedChart === "weeklyTracking" && (
               <ChartContainer
                 config={localizedChartConfig}
@@ -502,7 +504,12 @@ export default function QualityDashboard() {
                     tickFormatter={(v) => formatWeekLabel(v, locale)}
                     minTickGap={32}
                   />
-                  <YAxis tickLine={false} axisLine={false} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    // Phones: the 200pt chart would drop a tick; keep all five like desktop.
+                    {...(isPhone ? { interval: 0 } : {})}
+                  />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent

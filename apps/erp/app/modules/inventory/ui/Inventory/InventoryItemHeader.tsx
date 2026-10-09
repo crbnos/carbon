@@ -2,10 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, VStack } from "@carbon/react";
-import { LuExternalLink, LuX } from "react-icons/lu";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  IconButton,
+  VStack
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { LuEllipsis, LuExternalLink, LuX } from "react-icons/lu";
 import { Link, useNavigate, useParams } from "react-router";
 import { DetailsTopbar } from "~/components/Layout";
+import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
+import { useHideListAppBarMenu } from "~/components/Table/components/Compact/CompactToolbar";
 import { useUrlParams } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
@@ -27,6 +39,11 @@ const InventoryItemHeader = ({
   const [params] = useUrlParams();
 
   const navigate = useNavigate();
+  const { t } = useLingui();
+
+  // Phones: this page owns the app bar ⋯ (the list behind it keeps out), and
+  // the link to the item's own page lives there.
+  useHideListAppBarMenu();
 
   return (
     <div>
@@ -35,6 +52,7 @@ const InventoryItemHeader = ({
           <Button
             isIcon
             variant="ghost"
+            className="max-md:hidden"
             onClick={() =>
               navigate(`${path.to.inventory}?${params.toString()}`)
             }
@@ -42,14 +60,37 @@ const InventoryItemHeader = ({
             <LuX className="w-4 h-4" />
           </Button>
           <span className="flex items-center font-semibold text-center">
-            {itemReadableId}{" "}
-            <Link to={getLinkToItemDetails(itemType, itemId)} className="ml-2">
+            <span className="max-md:hidden">{itemReadableId}</span>{" "}
+            <Link
+              to={getLinkToItemDetails(itemType, itemId)}
+              className="ml-2 max-md:hidden"
+            >
               <LuExternalLink />
             </Link>
           </span>
           <DetailsTopbar links={links} preserveParams />
         </div>
       </VStack>
+      <AppBarActions>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t`More options`}
+              icon={<LuEllipsis />}
+              variant="ghost"
+              size="lg"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={getLinkToItemDetails(itemType, itemId)}>
+                <DropdownMenuIcon icon={<LuExternalLink />} />
+                <Trans>Item Master</Trans>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </AppBarActions>
     </div>
   );
 };

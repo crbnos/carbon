@@ -21,7 +21,7 @@ const Table = forwardRef<
     </div>
   ) : (
     <div className="rounded-md w-full overflow-hidden">
-      <div className="relative w-full overflow-auto">
+      <div className="relative w-full overflow-auto max-md:scroll-fade-x">
         <table
           ref={ref}
           className={cn("w-full caption-bottom text-sm", className)}

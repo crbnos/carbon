@@ -46,7 +46,7 @@ export function SortableNavItem({
       <div
         className={cn(
           "absolute left-0 top-0 h-full flex items-center pl-1",
-          "opacity-0 group-data-[state=expanded]:opacity-100",
+          "md:opacity-0 group-data-[state=expanded]:opacity-100",
           "cursor-grab active:cursor-grabbing"
         )}
         {...attributes}
@@ -63,7 +63,7 @@ export function SortableNavItem({
         className={cn(
           "min-w-[128px] text-sm",
           "absolute left-12 group-data-[state=expanded]:left-16",
-          "opacity-0 group-data-[state=expanded]:opacity-100"
+          "md:opacity-0 group-data-[state=expanded]:opacity-100"
         )}
       >
         {module.name}
@@ -75,7 +75,7 @@ export function SortableNavItem({
         onClick={() => onToggleHidden(module.key)}
         className={cn(
           "absolute right-2 top-2.5 p-0.5 rounded",
-          "opacity-0 group-data-[state=expanded]:opacity-100",
+          "md:opacity-0 group-data-[state=expanded]:opacity-100",
           "text-muted-foreground hover:text-foreground",
           "transition-opacity"
         )}

@@ -215,6 +215,9 @@ msgstr "उपलब्ध"
 msgid "Available"
 msgstr "उपलब्ध"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "बैच पर वापस"
 
@@ -295,6 +298,9 @@ msgstr "अपना ईमेल जांचें"
 msgid "Choose a job"
 msgstr "एक जॉब चुनें"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Clear"
 msgstr "साफ़ करें"
 
@@ -360,6 +366,10 @@ msgstr "कंपनी"
 msgid "Complete"
 msgstr "पूर्ण करें"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
@@ -406,8 +416,7 @@ msgstr "क्लिपबोर्ड पर कॉपी करें"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} बनाएं"
 
@@ -510,8 +519,8 @@ msgid "Due"
 msgstr "अंतिम तारीख"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Due {0} के लिए"
 
@@ -668,6 +677,9 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "First due {0}"
 msgstr "पहली देय {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
 
@@ -688,6 +700,9 @@ msgstr "ऑपरेशन पर वापस जाएं"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
@@ -810,6 +825,9 @@ msgstr "एक ऑपरेशन को 0 पर छोड़ दें इस�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
 
@@ -879,6 +897,9 @@ msgstr "मशीन"
 msgid "Machine down for maintenance now?"
 msgstr "मशीन अब रखरखाव के लिए बंद है?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "रखरखाव"
 
@@ -930,6 +951,9 @@ msgstr "मीट्रिक"
 
 msgid "Model"
 msgstr "मॉडल"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
@@ -1160,13 +1184,14 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
 
 msgid "Open Jobs"
-msgstr "खुली जॉब्स"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "सब-असेंबली {0} खोलें: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "ऑपरेशन {0} तक आवश्यक"
@@ -1185,6 +1210,9 @@ msgstr "ऑपरेटर द्वारा निष्पादित"
 
 msgid "Optional"
 msgstr "वैकल्पिक"
+
+msgid "Options"
+msgstr ""
 
 msgid "or"
 msgstr "या"
@@ -1224,6 +1252,9 @@ msgstr "पासकी अनलॉक विफल"
 
 msgid "Pause"
 msgstr "रोकें"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "चुनें"
@@ -1279,6 +1310,9 @@ msgstr "PM शेड्यूल समाप्त"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "पिछला"
@@ -1646,6 +1680,9 @@ msgstr "{0} शुरू करें"
 msgid "Start or pause the operation"
 msgstr "ऑपरेशन को शुरू करें या रोकें"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
 
@@ -1744,6 +1781,9 @@ msgstr "इस बैच के पास कोई कार्य निर्
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "यह पार्ट ऑर्डर के अनुसार बनाया गया था। इसे स्क्रैप करने से इसकी रूटिंग को फिर से खोला जा सकता है ताकि एक रिप्लेसमेंट बनाया जा सके।"
 
@@ -1778,11 +1818,23 @@ msgstr "चलाने के लिए"
 msgid "Today"
 msgstr "आज"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "साइडबार को टॉगल करें"
 
 msgid "Tools"
 msgstr "उपकरण"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "कुल"
@@ -1918,6 +1970,9 @@ msgstr "वर्क सेंटर डिस्प्ले"
 
 msgid "Work instructions"
 msgstr "कार्य निर्देश"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "हां"

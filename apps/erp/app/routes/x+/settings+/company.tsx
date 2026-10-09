@@ -16,14 +16,15 @@ import {
   Copy,
   Heading,
   HStack,
-  ScrollArea,
-  VStack
+  ScrollArea
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare, LuRocket } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data, Link } from "react-router";
+import { AppBarActions } from "~/components/Layout/Mobile";
+import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
 import type { Company as CompanyType } from "~/modules/settings";
@@ -140,11 +141,8 @@ export default function Company() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <HStack spacing={1} className="items-center">
+      <SettingsPage className="gap-4">
+        <HStack spacing={1} className="items-center max-md:hidden">
           <Heading size="h3">
             <Trans>Company</Trans>
           </Heading>
@@ -156,6 +154,15 @@ export default function Company() {
             className="w-auto"
           />
         </HStack>
+        <AppBarActions>
+          <Copy
+            text={company.id ?? ""}
+            label={t`Copy company unique identifier`}
+            icon={<LuKeySquare />}
+            variant="ghost"
+            size="lg"
+          />
+        </AppBarActions>
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
@@ -189,7 +196,7 @@ export default function Company() {
             <CompanyForm company={initialValues} />
           </CardContent>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

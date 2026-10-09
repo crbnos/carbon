@@ -41,7 +41,7 @@ export function BackupContentsInfo() {
         <button
           type="button"
           aria-label={t`What a backup contains`}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground max-md:hit-area"
         >
           <LuInfo className="h-3.5 w-3.5" />
         </button>

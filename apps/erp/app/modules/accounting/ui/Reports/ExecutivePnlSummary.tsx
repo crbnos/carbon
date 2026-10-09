@@ -12,8 +12,12 @@ import { useLocale } from "@react-aria/i18n";
 import { memo, useEffect, useMemo, useRef } from "react";
 import { useRealtime } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
+import { reportFrameClassName } from "./ColumnStepper";
 import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
-import { getPeriodColumnLabel } from "./MultiPeriodStatementTree";
+import {
+  getPeriodColumnLabel,
+  usePeriodStep
+} from "./MultiPeriodStatementTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
 const PERIOD_COLUMN_WIDTH = 128;
@@ -44,6 +48,10 @@ const ExecutivePnlSummary = memo(
     parentCurrency
   }: ExecutivePnlSummaryProps) => {
     const { t } = useLingui();
+    const { isPhone, stepper, visiblePeriods } = usePeriodStep(
+      periods,
+      columns
+    );
     const { locale } = useLocale();
     useRealtime("journal");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -93,49 +101,57 @@ const ExecutivePnlSummary = memo(
       [locale]
     );
 
-    const rowWidth =
-      ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
+    const rowWidth = isPhone
+      ? undefined
+      : ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col">
-        {/* Header viewport — scrollLeft is mirrored from the body below */}
-        <div ref={headerRef} className="shrink-0 overflow-x-hidden">
-          <div
-            className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
-            style={{ minWidth: rowWidth }}
-          >
+      <div className={cn("flex flex-col", reportFrameClassName)}>
+        {isPhone ? (
+          stepper
+        ) : (
+          // Header viewport — scrollLeft is mirrored from the body below
+          <div ref={headerRef} className="shrink-0 overflow-x-hidden">
             <div
-              className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: ACCOUNT_COLUMN_WIDTH }}
+              className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
+              style={{ minWidth: rowWidth }}
             >
-              <Trans>Executive P&amp;L</Trans>
-            </div>
-            {periods.map((bucket) => (
               <div
-                key={bucket.key}
-                className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
-                style={{ width: PERIOD_COLUMN_WIDTH }}
+                className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
+                style={{ width: ACCOUNT_COLUMN_WIDTH }}
               >
-                <span className="whitespace-nowrap">
-                  {getPeriodColumnLabel(bucket, columns, locale)}
-                </span>
-                {bucket.isPartial && (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {t`To Date`}
-                  </span>
-                )}
+                <Trans>Executive P&amp;L</Trans>
               </div>
-            ))}
+              {periods.map((bucket) => (
+                <div
+                  key={bucket.key}
+                  className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
+                  style={{ width: PERIOD_COLUMN_WIDTH }}
+                >
+                  <span className="whitespace-nowrap">
+                    {getPeriodColumnLabel(bucket, columns, locale)}
+                  </span>
+                  {bucket.isPartial && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {t`To Date`}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div ref={scrollRef} className="flex-1 overflow-auto">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-auto max-md:scroll-fade-x"
+        >
           <div style={{ minWidth: rowWidth }}>
             {rows.map((row) => (
               <div
                 key={row.key}
                 className={cn(
-                  "flex h-9 items-center pr-4 text-sm",
+                  "flex h-9 items-center pr-4 text-sm max-md:h-12",
                   row.isSubtotal && "font-semibold",
                   row.isSubtotal &&
                     !row.isBottomLine &&
@@ -149,15 +165,16 @@ const ExecutivePnlSummary = memo(
                 <div
                   className={cn(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center px-4",
+                    "max-md:static max-md:min-w-0 max-md:flex-1",
                     row.isBottomLine ? "bg-muted/40" : "bg-card"
                   )}
-                  style={{ width: ACCOUNT_COLUMN_WIDTH }}
+                  style={isPhone ? undefined : { width: ACCOUNT_COLUMN_WIDTH }}
                 >
                   <span className="truncate">{labels[row.key]}</span>
                 </div>
 
                 {/* One cell per period bucket */}
-                {periods.map((bucket) => {
+                {visiblePeriods.map((bucket) => {
                   const value = row.values[bucket.key] ?? 0;
                   const margin = row.margins?.[bucket.key];
                   return (

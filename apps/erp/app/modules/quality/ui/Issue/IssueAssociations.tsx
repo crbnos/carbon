@@ -279,7 +279,7 @@ export function IssueAssociationItem({
                         icon={<LuEllipsisVertical />}
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 flex-shrink-0 opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>

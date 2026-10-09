@@ -100,7 +100,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
         <span className="truncate text-xs font-semibold">
           {nodeNameLabel(name)}
         </span>
-        <LuPencil className="size-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/name:opacity-100" />
+        <LuPencil className="size-2.5 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/name:opacity-100" />
       </button>
     </div>
   );

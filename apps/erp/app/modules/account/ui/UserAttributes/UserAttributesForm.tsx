@@ -179,7 +179,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -216,7 +216,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -249,7 +249,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -290,7 +290,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -323,7 +323,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -356,7 +356,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -389,7 +389,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -422,7 +422,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -483,7 +483,7 @@ function TypedDisplay(
   switch (type) {
     case DataType.Boolean:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground items-center">{attribute.name}</p>
           {displayValue === "N/A" ? (
             <p className="self-center">{displayValue}</p>
@@ -507,7 +507,7 @@ function TypedDisplay(
     case DataType.List:
     case DataType.Text:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           <p className="self-center">
             {type === DataType.Date &&
@@ -533,7 +533,7 @@ function TypedDisplay(
       );
     case DataType.Numeric:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           <p className="self-center">{displayValue.toLocaleString(locale)}</p>
           <UpdateRemoveButtons
@@ -548,7 +548,7 @@ function TypedDisplay(
       );
     case DataType.User:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <UserSelect disabled value={value.toString()} />
@@ -568,7 +568,7 @@ function TypedDisplay(
       );
     case DataType.Customer:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <CustomerAvatar customerId={value.toString()} />
@@ -588,7 +588,7 @@ function TypedDisplay(
       );
     case DataType.Supplier:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <SupplierAvatar supplierId={value.toString()} />
@@ -608,7 +608,7 @@ function TypedDisplay(
       );
     case DataType.File:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <a
@@ -803,7 +803,7 @@ function FileAttributeForm({
         if (filePath) onSubmit(filePath);
       }}
     >
-      <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+      <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
         <p className="text-muted-foreground self-center">{attribute.name}</p>
         <div>
           <Hidden name="type" value="file" />

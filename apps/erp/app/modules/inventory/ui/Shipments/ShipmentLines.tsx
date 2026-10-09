@@ -397,7 +397,12 @@ function ShipmentFixedAssetLineItem({
   };
 
   return (
-    <div className={cn("flex items-center gap-4 p-6", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-4 p-6 max-md:flex-wrap max-md:p-4",
+        className
+      )}
+    >
       <Checkbox
         isChecked={line.shipped}
         disabled={isReadOnly}
@@ -419,7 +424,7 @@ function ShipmentFixedAssetLineItem({
         placeholder="Serial Number"
         value={serialNumber}
         isDisabled={isReadOnly}
-        className="w-48"
+        className="w-48 max-md:w-full"
         onChange={(e) => setSerialNumber(e.target.value)}
         onBlur={() => {
           if (serialNumber !== (line.serialNumber ?? "")) {
@@ -521,12 +526,12 @@ function ShipmentLineItem({
   return (
     <div
       className={cn(
-        "@container flex flex-col border-b p-6 gap-6 relative",
+        "@container flex flex-col border-b p-6 gap-6 relative max-md:p-4 max-md:gap-4",
         className
       )}
     >
       {!isJobFulfillment && (
-        <div className="absolute top-3 right-6">
+        <div className="absolute top-3 right-6 max-md:right-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -644,7 +649,7 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className={cn(
-                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px]",
+                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px] max-md:w-full",
                     isJobOverShipped && "border-red-500 border-2"
                   )}
                   isDisabled={
@@ -990,7 +995,7 @@ function BatchForm({
   );
 
   return (
-    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Tracking Number</Heading>
         {hasTrackingLabel && (
@@ -1302,7 +1307,7 @@ function SerialForm({
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Tracking Numbers</Heading>
         {hasTrackingLabel && (

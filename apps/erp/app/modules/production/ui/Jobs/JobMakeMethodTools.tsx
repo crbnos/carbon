@@ -59,6 +59,7 @@ import {
   Submit,
   useConfigurableItems
 } from "~/components/Form";
+import { RecordAction } from "~/components/Layout/RecordHeader";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import {
@@ -306,28 +307,45 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   });
 
+  const canUseTools =
+    permissions.can("update", "production") && (isJobMethod || isJobMakeMethod);
+  const hasPrintLabel = Boolean(
+    makeMethod &&
+      (makeMethod.requiresSerialTracking || makeMethod.requiresBatchTracking)
+  );
+  const openGetMethod = () => {
+    // The modal's Item picker opens empty — clear any versions loaded on a
+    // previous open so the two can't disagree.
+    setSourceMakeMethods([]);
+    setSelectedSourceVersion(null);
+    getMethodModal.onOpen();
+  };
+  const openConfigure = () => {
+    setSelectedConfigureItemId(routeData?.job?.itemId ?? null);
+    configureSelectModal.onOpen();
+  };
+  const canConfigure = configurableItemIds.length > 0 && isJobMethod;
+
   return (
     <Fragment key={jobId}>
-      {permissions.can("update", "production") &&
-        (isJobMethod || isJobMakeMethod) && (
-          <Menubar>
-            <HStack className="w-full justify-start">
-              <HStack spacing={0}>
+      {canUseTools && (
+        <Menubar className={cn(!hasPrintLabel && "max-md:hidden")}>
+          <HStack className="w-full justify-start">
+            <HStack spacing={0}>
+              <RecordAction slot="overflow">
                 <MenubarItem
+                  className="rounded-md"
                   isLoading={isGetMethodLoading}
                   isDisabled={isDisabled || isGetMethodLoading}
                   leftIcon={<LuGitBranch />}
-                  onClick={() => {
-                    // The modal's Item picker opens empty — clear any versions
-                    // loaded on a previous open so the two can't disagree.
-                    setSourceMakeMethods([]);
-                    setSelectedSourceVersion(null);
-                    getMethodModal.onOpen();
-                  }}
+                  onClick={openGetMethod}
                 >
                   <Trans>Get Method</Trans>
                 </MenubarItem>
+              </RecordAction>
+              <RecordAction slot="overflow">
                 <MenubarItem
+                  className="rounded-md"
                   isDisabled={
                     !permissions.can("update", "parts") || isSaveMethodLoading
                   }
@@ -337,9 +355,12 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 >
                   <Trans>Save Method</Trans>
                 </MenubarItem>
+              </RecordAction>
 
-                {configurableItemIds.length > 0 && isJobMethod && (
+              {canConfigure && (
+                <RecordAction slot="overflow">
                   <MenubarItem
+                    className="rounded-md"
                     leftIcon={<LuSettings />}
                     isDisabled={
                       isDisabled ||
@@ -347,42 +368,42 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                       isConfigureLoading
                     }
                     isLoading={isConfigureLoading}
-                    onClick={() => {
-                      setSelectedConfigureItemId(
-                        routeData?.job?.itemId ?? null
-                      );
-                      configureSelectModal.onOpen();
-                    }}
+                    onClick={openConfigure}
                   >
                     <Trans>Configure</Trans>
                   </MenubarItem>
-                )}
-                {itemLink && (
-                  <MenubarItem leftIcon={<LuGitFork />} asChild>
+                </RecordAction>
+              )}
+              {itemLink && (
+                <RecordAction slot="overflow">
+                  <MenubarItem
+                    className="rounded-md"
+                    leftIcon={<LuGitFork />}
+                    asChild
+                  >
                     <PrefetchLink to={itemLink}>
                       <Trans>Item Master</Trans>
                     </PrefetchLink>
                   </MenubarItem>
-                )}
-                {makeMethod &&
-                  (makeMethod.requiresSerialTracking ||
-                    makeMethod.requiresBatchTracking) && (
-                    <PrintButton
-                      sourceDocument="Operation"
-                      sourceDocumentId={makeMethod.id}
-                      locationId={routeData?.job?.locationId ?? undefined}
-                      context="workCenter"
-                      variant="ghost"
-                      fileRoutes={{
-                        pdf: path.to.file.operationLabelsPdf,
-                        zpl: path.to.file.operationLabelsZpl
-                      }}
-                    />
-                  )}
-              </HStack>
+                </RecordAction>
+              )}
+              {hasPrintLabel && makeMethod && (
+                <PrintButton
+                  sourceDocument="Operation"
+                  sourceDocumentId={makeMethod.id}
+                  locationId={routeData?.job?.locationId ?? undefined}
+                  context="workCenter"
+                  variant="ghost"
+                  fileRoutes={{
+                    pdf: path.to.file.operationLabelsPdf,
+                    zpl: path.to.file.operationLabelsZpl
+                  }}
+                />
+              )}
             </HStack>
-          </Menubar>
-        )}
+          </HStack>
+        </Menubar>
+      )}
       <Modal
         open={getMethodModal.isOpen}
         onOpenChange={(open) => {

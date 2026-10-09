@@ -6,6 +6,9 @@ import { PreviewCard } from "@base-ui-components/react/preview-card";
 import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   Badge,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuTrigger,
   Copy,
   cn,
   DropdownMenu,
@@ -19,6 +22,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -141,6 +145,8 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
 
   const [filterTextInternal, setFilterTextInternal] = useState("");
   const filterText = filterTextProp ?? filterTextInternal;
+  // Phones: touch-sized rows (BoMExplorerRow draws them at this height).
+  const { isPhone } = useViewport();
 
   const {
     nodes,
@@ -156,7 +162,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
     tree,
     // biome-ignore lint/suspicious/noEmptyBlockStatements: selection is URL-driven
     onSelectedIdChanged: () => {},
-    estimatedRowHeight: () => 32,
+    estimatedRowHeight: () => (isPhone ? 48 : 32),
     parentRef,
     filter: {
       value: { text: filterText },
@@ -426,6 +432,119 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
   const [isBadgeHovered, setIsBadgeHovered] = useState(false);
 
   const bomId = bomIdMap.get(node.id);
+  const { isPhone } = useViewport();
+  const rowHeight = isPhone ? "h-12" : "h-8";
+
+  const content = (
+    <>
+      <div className={cn("flex items-center", rowHeight)}>
+        {Array.from({ length: node.level }).map((_, index) => (
+          <LevelLine
+            key={index}
+            isSelected={state.selected}
+            className={rowHeight}
+          />
+        ))}
+        <div
+          className={cn(
+            "flex items-center",
+            rowHeight,
+            isPhone ? "w-8 justify-center" : "w-4",
+            node.hasChildren && "hover:bg-accent"
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.altKey) {
+              if (state.expanded) {
+                collapseAllBelowDepth(node.level);
+              } else {
+                expandAllBelowDepth(node.level);
+              }
+            } else {
+              toggleExpandNode(node.id);
+            }
+          }}
+        >
+          {node.hasChildren ? (
+            state.expanded ? (
+              <LuChevronDown
+                className={cn(
+                  "h-4 w-4 text-gray-400 flex-shrink-0",
+                  !isPhone && "ml-1"
+                )}
+              />
+            ) : (
+              <LuChevronRight
+                className={cn(
+                  "h-4 w-4 text-gray-400 flex-shrink-0",
+                  !isPhone && "ml-1"
+                )}
+              />
+            )
+          ) : (
+            <div className={cn(rowHeight, "w-4")} />
+          )}
+        </div>
+      </div>
+
+      <div className="flex w-full min-w-0 items-center justify-between gap-2">
+        <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
+          {bomId && (
+            <Badge variant="outline" className="flex-shrink-0">
+              {bomId}
+            </Badge>
+          )}
+          <BoMNodeText node={node} />
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {node.data.isRoot ? (
+            <Badge variant="outline" className="whitespace-nowrap">
+              V{getRootVersion(node)}
+            </Badge>
+          ) : (
+            <BoMNodeData node={node} />
+          )}
+          {children && (
+            <div
+              className="flex items-center gap-1"
+              onPointerEnter={() => setIsBadgeHovered(true)}
+              onPointerLeave={() => setIsBadgeHovered(false)}
+            >
+              {children}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  const rowClassName = cn(
+    "flex cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
+    rowHeight,
+    state.selected
+      ? "bg-muted hover:bg-accent"
+      : "bg-transparent hover:bg-accent",
+    node.data.isPickDescendant && "opacity-60"
+  );
+
+  if (isPhone) {
+    // Phones have no hover: holding a row shows the preview desktop shows
+    // on hover.
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className={rowClassName} onClick={() => onNodeClick(node)}>
+            {content}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <div className="px-3 pb-2">
+            <BoMNodePreview node={node} />
+          </div>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
 
   return (
     // Uncontrolled: Base UI owns hover open/close per row.
@@ -436,79 +555,12 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         render={
           <div
             key={node.id}
-            className={cn(
-              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
-              state.selected
-                ? "bg-muted hover:bg-accent"
-                : "bg-transparent hover:bg-accent",
-              node.data.isPickDescendant && "opacity-60"
-            )}
+            className={rowClassName}
             onClick={() => onNodeClick(node)}
           />
         }
       >
-        <div className="flex h-8 items-center">
-          {Array.from({ length: node.level }).map((_, index) => (
-            <LevelLine key={index} isSelected={state.selected} />
-          ))}
-          <div
-            className={cn(
-              "flex h-8 w-4 items-center",
-              node.hasChildren && "hover:bg-accent"
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (e.altKey) {
-                if (state.expanded) {
-                  collapseAllBelowDepth(node.level);
-                } else {
-                  expandAllBelowDepth(node.level);
-                }
-              } else {
-                toggleExpandNode(node.id);
-              }
-            }}
-          >
-            {node.hasChildren ? (
-              state.expanded ? (
-                <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-              ) : (
-                <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-              )
-            ) : (
-              <div className="h-8 w-4" />
-            )}
-          </div>
-        </div>
-
-        <div className="flex w-full min-w-0 items-center justify-between gap-2">
-          <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
-            {bomId && (
-              <Badge variant="outline" className="flex-shrink-0">
-                {bomId}
-              </Badge>
-            )}
-            <BoMNodeText node={node} />
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-1">
-            {node.data.isRoot ? (
-              <Badge variant="outline" className="whitespace-nowrap">
-                V{getRootVersion(node)}
-              </Badge>
-            ) : (
-              <BoMNodeData node={node} />
-            )}
-            {children && (
-              <div
-                className="flex items-center gap-1"
-                onPointerEnter={() => setIsBadgeHovered(true)}
-                onPointerLeave={() => setIsBadgeHovered(false)}
-              >
-                {children}
-              </div>
-            )}
-          </div>
-        </div>
+        {content}
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner side="right" sideOffset={4} className="z-[100]">

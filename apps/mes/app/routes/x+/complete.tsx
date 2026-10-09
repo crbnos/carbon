@@ -20,6 +20,7 @@ import {
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
@@ -103,6 +104,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The page the operation was opened from; finishing returns there.
+  const origin = readOrigin(formData);
   const serviceRole = await getCarbonServiceRole();
 
   // Get current job operation and production quantities to check if operation will be finished
@@ -234,7 +237,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return redirect(
-        path.to.operations,
+        origin ?? path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
           flash: "success"
@@ -309,7 +312,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return redirect(
-        path.to.operations,
+        origin ?? path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
           flash: "success"
@@ -317,7 +320,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+    const operationPath = path.to.operation(validation.data.jobOperationId);
+    return redirect(withOrigin(operationPath, origin));
   } else {
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
     const { trackedEntityId, trackingType, ...d } = validation.data;
@@ -380,7 +384,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return redirect(
-        path.to.operations,
+        origin ?? path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
           flash: "success"

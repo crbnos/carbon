@@ -15,13 +15,19 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuLock, LuPencil } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { VersionMenu } from "~/components";
+import {
+  RecordAction,
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type {
@@ -58,7 +64,14 @@ function SaveMarker() {
 
 // Renaming is a property of the workflow, not of the version being viewed, so a
 // published (read-only) version is still renameable — only the permission gates it.
-function WorkflowTitle({ workflow }: { workflow: WorkflowDetail }) {
+// `inHero`: the phone hero wraps the title in its own h1 and sets its size.
+function WorkflowTitle({
+  workflow,
+  inHero = false
+}: {
+  workflow: WorkflowDetail;
+  inHero?: boolean;
+}) {
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{ success: boolean }>();
@@ -69,6 +82,10 @@ function WorkflowTitle({ workflow }: { workflow: WorkflowDetail }) {
   // Show the in-flight name so the title never flickers back before revalidation.
   const pending = fetcher.formData?.get("name");
   const name = typeof pending === "string" && pending ? pending : workflow.name;
+  const Heading = inHero ? "span" : "h1";
+  const headingClassName = inHero
+    ? "truncate"
+    : "truncate text-sm font-semibold";
 
   function commit(raw: string) {
     if (settled.current) return;
@@ -90,7 +107,7 @@ function WorkflowTitle({ workflow }: { workflow: WorkflowDetail }) {
   }
 
   if (!permissions.can("update", "workflows")) {
-    return <h1 className="truncate text-sm font-semibold">{name}</h1>;
+    return <Heading className={headingClassName}>{name}</Heading>;
   }
 
   if (isEditing) {
@@ -98,7 +115,11 @@ function WorkflowTitle({ workflow }: { workflow: WorkflowDetail }) {
       <input
         autoFocus
         aria-label={t`Workflow name`}
-        className="w-64 max-w-full bg-transparent text-sm font-semibold focus:outline-none"
+        className={
+          inHero
+            ? "w-full bg-transparent font-semibold focus:outline-none"
+            : "w-64 max-w-full bg-transparent text-sm font-semibold focus:outline-none"
+        }
         defaultValue={name}
         onFocus={(e) => e.currentTarget.select()}
         onBlur={(e) => commit(e.currentTarget.value)}
@@ -126,8 +147,8 @@ function WorkflowTitle({ workflow }: { workflow: WorkflowDetail }) {
         setIsEditing(true);
       }}
     >
-      <h1 className="truncate text-sm font-semibold">{name}</h1>
-      <LuPencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/title:opacity-100" />
+      <Heading className={headingClassName}>{name}</Heading>
+      <LuPencil className="size-3 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/title:opacity-100 max-md:size-4" />
     </button>
   );
 }
@@ -146,6 +167,7 @@ export function BuilderHeader({
   const isVersionLocked = useBuilderStore((state) => state.isVersionLocked);
   const canEdit = useBuilderStore((state) => state.canEdit);
   const isReadOnly = isVersionLocked || !canEdit;
+  const { isPhone } = useViewport();
 
   const publishFetcher = useFetcher<{
     ok?: boolean;
@@ -178,125 +200,158 @@ export function BuilderHeader({
     });
   };
 
-  return (
-    <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4">
-      <WorkflowTitle workflow={workflow} />
-
-      {isReadOnly && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-muted-foreground">
-              <LuLock className="size-3.5" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isPublishedVersion ? (
-              <Trans>
-                This version is published. Create a new version to edit.
-              </Trans>
-            ) : (
-              <Trans>You do not have permission to edit workflows</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      )}
-
-      <div className="ml-auto flex items-center gap-2">
-        <SaveMarker />
-        <VersionMenu
-          versions={versions}
-          currentVersionId={versionId}
-          getKey={(v) => v.id}
-          getHref={(v) => `${path.to.workflow(workflow.id)}?version=${v.id}`}
-          label={current && <span>Version {current.versionNumber}</span>}
-          renderLabel={(v) => <span>Version {v.versionNumber}</span>}
-          renderStatus={(v) => (
-            <WorkflowVersionStatus
-              isPublished={v.id === workflow.publishedVersionId}
-            />
-          )}
-          onNewVersion={
-            permissions.can("create", "workflows")
-              ? () => {
-                  const formData = new FormData();
-                  formData.set("copyFromVersionId", versionId);
-                  versionFetcher.submit(formData, {
-                    method: "post",
-                    action: path.to.workflowVersionNew(workflow.id)
-                  });
-                }
-              : undefined
-          }
-        />
+  const lockIndicator = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="text-muted-foreground">
+          <LuLock className="size-3.5" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
         {isPublishedVersion ? (
-          <Button
-            variant="secondary"
-            isDisabled={!permissions.can("update", "workflows")}
-            onClick={confirmUnpublish.onOpen}
-          >
-            <Trans>Unpublish</Trans>
-          </Button>
+          <Trans>
+            This version is published. Create a new version to edit.
+          </Trans>
         ) : (
-          <Button
-            isDisabled={
-              !permissions.can("update", "workflows") ||
-              publishFetcher.state !== "idle"
-            }
-            isLoading={publishFetcher.state !== "idle"}
-            onClick={() => {
-              // Replacing a published version is worth asking about; a first publish is not.
-              if (published) confirmPublish.onOpen();
-              else publish();
-            }}
-          >
-            <Trans>Publish</Trans>
-          </Button>
+          <Trans>You do not have permission to edit workflows</Trans>
         )}
-      </div>
+      </TooltipContent>
+    </Tooltip>
+  );
 
-      {confirmUnpublish.isOpen && (
-        <ConfirmUnpublishWorkflow
-          workflowId={workflow.id}
-          name={workflow.name}
-          onClose={confirmUnpublish.onClose}
-        />
-      )}
+  return (
+    <>
+      <RecordHero
+        title={<WorkflowTitle workflow={workflow} inHero />}
+        status={
+          <>
+            {isReadOnly && lockIndicator}
+            <SaveMarker />
+          </>
+        }
+      />
+      <RecordPhoneChrome />
+      <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4 max-md:hidden">
+        {/* One title on phones: its rename input lives in the hero there. */}
+        {!isPhone && <WorkflowTitle workflow={workflow} />}
 
-      {/* Hand-rolled rather than `Confirm`: publish posts `versionId` and reads the returned
-          issues back off its own fetcher to outline the failing nodes. */}
-      {confirmPublish.isOpen && current && published && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) confirmPublish.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Publish Version ${current.versionNumber}?`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                {t`Version ${published.versionNumber} is published now and will be replaced.`}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={confirmPublish.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
+        {isReadOnly && lockIndicator}
+
+        <div className="ml-auto flex items-center gap-2">
+          <SaveMarker />
+          <RecordAction slot="overflow">
+            <VersionMenu
+              versions={versions}
+              currentVersionId={versionId}
+              getKey={(v) => v.id}
+              getHref={(v) =>
+                `${path.to.workflow(workflow.id)}?version=${v.id}`
+              }
+              label={
+                current && (
+                  <span>
+                    <Trans>Version {current.versionNumber}</Trans>
+                  </span>
+                )
+              }
+              renderLabel={(v) => (
+                <span>
+                  <Trans>Version {v.versionNumber}</Trans>
+                </span>
+              )}
+              renderStatus={(v) => (
+                <WorkflowVersionStatus
+                  isPublished={v.id === workflow.publishedVersionId}
+                />
+              )}
+              onNewVersion={
+                permissions.can("create", "workflows")
+                  ? () => {
+                      const formData = new FormData();
+                      formData.set("copyFromVersionId", versionId);
+                      versionFetcher.submit(formData, {
+                        method: "post",
+                        action: path.to.workflowVersionNew(workflow.id)
+                      });
+                    }
+                  : undefined
+              }
+            />
+          </RecordAction>
+          {isPublishedVersion ? (
+            <RecordAction slot="primary">
               <Button
+                variant="secondary"
+                isDisabled={!permissions.can("update", "workflows")}
+                onClick={confirmUnpublish.onOpen}
+              >
+                <Trans>Unpublish</Trans>
+              </Button>
+            </RecordAction>
+          ) : (
+            <RecordAction slot="primary">
+              <Button
+                isDisabled={
+                  !permissions.can("update", "workflows") ||
+                  publishFetcher.state !== "idle"
+                }
+                isLoading={publishFetcher.state !== "idle"}
                 onClick={() => {
-                  confirmPublish.onClose();
-                  publish();
+                  // Replacing a published version is worth asking about; a first publish is not.
+                  if (published) confirmPublish.onOpen();
+                  else publish();
                 }}
               >
                 <Trans>Publish</Trans>
               </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
-    </header>
+            </RecordAction>
+          )}
+        </div>
+
+        {confirmUnpublish.isOpen && (
+          <ConfirmUnpublishWorkflow
+            workflowId={workflow.id}
+            name={workflow.name}
+            onClose={confirmUnpublish.onClose}
+          />
+        )}
+
+        {/* Hand-rolled rather than `Confirm`: publish posts `versionId` and reads the returned
+          issues back off its own fetcher to outline the failing nodes. */}
+        {confirmPublish.isOpen && current && published && (
+          <Modal
+            open
+            onOpenChange={(open) => {
+              if (!open) confirmPublish.onClose();
+            }}
+          >
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>{t`Publish Version ${current.versionNumber}?`}</ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <p className="text-sm text-muted-foreground">
+                  {t`Version ${published.versionNumber} is published now and will be replaced.`}
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" onClick={confirmPublish.onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Button
+                  onClick={() => {
+                    confirmPublish.onClose();
+                    publish();
+                  }}
+                >
+                  <Trans>Publish</Trans>
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
+      </header>
+    </>
   );
 }

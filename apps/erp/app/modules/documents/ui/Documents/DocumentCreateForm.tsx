@@ -6,12 +6,13 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import { File, toast } from "@carbon/react";
+import { File, toast, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
-import { LuUpload } from "react-icons/lu";
+import { LuPlus, LuUpload } from "react-icons/lu";
 import { useSubmit } from "react-router";
+import { AppBarAction } from "~/components/New";
 import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -19,6 +20,7 @@ const logger = getLogger("erp", "documentcreateform");
 
 const DocumentCreateForm = () => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const submit = useSubmit();
   const { carbon } = useCarbon();
   const {
@@ -87,6 +89,23 @@ const DocumentCreateForm = () => {
       navigate: false
     });
   };
+
+  // Phones: a "+" in the app bar, like New on every other list.
+  if (isPhone) {
+    return (
+      <AppBarAction>
+        <File
+          isIcon
+          variant="ghost"
+          size="lg"
+          aria-label={t`Upload`}
+          onChange={uploadFile}
+        >
+          <LuPlus className="size-6" />
+        </File>
+      </AppBarAction>
+    );
+  }
 
   return (
     <File leftIcon={<LuUpload />} onChange={uploadFile}>

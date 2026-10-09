@@ -37,7 +37,8 @@ import {
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
-  useNProgress
+  useNProgress,
+  useViewport
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
@@ -62,6 +63,11 @@ import {
   PrimaryNavigation,
   Topbar
 } from "~/components/Layout";
+import {
+  MobileAppBar,
+  MobileBottomChrome,
+  MobileTabBar
+} from "~/components/Layout/Mobile";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
@@ -368,6 +374,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AuthenticatedRoute() {
   const loaderData = useLoaderData<typeof loader>();
+  const { isPhone } = useViewport();
   const {
     company,
     session,
@@ -530,6 +537,11 @@ export default function AuthenticatedRoute() {
                 >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
+                    {/* Phones: app bar on top, tab bar or a page's bottom
+                        bar below <main>, in flow. Mounted only on phones so
+                        their hooks (notifications, sheets) never run on
+                        desktop. */}
+                    {isPhone && <MobileAppBar />}
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <ModuleSidebarLayout>
@@ -539,6 +551,11 @@ export default function AuthenticatedRoute() {
                         <Outlet key={companyId} />
                       </ModuleSidebarLayout>
                     </main>
+                    {isPhone && (
+                      <MobileBottomChrome>
+                        <MobileTabBar />
+                      </MobileBottomChrome>
+                    )}
                   </div>
                 </SidebarProvider>
                 <TrainingPanel

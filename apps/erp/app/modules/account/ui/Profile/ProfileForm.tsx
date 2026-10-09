@@ -61,7 +61,10 @@ const ProfileForm = ({ user }: ProfileFormProps) => {
               />
               <Hidden name="intent" value="about" />
             </VStack>
-            <ProfilePhotoForm user={user} />
+            {/* Phones: the avatar heads the form as the identity header. */}
+            <div className="contents max-md:block max-md:order-first max-md:justify-self-center">
+              <ProfilePhotoForm user={user} />
+            </div>
           </div>
         </CardContent>
         <CardFooter>

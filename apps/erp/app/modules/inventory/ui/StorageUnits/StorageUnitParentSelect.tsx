@@ -183,6 +183,7 @@ function DrillSelect({
           disabled={isReadOnly}
           className={cn(
             "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm text-left shadow-xs transition-[color,box-shadow]",
+            "max-md:h-11 max-md:text-base",
             "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
             isReadOnly && "opacity-60 cursor-not-allowed",
             !triggerLabel && "text-muted-foreground"
@@ -201,7 +202,7 @@ function DrillSelect({
                   e.stopPropagation();
                   onChange("");
                 }}
-                className="flex h-4 w-4 items-center justify-center rounded opacity-60 hover:bg-muted hover:opacity-100"
+                className="flex h-4 w-4 items-center justify-center rounded opacity-60 hover:bg-muted hover:opacity-100 max-md:hit-area"
               >
                 <LuX className="h-3 w-3" />
               </span>

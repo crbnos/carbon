@@ -215,6 +215,9 @@ msgstr "可用"
 msgid "Available"
 msgstr "可用"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "返回生产批次"
 
@@ -295,6 +298,9 @@ msgstr "请查收邮件"
 msgid "Choose a job"
 msgstr "选择工单"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Clear"
 msgstr "清除"
 
@@ -360,6 +366,10 @@ msgstr "公司"
 msgid "Complete"
 msgstr "完成"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "全部完成"
 
@@ -406,8 +416,7 @@ msgstr "复制到剪贴板"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "创建 {0}"
 
@@ -510,8 +519,8 @@ msgid "Due"
 msgstr "应交期"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -668,6 +677,9 @@ msgstr "物料未拣货的情况下要完成吗？"
 msgid "First due {0}"
 msgstr "最早应交期 {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "完成前请修正突出显示的数量。"
 
@@ -688,6 +700,9 @@ msgstr "返回操作"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "隐藏描述"
@@ -810,6 +825,9 @@ msgstr "将工序设置为 0 以跳过该工序 — 该工序将在排程中保�
 msgid "Leave this page"
 msgstr "离开此页面"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "让我们开始构建"
 
@@ -879,6 +897,9 @@ msgstr "机器"
 msgid "Machine down for maintenance now?"
 msgstr "机器现在正在维护吗？"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "维护"
 
@@ -930,6 +951,9 @@ msgstr "公制"
 
 msgid "Model"
 msgstr "模型"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "更多操作"
@@ -1160,13 +1184,14 @@ msgid "Open an NCR for MRB disposition"
 msgstr "为MRB处置打开NCR"
 
 msgid "Open Jobs"
-msgstr "未结工单"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "工序需求日期：{0}"
@@ -1185,6 +1210,9 @@ msgstr "操作员执行"
 
 msgid "Optional"
 msgstr "可选"
+
+msgid "Options"
+msgstr ""
 
 msgid "or"
 msgstr "或"
@@ -1224,6 +1252,9 @@ msgstr "通行密钥解锁失败"
 
 msgid "Pause"
 msgstr "暂停"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "拣货"
@@ -1279,6 +1310,9 @@ msgstr "PM排程已逾期"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "上一个"
@@ -1646,6 +1680,9 @@ msgstr "开始 {0}"
 msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "工位用户"
 
@@ -1744,6 +1781,9 @@ msgstr "此生产批次没有作业指导书。"
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路线以制造替换件。"
 
@@ -1778,11 +1818,23 @@ msgstr "待启动"
 msgid "Today"
 msgstr "今天"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "切换侧栏"
 
 msgid "Tools"
 msgstr "工具"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "总计"
@@ -1918,6 +1970,9 @@ msgstr "工作中心显示屏"
 
 msgid "Work instructions"
 msgstr "作业指导书"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "是"

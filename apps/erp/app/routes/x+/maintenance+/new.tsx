@@ -10,6 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   getFailureModesList,
@@ -121,11 +122,11 @@ export default function NewMaintenanceDispatchRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <MaintenanceDispatchForm
         initialValues={initialValues}
         failureModes={failureModes}
       />
-    </div>
+    </NewRecordPage>
   );
 }

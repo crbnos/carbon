@@ -25,6 +25,8 @@ const Checkbox = forwardRef<
     className={cn(
       "peer size-4 shrink-0 rounded-[4px] border border-muted-foreground/50 shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary",
       isIndeterminate && "bg-primary text-primary-foreground",
+      // Phones: a 44x44 hit area around the visual box.
+      "max-md:hit-area",
       className
     )}
     {...props}

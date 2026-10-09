@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
+import { useFormState, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
+  useViewport
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -87,23 +88,39 @@ const ItemManufacturingForm = ({
                 termId="item-configured"
                 bordered
                 description={t`Part is configured for manufacturing`}
-                className="col-span-3"
+                className="col-span-3 max-md:col-span-1"
               />
             )}
             <CustomFormFields table="partReplenishment" />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Submit
-            withBlocker={false}
+          <ManufacturingSubmit
             isDisabled={!permissions.can("update", "parts")}
-          >
-            <Trans>Save</Trans>
-          </Submit>
+          />
         </CardFooter>
       </ValidatedForm>
     </Card>
   );
 };
+
+/**
+ * The card's Save. Phones: full width, and disabled until a field in the
+ * card changes (precedent: DefaultDisabledSubmit).
+ */
+function ManufacturingSubmit({ isDisabled }: { isDisabled: boolean }) {
+  const { isPhone } = useViewport();
+  const { touchedFields } = useFormState();
+  const isTouched = Object.keys(touchedFields).length > 0;
+  return (
+    <Submit
+      withBlocker={false}
+      isDisabled={isDisabled || (isPhone && !isTouched)}
+      className="max-md:w-full"
+    >
+      <Trans>Save</Trans>
+    </Submit>
+  );
+}
 
 export default ItemManufacturingForm;

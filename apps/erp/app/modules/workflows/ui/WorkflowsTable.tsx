@@ -34,6 +34,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -74,7 +75,7 @@ const WorkflowsTable = memo(
               {row.original.name}
             </Hyperlink>
           ),
-          meta: { icon: <LuWorkflow /> }
+          meta: { mobile: "P1", icon: <LuWorkflow /> }
         },
         {
           accessorKey: "description",
@@ -93,7 +94,7 @@ const WorkflowsTable = memo(
               </Tooltip>
             );
           },
-          meta: { icon: <LuText /> }
+          meta: { mobile: "P3", icon: <LuText /> }
         },
         {
           id: "status",
@@ -107,6 +108,7 @@ const WorkflowsTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuBadgeCheck />,
             filterHeader: t`Status`,
             filter: {
@@ -258,12 +260,14 @@ const WorkflowsTable = memo(
           count={count}
           primaryAction={
             permissions.can("create", "workflows") && (
-              <Button
-                leftIcon={<LuCirclePlus />}
-                onClick={newDisclosure.onOpen}
-              >
-                {t`New Workflow`}
-              </Button>
+              <NewAction label={t`New Workflow`} onClick={newDisclosure.onOpen}>
+                <Button
+                  leftIcon={<LuCirclePlus />}
+                  onClick={newDisclosure.onOpen}
+                >
+                  {t`New Workflow`}
+                </Button>
+              </NewAction>
             )
           }
           renderContextMenu={renderContextMenu}
