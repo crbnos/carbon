@@ -53,6 +53,7 @@ import {
   elementLayouts
 } from "~/modules/projects/ui/Elements/ElementsHeader";
 import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
+import { ElementTimeline } from "~/modules/projects/ui/Elements/ElementTimeline";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -346,6 +347,12 @@ export default function ProjectElementsRoute() {
               links={links}
               requirementStatus={requirementStatus}
               canUpdate={layoutProps.canUpdate}
+            />
+          ) : layout === "timeline" ? (
+            <ElementTimeline
+              projectId={projectId}
+              elements={elements}
+              links={links}
             />
           ) : layout === "board" ? (
             <ElementBoard

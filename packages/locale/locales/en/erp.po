@@ -13843,6 +13843,9 @@ msgstr "No element found"
 msgid "No elements"
 msgstr "No elements"
 
+msgid "No elements to show"
+msgstr "No elements to show"
+
 msgid "No elements yet"
 msgstr "No elements yet"
 
@@ -14798,6 +14801,10 @@ msgstr "Oops! The link you're trying to access is not valid."
 
 msgid "Open"
 msgstr "Open"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr "Open {0}"
 
 msgid "Open a change notice"
 msgstr "Open a change notice"
@@ -22609,6 +22616,9 @@ msgstr "Timecards are disabled"
 
 msgid "Timecards are enabled"
 msgstr "Timecards are enabled"
+
+msgid "Timeline"
+msgstr "Timeline"
 
 msgid "Timer running"
 msgstr "Timer running"

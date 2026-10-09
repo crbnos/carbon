@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "申し訳ございません。アクセスしようとしているリン
 
 msgid "Open"
 msgstr "開く"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "変更通知を開く"
@@ -22609,6 +22616,9 @@ msgstr "タイムカードは無効です"
 
 msgid "Timecards are enabled"
 msgstr "タイムカードが有効です"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "タイマー実行中"

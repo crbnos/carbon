@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "अरे! आप जिस लिंक को एक्सेस क�
 
 msgid "Open"
 msgstr "खोलें"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "एक परिवर्तन सूचना खोलें"
@@ -22609,6 +22616,9 @@ msgstr "टाइमकार्ड अक्षम हैं"
 
 msgid "Timecards are enabled"
 msgstr "टाइमकार्ड सक्षम हैं"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "टाइमर चल रहा है"

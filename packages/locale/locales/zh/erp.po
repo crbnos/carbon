@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "哎呀！您尝试访问的链接无效。"
 
 msgid "Open"
 msgstr "未结"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "打开变更通知"
@@ -22609,6 +22616,9 @@ msgstr "工时记录已禁用"
 
 msgid "Timecards are enabled"
 msgstr "工时记录已启用"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "计时器运行中"

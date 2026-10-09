@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "¡Oops! El enlace que intentas acceder no es válido."
 
 msgid "Open"
 msgstr "Abrir"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Abrir un aviso de cambio"
@@ -22609,6 +22616,9 @@ msgstr "Registro de tiempos deshabilitado"
 
 msgid "Timecards are enabled"
 msgstr "Registro de tiempos habilitado"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "Temporizador en ejecución"

@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "Oups ! Le lien auquel vous essayez d'accéder n'est pas valide."
 
 msgid "Open"
 msgstr "Ouvrir"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Ouvrir un avis de modification"
@@ -22609,6 +22616,9 @@ msgstr "Les feuilles de temps sont désactivées"
 
 msgid "Timecards are enabled"
 msgstr "Les feuilles de temps sont activées"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "Minuterie en cours d'exécution"

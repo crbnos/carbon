@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "Oops! Der Link, auf den Sie zugreifen möchten, ist ungültig."
 
 msgid "Open"
 msgstr "Öffnen"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Öffnen Sie eine Änderungsmitteilung"
@@ -22609,6 +22616,9 @@ msgstr "Zeiterfassungen sind deaktiviert"
 
 msgid "Timecards are enabled"
 msgstr "Zeiterfassung ist aktiviert"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "Timer läuft"

@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "이런! 접근하려는 링크가 유효하지 않습니다."
 
 msgid "Open"
 msgstr "열림"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "변경 통지 열기"
@@ -22609,6 +22616,9 @@ msgstr "타임카드가 비활성화됨"
 
 msgid "Timecards are enabled"
 msgstr "타임카드가 활성화됨"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "타이머 실행 중"

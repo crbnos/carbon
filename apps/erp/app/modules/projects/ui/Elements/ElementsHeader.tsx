@@ -27,6 +27,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { IconType } from "react-icons";
 import {
+  LuChartGantt,
   LuChevronDown,
   LuKanban,
   LuListTree,
@@ -55,14 +56,21 @@ import {
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 
-export const elementLayouts = ["list", "board", "table", "tree"] as const;
+export const elementLayouts = [
+  "list",
+  "board",
+  "table",
+  "tree",
+  "timeline"
+] as const;
 export type ElementLayout = (typeof elementLayouts)[number];
 
 const layoutIcons: Record<ElementLayout, IconType> = {
   list: LuListTree,
   board: LuKanban,
   table: LuSheet,
-  tree: LuNetwork
+  tree: LuNetwork,
+  timeline: LuChartGantt
 };
 
 type ElementsHeaderProps = {
@@ -113,7 +121,8 @@ export function ElementsHeader({
     list: t`List`,
     board: t`Board`,
     table: t`Table`,
-    tree: t`Tree`
+    tree: t`Tree`,
+    timeline: t`Timeline`
   };
   const LayoutIcon = layoutIcons[layout];
   const hasFilters = params.getAll("filter").filter(Boolean).length > 0;

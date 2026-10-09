@@ -53,7 +53,7 @@
 - [x] Task 15: Add the Requirement, Test Case and Parameter fields and the verification read
 - [x] Task 16: Add the trace link, verification and parameter sections to the element page
 - [x] Task 17: Build the Tree layout
-- [ ] Task 18: Build the Timeline layout
+- [x] Task 18: Build the Timeline layout
 - [ ] Task 19: Build the Reader layout
 - [ ] Task 20: Add the Reader PDF
 - [ ] Task 21: Add saved views and per-user preferences
@@ -1507,3 +1507,5 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 17: the Tree layout is a plain React Flow canvas (no worker, unlike Traceability), because a project tree is small and dagre runs synchronously. Nodes cannot be dragged; a node click opens the peek and keeps the query string, so the layout stays on Tree. The collapse button skips the node click by a `data-graph-toggle` check, not `stopPropagation` (lessons: React Flow and Radix dismissal).
 - Task 17: after a drag between two handles, a panel at the top of the canvas offers the link types that `canLink` allows for that pair, in place of a popover at the drop point. The search is a `CommandDialog` over the visible nodes that centres the picked node. The amber outline marks a suspect link at either end, as in the List.
 - Task 17: the store is one zustand `persist` store per project (`getProjectGraphStore`), so the storage key is `project-graph:<projectId>`.
+- Task 18: the two panes are one scroll area with a sticky left column and a sticky header, so they scroll together with no scroll syncing. Rows collapse in local state. A today line is drawn in the browser's zone (display only). Day and Week zoom label each week; Month zoom labels each month.
+- Task 18: `defaultWindow(elements, fallback)` takes a fallback day: with no date at all it shows the 4 weeks around it. A target before the start draws a 1-day bar at the start. `projects-timeline-geometry.test.ts` has a 5th case for the window padding.

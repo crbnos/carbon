@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "Üzgünüz! Erişim sağlamaya çalıştığınız bağlantı geçerli d
 
 msgid "Open"
 msgstr "Aç"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Bir değişiklik bildirisi aç"
@@ -22609,6 +22616,9 @@ msgstr "Puantaj devre dışı"
 
 msgid "Timecards are enabled"
 msgstr "Puantaj etkin"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "Zamanlayıcı çalışıyor"

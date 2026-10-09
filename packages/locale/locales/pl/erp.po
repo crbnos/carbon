@@ -13843,6 +13843,9 @@ msgstr ""
 msgid "No elements"
 msgstr ""
 
+msgid "No elements to show"
+msgstr ""
+
 msgid "No elements yet"
 msgstr ""
 
@@ -14798,6 +14801,10 @@ msgstr "Ups! Link, do którego próbujesz uzyskać dostęp, jest nieprawidłowy.
 
 msgid "Open"
 msgstr "Otwórz"
+
+#. placeholder {0}: element.readableId
+msgid "Open {0}"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Otwórz zawiadomienie o zmianie"
@@ -22609,6 +22616,9 @@ msgstr "Karty czasu pracy są wyłączone"
 
 msgid "Timecards are enabled"
 msgstr "Karty czasu pracy są włączone"
+
+msgid "Timeline"
+msgstr ""
 
 msgid "Timer running"
 msgstr "Czasomierz uruchomiony"
