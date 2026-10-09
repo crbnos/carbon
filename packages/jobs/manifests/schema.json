@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009101510",
+  "schemaVersion": "20261009101725",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T10:16:55.370Z",
+  "exportedAt": "2026-10-09T10:21:42.508Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4219,7 +4219,9 @@
         "endDate",
         "priority",
         "isTemplate",
-        "customFields"
+        "customFields",
+        "fixedAssetClassId",
+        "fixedAssetId"
       ]
     },
     {
@@ -4309,7 +4311,9 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "isFinalAsset",
+        "fixedAssetId"
       ]
     },
     {
@@ -5187,7 +5191,10 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "projectId",
+        "projectElementId",
+        "postCapitalization"
       ]
     },
     {

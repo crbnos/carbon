@@ -37,7 +37,7 @@
 ## Progress
 
 - [x] Task 1: Create the Phase 1b enum migration
-- [ ] Task 2: Create the capital projects migration
+- [x] Task 2: Create the capital projects migration
 - [ ] Task 3: Create the trace links and element fields migration
 - [ ] Task 4: Create the views and preferences migration
 - [ ] Task 5: Apply migrations, regenerate types, ship RLS
@@ -1444,3 +1444,5 @@ ls .ai/playbooks/projects-phase-1b.md
 - Prerequisite check: the Phase 1a artifacts this plan names exist. They are the `project` and `projectElement` tables (with `itemId` and the `projectElement_project_key` UNIQUE on `id, projectId, companyId`), `fixedAssetCipCost`, `.claude/rules/projects-system.md` and `packages/server-functions/src/lib/project-posting.ts`. Every Phase 1a task is committed except Task 47 (browser verification, deferred by the overnight run).
 - Tasks 1–4: each migration was applied with `pnpm db:migrate` before its commit, and its regenerated types were committed with it, as in Phase 1a. The pre-commit `check:manifest` gate refuses a migration commit with a stale digest.
 - Tasks 1–4: `pnpm run check:workflow-catalog` fails before this plan. Phase 1a added `job.projectId`, `job.projectElementId` and `job.consumeToProject`, and the catalog has no labels for them. This plan leaves that failure alone.
+- Task 2: the CHECK name is `fixedAssetCipCost_sourceType_check`, as the plan says. `fixedAsset`, `fixedAssetClass` and `trackedEntity` have a single-column primary key and no `(id, companyId)` UNIQUE, so their new FKs stay single-column, as the plan writes them. The FK indexes are plain (not partial), as in Phase 1a.
+- Task 2: `turbo run typecheck --filter=@carbon/jobs` fails on 2 errors in `server-functions/src/post-timesheet/index.ts` (lines 158 and 161: the `inOrder` results infer as `any[][]`). The same 2 errors show with the types from before this migration, so this plan did not cause them. `@carbon/server-functions`, `erp` and `mes` typecheck green.

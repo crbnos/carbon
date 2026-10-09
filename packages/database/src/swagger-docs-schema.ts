@@ -10141,6 +10141,12 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.isFinalAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.fixedAssetId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -10293,6 +10299,12 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.isFinalAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.fixedAssetId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -10397,6 +10409,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectElement.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.isFinalAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.fixedAssetId"
           },
           {
             $ref: "#/parameters/body.projectElement"
@@ -96505,6 +96523,12 @@ export default {
             $ref: "#/parameters/rowFilter.project.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.project.fixedAssetClassId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.fixedAssetId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -96630,6 +96654,12 @@ export default {
             $ref: "#/parameters/rowFilter.project.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.project.fixedAssetClassId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.fixedAssetId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96707,6 +96737,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.project.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.fixedAssetClassId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.fixedAssetId"
           },
           {
             $ref: "#/parameters/body.project"
@@ -98737,6 +98773,15 @@ export default {
             $ref: "#/parameters/rowFilter.fixedAssetCipCost.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.postCapitalization"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -98838,6 +98883,15 @@ export default {
             $ref: "#/parameters/rowFilter.fixedAssetCipCost.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.postCapitalization"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -98891,6 +98945,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.fixedAssetCipCost.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixedAssetCipCost.postCapitalization"
           },
           {
             $ref: "#/parameters/body.fixedAssetCipCost"
@@ -122259,7 +122322,8 @@ export default {
         "isBilling",
         "sortOrder",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "isFinalAsset"
       ],
       properties: {
         id: {
@@ -122415,6 +122479,17 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        isFinalAsset: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        fixedAssetId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -163698,6 +163773,18 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        fixedAssetClassId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fixedAssetClass.id`.<fk table='fixedAssetClass' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        fixedAssetId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -164742,7 +164829,8 @@ export default {
         "amount",
         "costDate",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "postCapitalization"
       ],
       properties: {
         id: {
@@ -164815,6 +164903,19 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        postCapitalization: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -172574,6 +172675,18 @@ export default {
     },
     "rowFilter.projectElement.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.isFinalAsset": {
+      name: "isFinalAsset",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.fixedAssetId": {
+      name: "fixedAssetId",
       required: false,
       in: "query",
       type: "string"
@@ -218679,6 +218792,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.project.fixedAssetClassId": {
+      name: "fixedAssetClassId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.fixedAssetId": {
+      name: "fixedAssetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.training": {
       name: "training",
       description: "training",
@@ -219902,6 +220027,24 @@ export default {
     },
     "rowFilter.fixedAssetCipCost.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.fixedAssetCipCost.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.fixedAssetCipCost.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.fixedAssetCipCost.postCapitalization": {
+      name: "postCapitalization",
       required: false,
       in: "query",
       type: "string"

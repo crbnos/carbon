@@ -18421,6 +18421,9 @@ export type Database = {
           id: string
           jobId: string | null
           journalId: string | null
+          postCapitalization: boolean
+          projectElementId: string | null
+          projectId: string | null
           sourceDocumentId: string | null
           sourceDocumentLineId: string | null
           sourceType: string
@@ -18437,6 +18440,9 @@ export type Database = {
           id?: string
           jobId?: string | null
           journalId?: string | null
+          postCapitalization?: boolean
+          projectElementId?: string | null
+          projectId?: string | null
           sourceDocumentId?: string | null
           sourceDocumentLineId?: string | null
           sourceType: string
@@ -18453,6 +18459,9 @@ export type Database = {
           id?: string
           jobId?: string | null
           journalId?: string | null
+          postCapitalization?: boolean
+          projectElementId?: string | null
+          projectId?: string | null
           sourceDocumentId?: string | null
           sourceDocumentLineId?: string | null
           sourceType?: string
@@ -18571,6 +18580,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "journalEntries"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixedAssetCipCost_projectElement_fkey"
+            columns: ["projectElementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "fixedAssetCipCost_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "fixedAssetCipCost_updatedBy_fkey"
@@ -45217,6 +45240,8 @@ export type Database = {
           customFields: Json | null
           description: string | null
           endDate: string | null
+          fixedAssetClassId: string | null
+          fixedAssetId: string | null
           id: string
           identifier: string | null
           isTemplate: boolean
@@ -45241,6 +45266,8 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           endDate?: string | null
+          fixedAssetClassId?: string | null
+          fixedAssetId?: string | null
           id?: string
           identifier?: string | null
           isTemplate?: boolean
@@ -45265,6 +45292,8 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           endDate?: string | null
+          fixedAssetClassId?: string | null
+          fixedAssetId?: string | null
           id?: string
           identifier?: string | null
           isTemplate?: boolean
@@ -45378,6 +45407,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_fixedAssetClassId_fkey"
+            columns: ["fixedAssetClassId"]
+            isOneToOne: false
+            referencedRelation: "fixedAssetClass"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_location_fkey"
             columns: ["locationId"]
             isOneToOne: false
@@ -45472,9 +45522,11 @@ export type Database = {
           description: Json | null
           estimateAtCompletion: number | null
           estimatedHours: number | null
+          fixedAssetId: string | null
           id: string
           isBilling: boolean
           isChargeable: boolean
+          isFinalAsset: boolean
           itemId: string | null
           milestoneId: string | null
           name: string
@@ -45507,9 +45559,11 @@ export type Database = {
           description?: Json | null
           estimateAtCompletion?: number | null
           estimatedHours?: number | null
+          fixedAssetId?: string | null
           id?: string
           isBilling?: boolean
           isChargeable?: boolean
+          isFinalAsset?: boolean
           itemId?: string | null
           milestoneId?: string | null
           name: string
@@ -45542,9 +45596,11 @@ export type Database = {
           description?: Json | null
           estimateAtCompletion?: number | null
           estimatedHours?: number | null
+          fixedAssetId?: string | null
           id?: string
           isBilling?: boolean
           isChargeable?: boolean
+          isFinalAsset?: boolean
           itemId?: string | null
           milestoneId?: string | null
           name?: string
@@ -45639,6 +45695,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectElement_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "projectElement_item_fkey"
