@@ -54,6 +54,15 @@
 ### Phase E — Verify
 - [ ] Task 38: Run every gate and verify the enable flow in the browser
 
+### Phase F — Legacy documents on or after the cutover (spec section 5a)
+- [ ] Task 39: Write the journals of legacy sales and purchase invoices at enable
+- [ ] Task 40: Write the journals of legacy memos, payments, charges and reimbursements
+- [ ] Task 41: Write the journals of legacy movements that stored a cost row
+- [ ] Task 42: Write the cost rows and journals of legacy movements that stored none
+- [ ] Task 43: Write the journals of legacy asset and revenue runs again
+- [ ] Task 44: Show the legacy journals in the wizard and update the docs
+- [ ] Task 45: Verify the legacy window in the browser
+
 ## Dependencies
 
 - Task 1 must commit before Task 2 (a new enum value cannot be used in the transaction that adds it).
@@ -1370,6 +1379,74 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 ```
 
 **Out of scope:** pushing or opening a pull request (ask the user).
+
+---
+
+## Task 39: Write the journals of legacy sales and purchase invoices at enable
+
+**Depends on:** Task 28
+**Files:**
+- Create: `packages/server-functions/src/activate-accounting/legacy/` — `index.ts` (`journalLegacyDocuments(trx, { companyId, userId, cutoverDate })`, returns the count per family), `detect.ts`, `write.ts` (one helper that inserts a Provisional journal, its lines and their dimensions), `sales-invoice.ts`, `purchase-invoice.ts`, and a test.
+- Modify: `packages/server-functions/src/activate-accounting/index.ts` — call it as step 1a, after the readiness re-check and before the inventory reset.
+
+**Steps:**
+1. Detect a legacy invoice: posted (sales `Submitted`, `Partially Paid`, `Paid`; purchase `Open`, `Partially Paid`, `Paid`), `postingDate >= D`, and no `journalLine` with `documentType 'Invoice'` and its id in a journal of any status.
+2. Sales invoice: build the lines with `buildSalesPostingLines`, with accounts from `accountDefault` and the stand-in rule of `resolveDefaultAccount`. Book a contract, rental or fixed-asset line as plain revenue on the sales account. Use the same `documentLineReference` values and descriptions as `post-sales-invoice`, so payments find the control line.
+3. Purchase invoice: amounts from `calculatePurchasePostingAmounts`. Mirror the reference and description shapes of `post-purchase-invoice` (`purchase-invoice:<poLineId>` on GR/IR lines). A received PO line clears GR/IR at its receipt cost (receipt `costLedger` rows, else `receiptLine.unitPrice`), and the price difference goes to the purchase variance account. An unreceived quantity accrues GR/IR. A G/L line books its own `accountId`. A stock line with no PO books the inventory account.
+4. Convert to base at the document's `exchangeRate`. Write each journal `Provisional`, dated the invoice's `postingDate`, `sourceType` as the posting writes it, with no period.
+5. Add a database test: post a sales invoice and a purchase invoice in a company with no cutover, delete their journals (as the reset did), enable with a trial balance that ties, and assert: receivables and payables carry the invoices; a payment against the sales invoice posts; Migration Clearing is 0.
+
+**Verify:** typecheck `@carbon/server-functions`; the new test and `src/activate-accounting` pass.
+
+## Task 40: Write the journals of legacy memos, payments, charges and reimbursements
+
+**Depends on:** Task 39
+**Steps:**
+1. Export `rebuildMemoJournal` and `rebuildPaymentJournal`. Give the payment rebuild a fee override read from `externalIntegrationMapping` (`entityType 'payment'`, `metadata.feeAmount` when `feeCurrency` equals the payment currency).
+2. Book a contract or rental credit memo as a plain memo on the sales account.
+3. Extract the charge and reimbursement loaders enough to call `buildChargeJournal` and `buildReimbursementJournal` from stored rows.
+4. Order: memos, charges and reimbursements with the invoices; payments after them, in `postingDate` then `createdAt` order.
+5. Extend the test: a legacy payment against a legacy invoice dated on or after D nets receivables to the open balance.
+
+## Task 41: Write the journals of legacy movements that stored a cost row
+
+**Depends on:** Task 40
+**Steps:**
+1. Drive the family from `costLedger` rows dated on or after D whose document has no journal line.
+2. PO receipt: inventory (or indirect cost for Non-Inventory, WIP for outside processing) against GR/IR, with `receipt:<poLineId>` and the quantity, as `post-receipt` writes them. Return receipt: inventory against COGS. Return shipments: as `post-shipment` writes them.
+3. Adjustments, scrap, counts, non-conformance scrap and maintenance parts: `buildAdjustmentJournalLines` with the offset each posting uses.
+4. Skip transfers (no cost row) and corrections (they share the original document's keys).
+5. Extend the test: a legacy receipt dated on or after D, then a purchase invoice after the enable clears GR/IR to 0.
+
+## Task 42: Write the cost rows and journals of legacy movements that stored none
+
+**Depends on:** Task 41
+**Steps:**
+1. Sales shipment and direct sales invoice lines: for each negative `itemLedger` row with no outbound `costLedger` row, write one at today's unit cost and a COGS/inventory journal pair.
+2. Job material issue and backflush: write the outbound cost row and a WIP/inventory pair (`material-issue:<operationId>`).
+3. Job output: write the finished-goods layer at the cost of the job's material issued in the window, and an inventory/WIP pair.
+4. Run before the inventory reset, so the re-cost step values FIFO and LIFO items against the layers.
+5. Extend the test: a legacy shipment dated on or after D; after the enable, inventory on the GL equals the open layers.
+
+## Task 43: Write the journals of legacy asset and revenue runs again
+
+**Depends on:** Task 42
+**Steps:**
+1. Depreciation run lines and disposals dated on or after D with a null `journalId`: write their journals again from the stored lines, as `postDepreciationRun` and `postDisposal` build them. Set `journalId`.
+2. Revenue recognition schedule rows Posted on or after D with a null `journalId`: the same, as `postRevenueRecognitionRun` builds them.
+3. Write them Provisional. Promotion posts them.
+
+## Task 44: Show the legacy journals in the wizard and update the docs
+
+**Steps:**
+1. Add `getLegacyDocumentCounts(db, { companyId, cutoverDate })` to the reads. The enable step shows "N documents posted before Carbon kept journals get their journals now", per family.
+2. Update `packages/server-functions/AGENTS.md`, the accounting module AGENTS.md and `docs/content/docs/reference/accounting.mdx`.
+
+## Task 45: Verify the legacy window in the browser
+
+**Steps:**
+1. Build a local company with legacy documents dated on or after the cutover (post, then delete their journals and clear the cutover, as the reset did).
+2. Run the wizard, enable, pay a legacy invoice, and check the receivables balance.
 
 ---
 

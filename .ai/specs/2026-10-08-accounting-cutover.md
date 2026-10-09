@@ -152,6 +152,7 @@ For a control account, the trial balance amount is an assertion, not a posting. 
 One server function, `activate-accounting`, runs in one Kysely transaction:
 
 1. Lock `companySettings` `FOR UPDATE`. Re-run every readiness check and every Migration Clearing total. Refuse on any failure.
+1a. Write the journals of the legacy documents dated on or after D (section 5a).
 2. Reset inventory as of D. For each item, close the cost layers dated before D. Insert one layer: the on-hand quantity at D at the reviewed unit cost. Keep the layers dated on or after D.
 3. Re-cost every outbound movement dated on or after D against the reset layers, in date order. Rebuild the Provisional journal of each re-costed document. `recost-serial-unit` is the precedent for re-costing one unit.
 4. Set every Provisional journal dated before D to `Superseded`.
@@ -165,6 +166,35 @@ One server function, `activate-accounting`, runs in one Kysely transaction:
 12. Write no separate audit entry. Journals and accounting periods are auditable entities (`audit.config.ts:620-640`), so the event-driven audit records steps 4 to 9 for companies with the audit log on. `companySettings` is not auditable. The `accountingActivatedAt` and `accountingActivatedBy` columns are the record of the enable.
 
 The `check_accounting_period_open` trigger also checks a change from `Provisional` to `Posted`. Today it checks only a change from Draft to Posted (`20260713235930:59-64`), so step 8 could post into a Closed period without it.
+
+### 5a. Legacy documents on or after the cutover
+
+**The gap.** A legacy document is a posted document with no journal. Before always-posting, a company with accounting off wrote no journal, and the reset deleted every journal of the others. The opening journal covers documents open on D − 1, and promotion covers Provisional journals dated on or after D. A legacy document dated on or after D is in neither. Its amounts never reach the GL, and a payment against it fails with "Target is missing its original control account". Every existing company has such documents, because D can be up to 3 periods back.
+
+**The rule.** The enable writes the missing journals. For each legacy document dated on or after D, it writes the journal the document's posting writes today, as `Provisional`, dated the document's posting date. The later steps then treat it like every other Provisional journal: re-cost, period, stand-in re-point, promotion. A legacy document dated before D needs nothing: the opening journal covers it.
+
+**Detection.** A document is legacy when it is posted (not Draft, not Voided) and no `journalLine` with its document keys sits in a journal of any status. A voided legacy document gets no journal: its post and its void net to zero.
+
+**Inputs.** Every journal uses today's `accountDefault` and today's item settings, in base currency at the document's own exchange rate. The historical values are not stored. Each journal balances, so the books stay consistent.
+
+| Family | Source of the lines |
+|---|---|
+| Sales invoice | `buildSalesPostingLines` for receivables, revenue, shipping and tax. A contract, rental or fixed-asset line books plain revenue on the sales account. |
+| Purchase invoice | `calculatePurchasePostingAmounts`. A received PO line clears GR/IR at its receipt cost, with the price difference on the purchase variance account. An unreceived PO line accrues GR/IR. A G/L line books its own account. A stock line with no PO books inventory. |
+| Memo, payment | `rebuildMemoJournal`, `rebuildPaymentJournal`. A payment takes its processor fee from the integration mapping. A contract or rental credit memo books as a plain memo on the sales account. |
+| Charge, reimbursement | `buildChargeJournal`, `buildReimbursementJournal`, from the stored rows. |
+| Movement with a cost row | Receipts, return receipts, return shipments, adjustments, scrap, counts, non-conformance scrap and maintenance parts stored their cost on `costLedger`. The journal books that cost between inventory and the account the posting uses. |
+| Movement with no cost row | A sales shipment, a direct sales invoice line and a job material issue relieved no layer. The enable writes the missing outbound cost row at today's unit cost. A job output writes the missing finished-goods layer at the cost of the job's material issued in the window. The re-cost step (section 5, step 3) then values FIFO and LIFO items against the layers. |
+| Asset and revenue runs | Depreciation, disposal and revenue recognition journals existed and the reset deleted them. The enable writes them again for run lines and disposals dated on or after D, from the stored run lines. |
+
+**Order.** Invoices, memos, charges and reimbursements come first. Payments follow in posting order, because a payment reads the control line of what it settles. Movements come last, before the inventory reset.
+
+**Not rebuilt.** These have no stored basis, and the enable writes nothing for them:
+- labor and machine absorption of a legacy job (the rate is not stored);
+- the offset of a legacy serial recost or asset cost adjustment (the account is not stored);
+- an asset registration or transfer (the asset register and the opening fixed asset lines cover it).
+
+The enable step lists each family it wrote and how many documents, so a reviewer can find them.
 
 ### 6. After cutover
 
@@ -361,3 +391,4 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - 2026-10-08: Q7 revised: no back-fill of account defaults; stand-in lines with `journalLine.accountDefaultRole`, required defaults at readiness, re-pointed at enable.
 - 2026-10-08: Fixed the 2 bugs found while writing. The purchase receipt void now updates `costLedger`. The revenue recognition cron skips companies with `accountingEnabled = false`; this spec replaces that check with the cutover. Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.
 - 2026-10-08: The void of an invoice dated before D now fails and points to a credit memo or a debit memo. No builder covers a whole invoice posting (found executing Task 29). The user chose the refusal over a new purchase invoice builder.
+- 2026-10-09: Section 5a. The enable writes the journals of legacy documents dated on or after D. Found in the browser test: a legacy invoice dated after D reached neither the opening journal nor promotion. The user refused both a readiness refusal and a manual reset.
