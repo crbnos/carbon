@@ -57,8 +57,9 @@ Every posting function builds and writes its journal for every company. The comp
 
 1. Remove every sub-ledger branch on `accountingEnabled` listed in Problem Statement item 3. Every company relieves cost layers, writes finished-goods and asset cost, writes deferral schedules, contract entries and intercompany rows.
 2. Remove the journal branches on `accountingEnabled` in every posting server function and SQL function. Each one writes its journal with the status from `journalPostingStatus` (TS) or `journal_posting_status(company_id)` (SQL).
-3. The posting transaction reads `companySettings` with `FOR SHARE`. The enable transaction takes `FOR UPDATE` on the same row. So no posting can write a Provisional journal after the enable commits.
-4. 16 `accountDefault` columns are nullable, and a company that changed its chart of accounts can have them empty. Account numbers and names are user-editable, so no migration can fill them safely.
+3. A Provisional journal has no accounting period: `accountingPeriodId` is null, and no posting creates a period before the cutover. So Provisional journals never lock the fiscal calendar, and a company that does not use accounting collects no periods. The enable assigns the periods (section 5).
+4. The posting transaction reads `companySettings` with `FOR SHARE`. The enable transaction takes `FOR UPDATE` on the same row. So no posting can write a Provisional journal after the enable commits.
+5. 16 `accountDefault` columns are nullable, and a company that changed its chart of accounts can have them empty. Account numbers and names are user-editable, so no migration can fill them safely.
    - Before cutover, a builder that needs an empty default posts that line to `retainedEarningsAccount` (NOT NULL for every company). It writes the default it wanted in the new column `journalLine.accountDefaultRole`, for example `scrapAccount`. A Provisional journal counts nowhere, so the stand-in account changes no balance. `resolveDefaultAccount` (API / Service Changes) is the one place that decides this.
    - After cutover, an empty default fails the posting, as it does today with accounting on. The enable cannot happen while a default is empty (section 3).
 
@@ -87,7 +88,9 @@ Readers to change (from the code map, file:line in the migrations named):
 | GR/IR lookup `post-purchase-invoice:906`; intercompany lookups `post-sales-invoice:2212`, `post-purchase-invoice:2403`, `:2448`; `post-asset-transfer:1090` | no filter or `<> 'Draft'` | `DOCUMENT_JOURNAL_STATUSES` |
 | Payment control lookups `post-payment-transaction:498`, `:790`; memo void `:145`; `post-charge-void:38`; `post-reimbursement-void:63` | `= 'Posted'` | `OPEN_ITEM_JOURNAL_STATUSES` |
 | `post-maintenance-event:84`; sales invoice void reader `post-sales-invoice:2375` (it also lacks a `companyId` filter, which this change adds) | no filter | `DOCUMENT_JOURNAL_STATUSES` |
-| `getAccountingPeriodDeletability` (`:2548`), `getFiscalCalendarCommitted` (`:2622`) | all statuses | `GL_JOURNAL_STATUSES` |
+| `getFiscalCalendarCommitted` (`:2622`) | all statuses | `GL_JOURNAL_STATUSES` |
+
+`getAccountingPeriodDeletability` (`:2548`) keeps counting every journal in the period. A Provisional journal has no period (section 1), so it never blocks a delete.
 
 The SQL readers that filter on `= 'Posted'` (`get_ar_open_by_customer`, `get_ap_open_by_supplier`, `get_ar_tie_out`, `get_ap_tie_out`) keep that filter. They already exclude the 2 new statuses. They must also accept `sourceType 'Opening Balance'` (section 4).
 
@@ -141,10 +144,11 @@ One server function, `activate-accounting`, runs in one Kysely transaction:
 5. Mark `revenueRecognitionSchedule` rows dated before D as Posted with no journal. Mark lease Interest rows dated before D the same way.
 6. Make no change to the assets. `buildDepreciationRunLines` takes the cutover date as a floor: with no run posted after it, a run depreciates from D, not from `depreciationStartDate` (`accounting.utils.ts:555` today). Step 3 already put the accumulated depreciation at D on the register.
 7. Post the opening journal (section 4) in the period that contains D − 1.
-8. Re-point the stand-in lines. For each line in a Provisional journal dated on or after D with an `accountDefaultRole`, set `accountId` to that default's account and clear the role. Then set every Provisional journal dated on or after D to Posted.
-9. Close every period that ends before D with `closePreCutoverPeriods`. It runs inside this transaction, oldest first. It sets `closeStatus 'Closed'` and calls `snapshotAccountingPeriodBalances` for each period. It creates no close tasks. It cannot reuse `closeAccountingPeriod`, because that function opens its own transaction.
-10. Set `accountingCutoverDate = D`, `accountingActivatedAt = now()`, `accountingActivatedBy`.
-11. Write no separate audit entry. Journals and accounting periods are auditable entities (`audit.config.ts:620-640`), so the event-driven audit records steps 4 to 9 for companies with the audit log on. `companySettings` is not auditable. The `accountingActivatedAt` and `accountingActivatedBy` columns are the record of the enable.
+8. Assign periods. For each Provisional journal dated on or after D, set `accountingPeriodId` to the period that contains its date (`resolveAccountingPeriod`, mode historical). Superseded journals keep a null period.
+9. Re-point the stand-in lines. For each line in a Provisional journal dated on or after D with an `accountDefaultRole`, set `accountId` to that default's account and clear the role. Then set every Provisional journal dated on or after D to Posted.
+10. Close every period that ends before D with `closePreCutoverPeriods`. It runs inside this transaction, oldest first. It sets `closeStatus 'Closed'` and calls `snapshotAccountingPeriodBalances` for each period. It creates no close tasks. It cannot reuse `closeAccountingPeriod`, because that function opens its own transaction.
+11. Set `accountingCutoverDate = D`, `accountingActivatedAt = now()`, `accountingActivatedBy`.
+12. Write no separate audit entry. Journals and accounting periods are auditable entities (`audit.config.ts:620-640`), so the event-driven audit records steps 4 to 9 for companies with the audit log on. `companySettings` is not auditable. The `accountingActivatedAt` and `accountingActivatedBy` columns are the record of the enable.
 
 The `check_accounting_period_open` trigger also checks a change from `Provisional` to `Posted`. Today it checks only a change from Draft to Posted (`20260713235930:59-64`), so step 8 could post into a Closed period without it.
 
@@ -335,5 +339,6 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
   - The audit trail is event-driven, and the `accountingEnabled` column stays.
   - Migration Clearing is account 3400. Readiness checks for a Posted Opening Balance.
   - The inventory reset is per item. L is the company's first Provisional journal.
+- 2026-10-08: A Provisional journal has no accounting period; the enable assigns periods before promotion (found executing Task 10: periods on Provisional journals would lock the fiscal calendar).
 - 2026-10-08: Q7 revised: no back-fill of account defaults; stand-in lines with `journalLine.accountDefaultRole`, required defaults at readiness, re-pointed at enable.
 - 2026-10-08: Fixed the 2 bugs found while writing. The purchase receipt void now updates `costLedger`. The revenue recognition cron skips companies with `accountingEnabled = false`; this spec replaces that check with the cutover. Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.
