@@ -196,6 +196,61 @@ export function parseBomTree(payload: unknown): {
   return { root, lines, missingColumns };
 }
 
+/** Where one part of an assembly lives, for a metadata read. */
+export type AssemblyPartSource = {
+  documentId: string;
+  /** "v" for a part linked from a version; null for one in this document. */
+  wvm: "v" | null;
+  wvmId: string | null;
+  elementId: string;
+  partId: string;
+};
+
+/**
+ * The first part an assembly definition lists that is not Standard content.
+ * Its metadata lists the properties scoped to parts, which an assembly's own
+ * metadata does not carry. A part linked from another document names the
+ * version it is linked at; a part of the same document has none, so the
+ * caller reads it where it reads the assembly.
+ */
+export function firstOwnAssemblyPart(
+  definition: unknown
+): AssemblyPartSource | null {
+  const parts =
+    definition && typeof definition === "object"
+      ? (definition as { parts?: unknown }).parts
+      : null;
+  if (!Array.isArray(parts)) return null;
+  for (const part of parts) {
+    if (!part || typeof part !== "object") continue;
+    const entry = part as Record<string, unknown>;
+    if (entry.isStandardContent === true) continue;
+    const { documentId, elementId, partId, documentVersion } = entry;
+    if (
+      typeof documentId !== "string" ||
+      typeof elementId !== "string" ||
+      typeof partId !== "string" ||
+      documentId === "" ||
+      elementId === "" ||
+      partId === ""
+    ) {
+      continue;
+    }
+    const version =
+      typeof documentVersion === "string" && documentVersion !== ""
+        ? documentVersion
+        : null;
+    return {
+      documentId,
+      wvm: version ? "v" : null,
+      wvmId: version,
+      elementId,
+      partId
+    };
+  }
+  return null;
+}
+
 /** The tree without its cells: a stored plan needs the structure only. */
 export function withoutProperties(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
   return nodes.map(({ properties: _properties, children, ...node }) => ({

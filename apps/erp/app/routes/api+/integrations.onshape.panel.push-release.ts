@@ -114,6 +114,7 @@ type ItemRow = {
   name: string;
   type: string | null;
   defaultMethodType: string | null;
+  sourcingType: string | null;
   unitOfMeasureCode: string | null;
 };
 
@@ -372,7 +373,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, name, type, defaultMethodType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, type, defaultMethodType, sourcingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -644,6 +645,7 @@ export async function action({ request }: ActionFunctionArgs) {
         name: full.name,
         type: full.type,
         defaultMethodType: full.defaultMethodType ?? "Make to Order",
+        sourcingType: full.sourcingType ?? null,
         unitOfMeasureCode: full.unitOfMeasureCode ?? "EA"
       };
       created.push({
@@ -685,6 +687,7 @@ export async function action({ request }: ActionFunctionArgs) {
         name: proposed.name,
         type: "Part",
         defaultMethodType: proposed.defaultMethodType,
+        sourcingType: proposed.sourcingType ?? null,
         unitOfMeasureCode: proposed.unitOfMeasureCode
       };
       await writeCreatedExtras(item.partNumber, row.id, proposed);
@@ -862,6 +865,7 @@ export async function action({ request }: ActionFunctionArgs) {
         name: proposed.name,
         type: "Part",
         defaultMethodType: proposed.defaultMethodType,
+        sourcingType: proposed.sourcingType ?? null,
         unitOfMeasureCode: proposed.unitOfMeasureCode
       };
       await writeCreatedExtras(child.partNumber, childRow.id, proposed);
@@ -871,13 +875,21 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Sub-assembly lines point at the child's make method.
+  // Sub-assembly lines, and Make to Order lines as Carbon's BOM editor does,
+  // point at the child's make method.
   const madeChildItemIds = [
     ...new Set(
       bomTargets.flatMap((target) =>
         target.lines.flatMap((child) => {
-          if (!child.partNumber || child.children.length === 0) return [];
+          if (!child.partNumber) return [];
           const row = childItemByPartNumber.get(child.partNumber);
+          // A sub-assembly, or a made part whose line is Make to Order.
+          if (
+            child.children.length === 0 &&
+            row?.defaultMethodType !== "Make to Order"
+          ) {
+            return [];
+          }
           return row && !methodByItemId.has(row.id) ? [row.id] : [];
         })
       )
@@ -1040,7 +1052,10 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const childMethod =
-        child.children.length > 0 ? methodByItemId.get(childItem.id) : null;
+        child.children.length > 0 ||
+        childItem.defaultMethodType === "Make to Order"
+          ? methodByItemId.get(childItem.id)
+          : null;
       lines.push({
         row: {
           itemId: childItem.id,
@@ -1052,6 +1067,9 @@ export async function action({ request }: ActionFunctionArgs) {
             (child.children.length > 0
               ? "Make to Order"
               : "Pull from Inventory"),
+          sourcingType:
+            (childItem.sourcingType as OwnedMethodLine["row"]["sourcingType"]) ??
+            "Specified",
           order: lines.length,
           itemType,
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA"

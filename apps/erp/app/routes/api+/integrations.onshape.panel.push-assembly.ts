@@ -85,6 +85,8 @@ type PushSummary = {
   /** Manual lines now following Onshape; also counted in `linesWritten`. */
   linesTakenOver: number;
   descriptionsUpdated: number;
+  /** Reused items whose mapped fields this push wrote. */
+  fieldsUpdated: number;
   methodsTouched: number;
   /** Levels written into a new Draft; nothing is live until someone releases it. */
   draftVersionsCreated: string[];
@@ -99,6 +101,7 @@ type ItemRow = {
   active?: boolean | null;
   type: string | null;
   defaultMethodType: string | null;
+  sourcingType: string | null;
   unitOfMeasureCode: string | null;
 };
 
@@ -190,6 +193,7 @@ export async function action({ request }: ActionFunctionArgs) {
     linesUnchanged: 0,
     linesTakenOver: 0,
     descriptionsUpdated: 0,
+    fieldsUpdated: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
     skipped: [...plan.skipped],
@@ -212,7 +216,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, type, defaultMethodType, unitOfMeasureCode"
+        "id, readableId, revision, active, type, defaultMethodType, sourcingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -305,10 +309,12 @@ export async function action({ request }: ActionFunctionArgs) {
         edit: edits[partNumber],
         descriptions: planned.changes
       });
+      let fieldsWritten = false;
       if (applied.error) {
         summary.errors.push(`${partNumber}: ${applied.error}`);
-      } else if (planned.changes?.length) {
-        summary.descriptionsUpdated += 1;
+      } else {
+        if (planned.changes?.length) summary.descriptionsUpdated += 1;
+        fieldsWritten = (planned.itemFieldChanges?.length ?? 0) > 0;
       }
       const values = mappedFieldValues(planned.customFields ?? [], false);
       if (values.fieldIds.size > 0) {
@@ -329,14 +335,18 @@ export async function action({ request }: ActionFunctionArgs) {
           summary.errors.push(
             `${partNumber}: failed to write custom fields (${updatedPart.error.message})`
           );
+        } else {
+          fieldsWritten = true;
         }
       }
+      if (fieldsWritten) summary.fieldsUpdated += 1;
       // A BOM line written below copies its method and unit from the item,
       // so it reads them after this push's writes, not before.
       const row: ItemRow = applied.values
         ? {
             ...found,
             defaultMethodType: applied.values.defaultMethodType,
+            sourcingType: applied.values.sourcingType ?? found.sourcingType,
             unitOfMeasureCode:
               applied.values.unitOfMeasureCode ?? found.unitOfMeasureCode
           }
@@ -378,6 +388,7 @@ export async function action({ request }: ActionFunctionArgs) {
       revision: item.revision,
       type: "Part",
       defaultMethodType: item.defaultMethodType,
+      sourcingType: item.sourcingType ?? null,
       unitOfMeasureCode: item.unitOfMeasureCode
     };
     // upsertPart takes neither MPN nor Sourcing.
@@ -472,6 +483,50 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
+  // A Make to Order line points at its component's make method, as Carbon's
+  // BOM editor does (`upsertMethodMaterial`), so a job builds the component
+  // with its own operations. Sub-assemblies are read above; this reads the
+  // made parts that have no BOM of their own.
+  const madePartIds = [
+    ...new Set(
+      plan.items
+        .filter((item) => !item.isAssembly && !excluded.has(item.partNumber))
+        .map((item) => itemByReadableId.get(item.partNumber))
+        .filter(
+          (row): row is ItemRow =>
+            !!row &&
+            row.defaultMethodType === "Make to Order" &&
+            !methodByItemId.has(row.id)
+        )
+        .map((row) => row.id)
+    )
+  ];
+  let madePartMethodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
+  try {
+    madePartMethodByItemId = await loadActiveMakeMethods(
+      client,
+      companyId,
+      madePartIds
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the make methods"
+      },
+      { status: 500 }
+    );
+  }
+  const childMethodFor = (childItem: ItemRow, childMade: boolean) =>
+    childMade
+      ? methodByItemId.get(childItem.id)
+      : childItem.defaultMethodType === "Make to Order"
+        ? (madePartMethodByItemId.get(childItem.id) ??
+          methodByItemId.get(childItem.id))
+        : null;
+
   // Resolve each level's target method before reading ownership. A released
   // method is never edited, so the push writes into a Draft, and ownership is
   // keyed by method id: a Draft made after that read would duplicate every line.
@@ -612,7 +667,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const childMade = isAssemblyByPartNumber.get(write.partNumber) === true;
-      const childMethod = childMade ? methodByItemId.get(childItem.id) : null;
+      const childMethod = childMethodFor(childItem, childMade);
       const lineSyncedAt = datetime.timestamp();
       const lineMetadata = {
         makeMethodId: methodId,
@@ -623,7 +678,8 @@ export async function action({ request }: ActionFunctionArgs) {
       };
 
       // Only quantity, order and the child-method pointer are Onshape's.
-      // `methodType` and `unitOfMeasureCode` come from the item, at create only.
+      // `methodType`, `sourcingType` and `unitOfMeasureCode` come from the
+      // item, at create only.
       const reuse = reusableByItemId.get(childItem.id)?.shift();
       if (reuse) {
         // Skip unchanged lines so the audit trail does not show an edit.
@@ -720,6 +776,9 @@ export async function action({ request }: ActionFunctionArgs) {
           methodType:
             (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
             (childMade ? "Make to Order" : "Pull from Inventory"),
+          sourcingType:
+            (childItem.sourcingType as OwnedMethodLine["row"]["sourcingType"]) ??
+            "Specified",
           order,
           itemType,
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? fallbackUnit

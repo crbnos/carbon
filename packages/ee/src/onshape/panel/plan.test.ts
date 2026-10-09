@@ -21,6 +21,7 @@ import {
   pickAdoptTarget,
   pickLatestRow,
   pickReuseRow,
+  planCreatedItem,
   planExistingItem,
   proposeItem,
   proposeMappedItem,
@@ -1671,6 +1672,26 @@ describe("planExistingItem — modes", () => {
       defaultMethodType: "Purchase to Order"
     });
     expect(planned.mappedFieldProblems).toBeUndefined();
+  });
+
+  it("lists only the mapped values a new item takes", () => {
+    const created = planCreatedItem(
+      { partNumber: "P", name: null },
+      {
+        fields: [],
+        itemFields: [
+          itemField("sourcingType", "Drop Ship", "create", "Sourcing"),
+          itemField("mpn", "MPN-1", "create", "MPN")
+        ],
+        problems: []
+      },
+      options
+    );
+    expect(created.proposed.sourcingType).toBeUndefined();
+    expect(created.itemFields?.map((field) => field.field)).toEqual(["mpn"]);
+    expect(created.mappedFieldProblems).toEqual([
+      "Sourcing applies only to Buy and Make items. Not written."
+    ]);
   });
 
   it("skips Sourcing on a Make item, and a method Make does not allow", () => {

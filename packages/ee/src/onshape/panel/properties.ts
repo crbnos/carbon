@@ -40,6 +40,8 @@ export type OnshapePropertyValue = {
   valueType: string;
   value: unknown;
   editable?: boolean;
+  /** An ENUM's options as labels, when the metadata lists them. */
+  options?: string[];
 };
 
 /**
@@ -205,6 +207,18 @@ function enumLabel(value: unknown, options: unknown): unknown {
   return typeof label === "string" && label.trim() !== "" ? label : value;
 }
 
+/** A list's options as labels, the text a BOM cell shows; null when absent. */
+function enumOptions(options: unknown): string[] | null {
+  if (!Array.isArray(options)) return null;
+  const labels: string[] = [];
+  for (const option of options) {
+    if (!isRecord(option)) continue;
+    const label = enumLabel(option.value, options);
+    if (typeof label === "string" && label.trim() !== "") labels.push(label);
+  }
+  return labels.length > 0 ? labels : null;
+}
+
 /**
  * Onshape's text for a property the object does not have: a BOM row shows
  * "N/A" for a part-only property on an assembly row. It is no value. A value
@@ -225,6 +239,8 @@ export function parseProperties(payload: unknown): OnshapePropertyValue[] {
     const name = property.name;
     const valueType = property.valueType;
     if (typeof propertyId !== "string" || typeof name !== "string") continue;
+    const options =
+      valueType === "ENUM" ? enumOptions(property.enumValues) : null;
     out.push({
       propertyId,
       name,
@@ -235,7 +251,8 @@ export function parseProperties(payload: unknown): OnshapePropertyValue[] {
           ? enumLabel(property.value, property.enumValues)
           : property.value,
       editable:
-        typeof property.editable === "boolean" ? property.editable : undefined
+        typeof property.editable === "boolean" ? property.editable : undefined,
+      ...(options ? { options } : {})
     });
   }
   return out;

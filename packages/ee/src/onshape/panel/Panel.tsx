@@ -2,21 +2,26 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { ComboboxOption } from "@carbon/react";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
+  Combobox,
   cn,
   HStack,
   IconButton,
   Input,
-  Label,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
   Skeleton,
@@ -26,6 +31,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  TruncatedTooltipText,
   VStack
 } from "@carbon/react";
 import type { ReactNode } from "react";
@@ -36,8 +42,11 @@ import {
   LuCircleCheck,
   LuCircleDashed,
   LuInfo,
+  LuListChecks,
+  LuLock,
   LuPlus,
   LuRefreshCw,
+  LuTrash,
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
@@ -58,6 +67,13 @@ import type {
   ReleasePlan,
   ReleasePlanItem
 } from "./plan";
+import {
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_TRACKING_TYPES,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT
+} from "./plan";
+import type { OnshapePushDefaults } from "./preferences";
+import { reconcilePushDefaults } from "./preferences";
 import type {
   DescriptionModes,
   MappingMode,
@@ -69,6 +85,7 @@ import {
   CUSTOM_FIELD_TYPE_LABELS,
   customFieldDisplayValue,
   MAPPABLE_VALUE_TYPES,
+  MAPPING_MODES,
   propertyMapEqual,
   targetKey
 } from "./properties";
@@ -104,12 +121,20 @@ import {
   panelFetch,
   setPanelSessionToken
 } from "./session-storage";
-import type { StandardField, ValueTranslation } from "./standard-fields";
+import type {
+  StandardField,
+  StandardFieldId,
+  ValueTranslation
+} from "./standard-fields";
 import {
   defaultTranslations,
+  matchingUnit,
+  onshapeValueOptions,
+  repeatedTranslationRows,
   STANDARD_FIELDS,
   standardField,
-  standardFieldValues
+  standardFieldValues,
+  untranslatedOptions
 } from "./standard-fields";
 import type { PanelPartStatus } from "./status";
 
@@ -207,15 +232,19 @@ type PanelFieldsProperty = {
   valueType: string;
   /** Whether the value type has a Carbon type to map onto. */
   mappable: boolean;
+  /** An ENUM's options, when Onshape listed them. */
+  options?: string[];
 };
 
 type PanelFieldsData = {
   properties: PanelFieldsProperty[];
   map: PropertyMapEntry[];
   definitions: PlanCustomFieldDefinition[];
-  /** The company's units, for a Unit of Measure translation. */
+  /** The company's units, for a Unit of Measure translation and default. */
   units: PlanUnitOfMeasure[];
   descriptionModes: DescriptionModes;
+  /** What a push gives a new item when nothing maps a field. */
+  pushDefaults: OnshapePushDefaults;
 };
 
 /** One entry of the draft map the Fields page posts. */
@@ -235,6 +264,8 @@ type PanelFieldsState =
       entries: FieldsDraftEntry[];
       /** The draft modes of the two descriptions. */
       descriptionModes: DescriptionModes;
+      /** The draft push defaults. */
+      pushDefaults: OnshapePushDefaults;
       saving: boolean;
       refreshing?: boolean;
       refreshFailure?: LoadFailure;
@@ -249,11 +280,17 @@ type PanelFieldsState =
     }
   | { status: "error"; message: string; forbidden?: boolean };
 
-/** Radix Select refuses an empty item value, so "not mapped" is named. */
-const FIELDS_NOT_MAPPED = "__not-mapped__";
-
-/** Every push reads these two into the descriptions: the fixed rows. */
-const DESCRIPTION_PROPERTY_NAMES = new Set(["Name", "Description"]);
+/**
+ * Every push reads these four: Part number and Revision name the item, Name
+ * and Description fill its descriptions. The Fields page shows them as fixed
+ * rows and never offers them as a mapping.
+ */
+const FIXED_PROPERTY_NAMES = new Set([
+  "Part number",
+  "Revision",
+  "Name",
+  "Description"
+]);
 
 /**
  * The Carbon types an Onshape value type may map onto. MAPPABLE_VALUE_TYPES
@@ -275,7 +312,7 @@ function fieldsDraft(map: PropertyMapEntry[]): FieldsDraftEntry[] {
   }));
 }
 
-/** The target a Fields select value names, or null for "Not mapped". */
+/** The target a Carbon field select value names, or null for none. */
 function targetFromKey(key: string): PropertyMapTarget | null {
   if (key.startsWith("customField:")) {
     return { kind: "customField", fieldId: key.slice("customField:".length) };
@@ -360,6 +397,8 @@ type AssemblyPushSummary = {
   linesTakenOver?: number;
   /** Reused items whose descriptions now match Onshape. */
   descriptionsUpdated?: number;
+  /** Reused items whose mapped fields the push wrote. */
+  fieldsUpdated?: number;
   methodsTouched: number;
   /** Released methods this push superseded with a Draft version. */
   draftVersionsCreated?: string[];
@@ -463,9 +502,11 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
       ? `${plural(unchanged, "BOM line")} already up to date`
       : plural(s.linesWritten, "BOM line") +
         (unchanged > 0 ? ` (${unchanged} unchanged)` : "");
+  const fieldsUpdated = s.fieldsUpdated ?? 0;
   const text =
-    `${plural(s.itemsCreated, "item")} created, ${s.itemsReused} reused, ` +
-    `${lines} across ${plural(s.methodsTouched, "method")}`;
+    `${plural(s.itemsCreated, "item")} created, ${s.itemsReused} reused` +
+    (fieldsUpdated > 0 ? ` (${fieldsUpdated} updated)` : "") +
+    `, ${lines} across ${plural(s.methodsTouched, "method")}`;
   const drafts = s.draftVersionsCreated ?? [];
   const takenOver = s.linesTakenOver ?? 0;
   const described = s.descriptionsUpdated ?? 0;
@@ -1426,6 +1467,7 @@ export function OnshapePanel({
                 // replaces the draft rather than merging with it.
                 entries: fieldsDraft(body.map),
                 descriptionModes: { ...body.descriptionModes },
+                pushDefaults: { ...body.pushDefaults },
                 saving: false,
                 error: null,
                 fieldErrors: {}
@@ -1470,13 +1512,15 @@ export function OnshapePanel({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             entries: current.entries,
-            descriptionModes: current.descriptionModes
+            descriptionModes: current.descriptionModes,
+            pushDefaults: current.pushDefaults
           })
         });
         const body = (await response.json()) as
           | {
               map: PropertyMapEntry[];
               descriptionModes: DescriptionModes;
+              pushDefaults: OnshapePushDefaults;
               definitions: PlanCustomFieldDefinition[] | null;
               warning?: string;
             }
@@ -1502,12 +1546,14 @@ export function OnshapePanel({
             ...current.data,
             map: body.map,
             descriptionModes: body.descriptionModes,
+            pushDefaults: body.pushDefaults,
             // Null when the save landed but the re-read failed: keep the
             // definitions already on screen rather than emptying every select.
             definitions: body.definitions ?? current.data.definitions
           },
           entries: fieldsDraft(body.map),
           descriptionModes: { ...body.descriptionModes },
+          pushDefaults: { ...body.pushDefaults },
           saving: false,
           error: null,
           warning: body.warning,
@@ -1552,7 +1598,13 @@ export function OnshapePanel({
           target,
           mode: previous?.mode ?? "create",
           ...(field?.kind === "list"
-            ? { translations: defaultTranslations(field, property.valueType) }
+            ? {
+                translations: defaultTranslations(
+                  field,
+                  property.valueType,
+                  property.options
+                )
+              }
             : {})
         });
       }
@@ -1582,6 +1634,71 @@ export function OnshapePanel({
         fieldErrors: clearFieldErrors(current.fieldErrors, propertyId)
       };
     });
+
+  /**
+   * Set where a Carbon field's value comes from: a property, or (null) none,
+   * which for an item field with a push default means the default. The
+   * field's previous property is unmapped and the chosen one leaves any other
+   * field; a field that changes property keeps its mode.
+   */
+  const setTargetSource = (
+    target: PropertyMapTarget,
+    property: PanelFieldsProperty | null
+  ) =>
+    setFields((current) => {
+      if (current.status !== "ready") return current;
+      const key = targetKey(target);
+      const feeds = (entry: FieldsDraftEntry) =>
+        targetKey(entry.target) === key;
+      const previous = current.entries.find(feeds);
+      const entries = current.entries.filter(
+        (entry) =>
+          !feeds(entry) && entry.onshapePropertyId !== property?.propertyId
+      );
+      const field =
+        target.kind === "item" ? standardField(target.field) : undefined;
+      if (property) {
+        entries.push({
+          onshapePropertyId: property.propertyId,
+          onshapeName: property.name,
+          valueType: property.valueType,
+          target,
+          mode: previous?.mode ?? "create",
+          ...(field?.kind === "list"
+            ? {
+                translations: defaultTranslations(
+                  field,
+                  property.valueType,
+                  property.options
+                )
+              }
+            : {})
+        });
+      }
+      let fieldErrors = current.fieldErrors;
+      for (const id of [previous?.onshapePropertyId, property?.propertyId]) {
+        if (id) fieldErrors = clearFieldErrors(fieldErrors, id);
+      }
+      return { ...current, entries, error: null, fieldErrors };
+    });
+
+  /**
+   * Change a push default. A new Replenishment keeps its method when the pair
+   * is allowed, else takes the first allowed one, as the save requires.
+   */
+  const setPushDefaults = (patch: Partial<OnshapePushDefaults>) =>
+    setFields((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            pushDefaults: reconcilePushDefaults({
+              ...current.pushDefaults,
+              ...patch
+            }),
+            error: null
+          }
+        : current
+    );
 
   const setDescriptionMode = (
     field: keyof DescriptionModes,
@@ -1633,6 +1750,23 @@ export function OnshapePanel({
     const first = availableTabs[0];
     if (first && !availableTabs.includes(tab)) setTab(first);
   }, [availableTabs, tab]);
+
+  /*
+   * The first page's name and the Fields page both wait on the status read,
+   * which says what kind of element this is. Until it lands the bar is one
+   * skeleton as wide as the tabs expected, so they appear once, final.
+   */
+  const tabsPending =
+    session.status === "signed-in" &&
+    canLoadParts &&
+    (parts.status === "idle" || parts.status === "loading");
+  const pendingTabLabels = [
+    "Assembly",
+    ...(context.documentId ? ["Releases"] : []),
+    ...(session.status === "signed-in" && session.me.canEditFields
+      ? ["Fields"]
+      : [])
+  ];
 
   // The first page names what it holds, which is only known once the status
   // read says which kind of element this is.
@@ -1700,7 +1834,23 @@ export function OnshapePanel({
        * way to tell where a push will land.
        */}
       <HStack className="w-full shrink-0 justify-between gap-2 border-b border-border px-4 py-2">
-        {availableTabs.length > 1 ? (
+        {tabsPending ? (
+          // Sized by invisible copies of the tabs, the same padding as
+          // TabsList and its triggers, so it is as wide as the bar after it.
+          <Skeleton
+            aria-hidden
+            className="flex rounded-[0.5rem] border border-transparent p-0.5"
+          >
+            {pendingTabLabels.map((label) => (
+              <span
+                key={label}
+                className="invisible border border-transparent px-3 py-1 text-sm font-medium"
+              >
+                {label}
+              </span>
+            ))}
+          </Skeleton>
+        ) : availableTabs.length > 1 ? (
           <TabsList>
             {availableTabs.includes("push") ? (
               <TabsTrigger value="push">{pushTabLabel}</TabsTrigger>
@@ -1875,8 +2025,10 @@ export function OnshapePanel({
             <FieldsSection
               state={fields}
               onMap={mapFieldsProperty}
+              onTargetSource={setTargetSource}
               onEdit={editFieldsEntry}
               onDescriptionMode={setDescriptionMode}
+              onPushDefaults={setPushDefaults}
               onRefresh={() => loadFields(session.token)}
               onSave={() => saveFields(session.token)}
             />
@@ -2434,58 +2586,119 @@ function ReleasesSection({
 // Fields (Onshape properties → Carbon custom fields)
 // ---------------------------------------------------------------------------
 
-/**
- * The company's property map, edited from the current element's properties.
- * Onshape only lists properties from inside a document, which is why this
- * page is the one setting the panel keeps.
- */
-/** The words for each mode, on the Fields page and in the review. */
+/** The words for each mode, on the Fields page. */
 const MODE_LABEL: Record<MappingMode, string> = {
   create: "Set at creation",
   everyPush: "Update on every push"
 };
 
-const MODE_HELP: Record<MappingMode, string> = {
-  create:
-    "Onshape fills this field when a push creates the item. After that, Carbon owns the field. Later pushes don't change it. Items already in Carbon don't get it.",
-  everyPush:
-    "Every push replaces Carbon's value with Onshape's, including edits made in Carbon."
-};
-
-const CASCADE_HELP =
-  "A change also updates this item on Draft BOMs and Draft or Planned jobs, the same as editing it in Carbon.";
-
-const TRANSLATION_HELP =
-  "Onshape value → Carbon value. A value with no row shows as a problem in the review and isn't written.";
+/** What a mode does, one line under it in the dropdown. */
+function modeHelper(mode: MappingMode, cascades: boolean): string {
+  if (mode === "create") return "Only items a push creates get it";
+  return cascades
+    ? "Every push overwrites it, Draft BOMs and jobs too"
+    : "Every push overwrites Carbon's value";
+}
 
 /** Radix Select refuses an empty item value, so "No value" is named. */
 const TRANSLATION_NO_VALUE = "__no-value__";
+/** An Onshape option with no row: the review flags it. */
+const TRANSLATION_UNSET = "__unset__";
 
+/** The Carbon type an Onshape value type reads as, in the property select. */
+const VALUE_TYPE_LABEL: Record<string, string> = {
+  STRING: "Text",
+  ENUM: "List",
+  BOOL: "Yes/No",
+  INT: "Number",
+  DOUBLE: "Number",
+  DATE: "Date",
+  OBJECT: "Text (display name)"
+};
+
+function sameText(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+/**
+ * The company's property map. Onshape lists properties only from inside a
+ * document, which is why this page is the one setting the panel keeps. It
+ * shows what every push applies, then the company's mappings; a mapping is
+ * added by picking a property and a Carbon field.
+ */
 function FieldsSection({
   state,
   onMap,
+  onTargetSource,
   onEdit,
   onDescriptionMode,
+  onPushDefaults,
   onRefresh,
   onSave
 }: {
   state: Exclude<PanelFieldsState, { status: "closed" }>;
   onMap: (property: PanelFieldsProperty, selection: string) => void;
+  onTargetSource: (
+    target: PropertyMapTarget,
+    property: PanelFieldsProperty | null
+  ) => void;
   onEdit: (
     propertyId: string,
     patch: Partial<Pick<FieldsDraftEntry, "mode" | "translations">>
   ) => void;
   onDescriptionMode: (field: keyof DescriptionModes, mode: MappingMode) => void;
+  onPushDefaults: (patch: Partial<OnshapePushDefaults>) => void;
   onRefresh: () => void;
   onSave: () => void;
 }) {
+  const [adding, setAdding] = useState(false);
+  const [confirmingRefresh, setConfirmingRefresh] = useState(false);
+  // Unsaved edits: Refresh replaces the draft with the saved map, so it asks.
+  const dirty =
+    state.status === "ready" &&
+    (!propertyMapEqual(state.entries, state.data.map) ||
+      state.descriptionModes.name !== state.data.descriptionModes.name ||
+      state.descriptionModes.description !==
+        state.data.descriptionModes.description ||
+      !pushDefaultsEqual(state.pushDefaults, state.data.pushDefaults));
   const header = (
     <HStack className="w-full justify-between">
       <span className="text-sm font-medium">Fields</span>
+      {confirmingRefresh ? (
+        <Modal
+          open
+          onOpenChange={(open) =>
+            open ? undefined : setConfirmingRefresh(false)
+          }
+        >
+          <ModalContent size="small" aria-describedby={undefined}>
+            <ModalHeader>
+              <ModalTitle>Discard unsaved changes?</ModalTitle>
+            </ModalHeader>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmingRefresh(false)}
+              >
+                Keep editing
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setConfirmingRefresh(false);
+                  onRefresh();
+                }}
+              >
+                Discard and refresh
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      ) : null}
       <Button
         variant="ghost"
         size="sm"
-        onClick={onRefresh}
+        onClick={() => (dirty ? setConfirmingRefresh(true) : onRefresh())}
         isDisabled={
           state.status === "loading" ||
           (state.status === "ready" && state.saving)
@@ -2502,7 +2715,6 @@ function FieldsSection({
     return (
       <VStack spacing={2} className="w-full">
         {header}
-        <FieldsColumnLabels />
         <PanelListSkeleton />
       </VStack>
     );
@@ -2521,53 +2733,79 @@ function FieldsSection({
   }
 
   const { data } = state;
-  const entryFor = (propertyId: string) =>
-    state.entries.find((entry) => entry.onshapePropertyId === propertyId);
-  /*
-   * Only what the user can act on: a USER, BLOB or computed property has no
-   * Carbon field it can coerce into, and Name and Description are the fixed
-   * rows. An already-mapped property stays listed even if its type is not
-   * mappable, since the save posts the whole map and hiding the entry would
-   * leave it riding along with no way to remove it.
-   */
-  const visibleProperties = data.properties.filter(
-    (property) =>
-      !!entryFor(property.propertyId) ||
-      (property.mappable && !DESCRIPTION_PROPERTY_NAMES.has(property.name))
-  );
-  // Named under the list, so a missing property has a reason.
-  const unmappable = data.properties.filter(
-    (property) => !property.mappable && !entryFor(property.propertyId)
+  const propertyById = new Map(
+    data.properties.map((property) => [property.propertyId, property])
   );
   // A Carbon field takes one property: the property each is mapped from.
   const mappedFrom = new Map(
     state.entries.map((entry) => [targetKey(entry.target), entry])
   );
-  // The save posts the whole map, so a 422 can name a property mapped from
-  // another element. It has no row here, so it renders on its own.
-  const rendered = new Set(
-    visibleProperties.map((property) => property.propertyId)
+  // A property feeds one field: the mapping each property is in.
+  const mappingOf = new Map(
+    state.entries.map((entry) => [entry.onshapePropertyId, entry])
   );
-  const otherElementErrors = Object.entries(state.fieldErrors)
-    .filter(([propertyId]) => !rendered.has(propertyId))
-    .map(([propertyId, messages]) => ({
-      propertyId,
-      name: entryFor(propertyId)?.onshapeName || propertyId,
-      messages
-    }));
-  const dirty =
-    !propertyMapEqual(state.entries, data.map) ||
-    state.descriptionModes.name !== data.descriptionModes.name ||
-    state.descriptionModes.description !== data.descriptionModes.description;
+  const offered = data.properties
+    .filter(
+      (property) =>
+        property.mappable && !FIXED_PROPERTY_NAMES.has(property.name)
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+  // Item fields with a row of their own are set there; the rest are rows of
+  // their own only once mapped.
+  const otherEntries = state.entries.filter(
+    (entry) =>
+      !(
+        entry.target.kind === "item" &&
+        ITEM_FIELD_ROW_FIELDS.has(entry.target.field)
+      )
+  );
+  // Every entry has a row, so an error naming another property is a stray.
+  const listed = new Set(state.entries.map((entry) => entry.onshapePropertyId));
+  const strayErrors = Object.entries(state.fieldErrors)
+    .filter(([propertyId]) => !listed.has(propertyId))
+    .flatMap(([propertyId, messages]) =>
+      messages.map((message) => ({ propertyId, message }))
+    );
+  const addable = offered.filter(
+    (property) => !listed.has(property.propertyId)
+  );
   const busy = state.saving || !!state.refreshing;
+  // The properties a target can take, with the one it holds even when that
+  // property is mapped from another document and not on this element.
+  const candidatesFor = (
+    target: PropertyMapTarget,
+    entry: FieldsDraftEntry | undefined
+  ): PanelFieldsProperty[] => {
+    const takes = (valueType: string) => {
+      if (target.kind === "item") {
+        return !!standardField(target.field)?.valueTypes.includes(valueType);
+      }
+      const definition = data.definitions.find(
+        (field) => field.id === target.fieldId
+      );
+      return (
+        !!definition &&
+        mappableTypesFor(valueType).includes(definition.dataTypeId)
+      );
+    };
+    const candidates = offered.filter((property) => takes(property.valueType));
+    return entry &&
+      !candidates.some((c) => c.propertyId === entry.onshapePropertyId)
+      ? [
+          ...candidates,
+          {
+            propertyId: entry.onshapePropertyId,
+            name: entry.onshapeName,
+            valueType: entry.valueType,
+            mappable: true
+          }
+        ]
+      : candidates;
+  };
 
   return (
-    <VStack spacing={2} className="w-full">
+    <VStack spacing={3} className="w-full">
       {header}
-      <p className="text-xs text-muted-foreground">
-        Map an Onshape property to a Carbon item field or a part custom field.
-        Mappings apply to the whole company.
-      </p>
       {state.refreshFailure ? (
         <PanelLoadError
           title="Couldn't refresh properties"
@@ -2591,60 +2829,124 @@ function FieldsSection({
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       ) : null}
-      {otherElementErrors.map(({ propertyId, name, messages }) =>
-        messages.map((message) => (
-          <p
-            key={`${propertyId}:${message}`}
-            className="w-full text-xs text-destructive"
-          >
-            {name}: {message}
-          </p>
-        ))
-      )}
-      <FieldsColumnLabels />
-      <div className="w-full rounded-lg border border-border">
-        <ul className="flex w-full flex-col divide-y divide-border">
-          {/* Every push reads these two, so they are fixed rows. */}
-          <DescriptionModeRow
-            onshapeName="Name"
-            carbonLabel="Short Description"
-            mode={state.descriptionModes.name}
-            disabled={busy}
-            onChange={(mode) => onDescriptionMode("name", mode)}
-          />
-          <DescriptionModeRow
-            onshapeName="Description"
-            carbonLabel="Long Description"
-            mode={state.descriptionModes.description}
-            disabled={busy}
-            onChange={(mode) => onDescriptionMode("description", mode)}
-          />
-          {visibleProperties.map((property) => (
-            <FieldsRow
-              key={property.propertyId}
-              property={property}
-              entry={entryFor(property.propertyId)}
-              mappedFrom={mappedFrom}
+      {strayErrors.map(({ propertyId, message }) => (
+        <p
+          key={`${propertyId}:${message}`}
+          className="w-full text-xs text-destructive"
+        >
+          {message}
+        </p>
+      ))}
+
+      <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+        <FieldRow
+          source={<SourceText>Part number</SourceText>}
+          carbon="Part ID"
+          control={<AlwaysTag />}
+        />
+        <FieldRow
+          source={<SourceText>Revision</SourceText>}
+          carbon="Revision"
+          control={<AlwaysTag />}
+        />
+        <FieldRow
+          source={<SourceText>Name</SourceText>}
+          carbon="Short Description"
+          control={
+            <ModeSelect
+              mode={state.descriptionModes.name}
+              label="Short Description: when Onshape writes it"
+              disabled={busy}
+              onChange={(mode) => onDescriptionMode("name", mode)}
+            />
+          }
+        />
+        <FieldRow
+          source={<SourceText>Description</SourceText>}
+          carbon="Long Description"
+          control={
+            <ModeSelect
+              mode={state.descriptionModes.description}
+              label="Long Description: when Onshape writes it"
+              disabled={busy}
+              onChange={(mode) => onDescriptionMode("description", mode)}
+            />
+          }
+        />
+        {ITEM_FIELD_ROWS.map((row) => {
+          const target: PropertyMapTarget | null = row.field
+            ? { kind: "item", field: row.field }
+            : null;
+          const entry = target ? mappedFrom.get(targetKey(target)) : undefined;
+          return (
+            <ItemFieldRow
+              key={row.key}
+              row={row}
+              defaults={state.pushDefaults}
+              entry={entry}
+              property={
+                entry ? propertyById.get(entry.onshapePropertyId) : undefined
+              }
+              candidates={target ? candidatesFor(target, entry) : []}
+              mappingOf={mappingOf}
               definitions={data.definitions}
               units={data.units}
-              errors={state.fieldErrors[property.propertyId]}
+              errors={
+                entry ? state.fieldErrors[entry.onshapePropertyId] : undefined
+              }
               disabled={busy}
-              onMap={onMap}
-              onEdit={onEdit}
+              onSource={(property) =>
+                target && onTargetSource(target, property)
+              }
+              onDefault={onPushDefaults}
+              onEdit={(patch) =>
+                entry && onEdit(entry.onshapePropertyId, patch)
+              }
             />
-          ))}
-        </ul>
-      </div>
-      {visibleProperties.length === 0 ? (
-        <PanelEmpty>No other mappable properties on this element</PanelEmpty>
-      ) : null}
-      {unmappable.length > 0 ? (
-        <p className="w-full text-xs text-muted-foreground">
-          Not listed: {unmappable.map((property) => property.name).join(", ")}.
-          Onshape's computed, user, file and category properties can't be
-          mapped.
-        </p>
-      ) : null}
+          );
+        })}
+        {otherEntries.map((entry) => (
+          <MappingRow
+            key={entry.onshapePropertyId}
+            entry={entry}
+            property={propertyById.get(entry.onshapePropertyId)}
+            candidates={candidatesFor(entry.target, entry)}
+            mappingOf={mappingOf}
+            definitions={data.definitions}
+            units={data.units}
+            errors={state.fieldErrors[entry.onshapePropertyId]}
+            disabled={busy}
+            onSource={(property) => onTargetSource(entry.target, property)}
+            onEdit={(patch) => onEdit(entry.onshapePropertyId, patch)}
+          />
+        ))}
+        {adding ? (
+          <AddMappingRow
+            properties={addable}
+            mappedFrom={mappedFrom}
+            definitions={data.definitions}
+            disabled={busy}
+            onAdd={(property, selection) => {
+              onMap(property, selection);
+              setAdding(false);
+            }}
+            onCancel={() => setAdding(false)}
+          />
+        ) : null}
+      </ul>
+      {adding ? null : (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          leftIcon={<LuPlus />}
+          isDisabled={busy || addable.length === 0}
+          onClick={() => setAdding(true)}
+        >
+          Add mapping
+        </Button>
+      )}
+
       {/* Pinned like a review's push button; see ReviewActionBar. */}
       <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
         <Button
@@ -2653,34 +2955,297 @@ function FieldsSection({
           isDisabled={!dirty || busy}
           isLoading={state.saving}
         >
-          {dirty ? "Save mappings" : "No changes"}
+          {dirty ? "Save" : "No changes"}
         </Button>
       </div>
     </VStack>
   );
 }
 
-const FIELDS_CONTROL_WIDTH = "w-[180px]";
-
-function FieldsColumnLabels() {
+function pushDefaultsEqual(
+  a: OnshapePushDefaults,
+  b: OnshapePushDefaults
+): boolean {
   return (
-    <div className="flex w-full items-center gap-3 px-3">
-      <Label className="min-w-0 flex-1">Onshape property</Label>
-      {/* Spacer for the rows' arrow, so the labels sit over their columns. */}
-      <span aria-hidden className="size-4 shrink-0" />
-      <Label className={cn("shrink-0", FIELDS_CONTROL_WIDTH)}>
-        Carbon field
-      </Label>
+    a.replenishmentSystem === b.replenishmentSystem &&
+    a.methodTypeForMake === b.methodTypeForMake &&
+    a.methodTypeForBuy === b.methodTypeForBuy &&
+    a.itemTrackingType === b.itemTrackingType &&
+    a.unitOfMeasureCode === b.unitOfMeasureCode
+  );
+}
+
+/** Radix Select refuses an empty item value, so "the company's unit" is named. */
+const DEFAULT_UNIT_AUTOMATIC = "__automatic__";
+
+/** A source select's values: the push default, none, or a property by id. */
+const SOURCE_DEFAULT = "__default__";
+const SOURCE_NONE = "__none__";
+const SOURCE_PROPERTY = "property:";
+
+/**
+ * The item fields a push always fills: from a mapped property, else from the
+ * push default under `key`. The Buy items method is a default only; a mapped
+ * Default Method Type covers every item.
+ */
+const ITEM_FIELD_ROWS: {
+  key: keyof OnshapePushDefaults;
+  field: StandardFieldId | null;
+  label: string;
+}[] = [
+  {
+    key: "replenishmentSystem",
+    field: "replenishmentSystem",
+    label: "Replenishment"
+  },
+  {
+    key: "methodTypeForMake",
+    field: "defaultMethodType",
+    label: "Default Method Type"
+  },
+  {
+    key: "methodTypeForBuy",
+    field: null,
+    label: "Default Method Type for Buy items"
+  },
+  {
+    key: "itemTrackingType",
+    field: "itemTrackingType",
+    label: "Tracking Type"
+  },
+  {
+    key: "unitOfMeasureCode",
+    field: "unitOfMeasureCode",
+    label: "Unit of Measure"
+  }
+];
+
+/** The item fields with a row of their own; Add mapping does not offer them. */
+const ITEM_FIELD_ROW_FIELDS = new Set<string>(
+  ITEM_FIELD_ROWS.flatMap((row) => (row.field ? [row.field] : []))
+);
+
+type SelectOption = { value: string; label: string; helper?: string };
+
+/** The values a push default can take, with the text each shows. */
+function defaultValueOptions(
+  key: keyof OnshapePushDefaults,
+  defaults: OnshapePushDefaults,
+  units: PlanUnitOfMeasure[]
+): SelectOption[] {
+  const plain = (values: readonly string[]) =>
+    values.map((value) => ({ value, label: value }));
+  switch (key) {
+    case "replenishmentSystem":
+      return plain(ITEM_REPLENISHMENT_SYSTEMS);
+    case "methodTypeForMake":
+      return plain(
+        VALID_METHOD_TYPES_BY_REPLENISHMENT[defaults.replenishmentSystem]
+      );
+    case "methodTypeForBuy":
+      return plain(VALID_METHOD_TYPES_BY_REPLENISHMENT.Buy);
+    case "itemTrackingType":
+      return plain(ITEM_TRACKING_TYPES);
+    case "unitOfMeasureCode":
+      return [
+        {
+          value: DEFAULT_UNIT_AUTOMATIC,
+          label: "Automatic",
+          helper: "EA, or the company's first unit"
+        },
+        ...units.map((unit) => ({
+          value: unit.code,
+          label: `${unit.code} · ${unit.name}`
+        }))
+      ];
+  }
+}
+
+/** A push default as a select value; the unit's null is "Automatic". */
+function defaultValueKey(
+  key: keyof OnshapePushDefaults,
+  defaults: OnshapePushDefaults
+): string {
+  return defaults[key] ?? DEFAULT_UNIT_AUTOMATIC;
+}
+
+/** A select value back to the push default patch it sets. */
+function defaultPatch(
+  key: keyof OnshapePushDefaults,
+  value: string
+): Partial<OnshapePushDefaults> {
+  if (key === "unitOfMeasureCode") {
+    return {
+      unitOfMeasureCode: value === DEFAULT_UNIT_AUTOMATIC ? null : value
+    };
+  }
+  return { [key]: value } as Partial<OnshapePushDefaults>;
+}
+
+/**
+ * One row of the Fields page: where the value comes from, the Carbon field it
+ * lands in, one control, and one icon. Every row is the same grid, so the
+ * arrows and controls line up down the page whatever the text.
+ */
+function FieldRow({
+  source,
+  carbon,
+  control,
+  action,
+  notes
+}: {
+  source: ReactNode;
+  carbon: ReactNode;
+  control?: ReactNode;
+  action?: ReactNode;
+  /** Errors or a hint, under the row. */
+  notes?: ReactNode;
+}) {
+  return (
+    <li className="flex w-full flex-col gap-1 px-3 py-1.5">
+      <div className={FIELD_ROW_GRID}>
+        <div className="min-w-0 text-sm">{source}</div>
+        <LuArrowRight
+          aria-hidden
+          className="size-3.5 justify-self-center text-muted-foreground"
+        />
+        <div className="min-w-0 text-sm">
+          {typeof carbon === "string" ? (
+            <FieldName>{carbon}</FieldName>
+          ) : (
+            carbon
+          )}
+        </div>
+        <div className="min-w-0">{control}</div>
+        <div className="flex size-8 items-center justify-center">{action}</div>
+      </div>
+      {notes ? <div className="px-1">{notes}</div> : null}
+    </li>
+  );
+}
+
+/**
+ * Source, arrow, Carbon field, control, icon: the same in every row. The
+ * control column fits "Update on every push" whole.
+ */
+const FIELD_ROW_GRID =
+  "grid w-full grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_200px_32px] items-center gap-x-2";
+
+/**
+ * A field or property name in a narrow column: it wraps to two lines, and a
+ * name still too long shows whole in a tooltip.
+ */
+function FieldName({
+  children,
+  emphasis
+}: {
+  children: string;
+  emphasis?: boolean;
+}) {
+  return (
+    <TruncatedTooltipText
+      tooltip={children}
+      className={cn(
+        "line-clamp-2 break-words px-1 leading-snug",
+        emphasis && "font-medium"
+      )}
+    >
+      {children}
+    </TruncatedTooltipText>
+  );
+}
+
+/** A fixed source, padded like a picker's text so the two line up. */
+function SourceText({ children }: { children: string }) {
+  return <FieldName emphasis>{children}</FieldName>;
+}
+
+/**
+ * A source the user can change: a searchable list, drawn like the fixed rows'
+ * text so every row reads the same. An option the field cannot take now (a
+ * property another field holds) is left out, and each option's group shows
+ * on its helper line.
+ */
+function SourceSelect({
+  value,
+  label,
+  groups,
+  disabled,
+  placeholder,
+  onChange
+}: {
+  value: string | undefined;
+  label: string;
+  groups: {
+    label?: string;
+    options: (SelectOption & { disabled?: boolean })[];
+  }[];
+  disabled: boolean;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  const options: ComboboxOption[] = groups.flatMap((group) =>
+    group.options
+      .filter((option) => !option.disabled)
+      .map((option) => ({
+        value: option.value,
+        label: option.label,
+        helper:
+          [group.label, option.helper].filter(Boolean).join(" · ") || undefined
+      }))
+  );
+  return (
+    <div className="w-full min-w-0">
+      <Combobox
+        size="sm"
+        value={value}
+        options={options}
+        placeholder={placeholder}
+        disabled={disabled}
+        aria-label={label}
+        className="h-7 min-w-0 gap-1 border-transparent bg-transparent px-1 font-medium shadow-none hover:bg-accent"
+        onChange={onChange}
+      />
     </div>
   );
 }
 
-/** "Set at creation" or "Update on every push", with what it does. */
+/** The properties a source select offers; a taken one is marked disabled. */
+function propertyOptions(
+  candidates: PanelFieldsProperty[],
+  own: FieldsDraftEntry | undefined,
+  mappingOf: Map<string, FieldsDraftEntry>,
+  definitions: PlanCustomFieldDefinition[]
+): (SelectOption & { disabled?: boolean })[] {
+  return candidates.map((candidate) => {
+    const elsewhere = mappingOf.get(candidate.propertyId);
+    const taken = elsewhere !== undefined && elsewhere !== own;
+    return {
+      value: `${SOURCE_PROPERTY}${candidate.propertyId}`,
+      label: candidate.name,
+      disabled: taken,
+      helper: taken
+        ? `Mapped to ${targetLabel(elsewhere.target, definitions)}`
+        : (VALUE_TYPE_LABEL[candidate.valueType] ?? candidate.valueType)
+    };
+  });
+}
+
+function AlwaysTag() {
+  return (
+    <span className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+      <LuLock aria-hidden className="size-3" />
+      Always
+    </span>
+  );
+}
+
+/** "Set at creation" or "Update on every push"; what each does is in the dropdown. */
 function ModeSelect({
   mode,
   label,
   disabled,
-  cascades,
+  cascades = false,
   onChange
 }: {
   mode: MappingMode;
@@ -2691,358 +3256,765 @@ function ModeSelect({
   onChange: (mode: MappingMode) => void;
 }) {
   return (
-    <div className="flex w-full flex-col gap-1">
-      <Select
-        value={mode}
-        onValueChange={(value) => onChange(value as MappingMode)}
-        disabled={disabled}
-      >
-        <SelectTrigger size="sm" className="w-full" aria-label={label}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="create">{MODE_LABEL.create}</SelectItem>
-          <SelectItem value="everyPush">{MODE_LABEL.everyPush}</SelectItem>
-        </SelectContent>
-      </Select>
-      <p className="text-xs text-muted-foreground">{MODE_HELP[mode]}</p>
-      {cascades && mode === "everyPush" ? (
-        <p className="text-xs text-muted-foreground">{CASCADE_HELP}</p>
-      ) : null}
-    </div>
+    <Select
+      value={mode}
+      onValueChange={(value) => onChange(value as MappingMode)}
+      disabled={disabled}
+    >
+      <SelectTrigger size="sm" className="w-full" aria-label={label}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="min-w-[300px]">
+        {MAPPING_MODES.map((value) => (
+          <SelectItem
+            key={value}
+            value={value}
+            helper={modeHelper(value, cascades)}
+          >
+            {MODE_LABEL[value]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
-function DescriptionModeRow({
-  onshapeName,
-  carbonLabel,
-  mode,
+/** A push default's value. */
+function DefaultValueSelect({
+  options,
+  value,
+  label,
   disabled,
   onChange
 }: {
-  onshapeName: string;
-  carbonLabel: string;
-  mode: MappingMode;
+  options: SelectOption[];
+  value: string;
+  label: string;
   disabled: boolean;
-  onChange: (mode: MappingMode) => void;
+  onChange: (value: string) => void;
 }) {
   return (
-    <li className="flex w-full flex-col gap-2 px-3 py-2">
-      <div className="flex w-full items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col leading-tight">
-          <span className="truncate text-sm font-medium">{onshapeName}</span>
-          <span className="truncate text-xs text-muted-foreground">
-            Read on every push
-          </span>
-        </div>
-        <LuArrowRight
-          aria-hidden
-          className="size-4 shrink-0 text-muted-foreground"
-        />
-        <span className={cn("shrink-0 truncate text-sm", FIELDS_CONTROL_WIDTH)}>
-          {carbonLabel}
-        </span>
-      </div>
-      <ModeSelect
-        mode={mode}
-        label={`${carbonLabel}: when Onshape writes it`}
-        disabled={disabled}
-        onChange={onChange}
-      />
-    </li>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger size="sm" className="w-full" aria-label={label}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="min-w-[220px]">
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            helper={option.helper}
+          >
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
-function FieldsRow({
-  property,
+/** The Carbon field a mapping writes, as the page names it. */
+function targetLabel(
+  target: PropertyMapTarget,
+  definitions: PlanCustomFieldDefinition[]
+): string {
+  if (target.kind === "item") {
+    return standardField(target.field)?.label ?? target.field;
+  }
+  return (
+    definitions.find((definition) => definition.id === target.fieldId)?.name ??
+    "Deleted field"
+  );
+}
+
+function rowErrors(errors: string[] | undefined): ReactNode {
+  return errors?.map((message) => (
+    <p key={message} className="text-xs text-destructive">
+      {message}
+    </p>
+  ));
+}
+
+/**
+ * The list values of a mapped list field, behind an icon: amber while an
+ * Onshape option has no Carbon value. The window also holds the field's push
+ * default when it has one, the value a new item gets when Onshape gives none.
+ */
+function ValuesButton({
   entry,
-  mappedFrom,
+  property,
+  field,
+  units,
+  disabled,
+  fallback,
+  onEdit
+}: {
+  entry: FieldsDraftEntry;
+  property: PanelFieldsProperty | undefined;
+  field: StandardField;
+  units: PlanUnitOfMeasure[];
+  disabled: boolean;
+  fallback?: {
+    options: SelectOption[];
+    value: string;
+    onChange: (value: string) => void;
+  };
+  onEdit: (
+    patch: Partial<Pick<FieldsDraftEntry, "mode" | "translations">>
+  ) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const options = onshapeValueOptions(entry.valueType, property?.options);
+  const translations = entry.translations ?? [];
+  const untranslated = options
+    ? untranslatedOptions(field, options, translations, units)
+    : [];
+  const summary = options
+    ? `Values: ${options.length - untranslated.length} of ${options.length} mapped`
+    : `Values: ${translations.length}`;
+  return (
+    <>
+      <IconButton
+        aria-label={summary}
+        title={summary}
+        icon={untranslated.length > 0 ? <LuTriangleAlert /> : <LuListChecks />}
+        variant="ghost"
+        size="sm"
+        className={
+          untranslated.length > 0
+            ? "text-amber-600 dark:text-amber-400"
+            : undefined
+        }
+        isDisabled={disabled}
+        onClick={() => setOpen(true)}
+      />
+      {open ? (
+        <ValuesModal
+          title={`${entry.onshapeName} → ${field.label}`}
+          field={field}
+          options={options}
+          translations={translations}
+          units={units}
+          fallback={fallback}
+          onApply={(next, fallbackValue) => {
+            onEdit({ translations: next });
+            if (fallback && fallbackValue !== undefined) {
+              fallback.onChange(fallbackValue);
+            }
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * An item field a push always fills. The source is its push default until an
+ * Onshape property replaces it; the control is then the default's value, or
+ * the mapping's mode. A mapped list field keeps the default in its values
+ * window, for a part whose property gives no value.
+ */
+function ItemFieldRow({
+  row,
+  defaults,
+  entry,
+  property,
+  candidates,
+  mappingOf,
   definitions,
   units,
   errors,
   disabled,
-  onMap,
+  onSource,
+  onDefault,
   onEdit
 }: {
-  property: PanelFieldsProperty;
+  row: (typeof ITEM_FIELD_ROWS)[number];
+  defaults: OnshapePushDefaults;
+  /** The mapping that feeds this field, if any. */
   entry: FieldsDraftEntry | undefined;
-  /** The entry each Carbon field is mapped from, by `targetKey`. */
-  mappedFrom: Map<string, FieldsDraftEntry>;
+  property: PanelFieldsProperty | undefined;
+  /** The properties whose value type the field takes. */
+  candidates: PanelFieldsProperty[];
+  /** The mapping each property is in, by property id. */
+  mappingOf: Map<string, FieldsDraftEntry>;
   definitions: PlanCustomFieldDefinition[];
   units: PlanUnitOfMeasure[];
   errors: string[] | undefined;
   disabled: boolean;
-  onMap: (property: PanelFieldsProperty, selection: string) => void;
+  onSource: (property: PanelFieldsProperty | null) => void;
+  onDefault: (patch: Partial<OnshapePushDefaults>) => void;
   onEdit: (
-    propertyId: string,
     patch: Partial<Pick<FieldsDraftEntry, "mode" | "translations">>
   ) => void;
 }) {
-  const target = entry?.target;
-  const mappedFieldId =
-    target?.kind === "customField" ? target.fieldId : undefined;
-  // Only targets the value can land in are offered; a target already mapped
-  // stays listed even when it no longer accepts the type, so the current
-  // mapping is visible rather than a blank select.
-  const allowed = mappableTypesFor(property.valueType);
-  const customOptions = definitions.filter(
-    (definition) =>
-      allowed.includes(definition.dataTypeId) || definition.id === mappedFieldId
+  const field = row.field ? standardField(row.field) : undefined;
+  const defaultOptions = defaultValueOptions(row.key, defaults, units);
+  const defaultValue = defaultValueKey(row.key, defaults);
+  const setDefault = (value: string) => onDefault(defaultPatch(row.key, value));
+  const source = field ? (
+    <SourceSelect
+      value={
+        entry ? `${SOURCE_PROPERTY}${entry.onshapePropertyId}` : SOURCE_DEFAULT
+      }
+      label={`${row.label}: source`}
+      groups={[
+        {
+          options: [
+            {
+              value: SOURCE_DEFAULT,
+              label: "Default",
+              helper: "The value you pick on this row"
+            }
+          ]
+        },
+        {
+          label: "Onshape property",
+          options: propertyOptions(candidates, entry, mappingOf, definitions)
+        }
+      ]}
+      disabled={disabled}
+      onChange={(value) => {
+        if (value === SOURCE_DEFAULT) {
+          if (entry) onSource(null);
+          return;
+        }
+        const chosen = candidates.find(
+          (c) => c.propertyId === value.slice(SOURCE_PROPERTY.length)
+        );
+        if (chosen) onSource(chosen);
+      }}
+    />
+  ) : (
+    <SourceText>Default</SourceText>
   );
-  const itemOptions = STANDARD_FIELDS.filter(
-    (field) =>
-      field.valueTypes.includes(property.valueType) ||
-      (target?.kind === "item" && target.field === field.id)
+  return (
+    <FieldRow
+      source={source}
+      carbon={row.label}
+      control={
+        entry ? (
+          <ModeSelect
+            mode={entry.mode}
+            label={`${row.label}: when Onshape writes it`}
+            disabled={disabled}
+            cascades={field?.cascades}
+            onChange={(mode) => onEdit({ mode })}
+          />
+        ) : (
+          <DefaultValueSelect
+            options={defaultOptions}
+            value={defaultValue}
+            label={`${row.label}: default`}
+            disabled={disabled}
+            onChange={setDefault}
+          />
+        )
+      }
+      action={
+        entry && field?.kind === "list" ? (
+          <ValuesButton
+            entry={entry}
+            property={property}
+            field={field}
+            units={units}
+            disabled={disabled}
+            fallback={{
+              options: defaultOptions,
+              value: defaultValue,
+              onChange: setDefault
+            }}
+            onEdit={onEdit}
+          />
+        ) : null
+      }
+      notes={rowErrors(errors)}
+    />
   );
-  // A mapping whose Carbon field has since been deleted has no definition to
-  // name it, so it shows as a disabled option the user can map away from.
-  const deletedFieldId =
-    mappedFieldId &&
-    !customOptions.some((definition) => definition.id === mappedFieldId)
-      ? mappedFieldId
-      : null;
+}
+
+/**
+ * A mapped field with no push default: MPN, Sourcing, a part custom field.
+ * Its source can move to another property, or to "Not mapped", which removes
+ * the row.
+ */
+function MappingRow({
+  entry,
+  property,
+  candidates,
+  mappingOf,
+  definitions,
+  units,
+  errors,
+  disabled,
+  onSource,
+  onEdit
+}: {
+  entry: FieldsDraftEntry;
+  /** The property on this element; absent when it is mapped from another. */
+  property: PanelFieldsProperty | undefined;
+  candidates: PanelFieldsProperty[];
+  mappingOf: Map<string, FieldsDraftEntry>;
+  definitions: PlanCustomFieldDefinition[];
+  units: PlanUnitOfMeasure[];
+  errors: string[] | undefined;
+  disabled: boolean;
+  onSource: (property: PanelFieldsProperty | null) => void;
+  onEdit: (
+    patch: Partial<Pick<FieldsDraftEntry, "mode" | "translations">>
+  ) => void;
+}) {
   const itemField =
-    target?.kind === "item" ? standardField(target.field) : undefined;
+    entry.target.kind === "item"
+      ? standardField(entry.target.field)
+      : undefined;
+  const carbon = targetLabel(entry.target, definitions);
+  return (
+    <FieldRow
+      source={
+        <SourceSelect
+          value={`${SOURCE_PROPERTY}${entry.onshapePropertyId}`}
+          label={`${carbon}: source`}
+          groups={[
+            {
+              options: [
+                {
+                  value: SOURCE_NONE,
+                  label: "Not mapped",
+                  helper: "Removes this row"
+                }
+              ]
+            },
+            {
+              label: "Onshape property",
+              options: propertyOptions(
+                candidates,
+                entry,
+                mappingOf,
+                definitions
+              )
+            }
+          ]}
+          disabled={disabled}
+          onChange={(value) => {
+            if (value === SOURCE_NONE) {
+              onSource(null);
+              return;
+            }
+            const chosen = candidates.find(
+              (c) => c.propertyId === value.slice(SOURCE_PROPERTY.length)
+            );
+            if (chosen) onSource(chosen);
+          }}
+        />
+      }
+      carbon={carbon}
+      control={
+        <ModeSelect
+          mode={entry.mode}
+          label={`${carbon}: when Onshape writes it`}
+          disabled={disabled}
+          cascades={itemField?.cascades}
+          onChange={(mode) => onEdit({ mode })}
+        />
+      }
+      action={
+        itemField?.kind === "list" ? (
+          <ValuesButton
+            entry={entry}
+            property={property}
+            field={itemField}
+            units={units}
+            disabled={disabled}
+            onEdit={onEdit}
+          />
+        ) : null
+      }
+      notes={rowErrors(errors)}
+    />
+  );
+}
+
+/** A new row: pick an Onshape property, then the Carbon field it writes. */
+function AddMappingRow({
+  properties,
+  mappedFrom,
+  definitions,
+  disabled,
+  onAdd,
+  onCancel
+}: {
+  /** The properties this element offers that are not mapped yet. */
+  properties: PanelFieldsProperty[];
+  /** The entry each Carbon field is mapped from, by `targetKey`. */
+  mappedFrom: Map<string, FieldsDraftEntry>;
+  definitions: PlanCustomFieldDefinition[];
+  disabled: boolean;
+  onAdd: (property: PanelFieldsProperty, selection: string) => void;
+  onCancel: () => void;
+}) {
+  const [propertyId, setPropertyId] = useState<string | null>(null);
+  const property = properties.find((entry) => entry.propertyId === propertyId);
+  const allowed = property ? mappableTypesFor(property.valueType) : [];
+  const customOptions = property
+    ? definitions.filter((definition) =>
+        allowed.includes(definition.dataTypeId)
+      )
+    : [];
+  // An item field with a row of its own is set in that row.
+  const itemOptions = property
+    ? STANDARD_FIELDS.filter(
+        (field) =>
+          !ITEM_FIELD_ROW_FIELDS.has(field.id) &&
+          field.valueTypes.includes(property.valueType)
+      )
+    : [];
   // A field another property is mapped to stays listed, disabled, with that
   // property's name, so the clash shows before the save refuses it.
-  const heldBy = (key: string) => {
-    const holder = mappedFrom.get(key);
-    return holder && holder.onshapePropertyId !== property.propertyId
-      ? holder.onshapeName
-      : null;
+  const targetOption = (key: string, label: string) => {
+    const holder = mappedFrom.get(key)?.onshapeName ?? null;
+    return {
+      value: key,
+      label,
+      disabled: holder !== null,
+      helper: holder ? `Mapped from ${holder}` : undefined
+    };
   };
   const neededTypes = allowed
     .map((dataTypeId) => CUSTOM_FIELD_TYPE_LABELS[dataTypeId])
     .filter(Boolean)
     .join(" or ");
   const noTarget =
-    property.mappable &&
-    itemOptions.length === 0 &&
-    customOptions.length === 0 &&
-    neededTypes !== "";
+    !!property && itemOptions.length === 0 && customOptions.length === 0;
   return (
-    <li className="flex w-full flex-col gap-2 px-3 py-2">
-      <div className="flex w-full items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col leading-tight">
-          <span className="truncate text-sm font-medium" title={property.name}>
-            {property.name}
-          </span>
-          <span className="truncate text-xs text-muted-foreground">
-            {property.valueType}
-            {property.mappable ? null : " · no Carbon type to map onto"}
-          </span>
-        </div>
-        <LuArrowRight
-          aria-hidden
-          className="size-4 shrink-0 text-muted-foreground"
-        />
-        <div className={cn("shrink-0", FIELDS_CONTROL_WIDTH)}>
-          <Select
-            value={target ? targetKey(target) : FIELDS_NOT_MAPPED}
-            onValueChange={(value) => onMap(property, value)}
-            disabled={disabled}
-          >
-            <SelectTrigger
-              size="sm"
-              className="w-full"
-              aria-label={`Map ${property.name}`}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={FIELDS_NOT_MAPPED}>Not mapped</SelectItem>
-              {itemOptions.length > 0 ? (
-                <SelectGroup>
-                  <SelectLabel>Item fields</SelectLabel>
-                  {itemOptions.map((field) => {
-                    const key = targetKey({ kind: "item", field: field.id });
-                    const holder = heldBy(key);
-                    return (
-                      <SelectItem
-                        key={field.id}
-                        value={key}
-                        disabled={holder !== null}
-                      >
-                        {holder
-                          ? `${field.label} · from ${holder}`
-                          : field.label}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectGroup>
-              ) : null}
-              {customOptions.length > 0 || deletedFieldId ? (
-                <SelectGroup>
-                  <SelectLabel>Custom fields</SelectLabel>
-                  {customOptions.map((definition) => {
-                    const key = targetKey({
-                      kind: "customField",
-                      fieldId: definition.id
-                    });
-                    const holder = heldBy(key);
-                    return (
-                      <SelectItem
-                        key={definition.id}
-                        value={key}
-                        disabled={holder !== null}
-                      >
-                        {holder
-                          ? `${definition.name} · from ${holder}`
-                          : definition.name}
-                      </SelectItem>
-                    );
-                  })}
-                  {deletedFieldId ? (
-                    <SelectItem
-                      value={targetKey({
-                        kind: "customField",
-                        fieldId: deletedFieldId
-                      })}
-                      disabled
-                    >
-                      Deleted field
-                    </SelectItem>
-                  ) : null}
-                </SelectGroup>
-              ) : null}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      {noTarget ? (
-        <p className="text-xs text-muted-foreground">
-          No Carbon field takes a {property.valueType} value. Add a{" "}
-          {neededTypes} part custom field in Carbon to map it.
-        </p>
-      ) : null}
-      {entry ? (
-        <ModeSelect
-          mode={entry.mode}
-          label={`${property.name}: when Onshape writes it`}
+    <FieldRow
+      source={
+        <SourceSelect
+          value={propertyId ?? undefined}
+          placeholder="Onshape property"
+          label="Onshape property"
+          groups={[
+            {
+              options: properties.map((entry) => ({
+                value: entry.propertyId,
+                label: entry.name,
+                helper: VALUE_TYPE_LABEL[entry.valueType] ?? entry.valueType
+              }))
+            }
+          ]}
           disabled={disabled}
-          cascades={itemField?.cascades}
-          onChange={(mode) => onEdit(property.propertyId, { mode })}
+          onChange={setPropertyId}
         />
-      ) : null}
-      {entry && itemField?.kind === "list" ? (
-        <TranslationRows
-          field={itemField}
-          translations={entry.translations ?? []}
-          units={units}
-          disabled={disabled}
-          onChange={(translations) =>
-            onEdit(property.propertyId, { translations })
-          }
+      }
+      carbon={
+        <SourceSelect
+          // Remounts on a new property, so no stale field stays picked.
+          key={propertyId ?? ""}
+          value={undefined}
+          placeholder="Carbon field"
+          label="Carbon field"
+          groups={[
+            {
+              label: "Item fields",
+              options: itemOptions.map((field) =>
+                targetOption(
+                  targetKey({ kind: "item", field: field.id }),
+                  field.label
+                )
+              )
+            },
+            {
+              label: "Custom fields",
+              options: customOptions.map((definition) =>
+                targetOption(
+                  targetKey({ kind: "customField", fieldId: definition.id }),
+                  definition.name
+                )
+              )
+            }
+          ]}
+          disabled={disabled || !property || noTarget}
+          onChange={(value) => property && onAdd(property, value)}
         />
-      ) : null}
-      {errors?.map((message) => (
-        <p key={message} className="text-xs text-destructive">
-          {message}
-        </p>
-      ))}
-    </li>
+      }
+      action={
+        <IconButton
+          aria-label="Cancel the new mapping"
+          icon={<LuX />}
+          variant="ghost"
+          size="sm"
+          onClick={onCancel}
+        />
+      }
+      notes={
+        noTarget && property ? (
+          <p className="text-xs text-muted-foreground">
+            No Carbon field takes a {property.valueType} value
+            {neededTypes
+              ? `. Add a ${neededTypes} part custom field in Carbon to map it.`
+              : "."}
+          </p>
+        ) : null
+      }
+    />
   );
 }
 
-/** The value translation of a list item field: Onshape value → Carbon value. */
-function TranslationRows({
+type ValuesDraftRow = {
+  onshape: string;
+  /** A Carbon value, null for "No value", or TRANSLATION_UNSET for no row. */
+  carbon: string | null;
+  /** One of the Onshape list's own options: its text is fixed. */
+  fixed: boolean;
+};
+
+/**
+ * The value translation of a list item field: Onshape value → Carbon value.
+ * With the Onshape list's options known, each is a fixed row; an option left
+ * "Not mapped" has no row, so the review flags it. A typed row covers a value
+ * the options do not list.
+ */
+function ValuesModal({
+  title,
   field,
+  options,
   translations,
   units,
-  disabled,
-  onChange
+  fallback,
+  onApply,
+  onClose
 }: {
+  title: string;
   field: StandardField;
+  options: string[] | null;
   translations: ValueTranslation[];
   units: PlanUnitOfMeasure[];
-  disabled: boolean;
-  onChange: (translations: ValueTranslation[]) => void;
+  /** The field's push default: what a new item gets when Onshape gives none. */
+  fallback?: { options: SelectOption[]; value: string };
+  onApply: (translations: ValueTranslation[], fallback?: string) => void;
+  onClose: () => void;
 }) {
+  const [fallbackValue, setFallbackValue] = useState(fallback?.value);
+  // Rows that repeat a value listed above, found on Apply.
+  const [repeated, setRepeated] = useState<number[]>([]);
+  const [rows, setRows] = useState<ValuesDraftRow[]>(() => [
+    ...(options ?? []).map((option) => {
+      const saved = translations.find((row) => sameText(row.onshape, option));
+      return {
+        onshape: option,
+        carbon: saved ? saved.carbon : TRANSLATION_UNSET,
+        fixed: true
+      };
+    }),
+    ...translations
+      .filter(
+        (row) =>
+          !(options ?? []).some((option) => sameText(option, row.onshape))
+      )
+      .map((row) => ({ ...row, fixed: false }))
+  ]);
   const values = standardFieldValues(field, units);
   const unitName = new Map(units.map((unit) => [unit.code, unit.name]));
-  const update = (index: number, patch: Partial<ValueTranslation>) =>
-    onChange(
-      translations.map((row, at) => (at === index ? { ...row, ...patch } : row))
+  const isUnit = field.id === "unitOfMeasureCode";
+  const update = (index: number, patch: Partial<ValuesDraftRow>) => {
+    setRepeated([]);
+    setRows((current) =>
+      current.map((row, at) => (at === index ? { ...row, ...patch } : row))
     );
+  };
+  const apply = () => {
+    // The save refuses two rows for one value; stop it here, on the row.
+    const repeats = repeatedTranslationRows(rows);
+    if (repeats.length > 0) {
+      setRepeated(repeats);
+      return;
+    }
+    onApply(
+      rows
+        .filter(
+          (row) => row.carbon !== TRANSLATION_UNSET && row.onshape.trim() !== ""
+        )
+        .map((row) => ({ onshape: row.onshape.trim(), carbon: row.carbon })),
+      fallbackValue
+    );
+  };
+  // What an unset option or "No value" ends as: the field's default on a new
+  // item, else nothing; an unset option also warns in the review.
+  const unsetHelper = fallback
+    ? "Uses the default, with a review warning"
+    : "Not written, with a review warning";
+  const noValueHelper = fallback ? "Uses the default" : "Not written";
+  const valueOptions: ComboboxOption[] = values.map((value) => ({
+    value,
+    label: unitName.get(value) ? `${value} · ${unitName.get(value)}` : value
+  }));
+  // A unit option with no row still lands on the unit its code or name
+  // matches, so the row says which one, muted and marked so it does not read
+  // as a value someone chose.
+  const optionsFor = (row: ValuesDraftRow): ComboboxOption[] => {
+    const match = isUnit ? matchingUnit(row.onshape, units) : null;
+    return [
+      ...(row.fixed
+        ? [
+            match
+              ? {
+                  value: TRANSLATION_UNSET,
+                  label: (
+                    <span className="text-muted-foreground">
+                      {`${match.unit.code} · ${match.unit.name} (matched)`}
+                    </span>
+                  ),
+                  helper: `By unit ${match.by}`
+                }
+              : {
+                  value: TRANSLATION_UNSET,
+                  label: "Not mapped",
+                  helper: unsetHelper
+                }
+          ]
+        : []),
+      { value: TRANSLATION_NO_VALUE, label: "No value", helper: noValueHelper },
+      ...valueOptions
+    ];
+  };
   return (
-    <div className="flex w-full flex-col gap-1 rounded-md bg-muted/40 p-2">
-      <p className="text-xs text-muted-foreground">{TRANSLATION_HELP}</p>
-      {field.id === "unitOfMeasureCode" ? (
-        <p className="text-xs text-muted-foreground">
-          A value that matches a unit's code or name needs no row.
-        </p>
-      ) : null}
-      {translations.map((row, index) => (
-        // Rows have no id of their own; their order is stable while editing.
-        <div key={index} className="flex w-full items-center gap-2">
-          <Input
-            size="sm"
-            className="min-w-0 flex-1"
-            value={row.onshape}
-            aria-label={`Onshape value ${index + 1}`}
-            disabled={disabled}
-            onChange={(event) => update(index, { onshape: event.target.value })}
-          />
-          <LuArrowRight
-            aria-hidden
-            className="size-4 shrink-0 text-muted-foreground"
-          />
-          <div className="w-[140px] shrink-0">
-            <Select
-              value={row.carbon ?? TRANSLATION_NO_VALUE}
-              onValueChange={(value) =>
-                update(index, {
-                  carbon: value === TRANSLATION_NO_VALUE ? null : value
-                })
-              }
-              disabled={disabled}
-            >
-              <SelectTrigger
-                size="sm"
-                className="w-full"
-                aria-label={`Carbon value for ${row.onshape || "this row"}`}
+    <Modal open onOpenChange={(open) => (open ? undefined : onClose())}>
+      <ModalContent size="medium" aria-describedby={undefined}>
+        <ModalHeader>
+          <ModalTitle>{title}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex w-full flex-col gap-3">
+            <div className="flex w-full flex-col gap-1">
+              <div
+                className={cn(
+                  VALUES_ROW_GRID,
+                  "px-3 text-xs font-medium text-muted-foreground"
+                )}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={TRANSLATION_NO_VALUE}>No value</SelectItem>
-                {values.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {unitName.get(value)
-                      ? `${value} · ${unitName.get(value)}`
-                      : value}
-                  </SelectItem>
+                <span className="px-1">Onshape value</span>
+                <span />
+                <span>Carbon value</span>
+                <span />
+              </div>
+              <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+                {rows.map((row, index) => (
+                  // Rows have no id of their own; their order is stable while editing.
+                  <li
+                    key={index}
+                    className={cn(VALUES_ROW_GRID, "px-3 py-1.5")}
+                  >
+                    {row.fixed ? (
+                      <SourceText>{row.onshape}</SourceText>
+                    ) : (
+                      <Input
+                        size="sm"
+                        value={row.onshape}
+                        placeholder="Onshape value"
+                        aria-label={`Onshape value ${index + 1}`}
+                        onChange={(event) =>
+                          update(index, { onshape: event.target.value })
+                        }
+                      />
+                    )}
+                    <LuArrowRight
+                      aria-hidden
+                      className="size-3.5 justify-self-center text-muted-foreground"
+                    />
+                    <Combobox
+                      size="sm"
+                      value={
+                        row.carbon === TRANSLATION_UNSET
+                          ? TRANSLATION_UNSET
+                          : (row.carbon ?? TRANSLATION_NO_VALUE)
+                      }
+                      options={optionsFor(row)}
+                      aria-label={`Carbon value for ${row.onshape || "this row"}`}
+                      onChange={(value) => {
+                        if (!value) return;
+                        update(index, {
+                          carbon: value === TRANSLATION_NO_VALUE ? null : value
+                        });
+                      }}
+                    />
+                    <div className="flex size-8 items-center justify-center">
+                      {row.fixed ? null : (
+                        <IconButton
+                          aria-label={`Remove ${row.onshape || "row"}`}
+                          icon={<LuTrash />}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setRows((current) =>
+                              current.filter((_, at) => at !== index)
+                            )
+                          }
+                        />
+                      )}
+                    </div>
+                    {repeated.includes(index) ? (
+                      <span className="col-span-full px-1 text-xs text-destructive">
+                        "{row.onshape.trim()}" is already listed above
+                      </span>
+                    ) : null}
+                  </li>
                 ))}
-              </SelectContent>
-            </Select>
+                {fallback ? (
+                  <li className={cn(VALUES_ROW_GRID, "px-3 py-1.5")}>
+                    <span className="px-1 text-sm text-muted-foreground">
+                      No Onshape value or unmapped value: new items get
+                    </span>
+                    <LuArrowRight
+                      aria-hidden
+                      className="size-3.5 justify-self-center text-muted-foreground"
+                    />
+                    <DefaultValueSelect
+                      options={fallback.options}
+                      value={fallbackValue ?? fallback.value}
+                      label="Value a new item gets when Onshape gives none or an unmapped one"
+                      disabled={false}
+                      onChange={setFallbackValue}
+                    />
+                    <span />
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="self-start"
+              leftIcon={<LuPlus />}
+              onClick={() =>
+                setRows((current) => [
+                  ...current,
+                  { onshape: "", carbon: null, fixed: false }
+                ])
+              }
+            >
+              Add value
+            </Button>
           </div>
-          <IconButton
-            aria-label={`Remove ${row.onshape || "row"}`}
-            icon={<LuX />}
-            variant="ghost"
-            size="sm"
-            isDisabled={disabled}
-            onClick={() =>
-              onChange(translations.filter((_, at) => at !== index))
-            }
-          />
-        </div>
-      ))}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="self-start"
-        leftIcon={<LuPlus />}
-        isDisabled={disabled}
-        onClick={() =>
-          onChange([...translations, { onshape: "", carbon: null }])
-        }
-      >
-        Add row
-      </Button>
-    </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={apply}>Apply</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }
+
+/**
+ * Onshape value, arrow, Carbon value, icon: the Fields rows' grid, narrower.
+ * The Carbon value takes more room: a unit reads "FOOT · Foot (matched)".
+ */
+const VALUES_ROW_GRID =
+  "grid w-full grid-cols-[minmax(0,2fr)_16px_minmax(0,3fr)_32px] items-center gap-x-2";
 
 // ---------------------------------------------------------------------------
 // Review (plan → apply)
@@ -3276,6 +4248,21 @@ function RowMappedFields({
   );
 }
 
+/**
+ * Whether a part row lists anything a push changes. An "update" with nothing
+ * listed is one whose geometry may have moved since the last export: the push
+ * exports the model again and changes no field.
+ */
+function rowHasDetails(row: PartPlanRow): boolean {
+  return (
+    row.changes.length > 0 ||
+    (row.itemFieldChanges?.length ?? 0) > 0 ||
+    (row.customFields?.length ?? 0) > 0 ||
+    (row.keptDifferences?.length ?? 0) > 0 ||
+    (row.mappedFieldProblems?.length ?? 0) > 0
+  );
+}
+
 /** Under the item choices: a choice made in the review stays in Carbon. */
 function CarbonOnlyNote() {
   return (
@@ -3360,10 +4347,10 @@ function PartReviewSection({
               variant="destructive"
               title={(n) =>
                 n === 1
-                  ? "1 part shares a part number with an existing Carbon item"
-                  : `${n} parts share a part number with an existing Carbon item`
+                  ? "1 part matches an existing Carbon item"
+                  : `${n} parts match existing Carbon items`
               }
-              description="Pushing links them, and each field set to Update on every push takes Onshape's value. If any of them is a different part, renumber it in Onshape before pushing."
+              description="Same part number. Pushing links them; renumber any that are different parts."
               lines={conflicts.map(
                 (row) =>
                   `${row.partNumber} · ${row.item?.name ?? row.name} in Carbon`
@@ -3417,6 +4404,11 @@ function PartReviewSection({
                     />
                   ) : null;
                 })()}
+                {row.action === "update" && !rowHasDetails(row) ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Only the model is exported again.
+                  </p>
+                ) : null}
                 {row.action !== "skip-no-part-number" ? (
                   <RowMappedFields
                     isCreate={row.action === "create"}
@@ -3550,10 +4542,10 @@ function AssemblyReviewSection({
           variant="destructive"
           title={(n) =>
             n === 1
-              ? "1 part shares a part number with an existing Carbon item"
-              : `${n} parts share a part number with an existing Carbon item`
+              ? "1 part matches an existing Carbon item"
+              : `${n} parts match existing Carbon items`
           }
-          description={`The push uses them in the BOM. The assembly being pushed and any part not yet linked to Onshape are linked to these Onshape parts; a part already linked to another Onshape part keeps that link. Any that are assemblies get Onshape's BOM lines written into their make methods, and each linked item's fields set to Update on every push take Onshape's value. If any of them is a different part, renumber it in Onshape before pushing.`}
+          description="Same part number. The push uses them in the BOM; renumber any that are different parts."
           lines={conflicts}
         />
       ) : null}
@@ -3594,7 +4586,7 @@ function AssemblyReviewSection({
               ? "1 item's Buy or Make doesn't match Onshape"
               : `${n} items' Buy or Make doesn't match Onshape`
           }
-          description="The push writes them as they are. Change Replenishment on the item below, or the Onshape property mapped to Replenishment."
+          description="Pushed as shown. Change it below or in Onshape."
           lines={buyOrMake}
         />
       ) : null}
@@ -3606,7 +4598,7 @@ function AssemblyReviewSection({
               ? "1 item takes Onshape's short and long descriptions"
               : `${n} items take Onshape's short and long descriptions`
           }
-          description="These items are linked to their Onshape parts, and their descriptions are set to Update on every push. You can edit every other field in Carbon."
+          description="Their descriptions are set to Update on every push."
           lines={textChanges}
         />
       ) : null}
@@ -3618,7 +4610,7 @@ function AssemblyReviewSection({
               ? "1 line added by hand in Carbon will follow Onshape"
               : `${n} lines added by hand in Carbon will follow Onshape`
           }
-          description="Onshape's BOM lists these parts too, so the push updates each line to Onshape's quantity instead of adding a second one. Its operation and scrap stay, and later pushes keep it in step with Onshape."
+          description="Quantity follows Onshape; operation and scrap stay."
           lines={takenOver}
         />
       ) : null}
@@ -3630,7 +4622,7 @@ function AssemblyReviewSection({
               ? "1 line added by hand in Carbon stays"
               : `${n} lines added by hand in Carbon stay`
           }
-          description="Onshape's BOM doesn't list these parts, so the push leaves them and these BOMs won't match Onshape."
+          description="Not in Onshape's BOM, so these BOMs won't match it."
           lines={keptManual}
         />
       ) : null}
@@ -3869,8 +4861,7 @@ function ReleaseReviewSection({
               ))}
             </ul>
             <p className="mt-1">
-              Their BOM lines in Carbon will be left as they are. Cancel and
-              review again to retry.
+              Their BOM lines stay as they are. Review again to retry.
             </p>
           </AlertDescription>
         </Alert>
@@ -3884,8 +4875,7 @@ function ReleaseReviewSection({
               : `${activeCount} items are released in Carbon`}
           </AlertTitle>
           <AlertDescription>
-            This push won't change their BOM lines. Open a change notice in
-            Carbon to modify them.
+            Their BOM lines won't change. Use a change notice in Carbon.
           </AlertDescription>
         </Alert>
       ) : null}

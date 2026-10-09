@@ -588,6 +588,22 @@ export class OnshapeClient {
   }
 
   /**
+   * The assembly definition at w/v/m without mates: its instances, its
+   * sub-assemblies, and every part it uses with the document and version the
+   * part lives in. Far cheaper than the BOM when only the parts are needed.
+   */
+  async getAssemblyDefinitionIn(
+    document: OnshapeDocument,
+    elementId: string,
+    configuration?: string | null
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?includeMateFeatures=false&includeNonSolids=false&includeMateConnectors=false${configurationQuery(configuration)}`
+    );
+  }
+
+  /**
    * Element metadata (the properties panel: Part number, Name, ...) at w/v/m.
    * Used for an assembly's own identity, which the BOM omits.
    */

@@ -373,6 +373,11 @@ export function proposeMappedItem(
   };
 }
 
+/** Whether a proposed item carries a mapped item field's value. */
+function proposedHolds(proposed: ProposedItem, field: PlanItemField): boolean {
+  return (proposed as Record<string, unknown>)[field.field] === field.value;
+}
+
 /** The push defaults as item fields: the last rule of the precedence order. */
 function pushDefaultFields(options: PlanOptions): ItemFieldSnapshot {
   return {
@@ -1008,8 +1013,10 @@ export function planCreatedItem(
   const out: MappedRowPlan & { proposed: ProposedItem } = { proposed };
   const customFields = resolved.fields.filter((field) => field.value !== null);
   if (customFields.length > 0) out.customFields = customFields;
+  // Only values the new item takes: a mapped value the interlock skips (a
+  // Sourcing on an item that is not Buy and Make) is a problem, not a value.
   const itemFields = resolved.itemFields.filter(
-    (field) => field.value !== null
+    (field) => field.value !== null && proposedHolds(proposed, field)
   );
   if (itemFields.length > 0) out.itemFields = itemFields;
   const allProblems = [...resolved.problems, ...mapped.problems, ...problems];

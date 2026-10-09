@@ -150,14 +150,34 @@ export function standardFieldValues(
 }
 
 /**
- * The rows a new mapping starts with. A fixed list gets one row per Carbon
- * value with its own text on the Onshape side, so an Onshape list with the
- * same options needs no setup. A BOOL property gets Yes and No, both "No
- * value". The unit gets none: a value matches a unit's code or name.
+ * The Onshape values a translation can list as fixed rows: Yes and No for a
+ * BOOL, an ENUM's options when Onshape listed them. Null when the values are
+ * free text or unknown, so the rows are typed by hand.
+ */
+export function onshapeValueOptions(
+  valueType: string,
+  options: readonly string[] | undefined
+): string[] | null {
+  if (valueType === "BOOL") return ["Yes", "No"];
+  if (valueType === "ENUM" && options && options.length > 0) {
+    return [...options];
+  }
+  return null;
+}
+
+/**
+ * The rows a new mapping starts with. With the Onshape list's options known,
+ * each option that names a Carbon value gets that value, and the rest get no
+ * row, so the review flags them until the user picks one. Without them, a
+ * fixed list gets one row per Carbon value with its own text on the Onshape
+ * side, so an Onshape list with the same options needs no setup. A BOOL
+ * property gets Yes and No, both "No value". The unit gets none: a value
+ * matches a unit's code or name.
  */
 export function defaultTranslations(
   field: StandardField,
-  valueType: string
+  valueType: string,
+  options?: readonly string[]
 ): ValueTranslation[] {
   if (field.kind !== "list") return [];
   if (valueType === "BOOL") {
@@ -166,10 +186,72 @@ export function defaultTranslations(
       { onshape: "No", carbon: null }
     ];
   }
-  return (field.values ?? []).map((value) => ({
-    onshape: value,
-    carbon: value
-  }));
+  if (!field.values) return [];
+  const values = field.values;
+  const listed = onshapeValueOptions(valueType, options);
+  if (listed) {
+    return listed.flatMap((option) => {
+      const carbon = values.find((value) => sameText(value, option));
+      return carbon ? [{ onshape: option, carbon }] : [];
+    });
+  }
+  return values.map((value) => ({ onshape: value, carbon: value }));
+}
+
+/**
+ * The Onshape options a push could not translate: no row matches them and,
+ * for the unit, no unit's code or name either. The review flags each one.
+ */
+export function untranslatedOptions(
+  field: StandardField,
+  options: readonly string[],
+  translations: readonly ValueTranslation[],
+  units: readonly PlanUnitOfMeasure[]
+): string[] {
+  return options.filter(
+    (option) =>
+      !translateValue({
+        field,
+        text: option,
+        valueType: "ENUM",
+        translations,
+        units
+      }).ok
+  );
+}
+
+/**
+ * The typed rows of a values window that repeat an Onshape value it already
+ * lists: one of the list's options or an earlier row, ignoring case and the
+ * spaces at the two ends. The save refuses two rows for one value, so the
+ * window stops them first. An empty row is not a repeat; Apply drops it.
+ */
+export function repeatedTranslationRows(
+  rows: readonly { onshape: string; fixed: boolean }[]
+): number[] {
+  const seen = new Set<string>();
+  const repeated: number[] = [];
+  rows.forEach((row, index) => {
+    const key = row.onshape.trim().toLowerCase();
+    if (key === "") return;
+    if (seen.has(key) && !row.fixed) repeated.push(index);
+    seen.add(key);
+  });
+  return repeated;
+}
+
+/**
+ * The company unit an Onshape value matches with no translation row, by code
+ * first and then by name, as the push matches it. Null when none does.
+ */
+export function matchingUnit(
+  text: string,
+  units: readonly PlanUnitOfMeasure[]
+): { unit: PlanUnitOfMeasure; by: "code" | "name" } | null {
+  const byCode = units.find((unit) => sameText(unit.code, text));
+  if (byCode) return { unit: byCode, by: "code" };
+  const byName = units.find((unit) => sameText(unit.name, text));
+  return byName ? { unit: byName, by: "name" } : null;
 }
 
 function sameText(a: string, b: string): boolean {

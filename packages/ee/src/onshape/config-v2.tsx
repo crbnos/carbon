@@ -8,13 +8,6 @@ import { defineIntegration } from "../fns";
 import { beginOAuthPopup } from "../oauth-popup";
 import { Logo, onshapeReconnectAction } from "./config";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./lib/integration-id";
-import {
-  ITEM_METHOD_TYPES,
-  ITEM_REPLENISHMENT_SYSTEMS,
-  ITEM_TRACKING_TYPES,
-  VALID_METHOD_TYPES_BY_REPLENISHMENT
-} from "./panel/plan";
-import { DEFAULT_PUSH_DEFAULTS } from "./panel/preferences";
 
 /**
  * The panel integration: push-only, driven from inside Onshape's element right
@@ -33,105 +26,13 @@ export const OnshapeV2 = defineIntegration({
   shortDescription: "Push CAD data to Carbon from inside Onshape.",
   images: [],
   /*
-   * What a push fills in when nothing else decides. A created item's part
-   * number, name, description and revision come from Onshape, and a mapped
-   * property (the panel's Fields page) wins over every default here. These
-   * are read at plan time by `parsePushDefaults`. The generic settings save
-   * merges into the stored metadata, so the property map and connection keys
-   * survive.
+   * No settings here: what a push fills in when nothing maps a field (the
+   * push defaults) is set on the panel's Fields page, next to the property
+   * map, so one page shows everything a push writes. The connection keys and
+   * those values share the metadata column; see `./lib/state`.
    */
-  settingGroups: [
-    {
-      name: "Push defaults",
-      description:
-        "Values Carbon gives items it creates from Onshape when no mapped property sets them. Map Onshape properties to item fields on the Fields page of the Onshape panel. Change an individual item on its page in Carbon after the push."
-    }
-  ],
-  settings: [
-    {
-      name: "defaultReplenishmentSystem",
-      label: "Replenishment",
-      description:
-        "A BOM row with components is always Make, and a Standard content row is Buy.",
-      group: "Push defaults",
-      type: "select",
-      listOptions: [...ITEM_REPLENISHMENT_SYSTEMS],
-      required: false,
-      value: DEFAULT_PUSH_DEFAULTS.replenishmentSystem
-    },
-    {
-      name: "defaultMethodTypeForMake",
-      label: "Method for the replenishment above",
-      description: "Also used for a BOM row with components, which is Make.",
-      group: "Push defaults",
-      type: "select",
-      listOptions: [...ITEM_METHOD_TYPES],
-      required: false,
-      value: DEFAULT_PUSH_DEFAULTS.methodTypeForMake
-    },
-    {
-      name: "defaultMethodTypeForBuy",
-      label: "Method for Buy items",
-      description:
-        "Used when a mapped property or Standard content makes an item Buy.",
-      group: "Push defaults",
-      type: "select",
-      listOptions: [...VALID_METHOD_TYPES_BY_REPLENISHMENT.Buy],
-      required: false,
-      value: DEFAULT_PUSH_DEFAULTS.methodTypeForBuy
-    },
-    {
-      name: "defaultItemTrackingType",
-      label: "Tracking type",
-      group: "Push defaults",
-      type: "select",
-      listOptions: [...ITEM_TRACKING_TYPES],
-      required: false,
-      value: DEFAULT_PUSH_DEFAULTS.itemTrackingType
-    },
-    {
-      name: "defaultUnitOfMeasureCode",
-      label: "Unit of measure",
-      description:
-        "Leave empty to use EA, or the company's first unit when it has no EA.",
-      group: "Push defaults",
-      type: "select",
-      // Per company: filled from the unit of measure list by the settings
-      // route loader.
-      listOptions: [],
-      required: false,
-      value: DEFAULT_PUSH_DEFAULTS.unitOfMeasureCode ?? ""
-    }
-  ],
-  schema: z
-    .object({
-      defaultReplenishmentSystem: z.enum(ITEM_REPLENISHMENT_SYSTEMS).optional(),
-      defaultMethodTypeForMake: z.enum(ITEM_METHOD_TYPES).optional(),
-      defaultMethodTypeForBuy: z
-        .enum(VALID_METHOD_TYPES_BY_REPLENISHMENT.Buy as [string, ...string[]])
-        .optional(),
-      defaultItemTrackingType: z.enum(ITEM_TRACKING_TYPES).optional(),
-      defaultUnitOfMeasureCode: z.string().optional()
-    })
-    .superRefine((value, ctx) => {
-      // The same rule the Part form applies. Refused here rather than quietly
-      // reconciled at plan time, so the saved value is the value pushes use.
-      const replenishment =
-        value.defaultReplenishmentSystem ??
-        DEFAULT_PUSH_DEFAULTS.replenishmentSystem;
-      const method =
-        value.defaultMethodTypeForMake ??
-        DEFAULT_PUSH_DEFAULTS.methodTypeForMake;
-      if (
-        !VALID_METHOD_TYPES_BY_REPLENISHMENT[replenishment].includes(method)
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["defaultMethodTypeForMake"],
-          message: `${method} isn't allowed with ${replenishment}`
-        });
-      }
-    }),
+  settings: [],
+  schema: z.object({}),
   actions: [onshapeReconnectAction("/api/integrations/onshape-v2/install")],
   onClientInstall: async () => {
     // Opened here, inside the click, so the browser still holds user

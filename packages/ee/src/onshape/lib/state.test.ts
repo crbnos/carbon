@@ -25,20 +25,27 @@ function touchedPaths(patch: {
 
 describe("onshapeSettingsPatch", () => {
   it("writes only the keys the form owns, never credentials or the property map", () => {
+    const patch = onshapeSettingsPatch("onshape-government", {
+      baseUrl: "https://acme.onshape.com",
+      credentials: { accessToken: "stale" },
+      propertyMap: []
+    });
+    expect(touchedPaths(patch)).toEqual(["baseUrl"]);
+  });
+
+  it("writes nothing for the panel integration, whose push defaults the Fields page owns", () => {
     const patch = onshapeSettingsPatch("onshape-v2", {
       defaultReplenishmentSystem: "Make",
       credentials: { accessToken: "stale" },
-      propertyMap: [],
-      baseUrl: "https://cad.onshape.com"
+      propertyMap: []
     });
-    expect(touchedPaths(patch)).toEqual(["defaultReplenishmentSystem"]);
+    expect(touchedPaths(patch)).toEqual([]);
   });
 
   it("clears a field saved empty", () => {
     expect(
-      onshapeSettingsPatch("onshape-v2", { defaultUnitOfMeasureCode: "" })
-        .removeMetadata
-    ).toEqual(["defaultUnitOfMeasureCode"]);
+      onshapeSettingsPatch("onshape-government", { baseUrl: "" }).removeMetadata
+    ).toEqual(["baseUrl"]);
   });
 
   it("vaults a new Government client secret and keeps the old one when left empty", () => {

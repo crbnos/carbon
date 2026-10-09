@@ -101,6 +101,34 @@ describe("parseProperties", () => {
     expect(unknown?.value).toBe("9");
   });
 
+  it("lists a list's options as labels, the value where a label is empty", () => {
+    const [state, unit, text] = parseProperties({
+      properties: [
+        {
+          propertyId: "p1",
+          name: "State",
+          valueType: "ENUM",
+          value: "0",
+          enumValues: [
+            { label: "In progress", value: "0" },
+            { label: "Released", value: "2" }
+          ]
+        },
+        {
+          propertyId: "p2",
+          name: "Unit of measure",
+          valueType: "ENUM",
+          value: "Each",
+          enumValues: [{ label: "", value: "Each" }, "garbage"]
+        },
+        { propertyId: "p3", name: "MPN", valueType: "STRING", value: "X" }
+      ]
+    });
+    expect(state?.options).toEqual(["In progress", "Released"]);
+    expect(unit?.options).toEqual(["Each"]);
+    expect(text?.options).toBeUndefined();
+  });
+
   it("reads N/A as no value, as a BOM row does", () => {
     const [mpn] = parseProperties({
       properties: [

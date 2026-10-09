@@ -6,10 +6,14 @@ import { describe, expect, it } from "vitest";
 import type { StandardField } from "./standard-fields";
 import {
   defaultTranslations,
+  matchingUnit,
+  onshapeValueOptions,
+  repeatedTranslationRows,
   STANDARD_FIELDS,
   standardField,
   translateValue,
-  translationErrors
+  translationErrors,
+  untranslatedOptions
 } from "./standard-fields";
 
 const units = [
@@ -57,6 +61,70 @@ describe("defaultTranslations", () => {
       []
     );
     expect(defaultTranslations(field("mpn"), "STRING")).toEqual([]);
+  });
+
+  it("starts a list with known options with a row for each option that names a Carbon value", () => {
+    expect(
+      defaultTranslations(field("replenishmentSystem"), "ENUM", [
+        "Make",
+        "buy",
+        "Make or Buy",
+        "Buy and Make"
+      ])
+    ).toEqual([
+      { onshape: "Make", carbon: "Make" },
+      { onshape: "buy", carbon: "Buy" },
+      { onshape: "Buy and Make", carbon: "Buy and Make" }
+    ]);
+  });
+
+  it("gives a list whose options name no Carbon value no rows", () => {
+    expect(
+      defaultTranslations(field("replenishmentSystem"), "ENUM", [
+        "In progress",
+        "Released"
+      ])
+    ).toEqual([]);
+  });
+});
+
+describe("onshapeValueOptions", () => {
+  it("lists Yes and No for a BOOL and an ENUM's own options", () => {
+    expect(onshapeValueOptions("BOOL", undefined)).toEqual(["Yes", "No"]);
+    expect(onshapeValueOptions("ENUM", ["A", "B"])).toEqual(["A", "B"]);
+  });
+
+  it("has none for free text or an ENUM whose options are unknown", () => {
+    expect(onshapeValueOptions("STRING", ["A"])).toBeNull();
+    expect(onshapeValueOptions("ENUM", undefined)).toBeNull();
+    expect(onshapeValueOptions("ENUM", [])).toBeNull();
+  });
+});
+
+describe("untranslatedOptions", () => {
+  it("names the options no row matches", () => {
+    expect(
+      untranslatedOptions(
+        field("replenishmentSystem"),
+        ["Make", "Buy", "Make or Buy"],
+        [
+          { onshape: "make", carbon: "Make" },
+          { onshape: "Buy", carbon: null }
+        ],
+        units
+      )
+    ).toEqual(["Make or Buy"]);
+  });
+
+  it("counts a unit's code or name as a match without a row", () => {
+    expect(
+      untranslatedOptions(
+        field("unitOfMeasureCode"),
+        ["Each", "KG", "Inch"],
+        [],
+        units
+      )
+    ).toEqual(["Inch"]);
   });
 });
 
@@ -186,5 +254,43 @@ describe("translationErrors", () => {
         units
       )
     ).toEqual(['"PC" is not a Unit of Measure value in Carbon']);
+  });
+});
+
+describe("repeatedTranslationRows", () => {
+  it("flags a typed row that repeats an option or an earlier row, ignoring case and spaces", () => {
+    expect(
+      repeatedTranslationRows([
+        { onshape: "Make", fixed: true },
+        { onshape: "Buy", fixed: true },
+        { onshape: " make ", fixed: false },
+        { onshape: "Outsourced", fixed: false },
+        { onshape: "OUTSOURCED", fixed: false },
+        { onshape: "  ", fixed: false }
+      ])
+    ).toEqual([2, 4]);
+  });
+
+  it("flags nothing when every value is listed once", () => {
+    expect(
+      repeatedTranslationRows([
+        { onshape: "Make", fixed: true },
+        { onshape: "Purchased", fixed: false }
+      ])
+    ).toEqual([]);
+  });
+});
+
+describe("matchingUnit", () => {
+  it("matches a unit by code first, then by name", () => {
+    expect(matchingUnit("kg", units)).toEqual({
+      unit: { code: "KG", name: "Kilogram" },
+      by: "code"
+    });
+    expect(matchingUnit(" each ", units)).toEqual({
+      unit: { code: "EA", name: "Each" },
+      by: "name"
+    });
+    expect(matchingUnit("Inch", units)).toBeNull();
   });
 });

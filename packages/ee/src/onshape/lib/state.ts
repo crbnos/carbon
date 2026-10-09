@@ -18,7 +18,8 @@ import {
  * Writes to an Onshape integration row, one owner per key.
  *
  * Three writers share the metadata column: the token refresh, the OAuth
- * callback and the settings save, plus the panel's property map. Each used to
+ * callback and the settings save, plus the panel's Fields save (the property
+ * map, the description modes and the push defaults). Each used to
  * write the whole column back from a copy read earlier, so whichever landed
  * last reverted the others. Every write here names only the keys it owns and
  * goes through `patchIntegrationState`, which applies it under a row lock.
@@ -32,13 +33,8 @@ const SETTINGS_PATHS: Record<OnshapeOAuthIntegrationId, readonly string[]> = {
     "clientId",
     "assetSyncEnabled"
   ],
-  [ONSHAPE_V2_INTEGRATION_ID]: [
-    "defaultReplenishmentSystem",
-    "defaultMethodTypeForMake",
-    "defaultMethodTypeForBuy",
-    "defaultItemTrackingType",
-    "defaultUnitOfMeasureCode"
-  ]
+  // The panel's Fields save owns the push defaults, with the property map.
+  [ONSHAPE_V2_INTEGRATION_ID]: []
 };
 
 const SETTINGS_SECRET_PATHS: Partial<

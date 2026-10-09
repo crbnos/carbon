@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  firstOwnAssemblyPart,
   flattenBomTree,
   missingBomColumnsMessage,
   parseBomTree,
@@ -251,5 +252,55 @@ describe("parseBomTree Subassembly BOM behavior", () => {
       ["ASM-008", undefined],
       ["PAD-005", undefined]
     ]);
+  });
+});
+
+describe("firstOwnAssemblyPart", () => {
+  const part = (extra: Record<string, unknown>) => ({
+    documentId: "d1",
+    elementId: "e1",
+    partId: "JHD",
+    ...extra
+  });
+
+  it("takes the first part that is not Standard content, at its linked version", () => {
+    expect(
+      firstOwnAssemblyPart({
+        parts: [
+          part({ partId: "NUT", isStandardContent: true }),
+          part({ documentVersion: "v1", documentMicroversion: "m1" })
+        ]
+      })
+    ).toEqual({
+      documentId: "d1",
+      wvm: "v",
+      wvmId: "v1",
+      elementId: "e1",
+      partId: "JHD"
+    });
+  });
+
+  it("names no version for a part in the same document", () => {
+    expect(firstOwnAssemblyPart({ parts: [part({})] })).toEqual({
+      documentId: "d1",
+      wvm: null,
+      wvmId: null,
+      elementId: "e1",
+      partId: "JHD"
+    });
+  });
+
+  it("skips malformed entries and is null when no part is left", () => {
+    expect(
+      firstOwnAssemblyPart({
+        parts: [
+          part({ partId: "" }),
+          "garbage",
+          part({ isStandardContent: true })
+        ]
+      })
+    ).toBeNull();
+    expect(firstOwnAssemblyPart({})).toBeNull();
+    expect(firstOwnAssemblyPart(null)).toBeNull();
   });
 });

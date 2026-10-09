@@ -242,12 +242,16 @@ export type {
 export {
   defaultTranslations,
   isStandardFieldId,
+  matchingUnit,
+  onshapeValueOptions,
+  repeatedTranslationRows,
   STANDARD_FIELD_IDS,
   STANDARD_FIELDS,
   standardField,
   standardFieldValues,
   translateValue,
-  translationErrors
+  translationErrors,
+  untranslatedOptions
 } from "./onshape/panel/standard-fields";
 export type {
   PanelAssemblyLineInput,

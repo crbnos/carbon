@@ -3,13 +3,14 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { getLogger } from "@carbon/logger";
+import { firstOwnAssemblyPart } from "../panel/bom";
 import type { OnshapePropertyValue } from "../panel/properties";
 import {
   parseProperties,
   partPropertiesFromElementMetadata
 } from "../panel/properties";
 import { OnshapeApiError, type OnshapeClient } from "./client";
-import type { OnshapeDocument } from "./document.type";
+import type { OnshapeDocument, OnshapeWVMType } from "./document.type";
 
 const logger = getLogger("ee", "onshape", "part-properties");
 
@@ -73,4 +74,55 @@ export async function readPartProperties(
     }
   }
   return byPartId;
+}
+
+/**
+ * An assembly's properties for the Fields page: its own, then those of one of
+ * its own parts. A property scoped to parts never shows on the assembly
+ * element, so without the part the page could not offer it. The part comes
+ * from the assembly definition, which is far cheaper than the BOM, and is
+ * read where it lives: at its version when linked from another document,
+ * where the assembly is read when it is in the same document. A failed
+ * definition or part read leaves the assembly's own list.
+ */
+export async function readAssemblyProperties(
+  client: OnshapeClient,
+  document: OnshapeDocument,
+  elementId: string
+): Promise<OnshapePropertyValue[]> {
+  const own = parseProperties(
+    await client.getElementMetadata(document, elementId)
+  );
+  try {
+    const part = firstOwnAssemblyPart(
+      await client.getAssemblyDefinitionIn(document, elementId)
+    );
+    if (!part) return own;
+    const partDocument: OnshapeDocument | null =
+      part.wvm && part.wvmId
+        ? {
+            documentId: part.documentId,
+            wvm: part.wvm as OnshapeWVMType,
+            wvmId: part.wvmId
+          }
+        : part.documentId === document.documentId
+          ? document
+          : null;
+    if (!partDocument) return own;
+    const partProperties = parseProperties(
+      await client.getPartMetadata(partDocument, part.elementId, part.partId)
+    );
+    const seen = new Set(own.map((property) => property.propertyId));
+    return [
+      ...own,
+      ...partProperties.filter((property) => !seen.has(property.propertyId))
+    ];
+  } catch (error) {
+    logger.warn("Failed to read an assembly part's properties", {
+      documentId: document.documentId,
+      elementId,
+      error
+    });
+    return own;
+  }
 }

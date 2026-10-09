@@ -6,16 +6,20 @@ import type { Json } from "@carbon/database";
 import type {
   DescriptionModes,
   OnshapePropertyValue,
+  OnshapePushDefaults,
   PlanCustomFieldDefinition,
   PropertyMapEntry
 } from "@carbon/ee";
 import {
   CUSTOM_FIELD_TYPE_LABELS,
+  ITEM_METHOD_TYPES,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_TRACKING_TYPES,
   MAPPABLE_VALUE_TYPES,
   MAPPING_MODES,
   parseDescriptionModes,
-  parseProperties,
   parsePropertyMap,
+  reconcilePushDefaults,
   STANDARD_FIELD_IDS,
   standardField,
   targetKey,
@@ -31,7 +35,10 @@ import {
   onshapeFailure
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
-import { readPartProperties } from "@carbon/ee/onshape.server";
+import {
+  readAssemblyProperties,
+  readPartProperties
+} from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
 import { sql } from "kysely";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -54,7 +61,7 @@ const querySchema = z.object({
 
 /**
  * Fields editor data: properties, the property map, the description modes,
- * the custom field definitions and the company's units.
+ * the push defaults, the custom field definitions and the company's units.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -99,7 +106,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 
   // A part studio's properties live on its parts, so take the union across
-  // them; an assembly's live on the element.
+  // them. An assembly has its own, plus the ones scoped to parts, which only
+  // its parts carry.
   let properties: OnshapePropertyValue[];
   try {
     const elements = await onshape.client.getElementsIn(document);
@@ -123,8 +131,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
       properties = [...seen.values()];
     } else {
-      properties = parseProperties(
-        await onshape.client.getElementMetadata(document, elementId)
+      properties = await readAssemblyProperties(
+        onshape.client,
+        document,
+        elementId
       );
     }
   } catch (error) {
@@ -166,10 +176,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         name: property.name,
         valueType: property.valueType,
         // Own keys only: `in` calls a property named "constructor" mappable.
-        mappable: Object.hasOwn(MAPPABLE_VALUE_TYPES, property.valueType)
+        mappable: Object.hasOwn(MAPPABLE_VALUE_TYPES, property.valueType),
+        ...(property.options ? { options: property.options } : {})
       })),
       map: parsePropertyMap(integration.data?.metadata),
       descriptionModes: parseDescriptionModes(integration.data?.metadata),
+      pushDefaults: options.defaults,
       definitions,
       units: options.unitsOfMeasure
     },
@@ -208,8 +220,32 @@ const payloadSchema = z.object({
       (entries) =>
         new Set(entries.map((e) => e.onshapePropertyId)).size === entries.length
     ),
-  descriptionModes: z.object({ name: modeSchema, description: modeSchema })
+  descriptionModes: z.object({ name: modeSchema, description: modeSchema }),
+  pushDefaults: z.object({
+    replenishmentSystem: z.enum(ITEM_REPLENISHMENT_SYSTEMS),
+    methodTypeForMake: z.enum(ITEM_METHOD_TYPES),
+    methodTypeForBuy: z.enum(ITEM_METHOD_TYPES),
+    itemTrackingType: z.enum(ITEM_TRACKING_TYPES),
+    unitOfMeasureCode: z.string().min(1).nullable()
+  })
 });
+
+/**
+ * The metadata keys the push defaults are stored under, read by
+ * `parsePushDefaults`. The unit has no key when it is left to the company's
+ * list.
+ */
+function pushDefaultsMetadata(defaults: OnshapePushDefaults) {
+  return {
+    defaultReplenishmentSystem: defaults.replenishmentSystem,
+    defaultMethodTypeForMake: defaults.methodTypeForMake,
+    defaultMethodTypeForBuy: defaults.methodTypeForBuy,
+    defaultItemTrackingType: defaults.itemTrackingType,
+    ...(defaults.unitOfMeasureCode
+      ? { defaultUnitOfMeasureCode: defaults.unitOfMeasureCode }
+      : {})
+  };
+}
 
 type FieldError = { key: string; errors: string[] };
 
@@ -221,8 +257,8 @@ function orList(values: readonly string[]): string {
 }
 
 /**
- * Replace the property map and the description modes; the panel always posts
- * the whole list.
+ * Replace the property map, the description modes and the push defaults; the
+ * panel always posts all of them.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requireOnshapePanelPermissions(request, {
@@ -237,6 +273,27 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { entries } = parsed.data;
   const descriptionModes: DescriptionModes = parsed.data.descriptionModes;
+  const pushDefaults: OnshapePushDefaults = parsed.data.pushDefaults;
+
+  // The same pairs the Part form allows; refused here so the saved value is
+  // the value pushes use, not one the plan quietly corrects.
+  const reconciled = reconcilePushDefaults(pushDefaults);
+  if (reconciled.methodTypeForMake !== pushDefaults.methodTypeForMake) {
+    return data(
+      {
+        error: `${pushDefaults.methodTypeForMake} isn't allowed with ${pushDefaults.replenishmentSystem}`
+      },
+      { status: 422 }
+    );
+  }
+  if (reconciled.methodTypeForBuy !== pushDefaults.methodTypeForBuy) {
+    return data(
+      {
+        error: `${pushDefaults.methodTypeForBuy} isn't allowed for Buy items`
+      },
+      { status: 422 }
+    );
+  }
 
   const fieldErrors: FieldError[] = [];
 
@@ -278,8 +335,19 @@ export async function action({ request }: ActionFunctionArgs) {
   // every Carbon value is one the field allows.
   const itemEntries = entries.filter((entry) => entry.target.kind === "item");
   let units: Awaited<ReturnType<typeof loadPlanOptions>>["unitsOfMeasure"] = [];
-  if (itemEntries.length > 0) {
+  if (itemEntries.length > 0 || pushDefaults.unitOfMeasureCode) {
     units = (await loadPlanOptions(client, companyId)).unitsOfMeasure;
+  }
+  if (
+    pushDefaults.unitOfMeasureCode &&
+    !units.some((unit) => unit.code === pushDefaults.unitOfMeasureCode)
+  ) {
+    return data(
+      {
+        error: `${pushDefaults.unitOfMeasureCode} is not a unit of measure in Carbon`
+      },
+      { status: 422 }
+    );
   }
   for (const entry of itemEntries) {
     if (entry.target.kind !== "item") continue;
@@ -372,19 +440,26 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   });
 
-  // jsonb_set patches only propertyMap and descriptionModes; other writers
-  // own the sibling keys. The column is json, hence the casts.
+  // jsonb_set and the merge patch only the keys this page owns: the map, the
+  // modes and the push defaults. Other writers own the sibling keys. The
+  // column is json, hence the casts.
   const db = getDatabaseClient();
   let updatedRows: bigint;
   try {
     const updated = await db
       .updateTable("companyIntegration")
       .set({
-        metadata: sql<Json>`jsonb_set(jsonb_set(metadata::jsonb, '{propertyMap}', ${JSON.stringify(
+        metadata: sql<Json>`((jsonb_set(jsonb_set(metadata::jsonb, '{propertyMap}', ${JSON.stringify(
           mapEntries
         )}::jsonb, true), '{descriptionModes}', ${JSON.stringify(
           descriptionModes
-        )}::jsonb, true)::json`
+        )}::jsonb, true) || ${JSON.stringify(
+          pushDefaultsMetadata(pushDefaults)
+        )}::jsonb)${
+          pushDefaults.unitOfMeasureCode
+            ? sql``
+            : sql` - 'defaultUnitOfMeasureCode'`
+        })::json`
       })
       .where("id", "=", ONSHAPE_V2_INTEGRATION_ID)
       .where("companyId", "=", companyId)
@@ -419,6 +494,7 @@ export async function action({ request }: ActionFunctionArgs) {
     {
       map: mapEntries,
       descriptionModes,
+      pushDefaults,
       definitions,
       ...(warning ? { warning } : {})
     },
