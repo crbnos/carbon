@@ -53,6 +53,7 @@
     "./accounting-currency": "./src/accounting-currency.ts",
     "./accounting-posting": "./src/accounting-posting.ts",
     "./journal-posting-status": "./src/journal-posting-status.ts",
+    "./accounting-cutover": "./src/accounting-cutover.ts",
     "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
     "./ledger": "./src/ledger.ts",
     "./deposit-scope": "./src/deposit-scope.ts"
