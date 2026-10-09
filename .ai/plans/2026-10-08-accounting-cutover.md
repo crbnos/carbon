@@ -25,8 +25,8 @@
 - [x] Task 14: Always post in `post-sales-invoice`
 - [x] Task 15: Always post in `post-purchase-invoice`
 - [x] Task 16: Always post in `post-payment` and `post-memo`
-- [ ] Task 17: Always post in `post-charge` and `post-reimbursement`
-- [ ] Task 18: Always post in `issue`
+- [x] Task 17: Always post in `post-charge` and `post-reimbursement`
+- [x] Task 18: Always post in `issue`
 - [ ] Task 19: Always post in `close-job` and `post-production-event`
 - [ ] Task 20: Always post in `post-asset-transfer` and `post-rental-agreement`
 - [x] Task 21: Always post in the SQL job-costing functions
