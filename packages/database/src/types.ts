@@ -92658,7 +92658,12 @@ export type Database = {
         | "Revenue Recognition"
         | "Asset Transfer"
         | "Lease"
-      journalEntryStatus: "Draft" | "Posted" | "Reversed"
+      journalEntryStatus:
+        | "Draft"
+        | "Posted"
+        | "Reversed"
+        | "Provisional"
+        | "Superseded"
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"
@@ -94172,7 +94177,13 @@ export const Constants = {
         "Asset Transfer",
         "Lease",
       ],
-      journalEntryStatus: ["Draft", "Posted", "Reversed"],
+      journalEntryStatus: [
+        "Draft",
+        "Posted",
+        "Reversed",
+        "Provisional",
+        "Superseded",
+      ],
       journalLineDocumentType: [
         "Receipt",
         "Invoice",

@@ -7,13 +7,13 @@
 ## Progress
 
 ### Phase A — Foundation (no behavior change)
-- [ ] Task 1: Add the Provisional and Superseded journal statuses
+- [x] Task 1: Add the Provisional and Superseded journal statuses
 - [ ] Task 2: Add the cutover columns, the stand-in role column, triggers and the status function
 - [ ] Task 3: Add Migration Clearing to the seed data
 - [ ] Task 4: Regenerate the database types
 - [ ] Task 5: Add the journal status lists and `journalPostingStatus`
 - [ ] Task 6: Change the SQL readers that filter on `<> 'Draft'`
-- [ ] Task 7: Exclude the new statuses from the dataset coverage check
+- [x] Task 7: Exclude the new statuses from the dataset coverage check
 - [ ] Task 8: Add the `journal-status-filter` conformance check
 - [ ] Task 9: Change the journal readers in the server functions
 - [ ] Task 10: Change the journal counts in the ERP period services
@@ -1389,3 +1389,10 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 | A new company posts as Posted | 35 |
 | `journal-status-filter` flags `<> 'Draft'` | 8 |
 | Datasets, typecheck, tests and lint pass | 38 |
+
+## Execution notes
+
+- Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
+- `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
+- A commit that touches a migration or `packages/database/src` needs `pnpm generate:mcp` first, then stage `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
+- The dataset and backup checks read `SUPABASE_DB_URL` from `.env` (port 54322). This worktree's stack is on `.env.local` (port 55625). Export it before a commit: `export $(grep -E "^SUPABASE_DB_URL=" .env.local | xargs)`.

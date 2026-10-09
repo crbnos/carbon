@@ -119231,7 +119231,7 @@ export default {
         },
         status: {
           default: "Posted",
-          enum: ["Draft", "Posted", "Reversed"],
+          enum: ["Draft", "Posted", "Reversed", "Provisional", "Superseded"],
           format: 'public."journalEntryStatus"',
           type: "string"
         },
@@ -132847,7 +132847,7 @@ export default {
           type: "string"
         },
         status: {
-          enum: ["Draft", "Posted", "Reversed"],
+          enum: ["Draft", "Posted", "Reversed", "Provisional", "Superseded"],
           format: 'public."journalEntryStatus"',
           type: "string"
         },
@@ -147036,7 +147036,7 @@ export default {
           type: "string"
         },
         status: {
-          enum: ["Draft", "Posted", "Reversed"],
+          enum: ["Draft", "Posted", "Reversed", "Provisional", "Superseded"],
           format: 'public."journalEntryStatus"',
           type: "string"
         },
