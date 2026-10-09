@@ -8358,7 +8358,9 @@ export async function getFixedAssetRelatedItems(
     Promise.all([
       client
         .from("purchaseOrderLine")
-        .select("id, purchaseOrder(id, purchaseOrderId, status, supplierId)")
+        .select(
+          "id, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId)"
+        )
         .eq("assetId", fixedAssetId)
         .eq("companyId", companyId),
       client

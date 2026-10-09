@@ -393,7 +393,9 @@ async function buildEventContent(
     case NotificationEvent.JobAssignment: {
       const job = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -421,7 +423,9 @@ async function buildEventContent(
     case NotificationEvent.JobCompleted: {
       const completedJob = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();

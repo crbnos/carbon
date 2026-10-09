@@ -1099,7 +1099,7 @@ export async function getJobPurchaseOrderLines(
   return client
     .from("purchaseOrderLine")
     .select(
-      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation(id, description, operationQuantity)"
+      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation!purchaseOrderLine_jobOperationId_fkey(id, description, operationQuantity)"
     )
     .eq("jobId", jobId);
 }
@@ -10489,7 +10489,9 @@ export async function getJobMaterialPurchaseOrderLines(
 
   const { data } = await client
     .from("purchaseOrderLine")
-    .select("itemId, purchaseQuantity, quantityReceived, purchaseOrder(status)")
+    .select(
+      "itemId, purchaseQuantity, quantityReceived, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(status)"
+    )
     .in("itemId", itemIds)
     .eq("locationId", locationId);
 
@@ -10763,7 +10765,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, promisedDate, purchaseOrder(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)

@@ -519,7 +519,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
 
     let query = carbon
       .from("purchaseOrderLine")
-      .select("id, itemId, item(name)")
+      .select("id, itemId, item!purchaseOrderLine_itemId_fkey(name)")
       .eq("purchaseOrderId", purchaseOrderId);
 
     if (items) {
