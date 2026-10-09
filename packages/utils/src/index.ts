@@ -12,6 +12,7 @@ export * from "./address";
 export * from "./arrays";
 export * from "./assembly-units";
 export * from "./async";
+export * from "./avatar";
 export * from "./balloons";
 export * from "./bank";
 export * from "./batch-compatibility";

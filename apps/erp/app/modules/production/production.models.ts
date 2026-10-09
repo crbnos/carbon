@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { plannedOrderValidator } from "../purchasing/purchasing.models";
 import {
   methodItemType,
   methodOperationOrders,
@@ -1058,7 +1059,13 @@ export const productionOrderValidator = z.object({
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),
   existingStatus: zfd.text(z.enum(jobStatus).optional()),
-  isASAP: z.boolean().optional()
+  isASAP: z.boolean().optional(),
+  // Reorder-policy attribution, copied from the Make action (absent on a job
+  // the planner added): the chart's order popover explains the suggestion
+  // from it, as it does for a purchase order.
+  policyName: plannedOrderValidator.shape.policyName,
+  reason: plannedOrderValidator.shape.reason,
+  triggerValues: plannedOrderValidator.shape.triggerValues
 });
 
 export type ProductionOrder = z.infer<typeof productionOrderValidator>;

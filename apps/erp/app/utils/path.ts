@@ -166,6 +166,10 @@ export const path = {
         generatePath(`${api}/items/quantities/${locationId}`),
       itemRecipeProcesses: (itemId: string) =>
         generatePath(`${api}/items/${itemId}/recipe-processes`),
+      itemSerialCosts: (itemId: string, locationId: string) =>
+        `${generatePath(`${api}/items/${itemId}/serial-costs`)}?${new URLSearchParams(
+          { locationId }
+        )}`,
       jiraCreateIssue: `${api}/integrations/jira/issue/create`,
       jiraLinkExistingIssue: `${api}/integrations/jira/issue/link`,
       jiraSyncNotes: `${api}/integrations/jira/issue/sync-notes`,
@@ -1308,6 +1312,8 @@ export const path = {
     },
     fiscalYears: `${x}/accounting/years`,
     fixedAsset: (id: string) => generatePath(`${x}/fixed-asset/${id}`),
+    fixedAssetAdjustCost: (id: string) =>
+      generatePath(`${x}/fixed-asset/${id}/adjust-cost`),
     fixedAssetAttachJob: (id: string) =>
       generatePath(`${x}/fixed-asset/${id}/attach-job`),
     fixedAssetCapitalize: `${x}/fixed-asset/capitalize`,
@@ -1395,6 +1401,8 @@ export const path = {
       generatePath(`${x}/inventory/quantities/${id}/activity`),
     inventoryItemAdjustment: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
+    inventoryItemRecost: (id: string) =>
+      generatePath(`${x}/inventory/quantities/${id}/recost`),
     inventoryRoot: `${x}/inventory`,
     inventorySettings: `${x}/settings/inventory`,
     inventoryValuation: `${x}/reports/inventory-valuation`,
@@ -2171,6 +2179,8 @@ export const path = {
       generatePath(`${x}/rental-agreement/${id}/${lineId}/classification`),
     rentalAgreementLineDeliver: (id: string, lineId: string) =>
       generatePath(`${x}/rental-agreement/${id}/${lineId}/deliver`),
+    rentalAgreementLineRelease: (id: string, lineId: string) =>
+      generatePath(`${x}/rental-agreement/${id}/${lineId}/release`),
     rentalAgreementLineReturn: (id: string, lineId: string) =>
       generatePath(`${x}/rental-agreement/${id}/${lineId}/return`),
     rentalAgreementLineSell: (id: string, lineId: string) =>

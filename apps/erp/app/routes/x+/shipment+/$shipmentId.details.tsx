@@ -63,7 +63,26 @@ export async function action({ request }: ActionFunctionArgs) {
     currentShipment.data.sourceDocumentId !== d.sourceDocumentId ||
     currentShipment.data.locationId !== d.locationId;
 
-  if (shipmentDataHasChanged) {
+  const sourceChanged =
+    currentShipment.data.sourceDocument !== d.sourceDocument ||
+    currentShipment.data.sourceDocumentId !== d.sourceDocumentId;
+  const isRental =
+    currentShipment.data.sourceDocument === "Rental Agreement" ||
+    d.sourceDocument === "Rental Agreement";
+  if (isRental && sourceChanged) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          null,
+          "A rental shipment keeps its rental agreement. Create it from the agreement."
+        )
+      )
+    );
+  }
+
+  if (shipmentDataHasChanged && !isRental) {
     switch (d.sourceDocument) {
       case "Sales Order":
         const salesOrderShipment = await serverFns
@@ -278,7 +297,8 @@ export default function ShipmentDetailsRoute() {
     sourceDocument: (routeData.shipment.sourceDocument ?? "Sales Order") as
       | "Sales Order"
       | "Purchase Order"
-      | "Outbound Transfer",
+      | "Outbound Transfer"
+      | "Rental Agreement",
     sourceDocumentId: routeData.shipment.sourceDocumentId ?? undefined,
     sourceDocumentReadableId:
       routeData.shipment.sourceDocumentReadableId ?? undefined,

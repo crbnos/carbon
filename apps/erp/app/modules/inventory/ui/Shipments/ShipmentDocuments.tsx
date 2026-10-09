@@ -9,6 +9,7 @@ import {
   LuBarcode,
   LuContainer,
   LuCreditCard,
+  LuKeyRound,
   LuShoppingCart,
   LuSquareUser,
   LuTruck,
@@ -34,7 +35,8 @@ const PACKING_SLIP_SOURCES = new Set<string>([
   "Sales Order",
   "Sales Invoice",
   "Purchase Order",
-  "Outbound Transfer"
+  "Outbound Transfer",
+  "Rental Agreement"
 ]);
 
 type SourceDocument = {
@@ -97,6 +99,14 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
             to: path.to.salesReturnOrderDetails(id),
             icon: <LuUndo2 />,
             label: t`Sales Return`
+          }
+        : null;
+    case "Rental Agreement":
+      return permissions.can("view", "sales")
+        ? {
+            to: path.to.rentalAgreementDetails(id),
+            icon: <LuKeyRound />,
+            label: t`Rental Agreement`
           }
         : null;
     default:

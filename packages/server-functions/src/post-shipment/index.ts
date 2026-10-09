@@ -48,12 +48,18 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { postRentalShipment, voidRentalShipment } from "./rental-agreement";
 
 const logger = getLogger("server-functions", "post-shipment");
 
 export const postShipmentInput = z.object({
   type: z.enum(["post", "void"]),
-  shipmentId: z.string()
+  shipmentId: z.string(),
+  /** The delivery date of a rental shipment. Other sources ignore it. */
+  postingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
 });
 
 /** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
@@ -61,7 +67,7 @@ const postShipment = defineServerFn({
   name: "post-shipment",
   input: postShipmentInput,
   permissions: { update: "inventory" },
-  async run(ctx, { type, shipmentId }) {
+  async run(ctx, { type, shipmentId, postingDate }) {
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, shipmentId, userId, companyId });
@@ -630,11 +636,13 @@ const postShipment = defineServerFn({
               const { data: shipmentFaLines } = await many(
                 db,
                 "shipmentFixedAssetLine",
-                { shipmentId, shipped: true },
+                { shipmentId, shipped: true, companyId },
                 { columns: ["salesOrderLineId", "serialNumber"] }
               );
               const shippedFaSoLineIds = new Set(
-                (shipmentFaLines ?? []).map((r) => r.salesOrderLineId)
+                (shipmentFaLines ?? [])
+                  .filter((r) => r.salesOrderLineId !== null)
+                  .map((r) => r.salesOrderLineId)
               );
 
               const faSalesOrderLines = salesOrderLines.data.filter(
@@ -3035,6 +3043,17 @@ const postShipment = defineServerFn({
               break;
             }
 
+            case "Rental Agreement": {
+              await postRentalShipment(db, {
+                shipmentId,
+                companyId,
+                userId,
+                today,
+                postingDate
+              });
+              break;
+            }
+
             default: {
               throw new Error(
                 `Invalid source document type: ${shipmentHeader.sourceDocument}`
@@ -4688,6 +4707,11 @@ const postShipment = defineServerFn({
                   .execute();
               });
 
+              break;
+            }
+
+            case "Rental Agreement": {
+              await voidRentalShipment(db, { shipmentId, companyId, userId });
               break;
             }
 

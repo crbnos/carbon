@@ -42,6 +42,12 @@ The ledger is append-only — a posted movement is never edited or deleted. To f
 
 Inventory value is on-hand quantity multiplied by item unit cost, aggregated by item and location. The Valuation report groups by location or item. Its **Tie-Out** panel compares subledger value with GL inventory balances. If they differ, **Reconcile** creates a draft adjusting journal for review and posting.
 
+### Serial unit cost
+
+On an item's **Inventory** tab, each serialized unit in **Storage Units** shows what it is carried at: the cost a shipment, a scrap or a capitalization would take out of inventory for it. A unit with its own cost layer shows that cost; any other unit shows the next layer in the item's FIFO or LIFO order. A unit carried at nothing reads **No cost**. Only users who can view accounting see these costs.
+
+To give one unit a cost of its own, for example a unit a job completed with no production or material recorded, use the row's **Recost** action. You need permission to update accounting, and the item must use FIFO or LIFO costing, since a Standard or Average item carries every unit at the item's one cost. Enter the **Unit Cost** and, with accounting enabled, the **Offset Account** the cost was spent from (Retained Earnings by default). Carbon takes the unit off the layer it was on and books it on a layer of its own at the new cost; the difference posts between the inventory account and the offset account. Nothing moves, so the unit's quantity and location are unchanged.
+
 ## Related
 
 <Cards>
@@ -58,6 +64,12 @@ Inventory value is on-hand quantity multiplied by item unit cost, aggregated by 
 
 ### "Insufficient quantity for negative adjustment"
 The decrease (or *Set Quantity* reduction) exceeds what's on hand in that storage unit. Manual adjustments are the one movement guarded against overdraw. Check on-hand for the exact item/location/storage unit (and lot, if tracked) and adjust by no more than that.
+
+### "… uses Average costing, so every unit carries the item's cost; one unit cannot have its own"
+Recost works on FIFO and LIFO items only. Change the item's cost on its **Costing** tab instead.
+
+### "… must have exactly one unit on hand to be recosted" / "… is already carried at that cost"
+The unit has left stock, or the entered cost equals what it already carries.
 
 ### "Serial number not found"
 The serial or batch number entered for a negative adjustment doesn't exist in the selected storage unit. Verify the number and the storage unit — the stock may sit in a different bin.

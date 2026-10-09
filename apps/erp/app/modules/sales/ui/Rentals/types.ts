@@ -8,6 +8,7 @@ import type {
   getRentalAgreementCharges,
   getRentalAgreementDeposits,
   getRentalAgreementLines,
+  getRentalAgreementRelatedDocuments,
   getRentalBillingPeriods
 } from "../../sales.service";
 import type { LeasePolicy } from "../../sales.utils";
@@ -63,6 +64,12 @@ export type RentalLeaseLineInputs = {
   accumulatedDepreciation: number | null;
 };
 
+type RelatedDocuments = NonNullable<
+  Awaited<ReturnType<typeof getRentalAgreementRelatedDocuments>>["data"]
+>;
+export type RentalAgreementShipment = RelatedDocuments["shipments"][number];
+export type RentalAgreementReceipt = RelatedDocuments["receipts"][number];
+
 /** The shell route's loader data, read by every section through
  *  `useRouteData(path.to.rentalAgreement(id))`. */
 export type RentalAgreementRouteData = {
@@ -71,6 +78,8 @@ export type RentalAgreementRouteData = {
   charges: RentalAgreementCharge[];
   periods: RentalBillingPeriod[];
   deposits: RentalAgreementDeposit[];
+  shipments: RentalAgreementShipment[];
+  receipts: RentalAgreementReceipt[];
   rentableAssets: RentableFleetAsset[];
   invoiceLinks: RentalInvoiceLinks;
   /** The customer contact's email; null when there is none to send to. */

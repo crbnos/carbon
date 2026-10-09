@@ -52,8 +52,10 @@ import {
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
+import { replanAfterItemChange } from "~/modules/production/production.server";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -205,6 +207,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+
+    // The planning pages list MRP's suggestions; re-plan so they follow the
+    // new settings now, not at the next scheduled run.
+    await replanAfterItemChange(getDatabaseClient(), {
+      itemId,
+      companyId,
+      userId
+    });
 
     throw redirect(
       path.to.partDetails(itemId),

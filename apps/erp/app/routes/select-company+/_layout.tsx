@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function SelectCompanyLayout() {
   return (
     <TooltipProvider>
-      <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
+      <div className="min-h-screen w-full bg-card">
         <Outlet />
       </div>
     </TooltipProvider>

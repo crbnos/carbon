@@ -7229,46 +7229,69 @@ export async function buildDepreciationRunLines(
     }
   );
 
-  const [settings, lastPosted, laterPosted, coveredLines, assets, decimals] =
-    await Promise.all([
-      client
-        .from("companySettings")
-        .select("assetTaxDepreciationEnabled")
-        .eq("id", companyId)
-        .single(),
-      client
-        .from("depreciationRun")
-        .select("periodEnd")
-        .eq("companyId", companyId)
-        .eq("status", "Posted")
-        .lt("periodEnd", periodEnd)
-        .order("periodEnd", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      client
-        .from("depreciationRun")
-        .select("depreciationRunId")
-        .eq("companyId", companyId)
-        .eq("status", "Posted")
-        .gt("periodEnd", periodEnd)
-        .order("periodEnd")
-        .limit(1)
-        .maybeSingle(),
-      covered,
-      fetchAllFromTable<Database["public"]["Tables"]["fixedAsset"]["Row"]>(
-        client,
-        "fixedAsset",
-        "*",
-        (query: any) =>
-          query
-            .eq("companyId", companyId)
-            .eq("status", "Active")
-            .order("id", { ascending: true })
-      ),
-      getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
-    ]);
+  const [
+    settings,
+    lastPosted,
+    laterPosted,
+    coveredLines,
+    assets,
+    decimals,
+    costAdjustments
+  ] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("assetTaxDepreciationEnabled")
+      .eq("id", companyId)
+      .single(),
+    client
+      .from("depreciationRun")
+      .select("periodEnd")
+      .eq("companyId", companyId)
+      .eq("status", "Posted")
+      .lt("periodEnd", periodEnd)
+      .order("periodEnd", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    client
+      .from("depreciationRun")
+      .select("depreciationRunId")
+      .eq("companyId", companyId)
+      .eq("status", "Posted")
+      .gt("periodEnd", periodEnd)
+      .order("periodEnd")
+      .limit(1)
+      .maybeSingle(),
+    covered,
+    fetchAllFromTable<Database["public"]["Tables"]["fixedAsset"]["Row"]>(
+      client,
+      "fixedAsset",
+      "*",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("status", "Active")
+          .order("id", { ascending: true })
+    ),
+    getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId),
+    // Assets whose cost was raised after capitalization: a Straight Line
+    // one catches up the months it took at the old cost.
+    fetchAllFromTable<{ fixedAssetId: string }>(
+      client,
+      "fixedAssetTransfer",
+      "id, fixedAssetId",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("type", "Cost Adjustment")
+          .eq("status", "Posted")
+          .order("id", { ascending: true })
+    )
+  ]);
 
   if (lastPosted.error) return { data: null, error: lastPosted.error };
+  if (costAdjustments.error || !costAdjustments.data) {
+    return { data: null, error: costAdjustments.error };
+  }
   if (laterPosted.error) return { data: null, error: laterPosted.error };
   if (coveredLines.error || !coveredLines.data) {
     return { data: null, error: coveredLines.error };
@@ -7308,6 +7331,9 @@ export async function buildDepreciationRunLines(
   const coveredAssetIds = new Set(
     coveredLines.data.map((line) => line.fixedAssetId)
   );
+  const costAdjustedAssetIds = new Set(
+    costAdjustments.data.map((transfer) => transfer.fixedAssetId)
+  );
 
   const lines = buildDepreciationLines(
     assets.data
@@ -7316,7 +7342,8 @@ export async function buildDepreciationRunLines(
         ...asset,
         accumulatedTaxDepreciation: Number(
           asset.accumulatedTaxDepreciation ?? 0
-        )
+        ),
+        costAdjusted: costAdjustedAssetIds.has(asset.id)
       })),
     periodEnd,
     lastPostedPeriodEnd,

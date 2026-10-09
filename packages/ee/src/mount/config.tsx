@@ -5,18 +5,24 @@
 import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
-import { MOUNT_DEFAULT_BASE_URL } from "./lib/constants";
+import {
+  MOUNT_DEFAULT_BASE_URL,
+  MOUNT_PUBLISH_ACTION_IDS
+} from "./lib/constants";
 
 const MountSettingsSchema = z.object({
   clientId: z.string().min(1),
   clientSecret: z.string(),
-  // A plain string check, not a refinement: zod v4 skips refinements for a
-  // `.default()` value (conformance: no-default-on-effects).
+  // Empty means Mount's own API: the client falls back to the default.
   baseUrl: z
-    .string()
-    .url()
-    .startsWith("https://", { message: "Must be an HTTPS URL" })
-    .default(MOUNT_DEFAULT_BASE_URL),
+    .literal("")
+    .or(
+      z
+        .string()
+        .url()
+        .startsWith("https://", { message: "Must be an HTTPS URL" })
+    )
+    .optional(),
   tenant: z.string().min(1),
   scope: z.string().optional(),
   partDefinitionSlug: z.string().min(1),
@@ -91,10 +97,11 @@ export const Mount = defineIntegration({
     {
       name: "baseUrl",
       label: "API URL",
+      description: `Leave empty to use Mount's API at ${MOUNT_DEFAULT_BASE_URL}. Change it only if Mount gave you a different address.`,
       group: "Connection",
       type: "text" as const,
       required: false,
-      value: MOUNT_DEFAULT_BASE_URL
+      value: ""
     },
     {
       name: "partDefinitionSlug",
@@ -110,44 +117,38 @@ export const Mount = defineIntegration({
       name: "customerTypeTitle",
       label: "Customer company type",
       description:
-        "Optional, but without it published customers appear under All rather than the Customers tab. The type's title, exactly as Mount lists it.",
+        "Leave empty to use Mount's Customer type. Enter a type's title or identifier only if your tenant names it differently.",
       group: "Mapping",
       type: "text" as const,
       required: false,
-      value: "Customer"
+      value: ""
     },
     {
       name: "supplierTypeTitle",
       label: "Supplier company type",
       description:
-        "Optional, but without it published suppliers appear under All rather than the Suppliers tab. The type's title, exactly as Mount lists it.",
+        "Leave empty to use Mount's Supplier type. Enter a type's title or identifier only if your tenant names it differently.",
       group: "Mapping",
       type: "text" as const,
       required: false,
-      value: "Supplier"
+      value: ""
     }
   ],
   schema: MountSettingsSchema,
   actions: [
     {
-      id: "push-customers",
+      id: MOUNT_PUBLISH_ACTION_IDS.customer,
       label: "Push customers",
-      description:
-        "Send customers Mount does not have yet, or holds out of date, as Companies of the customer type",
       endpoint: "/api/integrations/mount/publish?entityType=customer"
     },
     {
-      id: "push-suppliers",
+      id: MOUNT_PUBLISH_ACTION_IDS.supplier,
       label: "Push suppliers",
-      description:
-        "Send suppliers Mount does not have yet, or holds out of date, as Companies of the supplier type",
       endpoint: "/api/integrations/mount/publish?entityType=supplier"
     },
     {
-      id: "push-parts",
+      id: MOUNT_PUBLISH_ACTION_IDS.item,
       label: "Push parts",
-      description:
-        "Send parts Mount does not have yet, or holds out of date, as Objects under the part definition",
       endpoint: "/api/integrations/mount/publish?entityType=item"
     }
   ]
@@ -195,16 +196,16 @@ function SetupInstructions() {
         means the slug is <span className="font-mono">parts</span>.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
-        7. For the company types, go to Settings → Types → Company types and
-        copy the titles used for customers and suppliers exactly as shown,
-        creating them with New if needed. Without them, published companies
-        appear under All but under neither the Customers nor the Suppliers tab.
+        7. Customers and suppliers are sent as Companies of Mount's Customer and
+        Supplier types. Leave the two company type fields empty unless your
+        tenant names those types differently under Settings → Types → Company
+        types; then enter its titles there.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
-        If the integration reports unhealthy after saving, re-check the Member
-        ID in step 2 — a client with no member is refused on every request.
-        Saving these settings again re-runs the check immediately; otherwise the
-        status refreshes within five minutes.
+        If the integration reports unhealthy, hover the Unhealthy badge on its
+        card for the reason. A client with no Member ID (step 2) is refused on
+        every request. After fixing something in Mount, press Update here to run
+        the check again.
       </p>
     </>
   );

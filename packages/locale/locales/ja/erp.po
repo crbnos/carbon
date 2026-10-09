@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。} other {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。}}"
@@ -400,6 +404,9 @@ msgstr "{count} ／ {total} 個"
 msgid "{count} units"
 msgstr "{count} 個"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -423,6 +430,9 @@ msgstr "{from}–{to} / {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 件の工程"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
@@ -1989,6 +1999,15 @@ msgstr "住所 行1"
 msgid "Address line2"
 msgstr "住所 行2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料など。"
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料などです。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
+
+msgid "Adjust Cost"
+msgstr "原価を調整"
+
 msgid "Adjustment"
 msgstr "調整"
 
@@ -3418,8 +3437,21 @@ msgstr "利用可能時間"
 msgid "Available on the Business plan"
 msgstr "ビジネスプランで利用可能"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "アバターの候補 {0}"
+
+msgid "Avatar style"
+msgstr "アバターのスタイル"
+
 msgid "Avatar url"
 msgstr "アバターURL"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "アバターは {1} による <0>{0}</0> のもので、<1>{2}</1> でライセンスされています。"
 
 msgid "Avg Days to Close"
 msgstr "平均クローズ日数"
@@ -3435,6 +3467,9 @@ msgstr "トレーサビリティに戻る"
 
 msgid "Backflush"
 msgstr "バックフラッシュ"
+
+msgid "Background"
+msgstr "背景"
 
 msgid "Backup"
 msgstr "バックアップ"
@@ -4386,9 +4421,6 @@ msgstr "バッチ番号を選択"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "バッチ可能な工法を選択して、一緒に実行できる工程を確認してください。"
 
-msgid "Choose a company"
-msgstr "会社を選択"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
@@ -4405,8 +4437,14 @@ msgstr "製造指図上の{0}の仕入先を選択してください"
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
+msgid "Choose avatar"
+msgstr "アバターを選択"
+
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
+
+msgid "Choose Return To for {unitName}"
+msgstr "{unitName}の返却先を選択"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "このアグリーメントでレンタルするフリート個を選択してください。各個の初期レートはファイルに設定されています。グリッドで変更してください。"
@@ -5168,6 +5206,9 @@ msgstr "変換中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
+
+msgid "Copied ID to clipboard"
+msgstr "IDをクリップボードにコピーしました"
 
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
@@ -6958,11 +6999,11 @@ msgstr "ワークフローを削除"
 msgid "Deliver"
 msgstr "配送"
 
-msgid "Deliver {label}"
-msgstr "{label}を配送"
-
 msgid "Delivered"
 msgstr "配送済"
+
+msgid "Delivered on"
+msgstr "配送日"
 
 msgid "Delivery Date"
 msgstr "納期"
@@ -8291,6 +8332,9 @@ msgstr "有効期限を設定する前にバッチ番号を入力してくださ
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
 
+msgid "Enter a reason to take the unit out of service"
+msgstr "ユニットを使用停止にする理由を入力"
+
 msgid "Enter an item and quantity yourself."
 msgstr "品目と数量を手動で入力してください。"
 
@@ -8320,6 +8364,12 @@ msgstr "プライベートOAuthアプリケーションのOnshape URL、クラ�
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
+
+msgid "Enter what it cost to make."
+msgstr "製造にかかった原価を入力してください。"
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "製造にかかった原価を入力してください。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
 
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
@@ -9055,6 +9105,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
+
+msgid "Failed to plan job"
+msgstr "製造指図を計画できませんでした"
 
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
@@ -10277,6 +10330,9 @@ msgstr "IDと説明は原材料に対して生成されます。"
 msgid "If"
 msgstr "条件"
 
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "減価償却が既に実行されている場合、次回の減価償却実行時に定額法資産が旧原価で計上していた月分が埋め合わされます。"
+
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "次の通話を待つことができない場合、両側のリーダーが決定します。"
 
@@ -11331,11 +11387,21 @@ msgstr "姓"
 msgid "Last Name"
 msgstr "姓"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "前四半期"
 
 msgid "Last Run"
 msgstr "最終実行"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
@@ -12028,9 +12094,6 @@ msgstr "スコープを合意済みとしてマーク"
 msgid "Mark Short"
 msgstr "短い数量をマーク"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "本日、機器を得意先に配送済とマークしてください。本日からレンタル開始となり、請求は契約の開始日およびサイクルに従います。"
-
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
@@ -12278,8 +12341,8 @@ msgstr "メッセージ"
 msgid "Metadata"
 msgstr "メタデータ"
 
-msgid "Meter Reading"
-msgstr "メーター読取値"
+msgid "Meter"
+msgstr "メーター"
 
 msgid "Method"
 msgstr "方法"
@@ -12487,6 +12550,9 @@ msgstr "その他のオプション"
 msgid "More overtime"
 msgstr "残業を増やす"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "朝、{name}さん。"
 
@@ -12498,6 +12564,9 @@ msgstr "ほとんどのことはここで発見され、解決されます。明
 
 msgid "Motion"
 msgstr "モーション"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "移動"
@@ -13214,6 +13283,9 @@ msgstr "衝突のない経路がない"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "範囲内に完了した製造指図がありません"
 
@@ -13231,6 +13303,9 @@ msgstr "条件が一致しない"
 
 msgid "No conversion is required"
 msgstr "変換は不要です"
+
+msgid "No cost"
+msgstr "原価なし"
 
 msgid "No cost has been recorded against this asset yet."
 msgstr "このアセットに対してまだ原価が記録されていません。"
@@ -13791,6 +13866,9 @@ msgstr "未設定"
 msgid "Not Configured"
 msgstr "未設定"
 
+msgid "Not delivered"
+msgstr "未配送"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
@@ -13838,9 +13916,6 @@ msgstr "今日は勤務していません"
 
 msgid "Not yet"
 msgstr "まだ"
-
-msgid "Not you?"
-msgstr "違いますか？"
 
 msgid "Note"
 msgstr "メモ"
@@ -13951,6 +14026,9 @@ msgstr "オフ — 同期外で処理"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
+
+msgid "Offset Account"
+msgstr "相殺勘定"
 
 msgid "ok"
 msgstr "OK"
@@ -14482,6 +14560,9 @@ msgstr "注文日"
 msgid "Order Multiple"
 msgstr "発注倍数"
 
+msgid "Order Multiple:"
+msgstr "発注倍数:"
+
 msgid "Order Parts"
 msgstr "部品を注文"
 
@@ -14768,6 +14849,12 @@ msgstr "部品後継切替"
 msgid "Partial"
 msgstr "一部"
 
+msgid "Partially Delivered"
+msgstr "一部納入"
+
+msgid "Partially Returned"
+msgstr "一部返却"
+
 msgid "Partly Recognized"
 msgstr "部分認識済"
 
@@ -14999,9 +15086,6 @@ msgstr "電話"
 msgid "Phone Number"
 msgstr "電話番号"
 
-msgid "Photo removed successfully"
-msgstr "写真が正常に削除されました"
-
 msgid "Photo uploaded successfully"
 msgstr "写真が正常にアップロードされました"
 
@@ -15043,6 +15127,9 @@ msgstr "レコード種類を選択..."
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "リストからステップを選択して、その詳細、コンポーネント、および材料を編集します"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "スタイルとアバターを選ぶか、シャッフルして新しい候補を表示します。"
 
 msgid "Pick a target date to compare."
 msgstr "比較するターゲット日を選択してください。"
@@ -16553,6 +16640,13 @@ msgstr "記録"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "レコードと転記済仕訳がこのプロバイダーとの間で送受信されています。"
 
+msgid "Recost"
+msgstr "原価を再査定"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "{0}の原価を再査定"
+
 msgid "Recovery Period"
 msgstr "登録"
 
@@ -16676,6 +16770,9 @@ msgstr "相対的なタイムライン・確認待ちの日付"
 msgid "Release"
 msgstr "リリース"
 
+msgid "Release {unitLabel}"
+msgstr "{unitLabel}をリリース"
+
 msgid "Release Batch"
 msgstr "バッチをリリース"
 
@@ -16693,6 +16790,9 @@ msgstr "リリース管理"
 msgid "Release Control"
 msgstr "リリース管理"
 
+msgid "Release date"
+msgstr "リリース日"
+
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
@@ -16704,6 +16804,9 @@ msgstr "製造指図をリリース"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "発注書{target}を{date}までにリリース"
+
+msgid "Release unit"
+msgstr "ユニットをリリース"
 
 msgid "Released"
 msgstr "リリース済み"
@@ -16906,6 +17009,9 @@ msgstr "レンタル料率"
 
 msgid "Rental Site"
 msgstr "レンタル拠点"
+
+msgid "Rental Units"
+msgstr "レンタルユニット"
 
 msgid "Rental Utilization"
 msgstr "レンタル資産利用率"
@@ -17270,12 +17376,6 @@ msgstr "リバートを再試行"
 msgid "Return"
 msgstr "返却"
 
-msgid "Return {unitLabel}"
-msgstr "{unitLabel}を返却"
-
-msgid "Return Date"
-msgstr "返却日"
-
 msgid "Return Home"
 msgstr "ホームに戻る"
 
@@ -17284,9 +17384,6 @@ msgstr "返品ID"
 
 msgid "Return Location"
 msgstr "返品場所"
-
-msgid "Return Notes"
-msgstr "返却メモ"
 
 msgid "Return Number"
 msgstr "返品番号"
@@ -17315,9 +17412,6 @@ msgstr "在庫に返却"
 msgid "Return to Service"
 msgstr "使用再開"
 
-msgid "Return Unit"
-msgstr "返却資産"
-
 msgid "returnable"
 msgstr "返品可能"
 
@@ -17329,6 +17423,9 @@ msgstr "返品バッチ"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "返品商品は在庫にゼロ価値で再入庫されます"
+
+msgid "Returned on"
+msgstr "返却日"
 
 msgid "Returned serial numbers"
 msgstr "返品シリアル番号"
@@ -18157,6 +18254,9 @@ msgstr "イベントを検索…"
 msgid "Search fields..."
 msgstr "フィールドを検索..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "既存のものを検索するか、新しいものを作成してください"
 
@@ -18712,6 +18812,12 @@ msgstr "バージョン {0} をアクティブバージョンとして設定し�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "この個が在庫で計上されている価値を設定します。"
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "この個が在庫で計上されている価値を設定します。差額は在庫と支出元の勘定との間で計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
+
 msgid "Settings"
 msgstr "設定"
 
@@ -19072,6 +19178,9 @@ msgstr "請求書で顧客に表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Shuffle"
+msgstr "シャッフル"
+
 msgid "Sign in to Carbon"
 msgstr "Carbonにサインイン"
 
@@ -19207,6 +19316,9 @@ msgstr "いくつかのレコードは戻りません。続行するには<0>{CO
 
 msgid "Some Shifts"
 msgstr "一部のシフト"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
@@ -19406,6 +19518,9 @@ msgstr "まず"
 
 msgid "Started"
 msgstr "開始"
+
+msgid "Starting"
+msgstr ""
 
 msgid "Starting…"
 msgstr "開始中…"
@@ -19632,6 +19747,9 @@ msgstr "StripeにはこのCarbon得意先用のカスタマーがまだありま
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
+
+msgid "Style default"
+msgstr "スタイルの既定"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "かんばんテーブルに表示するかんばん出力のスタイル"
@@ -20334,9 +20452,6 @@ msgstr "すべての在庫移動の追加専用レコード。手持在庫はそ
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "資産が使用中クラスに移動され、使用開始日から減価償却が開始されます。"
 
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "資産の価値がゼロになります。品目に単価を設定してから、資産化してください。"
-
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshapeで認可が拒否されました。連携設定を保存して再度試してください。"
 
@@ -20577,9 +20692,6 @@ msgstr "この間接支出明細が転記される費用勘定。間接明細に
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "アップロードしたファイルと設定したマッピングは失われます。"
-
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "最終請求期間は返却日で再設定されます。事前請求済みの期間には未使用日数に対する調整が反映されます。"
 
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
@@ -20934,6 +21046,18 @@ msgstr "プロバイダーはディメンションターゲットを提供して
 msgid "The purchase order"
 msgstr "発注書"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この明細が価格設定される数量ブレークポイント。各列は買い手と仕入先の交渉および下流文書への変換用に、独自の単価を持ちます。"
 
@@ -21178,15 +21302,8 @@ msgstr "工順時間が表現される単位で、例えば「時間/個」ま�
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "契約が有効化されるとユニットと料率は確定します。"
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "単位は終了日{0}以降に返却できます。レンタルを販売として早期に終了することは、手動仕訳です。"
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "この品目は未償却残高で在庫に戻り、資産はゲインまたはロスなくクローズされます。"
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "ユニットは利用可能に戻すのではなく保全に移行します。"
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "契約期間が終了すると、その単位はあなたにとって他に用途がありません。"
@@ -21196,6 +21313,9 @@ msgstr "この品目は使用再開までの間、利用不可となります。
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "当該品目は在庫から出庫され、在庫で計上していた原価で固定資産化されます。"
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr "ユニットはヤードから出ていません。リリース日に請求が停止し、ユニットは再び利用可能になります。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "購入時のアイテムの単価"
@@ -21521,9 +21641,6 @@ msgstr "今四半期"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
 
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "このレンタルは販売として扱われます。期末純投資が単位とともに貸借対照表に戻り、転記されていない利息スケジュールが削除されます。"
-
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "これは{effectiveDate}から{resets}件の編集済請求書をリセットします"
 
@@ -21792,6 +21909,9 @@ msgstr "終了日"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "無効化するには、行メニューを使用して、アカウント無効化を選択します。"
+
+msgid "To Deliver"
+msgstr "納入待ち"
 
 msgid "To Location"
 msgstr "到着地"
@@ -22150,6 +22270,9 @@ msgstr "トリガー元"
 
 msgid "Triggers"
 msgstr "トリガー"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "火曜日"

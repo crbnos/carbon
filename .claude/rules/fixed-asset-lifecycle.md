@@ -39,7 +39,9 @@ Schema lives in these migrations (newest wins):
 `20260717031529_split-asset-gain-loss-disposal-accounts.sql`,
 `20261006220301_fleet-rental-lease-enums.sql`, `20261006220401_fleet-bridge.sql`,
 `20261006220501_rental-agreements.sql` (rentals, the sales-type lease schedule and the
-`fleetAssets` view) and `20261006221601_complete-job-to-asset.sql`. Design:
+`fleetAssets` view), `20261006221601_complete-job-to-asset.sql` and
+`20261008163615_fixed-asset-cost-adjustment.sql` (the `Cost Adjustment` / `Manual`
+transfer enum values). Design:
 `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §2 and §4.
 
 ## Tables (current schema)
@@ -139,8 +141,8 @@ the job → asset branch inside `complete_job_to_inventory` (Make to Asset).
 - `disposalMethod`: `Sale`, `Scrapping`, `Transfer to Inventory`
   (`20261006220301`; only `post-asset-transfer` writes the third — the UI
   `disposalMethods` array still lists the first two)
-- `fixedAssetTransferType`: `Capitalization`, `Return to Inventory`
-- `fixedAssetTransferSourceType`: `Inventory`, `Job`, `Construction in Progress`
+- `fixedAssetTransferType`: `Capitalization`, `Return to Inventory`, `Cost Adjustment`
+- `fixedAssetTransferSourceType`: `Inventory`, `Job`, `Construction in Progress`, `Manual`
 - `journalEntrySourceType`, `journalLineDocumentType`, `itemLedgerDocumentType`
   each gained `Asset Transfer`
 - `macrsPropertyClass`: `3`,`5`,`7`,`10`,`15`,`20`,`27.5`,`39`
@@ -167,7 +169,10 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `fixedAssetReturnToInventoryValidator` (transferDate, locationId,
   storageUnitId?), `fixedAssetAttachJobValidator` (jobId),
   `fixedAssetCapitalizeCipValidator` (toClassId, inServiceDate),
-  `fixedAssetOutOfServiceValidator` (reason).
+  `fixedAssetOutOfServiceValidator` (reason). `fixedAssetCapitalizeValidator`
+  also takes `cost?` + `offsetAccountId?` (a unit carried at zero), and
+  `fixedAssetAdjustCostValidator` (amount, offsetAccountId?, locationId,
+  transferDate) backs Adjust Cost.
 - Service: `accounting.service.ts` — `getFixedAsset(s)`, `insert/update/deleteFixedAsset`,
   `getFixedAssetsListForSale` (status Active/Fully Depreciated), class CRUD,
   `insert/getDepreciationRun(s)`, `getDepreciationRunLines`,
@@ -231,7 +236,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 - UI: `accounting/ui/FixedAssets/` — `FixedAssetForm` (has a **Work Center**
   picker, `workCenterId`), `AssetClassForm`, `FixedAssetRegisterForm`,
   `FixedAssetDisposalForm`, `FixedAssetCapitalizeForm`,
-  `FixedAssetReturnToInventoryForm`, `FixedAssetAttachJobForm`,
+  `FixedAssetReturnToInventoryForm`, `FixedAssetAdjustCostForm`, `FixedAssetAttachJobForm`,
   `FixedAssetCapitalizeCipForm`, `FixedAssetOutOfServiceForm`,
   `FixedAssetCipCosts` (the "Construction in Progress" card on the asset page,
   rendered for a CIP-class asset), `FleetAssetsTable`, `FleetStatus` (its own
@@ -239,7 +244,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `FIXED_ASSET_STATUS_COLOR_MAP` does include `Under Construction`), tables,
   status badges. The asset page also lists the asset's transfers and shows
   `Work Center` / `Out of Service Since` detail rows.
-- Routes: `routes/x+/fixed-asset+/$fixedAssetId.{tsx,register,dispose,sell,purchase,details,delete,capitalize,return-to-inventory,attach-job,out-of-service}`,
+- Routes: `routes/x+/fixed-asset+/$fixedAssetId.{tsx,register,dispose,sell,purchase,details,delete,capitalize,return-to-inventory,adjust-cost,attach-job,out-of-service}`,
   `routes/x+/fixed-asset+/capitalize.tsx` (no id: capitalize a stock unit);
   `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,recalculate,reverse,delete}`;
   list/new at `routes/x+/accounting+/{fixed-assets,asset-classes,depreciation-runs}*`;
@@ -300,7 +305,15 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    asset per unit; see **Make to Asset** below.
 4. Capitalize from stock: `post-asset-transfer` `capitalize` consumes an
    `Available` serialized unit into a new (or a Draft) asset at its carrying
-   cost; see **post-asset-transfer** below.
+   cost — or, for a unit carried at zero, at the cost the user enters; see
+   **post-asset-transfer** below.
+
+**Adjust Cost (post-capitalization).** An asset that came onto the books for
+less than it cost — a Make to Asset job with no WIP creates it at 0 — is raised
+by `post-asset-transfer` `adjustCost` (asset menu → **Adjust Cost**,
+`$fixedAssetId.adjust-cost.tsx`). Raise only; lowering is a write-down. The
+next depreciation run catches a Straight Line asset up on the months it took
+at the old cost (see **Depreciate**).
 
 **Make to Asset.** The branch lives inside `complete_job_to_inventory`
 (`20261006221601_complete-job-to-asset.sql`, forked from the guarded definition in
@@ -373,8 +386,11 @@ Closed; `$fixedAssetId.capitalize` offers only non-CIP classes.
 
 **post-asset-transfer** (`packages/server-functions/src/post-asset-transfer/index.ts`,
 `validators.ts` = the zod contract + pure helpers). One `fixedAssetTransfer`
-document per call, created and Posted in ONE transaction; the function declares
-`permissions: { create: "accounting" }`; business failures are 400
+document per call, created and Posted in ONE transaction; the function's permissions are keyed by
+`type`: `create: accounting` for capitalize / return / attachJob /
+capitalizeCip, `update: accounting` for `adjustCost`, and a `capitalize`
+that carries an entered `cost` additionally `authorize`s `update:
+accounting` (recosting puts a number of the user's own on the books); business failures are 400
 `InvalidInputError`s with the message the app shows, a record the
 caller's company does not own is a 404. With `accountingEnabled = false` every
 ledger, entity and asset write is identical and no journal is created. Journals
@@ -382,7 +398,7 @@ are `sourceType 'Asset Transfer'`, lines `documentType 'Asset Transfer'`, with
 Location / FixedAssetClass / Item dimensions. Four payload variants:
 - `capitalize` (`fixedAssetClassId`, `itemId`, `trackedEntityId`, `locationId`,
   `storageUnitId?`, `transferDate`, `name?`, `fixedAssetId?` = a Draft asset to
-  fill): the unit must belong to the item, be `Available`, have no live asset
+  fill, `cost?` + `offsetAccountId?` for a unit carried at zero): the unit must belong to the item, be `Available`, have no live asset
   and net on-hand at the location (`resolveCapitalizationStock`: the bin with
   the highest positive net wins; a picked unit has rows in more than one bin).
   Creates the asset (or fills the Draft under the same `status = 'Draft'` race
@@ -392,17 +408,27 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   for a CIP class); relieves the unit through the shared adjustment path
   (`itemLedger` −1, `entryType 'Negative Adjmt.'`, cost-layer consumption at
   carrying cost, no variance journal); posts Dr class asset / Cr the
-  replenishment inventory account for that cost (a unit whose carrying cost
-  rounds to 0 is REFUSED — "<serial> has no cost in inventory…" — and the
-  transaction rolls back, rather than creating a worthless asset with no
-  journal; the cost is never typed by the user, since the transfer can only
-  move the value inventory holds); writes a `'Manual'` CIP row for
+  replenishment inventory account for that cost. The cost is decided by the
+  pure `resolveCapitalizationCost` (`validators.ts`): a unit that carries a
+  cost moves at it, and an entered `cost` is refused ("<serial> is carried in
+  inventory at a cost…"); a unit whose carrying cost rounds to 0 takes the
+  entered `cost` instead and the journal credits `offsetAccountId` (description
+  `Capitalized Cost`; required with accounting on, an active non-group account
+  of the company group — `getOffsetAccount`, `lib/offset-account.ts`, which
+  returns the account's class so `buildCapitalizationLines` signs the credit
+  by it: Retained Earnings is Equity, credited +x); with neither it is REFUSED —
+  "<serial> has no cost in inventory… Enter what it cost, or set a unit
+  cost…" — and the transaction rolls back. The entered value never touches
+  the cost ledger: inventory relieved the unit at 0, and the value comes from
+  the offset account, not from stock; writes a `'Manual'` CIP row for
   a CIP class; sets the entity `Consumed` with `attributes['Fixed Asset']` and a
   `'Capitalize'` activity. Transfer: `type 'Capitalization'`, `sourceType
   'Inventory'`. Entry points: the inventory storage-unit row action and
   `x+/fixed-asset+/capitalize.tsx` (defaults the class to the one named
   `Rental Fleet`, hides CIP classes, shows the exact cost the transfer will
-  book and disables Capitalize when it is 0). That cost comes from the
+  book; when it is 0 the form asks for an Acquisition Cost and, with
+  accounting on, an Offset Account defaulting to
+  `accountDefault.retainedEarningsAccount`). That cost comes from the
   `preview-asset-capitalization` server function (`{ trackedEntityId }`,
   `view: accounting`; ERP wrapper `getCapitalizationCost`): the same
   `calculateCOGS` relief in a transaction that always rolls back, so it
@@ -440,6 +466,18 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   `status = 'Under Construction'`). Transfer: `type 'Capitalization'`,
   `sourceType 'Construction in Progress'`, `fromClassId`, `inServiceDate`.
 
+- `adjustCost` (`fixedAssetId`, `amount` > 0, `offsetAccountId?`,
+  `locationId`, `transferDate`): asset must be `Active` or `Fully
+  Depreciated` (`ADJUSTABLE_ASSET_STATUSES`, re-checked under `FOR UPDATE`
+  in the transaction). Posts Dr class `assetAccountId` / Cr `offsetAccountId`
+  (description `Capitalized Cost`; required and validated when accounting is
+  on, ignored when off), `acquisitionCost += amount`, and the status from
+  `statusAfterCostAdjustment` (Fully Depreciated → Active when NBV is above
+  residual again). Fills an unset asset location from `locationId` (the
+  route asks for one only when the asset has none). Transfer: `type 'Cost
+  Adjustment'`, `sourceType 'Manual'`, `accumulatedDepreciation` recorded.
+  The route defaults the offset account to Retained Earnings.
+
 **Fleet register.** `x+/accounting+/fleet.tsx` renders `getFleetAssets` with
 the derived status (see the view); **Build for Fleet** (needs
 `create: production`) opens `path.to.newJob?fixedAssetClassId=<the class named
@@ -455,14 +493,19 @@ line's accounting treatment (`lessorClassification`) is set at activation:
 `Rental` / `Sale` / `Financing` (ASC 842 operating / sales-type / direct
 financing lease; `Financing` has no input). A **`Rental`** line posts no journal at activation, the asset stays `Active` and keeps
 depreciating, and only the derived fleet status changes (Reserved → On Rent →
-Available again, or In Maintenance when the return form's out-of-service box is
-ticked — `post-rental-agreement` `return` sets `outOfServiceSince =
-returnedAt` and the reason). `post-rental-agreement` `activate` accepts a unit
+Available again, or In Maintenance when the rental receipt line's **Take out of
+service** box is ticked — `returnRentalUnit`, `post-rental-agreement/return-unit.ts`,
+sets `outOfServiceSince = returnedAt` and the reason). A unit goes On Rent when a
+rental shipment posts (`post-shipment`, source `'Rental Agreement'`) and comes back
+when a rental receipt posts (`post-receipt`); neither writes an `itemLedger` row or a
+journal for a `Rental` line. Posting the receipt sets `fixedAsset.locationId` to the
+receipt's location. **Release unit** (`post-rental-agreement` `release`) ends a
+Pending unit that never left the yard and does not move it. See
+`apps/erp/app/modules/sales/AGENTS.md` → Rentals → Deliver and return. `post-rental-agreement` `activate` accepts a unit
 whose `fleetStatus` is `Available`, or `Reserved` by the same agreement, and
 whose asset status is `Active` / `Fully Depreciated`; `In Maintenance` is
-refused with "<unit> is out of service: <reason>". Deliver
-(`x+/rental-agreement+/$id.$lineId.deliver.tsx`) is refused while the unit
-reads In Maintenance. **Return to Inventory is refused while the unit is on a
+refused with "<unit> is out of service: <reason>". Posting a rental shipment
+refuses an out-of-service unit with the same message. **Return to Inventory is refused while the unit is on a
 live rental line**: `post-asset-transfer` `returnToInventory` checks for a
 `rentalAgreementLine` with `status IN ('Pending','On Rent')` inside its
 transaction and throws "Asset <id> is on rent|reserved on rental agreement
@@ -492,8 +535,8 @@ refuses a line without a fleet unit, so the spec's from-stock commencement has
 no entry point in v1.
 
 **Residual return capitalizes a NEW Rental Fleet asset.** Returning a
-`Sale` line at or after `endDate` with `residualDestination: "Fleet"`
-(`returnResidual`) inserts a new `fixedAsset` (new `fixedAssetId` from the
+`Sale` line on a rental receipt at or after `endDate` with `residualDestination: "Fleet"`
+(`returnResidual`) inserts a new `fixedAsset` at the receipt's location (new `fixedAssetId` from the
 sequence) in the non-CIP class named "Rental Fleet" (else the class the unit
 left at commencement; neither → "No Rental Fleet asset class to return the
 unit into; create one or return the unit to inventory") with `acquisitionCost`
@@ -511,7 +554,7 @@ Cr Net Investment in Leases (skipped when accounting is off or closing is 0);
 the entity stays `Consumed` with `Fixed Asset` = the new asset and a
 `Capitalize` activity. The disposed original is untouched (the live-serial
 unique index ignores Disposed rows). `residualDestination: "Inventory"`
-instead books `bookAdjustment` +1 at `fixedUnitCost` = closing and Dr the
+instead books `bookAdjustment` +1 at the receipt's location at `fixedUnitCost` = closing and Dr the
 item's inventory account. Schedule lines and Planned Interest rows dated on or
 before the return STAY and post through later recognition runs (that is what
 brings Net Investment in Leases to zero: initial NI + Σ interest − Σ rent −
@@ -551,6 +594,18 @@ Cost** panel (asset id → NBV, per-asset monthly depreciation for Straight Line
 assets, totals). Machine rates are still typed by hand.
 
 **Depreciate.** Manual, in two steps — **no scheduled/cron job exists**:
+**Cost adjustment catch-up.** `buildDepreciationRunLines` passes
+`costAdjusted` (the asset has a Posted `Cost Adjustment` transfer) to
+`buildDepreciationLines`, which adds `straightLineShortfall` — what the CURRENT
+cost would have accumulated on a straight line from the start through the
+month before the run, less what was accumulated, never negative — to the
+asset's first month (book, and tax when the tax method is Straight Line),
+capped at what is left. It is stateless: once posted the shortfall is zero,
+and Reverse Run brings it back. Declining Balance and table MACRS correct
+themselves (remaining value over remaining life / cumulative minus taken);
+Units of Production does not catch up. Gated on the adjustment so a mid-life
+registration with an opening accumulated balance is never re-derived.
+
 1. `depreciation-runs.new` action calls `createDepreciationRun()`, which
    builds the lines with `buildDepreciationRunLines()` and inserts a
    `depreciationRun` (Draft) + one `depreciationRunLine` per asset per month.
@@ -631,7 +686,9 @@ two-step (ship → invoice) flow.
 - `Reserved` means "named on a live Pending line", which includes every line of
   a DRAFT agreement. Cancelling an agreement deletes its Pending lines (the
   line status enum has no Cancelled), which is what frees the unit.
-- A `Rental` line (operating lease) never changes `fixedAsset.status` or `locationId`:
-  custody is the agreement's `customerLocationId`, exposed on `fleetAssets`. A
+- A `Rental` line (operating lease) never changes `fixedAsset.status`. Its
+  `locationId` changes only when a rental receipt posts: the unit is then at the
+  receipt's location. While it is out, custody is the agreement's
+  `customerLocationId`, exposed on `fleetAssets`. A
   `Sale` line (sales-type lease) disposes the asset at activation (above), and a residual
   return creates a different asset row rather than reviving the old one.

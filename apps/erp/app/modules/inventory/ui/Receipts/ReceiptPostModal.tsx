@@ -9,6 +9,9 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  DatePicker,
+  FormControl,
+  FormLabel,
   HStack,
   Modal,
   ModalBody,
@@ -23,16 +26,17 @@ import {
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getItemReadableId } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
-import { useUser } from "~/hooks";
+import { useCompanyToday, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.service";
-import type { Receipt, ReceiptLine } from "../../types";
+import type { Receipt, ReceiptLine, RentalReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
@@ -47,7 +51,12 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       id: string;
       received: boolean;
     }[];
+    rentalLines: RentalReceiptLine[];
   }>(path.to.receipt(receiptId));
+
+  const isRental = routeData?.receipt?.sourceDocument === "Rental Agreement";
+  const companyToday = useCompanyToday();
+  const [postingDate, setPostingDate] = useState(companyToday);
 
   const navigation = useNavigation();
 
@@ -89,8 +98,11 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     const hasFaLines = (routeData?.fixedAssetLines ?? []).some(
       (line) => line.received
     );
+    const hasRentalLines = (routeData?.rentalLines ?? []).some(
+      (line) => line.received
+    );
 
-    if (!hasReceiptLines && !hasFaLines) {
+    if (!hasReceiptLines && !hasFaLines && !hasRentalLines) {
       setValidationErrors([
         {
           itemReadableId: null,
@@ -165,6 +177,22 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       }
     });
 
+    // A unit returned from a rental treated as a sale must say where it goes.
+    (routeData?.rentalLines ?? []).forEach((line) => {
+      if (
+        line.received &&
+        line.lessorClassification === "Sale" &&
+        !line.residualDestination
+      ) {
+        const unitName = line.unitName;
+        errors.push({
+          itemReadableId: line.assetReadableId,
+          receivedQuantity: 1,
+          receivedQuantityError: t`Choose Return To for ${unitName}`
+        });
+      }
+    });
+
     setValidationErrors(errors);
     setValidated(true);
   };
@@ -194,6 +222,19 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
           </ModalTitle>
         </ModalHeader>
         <ModalBody>
+          {isRental && (
+            <FormControl className="mb-4">
+              <FormLabel>
+                <Trans>Returned on</Trans>
+              </FormLabel>
+              <DatePicker
+                aria-label={t`Returned on`}
+                value={parseDate(postingDate)}
+                maxValue={parseDate(companyToday)}
+                onChange={(d) => d && setPostingDate(d.toString())}
+              />
+            </FormControl>
+          )}
           {validationErrors.length > 0 ? (
             <Alert variant="destructive">
               <LuTriangleAlert className="h-4 w-4" />
@@ -230,7 +271,9 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                ruleViolations.submit(new FormData());
+                const formData = new FormData();
+                if (isRental) formData.set("postingDate", postingDate);
+                ruleViolations.submit(formData);
               }}
             >
               <Button

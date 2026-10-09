@@ -47,7 +47,27 @@ Key service functions (verified):
   shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
   Pinned by `lib/cost-layer-order.test.ts` and the database test
-  `lib/calculate-cogs.test.ts`. The valuation
+  `lib/calculate-cogs.test.ts`.
+  **Serial unit cost and Recost.** `preview-serial-unit-costs` (`{ itemId,
+  locationId? }`, `view: accounting`) values every on-hand serial of an item
+  with the pure `serialUnitCost` (`lib/serial-unit-cost.ts`): calculateCOGS's
+  arithmetic for a quantity of one (own layer, then unstamped, with price
+  correction children; Standard / Average at the item cost), from one read of
+  the item's layers. ERP: `getSerialUnitCosts` → cached `api+/items.$itemId.serial-costs.ts`
+  (also returns `costingMethod` and `retainedEarningsAccountId`), read by
+  `InventoryStorageUnits` only when the user can view accounting; a zero
+  cost reads "No cost". **Recost** (row action, `update: accounting`, FIFO /
+  LIFO only) → `x+/inventory+/quantities+/$itemId.recost.tsx` →
+  `recostSerialUnit` → `recost-serial-unit` (`{ trackedEntityId, unitCost,
+  offsetAccountId?, postingDate }`, `update: accounting`): exactly one unit on
+  hand at one location; relieves it via `calculateCOGS` (its own layer first)
+  and books −1 at the old cost / +1 stamped at the new, both
+  `costLedgerType 'Revaluation'` (the only writer of that type; no
+  `itemLedger` row — nothing moves); with accounting on posts an `'Inventory
+  Adjustment'` journal of the difference, inventory account vs the offset
+  account (`getOffsetAccount`, `lib/offset-account.ts`, signed by the offset
+  account's own class via `buildOffsetLines`). The valuation report's FIFO /
+  LIFO layer average moves by exactly the difference, so the tie-out holds. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +

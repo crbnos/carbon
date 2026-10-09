@@ -43,6 +43,58 @@ export function LineItemsBlock({
   const hasTrackedEntities = trackedEntities.length > 0;
   let rowIndex = 0;
 
+  // A rental shipment lists its units instead of shipment lines: one unit per
+  // row, with its serial number.
+  if (data.rentalUnits && data.rentalUnits.length > 0) {
+    return (
+      <View style={tw("mb-4")}>
+        <View
+          style={[
+            tw("flex flex-row py-2 px-3 text-[9px] font-bold"),
+            { backgroundColor: theme.accent, color: theme.accentForeground }
+          ]}
+        >
+          <Text style={tw("w-6/12 text-left")}>Description</Text>
+          <Text style={tw("w-2/12 text-right")}>Qty</Text>
+          <Text style={tw("w-4/12 text-right")}>Serial</Text>
+        </View>
+        {data.rentalUnits.map((unit, index) => {
+          const rowBg =
+            !opts.zebra || index % 2 === 0 ? "bg-white" : "bg-gray-50";
+          return (
+            <View
+              key={unit.id}
+              style={tw(
+                `flex flex-row py-2 px-3 border-b border-gray-200 text-[10px] ${rowBg}`
+              )}
+              wrap={false}
+            >
+              <View style={tw("w-6/12 pr-2")}>
+                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                  {unit.name}
+                </Text>
+                {unit.assetReadableId ? (
+                  <Text
+                    style={{
+                      ...tw("text-[8px] text-gray-400 mt-0.5"),
+                      ...overflow
+                    }}
+                  >
+                    {unit.assetReadableId}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={tw("w-2/12 text-right text-gray-600")}>1</Text>
+              <Text style={tw("w-4/12 text-right text-gray-600")}>
+                {unit.serialNumber ?? ""}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
   return (
     <View style={tw("mb-4")}>
       <View

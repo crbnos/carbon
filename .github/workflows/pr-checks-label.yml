@@ -3,7 +3,7 @@ name: PR Checks Label
 on:
   workflow_run:
     workflows:
-      - Check Lint and Types
+      - Checks
     types:
       - completed
 

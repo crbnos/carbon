@@ -32,8 +32,8 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 
 | Command | Description |
 |---|---|
-| `crbn up` | Boot compose stack + apps. Picker includes opt-in apps: Assembler, Email previews (react-email server for every email template at `email.<branch>.dev`). |
-| `crbn up --all` | Launch all apps without the picker (ERP, MES, email previews; assembler when its OCCT build exists). |
+| `crbn up` | Boot compose stack + apps. Picker includes opt-in apps: Assembler, Email previews (react-email server for every email template at `email.<branch>.dev`), Studio (the Supabase dashboard at `studio.<branch>.dev`, with the Postgres-Meta it reads through). |
+| `crbn up --all` | Launch all apps without the picker (ERP, MES, email previews, Studio; assembler when its OCCT build exists). |
 | `crbn up --no-portless` | Localhost mode: fixed ports (API `:54321`, ERP `:3000`, MES `:3001`). |
 | `crbn up --borrow` | Reuse another worktree's running containers (DB, API, etc). |
 | `crbn up --no-apps` | Services only (postgres, kong, supabase, inngest, mail). |
@@ -49,7 +49,7 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn migrate` | Apply DB migrations against the running stack. |
 
 `CARBON_DEV_APPS` skips the picker: `CARBON_DEV_APPS=erp,mes,email crbn up`.
-Comma-separated, from `erp`, `mes`, `assembler`, `email` — unrecognized names
+Comma-separated, from `erp`, `mes`, `assembler`, `email`, `studio` — unrecognized names
 are dropped silently. Shell-level only; it is not read from `.env.local`.
 
 ### Files

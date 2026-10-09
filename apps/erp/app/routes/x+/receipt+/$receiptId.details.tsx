@@ -58,7 +58,26 @@ export async function action({ request }: ActionFunctionArgs) {
     currentReceipt.data.sourceDocumentId !== d.sourceDocumentId ||
     currentReceipt.data.locationId !== d.locationId;
 
-  if (receiptDataHasChanged) {
+  const sourceChanged =
+    currentReceipt.data.sourceDocument !== d.sourceDocument ||
+    currentReceipt.data.sourceDocumentId !== d.sourceDocumentId;
+  const isRental =
+    currentReceipt.data.sourceDocument === "Rental Agreement" ||
+    d.sourceDocument === "Rental Agreement";
+  if (isRental && sourceChanged) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          null,
+          "A rental receipt keeps its rental agreement. Create it from the agreement."
+        )
+      )
+    );
+  }
+
+  if (receiptDataHasChanged && !isRental) {
     switch (d.sourceDocument) {
       case "Purchase Order":
         const purchaseOrderReceipt = await serverFns
@@ -178,7 +197,8 @@ export default function ReceiptDetailsRoute() {
     externalDocumentId: routeData.receipt.externalDocumentId ?? undefined,
     sourceDocument: (routeData.receipt.sourceDocument ?? "Purchase Order") as
       | "Purchase Order"
-      | "Inbound Transfer",
+      | "Inbound Transfer"
+      | "Rental Agreement",
     sourceDocumentId: routeData.receipt.sourceDocumentId ?? undefined,
     sourceDocumentReadableId:
       routeData.receipt.sourceDocumentReadableId ?? undefined,
