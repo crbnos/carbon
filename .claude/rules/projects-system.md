@@ -44,13 +44,15 @@ one context per line.
 ### The SQL mirror
 
 `project_posting_account(company, project, element, date)` (migration
-`20261009055331_projects-functions.sql`) mirrors the TS resolver for the SQL posting
-paths: `complete_job_to_inventory` and `backflush_job_materials` (migration
-`20261009071629_complete-job-consume-to-project.sql`). Change both together.
+`20261009055331_projects-functions.sql`, redefined by
+`20261009100941_project-posting-account-missing-default.sql`) mirrors the TS resolver for
+the SQL posting paths: `complete_job_to_inventory` and `backflush_job_materials`
+(migration `20261009071629_complete-job-consume-to-project.sql`). Change both together.
 
-Gotcha: the SQL returns NULL for Statistical AND for a missing account default. Its
-callers raise "consumes to a Statistical project" for both, so a missing default reads
-as a Statistical project there.
+The SQL returns NULL for Statistical only. A missing account default raises the TS
+resolver's message ("Set Project Expense in Account Defaults …"), and a missing project
+raises too. So the callers' "consumes to a Statistical project" branch means Statistical.
+Before the redefinition a missing default also returned NULL and read as Statistical.
 
 ## `projectLedger`
 

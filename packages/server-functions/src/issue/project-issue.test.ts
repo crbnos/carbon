@@ -495,3 +495,84 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "completing a consume-to-project job names a missing account default, not Statistical",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("nut", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("d", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 1,
+        jobQuantity: 1
+      });
+      await f.db
+        .updateTable("accountDefault")
+        .set({ projectExpenseAccount: null })
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const completion = completeJob(f, job.jobId, 1, locationId);
+      await expect(completion).rejects.toThrow(
+        "Set Project Expense in Account Defaults before you charge an Expense project"
+      );
+      await expect(completion).rejects.not.toThrow(/Statistical/);
+
+      const unchanged = await f.db
+        .selectFrom("job")
+        .select("status")
+        .where("id", "=", job.jobId)
+        .executeTakeFirstOrThrow();
+      expect(unchanged.status).not.toEqual("Completed");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "project_posting_account returns NULL for a Statistical project only",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Statistical" });
+    try {
+      const account = (projectId: string) =>
+        sql<{ account: string | null }>`
+          SELECT project_posting_account(
+            ${f.companyId}, ${projectId}, ${f.elementId}, '2026-10-05'::date
+          ) AS account
+        `.execute(f.db);
+
+      const statistical = await account(f.projectId);
+      expect(statistical.rows[0]!.account).toBeNull();
+
+      await f.db
+        .updateTable("project")
+        .set({ costTreatment: "Contract" })
+        .where("id", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const contract = await account(f.projectId);
+      expect(contract.rows[0]!.account).toEqual(f.account("project-wip"));
+
+      await f.db
+        .updateTable("accountDefault")
+        .set({ projectWorkInProgressAccount: null })
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await expect(account(f.projectId)).rejects.toThrow(
+        "Set Project Work in Progress in Account Defaults before you charge a Contract project"
+      );
+
+      await expect(account(`${f.projectId}-missing`)).rejects.toThrow(
+        /does not exist/
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
