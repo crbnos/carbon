@@ -1,0 +1,672 @@
+# Projects Phase 1c — implementation plan
+
+**Spec:** .ai/specs/2026-10-03-projects.md (*Baselines and change requests (Phase 1c)*)
+**Research:** .ai/research/projects-systems-engineering-ux.md (Flow Engineering branches, change review, baselines)
+**Branch:** projects-wbs-research-spec
+**Prerequisite:** Phase 1a and Phase 1b plans are done and committed. If a named Phase 1a or 1b artifact does not exist, STOP and report.
+
+## Scope of this plan
+
+1. **Baselines.** A read-only snapshot of the plan layer, taken by a user or when a milestone completes. A compare view diffs any two baselines, or a baseline with the current plan.
+2. **Change requests.** A draft set of plan-layer edits, made in the normal Elements UI while a change request is open.
+   - Reviewers see per-element diffs, comment on a changed field, and mark each element as viewed.
+   - Approval goes through the approvals engine when a rule applies. Otherwise a user with `update: projects` approves directly; approval rules are a paid feature (`APPROVAL_RULES`), and Projects is community.
+   - On approval, Carbon applies the edits and writes a baseline.
+3. **Plan lock.** A project can lock its plan layer after a chosen milestone. After that milestone, plan-layer fields change only through a change request.
+
+**Plan-layer fields** (the only fields that change requests, baselines and the lock cover):
+- element add, delete and move;
+- element `name`, `description`, `type`, `isChargeable`, `budget`, `estimatedHours`, `itemId`, the Requirement target fields and the Parameter fields;
+- trace links;
+- plan lines (materials, labor, other costs).
+
+Progress fields stay editable at all times: state, owner, priority, labels, dates, milestone, verdict, comments.
+
+## Rules for the executor
+
+- Read `.ai/lessons.md`, `.claude/rules/conventions-services.md`, `.claude/rules/conventions-forms.md`, `.claude/rules/authz-manifest.md` and `.claude/rules/projects-system.md` before Task 1.
+- Use the `carbon-design` skill for every UI task.
+- Start every new source file with its SPDX header. Run `pnpm --filter @carbon/checks license-headers` after you create files.
+- 🛑 Keep project apply logic out of `packages/ee`. The approvals engine only flips the change request's status.
+- Never query in a loop.
+- If a quoted code line or line number does not match the file, search for the quoted code. If you cannot find it, STOP and report.
+
+## Progress
+
+- [ ] Task 1: Create the Phase 1c enum migration
+- [ ] Task 2: Create the baselines and change requests migration
+- [ ] Task 3: Apply migrations, regenerate types, ship RLS
+- [ ] Task 4: Move the diff engine to `modules/shared`
+- [ ] Task 5: Move the diff UI to shared components
+- [ ] Task 6: Add the plan snapshot and the baseline service
+- [ ] Task 7: Add the baseline compare page
+- [ ] Task 8: Add the change request overlay and draft writes
+- [ ] Task 9: Add submit, approve, reject and apply
+- [ ] Task 10: Add the approvals engine branch and notifications
+- [ ] Task 11: Build the change request pages
+- [ ] Task 12: Add the plan lock
+- [ ] Task 13: Update the rule file, module AGENTS.md, docs and spec
+- [ ] Task 14: Verify in the browser
+
+## Dependencies
+
+- Tasks 1 → 2 → 3 run in order.
+- Tasks 4 and 5 are independent of Tasks 1–3 and of each other.
+- Task 6 needs Tasks 3 and 4. Task 7 needs Tasks 5 and 6.
+- Task 8 needs Task 3. Task 9 needs Tasks 6 and 8. Task 10 needs Task 9.
+- Task 11 needs Tasks 5, 9 and 10. Task 12 needs Task 8.
+- Task 13 needs Tasks 1–12. Task 14 runs last.
+
+---
+
+## Task 1: Create the Phase 1c enum migration
+
+**Depends on:** none
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_projects-1c-enums.sql`
+- Copy from (precedent): `packages/database/supabase/migrations/20260310005407_supplier-approvals.sql` (line 2)
+
+**Steps:**
+1. Run `pnpm db:migrate:new projects-1c-enums`.
+2. Write only these statements:
+
+```sql
+ALTER TYPE "approvalDocumentType" ADD VALUE IF NOT EXISTS 'projectChangeRequest';
+CREATE TYPE "projectChangeRequestStatus" AS ENUM ('Draft', 'In Review', 'Approved', 'Rejected', 'Applied', 'Cancelled');
+CREATE TYPE "projectChangeOperation" AS ENUM ('Add', 'Update', 'Delete');
+CREATE TYPE "projectPlanTable" AS ENUM ('projectElement', 'projectElementLink', 'projectElementMaterial', 'projectElementLabor', 'projectElementCost');
+CREATE TYPE "projectBaselineSource" AS ENUM ('Manual', 'Milestone', 'Change Request');
+```
+
+**Verify:**
+```bash
+grep -c "projectChangeRequest" packages/database/supabase/migrations/*_projects-1c-enums.sql
+# Expected: 2
+```
+
+**Out of scope:** any table change.
+
+---
+
+## Task 2: Create the baselines and change requests migration
+
+**Depends on:** 1
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_projects-baselines.sql`
+- Copy from (precedent): `20260810100100_workflows-foundation.sql` lines 55–74 (`workflowVersion`); `20260310005407_supplier-approvals.sql` lines 79–107 (the `approvalRequests` view)
+
+**Steps:**
+1. Run `pnpm db:migrate:new projects-baselines`.
+2. Write the SQL below. Add an index on `companyId` and on every FK column.
+
+```sql
+ALTER TABLE "project"
+  ADD COLUMN IF NOT EXISTS "lockPlanAfterMilestoneId" TEXT,
+  ADD COLUMN IF NOT EXISTS "nextChangeRequestSequence" INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS "nextBaselineSequence" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "project" ADD CONSTRAINT "project_lockMilestone_fkey"
+  FOREIGN KEY ("lockPlanAfterMilestoneId", "companyId") REFERENCES "projectMilestone"("id", "companyId") ON DELETE SET NULL ("lockPlanAfterMilestoneId");
+
+CREATE TABLE IF NOT EXISTS "projectBaseline" (
+  "id" TEXT NOT NULL DEFAULT id('pjbl'),
+  "companyId" TEXT NOT NULL,
+  "projectId" TEXT NOT NULL,
+  "sequence" INTEGER NOT NULL,
+  "name" TEXT NOT NULL,
+  "source" "projectBaselineSource" NOT NULL,
+  "milestoneId" TEXT,
+  "changeRequestId" TEXT,
+  "formatVersion" INTEGER NOT NULL DEFAULT 1,
+  "snapshot" JSONB NOT NULL,          -- { elements, links, materials, labor, costs }
+  "elementCount" INTEGER NOT NULL,
+  "linkCount" INTEGER NOT NULL,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT "projectBaseline_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectBaseline_sequence_key" UNIQUE ("projectId", "sequence", "companyId"),
+  CONSTRAINT "projectBaseline_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "projectBaseline_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "projectChangeRequest" (
+  "id" TEXT NOT NULL DEFAULT id('pjcr'),
+  "companyId" TEXT NOT NULL,
+  "projectId" TEXT NOT NULL,
+  "readableId" TEXT NOT NULL DEFAULT '',     -- '<identifier>-CR-<n>', set by the service
+  "title" TEXT NOT NULL,
+  "reason" JSONB,
+  "status" "projectChangeRequestStatus" NOT NULL DEFAULT 'Draft',
+  "baseBaselineId" TEXT,                      -- the baseline the draft started from
+  "appliedBaselineId" TEXT,
+  "submittedAt" TIMESTAMP WITH TIME ZONE,
+  "decidedBy" TEXT REFERENCES "user"("id"),
+  "decidedAt" TIMESTAMP WITH TIME ZONE,
+  "decisionNotes" TEXT,
+  "appliedAt" TIMESTAMP WITH TIME ZONE,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "projectChangeRequest_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectChangeRequest_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "projectChangeRequest_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+ALTER TABLE "projectBaseline" ADD CONSTRAINT "projectBaseline_changeRequest_fkey"
+  FOREIGN KEY ("changeRequestId", "companyId") REFERENCES "projectChangeRequest"("id", "companyId") ON DELETE SET NULL ("changeRequestId");
+
+CREATE TABLE IF NOT EXISTS "projectChangeRequestItem" (
+  "id" TEXT NOT NULL DEFAULT id('pjci'),
+  "companyId" TEXT NOT NULL,
+  "changeRequestId" TEXT NOT NULL,
+  "operation" "projectChangeOperation" NOT NULL,
+  "targetTable" "projectPlanTable" NOT NULL,
+  "targetId" TEXT NOT NULL,           -- the live row id; for Add, a pre-generated id the apply step inserts with
+  "payload" JSONB,                    -- the proposed row (Add, Update)
+  "baseRow" JSONB,                    -- the live row when the draft first touched it (Update, Delete)
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "projectChangeRequestItem_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectChangeRequestItem_target_key" UNIQUE ("changeRequestId", "targetTable", "targetId", "companyId"),
+  CONSTRAINT "projectChangeRequestItem_cr_fkey" FOREIGN KEY ("changeRequestId", "companyId") REFERENCES "projectChangeRequest"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "projectChangeRequestItem_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "projectChangeRequestComment" (
+  "id" TEXT NOT NULL DEFAULT id('pjcc'),
+  "companyId" TEXT NOT NULL,
+  "changeRequestId" TEXT NOT NULL,
+  "targetTable" "projectPlanTable",
+  "targetId" TEXT,
+  "field" TEXT,                       -- null = a comment on the whole change or the whole row
+  "comment" TEXT NOT NULL,
+  "resolvedAt" TIMESTAMP WITH TIME ZONE,
+  "resolvedBy" TEXT REFERENCES "user"("id"),
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "projectChangeRequestComment_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectChangeRequestComment_cr_fkey" FOREIGN KEY ("changeRequestId", "companyId") REFERENCES "projectChangeRequest"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "projectChangeRequestComment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "projectChangeRequestView" (
+  "changeRequestId" TEXT NOT NULL,
+  "targetTable" "projectPlanTable" NOT NULL,
+  "targetId" TEXT NOT NULL,
+  "userId" TEXT NOT NULL REFERENCES "user"("id"),
+  "companyId" TEXT NOT NULL,
+  "viewedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT "projectChangeRequestView_pkey" PRIMARY KEY ("changeRequestId", "targetTable", "targetId", "userId", "companyId"),
+  CONSTRAINT "projectChangeRequestView_cr_fkey" FOREIGN KEY ("changeRequestId", "companyId") REFERENCES "projectChangeRequest"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "projectChangeRequestView_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+```
+
+3. Recreate the `approvalRequests` view. Copy the latest definition (`20260310005407_supplier-approvals.sql` lines 79–107, or a later one if `grep -l "approvalRequests" packages/database/supabase/migrations/*.sql | tail -1` finds one).
+   - Add a `projectChangeRequest` branch to each CASE: `documentReadableId` = `projectChangeRequest."readableId"`, `documentDescription` = `projectChangeRequest."title"`.
+   - Add a `LEFT JOIN "projectChangeRequest"` on `documentId` and `companyId`.
+   - Keep `WITH (security_invoker = true)`.
+
+**Verify:**
+```bash
+grep -c "CREATE TABLE IF NOT EXISTS" packages/database/supabase/migrations/*_projects-baselines.sql
+# Expected: 5
+```
+
+**Out of scope:** branching of facts (time, issues, journals). They never enter a change request.
+
+---
+
+## Task 3: Apply migrations, regenerate types, ship RLS
+
+**Depends on:** 2
+**Files:**
+- Modify: `packages/database/src/authz/manifest.ts`
+- Modify: generated types; create the generated RLS migration
+
+**Steps:**
+1. Run `pnpm db:migrate`.
+2. Run `pnpm run generate:types`.
+3. Add these rules in alphabetical order:
+
+```ts
+projectBaseline: company("projects", { update: false, delete: false }),
+projectChangeRequest: company("projects"),
+projectChangeRequestComment: company("projects", { create: "employee", update: owner("createdBy"), delete: owner("createdBy") }),
+projectChangeRequestItem: company("projects"),
+projectChangeRequestView: policies({
+  select: owner("userId"),
+  insert: and(owner("userId"), inCompany("companyId", "employee")),
+  update: { using: owner("userId"), check: and(owner("userId"), inCompany("companyId", "employee")) },
+  delete: owner("userId")
+}),
+```
+
+4. If a helper signature differs, read `packages/database/src/authz/rules.ts` and keep the meaning.
+5. Run `pnpm db:migrate`, then `pnpm --filter @carbon/database authz migration projects-1c-rls`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/database exec vitest run src/authz
+# Expected: all tests pass
+```
+
+**Out of scope:** hand edits to generated files.
+
+---
+
+## Task 4: Move the diff engine to `modules/shared`
+
+**Depends on:** none
+**Files:**
+- Create: `apps/erp/app/modules/shared/diff.ts`
+- Create: `apps/erp/app/modules/shared/diff.test.ts`
+- Modify: `apps/erp/app/modules/items/items.service.ts` (lines 8562–8660 and 9005)
+- Modify: `apps/erp/app/modules/items/items.models.ts` (lines 1310–1318)
+- Copy from (precedent): `apps/erp/app/modules/shared/sort-order.ts` and `sort-order.test.ts`
+
+**Steps:**
+1. In `diff.ts`, export:
+   - `DiffStatus` and `DiffEntry<T>` (copies of `MethodDiffStatus` and `MethodDiffEntry`);
+   - `BASE_IGNORED_FIELDS` = `id`, `companyId`, `customFields`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`;
+   - `valuesEqual`, unchanged;
+   - `diffFields(base, target, ignored: Set<string>)`;
+   - `diffRows(base, target, { key, ignoredFields })`, which merges `ignoredFields` with `BASE_IGNORED_FIELDS` and matches `target[key]` to `base.id` as today.
+2. In `items.models.ts`, keep `MethodDiffStatus` and `MethodDiffEntry` as aliases: `export type MethodDiffEntry<T> = DiffEntry<T>`.
+3. In `items.service.ts`:
+   1. Keep the items-only fields as `ITEM_IGNORED_FIELDS`.
+   2. Replace the private helpers with imports from `../shared/diff`.
+   3. Call `diffRows(base, target, { key: sourceKey, ignoredFields: ITEM_IGNORED_FIELDS })` at the 6 call sites (8735–8737, 8754, 8831, 8877).
+   4. Keep `DiffMethodInput` and `diffMethod` in `items.service.ts` (`apps/erp/test/mcp-tool-metadata.test.ts:286` reads them).
+4. Do not add `@mcp` to anything in `diff.ts`.
+5. Write `diff.test.ts` with 4 cases:
+   1. An added row (key not in base).
+   2. A removed row.
+   3. A modified row whose `changedFields` lists only the changed column.
+   4. A numeric string "1.50" equal to the number 1.5 (unchanged).
+
+**Verify:**
+```bash
+pnpm --filter erp test -- diff items.service mcp-tool-metadata
+# Expected: all tests pass, including the 5 existing diffMethod describe blocks
+```
+
+**Out of scope:** `correlate` (natural-key matching). Projects match by id only.
+
+---
+
+## Task 5: Move the diff UI to shared components
+
+**Depends on:** none
+**Files:**
+- Move: `apps/erp/app/modules/items/ui/ChangeNotice/diff-ui.tsx` → `apps/erp/app/components/Diff/diff-ui.tsx`
+- Create: `apps/erp/app/components/Diff/DiffParts.tsx` — `Pill`, `FieldRow`, `ValueRow`, `TreeNode`, `TreeChildren`, `statusColor`, extracted from `ChangeNoticeDiffViewer.tsx` (lines 182–330)
+- Create: `apps/erp/app/components/Diff/index.ts`
+- Modify: `apps/erp/app/modules/items/ui/ChangeNotice/ChangeNoticeDiffViewer.tsx` — import the parts; pass `labels={FIELD_LABELS}`
+- Modify: every importer of `diff-ui.tsx` (find them with `grep -rn "ChangeNotice/diff-ui\|./diff-ui" apps/erp/app`)
+
+**Steps:**
+1. Move `diff-ui.tsx` unchanged, except that its type import comes from `~/modules/shared/diff`.
+2. Extract the generic parts. `FieldRow` and `ValueRow` take a `labels: Record<string, string>` prop. `humanizeField` falls back to a title-cased key when a label is missing.
+3. Keep the items-only parts (`FIELD_LABELS`, `NOISE_FIELDS`, unit grouping, entry components) in `ChangeNoticeDiffViewer.tsx`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** any visual change to the change notice pages.
+
+---
+
+## Task 6: Add the plan snapshot and the baseline service
+
+**Depends on:** 3, 4
+**Files:**
+- Modify: `apps/erp/app/modules/projects/projects.models.ts`
+- Modify: `apps/erp/app/modules/projects/projects.server.ts`
+- Modify: `apps/erp/app/modules/projects/projects.service.ts`
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.milestones.tsx` — the `complete` intent
+- Create: `apps/erp/test/projects-snapshot.test.ts`
+
+**Steps:**
+1. In `projects.models.ts`, export `PLAN_LAYER_FIELDS: Record<ProjectPlanTable, string[]>`, the plan-layer columns of each table (see *Scope*).
+   - For `projectElement`, also keep `id`, `parentId`, `readableId`, `sortOrder` and `type`.
+   - For the other tables, keep every column except the audit columns and `companyId`.
+2. Export `ProjectPlanSnapshot = { elements, links, materials, labor, costs }`, each an array of plain rows with only `PLAN_LAYER_FIELDS`.
+3. Export a pure function `toPlanSnapshot(rows)`. It picks the plan-layer columns and sorts each array by `id`.
+4. Export a pure function `diffPlanSnapshots(base, target)`. It calls `diffRows(base[x], target[x], { key: "id", ignoredFields: [] })` for each table and returns `{ elements, links, materials, labor, costs }` of `DiffEntry` arrays.
+5. In `projects.server.ts`, add `loadPlanSnapshot(db, { companyId, projectId })`: 5 queries, one per table, then `toPlanSnapshot`.
+6. Add `createProjectBaseline(db, { companyId, userId, projectId, name, source, milestoneId?, changeRequestId? })`. In one transaction:
+   1. Load the snapshot.
+   2. Read and increment `project.nextBaselineSequence` with `UPDATE … RETURNING`.
+   3. Insert the baseline with counts.
+7. In `projects.service.ts`, add:
+   - `getProjectBaselines(client, projectId, companyId)`: selects every column except `snapshot`;
+   - `getProjectBaseline(client, id, companyId)`: with `snapshot`.
+8. When the milestones route completes a milestone, call `createProjectBaseline` with `source: "Milestone"` and `name: "<milestone name> (completed)"`.
+9. Write `projects-snapshot.test.ts` with 3 cases:
+   1. `toPlanSnapshot` drops a progress field (`stateId`) and keeps `budget`.
+   2. `diffPlanSnapshots` reports an added element, a removed link and a modified plan-line quantity.
+   3. A changed `stateId` alone gives no diff.
+
+**Verify:**
+```bash
+pnpm --filter erp test -- projects-snapshot
+# Expected: 3 passed
+```
+
+**Out of scope:** restoring a baseline. Reverting is a change request.
+
+---
+
+## Task 7: Add the baseline compare page
+
+**Depends on:** 5, 6
+**Files:**
+- Create: `apps/erp/app/routes/x+/project+/$projectId.baselines.tsx`
+- Create: `apps/erp/app/routes/x+/project+/$projectId.baselines.compare.tsx`
+- Create: `apps/erp/app/modules/projects/ui/Baselines/BaselinesList.tsx`
+- Create: `apps/erp/app/modules/projects/ui/Baselines/PlanDiffViewer.tsx`
+- Modify: `apps/erp/app/modules/projects/ui/Project/useProjectNavigation.tsx` — add a **Baselines** tab
+- Copy from (precedent): `apps/erp/app/modules/items/ui/ChangeNotice/ChangeNoticeDiffViewer.tsx` (layout), `apps/erp/app/components/Diff/` (Task 5)
+
+**Steps:**
+1. `$projectId.baselines.tsx`:
+   - loader: `getProjectBaselines`;
+   - UI: `BaselinesList` with sequence, name, source, date, author and element count, plus **Take baseline** (a name input);
+   - action: `intent: "create"` runs `requirePermissions(request, { update: "projects" })`, then `createProjectBaseline` with `source: "Manual"`.
+2. `$projectId.baselines.compare.tsx` reads `?from=<baselineId>&to=<baselineId|current>`.
+   - It loads both snapshots. For `current`, it calls `loadPlanSnapshot`.
+   - It renders `PlanDiffViewer`.
+3. `PlanDiffViewer` groups the diff by element, in the target tree order. Each element shows a `DiffBadge`, its changed fields (`FieldRow` with element labels) and its changed plan lines and links beneath it. Removed elements come last.
+4. Each baseline row has **Compare with current** and **Compare with…** (a select of the other baselines).
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** exporting a diff to PDF.
+
+---
+
+## Task 8: Add the change request overlay and draft writes
+
+**Depends on:** 3
+**Files:**
+- Modify: `apps/erp/app/modules/projects/projects.models.ts`
+- Modify: `apps/erp/app/modules/projects/projects.server.ts`
+- Modify: `apps/erp/app/modules/projects/projects.service.ts`
+- Modify: every plan-layer route: `$projectId.elements.new.tsx`, `$projectId.elements.update.tsx`, `$projectId.elements.move.tsx`, `$projectId.elements.links.tsx`, `$projectId.elements.$elementId.plan.tsx`, `$projectId.elements.$elementId.delete.tsx`
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.elements.tsx` and the element page loaders
+- Create: `apps/erp/test/projects-overlay.test.ts`
+
+**Steps:**
+1. Add a pure function `applyChangeRequestItems(live: ProjectPlanSnapshot, items)` in `projects.models.ts`. It returns the snapshot as the change request would leave it:
+   - `Add` appends `payload`;
+   - `Update` replaces the row's plan-layer fields with `payload`;
+   - `Delete` removes the row.
+
+   It also removes links and plan lines of a deleted element.
+2. Add `isPlanLayerField(table, field)` from `PLAN_LAYER_FIELDS`.
+3. Add `upsertChangeRequestItem(db, { companyId, userId, changeRequestId, operation, targetTable, targetId, payload })` to `projects.server.ts`.
+   1. It refuses unless the change request is `Draft`.
+   2. On the first touch of a live row (`Update` or `Delete`), it stores the live row's plan-layer fields as `baseRow`.
+   3. An `Update` after an `Add` of the same `targetId` merges into the Add's `payload`.
+   4. A `Delete` after an `Add` removes the item.
+4. In each plan-layer route, read the open change request from the form field `changeRequestId` (sent by the UI while a change request is active).
+   - If it is set, call `upsertChangeRequestItem` instead of the live write.
+   - For an `Add`, generate the element id with `nanoid()` and keep `readableId` empty; the apply step assigns it.
+   - Progress fields (`isPlanLayerField` false) always write live.
+5. In the Elements loader and the element page loader, read `?cr=<changeRequestId>`. If it is set:
+   1. Load the items.
+   2. Show `applyChangeRequestItems(liveSnapshot, items)` instead of the live plan layer.
+   3. Mark each changed row with its operation, so the UI can badge it.
+6. Write `projects-overlay.test.ts` with 4 cases:
+   1. An Add then an Update of the same row gives one Add with the merged payload.
+   2. A Delete removes the element and its links and plan lines.
+   3. An Update changes only plan-layer fields.
+   4. A Delete after an Add leaves nothing.
+
+**Verify:**
+```bash
+pnpm --filter erp test -- projects-overlay
+# Expected: 4 passed
+```
+
+**Out of scope:** two open change requests editing the same row. The apply step's conflict check handles that (Task 9).
+
+---
+
+## Task 9: Add submit, approve, reject and apply
+
+**Depends on:** 6, 8
+**Files:**
+- Modify: `apps/erp/app/modules/projects/projects.server.ts`
+- Modify: `apps/erp/app/modules/projects/projects.service.ts`
+- Create: `apps/erp/app/routes/x+/project+/$projectId.change-requests.new.tsx`
+- Create: `apps/erp/app/routes/x+/project+/$projectId.change-requests.$crId.status.tsx`
+- Create: `apps/erp/test/projects-apply.test.ts`
+- Copy from (precedent): `applyChangeNotice` in `apps/erp/app/modules/items/items.server.ts` (line 511); `apps/erp/app/routes/x+/purchase-order+/$orderId.finalize.tsx` (lines 161, 197–246); `apps/erp/app/routes/x+/quality-document+/$id.tsx` (lines 116–232)
+
+**Steps:**
+1. `createChangeRequest(db, { companyId, userId, projectId, title, reason })`:
+   1. Increments `project.nextChangeRequestSequence`.
+   2. Sets `readableId` = `"<identifier>-CR-<n>"`.
+   3. Takes a baseline (`source: "Change Request"`, name "Before <readableId>") and stores it as `baseBaselineId`.
+2. Add a pure function `findConflicts(items, liveSnapshot)` in `projects.models.ts`. An `Update` or `Delete` item conflicts when the live row's plan-layer fields differ from its `baseRow` (`diffFields`), or when the live row no longer exists. It returns the conflicting items with the fields that changed.
+3. The status route handles these intents, each with `requirePermissions(request, { update: "projects" })`:
+   - **submit** (Draft → In Review):
+     1. If the change request has no items, refuse.
+     2. If `isApprovalRequired(serviceRole, "projectChangeRequest", companyId)` is true, call `createApprovalRequest` and notify the approvers, as the PO finalize route does.
+     3. Set `submittedAt`.
+   - **approve**:
+     - If an approval request exists, call `canApproveRequest` and `approveRequest` (Task 10 flips the status).
+     - Otherwise set `Approved` directly, with `decidedBy` and `decidedAt`.
+     - Then call `applyChangeRequest`.
+   - **reject**: the same paths with `rejectRequest`, and `decisionNotes` from the form.
+   - **cancel** (Draft or In Review → Cancelled): only the author or an `update: projects` holder.
+   - **reopen** (Rejected → Draft).
+4. `applyChangeRequest(db, { companyId, userId, changeRequestId })`, in one Kysely transaction:
+   1. Lock the change request with `FOR UPDATE`. If it is not `Approved`, return.
+   2. Load the live snapshot and run `findConflicts`. If any conflict exists, throw a `ProjectChangeConflictError` with the list, and keep the status `Approved`.
+   3. Apply the items in this order:
+      1. element Adds, parent first, with readable ids from `project.nextElementSequence` (the same logic as `insertProjectElement`);
+      2. element Updates;
+      3. plan-line and link Adds and Updates;
+      4. link and plan-line Deletes;
+      5. element Deletes, children first.
+
+      For an element Delete, refuse when the element or a descendant has a charge (the `deleteProjectElement` checks).
+   4. Take a baseline (`source: "Change Request"`, name "After <readableId>") and store it as `appliedBaselineId`.
+   5. Set `status` to `Applied` with `.where("status", "=", "Approved")`, and set `appliedAt`.
+5. On a conflict, the status route flashes the conflict list. The change request page shows the conflicts, and the author can reopen it to fix them.
+6. Write `projects-apply.test.ts` with 3 cases for `findConflicts`:
+   1. No live change: no conflict.
+   2. A live budget change on a row the change request updates: a conflict on `budget`.
+   3. A live delete of a row the change request updates: a conflict.
+
+**Verify:**
+```bash
+pnpm --filter erp test -- projects-apply
+# Expected: 3 passed
+```
+
+**Out of scope:** partial apply. A change request applies fully or not at all.
+
+---
+
+## Task 10: Add the approvals engine branch and notifications
+
+**Depends on:** 9
+**Files:**
+- Modify: `packages/ee/src/approvals/models.ts` — add `projectChangeRequest` to `approvalDocumentType` (line 17) and to `approvalDocumentTypeLabel` (line 26) as "Project change request". Do not add it to `approvalDocumentTypesWithAmounts`.
+- Modify: `packages/ee/src/approvals/service.ts` — `approveRequest` (line 33) and `rejectRequest` (line 819)
+- Modify: `packages/jobs/src/inngest/functions/notifications/content.ts` (line 1235)
+- Modify: `apps/erp/app/components/Layout/Topbar/Notifications.tsx` (line 292)
+- Modify: `apps/erp/app/routes/api+/link.ts` (lines 105–112)
+- Modify: `apps/erp/app/modules/settings/ui/Approvals/ApprovalRules.ee.tsx` (lines 117–180)
+
+**Steps:**
+1. In `approveRequest` and `rejectRequest`, add a `projectChangeRequest` branch. It updates `projectChangeRequest.status` from `'In Review'` to `'Approved'` or `'Rejected'`, with `decidedBy`, `decidedAt` and a `companyId` pin, in the same transaction.
+2. Do not call any projects code from `packages/ee`. The ERP route runs `applyChangeRequest` after `approveRequest` returns.
+3. In `content.ts`, describe the change request as "<readableId>: <title>".
+4. In `Notifications.tsx` and `link.ts`, route a `projectChangeRequest` notification to the change request page (`path.to.projectChangeRequest(projectId, crId)`, Task 11). Replace the current two-way ternary in `Notifications.tsx` with a switch on the document type.
+5. In `ApprovalRules.ee.tsx`, add a card for project change requests, copying the quality document card.
+6. Run `pnpm exec turbo run typecheck --filter=@carbon/ee --filter=@carbon/jobs --filter=erp`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=@carbon/ee --filter=@carbon/jobs --filter=erp
+# Expected: exit code 0
+pnpm --filter @carbon/ee test -- approvals
+# Expected: all tests pass
+```
+
+**Out of scope:** amount-based rules for change requests.
+
+---
+
+## Task 11: Build the change request pages
+
+**Depends on:** 5, 9, 10
+**Files:**
+- Create: `apps/erp/app/routes/x+/project+/$projectId.change-requests.tsx`
+- Create: `apps/erp/app/routes/x+/project+/$projectId.change-requests.$crId.tsx`
+- Create: `apps/erp/app/routes/x+/project+/$projectId.change-requests.$crId.comments.tsx`
+- Create: `apps/erp/app/routes/x+/project+/$projectId.change-requests.$crId.viewed.tsx`
+- Create: `apps/erp/app/modules/projects/ui/ChangeRequests/ChangeRequestsTable.tsx`
+- Create: `apps/erp/app/modules/projects/ui/ChangeRequests/ChangeRequestReview.tsx`
+- Create: `apps/erp/app/modules/projects/ui/ChangeRequests/ChangeRequestBanner.tsx`
+- Modify: `apps/erp/app/modules/projects/ui/Elements/ElementsHeader.tsx`, `ElementList.tsx`
+- Modify: `apps/erp/app/modules/projects/ui/Project/useProjectNavigation.tsx` — add **Change requests**
+- Modify: `apps/erp/app/utils/path.ts` — `projectChangeRequests(id)`, `projectChangeRequest(id, crId)`, `newProjectChangeRequest(id)`, `projectChangeRequestStatus(id, crId)`
+- Copy from (precedent): `apps/erp/app/modules/items/ui/ChangeNotice/ChangeNoticeDiffViewer.tsx`; `apps/erp/app/routes/x+/maintenance+/$dispatchId.comments.tsx` (comments)
+
+**Steps:**
+1. **List page.** Readable id, title, status, author, item count, submitted date. **New change request** (title, reason) posts to the new route, which redirects to the Elements page with `?cr=<id>`.
+2. **`ChangeRequestBanner`.** Shown on the Elements page and the element page while `?cr=` is set. It reads "Editing <readableId>: <title>. Changes go to this change request." and has **Review** and **Leave**. While it shows, every plan-layer form adds the hidden field `changeRequestId`.
+3. Rows changed by the change request show a `DiffBadge` (Added, Modified, Removed) in the List layout.
+4. **Review page (`$crId.tsx`).** The header holds the readable id, title, status, author, and the counts "Items changed N" and "K/N viewed". It also holds **Submit**, **Approve**, **Reject** (with notes), **Cancel** and **Reopen** by status and permission.
+
+   The body has one card per changed element, in tree order. Each card shows:
+   - the element's readable id and name, with a `DiffBadge`;
+   - a **Viewed** checkbox (posts to `$crId.viewed`);
+   - a comment button.
+
+   Inside each card:
+   - the changed fields as `FieldRow` before → after, each with a comment action;
+   - the changed plan lines and links beneath.
+5. A **Viewed** mark resets when the item's `updatedAt` is later than the mark's `viewedAt`.
+6. Comments show inline under their field, or under the card when `field` is null. Each has **Resolve**.
+7. When an apply conflict was flashed, the page shows the conflict list at the top, with links to the live elements.
+8. A change request that is not `Draft` cannot be edited. The banner shows read-only, and the plan-layer routes refuse its items (Task 8 step 3.1).
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** suggested edits by reviewers (a reviewer comments; the author edits).
+
+---
+
+## Task 12: Add the plan lock
+
+**Depends on:** 8
+**Files:**
+- Modify: `apps/erp/app/modules/projects/projects.models.ts` — `isProjectPlanLocked`, `projectPlanLockedMessage`
+- Modify: `apps/erp/app/modules/projects/projects.server.ts` — `requireProjectPlanEditable`, `requireEditablePlanRoute`
+- Modify: every plan-layer route listed in Task 8
+- Modify: `apps/erp/app/modules/projects/ui/Projects/ProjectForm.tsx` — a **Lock plan after milestone** select
+- Modify: `apps/erp/app/modules/projects/ui/Elements/ElementsHeader.tsx` — a lock indicator
+- Create: `apps/erp/test/projects-lock.test.ts`
+- Copy from (precedent): `requireChangeNoticeEditable` and `requireEditableChangeNoticeRoute` in `apps/erp/app/modules/items/items.server.ts` (lines 295, 394); `changeNoticeLockedMessage` in `items.models.ts` (line 1195)
+
+**Steps:**
+1. `isProjectPlanLocked({ lockMilestone })` returns true when the project has `lockPlanAfterMilestoneId` and that milestone has `completedAt` set.
+2. `projectPlanLockedMessage(milestoneName)` returns "The plan is locked after <milestone>. Open a change request to change it."
+3. `requireEditablePlanRoute(request, { client, projectId, companyId, changeRequestId })`:
+   - returns null when the plan is not locked;
+   - returns null when the write targets an open Draft change request;
+   - otherwise returns `data({ success: false }, await flash(request, error(null, message)))`.
+4. Call it first in each plan-layer route action, but only for plan-layer fields (`isPlanLayerField`). Progress fields pass.
+5. `applyChangeRequest` does not call the guard. It is the one writer allowed to change a locked plan.
+6. In the UI, plan-layer controls show disabled with the message as a tooltip when locked and no change request is open. **Open change request** sits beside the lock indicator.
+7. Write `projects-lock.test.ts` with 3 cases:
+   1. No lock milestone: unlocked.
+   2. A lock milestone not completed: unlocked.
+   3. A completed lock milestone: locked, and the message names it.
+
+**Verify:**
+```bash
+pnpm --filter erp test -- projects-lock
+# Expected: 3 passed
+```
+
+**Out of scope:** locking progress fields.
+
+---
+
+## Task 13: Update the rule file, module AGENTS.md, docs and spec
+
+**Depends on:** 1–12
+**Files:**
+- Modify: `.claude/rules/projects-system.md`
+- Modify: `apps/erp/app/modules/projects/AGENTS.md`
+- Modify: `docs/content/docs/reference/projects.mdx`
+- Modify: `.ai/specs/2026-10-03-projects.md`
+
+**Steps:**
+1. Document only committed code.
+2. In the spec, record these decisions:
+   1. **Plan-layer fields:** list them; progress fields are never locked or branched.
+   2. **Approval fallback:** direct approval by `update: projects` when no approval rule applies (Community and plans without `APPROVAL_RULES`).
+   3. **Conflicts:** apply refuses on a conflict with the live plan, and the author reopens the change request.
+   4. **Baselines:** one JSONB snapshot per baseline, with `formatVersion`.
+3. Run the STE-80 review pass on every `.ai/` file you changed.
+
+**Verify:**
+```bash
+cd docs && pnpm typecheck
+# Expected: exit code 0
+```
+
+**Out of scope:** the changelog entry.
+
+---
+
+## Task 14: Verify in the browser
+
+**Depends on:** 1–13
+**Files:**
+- Create: `.ai/playbooks/projects-phase-1c.md` (written by `/test`)
+
+**Steps:**
+1. Run `/test` on a satellite dataset company.
+2. Cover these spec acceptance criteria:
+   1. **Baseline (Phase 1c).** Take a baseline, change a Requirement target, then compare with the current plan. `SNS-4` shows as modified with the old and new target.
+   2. **Change request:**
+      1. Open a change request.
+      2. Add an element, change a budget, delete a link.
+      3. Check that the live plan does not change.
+      4. Submit, approve (directly, as Community has no rules), and check that the edits apply and that an "After" baseline exists.
+   3. **Review:** comment on a changed field, mark an element viewed, edit the element, and check that the mark resets.
+   4. **Conflict:** change a budget live after the change request changed it, approve, and check that apply refuses with the conflict listed.
+   5. **Lock:** set the lock milestone, complete it, and check that a budget edit is refused while a state change still works. An open change request accepts the budget edit.
+3. Save the playbook to `.ai/playbooks/projects-phase-1c.md`.
+
+**Verify:**
+```bash
+ls .ai/playbooks/projects-phase-1c.md
+# Expected: the file exists, and the /test run reports every step passed
+```
+
+**Out of scope:** Phase 2 (project stock).

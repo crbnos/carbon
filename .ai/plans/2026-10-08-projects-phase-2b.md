@@ -1,0 +1,653 @@
+# Projects Phase 2b — project-aware MRP — implementation plan
+
+**Spec:** .ai/specs/2026-10-03-projects.md (*MRP: a project-aware netting segment*; decisions 18 and 24; Risks: *MRP primary key change*)
+**Research:** .ai/research/projects-wbs-pmmo.md (pattern 6, Oracle and IFS netting)
+**Branch:** projects-wbs-research-spec
+**Prerequisite:** the Phase 2a plan is done and committed. If a named Phase 2a artifact does not exist, STOP and report.
+
+## Scope of this plan
+
+MRP nets each project with project stock in its own **netting segment**. The segment is a fourth key, `planningSegmentId`:
+- `''` is common;
+- a project id is a project with project stock (Phase 3 adds planning group ids).
+
+The plan covers:
+1. **The engine keys:** a pure golden test first, then the segment threaded through the engine, the runner and the writes.
+2. **Segmented inputs:** demand, supply and on-hand carry a segment. The new demand source **Project Material** reads plan-line materials. Open borrows are firm demand on the borrower and firm supply on the lender.
+3. **The netting sequence:** own segment first, then common surplus with a **Transfer** planning action, then new supply in the segment.
+4. **The outputs:** the 4 MRP tables, `planningAction` and the planning RPCs gain the segment.
+5. **Apply:** an Order or Make in a segment creates a PO line or job charged to the project. A Transfer creates a Draft project stock transfer.
+6. **The worklist UI:** a Segment column and filter.
+
+**The invariant:** a company with no project stock gets output that is identical to today's, row for row. The golden test from Task 1 pins it.
+
+## Rules for the executor
+
+- Read `.ai/lessons.md`, `.claude/rules/mrp-system.md`, `.claude/rules/database-migration-patterns.md` and `packages/planning/AGENTS.md` before Task 1.
+- 🛑 Never edit the Task 1 golden snapshot to make a test pass. If it changes, the change broke the invariant. STOP and report.
+- The segment sentinel is `''`, never NULL. Every new `planningSegmentId` column is `TEXT NOT NULL DEFAULT ''`.
+- Project segments are lot-for-lot with no reorder point and no safety stock. Forecasts, demand projections and supersession apply to segment `''` only.
+- Use one `KEY_SEP`. Task 3 removes the two copies.
+- If a quoted code line or line number does not match the file, search for the quoted code. If you cannot find it, STOP and report.
+
+## Progress
+
+- [ ] Task 1: Extract the planning core and pin a golden test
+- [ ] Task 2: Create the Phase 2b enum and segment migration
+- [ ] Task 3: Add the segment to the engine keys
+- [ ] Task 4: Add the netting sequence as a pure module
+- [ ] Task 5: Segment the demand and supply views
+- [ ] Task 6: Segment the inputs of `runMrp`
+- [ ] Task 7: Net segments and draw common surplus in `explodeBom`
+- [ ] Task 8: Segment the actuals and the Phase 7 writes
+- [ ] Task 9: Segment the planning RPCs and grids
+- [ ] Task 10: Generate segmented and Transfer planning actions
+- [ ] Task 11: Apply segmented Order, Make and Transfer actions
+- [ ] Task 12: Add the project-manager rung and the company sweep
+- [ ] Task 13: Add the Segment column to the planning worklists
+- [ ] Task 14: Show borrow exceptions
+- [ ] Task 15: Update the rules, AGENTS.md, docs and spec
+- [ ] Task 16: Verify in the browser
+
+## Dependencies
+
+- Task 1 runs first and is committed before any other task.
+- Task 2 needs Task 1. Tasks 3 and 4 need Task 1.
+- Task 5 needs Task 2. Task 6 needs Tasks 3 and 5. Task 7 needs Tasks 4 and 6. Task 8 needs Task 7.
+- Task 9 needs Task 2. Task 10 needs Tasks 8 and 9. Task 11 needs Task 10.
+- Tasks 12, 13 and 14 need Task 10. Task 15 needs Tasks 1–14. Task 16 runs last.
+
+---
+
+## Task 1: Extract the planning core and pin a golden test
+
+**Depends on:** none
+**Files:**
+- Create: `packages/planning/src/mrp/plan-company.ts`
+- Create: `packages/planning/src/mrp/plan-company.test.ts`
+- Create: `packages/planning/src/mrp/__fixtures__/plan-company.basic.json`
+- Modify: `packages/planning/src/mrp/mrp.ts`
+
+**Steps:**
+1. `runMrp` has no test harness today. Move the pure part of Phases 3–6 (lines 395–1137) into `planCompany(inputs: PlanCompanyInputs): PlanCompanyOutputs` in `plan-company.ts`.
+   - `PlanCompanyInputs` holds every value that Phases 1 and 2 load. These are periods, locations, items (with replenishment and lead time), BOMs, on-hand, open supply, open demand, projections, supersessions and `today`.
+   - `PlanCompanyOutputs` holds every array Phase 7 writes: `demandForecastUpserts`, `demandForecastSourceInserts`, `supplyForecast` rows (if any), `demandActualUpserts`, `supplyActualUpserts`, `consumptionUpdates` and the cycle log.
+2. `runMrp` keeps the loads and the writes. It calls `planCompany` between them. Make no other change.
+3. Build `plan-company.basic.json` from a satellite dataset company. Export the inputs once with a temporary log line, then remove the log line. The fixture must hold at least these 6 cases:
+   1. one Make item with a 2-level BOM;
+   2. one Buy item;
+   3. one open PO line and one open job;
+   4. one sales order line;
+   5. one demand projection;
+   6. one Consume First supersession.
+4. In `plan-company.test.ts`, load the fixture, run `planCompany`, sort each output array by its key, and compare with `toMatchSnapshot()`.
+5. Run the test once to write the snapshot. Commit the fixture, the snapshot and the extraction.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/planning test -- plan-company
+# Expected: 1 passed, 1 snapshot written
+pnpm --filter @carbon/planning test
+# Expected: all tests pass
+```
+
+**Out of scope:** any behavior change. Phase 7 stays in `mrp.ts`.
+
+---
+
+## Task 2: Create the Phase 2b enum and segment migration
+
+**Depends on:** 1
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_projects-2b-enums.sql`
+- Create: `packages/database/supabase/migrations/<timestamp>_mrp-planning-segment.sql`
+
+**Steps:**
+1. Run `pnpm db:migrate:new projects-2b-enums`. Write only:
+
+```sql
+ALTER TYPE "demandSourceType" ADD VALUE IF NOT EXISTS 'Project Material';
+ALTER TYPE "demandSourceType" ADD VALUE IF NOT EXISTS 'Project Borrow';
+ALTER TYPE "supplySourceType" ADD VALUE IF NOT EXISTS 'Project Borrow';
+ALTER TYPE "demandForecastSourceType" ADD VALUE IF NOT EXISTS 'Project Material';
+ALTER TYPE "planningActionType" ADD VALUE IF NOT EXISTS 'Transfer';
+ALTER TYPE "planningActionType" ADD VALUE IF NOT EXISTS 'Borrow';
+```
+
+2. Run `pnpm db:migrate:new mrp-planning-segment`. Write:
+
+```sql
+-- One segment rule for every view and RPC. Phase 3 redefines it to prefer planningGroupId.
+CREATE OR REPLACE FUNCTION project_planning_segment(p_project_id TEXT)
+RETURNS TEXT LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
+  SELECT COALESCE((SELECT CASE WHEN p."projectStock" THEN p."id" ELSE '' END
+                   FROM "project" p WHERE p."id" = p_project_id), '');
+$$;
+
+ALTER TABLE "demandForecast"       ADD COLUMN IF NOT EXISTS "planningSegmentId" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "supplyForecast"       ADD COLUMN IF NOT EXISTS "planningSegmentId" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "demandActual"         ADD COLUMN IF NOT EXISTS "planningSegmentId" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "supplyActual"         ADD COLUMN IF NOT EXISTS "planningSegmentId" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "demandForecastSource" ADD COLUMN IF NOT EXISTS "planningSegmentId" TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE "demandForecast" DROP CONSTRAINT "demandForecast_pkey";
+ALTER TABLE "demandForecast" ADD CONSTRAINT "demandForecast_pkey" PRIMARY KEY ("itemId", "locationId", "periodId", "planningSegmentId");
+ALTER TABLE "demandForecast" DROP CONSTRAINT "demandForecast_itemId_locationId_periodId_companyId_key";
+ALTER TABLE "demandForecast" ADD CONSTRAINT "demandForecast_itemId_locationId_periodId_companyId_key"
+  UNIQUE ("itemId", "locationId", "periodId", "companyId", "planningSegmentId");
+ALTER TABLE "supplyForecast" DROP CONSTRAINT "supplyForecast_pkey";
+ALTER TABLE "supplyForecast" ADD CONSTRAINT "supplyForecast_pkey" PRIMARY KEY ("itemId", "locationId", "periodId", "planningSegmentId");
+ALTER TABLE "demandActual" DROP CONSTRAINT "demandActual_pkey";
+ALTER TABLE "demandActual" ADD CONSTRAINT "demandActual_pkey" PRIMARY KEY ("itemId", "locationId", "periodId", "sourceType", "planningSegmentId");
+ALTER TABLE "supplyActual" DROP CONSTRAINT "supplyActual_pkey";
+ALTER TABLE "supplyActual" ADD CONSTRAINT "supplyActual_pkey" PRIMARY KEY ("itemId", "locationId", "periodId", "sourceType", "planningSegmentId");
+
+ALTER TABLE "planningAction"
+  ADD COLUMN IF NOT EXISTS "planningSegmentId" TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS "fromProjectId" TEXT,           -- Transfer/Borrow source owner; null = common
+  ADD COLUMN IF NOT EXISTS "toProjectId" TEXT,             -- Transfer/Borrow target owner; null = common
+  ADD COLUMN IF NOT EXISTS "projectStockTransferId" TEXT,
+  ADD COLUMN IF NOT EXISTS "projectBorrowId" TEXT;
+ALTER TABLE "planningAction" DROP CONSTRAINT "planningAction_change_target_chk";
+ALTER TABLE "planningAction" ADD CONSTRAINT "planningAction_change_target_chk" CHECK (
+  ("type" IN ('Order','Make','Transfer','Borrow') AND "purchaseOrderLineId" IS NULL AND "jobId" IS NULL)
+  OR ("type" NOT IN ('Order','Make','Transfer','Borrow') AND (("purchaseOrderLineId" IS NOT NULL)::int + ("jobId" IS NOT NULL)::int) = 1)
+);
+ALTER TABLE "planningAction" ADD CONSTRAINT "planningAction_transfer_owner_chk" CHECK (
+  ("type" IN ('Transfer','Borrow') AND "fromProjectId" IS DISTINCT FROM "toProjectId")
+  OR ("type" NOT IN ('Transfer','Borrow') AND "fromProjectId" IS NULL AND "toProjectId" IS NULL)
+);
+DROP INDEX IF EXISTS "planningAction_natural_key_idx";
+CREATE UNIQUE INDEX "planningAction_natural_key_idx" ON "planningAction"
+  ("companyId", "itemId", "locationId", "planningSegmentId", "type",
+   (COALESCE("purchaseOrderLineId", "jobId", "periodId")),
+   (COALESCE("fromProjectId", '')), (COALESCE("toProjectId", '')))
+  WHERE "status" <> 'Actioned';
+CREATE INDEX IF NOT EXISTS "planningAction_segment_idx" ON "planningAction" ("companyId", "planningSegmentId") WHERE "planningSegmentId" <> '';
+```
+
+3. Postgres refuses a new enum value in the transaction that adds it. The CHECK above names `'Transfer'` and `'Borrow'`, so the enum migration must have the earlier timestamp.
+4. Read the real constraint names in the migrations before you write the DROP lines (`grep -n "CONSTRAINT" 20250610000433_demand-planning.sql 20250907225239*.sql 20261006130000_mrp-planning-actions.sql`). If a name differs, use the real name.
+5. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+6. Add `"planningSegmentId"` to the `id-refs.ts` entries of these tables if `packages/jobs/src/backups/id-refs.ts` lists their key columns.
+
+**Verify:**
+```bash
+psql "$SUPABASE_DB_URL" -c "SELECT count(*) FROM \"planningAction\" WHERE \"planningSegmentId\" <> '';"
+# Expected: 0
+pnpm exec turbo run typecheck --filter=@carbon/database
+# Expected: exit code 0
+```
+
+**Out of scope:** the views (Task 5) and the RPCs (Task 9).
+
+---
+
+## Task 3: Add the segment to the engine keys
+
+**Depends on:** 1
+**Files:**
+- Modify: `packages/database/src/mrp-engine.ts` (lines 76–112, 182–383)
+- Modify: `packages/database/src/mrp-engine.test.ts`
+- Modify: `packages/planning/src/mrp/planning-actions.ts` (line 55)
+- Modify: `packages/planning/src/mrp/responsible-employee.ts` (line 18)
+
+**Steps:**
+1. Change the key helpers so the segment is the last part and defaults to `''`:
+
+```ts
+export const COMMON_SEGMENT = "";
+
+export function makeKey(locationId: string, periodId: string, itemId: string, segmentId: string = COMMON_SEGMENT): string {
+  return locationId + KEY_SEP + periodId + KEY_SEP + itemId + KEY_SEP + segmentId;
+}
+export function splitKey(key: string): [string, string, string, string] {
+  const parts = key.split(KEY_SEP);
+  return [parts[0]!, parts[1]!, parts[2]!, parts[3] ?? COMMON_SEGMENT];
+}
+export function makeLocationItemKey(locationId: string, itemId: string, segmentId: string = COMMON_SEGMENT): string {
+  return locationId + KEY_SEP + itemId + KEY_SEP + segmentId;
+}
+export function splitLocationItemKey(key: string): [string, string, string] {
+  const parts = key.split(KEY_SEP);
+  return [parts[0]!, parts[1]!, parts[2] ?? COMMON_SEGMENT];
+}
+```
+
+2. Change `makeActualKey` and `splitActualKey` the same way, with the segment as the fifth part.
+3. Replace the hand parse in `explodeBom` (lines 248–259, `locItem.indexOf(KEY_SEP)`) with `splitLocationItemKey`.
+4. In `explodeBom`, carry the parent's segment into every child key. Children of a parent in segment S get demand in segment S.
+5. Add `segmentId` to `DemandContributorBase`, optional with default `''`.
+6. Delete the `KEY_SEP` copies in `planning-actions.ts:55` and `responsible-employee.ts:18`. Import `KEY_SEP` from `@carbon/database/mrp-engine` (or the export path the package already uses for it).
+7. Add tests to `mrp-engine.test.ts`:
+   1. `splitKey(makeKey("l", "p", "i"))` returns `["l", "p", "i", ""]`.
+   2. A parent with demand in segment `prj_1` explodes its child's demand into `prj_1` only.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/database test -- mrp-engine && pnpm --filter @carbon/planning test
+# Expected: all tests pass; the plan-company snapshot is unchanged
+```
+
+**Out of scope:** the common surplus draw (Task 7).
+
+---
+
+## Task 4: Add the netting sequence as a pure module
+
+**Depends on:** 1
+**Files:**
+- Create: `packages/database/src/mrp-netting-sequence.ts`
+- Create: `packages/database/src/mrp-netting-sequence.test.ts`
+- Modify: `packages/database/package.json` — export `./mrp-netting-sequence` next to `./mrp-engine`
+
+**Steps:**
+1. Export `trueSurplusByPeriod(onHand, demandByPeriod)`.
+   - Input: the common segment's on-hand and its gross demand per period index, in period order.
+   - Output: for each period index t, the stock the common segment does not need in t or later. That is `min over k ≥ t of (onHand − Σ demand[0..k])`, floored at 0.
+   - Planned and open supply do not count. A Transfer moves only stock that exists.
+2. Export `allocateCommonSurplus({ surplusByPeriod, needs })`.
+   - `needs` is a list of `{ segmentId, periodIndex, quantity }` for project segments, after each segment's own on-hand and supply.
+   - Sort the needs by period index, then segment id.
+   - For each need, take `min(need, surplus available at its period)`. Then reduce the surplus at that period and at every earlier period by the amount taken, so later needs see less.
+   - Return `{ draws: { segmentId, periodIndex, quantity }[], remaining: same shape }`.
+3. Write tests for 5 cases:
+   1. On-hand 10 and common demand 2 in week 3 give a surplus of 8 in every week up to 3, and 8 after.
+   2. On-hand 10 and common demand 6 in week 5 give a project need of 7 in week 2 a draw of 4. The remainder is 3.
+   3. Two segments needing 5 each in weeks 2 and 1, with surplus 6, draw 5 for the week-1 segment and 1 for the week-2 segment.
+   4. A surplus of 0 draws nothing.
+   5. The output is the same for any input order of `needs`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/database test -- mrp-netting-sequence
+# Expected: 5 passed
+```
+
+**Out of scope:** `itemPlanning.allowCommonSupplyForProjects`. The caller filters items by it.
+
+---
+
+## Task 5: Segment the demand and supply views
+
+**Depends on:** 2
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_mrp-segment-views.sql`
+
+**Steps:**
+1. Recreate each view from its latest definition with a `planningSegmentId` column. Keep every existing column and filter.
+   - `openSalesOrderLines` (`20261006130001_demand-forecast-consumption.sql:32–73`): `''::text AS "planningSegmentId"`. Phase 4 links sales orders to projects.
+   - `openJobMaterialLines` (`20260926093417…sql:21–56`): `project_planning_segment(j."projectId")`.
+   - `openProductionOrders` (`20260811123619…sql:474–500`):
+     - `CASE WHEN j."receiveToProjectStock" THEN project_planning_segment(j."projectId") ELSE '' END`;
+     - add `AND NOT j."consumeToProject"`, because a job that consumes its output to the project puts nothing in stock.
+   - `openPurchaseOrderLines` (`20260811123616…sql:164–192`): `project_planning_segment(pol."projectId")`. Exclude a line that the receipt consumes to the project. Use the exact condition of the Phase 1a consume-at-receipt branch in `post-receipt` (search `post-receipt/index.ts` for the branch Task 9 of Phase 2a kept).
+2. Create `openProjectMaterialLines`. Fill `planningSegmentId` with `project_planning_segment(m."projectId")`:
+
+```sql
+CREATE OR REPLACE VIEW "openProjectMaterialLines" WITH (security_invoker = true) AS
+SELECT
+  m."id", m."companyId", m."projectId", m."projectElementId", m."itemId",
+  p."locationId",
+  m."quantity" - m."quantityIssued" AS "quantity",
+  COALESCE(m."requiredDate", e."startDate", p."startDate") AS "requiredDate",
+  project_planning_segment(m."projectId") AS "planningSegmentId"
+FROM "projectElementMaterial" m
+JOIN "projectElement" e ON e."id" = m."projectElementId" AND e."companyId" = m."companyId"
+JOIN "projectState" s ON s."id" = e."stateId"
+JOIN "project" p ON p."id" = m."projectId" AND p."companyId" = m."companyId"
+WHERE m."methodType" = 'Pull from Inventory'
+  AND m."quantity" > m."quantityIssued"
+  AND s."group" IN ('Unstarted', 'Started')
+  AND p."status" = 'Released'
+  AND p."locationId" IS NOT NULL;
+```
+
+3. Create `openProjectBorrows`: one row per `projectBorrow` with status `Open`. Fill these columns:
+   - `quantity` = `quantity − quantityPaidBack`;
+   - `paybackDueDate`;
+   - `borrowerSegmentId` = `project_planning_segment("borrowerProjectId")`;
+   - `lenderSegmentId` = `project_planning_segment("lenderProjectId")`;
+   - plus `itemId`, `locationId` and `companyId`.
+4. Read the real column names of `projectElement` (`startDate`), `projectState` (`group`) and `project` (`locationId`, `startDate`) in the Phase 1a migration. If one differs, use the real name.
+5. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+
+**Verify:**
+```bash
+psql "$SUPABASE_DB_URL" -c "SELECT count(*) FROM \"openJobMaterialLines\" WHERE \"planningSegmentId\" <> '';"
+# Expected: 0 on a database with no project stock
+```
+
+**Out of scope:** the RPCs (Task 9).
+
+---
+
+## Task 6: Segment the inputs of `runMrp`
+
+**Depends on:** 3, 5
+**Files:**
+- Modify: `packages/planning/src/mrp/mrp.ts` (Phase 1 loads, lines 132–393; on-hand 306–321)
+- Modify: `packages/planning/src/mrp/plan-company.ts`
+
+**Steps:**
+1. Select `planningSegmentId` from the 4 open views and pass it into `PlanCompanyInputs`.
+2. Load `openProjectMaterialLines` and `openProjectBorrows` with `fetchAll` (or the paging helper `runMrp` uses). Order each by `id`.
+3. Replace the Phase 2a common-only on-hand read with a read grouped by segment:
+   - select `itemId`, `locationId`, `projectId` and the quantity;
+   - map `projectId` to a segment with the same rule as `project_planning_segment` (load `project.id, projectStock` once);
+   - sum into `onHand` keyed by `makeLocationItemKey(locationId, itemId, segmentId)`.
+4. In `planCompany`:
+   1. Add demand rows into `grossDemand` with `makeKey(location, period, item, segment)`. Project Material rows use contributor source type `"Project Material"` with `projectElementMaterialId`. Add that variant to `DemandContributor`.
+   2. Add each open borrow twice: as `"Project Borrow"` demand in `borrowerSegmentId`, and as `"Project Borrow"` supply in `lenderSegmentId`. Both use the payback due date's period.
+   3. Apply supersession (Phase 4.5) and forecast consumption to segment `''` only.
+   4. Use lot-for-lot for any key with a segment other than `''`. Skip the reorder point and safety stock.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/planning test
+# Expected: all tests pass; the plan-company snapshot is unchanged
+```
+
+**Out of scope:** the common surplus draw (Task 7).
+
+---
+
+## Task 7: Net segments and draw common surplus in `explodeBom`
+
+**Depends on:** 4, 6
+**Files:**
+- Modify: `packages/database/src/mrp-engine.ts`
+- Modify: `packages/database/src/mrp-engine.test.ts`
+- Modify: `packages/planning/src/mrp/plan-company.ts`
+- Modify: `packages/planning/src/mrp/plan-company.test.ts`
+
+**Steps:**
+1. Add 2 inputs to `BomExplosionInput`:
+   - `commonSurplusItems: Set<string>`, the item ids with `allowCommonSupplyForProjects`;
+   - `horizonPeriods: number`, the count of periods a surplus looks ahead.
+2. Add `commonSurplusDraws: Map<string, number>` to `BomExplosionOutput`, keyed by `makeKey(location, period, item, segment)`.
+3. In the level loop, process the location-item keys of one level in this order: segment `''` first, then the other segments sorted by id.
+4. After the common key of an item is netted, compute `trueSurplusByPeriod` from its on-hand and its gross demand per period.
+5. For each project segment of the same item and location:
+   1. Net against the segment's own on-hand and job supply first.
+   2. If the item is in `commonSurplusItems`, collect the remaining need per period.
+   3. Call `allocateCommonSurplus` once for all segments of that item and location.
+   4. Add each draw to `commonSurplusDraws`, and treat it as on-hand of the segment in its period before you explode the remainder.
+6. Pass `commonSurplusDraws` out of `planCompany` in `PlanCompanyOutputs`.
+7. Add tests to `mrp-engine.test.ts`:
+   1. The spec case: P-101 has demand 20 and stock 5. Common has stock 8 and no demand. Expect a draw of 8 and a net requirement of 7 in P-101.
+   2. With `allowCommonSupplyForProjects` off for the item, there is no draw, and the net requirement is 15.
+   3. A Make item in a project segment explodes only its remainder after the draw.
+8. Add a second fixture `plan-company.project.json` with the spec case. Snapshot it.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/database test -- mrp-engine && pnpm --filter @carbon/planning test -- plan-company
+# Expected: all tests pass; the basic snapshot is unchanged, and the project snapshot is written
+```
+
+**Out of scope:** writing Transfer actions (Task 10).
+
+---
+
+## Task 8: Segment the actuals and the Phase 7 writes
+
+**Depends on:** 7
+**Files:**
+- Modify: `packages/planning/src/mrp/plan-company.ts` (Phase 6 actuals; paging order at `mrp.ts` 991–994 and 1005–1008)
+- Modify: `packages/planning/src/mrp/mrp.ts` (Phase 7, lines 1155–1275)
+- Modify: `apps/erp/app/routes/x+/production+/planning.update.tsx` (lines 410–415)
+- Modify: `apps/erp/app/routes/x+/purchasing+/planning.update.tsx` (lines 758–763)
+
+**Steps:**
+1. Write `planningSegmentId` on every row of `demandForecastUpserts`, `demandForecastSourceInserts`, `demandActualUpserts` and `supplyActualUpserts`, from the key's fourth part.
+2. Add `"planningSegmentId"` to the 3 `onConflict` column lists (lines 1193, 1222, 1240).
+3. Add `.order("planningSegmentId")` after each existing `.order(...)` in the actuals paging (lines 991–994, 1005–1008).
+4. Write `consumptionUpdates` for segment `''` only.
+5. In both `planning.update.tsx` files, add `planningSegmentId` to the `supplyForecast` upsert row and its conflict columns. Read the segment from the posted row; the default is `''`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/planning test && pnpm exec turbo run typecheck --filter=erp --filter=@carbon/planning
+# Expected: all tests pass; typecheck exits 0; the basic snapshot is unchanged
+```
+
+**Out of scope:** the planning actions (Task 10).
+
+---
+
+## Task 9: Segment the planning RPCs and grids
+
+**Depends on:** 2
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_planning-rpcs-segment.sql`
+- Modify: `apps/erp/app/modules/production/production.service.ts`, `apps/erp/app/modules/purchasing/purchasing.service.ts` (the RPC callers)
+
+**Steps:**
+1. Redefine `get_production_planning` and `get_purchasing_planning` (latest in `20261006130001_demand-forecast-consumption.sql`). Also redefine their grid wrappers (`20261006205037…sql`).
+   1. Add `"planningSegmentId"` to the RETURNS TABLE. This changes the signature, so `DROP FUNCTION` first.
+   2. Return one row per (item, segment). Group demand, supply and actuals by `planningSegmentId`.
+   3. Keep the on-hand source (`itemLedger`, lines 257–263 and 594–600). Group it by `project_planning_segment("projectId")`, which maps a null `projectId` to `''`.
+   4. Order by `id` (the item id), then `planningSegmentId`, so every page has a total order.
+2. Keep each function's `SECURITY` setting and its `assert_company_access` call.
+3. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+4. In both services, add `.order("planningSegmentId")` after each `.order("id")` on these RPCs. Carry `planningSegmentId` in the row types.
+5. Each grid row key becomes `id + KEY_SEP + planningSegmentId`. Find each key with `grep -rn "getRowId\|rowKey" apps/erp/app/modules/production/ui/Planning apps/erp/app/modules/purchasing/ui/Planning`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+psql "$SUPABASE_DB_URL" -c "SELECT count(*) FROM get_purchasing_planning('<a dataset company id>', '<location id>', ...);"
+# Expected: the same count as before the migration (fill the arguments from the function signature)
+```
+
+**Out of scope:** the Segment column (Task 13).
+
+---
+
+## Task 10: Generate segmented and Transfer planning actions
+
+**Depends on:** 8, 9
+**Files:**
+- Modify: `packages/planning/src/mrp/planning-actions.ts` (`naturalKey` 717, `diffPlanningActions` 797, `writePlanningActionDiff` 946, `generatePlanningActions` 1084; `itemStockQuantities` read 1192–1196 and 1256–1264; RPC paging 1371–1380; existing actions 1597)
+- Modify: `packages/planning/src/mrp/mrp.ts` (line 1282)
+- Modify: `apps/erp/app/modules/production/planning-action-claims.ts` (lines 66–100)
+- Modify: `apps/erp/app/modules/production/production.service.ts` (natural key copy near line 11007; `inPlanningWorklist` 10868–10875)
+- Modify: `packages/planning/src/mrp/planning-actions.test.ts`, `planning-actions.write.test.ts`
+
+**Steps:**
+1. Add `planningSegmentId`, `fromProjectId` and `toProjectId` to `PlanningActionCandidate` and `ExistingPlanningAction`.
+2. Add the segment to `naturalKey` after `locationId`, and `fromProjectId` and `toProjectId` (as `''` when null) at the end. Change the 2 raw copies (`planning-action-claims.ts`, `production.service.ts`) to call `naturalKey`, or to add the segment in the same position.
+3. Read `itemStockQuantities` by segment (map `projectId` as in Task 6). Read the RPCs per (item, segment) with `.order("id").order("planningSegmentId")`.
+4. Compute each segment's actions independently. Use lot-for-lot for segments other than `''`.
+5. Add the parameter `commonSurplusDraws` to `generatePlanningActions`. `runMrp` passes `planCompany`'s output at line 1282.
+   1. For each draw, emit a `Transfer` candidate with these values:
+      - `planningSegmentId` = the project segment, `fromProjectId` = null (common) and `toProjectId` = the segment's project;
+      - the draw's period, quantity, and `suggestedDate` = the period start;
+      - `reason` = "Common stock not needed within the horizon".
+   2. Treat the draw as on-hand of the project segment, so the segment's Order covers only the remainder.
+6. Set `planningSegmentId` on every Order, Make and change action from its row.
+7. Add `'Transfer'` and `'Borrow'` to `inPlanningWorklist`.
+8. Add tests:
+   1. `naturalKey` differs for the same item and week in segments `''` and `prj_1`, and for two Transfers that differ only in `fromProjectId`.
+   2. The spec case gives 2 candidates: Transfer 8 and Order 7, both in segment `prj_1`.
+   3. In `planning-actions.write.test.ts`, a second run with the same inputs writes no change.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/planning test
+# Expected: all tests pass; the basic snapshot is unchanged
+```
+
+**Out of scope:** Borrow candidates (Phase 3, between members of a group).
+
+---
+
+## Task 11: Apply segmented Order, Make and Transfer actions
+
+**Depends on:** 10
+**Files:**
+- Modify: `apps/erp/app/routes/x+/purchasing+/planning.update.tsx` (`order` at 127, `apply` at 1030)
+- Modify: `apps/erp/app/routes/x+/production+/planning.update.tsx` (`order` at 106, `apply` at 660)
+- Modify: `apps/erp/app/modules/production/ui/Planning/planned-orders-from-actions.ts`
+- Modify: `apps/erp/app/modules/projects/projects.service.ts` — `createProjectStockTransferFromAction`
+
+**Steps:**
+1. **Order in a segment:** if the action's `planningSegmentId` is a project id, create the PO line with `projectId` = the segment. `projectElementId` stays null, so the receipt stripes the stock to the project (Phase 2a).
+2. **Make in a segment:** create the job with `projectId` = the segment and `receiveToProjectStock = true`.
+3. **Transfer:** call `createProjectStockTransferFromAction(client, { companyId, userId, action })`. It inserts a Draft `projectStockTransfer` with these values:
+   - type `Transfer`, `fromProjectId` and `toProjectId` copied from the action;
+   - the action's location and `planningActionId`;
+   - reason = the action's `reason`;
+   - one line with the item and quantity.
+
+   Then set the action to `Actioned` with `projectStockTransferId`.
+4. Keep the claim (`claimPlanningActions`) and release logic unchanged. Each new branch runs inside the existing claim.
+5. A Transfer action is never applied in bulk with Orders. If a bulk apply includes one, create its transfer and report it in the flash message.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp && pnpm --filter erp test -- planning-action-writes
+# Expected: typecheck exits 0; all tests pass
+```
+
+**Out of scope:** approving the transfer (the Phase 2a pages do it).
+
+---
+
+## Task 12: Add the project-manager rung and the company sweep
+
+**Depends on:** 10
+**Files:**
+- Modify: `packages/planning/src/mrp/responsible-employee.ts`
+- Modify: `packages/planning/src/mrp/responsible-employee.test.ts`
+- Modify: `packages/jobs/src/inngest/functions/scheduled/mrp-companies.ts` (lines 121–160)
+
+**Steps:**
+1. For an action with a segment other than `''`, the resolver tries the segment project's manager (`project.ownerId`) first. Then it continues down the existing ladder.
+2. Load the project managers once per run, with one `.in("id", segmentIds)` query.
+3. Add a test: an action in segment `prj_1` whose project has a manager is assigned to that manager.
+4. In `companiesWithPlanningWork`, add 2 existence checks to the same query:
+   - a company with any `openProjectMaterialLines` row;
+   - a company with any `projectBorrow` row in status `Open`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/planning test -- responsible-employee && pnpm --filter @carbon/jobs test -- mrp-companies
+# Expected: all tests pass
+```
+
+**Out of scope:** notifications to the project manager.
+
+---
+
+## Task 13: Add the Segment column to the planning worklists
+
+**Depends on:** 10
+**Files:**
+- Modify: `apps/erp/app/modules/production/ui/Planning/ProductionPlanningTable.tsx`
+- Modify: `apps/erp/app/modules/purchasing/ui/Planning/PurchasingPlanningTable.tsx`
+- Modify: `apps/erp/app/modules/production/ui/Planning/PlanningActionLines.tsx`
+- Modify: `apps/erp/app/modules/production/ui/Planning/usePlanningActions.ts`
+- Modify: `apps/erp/app/routes/x+/production+/planning.tsx`, `apps/erp/app/routes/x+/purchasing+/planning.tsx` (loaders)
+
+**Steps:**
+1. Use the `carbon-design` skill.
+2. Add a **Segment** column. Show "Common" for `''` and the project's identifier and name for a project id. Load the names once with `.in("id", segmentIds)` in the loader.
+3. Add a **Segment** filter (Common, or a project).
+4. Show a Transfer action with a transfer icon and the text "Transfer 8 from common stock". Its button is **Create transfer**, which posts `intent = apply`.
+5. After apply, link the action's `projectStockTransferId` to `path.to.projectStockTransfer(id)`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** a planning page per project.
+
+---
+
+## Task 14: Show borrow exceptions
+
+**Depends on:** 10
+**Files:**
+- Modify: `apps/erp/app/modules/projects/ui/Stock/ProjectStock.tsx`
+- Modify: `apps/erp/app/modules/projects/ui/Project/ProjectHeader.tsx`
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.tsx` (loader)
+- Modify: `packages/planning/src/mrp/planning-actions.ts`
+
+**Steps:**
+1. In `generatePlanningActions`, MRP never emits a change action against a borrow. The Project Borrow supply and demand are firm.
+2. In `ProjectHeader`, show an **Overdue borrows** badge when the project has an `Open` borrow with `paybackDueDate` before today in the company timezone. The `$projectId.tsx` loader counts them with one query. The badge links to the Stock tab, which lists item, quantity and due date.
+3. In the planning worklist, show the same overdue borrows as a read-only row group **Overdue borrows** above the actions, filtered by the Segment filter.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** automatic paybacks.
+
+---
+
+## Task 15: Update the rules, AGENTS.md, docs and spec
+
+**Depends on:** 1–14
+**Files:**
+- Modify: `.claude/rules/mrp-system.md`, `.claude/rules/projects-system.md`
+- Modify: `packages/planning/AGENTS.md`, `apps/erp/app/modules/production/AGENTS.md`, `apps/erp/app/modules/projects/AGENTS.md`
+- Modify: `docs/content/docs/reference/projects.mdx`, and the MRP reference page
+- Modify: `.ai/specs/2026-10-03-projects.md`
+
+**Steps:**
+1. Document these 5 points:
+   1. the segment key and the `''` sentinel;
+   2. `project_planning_segment`;
+   3. the netting sequence and the true-surplus rule;
+   4. the golden test and its rule (never edit the snapshot to pass);
+   5. `planCompany` as the pure core of `runMrp`.
+2. Remove the Phase 2a "common stock only" note from the MRP rule.
+3. In the spec, record these 3 decisions:
+   1. **Enum values:** `'Project Borrow'` is the source type for borrow demand and supply.
+   2. **True surplus** counts on-hand only, not open or planned supply.
+   3. **Planning RPCs:** they keep `itemLedger` as the on-hand source, grouped by segment.
+4. Run the STE-80 review pass on every `.ai/` file you changed.
+
+**Verify:**
+```bash
+cd docs && pnpm typecheck
+# Expected: exit code 0
+```
+
+**Out of scope:** the changelog entry.
+
+---
+
+## Task 16: Verify in the browser
+
+**Depends on:** 1–15
+**Files:**
+- Create: `.ai/playbooks/projects-phase-2b.md` (written by `/test`)
+
+**Steps:**
+1. Run `/test` on a satellite dataset company. Run MRP after each setup step.
+2. Cover these spec acceptance criteria:
+   1. **Segmented MRP:** P-101 has demand 20 and stock 5. Common stock has 8 left after common demand.
+      - MRP emits Transfer 8 (common → P-101) and Order 7 in P-101's segment.
+      - Applying the Order creates a PO line charged to P-101.
+      - Applying the Transfer creates a Draft project stock transfer.
+      - The common planning rows are unchanged.
+   2. **Borrow in MRP:** post a Borrow of 5 from P-101 to P-102. MRP shows firm demand on P-102 and firm supply on P-101, both on the payback date.
+   3. **Overdue borrows:** a borrow past its due date shows in the project header and in the worklist.
+3. Save the playbook to `.ai/playbooks/projects-phase-2b.md`.
+
+**Verify:**
+```bash
+ls .ai/playbooks/projects-phase-2b.md
+# Expected: the file exists, and the /test run reports every step passed
+```
+
+**Out of scope:** planning groups (Phase 3).

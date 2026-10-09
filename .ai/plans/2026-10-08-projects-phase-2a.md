@@ -1,0 +1,826 @@
+# Projects Phase 2a — project stock — implementation plan
+
+**Spec:** .ai/specs/2026-10-03-projects.md (*Phase 2: Project stock*, *Transfer, Borrow, Payback*; decisions 14–17; Q2 answer)
+**Research:** .ai/research/projects-wbs-pmmo.md (patterns 5 and 7)
+**Branch:** projects-wbs-research-spec
+**Prerequisite:** the Phase 1a, 1b and 1c plans are done and committed. If a named earlier artifact does not exist, STOP and report.
+
+## Scope of this plan
+
+Project stock as **valuated striping** (Q2, 2026-10-07):
+- a nullable `projectId` on `itemLedger` and `costLedger`, where null is common stock;
+- `itemStockQuantities.projectId` with the sentinel `''` in its primary key.
+
+The plan covers:
+1. **Issue rules.** Project demand draws its own project's stock, then common stock. Common demand draws common stock only. Another project's stock needs a Transfer or a Borrow first. The bin and lot pickers enforce this through one stripe set per call.
+2. **Writers that create project stock:** PO receipts of lines charged to a project with project stock, and job output with **Receive to project stock**.
+3. **Writers that carry the stripe:** issues record the stripe they drew. Picking, stock transfers, returns, voids and corrections copy their source stripe.
+4. **Valuation and quantity reads by stripe.**
+5. **`projectStockTransfer`:** Transfer, Borrow and Payback, with approval, a reason, a payback variance charged to the borrower, and a government-furnished guard.
+6. **The inventory UI and the project Stock tab.**
+
+Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to common stock (`projectId = ''`), so planning output does not change.
+
+## Rules for the executor
+
+- Read `.ai/lessons.md`, `.claude/rules/inventory-system.md`, `.claude/rules/traceability-model.md`, `.claude/rules/authz-manifest.md`, `.claude/rules/company-backup-restore.md` and `.claude/rules/projects-system.md` before Task 1.
+- 🛑 Tasks 2 and 3 ship together. Between the primary-key change and the new handler body, every `itemLedger` insert fails. Never run `pnpm db:migrate` with only one of them on disk.
+- **Stripe rule for every ledger row you touch:**
+  - a row that **creates** stock sets the stripe its source names;
+  - a row that **draws** stock sets the stripe it drew;
+  - a reversal or correction **copies** the row it reverses.
+- Never query in a loop. Never construct a database client in a `*.service.ts`.
+- Use the `carbon-design` skill for every UI task.
+- If a quoted code line or line number does not match the file, search for the quoted code. If you cannot find it, STOP and report.
+
+## Progress
+
+- [ ] Task 1: Create the Phase 2a enum and table migration
+- [ ] Task 2: Change the `itemStockQuantities` primary key and the reconcile function
+- [ ] Task 3: Change the stock handler and ship it with the authz migration
+- [ ] Task 4: Regenerate types and add the RLS rules
+- [ ] Task 5: Make the planning readers read common stock only
+- [ ] Task 6: Add the stripe to `calculateCOGS` and the SQL FIFO
+- [ ] Task 7: Add the stripe to `bookAdjustment` and corrections
+- [ ] Task 8: Make the bin and lot pickers stripe-aware
+- [ ] Task 9: Stripe PO receipts and their voids
+- [ ] Task 10: Stripe job output and the backflush
+- [ ] Task 11: Record the drawn stripe in `issue`
+- [ ] Task 12: Carry the stripe through picking and stock transfers
+- [ ] Task 13: Carry the stripe through shipments, invoices, returns and counts
+- [ ] Task 14: Draw project stock in Issue to Project
+- [ ] Task 15: Stripe the inventory snapshot and the quantity and valuation RPCs
+- [ ] Task 16: Add the `post-project-stock-transfer` server function
+- [ ] Task 17: Add the project stock transfer pages
+- [ ] Task 18: Add the project stock UI
+- [ ] Task 19: Extend the demo datasets
+- [ ] Task 20: Update the rules, AGENTS.md, docs and spec
+- [ ] Task 21: Verify in the browser
+
+## Dependencies
+
+- Task 1 runs first. Tasks 2 and 3 run together, then Task 4.
+- Task 5 needs Task 4 and must ship in the same release as Task 3.
+- Tasks 6 and 7 need Task 4. Task 8 needs Task 4.
+- Tasks 9–14 need Tasks 6, 7 and 8. They are independent of each other.
+- Task 15 needs Task 4. Task 16 needs Tasks 6 and 8. Task 17 needs Task 16. Task 18 needs Tasks 15 and 17.
+- Task 19 needs Task 16. Task 20 needs Tasks 1–19. Task 21 runs last.
+
+---
+
+## Task 1: Create the Phase 2a enum and table migration
+
+**Depends on:** none
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_projects-2a-enums.sql`
+- Create: `packages/database/supabase/migrations/<timestamp>_projects-stock.sql`
+- Copy from (precedent): the `stockTransfer` tables (`grep -l 'CREATE TABLE "stockTransfer"' packages/database/supabase/migrations/*.sql`)
+
+**Steps:**
+1. Run `pnpm db:migrate:new projects-2a-enums`. Write only:
+
+```sql
+CREATE TYPE "projectStockTransferType" AS ENUM ('Transfer', 'Borrow', 'Payback');
+CREATE TYPE "projectStockTransferStatus" AS ENUM ('Draft', 'Approved', 'Posted', 'Cancelled');
+CREATE TYPE "projectBorrowStatus" AS ENUM ('Open', 'Paid Back');
+ALTER TYPE "itemLedgerDocumentType" ADD VALUE IF NOT EXISTS 'Project Transfer';
+ALTER TYPE "journalEntrySourceType" ADD VALUE IF NOT EXISTS 'Project Transfer';
+ALTER TYPE "journalLineDocumentType" ADD VALUE IF NOT EXISTS 'Project Transfer';
+```
+
+2. Run `pnpm db:migrate:new projects-stock`. Write the SQL below. Add an index on `companyId` and every FK column.
+
+```sql
+ALTER TABLE "project"
+  ADD COLUMN IF NOT EXISTS "projectStock" BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS "chargeAtReceipt" BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS "governmentFurnished" BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE "itemLedger" ADD COLUMN IF NOT EXISTS "projectId" TEXT;
+ALTER TABLE "itemLedger" ADD CONSTRAINT "itemLedger_project_fkey"
+  FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId");
+CREATE INDEX IF NOT EXISTS "itemLedger_project_idx" ON "itemLedger" ("companyId", "projectId") WHERE "projectId" IS NOT NULL;
+
+ALTER TABLE "costLedger" ADD COLUMN IF NOT EXISTS "projectId" TEXT;
+ALTER TABLE "costLedger" ADD CONSTRAINT "costLedger_project_fkey"
+  FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId");
+CREATE INDEX IF NOT EXISTS "costLedger_open_stripe_idx" ON "costLedger" ("itemId", "projectId", "remainingQuantity") WHERE "remainingQuantity" > 0;
+
+ALTER TABLE "job" ADD COLUMN IF NOT EXISTS "receiveToProjectStock" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE "job" ADD CONSTRAINT "job_receiveToProjectStock_check"
+  CHECK (NOT "receiveToProjectStock" OR ("projectId" IS NOT NULL AND NOT "consumeToProject"));
+
+ALTER TABLE "pickingListLine" ADD COLUMN IF NOT EXISTS "projectId" TEXT;
+ALTER TABLE "inventoryCountLine" ADD COLUMN IF NOT EXISTS "projectId" TEXT;
+ALTER TABLE "itemPlanning" ADD COLUMN IF NOT EXISTS "allowCommonSupplyForProjects" BOOLEAN NOT NULL DEFAULT TRUE;
+
+CREATE TABLE IF NOT EXISTS "projectStockTransfer" (
+  "id" TEXT NOT NULL DEFAULT id('pst'),
+  "companyId" TEXT NOT NULL,
+  "projectStockTransferId" TEXT NOT NULL,     -- readable, sequence 'projectStockTransfer' prefix PST
+  "type" "projectStockTransferType" NOT NULL,
+  "status" "projectStockTransferStatus" NOT NULL DEFAULT 'Draft',
+  "fromProjectId" TEXT,                        -- null = common
+  "toProjectId" TEXT,                          -- null = common
+  "locationId" TEXT NOT NULL REFERENCES "location"("id"),
+  "reason" TEXT NOT NULL,
+  "paybackDueDate" DATE,
+  "settlesBorrowId" TEXT,
+  "planningActionId" TEXT,
+  "approvedBy" TEXT REFERENCES "user"("id"),
+  "approvedAt" TIMESTAMP WITH TIME ZONE,
+  "postedAt" TIMESTAMP WITH TIME ZONE,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "projectStockTransfer_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectStockTransfer_readable_key" UNIQUE ("projectStockTransferId", "companyId"),
+  CONSTRAINT "projectStockTransfer_from_fkey" FOREIGN KEY ("fromProjectId", "companyId") REFERENCES "project"("id", "companyId"),
+  CONSTRAINT "projectStockTransfer_to_fkey" FOREIGN KEY ("toProjectId", "companyId") REFERENCES "project"("id", "companyId"),
+  CONSTRAINT "projectStockTransfer_owner_check" CHECK ("fromProjectId" IS DISTINCT FROM "toProjectId"),
+  CONSTRAINT "projectStockTransfer_borrow_check" CHECK ("type" <> 'Borrow' OR ("paybackDueDate" IS NOT NULL AND "fromProjectId" IS NOT NULL AND "toProjectId" IS NOT NULL)),
+  CONSTRAINT "projectStockTransfer_payback_check" CHECK ("type" <> 'Payback' OR "settlesBorrowId" IS NOT NULL),
+  CONSTRAINT "projectStockTransfer_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "projectStockTransferLine" (
+  "id" TEXT NOT NULL DEFAULT id('psl'),
+  "companyId" TEXT NOT NULL,
+  "projectStockTransferId" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL REFERENCES "item"("id"),
+  "quantity" NUMERIC NOT NULL CHECK ("quantity" > 0),
+  "storageUnitId" TEXT,
+  "trackedEntityId" TEXT REFERENCES "trackedEntity"("id"),
+  "unitCost" NUMERIC,                          -- stamped at posting
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "projectStockTransferLine_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectStockTransferLine_header_fkey" FOREIGN KEY ("projectStockTransferId", "companyId") REFERENCES "projectStockTransfer"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "projectStockTransferLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "projectBorrow" (
+  "id" TEXT NOT NULL DEFAULT id('pbw'),
+  "companyId" TEXT NOT NULL,
+  "borrowerProjectId" TEXT NOT NULL,
+  "lenderProjectId" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL REFERENCES "item"("id"),
+  "locationId" TEXT NOT NULL REFERENCES "location"("id"),
+  "quantity" NUMERIC NOT NULL CHECK ("quantity" > 0),
+  "quantityPaidBack" NUMERIC NOT NULL DEFAULT 0,
+  "borrowedUnitCost" NUMERIC NOT NULL,
+  "paybackDueDate" DATE NOT NULL,
+  "status" "projectBorrowStatus" NOT NULL DEFAULT 'Open',
+  "projectStockTransferLineId" TEXT NOT NULL,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "projectBorrow_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "projectBorrow_borrower_fkey" FOREIGN KEY ("borrowerProjectId", "companyId") REFERENCES "project"("id", "companyId"),
+  CONSTRAINT "projectBorrow_lender_fkey" FOREIGN KEY ("lenderProjectId", "companyId") REFERENCES "project"("id", "companyId"),
+  CONSTRAINT "projectBorrow_paid_check" CHECK ("quantityPaidBack" <= "quantity"),
+  CONSTRAINT "projectBorrow_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+ALTER TABLE "costLedger" ADD COLUMN IF NOT EXISTS "projectBorrowId" TEXT;
+
+-- sequence for every company (seed-data.ts gets the same entry in Task 4)
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 'projectStockTransfer', 'Project Stock Transfer', 'PST', NULL, 0, 6, 1, c.id FROM "company" c
+ON CONFLICT DO NOTHING;
+```
+
+3. If `inventoryCountLine` or `pickingListLine` has another table name, find it with `grep -l "CREATE TABLE \"pickingListLine\"\|CREATE TABLE \"inventoryCountLine\"" packages/database/supabase/migrations/*.sql` and use the real name.
+
+**Verify:**
+```bash
+grep -c "CREATE TABLE IF NOT EXISTS" packages/database/supabase/migrations/*_projects-stock.sql
+# Expected: 3
+```
+
+**Out of scope:** `trackedEntity.projectId`. The stripe lives on `itemLedger` only, because a batch can sit in two stripes after a partial transfer.
+
+---
+
+## Task 2: Change the `itemStockQuantities` primary key and the reconcile function
+
+**Depends on:** 1
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_item-stock-quantities-project.sql`
+- Copy from (precedent): `packages/database/supabase/migrations/20260812002454_item-stock-quantities-incremental.sql` (lines 68–80, 218–257)
+
+**Steps:**
+1. 🛑 Do not run `pnpm db:migrate` until Task 3's handler migration is also on disk.
+2. Run `pnpm db:migrate:new item-stock-quantities-project`. Write:
+
+```sql
+ALTER TABLE "itemStockQuantities" ADD COLUMN IF NOT EXISTS "projectId" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "itemStockQuantities" DROP CONSTRAINT "itemStockQuantities_pkey";
+ALTER TABLE "itemStockQuantities" ADD PRIMARY KEY ("itemId", "companyId", "locationId", "projectId");
+```
+
+3. Read the real primary-key name with `grep -n "PRIMARY KEY" 20260812002454_item-stock-quantities-incremental.sql` and in the generated schema. If it is not `itemStockQuantities_pkey`, use the real name.
+4. In the same file, redefine `reconcile_item_stock_quantities` from lines 218–257 of `20260812002454`:
+   - add `COALESCE("projectId", '')` to the SELECT list and the GROUP BY, and `"projectId"` to the `ON CONFLICT` list;
+   - change `ORDER BY 1, 2, 3` to `ORDER BY 1, 2, 3, 4`;
+   - add `AND COALESCE(il."projectId", '') = isq."projectId"` to the `DELETE … NOT EXISTS` (lines 248–255);
+   - write `SECURITY INVOKER` (as `20260925121735_rpc-function-guards.sql:2777` set it).
+
+**Verify:**
+```bash
+grep -c '"projectId"' packages/database/supabase/migrations/*_item-stock-quantities-project.sql
+# Expected: at least 5
+```
+
+**Out of scope:** the handler (Task 3).
+
+---
+
+## Task 3: Change the stock handler and ship it with the authz migration
+
+**Depends on:** 2
+**Files:**
+- Modify: `packages/database/src/event-system/handlers/apply_item_stock_quantities.sql`
+- Create: the generated authz migration (its timestamp must come directly after Task 2's)
+
+**Steps:**
+1. In each of the 3 branches of the handler (INSERT lines 8–20, UPDATE 27–51, DELETE 57–68), make 4 edits:
+   1. Add `COALESCE("projectId", '')` to the SELECT list, after `COALESCE("locationId", '')`.
+   2. Add the same expression to the GROUP BY.
+   3. Change `ORDER BY 1, 2, 3` to `ORDER BY 1, 2, 3, 4`.
+   4. Add `"projectId"` to the `ON CONFLICT` list.
+2. Do not write this body into a hand-written migration. The `no-authz-ddl-in-migrations` check refuses it.
+3. Run `pnpm --filter @carbon/database authz migration item-stock-quantities-project-handler`.
+4. Check that the generated file's timestamp is later than Task 2's file and that no other migration sits between them. If one does, rename nothing; STOP and report.
+5. Run `pnpm db:migrate`.
+
+**Verify:**
+```bash
+pnpm db:migrate && psql "$SUPABASE_DB_URL" -c "SELECT count(*) FROM \"itemStockQuantities\" WHERE \"projectId\" <> '';"
+# Expected: the migration succeeds, and the count is 0
+pnpm --filter @carbon/database exec vitest run src/authz
+# Expected: all tests pass
+```
+
+**Out of scope:** `broadcast_table_changes`. It needs no change.
+
+---
+
+## Task 4: Regenerate types and add the RLS rules
+
+**Depends on:** 3
+**Files:**
+- Modify: `packages/database/src/authz/manifest.ts`
+- Modify: `packages/database/src/seed-data.ts` — add the `projectStockTransfer` sequence (prefix `PST`, size 6)
+- Modify: `packages/jobs/src/backups/id-refs.ts` — line 75: add `"projectId"` to the `itemStockQuantities` entry
+- Modify: generated types
+
+**Steps:**
+1. Run `pnpm run generate:types`.
+2. Add these rules in alphabetical order:
+
+```ts
+projectBorrow: company("projects", { create: false, update: false, delete: false }),
+projectStockTransfer: company("projects"),
+projectStockTransferLine: company("projects"),
+```
+
+3. Run `pnpm db:migrate`, then `pnpm --filter @carbon/database authz migration projects-2a-rls`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=@carbon/database --filter=@carbon/jobs
+# Expected: exit code 0
+```
+
+**Out of scope:** UI.
+
+---
+
+## Task 5: Make the planning readers read common stock only
+
+**Depends on:** 4
+**Files:**
+- Modify: `packages/planning/src/mrp/mrp.ts` (lines 306–321)
+- Modify: `packages/planning/src/mrp/planning-actions.ts` (lines 1192–1196, 1256–1264)
+- Modify: `packages/planning/src/scheduling/quote-lead-time.ts` (lines 585–605)
+- Modify: `packages/server-functions/src/get-method/index.ts` (lines 7803–7821, 8082–8095)
+- Modify: `apps/erp/app/modules/items/items.service.ts` (line 1279)
+
+**Steps:**
+1. 🛑 These 3 readers keep one value per key with `Map.set`: `mrp.ts:315`, `planning-actions.ts:1259`, `quote-lead-time.ts:603`. After the key change, two rows per key would make the last row win. Fix them before any project stock exists.
+2. In the 3 planning readers, add `.where("projectId", "=", "")` to the `itemStockQuantities` read. Phase 2b replaces this with segment keys.
+3. In `get-method` (Consume First on-hand), filter to `projectId = ''` plus the job's own project when the job has `receiveToProjectStock` or `projectId`. Sum the rows.
+4. In `getItemStockQuantitiesByLocation` (`items.service.ts:1279`), add `.order("projectId")` so paging has a total order. Keep summing.
+5. Add a test in `planning-actions.test.ts`. Give one item and location two `itemStockQuantities` rows: `''` with 5 and `'prj_1'` with 3. Expect on-hand 5.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/planning test && pnpm --filter @carbon/server-functions test -- get-method
+# Expected: all tests pass
+```
+
+**Out of scope:** segment netting (Phase 2b).
+
+---
+
+## Task 6: Add the stripe to `calculateCOGS` and the SQL FIFO
+
+**Depends on:** 4
+**Files:**
+- Modify: `packages/server-functions/src/lib/calculate-cogs.ts` (lines 21–37, 69–93)
+- Modify: `packages/server-functions/src/lib/calculate-cogs.test.ts`
+- Create: `packages/database/supabase/migrations/<timestamp>_backflush-project-stripe.sql`
+
+**Steps:**
+1. Add `projectId?: string | null` to `calculateCOGS`'s argument object. Undefined means null (common).
+2. After line 78, add `.where((eb) => (projectId ? eb("projectId", "=", projectId) : eb("projectId", "is", null)))`.
+3. Leave `orderLayersForConsumption` unchanged.
+4. Add 2 tests:
+   1. With a common layer at 10.00 and a project layer at 12.00, `projectId: "prj_1"` draws 12.00.
+   2. With the same layers, no `projectId` draws 10.00.
+5. Run `pnpm db:migrate:new backflush-project-stripe`. Copy the latest `backflush_job_materials` (`20260805023439_company-timezone-sql-functions.sql`, line 31; search for a later definition first).
+   1. Add a parallel array `v_bf_project_ids` next to `v_bf_item_ids` (lines 189–191). Fill it with the job's `projectId` when the job has `receiveToProjectStock` or `consumeToProject`, else NULL.
+   2. Add `AND "projectId" IS NOT DISTINCT FROM v_bf_project_ids[i]` to the FIFO query (lines 308–324).
+   3. Write `projectId` on the `itemLedger` insert (lines 175–182) and the `costLedger` rows.
+   4. Keep `SECURITY INVOKER` (`20260925121735…sql:2761`).
+6. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- calculate-cogs
+# Expected: all tests pass, including 2 new ones
+```
+
+**Out of scope:** the callers (Tasks 9–14 pass the stripe).
+
+---
+
+## Task 7: Add the stripe to `bookAdjustment` and corrections
+
+**Depends on:** 4
+**Files:**
+- Modify: `packages/server-functions/src/lib/post-adjustment.ts` (`bookAdjustment`, line 231; `valueMovement`, line 313)
+- Modify: `packages/server-functions/src/correct-stock-movement/index.ts` (line 362)
+- Modify: `packages/server-functions/src/post-inventory-adjustment/index.ts` (void at line 571)
+
+**Steps:**
+1. Add `projectId?: string | null` to `BookAdjustmentArgs.ledger`. Write it on the `itemLedger` row (line 238) and on every `costLedger` row `valueMovement` writes (lines 347, 368, 396). Pass it to `calculateCOGS`.
+2. In `correct-stock-movement`, copy `projectId` from the corrected row (`correctionOfItemLedgerId`).
+3. In the `post-inventory-adjustment` void, copy `projectId` from the voided row.
+4. Every other `bookAdjustment` caller passes nothing (common). List them with `grep -rn "bookAdjustment(" packages/server-functions/src` to confirm none needs a stripe.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- post-adjustment post-inventory-adjustment correct-stock-movement
+# Expected: all tests pass
+```
+
+**Out of scope:** Issue to Project (Task 14).
+
+---
+
+## Task 8: Make the bin and lot pickers stripe-aware
+
+**Depends on:** 4
+**Files:**
+- Modify: `packages/server-functions/src/lib/storage-units.ts` (lines 33–52)
+- Create: `packages/server-functions/src/lib/stock-stripes.ts`
+- Create: `packages/server-functions/src/lib/stock-stripes.test.ts`
+- Create: `packages/database/supabase/migrations/<timestamp>_stock-pickers-project-stripe.sql`
+
+**Steps:**
+1. In `stock-stripes.ts`, export:
+   - `type StockStripe = string | null` (null = common);
+   - `stripesForDemand({ projectId, projectStock })`: `[projectId, null]` when the demand belongs to a project with project stock, else `[null]`;
+   - `splitAcrossStripes(quantity, available: { stripe; quantity }[])`: takes quantity stripe by stripe in the given order, and returns `{ stripe, quantity }[]` plus `remaining`.
+2. Write `stock-stripes.test.ts` with 3 cases:
+   1. A project demand of 10 with 6 in the project and 8 in common gives 6 then 4.
+   2. A common demand gives only common.
+   3. A demand larger than both returns `remaining`.
+3. Change `getStorageUnitWithHighestQuantity(trx, itemId, locationId)` to `(trx, { companyId, itemId, locationId, stripes })`.
+   - Add `.where("companyId", "=", companyId)`.
+   - Filter `projectId` to the stripes (`IS NULL` for null).
+   - Group by `storageUnitId` and `projectId`.
+   - Return `{ storageUnitId, projectId }` of the highest quantity, in stripe order.
+
+   Update every caller (`grep -rn "getStorageUnitWithHighestQuantity" packages/server-functions/src`).
+4. Run `pnpm db:migrate:new stock-pickers-project-stripe`. Redefine these RPCs from their latest definitions, each with a new last parameter `p_project_ids TEXT[] DEFAULT ARRAY[NULL]::TEXT[]` (common only by default):
+   - `get_available_tracked_entities` (`20260709125411…sql:26–56`): filter the `bin_onhand` CTE by `"projectId" IS NOT DISTINCT FROM ANY(...)`, and add `projectId` to its output and grouping;
+   - `get_item_quantities_by_tracking_id` (`20260925121735…sql:1614–1650`): add `projectId` to the output and the grouping, with no filter by default (it feeds 14 callers that need every stripe);
+   - `get_picking_list_availability` (`20260730143512…sql:247`) and `get_picking_list_tracked_available`: filter by each line's `projectId`.
+
+   Because each signature changes, write `DROP FUNCTION IF EXISTS <name>(<old args>);` first. Keep each function's `SECURITY` setting.
+5. A filter of `IS NOT DISTINCT FROM ANY` does not work for NULL in Postgres. Use `("projectId" IS NULL AND NULL = ANY(...)) OR "projectId" = ANY(...)`, or `COALESCE("projectId", '') = ANY(COALESCE-mapped array)` with `''` for null.
+6. Run `pnpm db:migrate`, then `pnpm run generate:types`. Fix every TypeScript caller of these RPCs (`grep -rn "get_available_tracked_entities\|get_item_quantities_by_tracking_id\|get_picking_list" apps packages`).
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- stock-stripes
+# Expected: 3 passed
+pnpm exec turbo run typecheck --filter=erp --filter=mes --filter=@carbon/server-functions
+# Expected: exit code 0
+```
+
+**Out of scope:** the pick list generator (Task 12).
+
+---
+
+## Task 9: Stripe PO receipts and their voids
+
+**Depends on:** 6, 7, 8
+**Files:**
+- Modify: `packages/server-functions/src/post-receipt/index.ts` (rows at 1778, 1798, 1846; insert at 2478; `costLedger` at 2216–2259; voids at 422, 979)
+- Modify: `packages/server-functions/src/post-purchase-invoice/index.ts` (invoice-first `costLedger` at 539, 561, 598; void at 532)
+- Modify: `packages/server-functions/src/post-receipt/project-receipt.test.ts`
+
+**Steps:**
+1. For a PO line with `projectId` whose project has `projectStock = true` and an inventory item:
+   - Replace the Phase 1a "consume at receipt" branch.
+   - Write the `Positive Adjmt.` row with `projectId` and the `costLedger` layer with `projectId`.
+   - Debit inventory as for a common receipt.
+   - Write no `projectLedger` row, unless the project has `chargeAtReceipt`. In that case, write a `Material` row as Phase 1a does.
+2. Keep the Phase 1a consume-at-receipt branch for projects without project stock.
+3. The receipt void (lines 422, 979) copies `projectId` from the reversed rows.
+4. In `post-purchase-invoice`, the invoice-first `costLedger` rows and the void copy the PO line's stripe.
+5. Add a `databaseTest`. Receive 10 of a Part on a PO line charged to a project with project stock. Expect 3 results:
+   1. an `itemLedger` row of +10 with `projectId`;
+   2. a `costLedger` layer with `projectId`;
+   3. `itemStockQuantities` +10 under that `projectId`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- post-receipt post-purchase-invoice
+# Expected: all tests pass
+```
+
+**Out of scope:** grouped receipts (Phase 3).
+
+---
+
+## Task 10: Stripe job output and the backflush
+
+**Depends on:** 6, 8
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_complete-job-project-stock.sql`
+- Modify: `apps/erp/app/modules/production/production.models.ts` — `receiveToProjectStock` on `baseJobValidator`, with a refine: it needs `projectId`, a project with `projectStock`, and `consumeToProject` off
+- Modify: `apps/erp/app/modules/production/ui/Jobs/JobForm.tsx`
+
+**Steps:**
+1. Copy the latest `complete_job_to_inventory` into a new migration (`pnpm db:migrate:new complete-job-project-stock`).
+2. When the job has `receiveToProjectStock`, write `projectId` on the `itemLedger` inserts (lines 458, 497, 538, 554) and on the `costLedger` Output row (lines 990–999).
+3. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+4. In `JobForm`, show **Receive to project stock** when the charge number's project has project stock. It is off when **Consume to project** is on.
+5. Add a `databaseTest` in `packages/server-functions/src/issue/project-issue.test.ts`: completing a job with `receiveToProjectStock` writes the receipt rows with the project stripe.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- project-issue
+# Expected: all tests pass
+```
+
+**Out of scope:** job output split across projects (Phase 3).
+
+---
+
+## Task 11: Record the drawn stripe in `issue`
+
+**Depends on:** 6, 7, 8
+**Files:**
+- Modify: `packages/server-functions/src/issue/index.ts` (`issueJobOperationMaterials` 115, bin choice 273–300, insert 370; `consumeTrackedEntitiesIntoOperation` 1361 and insert 1833; `partToOperation` 3002, bins 3111–3129, rows 3164–3193, inserts 3219, 3312; merge 4307; unconsume 4572; convert 4846; maintenance 4941, 5318, 5528, 5738, 5771)
+
+**Steps:**
+1. Load the job's `projectId` and its project's `projectStock` once per call. Compute `stripes = stripesForDemand(...)`.
+2. **Untracked items:**
+   1. Choose bins with the new `getStorageUnitWithHighestQuantity` and `stripes`.
+   2. When one bin cannot cover the quantity, split with `splitAcrossStripes`.
+   3. Write one `itemLedger` row per stripe drawn, with its `projectId`.
+   4. Call `calculateCOGS` once per stripe.
+3. **Tracked items:** read each entity's stripe from its on-hand rows (`get_item_quantities_by_tracking_id` now returns `projectId`). Refuse an entity whose stripe is not in `stripes`, with a message that names its project.
+4. **Unconsume, merge and convert:** copy the source rows' `projectId`.
+5. **Maintenance issues:** use `stripes = [null]`.
+6. Add a `databaseTest`: a job charged to project P with 4 in P and 10 in common issues 6. Expect two `itemLedger` rows: −4 in P and −2 in common.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- issue
+# Expected: all tests pass
+```
+
+**Out of scope:** the lineside budget logic in `picked-consumption.ts`, beyond reading the picked stripe (Task 12).
+
+---
+
+## Task 12: Carry the stripe through picking and stock transfers
+
+**Depends on:** 6, 8
+**Files:**
+- Modify: `apps/erp/app/modules/inventory/inventory.service.ts` — `generatePickingList` (line 3748; source bin 4190–4220; `getItemOnHandByStorageUnit` 3599; `resolveWarehouseSource` 3628)
+- Modify: `packages/server-functions/src/post-picking/index.ts` (inserts 230, 304, 409, 655, 780, 1027, 1553, 1729)
+- Modify: `packages/server-functions/src/post-stock-transfer/index.ts` (inserts 221, 297, 457, 707, 818, 1205)
+- Modify: `packages/database/src/picked-consumption.ts` (`getPickedBudgets`, lines 289–330)
+- Create: `packages/database/supabase/migrations/<timestamp>_picking-schedule-project-stripe.sql`
+
+**Steps:**
+1. In `generatePickingList`, restrict `onHandFor` to the job's stripes. Stamp `projectId` on each `pickingListLine` from the stripe it draws.
+2. In `post-picking` and `post-stock-transfer`, write the source row's `projectId` on **both** legs of every Transfer pair. Pick lines use their own `projectId`.
+3. In `getPickedBudgets`, carry each pick line's `projectId` into its budget, so consumption draws the same stripe.
+4. Redefine `get_picking_schedule` (latest `20260908211552_picking-supersession-consume-first.sql:63`) so its stock checks (lines 160–205) use the job's stripes. Redefine `get_lineside_credit` the same way. Keep the function signatures.
+5. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- post-picking post-stock-transfer && pnpm --filter @carbon/database test -- picked-consumption
+# Expected: all tests pass
+```
+
+**Out of scope:** changing the supersession pick rules.
+
+---
+
+## Task 13: Carry the stripe through shipments, invoices, returns and counts
+
+**Depends on:** 6, 7, 8
+**Files:**
+- Modify: `packages/server-functions/src/post-shipment/index.ts` (1192, 3539, 1964, 4062, 2340, 4158, 2917, 4461, 3840; `calculateCOGS` 1243, 2199, 2780; `costLedger` 1273, 2210, 2791, 4171, 4474)
+- Modify: `packages/server-functions/src/post-sales-invoice/index.ts` (2126, 2948; `calculateCOGS` 1833; `costLedger` 1856)
+- Modify: `packages/server-functions/src/post-receipt/index.ts` (sales return 3131, inbound transfer 3532)
+- Modify: `apps/erp/app/modules/inventory/inventory.service.ts` — `generateInventoryCountLines` (line 2118)
+- Modify: `packages/server-functions/src/post-inventory-count/index.ts`
+- Modify: `apps/erp/app/modules/quality/quality-disposition.server.ts` (line 549)
+
+**Steps:**
+1. **Sales shipments** draw common stock only: pass `stripes = [null]` to the bin choice and `projectId: null` to `calculateCOGS`.
+2. **Returns, transfers and voids** copy the source row's `projectId`:
+   - outbound and inbound warehouse transfers (both legs);
+   - sales return receipt and shipment;
+   - purchase return shipment;
+   - every void.
+3. **Inventory counts:** `generateInventoryCountLines` snapshots on-hand per stripe, with one line per (item, bin, lot, stripe), and stamps `projectId`. `post-inventory-count` posts each variance to its line's stripe through `bookAdjustment`.
+4. **Quality disposition** copies the source stripe.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- post-shipment post-sales-invoice post-receipt post-inventory-count
+# Expected: all tests pass
+```
+
+**Out of scope:** shipping project stock on a sales order. A project's stock reaches a customer only through a Transfer to common stock first.
+
+---
+
+## Task 14: Draw project stock in Issue to Project
+
+**Depends on:** 6, 7, 8
+**Files:**
+- Modify: `packages/server-functions/src/post-project-issue/index.ts`
+- Modify: `packages/server-functions/src/post-project-issue/post-project-issue.test.ts`
+
+**Steps:**
+1. When the project has project stock, draw from `stripesForDemand` (project, then common) with `splitAcrossStripes`. Book one adjustment per stripe through `bookAdjustment` with its `projectId`.
+2. A Return goes back to the project's stripe when the project has project stock, else to common.
+3. The `projectLedger` row carries the total cost of all stripes drawn.
+4. Add a test. With 4 in the project and 10 in common, issue 6. Expect −4 in the project stripe and −2 in common, and one `projectLedger` row with the summed cost.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- post-project-issue
+# Expected: all tests pass
+```
+
+**Out of scope:** issuing another project's stock.
+
+---
+
+## Task 15: Stripe the inventory snapshot and the quantity and valuation RPCs
+
+**Depends on:** 4
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_inventory-rpcs-project-stripe.sql`
+- Modify: `apps/erp/app/modules/inventory/inventory.service.ts` — `getInventoryItems` (lines 340–366), `getInventoryValuation` (399–409)
+- Modify: `apps/erp/app/modules/items/items.service.ts` — `getItemQuantities` (line 1236)
+
+**Steps:**
+1. Recreate the `itemLedgerSnapshot` materialized view (latest `20260811123614_widen-ledger-amounts.sql:116–145`) grouped by `COALESCE("projectId", '')`. Change its unique index to `(itemId, companyId, locationId, projectId)`, which `REFRESH … CONCURRENTLY` needs. Drop the dependent functions first if Postgres requires it, and recreate them in this migration.
+2. Redefine `get_inventory_quantities` (latest `20261006130001_demand-forecast-consumption.sql:869`) with a new last parameter `project_id TEXT DEFAULT NULL`:
+   - NULL means all stripes (today's behavior);
+   - `''` means common;
+   - an id means that project.
+
+   Filter all 3 arms (snapshot, tracked rows, untracked rows after `v_cutoff`) and the storage-unit CTE. Keep one row per item.
+3. Redefine `get_inventory_valuation` (latest `20260925121735…sql:1488–1612`):
+   1. Add `"projectId"` to its RETURNS TABLE. Because this is a signature change, `DROP FUNCTION` first.
+   2. Add `"projectId"` to each arm and the GROUP BY.
+   3. Group `carrying` by `(itemId, projectId)`.
+   4. Join on `c."projectId" IS NOT DISTINCT FROM q."projectId"`.
+4. Redefine `get_inventory_tie_out` (same file, line 1425), which calls it at line 1452, to sum across stripes as before.
+5. Redefine `get_item_ledger_balance` (`20261002153931_item-ledger-running-balance.sql:30–90`) and `get_inventory_value_by_location` (`20260713235406…sql:454`) for the new snapshot shape. Each keeps its signature and sums across stripes.
+6. Keep each function's `SECURITY` setting and its `assert_company_access` call.
+7. Run `pnpm db:migrate`, then `pnpm run generate:types`.
+8. Add `projectId?: string | null` to `getInventoryItems` and `getItemQuantities`, passed as `project_id`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+psql "$SUPABASE_DB_URL" -c "SELECT count(*) FROM get_inventory_valuation('<a dataset company id>');"
+# Expected: the same count as before the migration (no project stock exists yet)
+```
+
+**Out of scope:** a per-project valuation report page.
+
+---
+
+## Task 16: Add the `post-project-stock-transfer` server function
+
+**Depends on:** 6, 8
+**Files:**
+- Create: `packages/server-functions/src/post-project-stock-transfer/index.ts`
+- Create: `packages/server-functions/src/post-project-stock-transfer/plan.ts`
+- Create: `packages/server-functions/src/post-project-stock-transfer/plan.test.ts`
+- Create: `packages/server-functions/src/post-project-stock-transfer/post-project-stock-transfer.test.ts`
+- Modify: `packages/server-functions/src/invoke.ts` — register it
+- Copy from (precedent): `packages/server-functions/src/post-stock-transfer/index.ts` (lines 57–224)
+
+**Steps:**
+1. Input: `{ projectStockTransferId }`. Permissions: `{ update: "projects" }`.
+2. In one transaction, lock the header with `FOR UPDATE`. If it is not `Approved`, refuse.
+3. **Government-furnished guard:** if the from-project has `governmentFurnished`, refuse when the to-owner is common, or a project whose `customerId` differs.
+4. For each line:
+   1. **Draw** from the from-stripe with `calculateCOGS({ projectId: fromProjectId })`, which consumes the layers.
+   2. Write an `itemLedger` Transfer pair at the same bin, `documentType: "Project Transfer"`: −qty in the from-stripe and +qty in the to-stripe.
+   3. Stamp `unitCost` on the line.
+5. **By type:**
+   - **Transfer:** write the new layer in the to-stripe at the drawn cost. Move each consumed layer's adjustment children with it (see the child loop in `calculate-cogs.ts:131–160`). Post no journal, because both owners are inventory.
+   - **Borrow:**
+     1. Write the new layer in the borrower's stripe at the lender's cost, with `projectBorrowId`.
+     2. Insert a `projectBorrow` row: quantity, `borrowedUnitCost`, due date, `Open`.
+     3. Post no journal.
+   - **Payback:**
+     1. Draw from the borrower's stripe at the borrower's current FIFO cost.
+     2. Write the new layer in the lender's stripe at that cost.
+     3. Reduce the borrow FIFO-matched (oldest open borrow of the item first, starting from `settlesBorrowId`). Set `Paid Back` when it is fully paid.
+     4. When the payback cost differs from the borrowed cost: post Dr/Cr `inventoryAdjustmentVarianceAccount` / Cr/Dr inventory for the difference, with the Project dimension of the borrower. Write a `Payback Variance` row in the borrower's `projectLedger`.
+6. Put the pure rules in `plan.ts`: `planBorrowMatching(openBorrows, quantity)` and `paybackVariance(borrowedUnitCost, paybackUnitCost, quantity)`.
+7. Write `plan.test.ts` with 3 cases:
+   1. A payback of 7 against open borrows of 5 and 4 settles the first fully and 2 of the second.
+   2. A payback at 11.00 against a borrow at 10.00 for 5 units gives a variance of 5.00 to the borrower.
+   3. `planBorrowMatching` refuses a payback larger than the open borrows.
+8. Write `post-project-stock-transfer.test.ts` with `databaseTest`:
+   1. Transfer 3 from common to P moves `itemStockQuantities` between stripes and keeps the total value.
+   2. Borrow then Payback records the variance.
+9. Update the permissions snapshot (`-u`) and review it.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- post-project-stock-transfer permissions-manifest
+# Expected: all tests pass
+```
+
+**Out of scope:** tracked-entity batch splits during a partial transfer. A partial transfer of a lot leaves one entity in two stripes, which the ledger supports.
+
+---
+
+## Task 17: Add the project stock transfer pages
+
+**Depends on:** 16
+**Files:**
+- Create: `apps/erp/app/routes/x+/projects+/transfers.tsx`, `transfers.new.tsx`
+- Create: `apps/erp/app/routes/x+/project-stock-transfer+/$id.tsx`, `$id.lines.tsx`, `$id.status.tsx`
+- Create: `apps/erp/app/modules/projects/ui/Transfers/*`
+- Modify: `apps/erp/app/modules/projects/projects.models.ts`, `projects.service.ts`, `projects.server.ts`
+- Modify: `apps/erp/app/modules/projects/ui/useProjectsSubmodules.tsx` — **Transfers**
+- Copy from (precedent): `apps/erp/app/routes/x+/stock-transfer+/*`; `apps/erp/app/modules/inventory/inventory.service.ts` (`upsertStockTransfer`, lines 2337–2635)
+
+**Steps:**
+1. Models and services: `projectStockTransferValidator`, `projectStockTransferLineValidator`, `getProjectStockTransfers`, `getProjectStockTransfer`, `upsertProjectStockTransfer` (Draft only), `upsertProjectStockTransferLine`, `deleteProjectStockTransferLine`, and `getProjectBorrows(client, companyId, { projectId, status })`.
+2. **New:** type, from (project or common), to (project or common), location, reason (required). A Borrow needs a payback due date. A Payback picks the open borrow it settles, and from/to are filled from the borrow.
+3. **Lines:** item, quantity, storage unit and lot or serial. The available quantity shows from the from-stripe.
+4. **Status actions:**
+   - **Approve** needs `update: projects` and records `approvedBy` and `approvedAt`.
+   - **Post** calls `post-project-stock-transfer`.
+   - **Cancel** works from Draft or Approved.
+5. Show the government-furnished refusal as a flash error.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** approval rules from the approvals engine (projects stay community).
+
+---
+
+## Task 18: Add the project stock UI
+
+**Depends on:** 15, 17
+**Files:**
+- Modify: `apps/erp/app/routes/x+/inventory+/quantities.tsx` (loader lines 40–80) — a `project` search param
+- Modify: `apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx` — a **Stock owner** filter (All, Common, a project)
+- Modify: `apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx` (lines 138–180) — a top grouping by owner
+- Create: `apps/erp/app/routes/x+/project+/$projectId.stock.tsx`
+- Create: `apps/erp/app/modules/projects/ui/Stock/ProjectStock.tsx`
+- Modify: `apps/erp/app/modules/projects/ui/Project/useProjectNavigation.tsx` — **Stock** (projects with project stock)
+- Modify: `apps/erp/app/modules/projects/ui/Projects/ProjectForm.tsx` — **Project stock** (editable while Draft only), **Charge at receipt**, **Government-furnished**
+
+**Steps:**
+1. The quantities page passes `project_id` to `getInventoryItems`.
+2. The item's storage-unit view groups rows by owner (Common, then each project), then by bin. Its adjust actions pass the row's stripe to the adjustment.
+3. The project **Stock** tab shows 3 parts:
+   1. the project's on-hand by item, bin and lot (`get_inventory_quantities` with `project_id`);
+   2. the open borrows, owed and lent, with due dates;
+   3. **Transfer**, **Borrow** and **Payback** buttons. Each opens a prefilled Draft transfer.
+4. Overdue borrows show in red.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0
+```
+
+**Out of scope:** MRP exceptions for overdue borrows (Phase 2b).
+
+---
+
+## Task 19: Extend the demo datasets
+
+**Depends on:** 16
+**Files:**
+- Modify: `packages/database/src/datasets/types.ts`, `tiers/09-accounting.ts`, `tiers/03-inventory.ts`, `data/*/accounting.ts`, `coverage.ts`
+
+**Steps:**
+1. In the satellite dataset, set `projectStock` on the Contract project. Seed opening stock of 2 items in its stripe (`itemLedger` and `costLedger` with `projectId`), using the tier 03 opening stock pattern.
+2. Seed one posted Transfer (common → project) with its ledger pair and layers.
+3. Add `projectStockTransfer` to `COVERAGE_FLOORS` after measuring.
+4. Run `pnpm db:check:datasets`.
+
+**Verify:**
+```bash
+pnpm db:check:datasets
+# Expected: all four datasets pass
+```
+
+**Out of scope:** borrows in the datasets.
+
+---
+
+## Task 20: Update the rules, AGENTS.md, docs and spec
+
+**Depends on:** 1–19
+**Files:**
+- Modify: `.claude/rules/projects-system.md`, `.claude/rules/inventory-system.md`, `.claude/rules/traceability-model.md`, `.claude/rules/mrp-system.md` (the common-only on-hand filter until Phase 2b)
+- Modify: `apps/erp/app/modules/projects/AGENTS.md`, `apps/erp/app/modules/inventory/AGENTS.md`
+- Modify: `docs/content/docs/reference/projects.mdx`
+- Modify: `.ai/specs/2026-10-03-projects.md`
+
+**Steps:**
+1. Document the stripe rule, the stripe set per demand, the handler and primary-key order, and the Transfer, Borrow and Payback costing.
+2. In the spec, record these decisions:
+   1. **Stripe location:** no `trackedEntity.projectId`.
+   2. **Approval:** project stock transfers are approved by `update: projects`, not the approvals engine.
+   3. **Shipments:** sales shipments draw common stock only.
+   4. **Counts:** inventory counts count each stripe separately.
+3. Run the STE-80 review pass on every `.ai/` file you changed.
+
+**Verify:**
+```bash
+cd docs && pnpm typecheck
+# Expected: exit code 0
+```
+
+**Out of scope:** the changelog entry.
+
+---
+
+## Task 21: Verify in the browser
+
+**Depends on:** 1–20
+**Files:**
+- Create: `.ai/playbooks/projects-phase-2a.md` (written by `/test`)
+
+**Steps:**
+1. Run `/test` on a satellite dataset company.
+2. Cover these spec acceptance criteria:
+   1. **Stock rules.**
+      - Receiving a Part PO line charged to P-101 (project stock on) raises P-101's stock, not common stock.
+      - A job for P-102 cannot pick it.
+      - A job for P-101 picks P-101 first, then common.
+   2. **Borrow and payback.**
+      - Borrow 5 from P-101 to P-102 (due date set): the stock moves, and the lender keeps the cost.
+      - A Payback at a different unit cost charges the difference to P-102 as Payback Variance.
+   3. **Government-furnished material:** Approve refuses a transfer from a government-furnished project to a commercial project.
+   4. **Valuation:** the inventory valuation total is unchanged by a Transfer.
+   5. **Planning:** before Phase 2b, MRP output for the company is the same as before Phase 2a.
+3. Save the playbook to `.ai/playbooks/projects-phase-2a.md`.
+
+**Verify:**
+```bash
+ls .ai/playbooks/projects-phase-2a.md
+# Expected: the file exists, and the /test run reports every step passed
+```
+
+**Out of scope:** the Segmented MRP criterion (Phase 2b).
