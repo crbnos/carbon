@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "miejsca powstawania kosztów"
 
 msgid "Cost Centers"
 msgstr "Miejsca powstawania kosztów"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "Historia kosztów"
@@ -16103,6 +16112,9 @@ msgstr "Postęp"
 msgid "Project"
 msgstr "Projekt"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "Właściciel projektu"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "Wymagaj przypisanego operatora, zanim harmonogram umieści pracę w loka
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Wymagaj aplikacji authenticator przed otwarciem tej firmy. Pozostałe firmy danej osoby nie są objęte. Odwiedź <0>stronę kont pracowników</0>, aby zobaczyć status każdej osoby."
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Wymagaj zatwierdzenia zanim dostawcy będą mogli być ustawieni na Aktywny"
 
@@ -17503,6 +17521,9 @@ msgstr "Wymagaj zatwierdzenia dla zamówień zakupu na podstawie progów kwotowy
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Wymagaj zatwierdzenia dla dokumentów jakości w przepływie pracy"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "Wymaga dopasowania"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "Przesłane przez"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "Podmoduły"
 
@@ -22288,6 +22312,9 @@ msgstr "Karty czasu pracy są włączone"
 msgid "Timer running"
 msgstr "Czasomierz uruchomiony"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "Strefa czasowa"
 
@@ -24047,6 +24074,9 @@ msgstr "Gdy ten przyrząd pomiarowy jest wymagany do wzorcowania; po upłynięci
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Gdy ten przyrząd pomiarowy był ostatnio pomyślnie wzorcowany; następna data wzorcowania jest przeliczana z tej wartości plus interwału."
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Gdy to wygląda dobrze, oznacz jako uzgodnione. To kończy krok Odkrywania w Twoim centrum dowodzenia."

@@ -37,6 +37,7 @@ import type {
   invoiceAutomations,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
+  projectSettingsValidator,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
   subsidiaryValidator
@@ -1069,6 +1070,22 @@ export async function updateLeasePolicySettings(
   return client
     .from("companySettings")
     .update(sanitize(settings))
+    .eq("id", companyId);
+}
+
+/**
+ * Updates the project settings: whether timesheets need approval before they
+ * post, and whether every project charge needs an element.
+ * @mcp update
+ */
+export async function updateProjectSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  values: Partial<z.infer<typeof projectSettingsValidator>>
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize(values))
     .eq("id", companyId);
 }
 

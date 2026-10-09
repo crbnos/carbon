@@ -428,6 +428,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   workInProgressAccount: z.string().min(1, {
     message: "Work in progress account is required"
   }),
+  // Optional: a project with no account of its own and no default refuses
+  // its charges with a message that names this field.
+  projectWorkInProgressAccount: z.string().optional(),
   receivablesAccount: z.string().min(1, {
     message: "Receivables account is required"
   }),
@@ -534,6 +537,7 @@ export const defaultIncomeAcountValidator = z.object({
   maintenanceAccount: z.string().min(1, {
     message: "Maintenance account is required"
   }),
+  projectExpenseAccount: z.string().optional(),
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),

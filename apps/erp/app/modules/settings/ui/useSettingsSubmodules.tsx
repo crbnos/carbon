@@ -16,6 +16,7 @@ import {
   LuFactory,
   LuFileText,
   LuFlaskConical,
+  LuFolderKanban,
   LuHistory,
   LuImage,
   LuKey,
@@ -148,6 +149,12 @@ export default function useSettingsSubmodules() {
             to: path.to.productionSettings,
             role: "employee",
             icon: <LuFactory />
+          },
+          {
+            name: t`Projects`,
+            to: path.to.projectsSettings,
+            role: "employee",
+            icon: <LuFolderKanban />
           },
           {
             name: t`Quality`,

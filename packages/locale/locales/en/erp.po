@@ -4417,6 +4417,9 @@ msgstr "Charge number"
 msgid "Charge Number"
 msgstr "Charge Number"
 
+msgid "Charge Numbers"
+msgstr "Charge Numbers"
+
 msgid "Chargeable"
 msgstr "Chargeable"
 
@@ -5590,6 +5593,12 @@ msgstr "cost centers"
 
 msgid "Cost Centers"
 msgstr "Cost Centers"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr "Cost charged to Contract projects until it is billed"
+
+msgid "Cost charged to Expense projects"
+msgstr "Cost charged to Expense projects"
 
 msgid "Cost History"
 msgstr "Cost History"
@@ -16103,6 +16112,9 @@ msgstr "Progress"
 msgid "Project"
 msgstr "Project"
 
+msgid "Project Expense"
+msgstr "Project Expense"
+
 msgid "Project owner"
 msgstr "Project owner"
 
@@ -16117,6 +16129,9 @@ msgstr "Project Time"
 
 msgid "Project total"
 msgstr "Project total"
+
+msgid "Project WIP"
+msgstr "Project WIP"
 
 msgid "Projected"
 msgstr "Projected"
@@ -17495,6 +17510,9 @@ msgstr "Require an assigned operator before the scheduler places work at a locat
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 
+msgid "Require an element on every project charge"
+msgstr "Require an element on every project charge"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Require approval before suppliers can be set to Active"
 
@@ -17503,6 +17521,9 @@ msgstr "Require approval for purchase orders based on amount thresholds"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Require approval for quality documents in your workflow"
+
+msgid "Require approval of timesheets"
+msgstr "Require approval of timesheets"
 
 msgid "Require Match"
 msgstr "Require Match"
@@ -20181,6 +20202,9 @@ msgstr "Submitted"
 msgid "Submitted By"
 msgstr "Submitted By"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+
 msgid "Submodules"
 msgstr "Submodules"
 
@@ -22288,6 +22312,9 @@ msgstr "Timecards are enabled"
 msgid "Timer running"
 msgstr "Timer running"
 
+msgid "Timesheet Approval"
+msgstr "Timesheet Approval"
+
 msgid "Timezone"
 msgstr "Timezone"
 
@@ -24047,6 +24074,9 @@ msgstr "When this gauge becomes due for calibration; once past due it reads Out-
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr "When this is on, time, material and purchases charge an element of a project, never the project alone."
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "When this looks right, mark it agreed. That completes the Discovery step on your command center."

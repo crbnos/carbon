@@ -803,6 +803,11 @@ export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()
 });
 
+export const projectSettingsValidator = z.object({
+  timesheetApprovalRequired: zfd.checkbox(),
+  requireProjectElement: zfd.checkbox()
+});
+
 // The editor submits the block list as a JSON string in a hidden field; we
 // parse it and validate every block against the shared schema.
 const jsonField = <T>(schema: z.ZodType<T>, message: string) =>

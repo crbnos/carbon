@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "원가 센터"
 
 msgid "Cost Centers"
 msgstr "원가 센터"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "원가 이력"
@@ -16103,6 +16112,9 @@ msgstr "진행 상황"
 msgid "Project"
 msgstr "프로젝트"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "프로젝트 책임자"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "공급업체를 활성 상태로 설정하기 전에 승인 필요"
 
@@ -17503,6 +17521,9 @@ msgstr "금액 임계값을 기준으로 발주서에 대한 승인 필요"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "필수 일치"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "제출자"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "하위 모듈"
 
@@ -22288,6 +22312,9 @@ msgstr "타임카드가 활성화됨"
 msgid "Timer running"
 msgstr "타이머 실행 중"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "시간대"
 
@@ -24047,6 +24074,9 @@ msgstr "이 계측기의 교정이 만료될 때; 만료되면 Out-of-Calibratio
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "이 계측기가 마지막으로 성공적으로 교정된 시점; 다음 교정 날짜는 이 값에 간격을 더해서 다시 계산됩니다."
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "이 내용이 맞으면 합의됨으로 표시하세요. 그러면 커맨드 센터의 발견(Discovery) 단계가 완료됩니다."

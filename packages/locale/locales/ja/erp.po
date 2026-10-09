@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "原価センター"
 
 msgid "Cost Centers"
 msgstr "原価センター"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "原価履歴"
@@ -16103,6 +16112,9 @@ msgstr "進捗"
 msgid "Project"
 msgstr "プロジェクト"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "プロジェクト責任者"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "スケジューラがある拠点に作業を配置する前に、割当
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "仕入先を有効に設定する前に承認が必要です"
 
@@ -17503,6 +17521,9 @@ msgstr "金額の閾値に基づいて発注書の承認が必要です"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフローの品質ドキュメントについて承認が必要です"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "照合が必須"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "提出者"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "サブモジュール"
 
@@ -22288,6 +22312,9 @@ msgstr "タイムカードが有効です"
 msgid "Timer running"
 msgstr "タイマー実行中"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "タイムゾーン"
 
@@ -24047,6 +24074,9 @@ msgstr "この測定器が校正の対象日となる日時。期限を過ぎる
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "この測定器が最後に正常に校正された日時。次の校正日はこの値とインターバルの合計から再計算されます。"
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "これが正しく見えたら、同意済みとしてマークしてください。これでコマンドセンターの検出ステップが完了します。"

@@ -78,7 +78,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 39: Build My Timesheet and Approvals in the ERP
 - [x] Task 40: Build the MES timesheet
 - [x] Task 41: Add charge numbers to the job, PO line and purchase invoice line forms
-- [ ] Task 42: Add the account defaults and project settings UI
+- [x] Task 42: Add the account defaults and project settings UI
 - [ ] Task 43: Add keyboard shortcuts for the Elements page and element page
 - [ ] Task 44: Register the MCP namespace and regenerate tools
 - [ ] Task 45: Add projects to the demo datasets
@@ -2555,3 +2555,5 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 41: `JobProperties` shows the charge number as an inline picker (`ChargeNumber` gains `inline`), editable while the job is Draft or Planned and read-only after release. It posts `field=chargeNumber` to the job `update.tsx` route, which refuses a released job, checks the charge number, and clears `consumeToProject` when the new project is Statistical or empty. There is no Consume to project switch in Properties; it is set when the job is created.
 - Task 41: `JobHeader` shows the charge number as a secondary button that opens the element (or the project), next to the Sales Order button, and a **Consumes to project** badge after the status.
 - Task 41: the PO line form shows **Charge Number** on the item tab (not for outside processing, whose job decides the charge, Task 21) and next to Cost Center on the G/L Account tab, not on the Fixed Asset tab. The purchase invoice line form shows it on the item tab and next to Cost Center. `getChargeNumbers` rows gain `costTreatment` (plan step 4).
+- Task 42: both account defaults are optional in the validators (`z.string().optional()`, as `scrapAccount` is), because the columns are nullable and a company with no project accounts must still save its defaults. **Project WIP** sits after Work in Progress in the Inventory group, **Project Expense** after Maintenance Expense in Operating Expenses. Neither has a glossary `termId` yet (no glossary entry exists).
+- Task 42: the settings page is `x+/settings+/projects.tsx` (`path.to.projectsSettings`, new), two cards with a `Switch` each, as `settings+/items.tsx`. Each switch posts `intent` (`timesheetApproval`, `requireElement`) and `enabled`; the action validates the one field with `projectSettingsValidator.pick(...)` and calls `updateProjectSettings(client, companyId, values)` (`settings.service.ts`, `@mcp update`, a partial update). **Projects** is in the settings Modules group after Production.

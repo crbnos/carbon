@@ -1998,6 +1998,7 @@ export const path = {
       generatePath(`${x}/project/${id}/settings`),
     projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),
     projects: `${x}/projects`,
+    projectsSettings: `${x}/settings/projects`,
     projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
     projectTimesheet: `${x}/projects/timesheet`,
     projectTimesheetApprovals: `${x}/projects/approvals`,

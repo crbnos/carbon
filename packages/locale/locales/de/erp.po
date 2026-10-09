@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "Kostenstellen"
 
 msgid "Cost Centers"
 msgstr "Kostenstellen"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "Kostenverlauf"
@@ -16103,6 +16112,9 @@ msgstr "Fortschritt"
 msgid "Project"
 msgstr "Projekt"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "Projektverantwortlicher"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "Erfordert einen zugewiesenen Werker, bevor der Planer Arbeiten an einem 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Erfordert eine Authentifizierungs-App, bevor jemand dieses Unternehmen öffnen kann. Ihre anderen Unternehmen sind nicht betroffen. Besuchen Sie die <0>Seite mit den Mitarbeiterkonten</0>, um den Status jeder Person zu sehen."
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Genehmigung erforderlich, bevor Lieferanten auf Aktiv gesetzt werden können"
 
@@ -17503,6 +17521,9 @@ msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erfor
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "Abgleich erforderlich"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "Eingereicht von"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "Untermodule"
 
@@ -22288,6 +22312,9 @@ msgstr "Zeiterfassung ist aktiviert"
 msgid "Timer running"
 msgstr "Timer läuft"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "Zeitzone"
 
@@ -24047,6 +24074,9 @@ msgstr "Wenn dieses Prüfmittel zur Kalibrierung fällig wird; sobald es überf�
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Wann dieses Prüfmittel zuletzt erfolgreich kalibriert wurde; das nächste Kalibrierungsdatum wird aus diesem Wert plus dem Intervall neu berechnet."
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Wenn dies richtig aussieht, markieren Sie es als vereinbart. Dies schließt den Discovery-Schritt in Ihrem Command Center ab."

@@ -181,6 +181,12 @@ const AccountDefaultsForm = ({
             description: t`Account for production orders not yet completed`,
             badgeType: "Asset",
             termId: "account-default-wip"
+          },
+          {
+            name: "projectWorkInProgressAccount",
+            label: t`Project WIP`,
+            description: t`Cost charged to Contract projects until it is billed`,
+            badgeType: "Asset"
           }
         ]
       },
@@ -498,6 +504,12 @@ const AccountDefaultsForm = ({
             description: t`Expense account for equipment and facility maintenance`,
             badgeType: "Expense",
             termId: "account-default-maintenance-expense"
+          },
+          {
+            name: "projectExpenseAccount",
+            label: t`Project Expense`,
+            description: t`Cost charged to Expense projects`,
+            badgeType: "Expense"
           },
           {
             name: "assetDepreciationExpenseAccount",

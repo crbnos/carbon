@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "центры затрат"
 
 msgid "Cost Centers"
 msgstr "Центры затрат"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "История себестоимости"
@@ -16103,6 +16112,9 @@ msgstr "Прогресс"
 msgid "Project"
 msgstr "Проект"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "Ответственный проекта"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "Требовать назначенного оператора пере�
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Требовать утверждение перед установкой статуса «Активный» для поставщиков"
 
@@ -17503,6 +17521,9 @@ msgstr "Требовать утверждение для заказов пост
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требовать утверждение для документов качества в вашем рабочем процессе"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "Требовать совпадение"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "Отправлено"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "Подмодули"
 
@@ -22288,6 +22312,9 @@ msgstr "Табели учета рабочего времени включены
 msgid "Timer running"
 msgstr "Таймер запущен"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "Часовой пояс"
 
@@ -24047,6 +24074,9 @@ msgstr "Когда это Средство измерения подлежит �
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Когда это средство измерения последний раз успешно калибровалось; дата следующей калибровки пересчитывается из этого значения плюс интервал."
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Когда это выглядит правильно, отметьте это как согласованное. Это завершает шаг Открытия на вашем центре управления."

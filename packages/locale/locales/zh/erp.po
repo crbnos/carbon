@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "成本中心"
 
 msgid "Cost Centers"
 msgstr "成本中心"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "成本历史记录"
@@ -16103,6 +16112,9 @@ msgstr "进度"
 msgid "Project"
 msgstr "项目"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "项目负责人"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "排程前需要已分配的操作员才能在地点安排工作。启用
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "供应商设置为启用前需要审批"
 
@@ -17503,6 +17521,9 @@ msgstr "根据金额阈值对采购订单需要审批"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "工作流中的质量文档需要审批"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "必需匹配"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "提交者"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "子模块"
 
@@ -22288,6 +22312,9 @@ msgstr "工时记录已启用"
 msgid "Timer running"
 msgstr "计时器运行中"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "时区"
 
@@ -24047,6 +24074,9 @@ msgstr "该量具何时需要校准；过期后读数显示为失准。"
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "此量具最后一次成功校准时；下一个校准日期从此值加上间隔重新计算。"
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "当这看起来正确时，将其标记为已同意。这将完成您的指挥中心上的发现步骤。"

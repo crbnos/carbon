@@ -4417,6 +4417,9 @@ msgstr ""
 msgid "Charge Number"
 msgstr ""
 
+msgid "Charge Numbers"
+msgstr ""
+
 msgid "Chargeable"
 msgstr ""
 
@@ -5590,6 +5593,12 @@ msgstr "maliyet merkezleri"
 
 msgid "Cost Centers"
 msgstr "Maliyet Merkezleri"
+
+msgid "Cost charged to Contract projects until it is billed"
+msgstr ""
+
+msgid "Cost charged to Expense projects"
+msgstr ""
 
 msgid "Cost History"
 msgstr "Maliyet Geçmişi"
@@ -16103,6 +16112,9 @@ msgstr "İlerleme"
 msgid "Project"
 msgstr "Proje"
 
+msgid "Project Expense"
+msgstr ""
+
 msgid "Project owner"
 msgstr "Proje sahibi"
 
@@ -16116,6 +16128,9 @@ msgid "Project Time"
 msgstr ""
 
 msgid "Project total"
+msgstr ""
+
+msgid "Project WIP"
 msgstr ""
 
 msgid "Projected"
@@ -17495,6 +17510,9 @@ msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
+msgid "Require an element on every project charge"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Tedarikçilerin Aktif olarak ayarlanabilmesi için onay gerektirir"
 
@@ -17503,6 +17521,9 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
+
+msgid "Require approval of timesheets"
+msgstr ""
 
 msgid "Require Match"
 msgstr "Eşleştirme Gerekli"
@@ -20181,6 +20202,9 @@ msgstr ""
 msgid "Submitted By"
 msgstr "Gönderen"
 
+msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
+msgstr ""
+
 msgid "Submodules"
 msgstr "Alt modüller"
 
@@ -22288,6 +22312,9 @@ msgstr "Puantaj etkin"
 msgid "Timer running"
 msgstr "Zamanlayıcı çalışıyor"
 
+msgid "Timesheet Approval"
+msgstr ""
+
 msgid "Timezone"
 msgstr "Saat Dilim"
 
@@ -24047,6 +24074,9 @@ msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtik
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Bu ölçü aletinin en son başarıyla kalibre edildiği zaman; sonraki kalibrasyonu tarihi bu değer artı aralığından yeniden hesaplanır."
+
+msgid "When this is on, time, material and purchases charge an element of a project, never the project alone."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Bu doğru göründüğünde, kabul edildi olarak işaretleyin. Bu, komut merkezinizde Keşif adımını tamamlar."
