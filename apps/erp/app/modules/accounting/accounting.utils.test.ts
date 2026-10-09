@@ -7,6 +7,7 @@ import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
+  activationCutoverDates,
   addOneMonth,
   buildDepreciationLines,
   calculateDepreciation,
@@ -23,6 +24,7 @@ import {
   getMonthsElapsed,
   getNextPeriodEnd,
   getNextRevenueRecognitionPeriodEnd,
+  hasAccountingCutover,
   isFutureRunPeriod,
   monthEndOf,
   runPostingTargets,
@@ -1493,5 +1495,54 @@ describe("depreciationFloor", () => {
   it("changes nothing for a company with no cutover", () => {
     expect(depreciationFloor("2026-03-31", null)).toBe("2026-03-31");
     expect(depreciationFloor(null, null)).toBeNull();
+  });
+});
+
+describe("activationCutoverDates", () => {
+  const today = parseDate("2026-10-09");
+
+  it("defaults to the first day of the current period", () => {
+    expect(activationCutoverDates(null, today, 3)).toEqual({
+      cutoverDate: "2026-10-01",
+      earliestCutoverDate: "2026-07-01",
+      latestCutoverDate: "2026-10-01"
+    });
+  });
+
+  it("takes a calendar date from the search param", () => {
+    expect(activationCutoverDates("2026-08-01", today, 3).cutoverDate).toBe(
+      "2026-08-01"
+    );
+  });
+
+  it("keeps a date outside the range, for the readiness check to refuse", () => {
+    expect(activationCutoverDates("2026-03-15", today, 3).cutoverDate).toBe(
+      "2026-03-15"
+    );
+  });
+
+  it("ignores a param that is not a calendar date", () => {
+    for (const param of ["", "2026-8-1", "2026-02-30", "tomorrow", "2026-08"]) {
+      expect(activationCutoverDates(param, today, 3).cutoverDate).toBe(
+        "2026-10-01"
+      );
+    }
+  });
+
+  it("crosses a year boundary going back", () => {
+    expect(
+      activationCutoverDates(null, parseDate("2026-02-28"), 3)
+        .earliestCutoverDate
+    ).toBe("2025-11-01");
+  });
+});
+
+describe("hasAccountingCutover", () => {
+  it("is true only with a cutover date", () => {
+    expect(hasAccountingCutover({ accountingCutoverDate: "2026-10-01" })).toBe(
+      true
+    );
+    expect(hasAccountingCutover({ accountingCutoverDate: null })).toBe(false);
+    expect(hasAccountingCutover(null)).toBe(false);
   });
 });

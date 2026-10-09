@@ -5,11 +5,21 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dayBeforeCutover,
+  isMigrationClearingZero
+} from "@carbon/database/accounting-cutover";
+import {
+  getActivationReadiness,
+  getLegacyDocumentCounts,
+  getMigrationClearing,
+  type LegacyDocumentFamily
+} from "@carbon/database/accounting-cutover-reads";
 import { ValidatedForm, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
 import { getErrorMessage, redirect } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,21 +36,16 @@ import {
   useUser
 } from "~/hooks";
 import { activateAccountingValidator } from "~/modules/accounting";
-import {
-  getActivationCutover,
-  getActivationReadiness,
-  getLegacyDocumentCounts,
-  getMigrationClearing,
-  type LegacyDocumentFamily
-} from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.server";
 import {
   ActivationFooter,
-  activationStepPath,
-  isMigrationClearingZero
+  activationStepPath
 } from "~/modules/accounting/ui/Activation";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting/activation/enable");
 
 export const handle: Handle = {
   breadcrumb: msg`Enable`,
@@ -144,6 +149,10 @@ export async function action({ request }: ActionFunctionArgs) {
       confirmation: validation.data.confirmation
     });
   if (result.error) {
+    logger.error("Failed to enable accounting", {
+      companyId,
+      error: result.error
+    });
     return data(
       {},
       await flash(
@@ -195,11 +204,7 @@ export default function AccountingActivationEnableRoute() {
             <dt className="text-muted-foreground">
               <Trans>Opening balances as of</Trans>
             </dt>
-            <dd>
-              {formatDate(
-                parseDate(cutoverDate).subtract({ days: 1 }).toString()
-              )}
-            </dd>
+            <dd>{formatDate(dayBeforeCutover(cutoverDate))}</dd>
             <dt className="text-muted-foreground">
               <Trans>Open items</Trans>
             </dt>
@@ -217,31 +222,6 @@ export default function AccountingActivationEnableRoute() {
               {formatter.format(migrationClearingTotal)}
             </dd>
           </dl>
-          {legacyDocuments.length > 0 && (
-            <div className="flex w-full max-w-xl flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <h3 className="text-sm font-medium text-foreground">
-                  <Trans>Documents posted before Carbon kept journals</Trans>
-                </h3>
-                <p className="text-sm text-muted-foreground text-pretty">
-                  <Trans>
-                    Carbon writes their journals when you enable accounting,
-                    with today's accounts and costs.
-                  </Trans>
-                </p>
-              </div>
-              <dl className={SUMMARY_LIST_CLASS}>
-                {legacyDocuments.map(({ family, count }) => (
-                  <Fragment key={family}>
-                    <dt className="text-muted-foreground">
-                      {i18n._(LEGACY_FAMILY_LABELS[family])}
-                    </dt>
-                    <dd className="tabular-nums">{count}</dd>
-                  </Fragment>
-                ))}
-              </dl>
-            </div>
-          )}
           {!readinessPassed && (
             <p className="text-sm text-destructive">
               <Trans>
@@ -263,12 +243,35 @@ export default function AccountingActivationEnableRoute() {
                   to={activationStepPath("trial-balance", cutoverDate)}
                   className="underline"
                 >
-                  Go to Trial balance
+                  Go to Trial Balance
                 </Link>
               </Trans>
             </p>
           )}
         </SetupSection>
+
+        {legacyDocuments.length > 0 && (
+          <SetupSection
+            title={<Trans>Documents Posted Before Carbon Kept Journals</Trans>}
+            description={
+              <Trans>
+                Carbon writes their journals when you enable accounting, with
+                today's accounts and costs.
+              </Trans>
+            }
+          >
+            <dl className={SUMMARY_LIST_CLASS}>
+              {legacyDocuments.map(({ family, count }) => (
+                <Fragment key={family}>
+                  <dt className="text-muted-foreground">
+                    {i18n._(LEGACY_FAMILY_LABELS[family])}
+                  </dt>
+                  <dd className="tabular-nums">{count}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </SetupSection>
+        )}
 
         <SetupSection title={<Trans>Enable Accounting</Trans>}>
           <Alert variant="destructive" className="max-w-xl">

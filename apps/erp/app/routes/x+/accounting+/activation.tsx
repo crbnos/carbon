@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -11,13 +12,17 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useMatches } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { getActivationCutover } from "~/modules/accounting/accounting.server";
-import type { ActivationStep } from "~/modules/accounting/ui/Activation";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
+  type ActivationStep,
   ActivationSteps,
   activationSteps
 } from "~/modules/accounting/ui/Activation";
+import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting/activation");
 
 export const handle: Handle = {
   breadcrumb: msg`Setup`,
@@ -31,12 +36,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "accounting"
   });
 
-  const settings = await client
-    .from("companySettings")
-    .select("accountingCutoverDate")
-    .eq("id", companyId)
-    .maybeSingle();
-  if (settings.data?.accountingCutoverDate) {
+  const settings = await getCompanySettings(client, companyId);
+  if (settings.error) {
+    logger.error("Failed to get company settings", {
+      companyId,
+      error: settings.error
+    });
+    throw new Response("The company settings could not be loaded.", {
+      status: 500
+    });
+  }
+  if (hasAccountingCutover(settings.data)) {
     throw redirect(path.to.accountingPeriods);
   }
 

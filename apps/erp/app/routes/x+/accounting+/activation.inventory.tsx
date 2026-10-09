@@ -3,15 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCutoverInventoryValuation } from "@carbon/database/accounting-cutover-reads";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import {
-  getActivationCutover,
-  getCutoverInventory
-} from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.server";
 import {
   ActivationFooter,
   InventoryCostTable
@@ -34,16 +32,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyId,
     request
   );
-  const items = await getCutoverInventory(getDatabaseClient(), {
+  const inventory = await getCutoverInventoryValuation(getDatabaseClient(), {
     companyId,
     cutoverDate
   });
-  return { cutoverDate, items };
+  return { cutoverDate, inventory };
 }
 
 /** Step 2: the stock the enable opens with, and the cost of each item. */
 export default function AccountingActivationInventoryRoute() {
-  const { cutoverDate, items } = useLoaderData<typeof loader>();
+  const { cutoverDate, inventory } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -58,7 +56,11 @@ export default function AccountingActivationInventoryRoute() {
             </Trans>
           }
         >
-          <InventoryCostTable items={items} />
+          <InventoryCostTable
+            items={inventory.items}
+            accounts={inventory.accounts}
+            total={inventory.total}
+          />
         </SetupSection>
       </SetupBody>
       <ActivationFooter step="inventory" cutoverDate={cutoverDate} />

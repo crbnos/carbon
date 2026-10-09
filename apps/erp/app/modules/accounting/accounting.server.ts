@@ -6,11 +6,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import { ACTIVATION_CUTOVER_PARAM } from "@carbon/database/accounting-cutover";
 import { CUTOVER_MAX_PERIODS_BACK } from "@carbon/database/accounting-cutover-reads";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
-  type AutomaticJournalStatus,
-  journalPostingStatus
+  journalPostingStatus,
+  readAccountingCutoverDate
 } from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
@@ -21,7 +22,6 @@ import {
   round,
   toStoredAmount
 } from "@carbon/utils";
-import { parseDate, startOfMonth } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -34,7 +34,9 @@ import {
   getOrCreateAccountingPeriod
 } from "./accounting.service";
 import {
+  type ActivationCutoverDates,
   acquisitionLines,
+  activationCutoverDates,
   type DepreciationLine,
   depreciationRunLinesMatch,
   isFutureRunPeriod,
@@ -42,70 +44,22 @@ import {
   runPostingTargets
 } from "./accounting.utils";
 
-// The accounting cutover's reads and its two pre-enable writes. They live once,
-// in Kysely, so the enable wizard's loaders (passing `getDatabaseClient()`) and
-// the `activate-accounting` transaction run the same queries.
-export {
-  ACCOUNTING_ALREADY_SET_UP,
-  type ActivationCheck,
-  type ActivationCheckItem,
-  type ActivationCheckKey,
-  type CutoverFixedAsset,
-  type CutoverInventoryItem,
-  getActivationReadiness,
-  getCutoverFixedAssets,
-  getCutoverInventory,
-  getCutoverOpenItems,
-  getLegacyDocumentCounts,
-  getMigrationClearing,
-  getOpeningTrialBalance,
-  type LegacyDocumentCounts,
-  type LegacyDocumentFamily,
-  saveOpeningTrialBalance,
-  updateCutoverAccumulatedDepreciation
-} from "@carbon/database/accounting-cutover-reads";
-
-/** The search param that carries the enable wizard's cutover date. */
-export const ACTIVATION_CUTOVER_PARAM = "cutover";
-
-function isCalendarDateString(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  try {
-    parseDate(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
- * The cutover date the enable wizard works against: the `cutover` search
- * param, else the first day of the company's current period. Periods are
- * calendar months, as `cutoverDateError` reads them. Also returns the earliest
- * and the latest cutover date that rule allows, for the wizard's date picker.
+ * The cutover date the enable wizard works against, with the earliest and the
+ * latest date its date picker allows (`activationCutoverDates`), from the
+ * company's current period.
  */
 export async function getActivationCutover(
   client: SupabaseClient<Database>,
   companyId: string,
   request: Request
-): Promise<{
-  cutoverDate: string;
-  earliestCutoverDate: string;
-  latestCutoverDate: string;
-}> {
+): Promise<ActivationCutoverDates> {
   const timeZone = await getCompanyTimeZone(client, companyId);
-  const currentPeriodStart = startOfMonth(datetime.today(timeZone));
-  const param = new URL(request.url).searchParams.get(ACTIVATION_CUTOVER_PARAM);
-  return {
-    cutoverDate:
-      param && isCalendarDateString(param)
-        ? param
-        : currentPeriodStart.toString(),
-    earliestCutoverDate: currentPeriodStart
-      .subtract({ months: CUTOVER_MAX_PERIODS_BACK })
-      .toString(),
-    latestCutoverDate: currentPeriodStart.toString()
-  };
+  return activationCutoverDates(
+    new URL(request.url).searchParams.get(ACTIVATION_CUTOVER_PARAM),
+    datetime.today(timeZone),
+    CUTOVER_MAX_PERIODS_BACK
+  );
 }
 
 /** The company's business day, `YYYY-MM-DD`. */
@@ -268,21 +222,6 @@ export async function getConsolidatedAccountLedger(
   return { ledger, summary };
 }
 
-/** Throwing form of `requireAccountingCutover` for the Kysely posting paths. */
-async function assertAccountingCutover(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  companyId: string
-) {
-  const settings = await db
-    .selectFrom("companySettings")
-    .select("accountingCutoverDate")
-    .where("id", "=", companyId)
-    .executeTakeFirst();
-  if (!settings?.accountingCutoverDate) {
-    throw new Error(ACCOUNTING_NOT_STARTED);
-  }
-}
-
 export async function postDisposal(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -323,7 +262,9 @@ export async function postDisposal(
     userId
   } = args;
 
-  await assertAccountingCutover(db, companyId);
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
 
   const nbv = acquisitionCost - accumulatedDepreciation;
   const now = datetime.timestamp();
@@ -461,9 +402,11 @@ export async function postDisposal(
 
 /**
  * Registers a Draft asset: Active, or Under Construction for a
- * construction-in-progress class. With `posting` it posts the acquisition
- * journal first (Provisional before the accounting cutover, Posted after); with `posting: null` it writes the same asset and
- * CIP cost rows with no journal. One transaction either way, so no asset is
+ * construction-in-progress class. It posts the acquisition journal first:
+ * Provisional before the accounting cutover (no period), Posted after it, in
+ * the acquisition date's period. The status is read once, in the transaction,
+ * under the lock the enable takes, so no registration writes a Provisional
+ * journal after the enable commits. One transaction, so no asset is
  * registered without its journal or its CIP cost row.
  */
 export async function postAssetRegistration(
@@ -487,12 +430,11 @@ export async function postAssetRegistration(
       // Equity offset for a direct (non-purchase) registration — owner equity
       // / retained earnings. Brings the asset onto the books at NBV.
       offsetAccountId: string;
-      // Provisional before the accounting cutover (no period), Posted after.
-      postingStatus: AutomaticJournalStatus;
-      accountingPeriodId: string | null;
       locationDimensionId: string | undefined;
       assetClassDimensionId: string | undefined;
-    } | null;
+      /** The period of a Posted journal. Called only after the cutover. */
+      resolveAccountingPeriodId: (postingDate: string) => Promise<string>;
+    };
     // "Under Construction" for an asset registered into a construction-in-
     // progress class: it accumulates cost and is not depreciated until it is
     // capitalized into its in-service class.
@@ -510,110 +452,110 @@ export async function postAssetRegistration(
     companyId,
     userId
   } = args;
+  const {
+    locationId,
+    fixedAssetClassId,
+    assetAccountId,
+    accumulatedDepreciationAccountId,
+    offsetAccountId,
+    locationDimensionId,
+    assetClassDimensionId
+  } = posting;
 
   const { acquisitionCost, acquisitionDate, accumulatedDepreciation } =
     registration;
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    let accountingPeriodId: string | null = null;
+    if (postingStatus === "Posted") {
+      // A Provisional journal counts nowhere, so only a Posted one needs the
+      // dimensions.
+      if (!locationDimensionId || !assetClassDimensionId) {
+        throw new Error("Missing dimensions required for asset registration");
+      }
+      accountingPeriodId =
+        await posting.resolveAccountingPeriodId(acquisitionDate);
+    }
+
     // Post the acquisition journal FIRST, then flip the asset to Active — so a
     // capitalized asset can never exist without its GL entry (if the journal
     // fails the whole transaction rolls back and the asset stays Draft).
     //   Dr  assetAccountId                     acquisitionCost           (capitalize at gross cost)
     //       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra, mid-life only)
     //       Cr  offsetAccountId                    nbv                       (owner equity)
-    let journalId: string | null = null;
-    if (posting) {
-      const {
-        locationId,
-        fixedAssetClassId,
-        assetAccountId,
-        accumulatedDepreciationAccountId,
-        offsetAccountId,
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
         accountingPeriodId,
-        locationDimensionId,
-        assetClassDimensionId
-      } = posting;
-      // The route read the status before this transaction to resolve the
-      // period; read it again under the lock the enable takes.
-      if (
-        (await journalPostingStatus(trx, companyId)) !== posting.postingStatus
-      ) {
-        throw new Error("Accounting was just set up. Post the document again.");
-      }
-      const journalEntryId = await getNextSequence(
-        trx,
-        "journalEntry",
-        companyId
-      );
+        companyId,
+        description: `Asset Registration: ${fixedAssetReadableId}`,
+        postingDate: acquisitionDate,
+        sourceType: "Manual",
+        status: postingStatus,
+        postedAt: now,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
 
-      const journal = await trx
-        .insertInto("journal")
-        .values({
-          journalEntryId,
-          accountingPeriodId,
-          companyId,
-          description: `Asset Registration: ${fixedAssetReadableId}`,
-          postingDate: acquisitionDate,
-          sourceType: "Manual",
-          status: posting.postingStatus,
-          postedAt: now,
-          postedBy: userId,
-          createdBy: userId
-        })
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
-      journalId = journal.id;
-
-      const journalLineResults = await trx
-        .insertInto("journalLine")
-        .values(
-          acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
-            (line) => ({
-              journalId: journal.id,
-              accountId:
-                line.role === "asset"
-                  ? assetAccountId
-                  : line.role === "accumulatedDepreciation"
-                    ? accumulatedDepreciationAccountId
-                    : offsetAccountId,
-              description: line.description,
-              amount: line.amount,
-              journalLineReference: crypto.randomUUID(),
-              companyId
-            })
-          )
+    const journalLineResults = await trx
+      .insertInto("journalLine")
+      .values(
+        acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
+          (line) => ({
+            journalId: journal.id,
+            accountId:
+              line.role === "asset"
+                ? assetAccountId
+                : line.role === "accumulatedDepreciation"
+                  ? accumulatedDepreciationAccountId
+                  : offsetAccountId,
+            description: line.description,
+            amount: line.amount,
+            journalLineReference: crypto.randomUUID(),
+            companyId
+          })
         )
-        .returning(["id"])
+      )
+      .returning(["id"])
+      .execute();
+
+    if (locationDimensionId && locationId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: locationDimensionId,
+            valueId: locationId,
+            companyId
+          }))
+        )
         .execute();
+    }
 
-      if (locationDimensionId && locationId) {
-        await trx
-          .insertInto("journalLineDimension")
-          .values(
-            journalLineResults.map((jl) => ({
-              journalLineId: jl.id,
-              dimensionId: locationDimensionId,
-              valueId: locationId,
-              companyId
-            }))
-          )
-          .execute();
-      }
-
-      if (assetClassDimensionId && fixedAssetClassId) {
-        await trx
-          .insertInto("journalLineDimension")
-          .values(
-            journalLineResults.map((jl) => ({
-              journalLineId: jl.id,
-              dimensionId: assetClassDimensionId,
-              valueId: fixedAssetClassId,
-              companyId
-            }))
-          )
-          .execute();
-      }
+    if (assetClassDimensionId && fixedAssetClassId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: assetClassDimensionId,
+            valueId: fixedAssetClassId,
+            companyId
+          }))
+        )
+        .execute();
     }
 
     const updateResult = await trx
@@ -648,7 +590,7 @@ export async function postAssetRegistration(
           sourceType: "Manual",
           amount: acquisitionCost,
           costDate: acquisitionDate,
-          journalId,
+          journalId: journal.id,
           companyId,
           createdBy: userId
         })
@@ -853,7 +795,9 @@ export async function postDepreciationRun(
     userId
   } = args;
 
-  await assertAccountingCutover(db, companyId);
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
   const now = datetime.timestamp();
 
   const periodOf = (monthEnd: string) => {
@@ -1341,7 +1285,9 @@ export async function postRevenueRecognitionRun(
   }
 ) {
   const { runId, companyId, userId, periods, dimensionIds } = args;
-  await assertAccountingCutover(db, companyId);
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {

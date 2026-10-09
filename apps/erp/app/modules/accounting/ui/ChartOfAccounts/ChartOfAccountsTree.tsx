@@ -29,7 +29,7 @@ import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useSettings, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
-import { hasAccountingCutover } from "../../accounting.models";
+import { hasAccountingCutover } from "../../accounting.utils";
 import type { Chart } from "../../types";
 
 type ChartOfAccountsTreeProps = {

@@ -47,7 +47,7 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
-import { hasAccountingCutover } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { getImplementationSignals } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

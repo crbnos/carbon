@@ -16,7 +16,7 @@ import {
 } from "~/components/UpgradeOverlay";
 import { useSettings } from "~/hooks";
 import { path } from "~/utils/path";
-import { hasAccountingCutover } from "../accounting.models";
+import { hasAccountingCutover } from "../accounting.utils";
 
 const gatedRoutes = [
   path.to.reports,

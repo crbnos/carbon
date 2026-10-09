@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
+import { getActivationReadiness } from "@carbon/database/accounting-cutover-reads";
 import { DatePicker } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
@@ -11,15 +13,11 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
-import {
-  getActivationCutover,
-  getActivationReadiness
-} from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.server";
 import {
   ActivationFooter,
   activationStepPath,
-  ReadinessChecklist,
-  useActivationRouteData
+  ReadinessChecklist
 } from "~/modules/accounting/ui/Activation";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -34,23 +32,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
-  const { cutoverDate } = await getActivationCutover(
-    client,
-    companyId,
-    request
-  );
+  const cutover = await getActivationCutover(client, companyId, request);
   const readiness = await getActivationReadiness(getDatabaseClient(), {
     companyId,
-    cutoverDate
+    cutoverDate: cutover.cutoverDate
   });
-  return { cutoverDate, readiness };
+  return { ...cutover, readiness };
 }
 
 /** Step 1: the cutover date and the checks that must pass before the enable. */
 export default function AccountingActivationReadinessRoute() {
   const { t } = useLingui();
-  const { cutoverDate, readiness } = useLoaderData<typeof loader>();
-  const routeData = useActivationRouteData();
+  const { cutoverDate, earliestCutoverDate, latestCutoverDate, readiness } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { formatDate } = useDateFormatter();
 
@@ -72,12 +66,8 @@ export default function AccountingActivationReadinessRoute() {
               aria-label={t`Cutover date`}
               closeOnSelect
               value={parseDate(cutoverDate)}
-              minValue={
-                routeData ? parseDate(routeData.earliestCutoverDate) : undefined
-              }
-              maxValue={
-                routeData ? parseDate(routeData.latestCutoverDate) : undefined
-              }
+              minValue={parseDate(earliestCutoverDate)}
+              maxValue={parseDate(latestCutoverDate)}
               isDateUnavailable={(date) => date.day !== 1}
               onChange={(value) => {
                 if (value && value.toString() !== cutoverDate) {
@@ -89,10 +79,7 @@ export default function AccountingActivationReadinessRoute() {
           <p className="text-sm text-muted-foreground">
             <Trans>
               The opening balances are as of the end of{" "}
-              {formatDate(
-                parseDate(cutoverDate).subtract({ days: 1 }).toString()
-              )}
-              .
+              {formatDate(dayBeforeCutover(cutoverDate))}.
             </Trans>
           </p>
         </SetupSection>

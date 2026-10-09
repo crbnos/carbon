@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
-import { hasAccountingCutover } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import type { AgingTotals, RecentPayment } from "~/modules/invoicing";
 import {
   getApAging,

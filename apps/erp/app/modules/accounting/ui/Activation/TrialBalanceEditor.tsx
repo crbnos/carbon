@@ -37,13 +37,14 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import type { TrialBalanceCsvError } from "../../trial-balance-csv";
 import type { AccountListItem } from "../../types";
 import { activationStepPath, useAccountsById } from "./ActivationSteps";
 
 type Amounts = { debit: number; credit: number };
 
 /** What the trial balance step's action returns when an import fails. */
-export type TrialBalanceImportResult = { errors?: string[] };
+export type TrialBalanceImportResult = { errors?: TrialBalanceCsvError[] };
 
 /**
  * The prior system's trial balance as of the day before the cutover: a debit
@@ -228,8 +229,11 @@ export default function TrialBalanceEditor({
           </AlertTitle>
           <AlertDescription>
             <ul className="list-disc pl-4">
-              {importErrors.map((message) => (
-                <li key={message}>{message}</li>
+              {importErrors.map((importError) => (
+                // No two errors carry the same fields.
+                <li key={JSON.stringify(importError)}>
+                  <TrialBalanceCsvErrorMessage error={importError} />
+                </li>
               ))}
             </ul>
           </AlertDescription>
@@ -335,4 +339,69 @@ export default function TrialBalanceEditor({
       </Table>
     </div>
   );
+}
+
+/** One reason a CSV was not imported, in the user's language. */
+function TrialBalanceCsvErrorMessage({
+  error
+}: {
+  error: TrialBalanceCsvError;
+}) {
+  switch (error.code) {
+    case "empty-file":
+      return <Trans>The CSV file is empty.</Trans>;
+    case "missing-columns": {
+      const columns = error.columns.join(", ");
+      return <Trans>The CSV has no {columns} column.</Trans>;
+    }
+    case "missing-account-number": {
+      const { line } = error;
+      return <Trans>Line {line} has no account number.</Trans>;
+    }
+    case "invalid-amount": {
+      const { line, accountNumber, value } = error;
+      return error.column === "debit" ? (
+        <Trans>
+          Line {line} ({accountNumber}): the debit "{value}" is not a positive
+          number.
+        </Trans>
+      ) : (
+        <Trans>
+          Line {line} ({accountNumber}): the credit "{value}" is not a positive
+          number.
+        </Trans>
+      );
+    }
+    case "ambiguous-amount": {
+      const { line, accountNumber, value } = error;
+      return error.column === "debit" ? (
+        <Trans>
+          Line {line} ({accountNumber}): the debit "{value}" has a comma. Write
+          amounts with a point for decimals and no thousands separator, such as
+          1234.56.
+        </Trans>
+      ) : (
+        <Trans>
+          Line {line} ({accountNumber}): the credit "{value}" has a comma. Write
+          amounts with a point for decimals and no thousands separator, such as
+          1234.56.
+        </Trans>
+      );
+    }
+    case "duplicate-account": {
+      const { line, firstLine, accountNumber } = error;
+      return (
+        <Trans>
+          Line {line}: account {accountNumber} is already on line {firstLine}.
+          Put each account on one line.
+        </Trans>
+      );
+    }
+    case "unknown-account": {
+      const { accountNumber } = error;
+      return (
+        <Trans>Account {accountNumber} is not an active posting account.</Trans>
+      );
+    }
+  }
 }

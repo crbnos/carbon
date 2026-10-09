@@ -73,6 +73,7 @@ import {
   type DepreciationLine,
   depreciationFloor,
   diffJournalLines,
+  hasAccountingCutover,
   monthEndOf,
   usageKey
 } from "./accounting.utils";
@@ -1300,13 +1301,8 @@ export async function upsertReportPin(
   );
 }
 
-// -- Dimensional analytics (pivot) reports --
-// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
-// RPCs defined in migration 20260809184714_dimensional-pivot-reporting.sql.
+// -- Accounting cutover --
 
-// In `columnKeys` the null column (lines with no tag for the column
-// dimension — the Unassigned bucket) is represented by this string sentinel.
-// Group rows keep their `columnKey` as returned by the RPC (null stays null).
 // Manual accounting work — journal entries, period lock and close,
 // depreciation and recognition runs, intercompany matching and eliminations —
 // runs only after the company's accounting cutover. Before it, journals are
@@ -1325,7 +1321,7 @@ export async function requireAccountingCutover(
     .eq("id", companyId)
     .maybeSingle();
   if (settings.error) return { error: settings.error };
-  if (!settings.data?.accountingCutoverDate) {
+  if (!hasAccountingCutover(settings.data)) {
     return { error: { message: ACCOUNTING_NOT_STARTED } };
   }
   return { error: null };
@@ -1355,6 +1351,13 @@ export async function requireGroupAccountingCutover(
   return { error: null };
 }
 
+// -- Dimensional analytics (pivot) reports --
+// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
+// RPCs defined in migration 20260809184714_dimensional-pivot-reporting.sql.
+
+// In `columnKeys` the null column (lines with no tag for the column
+// dimension — the Unassigned bucket) is represented by this string sentinel.
+// Group rows keep their `columnKey` as returned by the RPC (null stays null).
 export const UNASSIGNED_COLUMN_KEY = "__unassigned__";
 
 type DimensionPivotGroup = {

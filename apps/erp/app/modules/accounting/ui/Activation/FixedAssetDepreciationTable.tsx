@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CutoverFixedAsset } from "@carbon/database/accounting-cutover-reads";
 import { useAction } from "@carbon/query";
 import {
   NumberField,
@@ -16,6 +17,7 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ComponentProps } from "react";
 import { Link } from "react-router";
 import {
   useCurrencyDecimals,
@@ -23,9 +25,9 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import type { CutoverFixedAsset } from "~/modules/accounting/accounting.server";
 import { path } from "~/utils/path";
-import { activationStepPath, useActivationRouteData } from "./ActivationSteps";
+import FixedAssetStatus from "../FixedAssets/FixedAssetStatus";
+import { activationStepPath } from "./ActivationSteps";
 
 /**
  * Per asset acquired before the cutover, its cost and its accumulated
@@ -33,9 +35,12 @@ import { activationStepPath, useActivationRouteData } from "./ActivationSteps";
  * cutover, so the accumulated depreciation is entered here.
  */
 export default function FixedAssetDepreciationTable({
-  assets
+  assets,
+  cutoverDate
 }: {
   assets: CutoverFixedAsset[];
+  /** The wizard's cutover date, which a save is made against. */
+  cutoverDate: string;
 }) {
   const formatter = useCurrencyFormatter();
   const totalCost = round(assets.reduce((sum, asset) => sum + asset.cost, 0));
@@ -75,7 +80,11 @@ export default function FixedAssetDepreciationTable({
           </Tr>
         ) : (
           assets.map((asset) => (
-            <FixedAssetDepreciationRow key={asset.id} asset={asset} />
+            <FixedAssetDepreciationRow
+              key={asset.id}
+              asset={asset}
+              cutoverDate={cutoverDate}
+            />
           ))
         )}
       </Tbody>
@@ -99,13 +108,18 @@ export default function FixedAssetDepreciationTable({
   );
 }
 
-function FixedAssetDepreciationRow({ asset }: { asset: CutoverFixedAsset }) {
+function FixedAssetDepreciationRow({
+  asset,
+  cutoverDate
+}: {
+  asset: CutoverFixedAsset;
+  cutoverDate: string;
+}) {
   const { t } = useLingui();
   const formatter = useCurrencyFormatter();
   const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
   const permissions = usePermissions();
-  const cutoverDate = useActivationRouteData()?.cutoverDate ?? "";
   // Errors arrive as a flash toast from the route action.
   const save = useAction();
 
@@ -122,7 +136,13 @@ function FixedAssetDepreciationRow({ asset }: { asset: CutoverFixedAsset }) {
           <span className="text-xs text-muted-foreground">{asset.name}</span>
         </div>
       </Td>
-      <Td>{asset.status}</Td>
+      <Td>
+        <FixedAssetStatus
+          status={
+            asset.status as ComponentProps<typeof FixedAssetStatus>["status"]
+          }
+        />
+      </Td>
       <Td className="text-right tabular-nums">
         {formatter.format(asset.cost)}
       </Td>

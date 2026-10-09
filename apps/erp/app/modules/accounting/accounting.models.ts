@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { months } from "~/modules/shared";
@@ -693,14 +694,6 @@ export const intercompanyTransactionValidator = z
     }
   );
 
-// A company has set up accounting once it has a cutover date. The wizard sets
-// it, and nothing clears it.
-export function hasAccountingCutover(
-  settings: { accountingCutoverDate?: string | null } | null | undefined
-): boolean {
-  return settings?.accountingCutoverDate != null;
-}
-
 export const journalEntrySourceTypes = [
   "Manual",
   "Opening Balance",
@@ -737,13 +730,7 @@ export const journalEntrySourceTypes = [
 
 // Provisional: written before the accounting cutover, counts nowhere.
 // Superseded: a Provisional journal dated before the cutover.
-export const journalEntryStatuses = [
-  "Draft",
-  "Posted",
-  "Reversed",
-  "Provisional",
-  "Superseded"
-] as const;
+export const journalEntryStatuses = Constants.public.Enums.journalEntryStatus;
 
 export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
 

@@ -10,9 +10,9 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   getDefaultAccounts,
-  hasAccountingCutover,
   saveJournalEntryWithLines
 } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { getApTieOut } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";

@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ACTIVATION_CUTOVER_PARAM } from "@carbon/database/accounting-cutover";
 import { Button } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { Link } from "react-router";
 import { SetupFooter, SetupSteps } from "~/components/Setup";
@@ -21,18 +21,6 @@ export const activationSteps = [
 ] as const;
 
 export type ActivationStep = (typeof activationSteps)[number];
-
-/** What the wizard's layout loader returns. */
-export type ActivationRouteData = {
-  cutoverDate: string;
-  earliestCutoverDate: string;
-  latestCutoverDate: string;
-};
-
-/** The wizard's layout data, which every step reads. */
-export function useActivationRouteData() {
-  return useRouteData<ActivationRouteData>(path.to.accountingActivation);
-}
 
 /** Every active posting account, by id, from the accounting layout. */
 export function useAccountsById() {
@@ -65,7 +53,7 @@ export function accountLabel(
  *  stays the same from step to step. */
 export function activationStepPath(step: ActivationStep, cutoverDate: string) {
   return `${path.to.accountingActivationStep(step)}?${new URLSearchParams({
-    cutover: cutoverDate
+    [ACTIVATION_CUTOVER_PARAM]: cutoverDate
   })}`;
 }
 
@@ -85,8 +73,8 @@ const ActivationSteps = ({ current, cutoverDate }: ActivationStepsProps) => {
       labels={{
         readiness: t`Readiness`,
         inventory: t`Inventory`,
-        "fixed-assets": t`Fixed assets`,
-        "trial-balance": t`Trial balance`,
+        "fixed-assets": t`Fixed Assets`,
+        "trial-balance": t`Trial Balance`,
         enable: t`Enable`
       }}
       to={(step) => activationStepPath(step, cutoverDate)}
@@ -98,14 +86,12 @@ const ActivationSteps = ({ current, cutoverDate }: ActivationStepsProps) => {
 export const ActivationFooter = ({
   step,
   cutoverDate,
-  canContinue = true,
-  summary
+  canContinue = true
 }: {
   step: ActivationStep;
   cutoverDate: string;
   /** False keeps Next disabled, as on Readiness while a check fails. */
   canContinue?: boolean;
-  summary?: ReactNode;
 }) => {
   const index = activationSteps.indexOf(step);
   const previous = index > 0 ? activationSteps[index - 1] : null;
@@ -114,7 +100,6 @@ export const ActivationFooter = ({
 
   return (
     <SetupFooter
-      summary={summary}
       actions={
         <>
           {previous && (

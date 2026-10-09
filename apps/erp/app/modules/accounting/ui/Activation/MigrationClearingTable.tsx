@@ -2,20 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { MigrationClearingRow } from "@carbon/database/accounting-cutover";
+import {
+  isMigrationClearingZero,
+  type MigrationClearingRow
+} from "@carbon/database/accounting-cutover";
 import { cn, Table, Tbody, Td, Tfoot, Th, Thead, Tr } from "@carbon/react";
-import { equals } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useCurrencyFormatter } from "~/hooks";
 import { accountLabel, useAccountsById } from "./ActivationSteps";
-
-/** Migration Clearing must total zero within this to enable accounting. */
-export const MIGRATION_CLEARING_TOLERANCE = 0.01;
-
-/** Whether Migration Clearing nets to zero, so the enable can run. */
-export function isMigrationClearingZero(total: number) {
-  return equals(total, 0, MIGRATION_CLEARING_TOLERANCE);
-}
 
 /**
  * Migration Clearing per control account: what the prior system's trial

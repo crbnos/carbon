@@ -32,7 +32,7 @@ import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
-import JournalEntryStatus from "~/modules/accounting/ui/JournalEntries/JournalEntryStatus";
+import { JournalEntryStatus } from "~/modules/accounting/ui/JournalEntries";
 import { ChargeStatus, getCharge } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 

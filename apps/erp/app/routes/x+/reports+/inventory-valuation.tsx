@@ -7,7 +7,7 @@ import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { hasAccountingCutover } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getInventoryValuation,
   getInventoryValuationTieOut,

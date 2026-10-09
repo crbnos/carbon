@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  CutoverInventoryAccountValue,
+  CutoverInventoryValuedItem
+} from "@carbon/database/accounting-cutover-reads";
 import { useAction } from "@carbon/query";
 import {
   NumberField,
@@ -18,9 +22,9 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { EPSILON, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { Link } from "react-router";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -28,47 +32,30 @@ import {
   useQuantityFormatter,
   useUser
 } from "~/hooks";
-import type { CutoverInventoryItem } from "~/modules/accounting/accounting.server";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { itemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { accountLabel, useAccountsById } from "./ActivationSteps";
 
-/** The value the opening journal gives an item: on-hand × unit cost. Items
- *  with no stock on hand open with no value, as in `getCutoverOpeningInputs`. */
-function openingValue(item: CutoverInventoryItem) {
-  return item.quantity > EPSILON ? round(item.quantity * item.unitCost) : 0;
-}
-
 /**
  * Per item, the on-hand quantity at the cutover and the unit cost the enable
- * resets its stock to. Only an Average item's cost comes from `itemCost`, so
- * only that cost is editable here: a FIFO or LIFO item's cost is replayed from
- * its cost layers, and a Standard item uses its standard cost.
+ * resets its stock to, then the opening value per inventory account. The
+ * values come from the server (`getCutoverInventoryValuation`), valued as the
+ * opening journal values them. Only an Average item's cost comes from
+ * `itemCost`, so only that cost is editable here: a FIFO or LIFO item's cost is
+ * replayed from its cost layers, and a Standard item uses its standard cost.
  */
 export default function InventoryCostTable({
-  items
+  items,
+  accounts,
+  total
 }: {
-  items: CutoverInventoryItem[];
+  items: CutoverInventoryValuedItem[];
+  accounts: CutoverInventoryAccountValue[];
+  total: number;
 }) {
   const formatter = useCurrencyFormatter();
   const accountsById = useAccountsById();
-
-  const totals = useMemo(() => {
-    const byAccount = new Map<string, number>();
-    for (const item of items) {
-      const value = openingValue(item);
-      if (value === 0) continue;
-      byAccount.set(
-        item.inventoryAccountId,
-        (byAccount.get(item.inventoryAccountId) ?? 0) + value
-      );
-    }
-    return [...byAccount].map(([accountId, value]) => ({
-      accountId,
-      value: round(value)
-    }));
-  }, [items]);
-
-  const total = round(totals.reduce((sum, row) => sum + row.value, 0));
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -119,11 +106,11 @@ export default function InventoryCostTable({
           </Tr>
         </Thead>
         <Tbody>
-          {totals.map((row) => (
-            <Tr key={row.accountId}>
-              <Td>{accountLabel(accountsById, row.accountId)}</Td>
+          {accounts.map((account) => (
+            <Tr key={account.accountId}>
+              <Td>{accountLabel(accountsById, account.accountId)}</Td>
               <Td className="text-right tabular-nums">
-                {formatter.format(row.value)}
+                {formatter.format(account.value)}
               </Td>
             </Tr>
           ))}
@@ -143,7 +130,12 @@ export default function InventoryCostTable({
   );
 }
 
-function InventoryCostRow({ item }: { item: CutoverInventoryItem }) {
+/** Whether an item type has a details page to link to. */
+function isLinkableItemType(type: string): type is (typeof itemType)[number] {
+  return (itemType as readonly string[]).includes(type);
+}
+
+function InventoryCostRow({ item }: { item: CutoverInventoryValuedItem }) {
   const { t } = useLingui();
   const formatter = useCurrencyFormatter();
   const rateFormatter = useCurrencyFormatter({ rate: true });
@@ -156,22 +148,40 @@ function InventoryCostRow({ item }: { item: CutoverInventoryItem }) {
     onError: (result) => toast.error(result.error ?? t`Failed to save the cost`)
   });
 
-  const isEditable = item.costingMethod === "Average";
+  const costingMethodLabels: Record<string, string> = {
+    Standard: t`Standard`,
+    Average: t`Average`,
+    FIFO: t`FIFO`,
+    LIFO: t`LIFO`
+  };
+  const isAverage = item.costingMethod === "Average";
+  // The cost is saved on the item, so it takes the permission to edit parts.
+  const canEditCost = permissions.can("update", "parts");
+  const linkType = isLinkableItemType(item.type) ? item.type : null;
 
   return (
     <Tr>
       <Td>
         <div className="flex flex-col">
-          <span className="font-medium">{item.readableId}</span>
+          {linkType && permissions.can("view", "parts") ? (
+            <Link
+              to={getLinkToItemDetails(linkType, item.itemId)}
+              className="font-medium text-primary hover:underline"
+            >
+              {item.readableId}
+            </Link>
+          ) : (
+            <span className="font-medium">{item.readableId}</span>
+          )}
           <span className="text-xs text-muted-foreground">{item.name}</span>
         </div>
       </Td>
-      <Td>{item.costingMethod}</Td>
+      <Td>{costingMethodLabels[item.costingMethod] ?? item.costingMethod}</Td>
       <Td className="text-right tabular-nums">
         {formatQuantity(item.quantity)}
       </Td>
       <Td className="text-right">
-        {isEditable ? (
+        {isAverage && canEditCost ? (
           <NumberField
             // A saved cost reloads the row; the new value remounts the input.
             key={`${item.itemId}:${item.unitCost}`}
@@ -183,7 +193,7 @@ function InventoryCostRow({ item }: { item: CutoverInventoryItem }) {
               company.baseCurrencyCode,
               currencyDecimals
             )}
-            isDisabled={!permissions.can("update", "parts") || save.isPending}
+            isDisabled={save.isPending}
             onChange={(value) => {
               if (!Number.isFinite(value) || value === item.unitCost) return;
               save.submit(
@@ -202,7 +212,12 @@ function InventoryCostRow({ item }: { item: CutoverInventoryItem }) {
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              {item.costingMethod === "Standard" ? (
+              {isAverage ? (
+                <Trans>
+                  The average cost of the item. Changing it needs permission to
+                  edit parts.
+                </Trans>
+              ) : item.costingMethod === "Standard" ? (
                 <Trans>The standard cost of the item.</Trans>
               ) : (
                 <Trans>
@@ -214,7 +229,7 @@ function InventoryCostRow({ item }: { item: CutoverInventoryItem }) {
         )}
       </Td>
       <Td className="text-right tabular-nums">
-        {formatter.format(openingValue(item))}
+        {formatter.format(item.value)}
       </Td>
     </Tr>
   );

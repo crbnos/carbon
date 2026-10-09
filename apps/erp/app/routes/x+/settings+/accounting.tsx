@@ -5,6 +5,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLegacyDocumentCounts } from "@carbon/database/accounting-cutover-reads";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
@@ -47,8 +48,8 @@ import {
   Submit
 } from "~/components/Form";
 import { useDateFormatter, usePermissions } from "~/hooks";
-import { getDefaultAccounts, hasAccountingCutover } from "~/modules/accounting";
-import { getLegacyDocumentCounts } from "~/modules/accounting/accounting.server";
+import { getDefaultAccounts } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getCompanySettings,
   updateAssetTaxDepreciationSettings,
@@ -118,7 +119,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
   // Documents posted on or after the cutover with no journal: a company
-  // enabled before the enable wrote them.
+  // enabled before the enable wrote them. Awaited, not streamed: the count
+  // decides whether the repair alert exists, and an alert that arrives after
+  // the first paint pushes the cards below it down.
   const cutoverDate = companySettings.data.accountingCutoverDate;
   const legacyCounts = cutoverDate
     ? await getLegacyDocumentCounts(getDatabaseClient(), {
@@ -137,16 +140,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "settings"
+  });
+
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   if (intent === JOURNAL_LEGACY_INTENT) {
     return journalLegacyDocuments(request);
   }
-
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
 
   if (intent === "showCurrencyTrailingZeros") {
     const enabled = formData.get("enabled") === "true";
@@ -396,38 +399,41 @@ export default function AccountingSettingsRoute() {
               )}
             </HStack>
             {accountingSetUp && legacyDocumentCount > 0 && (
-              // One centred row: the Alert's grid (icon column, text column)
-              // would put the icon on the first line and the button under
-              // the text.
-              <Alert variant="warning" className="mt-4 flex items-center gap-3">
-                <LuTriangleAlert className="shrink-0" />
-                <AlertDescription className="flex-1 text-sm">
-                  <Plural
-                    value={legacyDocumentCount}
-                    one="# document posted before Carbon kept journals has no journal."
-                    other="# documents posted before Carbon kept journals have no journal."
-                  />
+              // The icon keeps the Alert's icon column; the text and the
+              // button share the description, one row centred on the icon.
+              <Alert variant="warning" className="mt-4 items-center">
+                <LuTriangleAlert />
+                <AlertDescription className="flex items-center justify-between gap-4 text-sm">
+                  <span>
+                    <Plural
+                      value={legacyDocumentCount}
+                      one="# document posted before Carbon kept journals has no journal."
+                      other="# documents posted before Carbon kept journals have no journal."
+                    />
+                  </span>
+                  <legacyFetcher.Form method="post" className="shrink-0">
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value={JOURNAL_LEGACY_INTENT}
+                    />
+                    {/* A secondary button sets no text colour of its own, so
+                        it would take the alert's amber. */}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="text-foreground"
+                      isLoading={legacyFetcher.state !== "idle"}
+                      isDisabled={
+                        legacyFetcher.state !== "idle" ||
+                        !permissions.can("update", "settings") ||
+                        !permissions.can("update", "accounting")
+                      }
+                    >
+                      <Trans>Write missing journals</Trans>
+                    </Button>
+                  </legacyFetcher.Form>
                 </AlertDescription>
-                <legacyFetcher.Form method="post" className="shrink-0">
-                  <input
-                    type="hidden"
-                    name="intent"
-                    value={JOURNAL_LEGACY_INTENT}
-                  />
-                  {/* The alert's amber text would cascade into the button. */}
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    className="text-foreground"
-                    isLoading={legacyFetcher.state !== "idle"}
-                    isDisabled={
-                      legacyFetcher.state !== "idle" ||
-                      !permissions.can("update", "accounting")
-                    }
-                  >
-                    <Trans>Write missing journals</Trans>
-                  </Button>
-                </legacyFetcher.Form>
               </Alert>
             )}
           </CardContent>

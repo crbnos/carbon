@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -1048,8 +1049,59 @@ export function depreciationFloor(
   cutoverDate: string | null
 ): string | null {
   if (!cutoverDate) return postedPeriodEnd;
-  const beforeCutover = parseDate(cutoverDate).subtract({ days: 1 }).toString();
+  const beforeCutover = dayBeforeCutover(cutoverDate);
   return !postedPeriodEnd || postedPeriodEnd < beforeCutover
     ? beforeCutover
     : postedPeriodEnd;
+}
+
+/** A company has set up accounting once it has a cutover date. The wizard
+ *  sets it, and nothing clears it. */
+export function hasAccountingCutover(
+  settings: { accountingCutoverDate?: string | null } | null | undefined
+): boolean {
+  return settings?.accountingCutoverDate != null;
+}
+
+/** The enable wizard's cutover date and the range its date picker allows. */
+export type ActivationCutoverDates = {
+  cutoverDate: string;
+  earliestCutoverDate: string;
+  latestCutoverDate: string;
+};
+
+/**
+ * The cutover date the enable wizard works against: `param` (the wizard's
+ * search param) when it is a `YYYY-MM-DD` calendar date, else the first day
+ * of the current period. Periods are calendar months, as `cutoverDateError`
+ * reads them. The date picker allows the first day of the current period and
+ * of the `maxPeriodsBack` periods before it. A date outside that range still
+ * comes back as the cutover date: the readiness check refuses it.
+ */
+export function activationCutoverDates(
+  param: string | null,
+  companyToday: CalendarDate,
+  maxPeriodsBack: number
+): ActivationCutoverDates {
+  const currentPeriodStart = startOfMonth(companyToday);
+  return {
+    cutoverDate:
+      param && isCalendarDateString(param)
+        ? param
+        : currentPeriodStart.toString(),
+    earliestCutoverDate: currentPeriodStart
+      .subtract({ months: maxPeriodsBack })
+      .toString(),
+    latestCutoverDate: currentPeriodStart.toString()
+  };
+}
+
+function isCalendarDateString(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
 }

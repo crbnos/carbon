@@ -5,7 +5,12 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  getCutoverFixedAssets,
+  updateCutoverAccumulatedDepreciation
+} from "@carbon/database/accounting-cutover-reads";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -13,11 +18,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { cutoverAccumulatedDepreciationValidator } from "~/modules/accounting";
-import {
-  getActivationCutover,
-  getCutoverFixedAssets,
-  updateCutoverAccumulatedDepreciation
-} from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.server";
 import {
   ActivationFooter,
   FixedAssetDepreciationTable
@@ -25,6 +26,8 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting/activation/fixed-assets");
 
 export const handle: Handle = {
   breadcrumb: msg`Fixed Assets`,
@@ -94,6 +97,11 @@ export async function action({ request }: ActionFunctionArgs) {
       accumulatedDepreciation: validation.data.accumulatedDepreciation
     });
   } catch (err) {
+    logger.error("Failed to save the accumulated depreciation", {
+      companyId,
+      fixedAssetId: validation.data.fixedAssetId,
+      error: err
+    });
     return data(
       {},
       await flash(
@@ -126,7 +134,10 @@ export default function AccountingActivationFixedAssetsRoute() {
             </Trans>
           }
         >
-          <FixedAssetDepreciationTable assets={assets} />
+          <FixedAssetDepreciationTable
+            assets={assets}
+            cutoverDate={cutoverDate}
+          />
         </SetupSection>
       </SetupBody>
       <ActivationFooter step="fixed-assets" cutoverDate={cutoverDate} />

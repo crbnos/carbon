@@ -5,8 +5,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { parseCsv } from "@carbon/files/csv";
+import {
+  getMigrationClearing,
+  saveOpeningTrialBalance
+} from "@carbon/database/accounting-cutover-reads";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -17,20 +21,22 @@ import {
   openingTrialBalanceImportValidator,
   openingTrialBalanceValidator
 } from "~/modules/accounting";
+import { getActivationCutover } from "~/modules/accounting/accounting.server";
 import {
-  getActivationCutover,
-  getMigrationClearing,
-  saveOpeningTrialBalance
-} from "~/modules/accounting/accounting.server";
-import type { TrialBalanceImportResult } from "~/modules/accounting/ui/Activation";
+  mapTrialBalanceAccounts,
+  parseTrialBalanceCsv
+} from "~/modules/accounting/trial-balance-csv";
 import {
   ActivationFooter,
   MigrationClearingTable,
-  TrialBalanceEditor
+  TrialBalanceEditor,
+  type TrialBalanceImportResult
 } from "~/modules/accounting/ui/Activation";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting/activation/trial-balance");
 
 export const handle: Handle = {
   breadcrumb: msg`Trial Balance`,
@@ -56,18 +62,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     controlAccountIds: [...clearing.controlAccountIds],
     clearing: { rows: clearing.rows, total: clearing.total }
   };
-}
-
-const CSV_COLUMNS = ["accountNumber", "debit", "credit"] as const;
-
-/** A CSV amount: empty is zero; thousands separators are dropped. */
-function parseAmount(value: unknown): number | null {
-  const text = String(value ?? "")
-    .replace(/,/g, "")
-    .trim();
-  if (text === "") return 0;
-  const amount = Number(text);
-  return Number.isFinite(amount) && amount >= 0 ? amount : null;
 }
 
 /** `save-tb` saves the editor's lines; `import-tb` replaces them with a CSV. */
@@ -107,6 +101,10 @@ export async function action({ request }: ActionFunctionArgs) {
         lines: validation.data.lines
       });
     } catch (err) {
+      logger.error("Failed to save the trial balance", {
+        companyId,
+        error: err
+      });
       return data(
         {},
         await flash(
@@ -127,76 +125,54 @@ export async function action({ request }: ActionFunctionArgs) {
     ).validate(formData);
     if (validation.error) {
       return data<TrialBalanceImportResult>(
-        { errors: Object.values(validation.error.fieldErrors) },
+        { errors: [{ code: "empty-file" }] },
         await flash(request, error(validation.error, "Invalid CSV"))
       );
     }
 
-    const { rows, fields } = parseCsv<Record<string, unknown>>(
-      validation.data.csv
-    );
-    const missing = CSV_COLUMNS.filter((column) => !fields.includes(column));
-    const errors: string[] = [];
-    if (missing.length > 0) {
-      errors.push(`The CSV has no ${missing.join(", ")} column.`);
-    }
-
-    const parsed: { accountNumber: string; debit: number; credit: number }[] =
-      [];
-    if (missing.length === 0) {
-      rows.forEach((row, index) => {
-        const line = index + 2; // the header is line 1
-        const accountNumber = String(row.accountNumber ?? "").trim();
-        const debit = parseAmount(row.debit);
-        const credit = parseAmount(row.credit);
-        if (!accountNumber) {
-          errors.push(`Line ${line} has no account number.`);
-          return;
-        }
-        if (debit === null || credit === null) {
-          errors.push(
-            `Line ${line} (${accountNumber}) has a debit or credit that is not a positive number.`
-          );
-          return;
-        }
-        parsed.push({ accountNumber, debit, credit });
-      });
-    }
-
-    const numbers = [...new Set(parsed.map((line) => line.accountNumber))];
-    const accountIdByNumber = new Map<string, string>();
-    if (numbers.length > 0) {
-      const accounts = await client
-        .from("account")
-        .select("id, number")
-        .eq("companyGroupId", companyGroupId)
-        .eq("isGroup", false)
-        .eq("active", true)
-        .in("number", numbers);
-      if (accounts.error) {
-        return data<TrialBalanceImportResult>(
-          { errors: ["Failed to read the chart of accounts."] },
-          await flash(
-            request,
-            error(accounts.error, "Failed to read the chart of accounts")
-          )
-        );
-      }
-      for (const account of accounts.data ?? []) {
-        if (account.number) accountIdByNumber.set(account.number, account.id);
-      }
-    }
-    for (const accountNumber of numbers) {
-      if (!accountIdByNumber.has(accountNumber)) {
-        errors.push(
-          `Account ${accountNumber} is not an active posting account.`
-        );
-      }
-    }
-
-    if (errors.length > 0) {
+    const parsed = parseTrialBalanceCsv(validation.data.csv);
+    if (parsed.errors) {
       return data<TrialBalanceImportResult>(
-        { errors },
+        { errors: parsed.errors },
+        await flash(request, error(null, "The CSV was not imported"))
+      );
+    }
+
+    const numbers = [...new Set(parsed.rows.map((row) => row.accountNumber))];
+    const accounts =
+      numbers.length > 0
+        ? await client
+            .from("account")
+            .select("id, number")
+            .eq("companyGroupId", companyGroupId)
+            .eq("isGroup", false)
+            .eq("active", true)
+            .in("number", numbers)
+        : { data: [], error: null };
+    if (accounts.error) {
+      logger.error("Failed to read the chart of accounts", {
+        companyId,
+        error: accounts.error
+      });
+      return data<TrialBalanceImportResult>(
+        {},
+        await flash(
+          request,
+          error(accounts.error, "Failed to read the chart of accounts")
+        )
+      );
+    }
+    const mapped = mapTrialBalanceAccounts(
+      parsed.rows,
+      new Map(
+        (accounts.data ?? []).flatMap((account) =>
+          account.number ? [[account.number, account.id] as const] : []
+        )
+      )
+    );
+    if (mapped.errors) {
+      return data<TrialBalanceImportResult>(
+        { errors: mapped.errors },
         await flash(request, error(null, "The CSV was not imported"))
       );
     }
@@ -206,14 +182,13 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId,
         cutoverDate: validation.data.cutoverDate,
-        lines: parsed.flatMap(({ accountNumber, debit, credit }) => {
-          const accountId = accountIdByNumber.get(accountNumber);
-          return accountId && (debit !== 0 || credit !== 0)
-            ? [{ accountId, debit, credit }]
-            : [];
-        })
+        lines: mapped.lines
       });
     } catch (err) {
+      logger.error("Failed to save the imported trial balance", {
+        companyId,
+        error: err
+      });
       return data<TrialBalanceImportResult>(
         {},
         await flash(

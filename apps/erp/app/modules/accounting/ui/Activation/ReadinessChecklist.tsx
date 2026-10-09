@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  ActivationCheck,
+  ActivationCheckItem
+} from "@carbon/database/accounting-cutover-reads";
 import {
   Popover,
   PopoverContent,
@@ -14,15 +18,20 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { plural } from "@lingui/core/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { type ComponentProps, useMemo } from "react";
 import { Link } from "react-router";
-import type {
-  ActivationCheck,
-  ActivationCheckItem
-} from "~/modules/accounting/accounting.server";
+import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
+import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
+import { MemoStatus } from "~/modules/invoicing/ui/Memo";
+import { PaymentStatus } from "~/modules/invoicing/ui/Payment";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui/PurchaseInvoice";
+import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
+import { JobStatus } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 import { useAccountDefaultGroups } from "../AccountDefaults";
+import { JournalEntryStatus } from "../JournalEntries";
 
 /** Where a blocker lives, when it has a page of its own. */
 function itemPath(item: ActivationCheckItem): string | null {
@@ -70,6 +79,73 @@ function ItemTypeLabel({ type }: { type: string }) {
       return <Trans>Journal Entry</Trans>;
     default:
       return <>{type}</>;
+  }
+}
+
+/** An account default that is empty or names an inactive account. The other
+ *  kind is a Migration Clearing account that is not an Equity posting
+ *  account. */
+function isUnsetDefault(item: ActivationCheckItem) {
+  return item.status === null || item.status === "Inactive";
+}
+
+/** A blocking document's or job's status, as its own pages show it. */
+function ReadinessItemStatus({ item }: { item: ActivationCheckItem }) {
+  switch (item.type) {
+    case "Receipt":
+      return (
+        <ReceiptStatus
+          status={item.status as ComponentProps<typeof ReceiptStatus>["status"]}
+        />
+      );
+    case "Shipment":
+      return (
+        <ShipmentStatus
+          status={
+            item.status as ComponentProps<typeof ShipmentStatus>["status"]
+          }
+        />
+      );
+    case "Sales Invoice":
+      return <SalesInvoiceStatus status={item.status} />;
+    case "Purchase Invoice":
+      return (
+        <PurchaseInvoicingStatus
+          status={
+            item.status as ComponentProps<
+              typeof PurchaseInvoicingStatus
+            >["status"]
+          }
+        />
+      );
+    case "Payment":
+      return (
+        <PaymentStatus
+          status={item.status as ComponentProps<typeof PaymentStatus>["status"]}
+        />
+      );
+    case "Memo":
+      return (
+        <MemoStatus
+          status={item.status as ComponentProps<typeof MemoStatus>["status"]}
+        />
+      );
+    case "Job":
+      return (
+        <JobStatus
+          status={item.status as ComponentProps<typeof JobStatus>["status"]}
+        />
+      );
+    case "Journal":
+      return (
+        <JournalEntryStatus
+          status={
+            item.status as ComponentProps<typeof JournalEntryStatus>["status"]
+          }
+        />
+      );
+    default:
+      return null;
   }
 }
 
@@ -128,26 +204,7 @@ function ReadinessCheckRow({
     }
   })();
 
-  // The checks with a count say what to do in the user's language; the
-  // others name the one thing that is wrong, as the server words it.
-  const detail = check.passed
-    ? null
-    : (() => {
-        switch (check.key) {
-          case "account-defaults":
-            return check.count > 0
-              ? t`Set these account defaults to an active account.`
-              : check.detail;
-          case "pending-documents":
-            return t`Post or delete the ${check.count} document(s) dated before the cutover.`;
-          case "legacy-jobs":
-            return t`Complete or cancel the ${check.count} job(s) created before Carbon recorded their costs.`;
-          case "opening-balance":
-            return t`The company already has a posted opening balance journal.`;
-          default:
-            return check.detail;
-        }
-      })();
+  const detail = useCheckDetail(check);
 
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3">
@@ -170,6 +227,12 @@ function ReadinessCheckRow({
                   <span className="text-muted-foreground">
                     {" "}
                     <Trans>(inactive account)</Trans>
+                  </span>
+                )}
+                {!isUnsetDefault(item) && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    <Trans>(not an Equity posting account)</Trans>
                   </span>
                 )}
               </li>
@@ -195,6 +258,50 @@ function ReadinessCheckRow({
   );
 }
 
+/**
+ * What to do about a failing check, in the user's language, from its key and
+ * its items. The server's English `detail` is never shown. A function
+ * declaration, so `plural()` folds into the `t` message.
+ */
+function useCheckDetail(check: ActivationCheck): string | null {
+  const { t } = useLingui();
+  if (check.passed) return null;
+  switch (check.key) {
+    case "account-defaults": {
+      if (check.count === 0) {
+        return t`The company has no account defaults.`;
+      }
+      const unset = check.items.some(isUnsetDefault);
+      const wrongKind = check.items.some((item) => !isUnsetDefault(item));
+      return [
+        unset ? t`Set these account defaults to an active account.` : "",
+        wrongKind
+          ? t`Set the Migration Clearing account to an active Equity account that is not a group.`
+          : ""
+      ]
+        .filter(Boolean)
+        .join(" ");
+    }
+    case "fiscal-settings":
+      return t`Set the fiscal year settings and the base currency.`;
+    case "cutover-date":
+      return t`Choose the first day of the current period or of one of the 3 periods before it.`;
+    case "pending-documents":
+      return t`${plural(check.count, {
+        one: "Post or delete the # document dated before the cutover.",
+        other: "Post or delete the # documents dated before the cutover."
+      })}`;
+    case "legacy-jobs":
+      return t`${plural(check.count, {
+        one: "Complete or cancel the # job created before Carbon recorded its costs.",
+        other:
+          "Complete or cancel the # jobs created before Carbon recorded their costs."
+      })}`;
+    case "opening-balance":
+      return t`The company already has a posted opening balance journal.`;
+  }
+}
+
 /** The documents or jobs that block a check, each linked to its page. */
 function ReadinessItemsPopover({
   check,
@@ -210,11 +317,11 @@ function ReadinessItemsPopover({
           type="button"
           className="w-fit text-sm text-primary underline underline-offset-4"
         >
-          {check.count === 1 ? (
-            <Trans>1 blocking record</Trans>
-          ) : (
-            <Trans>{check.count} blocking records</Trans>
-          )}
+          <Plural
+            value={check.count}
+            one="# blocking record"
+            other="# blocking records"
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -254,7 +361,9 @@ function ReadinessItemsPopover({
                     <Td>
                       <ItemTypeLabel type={item.type} />
                     </Td>
-                    <Td>{item.status}</Td>
+                    <Td>
+                      <ReadinessItemStatus item={item} />
+                    </Td>
                   </Tr>
                 );
               })}
