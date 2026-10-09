@@ -56,9 +56,11 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 03:00 | Projects 1a | Tasks 25, 11–15, 24 | done (`61fabb33f1`…`e91a3157de`); typecheck green |
 | 03:25 | Projects 1a | Tasks 16–19 | done (`3d8f5237bb`…`a70669a821`) |
 | 03:55 | Projects 1a | Tasks 20–23 + scrap fix | done (`bd371e2f97`…`3b4c6c22b9`); server-functions suite 416 passed |
+| 07:25 | Projects 1a fixes, 1b | catalog + `@carbon/jobs` typecheck fixes; 1b Tasks 6–13 | done (`3068cfbfbc`…`7cee2a64c2`); server-functions 429, erp 1974 |
 
 ## Follow-ups found during execution
 
 - A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
 - `POSTING_POLICY` syncs `Timesheet` and `Project Issue` journals to external ledgers by default, as `Maintenance Event` does. Confirm with Brad.
-- Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts` fail sometimes in full runs and pass alone.
+- Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts` and `get-accounting-period.test.ts` fail sometimes in full runs and pass alone.
+- Phase 1b Task 12: the remaining-life Straight Line applies only to assets with a late capital cost. Confirm with Brad before it applies to every asset (it would change existing schedules).
