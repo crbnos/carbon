@@ -239,3 +239,110 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "voiding a repair receipt cancels its order, closes its project, sets the asset In Service and keeps the serial Consumed",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const r = await salesReturnRepairFixture(f);
+      const widgetBefore = await onHand(f, r.widgetItemId, r.locationId);
+      expect(
+        (await postReceipt(f.ctx, { type: "post", receiptId: r.receiptId }))
+          .error
+      ).toBeNull();
+
+      const voided = await postReceipt(f.ctx, {
+        type: "void",
+        receiptId: r.receiptId
+      });
+      expect(voided.error).toBeNull();
+
+      const [order] = await depotOrders(f, r);
+      expect(order).toMatchObject({
+        status: "Cancelled",
+        projectStatus: "Closed"
+      });
+      expect(await serialAndAsset(f, r)).toEqual({
+        serial: "Consumed",
+        asset: "In Service"
+      });
+      // The widget line's stock is reversed as before.
+      expect(await onHand(f, r.widgetItemId, r.locationId)).toBe(widgetBefore);
+      const line = await f.db
+        .selectFrom("salesReturnOrderLine")
+        .select("quantityReceived")
+        .where("id", "=", r.repairLineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(line.quantityReceived)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "voiding a repair receipt is refused while its order has a charge that is not reversed",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const r = await salesReturnRepairFixture(f);
+      expect(
+        (await postReceipt(f.ctx, { type: "post", receiptId: r.receiptId }))
+          .error
+      ).toBeNull();
+      const [order] = await depotOrders(f, r);
+      const charge = await f.db
+        .insertInto("projectLedger")
+        .values({
+          projectId: order!.projectId,
+          postingDate: "2026-01-02",
+          costType: "Other Direct",
+          documentType: "Project Expense",
+          documentId: `${f.prefix}-expense`,
+          amount: 40,
+          coverage: "Billable",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const refused = await postReceipt(f.ctx, {
+        type: "void",
+        receiptId: r.receiptId
+      });
+      expect(refused.error?.message).toContain(
+        "has posted charges. Reverse them before you void this receipt."
+      );
+      const [still] = await depotOrders(f, r);
+      expect(still?.status).toBe("Draft");
+
+      // Once the charge is reversed, the void goes through.
+      await f.db
+        .insertInto("projectLedger")
+        .values({
+          projectId: order!.projectId,
+          postingDate: "2026-01-03",
+          costType: "Other Direct",
+          documentType: "Project Expense",
+          documentId: `${f.prefix}-expense-reversal`,
+          amount: -40,
+          coverage: "Billable",
+          reversalOfId: charge.id,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      expect(
+        (await postReceipt(f.ctx, { type: "void", receiptId: r.receiptId }))
+          .error
+      ).toBeNull();
+      const [cancelled] = await depotOrders(f, r);
+      expect(cancelled?.status).toBe("Cancelled");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

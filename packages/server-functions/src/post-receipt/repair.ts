@@ -11,7 +11,7 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
-import { datetime } from "@carbon/utils";
+import { datetime, openChargeIds } from "@carbon/utils";
 import type { Transaction } from "kysely";
 import {
   ensureCustomerAssets,
@@ -160,6 +160,126 @@ export async function createDepotRepairOrders(
         createdBy: userId,
         createdAt: args.today
       })
+      .execute();
+  }
+}
+
+/**
+ * The void of a repair receipt, in the void transaction (plan decision B4).
+ * The receipt's Depot Repair orders (its serials on its RMA lines) are
+ * cancelled with their open visits, their projects closed, and their assets
+ * set back In Service. Refused when an order has a charge that is not
+ * reversed, or its unit has already shipped back. The serials stay Consumed:
+ * the void's own entity reset already writes that.
+ */
+export async function voidDepotRepairOrders(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    salesReturnOrderLineIds: string[];
+    trackedEntityIds: string[];
+  }
+): Promise<void> {
+  const { companyId, userId } = args;
+  if (
+    args.salesReturnOrderLineIds.length === 0 ||
+    args.trackedEntityIds.length === 0
+  ) {
+    return;
+  }
+
+  const orders = await trx
+    .selectFrom("serviceOrder as so")
+    .leftJoin("customerAsset as ca", (join) =>
+      join
+        .onRef("ca.id", "=", "so.customerAssetId")
+        .on("ca.companyId", "=", companyId)
+    )
+    .select([
+      "so.id",
+      "so.serviceOrderId",
+      "so.projectId",
+      "so.customerAssetId",
+      "ca.status as assetStatus"
+    ])
+    .where("so.type", "=", "Depot Repair")
+    .where("so.salesReturnOrderLineId", "in", args.salesReturnOrderLineIds)
+    .where("so.trackedEntityId", "in", args.trackedEntityIds)
+    .where("so.status", "!=", "Cancelled")
+    .where("so.companyId", "=", companyId)
+    .forUpdate("so")
+    .execute();
+  if (orders.length === 0) return;
+
+  const ledger = await trx
+    .selectFrom("projectLedger")
+    .select(["id", "reversalOfId", "projectId"])
+    .where(
+      "projectId",
+      "in",
+      orders.map((order) => order.projectId)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const open = new Set(openChargeIds(ledger));
+  const charged = orders.find((order) =>
+    ledger.some((row) => row.projectId === order.projectId && open.has(row.id))
+  );
+  if (charged) {
+    throw new Error(
+      `Service order ${charged.serviceOrderId} has posted charges. Reverse them before you void this receipt.`
+    );
+  }
+  const shipped = orders.find(
+    (order) => order.assetStatus !== null && order.assetStatus !== "At Depot"
+  );
+  if (shipped) {
+    throw new Error(
+      `The unit of service order ${shipped.serviceOrderId} is no longer at the depot. Void its return shipment before you void this receipt.`
+    );
+  }
+
+  const now = datetime.timestamp();
+  const orderIds = orders.map((order) => order.id);
+  await trx
+    .updateTable("serviceVisit")
+    .set({ status: "Cancelled", updatedBy: userId, updatedAt: now })
+    .where("serviceOrderId", "in", orderIds)
+    .where("status", "in", ["Scheduled", "Traveling", "On Site"])
+    .where("companyId", "=", companyId)
+    .execute();
+  await trx
+    .updateTable("serviceOrder")
+    .set({
+      status: "Cancelled",
+      completedAt: null,
+      completedBy: null,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "in", orderIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  await trx
+    .updateTable("project")
+    .set({ status: "Closed", updatedBy: userId, updatedAt: now })
+    .where(
+      "id",
+      "in",
+      orders.map((order) => order.projectId)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const assetIds = orders
+    .map((order) => order.customerAssetId)
+    .filter((id): id is string => Boolean(id));
+  if (assetIds.length > 0) {
+    await trx
+      .updateTable("customerAsset")
+      .set({ status: "In Service", updatedBy: userId, updatedAt: now })
+      .where("id", "in", assetIds)
+      .where("companyId", "=", companyId)
       .execute();
   }
 }

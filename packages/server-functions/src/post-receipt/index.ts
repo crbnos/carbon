@@ -60,7 +60,7 @@ import {
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadReceiptProjectRoutes } from "./project-routes";
-import { createDepotRepairOrders } from "./repair";
+import { createDepotRepairOrders, voidDepotRepairOrders } from "./repair";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -429,6 +429,23 @@ const postReceipt = defineServerFn({
                 "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
               );
             }
+
+            // Repair lines: the receipt's Depot Repair orders are cancelled
+            // and their assets go back In Service. The serials stay Consumed
+            // (the entity reset below).
+            await voidDepotRepairOrders(trx, {
+              companyId,
+              userId,
+              salesReturnOrderLineIds: (returnLinesVoid.data ?? [])
+                .filter(
+                  (line) =>
+                    line.disposition === "Repair" && receivedByLine.has(line.id)
+                )
+                .map((line) => line.id),
+              trackedEntityIds: (receiptLineTracking.data ?? []).map(
+                (entity) => entity.id
+              )
+            });
 
             if (reversingItemLedger.length > 0) {
               await trx

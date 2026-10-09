@@ -40,7 +40,7 @@ Task 12 records these in the spec.
 - [x] Task 2: Move service order creation into a shared helper
 - [x] Task 3: Allow `Repair` before receipt and lock it after
 - [x] Task 4: Post a `Repair` receipt with no ledger
-- [ ] Task 5: Void a `Repair` receipt
+- [x] Task 5: Void a `Repair` receipt
 - [ ] Task 6: Let the return shipment take `Repair` serials
 - [ ] Task 7: Post a `Repair` return shipment with no ledger
 - [ ] Task 8: Guard the credit memo and the replacement order
@@ -436,3 +436,5 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 4: a serial that already has an open service order is refused before any write ("Serial … has an open service order (SVC…). Close or cancel it before you receive the unit for repair."), instead of failing on `serviceOrder_open_subject_key`.
 - Task 4 (deviation): the spec says the order takes its coverage contract "from the RMA", and the RMA has no contract column. The order takes the customer's only Active contract, the rule the ERP's New Service Order proposes; with none or several, it has none. The contact is the RMA's contact; the location is the receipt line's location, else the RMA's, else the receipt's.
 - Task 4: Task 10's receipt test came early (`post-receipt/sales-return-repair.test.ts`, on the new `lib/sales-return-test-fixture.ts`): one receipt with a Repair line for SN-0001 and a Return to Customer line for 2 widgets. Only the widget line writes `itemLedger`, `costLedger` and its 2 journal lines (20.00 each); the machine's on-hand does not move; the serial stays Consumed; the asset is At Depot; one Draft Depot Repair order links to the line with its Released Service project; the activity carries `At Depot` and the order id. A Repair line without its serial is refused, and a serial with no asset gets a Manual one. With the Repair branch disabled, all 3 cases fail.
+- Task 5: `voidDepotRepairOrders` (`post-receipt/repair.ts`) runs inside the void transaction and locks the orders it reads: the Depot Repair orders of this receipt's serials on its Repair lines that are not Cancelled. A partial receipt's void therefore cancels only its own serials' orders. "Posted charges" means a charge that is not reversed (`openChargeIds`, the Phase A cancel fix), so reversing the charges does let the void through. It also cancels the orders' open visits, clears the completion stamp, and refuses an order whose unit is no longer At Depot ("Void its return shipment before you void this receipt").
+- Task 5: 2 more cases in the receipt test: the void cancels the order, closes its project, sets the asset In Service, keeps the serial Consumed, and still reverses the widget line's stock; a void with an open charge is refused, and goes through once the charge is reversed.
