@@ -74,7 +74,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 35: Build the element page (peek and full page)
 - [x] Task 36: Add Log time and Issue material to the element page
 - [x] Task 37: Build the Milestones tab
-- [ ] Task 38: Build the Costs tab and the Time & materials tab
+- [x] Task 38: Build the Costs tab and the Time & materials tab
 - [ ] Task 39: Build My Timesheet and Approvals in the ERP
 - [ ] Task 40: Build the MES timesheet
 - [ ] Task 41: Add charge numbers to the job, PO line and purchase invoice line forms
@@ -2532,3 +2532,8 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 37: `completeProjectMilestone(client, { id, companyId, completed, updatedBy })` (`projects.service.ts`, `@mcp update`) sets `completedAt` to now or clears it. The action takes a fourth intent, `reopen`, so a milestone completed by mistake can go back.
 - Task 37: the grouping and totals are the pure `milestoneGroup` / `summarizeMilestones` (`projects.models.ts`, pinned by `apps/erp/test/projects-milestones.test.ts`). A milestone with no dates is Upcoming; one past its end date and not completed stays Active and shows its date in red. Cancelled elements are left out of the count. Each element adds only its own cost and hours, not its children's, so a parent and child on one milestone are not counted twice.
 - Task 37: the list is three sections of plain rows (the Settings-tab row style), not the `Table` `groupRowsBy` of `OutboundTable`. A milestone list is short and has no columns to sort, filter or export.
+- Task 38: the figures are the pure `buildProjectCostFigures`, `estimateAtCompletion` and `elementSubtreeIds` (`projects.models.ts`, pinned by `apps/erp/test/projects-cost-figures.test.ts`). A row's budget adds every budget set in its subtree (a dash when none is set), so Remaining is a dash too. An element's own `estimateAtCompletion` overrides its row's estimate only; the project row always computes its estimate.
+- Task 38: the Costs loader reads `getProjectElementCosts` (new, `projects.service.ts`: id, parent, sort order, readable id, name, type, budget, `estimateAtCompletion`; `fetchAll`), because the element list query has no `estimateAtCompletion`.
+- Task 38: the ledger drawer is a route, `$projectId.costs.$elementId.tsx` (`path.to.projectCostsElement`), as `charts.ledger.$accountId.tsx` is, so the open element is in the URL. It filters `getProjectLedger` by the subtree ids (one `.in()`). The project total row does not drill down; the Time & materials tab lists the whole ledger.
+- Task 38: `ProjectLedgerTable` is the app `Table` (CSV export, a static Cost Type filter, server pagination through `getGenericQueryFilters`). The document cell links a Purchase Receipt, Purchase Invoice, Charge or Reimbursement to its page and any other row with a `jobId` to the job; a Timesheet or Project Issue row has no page and shows plain text.
+- Task 38: the Time & materials tab lists the entries that are not Posted from `getProjectOpenTimesheetEntries` (new, newest 500) above the ledger table.

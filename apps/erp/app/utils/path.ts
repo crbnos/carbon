@@ -1973,6 +1973,8 @@ export const path = {
     profile: `${x}/account/profile`,
     project: (id: string) => generatePath(`${x}/project/${id}`),
     projectCosts: (id: string) => generatePath(`${x}/project/${id}/costs`),
+    projectCostsElement: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/costs/${elementId}`),
     projectDetails: (id: string) => generatePath(`${x}/project/${id}/details`),
     projectElement: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/elements/${elementId}`),

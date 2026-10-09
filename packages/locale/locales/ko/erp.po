@@ -4657,6 +4657,7 @@ msgid "Collapse"
 msgstr "접기"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: row.readableId
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "축소 {0}"
@@ -5581,6 +5582,12 @@ msgid "Cost of Sales"
 msgstr "매출 원가"
 
 msgid "Cost Treatment"
+msgstr ""
+
+msgid "Cost Type"
+msgstr ""
+
+msgid "Cost Types"
 msgstr ""
 
 msgid "Costing"
@@ -8614,6 +8621,9 @@ msgstr "에스컬레이션"
 msgid "Est. Duration"
 msgstr "예상 소요시간"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimate at completion"
 msgstr ""
 
@@ -8769,7 +8779,7 @@ msgstr "펼치기"
 
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: unit.name
+#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "{0} 펼치기"
 
@@ -16025,6 +16035,9 @@ msgid "Project start"
 msgstr "프로젝트 시작"
 
 msgid "Project Time"
+msgstr ""
+
+msgid "Project total"
 msgstr ""
 
 msgid "Projected"

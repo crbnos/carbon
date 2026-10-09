@@ -4657,6 +4657,7 @@ msgid "Collapse"
 msgstr "Daralt"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: row.readableId
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "{0} öğesini daralt"
@@ -5581,6 +5582,12 @@ msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
 
 msgid "Cost Treatment"
+msgstr ""
+
+msgid "Cost Type"
+msgstr ""
+
+msgid "Cost Types"
 msgstr ""
 
 msgid "Costing"
@@ -8614,6 +8621,9 @@ msgstr "Yükseltme"
 msgid "Est. Duration"
 msgstr "Tahmini Süre"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimate at completion"
 msgstr ""
 
@@ -8769,7 +8779,7 @@ msgstr "Genişlet"
 
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: unit.name
+#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Genişlet {0}"
 
@@ -16025,6 +16035,9 @@ msgid "Project start"
 msgstr "Proje başlangıcı"
 
 msgid "Project Time"
+msgstr ""
+
+msgid "Project total"
 msgstr ""
 
 msgid "Projected"

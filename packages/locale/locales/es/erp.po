@@ -4657,6 +4657,7 @@ msgid "Collapse"
 msgstr "Contraer"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: row.readableId
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Contraer {0}"
@@ -5581,6 +5582,12 @@ msgid "Cost of Sales"
 msgstr "Costo de Ventas"
 
 msgid "Cost Treatment"
+msgstr ""
+
+msgid "Cost Type"
+msgstr ""
+
+msgid "Cost Types"
 msgstr ""
 
 msgid "Costing"
@@ -8614,6 +8621,9 @@ msgstr "Escalada"
 msgid "Est. Duration"
 msgstr "Duración Est."
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimate at completion"
 msgstr ""
 
@@ -8769,7 +8779,7 @@ msgstr "Expandir"
 
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: unit.name
+#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Expandir {0}"
 
@@ -16025,6 +16035,9 @@ msgid "Project start"
 msgstr "Inicio del proyecto"
 
 msgid "Project Time"
+msgstr ""
+
+msgid "Project total"
 msgstr ""
 
 msgid "Projected"

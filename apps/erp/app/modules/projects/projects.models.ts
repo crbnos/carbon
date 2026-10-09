@@ -772,3 +772,144 @@ export function summarizeMilestones<
     };
   });
 }
+
+/** The ids of an element and every element below it. */
+export function elementSubtreeIds(
+  elements: { id: string; parentId: string | null }[],
+  rootId: string
+): string[] {
+  const children = new Map<string, string[]>();
+  for (const element of elements) {
+    if (!element.parentId) continue;
+    const siblings = children.get(element.parentId) ?? [];
+    siblings.push(element.id);
+    children.set(element.parentId, siblings);
+  }
+  if (!elements.some((element) => element.id === rootId)) return [];
+
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+    stack.push(...(children.get(id) ?? []));
+  }
+  return ids;
+}
+
+export type ProjectCostFigures = {
+  plan: number;
+  /** The budgets set in the subtree, or null when none is set. */
+  budget: number | null;
+  committed: number;
+  actual: number;
+  hours: number;
+  /** Budget less committed and actual, or null with no budget. */
+  remaining: number | null;
+  estimateAtCompletion: number;
+};
+
+/**
+ * The estimate at completion: the override when one is set, else actual +
+ * committed + whatever of the plan is not spent or committed yet.
+ */
+export function estimateAtCompletion(args: {
+  plan: number;
+  committed: number;
+  actual: number;
+  override?: number | null;
+}): number {
+  if (args.override !== null && args.override !== undefined) {
+    return Number(args.override);
+  }
+  return (
+    args.actual +
+    args.committed +
+    Math.max(args.plan - args.actual - args.committed, 0)
+  );
+}
+
+/**
+ * The Costs tab figures for each element (its subtree) and for the project.
+ * Plan, committed, actual and hours roll up with `rollUpCostSummary`, so the
+ * project total includes charges with no element. The budget of a row adds
+ * every budget set in its subtree; the project budget adds every element's.
+ * An element's own `estimateAtCompletion` overrides its estimate; the project
+ * estimate is always computed.
+ */
+export function buildProjectCostFigures(
+  elements: {
+    id: string;
+    parentId: string | null;
+    budget: number | null;
+    estimateAtCompletion: number | null;
+  }[],
+  costSummary: Parameters<typeof rollUpCostSummary>[1]
+): { byElement: Map<string, ProjectCostFigures>; project: ProjectCostFigures } {
+  const { byElement: totals, project: projectTotals } = rollUpCostSummary(
+    elements,
+    costSummary
+  );
+
+  const parentOf = new Map<string, string | null>();
+  const budgets = new Map<string, number | null>();
+  for (const element of elements) {
+    parentOf.set(element.id, element.parentId);
+    budgets.set(element.id, null);
+  }
+
+  let projectBudget: number | null = null;
+  for (const element of elements) {
+    if (element.budget === null) continue;
+    const amount = Number(element.budget);
+    projectBudget = (projectBudget ?? 0) + amount;
+    const seen = new Set<string>();
+    let id: string | null = element.id;
+    while (id && parentOf.has(id) && !seen.has(id)) {
+      seen.add(id);
+      budgets.set(id, (budgets.get(id) ?? 0) + amount);
+      id = parentOf.get(id) ?? null;
+    }
+  }
+
+  const figures = (
+    total: CostTotals,
+    budget: number | null,
+    override: number | null
+  ): ProjectCostFigures => ({
+    plan: total.plan,
+    budget,
+    committed: total.committed,
+    actual: total.actual,
+    hours: total.hours,
+    remaining: budget === null ? null : budget - total.committed - total.actual,
+    estimateAtCompletion: estimateAtCompletion({
+      plan: total.plan,
+      committed: total.committed,
+      actual: total.actual,
+      override
+    })
+  });
+
+  const byElement = new Map<string, ProjectCostFigures>();
+  for (const element of elements) {
+    byElement.set(
+      element.id,
+      figures(
+        totals.get(element.id) ?? {
+          plan: 0,
+          committed: 0,
+          actual: 0,
+          hours: 0
+        },
+        budgets.get(element.id) ?? null,
+        element.estimateAtCompletion
+      )
+    );
+  }
+
+  return { byElement, project: figures(projectTotals, projectBudget, null) };
+}

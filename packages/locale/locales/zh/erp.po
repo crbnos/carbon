@@ -4657,6 +4657,7 @@ msgid "Collapse"
 msgstr "折叠"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: row.readableId
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "折叠 {0}"
@@ -5581,6 +5582,12 @@ msgid "Cost of Sales"
 msgstr "销售成本"
 
 msgid "Cost Treatment"
+msgstr ""
+
+msgid "Cost Type"
+msgstr ""
+
+msgid "Cost Types"
 msgstr ""
 
 msgid "Costing"
@@ -8614,6 +8621,9 @@ msgstr "升级"
 msgid "Est. Duration"
 msgstr "预计时长"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimate at completion"
 msgstr ""
 
@@ -8769,7 +8779,7 @@ msgstr "展开"
 
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: unit.name
+#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "展开 {0}"
 
@@ -16025,6 +16035,9 @@ msgid "Project start"
 msgstr "项目开始"
 
 msgid "Project Time"
+msgstr ""
+
+msgid "Project total"
 msgstr ""
 
 msgid "Projected"

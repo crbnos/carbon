@@ -4657,6 +4657,7 @@ msgid "Collapse"
 msgstr "Zwiń"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: row.readableId
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Zwiń {0}"
@@ -5581,6 +5582,12 @@ msgid "Cost of Sales"
 msgstr "Koszt sprzedaży"
 
 msgid "Cost Treatment"
+msgstr ""
+
+msgid "Cost Type"
+msgstr ""
+
+msgid "Cost Types"
 msgstr ""
 
 msgid "Costing"
@@ -8614,6 +8621,9 @@ msgstr "Eskalacja"
 msgid "Est. Duration"
 msgstr "Szac. Czas trwania"
 
+msgid "Estimate"
+msgstr ""
+
 msgid "Estimate at completion"
 msgstr ""
 
@@ -8769,7 +8779,7 @@ msgstr "Rozwiń"
 
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: unit.name
+#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Rozwiń {0}"
 
@@ -16025,6 +16035,9 @@ msgid "Project start"
 msgstr "Początek projektu"
 
 msgid "Project Time"
+msgstr ""
+
+msgid "Project total"
 msgstr ""
 
 msgid "Projected"

@@ -2006,6 +2006,63 @@ export async function getProjectLedger(
   return query;
 }
 
+const PROJECT_ELEMENT_COST_COLUMNS =
+  "id, parentId, sortOrder, readableId, name, type, budget, estimateAtCompletion" as const;
+
+function projectElementCostsQuery(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectElement")
+    .select(PROJECT_ELEMENT_COST_COLUMNS)
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true })
+    .order("id", { ascending: true });
+}
+
+export type ProjectElementCostItem = NonNullable<
+  Awaited<ReturnType<typeof projectElementCostsQuery>>["data"]
+>[number];
+
+/**
+ * Lists every element of a project with its budget and estimate at
+ * completion, for the Costs tab. Pages through the rows.
+ * @mcp read
+ */
+export async function getProjectElementCosts(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return fetchAll<ProjectElementCostItem>(() =>
+    projectElementCostsQuery(client, projectId, companyId)
+  );
+}
+
+/**
+ * Lists the timesheet entries of a project that are not Posted yet, newest
+ * first (at most 500).
+ * @mcp read
+ */
+export async function getProjectOpenTimesheetEntries(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("timesheetEntry")
+    .select(TIMESHEET_ENTRY_COLUMNS)
+    .eq("companyId", companyId)
+    .eq("projectId", projectId)
+    .neq("status", "Posted")
+    .order("entryDate", { ascending: false })
+    .order("createdAt", { ascending: false })
+    .limit(500);
+}
+
 /**
  * Gets plan, committed, actual and hours per element of a project, plus one
  * row with no element for charges to the project itself.
