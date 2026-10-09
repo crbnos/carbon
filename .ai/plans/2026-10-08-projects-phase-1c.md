@@ -41,7 +41,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 - [x] Task 6: Add the plan snapshot and the baseline service
 - [x] Task 7: Add the baseline compare page
 - [x] Task 8: Add the change request overlay and draft writes
-- [ ] Task 9: Add submit, approve, reject and apply
+- [x] Task 9: Add submit, approve, reject and apply
 - [ ] Task 10: Add the approvals engine branch and notifications
 - [ ] Task 11: Build the change request pages
 - [ ] Task 12: Add the plan lock
@@ -703,4 +703,11 @@ ls .ai/playbooks/projects-phase-1c.md
 - Task 8: a delete in a change request does not run the charge checks. The apply step runs them (Task 9). The delete route then redirects to the Elements page with `?cr=`.
 - Task 8: the Elements loader keeps `cr` when it redirects a URL without `layout`. In the list, a row the change request removes stays, marked `Delete`, so the UI can badge it. Verification is still computed on the live plan.
 - Task 8: the element page loaders call `getProjectElementPageInChangeRequest`. It lays the change request over the element, the element list, the plan lines and the links. The page of an element that the change request adds is built from its payload; it has no comments, ledger rows or time.
+- Task 9: `findConflicts` also flags an Add whose live element is gone. That element is the parent of an element, or the element of a link or a plan line. The apply would otherwise fail on the FK.
+- Task 9 (not in the plan): reopening an Approved change request must let the author fix a conflict. Without help, its stale `baseRow` would conflict forever. So `reopenChangeRequest` runs the pure `rebaseChangeRequestItems`. An Update keeps only the fields it changed, laid over the live row, and takes the live row as its new `baseRow`. An item whose live row is gone is dropped, and so is an Update left with no change. The flash names the number dropped.
+- Task 9: `applyChangeRequest` locks the change request and then the project row before the conflict check. The Updates of each table run as one `UPDATE … FROM jsonb_populate_recordset(…)`, which casts each value to its column type. The Adds of each table run as one insert. The element Adds take readable ids from one `nextElementSequence` update. A refused element Delete names the element and the charge (costs, time, a job or a purchase order line).
+- Task 9: `createChangeRequest` sets a missing project identifier with `derive_project_identifier`, as `insertProjectElement` does. The reason is stored as a tiptap document (`optionalTiptapDoc`).
+- Task 9: the status route's intents start from the statuses in `projectChangeRequestIntentFrom`. Reopen also starts from Approved. Cancel of a pending approval request goes through `cancelApprovalRequest`, which only the requester may do. The approval notifications carry `<projectId>:<crId>` as their document id, so their links can open the page without a lookup (Task 10).
+- Task 9: the 5 change request paths of Task 11 were added to `path.ts` here, because the status route redirects to the change request page. `getProjectChangeRequests` and `getProjectChangeRequest` (`@mcp read`) were added here too, so the MCP digest changed.
+- Task 9: a throwaway vitest run against this worktree's database ran the whole flow on a scratch project. It opened `CRTX-CR-1`, added a child element with a cost line, changed a budget and deleted an element; the live plan stayed as it was. The apply numbered the new element `CRTX-3`, wrote the budget and the cost line and set Applied with a baseline. A second change request then hit a live budget change and was refused with `ProjectChangeConflictError`. The reopen rebased its item onto the live budget. The project was then deleted; the script was not committed.
 

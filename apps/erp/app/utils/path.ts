@@ -1755,6 +1755,8 @@ export const path = {
       generatePath(`${x}/procedure/${id}/steps/new`),
     newProcess: `${x}/resources/processes/new`,
     newProject: `${x}/projects/new`,
+    newProjectChangeRequest: (id: string) =>
+      generatePath(`${x}/project/${id}/change-requests/new`),
     newProjectElement: (id: string) =>
       generatePath(`${x}/project/${id}/elements/new`),
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
@@ -1977,6 +1979,16 @@ export const path = {
       `${generatePath(`${x}/project/${id}/baselines/compare`)}?${new URLSearchParams({ from, to })}`,
     projectBaselines: (id: string) =>
       generatePath(`${x}/project/${id}/baselines`),
+    projectChangeRequest: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}`),
+    projectChangeRequestComments: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}/comments`),
+    projectChangeRequestStatus: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}/status`),
+    projectChangeRequests: (id: string) =>
+      generatePath(`${x}/project/${id}/change-requests`),
+    projectChangeRequestViewed: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}/viewed`),
     projectCosts: (id: string) => generatePath(`${x}/project/${id}/costs`),
     projectCostsElement: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/costs/${elementId}`),

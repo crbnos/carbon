@@ -973,6 +973,46 @@ export async function getProjectBaseline(
     .single();
 }
 
+// --- Change requests -----------------------------------------------------------
+
+const PROJECT_CHANGE_REQUEST_LIST_COLUMNS =
+  "id, projectId, readableId, title, status, submittedAt, decidedBy, decidedAt, appliedAt, baseBaselineId, appliedBaselineId, createdBy, createdAt, updatedAt, items:projectChangeRequestItem!projectChangeRequestItem_cr_fkey(count)";
+
+/**
+ * Lists the change requests of a project, newest first, with their item
+ * counts.
+ * @mcp read
+ */
+export async function getProjectChangeRequests(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectChangeRequest")
+    .select(PROJECT_CHANGE_REQUEST_LIST_COLUMNS)
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+/**
+ * Loads one change request with its title, reason, status and decision.
+ * @mcp read
+ */
+export async function getProjectChangeRequest(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("projectChangeRequest")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
 /** The names of the given labor categories, active or not (one `.in()`). */
 export async function getLaborCategoryNames(
   client: Client,

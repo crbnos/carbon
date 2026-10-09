@@ -8,7 +8,7 @@ import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
-import { methodType } from "../shared/shared.models";
+import { methodType, optionalTiptapDoc } from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
 
@@ -3268,3 +3268,192 @@ export function mergeChangeRequestItem(
     ...presentPlanFields(table, change.payload)
   });
 }
+export type ChangeRequestConflict = {
+  targetTable: ProjectPlanTable;
+  targetId: string;
+  operation: ProjectChangeOperation;
+  /** The plan-layer fields changed on the live row since the draft read it. */
+  fields: string[];
+  /** The live row (or, for an Add, the row it hangs from) no longer exists. */
+  missing: boolean;
+};
+
+/**
+ * The items that no longer fit the live plan. An Update or Delete conflicts
+ * when the live row's plan-layer fields differ from its `baseRow`, or when
+ * the live row is gone. An Add conflicts when the live element it hangs from
+ * is gone.
+ */
+export function findConflicts(
+  items: ChangeRequestItem[],
+  live: ProjectPlanSnapshot
+): ChangeRequestConflict[] {
+  const liveById = Object.fromEntries(
+    projectPlanTables.map((table) => [
+      table,
+      new Map(live[planSnapshotKeys[table]].map((row) => [row.id, row]))
+    ])
+  ) as Record<ProjectPlanTable, Map<string, PlanRow>>;
+  const addedElementIds = new Set(
+    items
+      .filter(
+        (item) =>
+          item.operation === "Add" && item.targetTable === "projectElement"
+      )
+      .map((item) => item.targetId)
+  );
+
+  const conflicts: ChangeRequestConflict[] = [];
+  for (const item of items) {
+    const conflict = {
+      targetTable: item.targetTable,
+      targetId: item.targetId,
+      operation: item.operation
+    };
+    if (item.operation === "Add") {
+      const parentIds = planRowParentIds(item.targetTable, item.payload ?? {});
+      const missing = parentIds.some(
+        (id) => !addedElementIds.has(id) && !liveById.projectElement.has(id)
+      );
+      if (missing) conflicts.push({ ...conflict, fields: [], missing: true });
+      continue;
+    }
+    const row = liveById[item.targetTable].get(item.targetId);
+    if (!row) {
+      conflicts.push({ ...conflict, fields: [], missing: true });
+      continue;
+    }
+    const changed = diffFields(
+      item.baseRow ?? {},
+      pickPlanLayerFields(item.targetTable, row),
+      NO_IGNORED_FIELDS
+    );
+    if (changed) {
+      conflicts.push({
+        ...conflict,
+        fields: Object.keys(changed),
+        missing: false
+      });
+    }
+  }
+  return conflicts;
+}
+
+/**
+ * Brings a reopened change request back onto the live plan, after an apply
+ * refused it on a conflict. An Update keeps only the fields it changed, laid
+ * over the live row, and stores the live row as its new `baseRow`. A Delete
+ * takes the live row as its `baseRow`. An item whose live row is gone, an
+ * Update left with no change, and an Add whose element is gone are dropped.
+ */
+export function rebaseChangeRequestItems(
+  items: ChangeRequestItem[],
+  live: ProjectPlanSnapshot
+): { keep: ChangeRequestItem[]; drop: ChangeRequestItem[] } {
+  const liveById = Object.fromEntries(
+    projectPlanTables.map((table) => [
+      table,
+      new Map(live[planSnapshotKeys[table]].map((row) => [row.id, row]))
+    ])
+  ) as Record<ProjectPlanTable, Map<string, PlanRow>>;
+
+  const keep: ChangeRequestItem[] = [];
+  const drop: ChangeRequestItem[] = [];
+  const adds: ChangeRequestItem[] = [];
+  for (const item of items) {
+    if (item.operation === "Add") {
+      adds.push(item);
+      continue;
+    }
+    const row = liveById[item.targetTable].get(item.targetId);
+    if (!row) {
+      drop.push(item);
+      continue;
+    }
+    const baseRow = pickPlanLayerFields(item.targetTable, row);
+    if (item.operation === "Delete") {
+      keep.push({ ...item, baseRow });
+      continue;
+    }
+    const changed = diffFields(
+      item.baseRow ?? {},
+      item.payload ?? {},
+      NO_IGNORED_FIELDS
+    );
+    const payload = { ...baseRow };
+    for (const field of Object.keys(changed ?? {})) {
+      payload[field] = item.payload?.[field] ?? null;
+    }
+    if (diffFields(baseRow, payload, NO_IGNORED_FIELDS)) {
+      keep.push({ ...item, payload, baseRow });
+    } else {
+      drop.push(item);
+    }
+  }
+
+  // An Add hangs from a live element or from another kept Add.
+  let addedIds = new Set(
+    adds
+      .filter((item) => item.targetTable === "projectElement")
+      .map((item) => item.targetId)
+  );
+  let remaining = adds;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const next: ChangeRequestItem[] = [];
+    for (const item of remaining) {
+      const parents = planRowParentIds(item.targetTable, item.payload ?? {});
+      const missing = parents.some(
+        (id) => !addedIds.has(id) && !liveById.projectElement.has(id)
+      );
+      if (missing) {
+        drop.push(item);
+        changed = true;
+      } else {
+        next.push(item);
+      }
+    }
+    remaining = next;
+    addedIds = new Set(
+      remaining
+        .filter((item) => item.targetTable === "projectElement")
+        .map((item) => item.targetId)
+    );
+  }
+  return { keep: [...keep, ...remaining], drop };
+}
+
+export const projectChangeRequestValidator = z.object({
+  title: z.string().trim().min(1, { message: "Title is required" }),
+  reason: optionalTiptapDoc
+});
+
+export const projectChangeRequestIntents = [
+  "submit",
+  "approve",
+  "reject",
+  "cancel",
+  "reopen"
+] as const;
+
+export type ProjectChangeRequestIntent =
+  (typeof projectChangeRequestIntents)[number];
+
+/** The statuses each intent starts from. */
+export const projectChangeRequestIntentFrom: Record<
+  ProjectChangeRequestIntent,
+  readonly ProjectChangeRequestStatus[]
+> = {
+  submit: ["Draft"],
+  approve: ["In Review"],
+  reject: ["In Review"],
+  cancel: ["Draft", "In Review"],
+  // An Approved change request whose apply hit a conflict reopens too.
+  reopen: ["Rejected", "Approved"]
+};
+
+export const projectChangeRequestStatusValidator = z.object({
+  intent: z.enum(projectChangeRequestIntents, { error: "Unknown action" }),
+  notes: zfd.text(z.string().trim().optional())
+});

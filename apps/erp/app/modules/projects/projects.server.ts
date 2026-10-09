@@ -18,6 +18,7 @@ import type {
   BuildSourceNode,
   ChangeOperationMark,
   ChangeRequestChange,
+  ChangeRequestConflict,
   ChangeRequestItem,
   ElementVerification,
   logTimeValidator,
@@ -25,6 +26,7 @@ import type {
   PlanRow,
   ProjectBaselineSource,
   ProjectChangeOperation,
+  ProjectChangeRequestStatus,
   ProjectCopyElement,
   ProjectCopySource,
   ProjectElementEditableField,
@@ -46,6 +48,7 @@ import {
   chargeableByDefault,
   computeVerification,
   defaultProjectStates,
+  findConflicts,
   mergeChangeRequestItem,
   overlayPlanRows,
   PLAN_LAYER_FIELDS,
@@ -58,6 +61,7 @@ import {
   planRowParentIds,
   planSnapshotKeys,
   projectCopyIdPrefixes,
+  rebaseChangeRequestItems,
   rollUpRequirementStatus,
   toPlanSnapshot,
   typeSpecificElementFields
@@ -1252,6 +1256,499 @@ export async function overlayPlanLines<
       (row) => ({ ...row }) as unknown as C
     )
   };
+}
+
+/**
+ * Creates a Draft change request, in one transaction: takes the next
+ * `project.nextChangeRequestSequence` for its readable id
+ * (`<identifier>-CR-<n>`) and a baseline of the plan it starts from.
+ */
+export async function createChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    title: string;
+    reason?: unknown;
+  }
+): Promise<{ id: string; readableId: string }> {
+  return db.transaction().execute(async (trx) => {
+    const project = await trx
+      .updateTable("project")
+      .set({
+        nextChangeRequestSequence: sql`"nextChangeRequestSequence" + 1`,
+        identifier: sql`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
+      })
+      .where("id", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .returning([
+        sql<number>`"nextChangeRequestSequence" - 1`.as("sequence"),
+        "identifier"
+      ])
+      .executeTakeFirst();
+    if (!project) throw new Error("The project does not exist");
+
+    const readableId = `${project.identifier}-CR-${project.sequence}`;
+    const changeRequest = await trx
+      .insertInto("projectChangeRequest")
+      .values({
+        companyId: args.companyId,
+        projectId: args.projectId,
+        readableId,
+        title: args.title,
+        reason: (args.reason == null ? null : toJson(args.reason)) as never,
+        createdBy: args.userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    const baseline = await insertProjectBaseline(trx, {
+      companyId: args.companyId,
+      userId: args.userId,
+      projectId: args.projectId,
+      name: `Before ${readableId}`,
+      source: "Change Request",
+      changeRequestId: changeRequest.id
+    });
+    await trx
+      .updateTable("projectChangeRequest")
+      .set({ baseBaselineId: baseline.id })
+      .where("id", "=", changeRequest.id)
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    return { id: changeRequest.id, readableId };
+  });
+}
+
+/**
+ * Moves a change request from one of `from` to `to`, with the extra columns
+ * in `set`. Returns false when it is in another status or is not a change
+ * request of the project.
+ */
+export async function setChangeRequestStatus(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    changeRequestId: string;
+    from: readonly ProjectChangeRequestStatus[];
+    to: ProjectChangeRequestStatus;
+    set?: {
+      submittedAt?: boolean;
+      decided?: boolean;
+      decisionNotes?: string | null;
+      clearDecision?: boolean;
+    };
+  }
+) {
+  const now = sql<string>`NOW()`;
+  const row = await db
+    .updateTable("projectChangeRequest")
+    .set({
+      status: args.to,
+      updatedBy: args.userId,
+      updatedAt: now,
+      ...(args.set?.submittedAt ? { submittedAt: now } : {}),
+      ...(args.set?.decided
+        ? {
+            decidedBy: args.userId,
+            decidedAt: now,
+            decisionNotes: args.set.decisionNotes ?? null
+          }
+        : {}),
+      ...(args.set?.clearDecision
+        ? { decidedBy: null, decidedAt: null, decisionNotes: null }
+        : {})
+    })
+    .where("id", "=", args.changeRequestId)
+    .where("projectId", "=", args.projectId)
+    .where("companyId", "=", args.companyId)
+    .where("status", "in", [...args.from])
+    .returning("id")
+    .executeTakeFirst();
+  return Boolean(row);
+}
+
+/**
+ * Reopens a Rejected change request, or an Approved one whose apply hit a
+ * conflict, as a Draft. The items are brought onto the live plan with
+ * `rebaseChangeRequestItems`: the author then fixes what the live plan
+ * changed. Returns the number of items it dropped.
+ */
+export async function reopenChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    changeRequestId: string;
+  }
+): Promise<{ dropped: number }> {
+  return db.transaction().execute(async (trx) => {
+    const changeRequest = await trx
+      .selectFrom("projectChangeRequest")
+      .select(["status", "projectId"])
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!changeRequest || changeRequest.projectId !== args.projectId) {
+      throw new ProjectChangeRequestError("The change request does not exist");
+    }
+    if (!["Rejected", "Approved"].includes(changeRequest.status)) {
+      throw new ProjectChangeRequestError(
+        `A ${changeRequest.status} change request cannot reopen`
+      );
+    }
+
+    const [items, live] = await Promise.all([
+      loadChangeRequestItems(trx, args),
+      loadPlanSnapshot(trx, args)
+    ]);
+    const { keep, drop } = rebaseChangeRequestItems(items, live);
+    const dropIds = drop
+      .map((item) => (item as ChangeRequestItemRow).id)
+      .filter(Boolean);
+    if (dropIds.length > 0) {
+      await trx
+        .deleteFrom("projectChangeRequestItem")
+        .where("id", "in", dropIds)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+    const rebased = keep.filter((item) => item.operation !== "Add");
+    if (rebased.length > 0) {
+      await sql`
+        UPDATE "projectChangeRequestItem" AS i
+        SET "payload" = v."payload",
+            "baseRow" = v."baseRow",
+            "updatedBy" = ${args.userId},
+            "updatedAt" = NOW()
+        FROM jsonb_to_recordset(${JSON.stringify(
+          rebased.map((item) => ({
+            id: (item as ChangeRequestItemRow).id,
+            payload: item.payload,
+            baseRow: item.baseRow
+          }))
+        )}::jsonb) AS v("id" TEXT, "payload" JSONB, "baseRow" JSONB)
+        WHERE i."id" = v."id" AND i."companyId" = ${args.companyId}
+      `.execute(trx);
+    }
+    await trx
+      .updateTable("projectChangeRequest")
+      .set({
+        status: "Draft",
+        decidedBy: null,
+        decidedAt: null,
+        decisionNotes: null,
+        submittedAt: null,
+        updatedBy: args.userId,
+        updatedAt: sql`NOW()`
+      })
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    return { dropped: drop.length };
+  });
+}
+
+/** An apply refused because the live plan changed under the change request. */
+export class ProjectChangeConflictError extends Error {
+  status = 409;
+  constructor(public conflicts: ChangeRequestConflict[]) {
+    super(
+      `The live plan changed under ${conflicts.length} row(s) of the change request`
+    );
+  }
+}
+
+/** The element columns an Add may set: the plan layer and the progress fields. */
+const ADDED_ELEMENT_FIELDS = [
+  ...PLAN_LAYER_FIELDS.projectElement.filter((field) => field !== "readableId"),
+  "stateId",
+  "ownerId",
+  "priority",
+  "milestoneId",
+  "startDate",
+  "targetDate"
+];
+
+/** Columns an Update never writes: identity and the project. */
+const FIXED_PLAN_FIELDS = new Set(["id", "readableId", "projectId"]);
+
+function presentFields(
+  payload: Record<string, unknown> | null,
+  fields: readonly string[]
+) {
+  const values: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (payload && field in payload) values[field] = payload[field];
+  }
+  return values;
+}
+
+/**
+ * Applies an Approved change request to the live plan, in one transaction,
+ * and marks it Applied. It refuses with `ProjectChangeConflictError` when
+ * the live plan changed under an item (`findConflicts`); the status stays
+ * Approved. Order: element Adds (parents first, numbered from
+ * `project.nextElementSequence`), element Updates, plan-line and link Adds
+ * and Updates, link and plan-line Deletes, element Deletes. An element
+ * Delete refuses when the element or one below it has a charge. A baseline
+ * of the result is stored as `appliedBaselineId`. The plan lock does not
+ * apply here: this is the one writer allowed to change a locked plan.
+ */
+export async function applyChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; changeRequestId: string }
+): Promise<{ applied: boolean }> {
+  return db.transaction().execute(async (trx) => {
+    const changeRequest = await trx
+      .selectFrom("projectChangeRequest")
+      .select(["projectId", "status", "readableId"])
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!changeRequest || changeRequest.status !== "Approved") {
+      return { applied: false };
+    }
+    const { projectId } = changeRequest;
+    const scope = { companyId: args.companyId, projectId };
+
+    // Lock the project first, so no live write lands between the conflict
+    // check and the apply.
+    await trx
+      .selectFrom("project")
+      .select("id")
+      .where("id", "=", projectId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+
+    const [items, live] = await Promise.all([
+      loadChangeRequestItems(trx, args),
+      loadPlanSnapshot(trx, scope)
+    ]);
+    const conflicts = findConflicts(items, live);
+    if (conflicts.length > 0) throw new ProjectChangeConflictError(conflicts);
+
+    const ofTable = (
+      table: ProjectPlanTable,
+      operation: ProjectChangeOperation
+    ) =>
+      items.filter(
+        (item) => item.targetTable === table && item.operation === operation
+      );
+
+    // 1. Element Adds, parents first.
+    const pending = ofTable("projectElement", "Add");
+    const ordered: ChangeRequestItemRow[] = [];
+    const placed = new Set<string>();
+    const addedIds = new Set(pending.map((item) => item.targetId));
+    while (ordered.length < pending.length) {
+      const ready = pending.filter(
+        (item) =>
+          !placed.has(item.targetId) &&
+          (!item.payload?.parentId ||
+            !addedIds.has(item.payload.parentId as string) ||
+            placed.has(item.payload.parentId as string))
+      );
+      if (ready.length === 0) {
+        throw new ProjectChangeRequestError(
+          "The added elements form a loop of parents"
+        );
+      }
+      for (const item of ready) {
+        ordered.push(item);
+        placed.add(item.targetId);
+      }
+    }
+    if (ordered.length > 0) {
+      const project = await trx
+        .updateTable("project")
+        .set({
+          nextElementSequence: sql`"nextElementSequence" + ${ordered.length}`,
+          identifier: sql`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
+        })
+        .where("id", "=", projectId)
+        .where("companyId", "=", args.companyId)
+        .returning([
+          sql<number>`"nextElementSequence" - ${ordered.length}`.as("start"),
+          "identifier"
+        ])
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("projectElement")
+        .values(
+          ordered.map((item, index) => {
+            const values = presentFields(item.payload, ADDED_ELEMENT_FIELDS);
+            return {
+              ...values,
+              description:
+                values.description == null ? null : toJson(values.description),
+              id: item.targetId,
+              projectId,
+              companyId: args.companyId,
+              readableId: `${project.identifier}-${project.start + index}`,
+              sequence: project.start + index,
+              createdBy: args.userId
+            } as never;
+          })
+        )
+        .execute();
+    }
+
+    // 2–3. Updates: one statement per table. `jsonb_populate_recordset`
+    // casts each value to its column's type.
+    const updateRows = async (table: ProjectPlanTable) => {
+      const updates = ofTable(table, "Update");
+      if (updates.length === 0) return;
+      const columns = PLAN_LAYER_FIELDS[table].filter(
+        (field) => !FIXED_PLAN_FIELDS.has(field)
+      );
+      const rows = updates.map((item) => ({
+        ...presentFields(item.payload, columns),
+        id: item.targetId
+      }));
+      await sql`
+        UPDATE ${sql.table(table)}
+        SET ${sql.join(
+          columns.map(
+            (column) => sql`${sql.ref(column)} = v.${sql.ref(column)}`
+          )
+        )},
+            "updatedBy" = ${args.userId},
+            "updatedAt" = NOW()
+        FROM jsonb_populate_recordset(NULL::${sql.table(table)}, ${JSON.stringify(rows)}::jsonb) AS v
+        WHERE ${sql.table(table)}."id" = v."id"
+          AND ${sql.table(table)}."companyId" = ${args.companyId}
+          AND ${sql.table(table)}."projectId" = ${projectId}
+      `.execute(trx);
+    };
+    await updateRows("projectElement");
+
+    const insertRows = async (
+      table: Exclude<ProjectPlanTable, "projectElement">
+    ) => {
+      const adds = ofTable(table, "Add");
+      if (adds.length === 0) return;
+      await trx
+        .insertInto(table as "projectElementCost")
+        .values(
+          adds.map(
+            (item) =>
+              ({
+                ...presentFields(item.payload, PLAN_LAYER_FIELDS[table]),
+                id: item.targetId,
+                projectId,
+                companyId: args.companyId,
+                createdBy: args.userId
+              }) as never
+          )
+        )
+        .execute();
+    };
+    const lineTables = [
+      "projectElementLink",
+      "projectElementMaterial",
+      "projectElementLabor",
+      "projectElementCost"
+    ] as const;
+    for (const table of lineTables) {
+      await insertRows(table);
+      await updateRows(table);
+    }
+
+    // 4. Link and plan-line Deletes.
+    for (const table of lineTables) {
+      const ids = ofTable(table, "Delete").map((item) => item.targetId);
+      if (ids.length === 0) continue;
+      await trx
+        .deleteFrom(table as "projectElementCost")
+        .where("id", "in", ids)
+        .where("projectId", "=", projectId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    // 5. Element Deletes. The parent FK cascades to the children, so one
+    // statement removes every subtree; first refuse any subtree with charges.
+    const deleted = ofTable("projectElement", "Delete").map(
+      (item) => item.targetId
+    );
+    if (deleted.length > 0) {
+      const charged = await sql<{ readableId: string; source: string }>`
+        WITH RECURSIVE subtree AS (
+          SELECT "id", "readableId" FROM "projectElement"
+          WHERE "id" IN (${sql.join(deleted)})
+            AND "projectId" = ${projectId}
+            AND "companyId" = ${args.companyId}
+          UNION
+          SELECT e."id", e."readableId" FROM "projectElement" e
+          JOIN subtree s ON e."parentId" = s."id"
+          WHERE e."projectId" = ${projectId}
+            AND e."companyId" = ${args.companyId}
+        )
+        SELECT s."readableId", 'costs' AS "source" FROM subtree s
+          WHERE EXISTS (SELECT 1 FROM "projectLedger" l
+            WHERE l."projectElementId" = s."id" AND l."companyId" = ${args.companyId})
+        UNION ALL
+        SELECT s."readableId", 'time' FROM subtree s
+          WHERE EXISTS (SELECT 1 FROM "timesheetEntry" t
+            WHERE t."projectElementId" = s."id" AND t."companyId" = ${args.companyId})
+        UNION ALL
+        SELECT s."readableId", 'a job' FROM subtree s
+          WHERE EXISTS (SELECT 1 FROM "job" j
+            WHERE j."projectElementId" = s."id" AND j."companyId" = ${args.companyId})
+        UNION ALL
+        SELECT s."readableId", 'a purchase order line' FROM subtree s
+          WHERE EXISTS (SELECT 1 FROM "purchaseOrderLine" p
+            WHERE p."projectElementId" = s."id" AND p."companyId" = ${args.companyId})
+        LIMIT 1
+      `.execute(trx);
+      const first = charged.rows[0];
+      if (first) {
+        throw new ProjectChangeRequestError(
+          `${first.readableId} has ${first.source} charged to it. The change request cannot delete it.`
+        );
+      }
+      await trx
+        .deleteFrom("projectElement")
+        .where("id", "in", deleted)
+        .where("projectId", "=", projectId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    const baseline = await insertProjectBaseline(trx, {
+      companyId: args.companyId,
+      userId: args.userId,
+      projectId,
+      name: `After ${changeRequest.readableId}`,
+      source: "Change Request",
+      changeRequestId: args.changeRequestId
+    });
+    const applied = await trx
+      .updateTable("projectChangeRequest")
+      .set({
+        status: "Applied",
+        appliedBaselineId: baseline.id,
+        appliedAt: sql`NOW()`,
+        updatedBy: args.userId,
+        updatedAt: sql`NOW()`
+      })
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Approved")
+      .returning("id")
+      .executeTakeFirst();
+    if (!applied) throw new Error("The change request is no longer Approved");
+    return { applied: true };
+  });
 }
 
 /**
