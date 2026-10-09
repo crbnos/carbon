@@ -8,15 +8,28 @@
 // the document's posting date, so the later steps re-cost, period, re-point
 // and promote it like every other Provisional journal. Invoices, memos,
 // charges and reimbursements come first; payments follow in posting order,
-// because a payment reads the control line of what it settles.
+// because a payment reads the control line of what it settles. Movements
+// that stored a cost row come last: receipts, return receipts, shipments
+// with their sale cost row, return shipments, and the movements of the
+// adjustment core. The inventory reset and re-cost after this step find
+// their inventory lines.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { buildLegacyAdjustmentJournals } from "./adjustment";
 import { buildLegacyChargeJournals } from "./charge";
 import { buildLegacyMemoJournals } from "./memo";
 import { journalLegacyPayments } from "./payment";
 import { buildLegacyPurchaseInvoiceJournals } from "./purchase-invoice";
+import {
+  buildLegacyPurchaseReceiptJournals,
+  buildLegacySalesReturnReceiptJournals
+} from "./receipt";
 import { buildLegacyReimbursementJournals } from "./reimbursement";
 import { buildLegacySalesInvoiceJournals } from "./sales-invoice";
+import {
+  buildLegacyReturnShipmentJournals,
+  buildLegacySalesShipmentJournals
+} from "./shipment";
 import {
   attachJournalIds,
   insertProvisionalJournals,
@@ -32,6 +45,14 @@ export type LegacyJournalCounts = {
   charges: number;
   reimbursements: number;
   payments: number;
+  purchaseReceipts: number;
+  salesReturnReceipts: number;
+  salesShipments: number;
+  returnShipments: number;
+  inventoryAdjustments: number;
+  inventoryCounts: number;
+  nonConformances: number;
+  maintenanceConsumptions: number;
 };
 
 export async function journalLegacyDocuments(
@@ -101,6 +122,42 @@ export async function journalLegacyDocuments(
     defaults
   });
 
+  // The movements last: no document journal reads them, and the re-cost
+  // after this step reads their inventory lines.
+  const movementArgs = { companyId, cutoverDate, defaults };
+  const purchaseReceipts = await buildLegacyPurchaseReceiptJournals(
+    trx,
+    movementArgs
+  );
+  const salesReturnReceipts = await buildLegacySalesReturnReceiptJournals(
+    trx,
+    movementArgs
+  );
+  const salesShipments = await buildLegacySalesShipmentJournals(
+    trx,
+    movementArgs
+  );
+  const returnShipments = await buildLegacyReturnShipmentJournals(
+    trx,
+    movementArgs
+  );
+  const adjustments = await buildLegacyAdjustmentJournals(trx, movementArgs);
+  await insertProvisionalJournals(trx, {
+    companyId,
+    companyGroupId,
+    userId,
+    journals: [
+      ...purchaseReceipts,
+      ...salesReturnReceipts,
+      ...salesShipments,
+      ...returnShipments,
+      ...adjustments.inventoryAdjustments,
+      ...adjustments.inventoryCounts,
+      ...adjustments.nonConformances,
+      ...adjustments.maintenanceConsumptions
+    ]
+  });
+
   // A zero-value document writes no journal, as its posting writes none.
   const written = (journals: { lines: unknown[] }[]) =>
     journals.filter((journal) => journal.lines.length > 0).length;
@@ -110,6 +167,14 @@ export async function journalLegacyDocuments(
     memos: written(memos),
     charges: written(charges),
     reimbursements: written(reimbursements),
-    payments
+    payments,
+    purchaseReceipts: written(purchaseReceipts),
+    salesReturnReceipts: written(salesReturnReceipts),
+    salesShipments: written(salesShipments),
+    returnShipments: written(returnShipments),
+    inventoryAdjustments: written(adjustments.inventoryAdjustments),
+    inventoryCounts: written(adjustments.inventoryCounts),
+    nonConformances: written(adjustments.nonConformances),
+    maintenanceConsumptions: written(adjustments.maintenanceConsumptions)
   };
 }

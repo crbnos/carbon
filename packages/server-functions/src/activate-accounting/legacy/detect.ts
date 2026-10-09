@@ -7,7 +7,9 @@
 // their document keys in a journal of any status. A company with accounting
 // off wrote no journal, and the reset deleted the journals of the others.
 
+import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import { sql } from "kysely";
 
 /** Statuses of a document that was never posted, or whose post and void net. */
 const NOT_POSTED = ["Draft", "Pending", "Voided"] as const;
@@ -214,3 +216,231 @@ export function legacyReimbursements(
 }
 
 export const POSTED_INVOICE_EXCLUDED_STATUSES = NOT_POSTED;
+
+type Enums = Database["public"]["Enums"];
+
+/**
+ * Posted receipts of one source document dated on or after the cutover with
+ * no 'Receipt' journal line. A voided receipt is left out: its post and its
+ * void net to zero.
+ */
+export function legacyReceipts(
+  trx: KyselyTx,
+  { companyId, cutoverDate }: Args,
+  sourceDocument: Extract<
+    Enums["receiptSourceDocument"],
+    "Purchase Order" | "Sales Return Order"
+  >
+) {
+  return trx
+    .selectFrom("receipt")
+    .select([
+      "receipt.id",
+      "receipt.receiptId",
+      "receipt.sourceDocumentId",
+      "receipt.externalDocumentId",
+      "receipt.postingDate"
+    ])
+    .where("receipt.companyId", "=", companyId)
+    .where("receipt.status", "=", "Posted")
+    .where("receipt.sourceDocument", "=", sourceDocument)
+    .where("receipt.postingDate", ">=", cutoverDate)
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("journalLine as line")
+            .select("line.id")
+            .whereRef("line.companyId", "=", "receipt.companyId")
+            .whereRef("line.documentId", "=", "receipt.id")
+            .where("line.documentType", "=", "Receipt")
+        )
+      )
+    )
+    .orderBy("receipt.postingDate")
+    .orderBy("receipt.createdAt")
+    .orderBy("receipt.id")
+    .execute();
+}
+
+/**
+ * Posted shipments of one source document dated on or after the cutover
+ * that stored a cost row and have no journal line under `journalDocumentType`.
+ * A sales shipment stored its "Sale" cost row only when the company had
+ * accounting on; one without it relieved no layer (Task 42's family).
+ */
+export function legacyShipments(
+  trx: KyselyTx,
+  { companyId, cutoverDate }: Args,
+  {
+    sourceDocument,
+    journalDocumentType,
+    costDocumentType,
+    itemLedgerType
+  }: {
+    sourceDocument: Extract<
+      Enums["shipmentSourceDocument"],
+      "Sales Order" | "Sales Return Order" | "Purchase Return Order"
+    >;
+    journalDocumentType: Enums["journalLineDocumentType"];
+    costDocumentType: Enums["itemLedgerDocumentType"];
+    itemLedgerType: Enums["itemLedgerType"];
+  }
+) {
+  return trx
+    .selectFrom("shipment")
+    .select([
+      "shipment.id",
+      "shipment.shipmentId",
+      "shipment.sourceDocumentId",
+      "shipment.locationId",
+      "shipment.postingDate"
+    ])
+    .where("shipment.companyId", "=", companyId)
+    .where("shipment.status", "=", "Posted")
+    .where("shipment.sourceDocument", "=", sourceDocument)
+    .where("shipment.postingDate", ">=", cutoverDate)
+    .where(({ exists, selectFrom }) =>
+      exists(
+        selectFrom("costLedger as cost")
+          .select("cost.id")
+          .whereRef("cost.companyId", "=", "shipment.companyId")
+          .whereRef("cost.documentId", "=", "shipment.id")
+          .where("cost.documentType", "=", costDocumentType)
+          .where("cost.itemLedgerType", "=", itemLedgerType)
+      )
+    )
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("journalLine as line")
+            .select("line.id")
+            .whereRef("line.companyId", "=", "shipment.companyId")
+            .whereRef("line.documentId", "=", "shipment.id")
+            .where("line.documentType", "=", journalDocumentType)
+        )
+      )
+    )
+    .orderBy("shipment.postingDate")
+    .orderBy("shipment.createdAt")
+    .orderBy("shipment.id")
+    .execute();
+}
+
+/**
+ * The cost rows of the adjustment core dated on or after the cutover whose
+ * document has no journal line on that date: manual adjustments and the CSV
+ * stock import (no document type), scrap and unscrap, inventory counts,
+ * non-conformance and inspection write-offs, and maintenance parts. A
+ * zero-cost row is left out, as the core posts no journal for it.
+ *
+ * Left out: a stock movement correction (it carries the original's document
+ * keys), found as an item ledger row with `correctionOfItemLedgerId` written
+ * in the same transaction as the cost row. A tracked unscrap also sets that
+ * column, so a correction written with an Unscrap activity is kept.
+ * A day is matched, not the document: a maintenance dispatch can consume
+ * parts on more than one day, and only the legacy days lack a journal.
+ */
+export function legacyAdjustmentCostRows(
+  trx: KyselyTx,
+  { companyId, cutoverDate }: Args
+) {
+  return trx
+    .selectFrom("costLedger as cost")
+    .select([
+      "cost.id",
+      "cost.itemId",
+      "cost.quantity",
+      "cost.cost",
+      "cost.documentType",
+      "cost.documentId",
+      "cost.postingDate",
+      "cost.entryNumber",
+      sql<string>`"cost"."createdAt"::text`.as("createdAt")
+    ])
+    .where("cost.companyId", "=", companyId)
+    .where("cost.postingDate", ">=", cutoverDate)
+    .where("cost.adjustment", "=", false)
+    .where("cost.appliesToCostLedgerId", "is", null)
+    .where("cost.costLedgerType", "=", "Direct Cost")
+    .where("cost.cost", "!=", 0)
+    .where("cost.quantity", "!=", 0)
+    .where("cost.documentId", "is not", null)
+    .where("cost.itemId", "is not", null)
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("cost.documentType", "is", null),
+          eb("cost.itemLedgerType", "in", [
+            "Positive Adjmt.",
+            "Negative Adjmt."
+          ])
+        ]),
+        eb.and([
+          eb("cost.documentType", "in", [
+            "Scrap",
+            "Inventory Count",
+            "Non-Conformance",
+            "Inbound Inspection"
+          ]),
+          eb("cost.itemLedgerType", "in", [
+            "Positive Adjmt.",
+            "Negative Adjmt."
+          ])
+        ]),
+        eb.and([
+          eb("cost.documentType", "=", "Maintenance Consumption"),
+          eb("cost.itemLedgerType", "=", "Consumption")
+        ])
+      ])
+    )
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("itemLedger as correction")
+            .select("correction.id")
+            .whereRef("correction.companyId", "=", "cost.companyId")
+            .whereRef("correction.createdAt", "=", "cost.createdAt")
+            .where("correction.correctionOfItemLedgerId", "is not", null)
+            .where(
+              sql<boolean>`coalesce("correction"."documentId", "correction"."id") = "cost"."documentId"`
+            )
+            .where(
+              sql<boolean>`"correction"."documentType" IS NOT DISTINCT FROM "cost"."documentType"`
+            )
+            .where(({ not, exists, selectFrom }) =>
+              not(
+                exists(
+                  selectFrom("trackedActivity as activity")
+                    .select("activity.id")
+                    .whereRef("activity.companyId", "=", "correction.companyId")
+                    .whereRef("activity.createdAt", "=", "correction.createdAt")
+                    .where("activity.type", "=", "Unscrap")
+                )
+              )
+            )
+        )
+      )
+    )
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("journalLine as line")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "line.journalId")
+                .onRef("journal.companyId", "=", "line.companyId")
+            )
+            .select("line.id")
+            .whereRef("line.companyId", "=", "cost.companyId")
+            .whereRef("line.documentId", "=", "cost.documentId")
+            .whereRef("journal.postingDate", "=", "cost.postingDate")
+            .where(
+              sql<boolean>`"line"."documentType"::text = coalesce("cost"."documentType"::text, 'Inventory Adjustment')`
+            )
+        )
+      )
+    )
+    .orderBy("cost.postingDate")
+    .orderBy("cost.entryNumber")
+    .execute();
+}

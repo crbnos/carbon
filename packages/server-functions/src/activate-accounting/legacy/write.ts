@@ -54,6 +54,21 @@ export function chunks<T>(rows: T[]): T[][] {
   return result;
 }
 
+/** The rows by key, each list in the order given. */
+export function groupBy<T>(
+  rows: T[],
+  key: (row: T) => string
+): Map<string, T[]> {
+  const map = new Map<string, T[]>();
+  for (const row of rows) {
+    const k = key(row);
+    const list = map.get(k);
+    if (list) list.push(row);
+    else map.set(k, [row]);
+  }
+  return map;
+}
+
 /** Runs `read` once per chunk of the distinct ids and concatenates the rows. */
 export async function readByIds<T>(
   ids: Iterable<string | null | undefined>,
@@ -65,6 +80,45 @@ export async function readByIds<T>(
   const rows: T[] = [];
   for (const chunk of chunks(unique)) rows.push(...(await read(chunk)));
   return rows;
+}
+
+/** Items by id, with what the movement journals read. */
+export async function readItems(
+  trx: KyselyTx,
+  companyId: string,
+  itemIds: Iterable<string | null | undefined>
+) {
+  const rows = await readByIds(itemIds, (ids) =>
+    trx
+      .selectFrom("item")
+      .select([
+        "id",
+        "itemTrackingType",
+        "replenishmentSystem",
+        "readableIdWithRevision"
+      ])
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute()
+  );
+  return new Map(rows.map((row) => [row.id, row]));
+}
+
+/** Each item's posting group (the ItemPostingGroup dimension), by item id. */
+export async function readPostingGroups(
+  trx: KyselyTx,
+  companyId: string,
+  itemIds: Iterable<string | null | undefined>
+) {
+  const rows = await readByIds(itemIds, (ids) =>
+    trx
+      .selectFrom("itemCost")
+      .select(["itemId", "itemPostingGroupId"])
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", ids)
+      .execute()
+  );
+  return new Map(rows.map((row) => [row.itemId, row.itemPostingGroupId]));
 }
 
 /**
