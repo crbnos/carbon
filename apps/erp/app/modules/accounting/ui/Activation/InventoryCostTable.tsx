@@ -192,10 +192,7 @@ function InventoryCostRow({ item }: { item: CutoverInventoryItem }) {
               );
             }}
           >
-            <NumberInput
-              size="sm"
-              className="h-7 text-right font-mono tabular-nums"
-            />
+            <NumberInput size="sm" className="h-7 text-right tabular-nums" />
           </NumberField>
         ) : (
           <Tooltip>

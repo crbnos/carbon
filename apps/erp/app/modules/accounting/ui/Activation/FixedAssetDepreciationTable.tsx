@@ -47,19 +47,19 @@ export default function FixedAssetDepreciationTable({
     <Table>
       <Thead>
         <Tr>
-          <Th>
+          <Th className="whitespace-nowrap">
             <Trans>Asset</Trans>
           </Th>
-          <Th>
+          <Th className="whitespace-nowrap">
             <Trans>Status</Trans>
           </Th>
-          <Th className="text-right">
+          <Th className="whitespace-nowrap text-right">
             <Trans>Cost</Trans>
           </Th>
-          <Th className="w-48 text-right">
+          <Th className="w-48 whitespace-nowrap text-right">
             <Trans>Accumulated Depreciation</Trans>
           </Th>
-          <Th className="text-right">
+          <Th className="whitespace-nowrap text-right">
             <Trans>Net Book Value</Trans>
           </Th>
         </Tr>
@@ -165,10 +165,7 @@ function FixedAssetDepreciationRow({ asset }: { asset: CutoverFixedAsset }) {
             );
           }}
         >
-          <NumberInput
-            size="sm"
-            className="h-7 text-right font-mono tabular-nums"
-          />
+          <NumberInput size="sm" className="h-7 text-right tabular-nums" />
         </NumberField>
       </Td>
       <Td className="text-right tabular-nums">

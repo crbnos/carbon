@@ -43,7 +43,10 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
-import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import {
+  getCurrentAccountingPeriod,
+  resolveAccountingPeriod
+} from "../lib/get-accounting-period";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import { journalLegacyDocuments, type LegacyJournalCounts } from "./legacy";
 import { chunks } from "./legacy/write";
@@ -318,6 +321,10 @@ const activateAccounting = defineServerFn({
             );
           }
         }
+
+        // 15a. Make the period that holds today Active, as the first posting
+        // would. The cutover is never after today, so step 15 never closes it.
+        await getCurrentAccountingPeriod(companyId, trx);
 
         // 16. The stamp. One-way: a trigger refuses any later change.
         await trx

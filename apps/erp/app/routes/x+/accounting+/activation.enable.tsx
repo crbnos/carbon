@@ -77,6 +77,10 @@ const LEGACY_FAMILY_LABELS: Record<LegacyDocumentFamily, MessageDescriptor> = {
   revenueRecognitionRuns: msg`Revenue recognition runs`
 };
 
+// Both summary lists share one fixed label column, so their values line up.
+const SUMMARY_LIST_CLASS =
+  "grid w-full max-w-xl grid-cols-[18rem_1fr] gap-x-8 gap-y-3 text-sm";
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
@@ -183,7 +187,7 @@ export default function AccountingActivationEnableRoute() {
     <>
       <SetupBody>
         <SetupSection title={<Trans>Summary</Trans>}>
-          <dl className="grid w-full max-w-xl grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
+          <dl className={SUMMARY_LIST_CLASS}>
             <dt className="text-muted-foreground">
               <Trans>Cutover date</Trans>
             </dt>
@@ -226,7 +230,7 @@ export default function AccountingActivationEnableRoute() {
                   </Trans>
                 </p>
               </div>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
+              <dl className={SUMMARY_LIST_CLASS}>
                 {legacyDocuments.map(({ family, count }) => (
                   <Fragment key={family}>
                     <dt className="text-muted-foreground">

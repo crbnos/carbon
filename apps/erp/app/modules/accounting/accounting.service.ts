@@ -5752,8 +5752,11 @@ export async function getJournalEntries(
     query = query.neq("status", "Superseded");
   }
 
+  // The enable writes many journals in one transaction, so they share a
+  // createdAt; the entry number breaks the tie.
   query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
+    { column: "createdAt", ascending: false },
+    { column: "journalEntryId", ascending: false }
   ]);
 
   return query;

@@ -105,6 +105,13 @@ databaseTest(
       });
       expect(refused.error?.message).toBe("Type the company name to confirm.");
 
+      // No period is Active before the enable, so the enable must set it.
+      await f.db
+        .updateTable("accountingPeriod")
+        .set({ status: "Inactive" })
+        .where("companyId", "=", f.companyId)
+        .execute();
+
       unwrap(
         await activateAccounting(f.ctx, {
           ...args,
@@ -235,7 +242,7 @@ databaseTest(
       // Every period before the cutover is Closed.
       const periods = await f.db
         .selectFrom("accountingPeriod")
-        .select(["endDate", "closeStatus"])
+        .select(["startDate", "endDate", "status", "closeStatus"])
         .where("companyId", "=", f.companyId)
         .execute();
       const before = periods.filter(
@@ -243,6 +250,12 @@ databaseTest(
       );
       expect(before.length).toBeGreaterThan(0);
       for (const period of before) expect(period.closeStatus).toBe("Closed");
+
+      // The period that holds today is the one Active period.
+      const active = periods.filter((period) => period.status === "Active");
+      expect(active).toHaveLength(1);
+      expect(String(active[0]!.startDate) <= f.today).toBe(true);
+      expect(String(active[0]!.endDate) >= f.today).toBe(true);
 
       const settings = await f.db
         .selectFrom("companySettings")

@@ -10,6 +10,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  cn,
   Input,
   InputGroup,
   InputLeftElement,
@@ -296,7 +297,11 @@ export default function TrialBalanceEditor({
                     >
                       <NumberInput
                         size="sm"
-                        className="h-7 text-right font-mono tabular-nums"
+                        className={cn(
+                          "h-7 text-right tabular-nums",
+                          // Most accounts carry no balance; mute the zeros.
+                          amounts[side] === 0 && "text-muted-foreground"
+                        )}
                       />
                     </NumberField>
                   </Td>
