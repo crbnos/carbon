@@ -735,7 +735,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
   /**
    * Load the Carbon payment + its settlements for an outbound push. Numeric
    * columns arrive as strings from Kysely and are coerced. `paidDate` is the
-   * posting date when set (accounting on), else the payment date.
+   * posting date when set (the payment is posted), else the payment date.
    */
   private async loadLocalPaymentForPush(
     paymentId: string

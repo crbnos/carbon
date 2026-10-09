@@ -208,7 +208,7 @@ export async function loadBillCostingLines(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message: !rows.length
-        ? "Cannot sync bill: no posted Purchase Invoice journal found. Post the invoice with accounting enabled, then retry."
+        ? "Cannot sync bill: no posted Purchase Invoice journal found. Set up accounting and post the invoice, then retry."
         : "Cannot sync bill: its original posted payables control account is missing. Correct the posting, then retry.",
       metadata: {
         billId: args.billId,
@@ -414,7 +414,7 @@ export async function loadChargeCostingLines(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync card charge: no posted Charge journal found. Post the charge with accounting enabled, then retry.",
+        "Cannot sync card charge: no posted Charge journal found. Set up accounting and post the charge, then retry.",
       metadata: { chargeId: args.chargeId }
     });
   }

@@ -10,12 +10,12 @@ flowIndex: 3
 
 As production proceeds, Carbon accumulates consumed material and labor, machine, and overhead costs in <Term id="wip">work-in-process</Term>. Job completion transfers that cost to finished-goods inventory. This guide describes the ledger entries, timing, and accounts for that flow.
 
-## Accounting is a switch
+## Every posting writes a journal
 
-The company-level **accounting enabled** setting is **off by default**. When disabled, Carbon still updates item-ledger quantities, job and operation statuses, and material issues, but it does not create general-ledger entries or cost layers. When enabled, the same operations also post financial entries.
+Receiving, issuing, logging time and completing a job always update inventory, cost layers and status, and always write the journals this guide describes. The company's **cutover date** decides only their status. Before the company sets up accounting, each journal is *Provisional*: it records the posting, but no balance or report counts it. After the setup, every journal is *Posted*.
 
-<Callout tone="amber" badge="OFF BY DEFAULT" title="Quantities always move; money only moves when accounting is on.">
-Receiving, issuing, and completion always update physical inventory and status. The GL postings in this guide occur only when accounting is enabled.
+<Callout tone="amber" badge="BEFORE THE CUTOVER" title="Provisional journals count nowhere until accounting is set up.">
+Set up accounting from **Settings → Accounting**. The setup turns journals dated on or after the cutover date into Posted journals, and replaces earlier ones with one opening journal. See [setting up accounting](/docs/reference/accounting#setting-up-accounting).
 </Callout>
 
 ## Cost lands in WIP

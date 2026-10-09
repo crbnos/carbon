@@ -12938,9 +12938,6 @@ msgstr "새로운 라인"
 msgid "New Line"
 msgstr "새 라인"
 
-msgid "New Line Item"
-msgstr "새 라인 항목"
-
 msgid "New Location"
 msgstr "새 위치"
 
@@ -20558,8 +20555,8 @@ msgstr "배치가 현장으로 이동합니다. 포함된 작업 지시들은 �
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "모든 전기된 전표 라인의 기록으로 계정별로 집계되며 회사의 회계가 활성화되었을 때만 작성됩니다."
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "원가를 추적하는 버킷"

@@ -15,6 +15,7 @@ import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
+import postCharge from "../post-charge";
 import postMemo from "../post-memo";
 import postPayment from "../post-payment";
 import postReceipt from "../post-receipt";
@@ -79,6 +80,46 @@ async function postCreditMemo(f: Fixture, amount: number): Promise<string> {
     .execute();
   unwrap(await postMemo(f.ctx, { type: "post", memoId }));
   return memoId;
+}
+
+/** A card charge of 100 from the card account to cost of goods, dated the
+ *  day before the cutover and posted before the enable. A Posted charge
+ *  refuses a date change, so it is dated there from the start. */
+async function postCardCharge(f: Fixture): Promise<string> {
+  const chargeId = `${f.prefix}-charge`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("charge")
+      .values({
+        id: chargeId,
+        chargeId: "CHG-1",
+        type: "Charge",
+        status: "Draft",
+        cardAccountId: f.account("card"),
+        transactionDate: f.beforeCutover,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        amount: 100,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("chargeLine")
+      .values({
+        chargeId,
+        accountId: f.account("cogs"),
+        description: "Card expense",
+        amount: 100,
+        sequence: 0,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postCharge(f.ctx, { type: "post", chargeId }));
+  return chargeId;
 }
 
 /** The sum of an account's lines in Posted and Reversed journals for one
@@ -180,6 +221,54 @@ databaseTest(
       );
       expect(await status()).toBe(before);
       expect(await glBalance(f, "receivables")).toBeCloseTo(100, 6);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a charge dated before the cutover refuses its void after the enable",
+  async () => {
+    const f = await activationFixture();
+    try {
+      const chargeId = await postCardCharge(f);
+      await enable(f, [
+        { account: "bank", debit: 100, credit: 0 },
+        { account: "retained-earnings", debit: 0, credit: 100 }
+      ]);
+      const charge = async () =>
+        f.db
+          .selectFrom("charge as c")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "c.journalId")
+              .onRef("journal.companyId", "=", "c.companyId")
+          )
+          .select(["c.status", "journal.status as journalStatus"])
+          .where("c.companyId", "=", f.companyId)
+          .where("c.id", "=", chargeId)
+          .executeTakeFirstOrThrow();
+      expect(await charge()).toEqual({
+        status: "Posted",
+        journalStatus: "Superseded"
+      });
+
+      const result = await postCharge(f.ctx, { type: "void", chargeId });
+      expect(result.error?.message).toBe(
+        "This charge is from before your accounting cutover. Record a journal entry to correct it instead."
+      );
+      expect(await charge()).toEqual({
+        status: "Posted",
+        journalStatus: "Superseded"
+      });
+      const voids = await f.db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("description", "=", "VOID Charge CHG-1")
+        .execute();
+      expect(voids).toEqual([]);
     } finally {
       await f.cleanup();
     }

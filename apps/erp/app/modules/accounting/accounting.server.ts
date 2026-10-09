@@ -458,8 +458,8 @@ export async function postDisposal(
 
 /**
  * Registers a Draft asset: Active, or Under Construction for a
- * construction-in-progress class. With `posting` (accounting on) it posts the
- * acquisition journal first; with `posting: null` it writes the same asset and
+ * construction-in-progress class. With `posting` it posts the acquisition
+ * journal first (Provisional before the accounting cutover, Posted after); with `posting: null` it writes the same asset and
  * CIP cost rows with no journal. One transaction either way, so no asset is
  * registered without its journal or its CIP cost row.
  */

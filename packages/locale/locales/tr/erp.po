@@ -12938,9 +12938,6 @@ msgstr "Yeni Satır"
 msgid "New Line"
 msgstr "Yeni Satır"
 
-msgid "New Line Item"
-msgstr "Yeni Satır Kalemi"
-
 msgid "New Location"
 msgstr "Yeni Konum"
 
@@ -20558,8 +20555,8 @@ msgstr "Parti atölyeye gider. İş emirleri zaten serbest bırakıldı."
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çekilir"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "Tüm Muhasebeleştirildi Muhasebe fişi satırlarının Büyük defteri, Hesap başına toplandı — yalnızca Şirkette Muhasebe etkinleştirildiğinde yazılır."
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "Maliyetleri takip ettiğiniz gruplar"

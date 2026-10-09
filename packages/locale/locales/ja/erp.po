@@ -12938,9 +12938,6 @@ msgstr "新規明細"
 msgid "New Line"
 msgstr "新しい行"
 
-msgid "New Line Item"
-msgstr "新しい行項目"
-
 msgid "New Location"
 msgstr "新しい場所"
 
@@ -20558,8 +20555,8 @@ msgstr "バッチが製造現場に移動します。その製造指図は既に
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "原価を追跡する集計単位"

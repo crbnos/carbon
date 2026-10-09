@@ -211,8 +211,8 @@ export const inventoryAdjustmentValidator = z
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
-    // Required for Scrap (enforced below); lands on the itemLedger row and,
-    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // Required for Scrap (enforced below); lands on the itemLedger row and as
+    // a ScrapReason journal dimension. Unscrap
     // omits it — the server function inherits the reason from the original scrap
     // movement it reverses.
     scrapReasonId: zfd.text(z.string().optional()),

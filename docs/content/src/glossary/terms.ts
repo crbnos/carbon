@@ -358,7 +358,7 @@ export const terms = {
   },
   "general-ledger": {
     term: msg`General ledger`,
-    definition: msg`The book of all posted journal lines, summed by account — written only when the company has accounting enabled.`,
+    definition: msg`The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it.`,
     href: "/docs/reference/accounting"
   },
   "accounting-period": {

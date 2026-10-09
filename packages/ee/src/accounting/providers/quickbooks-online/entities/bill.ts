@@ -138,7 +138,7 @@ export function buildQboBillLines(args: {
   if (args.costingLines.length === 0) {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
+      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Set up accounting and post the invoice, then retry.`,
       warning: true,
       metadata: { billId: bill.id }
     });

@@ -20,14 +20,14 @@ The machine you schedule production on is a <Term>work center</Term>; the machin
 
 A machine you buy for the shop comes onto the books one of two ways, and both start at **"Draft"**. The [fixed assets reference](/docs/reference/fixed-assets) covers the other two: building one on a job and capitalizing a unit from stock.
 
-**Register one you already have.** Create the asset, then register it, supplying its acquisition cost, acquisition date, and the date depreciation should start. A machine that is already partway through its life also takes its **"Accumulated Depreciation"** to date. Registering moves it to **"Active"**. No cash moves, but with accounting enabled it posts a journal: the asset account takes the acquisition cost, the opening accumulated depreciation goes to its contra account, and the net book value offsets retained earnings, since you're recording something you already own.
+**Register one you already have.** Create the asset, then register it, supplying its acquisition cost, acquisition date, and the date depreciation should start. A machine that is already partway through its life also takes its **"Accumulated Depreciation"** to date. Registering moves it to **"Active"**. No cash moves, but it posts a journal: the asset account takes the acquisition cost, the opening accumulated depreciation goes to its contra account, and the net book value offsets retained earnings, since you're recording something you already own.
 
 **Buy one through purchasing.** Put a **"Fixed Asset"** line on a purchase order pointed at the asset, then receive it. The asset page's **"Purchase"** action drafts that purchase order for you.
 
-When the receipt posts (or a purchase invoice for the line posts with no receipt), and only if accounting is enabled, Carbon debits the asset account, credits goods-received-not-invoiced, **adds** the cost to the asset, stamps the dates, and flips it from **"Draft"** to **"Active"**. Because the cost is added, an asset can accumulate value across several receipts.
+When the receipt posts (or a purchase invoice for the line posts with no receipt), Carbon debits the asset account, credits goods-received-not-invoiced, **adds** the cost to the asset, stamps the dates, and flips it from **"Draft"** to **"Active"**. Because the cost is added, an asset can accumulate value across several receipts.
 
-<Callout tone="blue" badge="ACCOUNTING GATES ACQUISITION" title="Receiving activates the asset only when accounting is on.">
-The purchase-receipt path creates the acquisition entry and activates the asset only when accounting is enabled. With accounting disabled, the PO line is received but the asset remains unchanged; register it manually instead.
+<Callout tone="blue" badge="BEFORE THE CUTOVER" title="The asset moves before accounting is set up; the ledger waits.">
+Before the company sets up accounting, receiving still adds the cost and activates the asset, but its journal is Provisional and counts in no balance. The setup's **Fixed assets** step opens each asset at its cost and accumulated depreciation on the cutover date. See [setting up accounting](/docs/reference/accounting#setting-up-accounting).
 </Callout>
 
 <Screenshot src="/screens/fa-register.png" label="Fixed asset — register" caption="Bringing an asset to Active with its acquisition cost and depreciation start date." ratio="wide" />

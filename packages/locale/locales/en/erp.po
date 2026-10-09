@@ -12938,9 +12938,6 @@ msgstr "New line"
 msgid "New Line"
 msgstr "New Line"
 
-msgid "New Line Item"
-msgstr "New Line Item"
-
 msgid "New Location"
 msgstr "New Location"
 
@@ -20558,8 +20555,8 @@ msgstr "The batch goes to the shop floor. Its jobs are already released."
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
 
 msgid "The buckets you track costs against"
 msgstr "The buckets you track costs against"

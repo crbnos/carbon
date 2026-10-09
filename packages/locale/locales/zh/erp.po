@@ -12938,9 +12938,6 @@ msgstr "新行"
 msgid "New Line"
 msgstr "新行"
 
-msgid "New Line Item"
-msgstr "新建行项目"
-
 msgid "New Location"
 msgstr "新位置"
 
@@ -20558,8 +20555,8 @@ msgstr "生产批次送往车间。其工单已下达。"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "所有已过账凭证行的汇总簿，按账户汇总——仅当公司启用会计时才编制。"
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "您用来追踪成本的分类"

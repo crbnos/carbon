@@ -12938,9 +12938,6 @@ msgstr "Новая строка"
 msgid "New Line"
 msgstr "Новая строка"
 
-msgid "New Line Item"
-msgstr "Новая строка счета"
-
 msgid "New Location"
 msgstr "Новое местоположение"
 
@@ -20558,8 +20555,8 @@ msgstr "Серия поступает на цех. Её производстве
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "Журнал всех проведенных операций, сгруппированных по счетам — ведется только когда в организации включена бухгалтерия."
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "Категории затрат, по которым вы отслеживаете расходы"

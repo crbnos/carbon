@@ -7,6 +7,10 @@ import {
   OPEN_ITEM_JOURNAL_STATUSES
 } from "@carbon/database/accounting-posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import {
+  CHARGE_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { allocateJournalLineIds } from "./journal-line-ids";
 import type { ChargeContext } from "./post-charge-post";
@@ -16,6 +20,16 @@ export async function voidCharge(
 ): Promise<{ journalId: string | null }> {
   const { trx, charge, postingStatus, companyId, userId, timestamp, today } =
     context;
+
+  // The enable superseded the journal of a charge dated before the cutover
+  // and opened its balances in the opening journal, so a reversal of its own
+  // lines would undo nothing. The date is the one the posting used.
+  await refuseVoidBeforeCutover(
+    trx,
+    companyId,
+    charge.postingDate ?? charge.transactionDate,
+    CHARGE_VOID_BEFORE_CUTOVER_ERROR
+  );
 
   if (charge.journalId) {
     const originalJournal = await trx

@@ -24,8 +24,8 @@ Create a **Draft** receipt from the order. Carbon copies the outstanding lines a
 
 **<Term id="posting">Posting</Term>** the receipt adds stock through a *Purchase Receipt* item-ledger entry, increments `quantityReceived`, updates `receivedComplete`, recalculates the order status, and moves the receipt to **"Posted"**.
 
-<Callout tone="amber" badge="INVENTORY vs LEDGER" title="Stock moves whether or not accounting is on.">
-Posting always updates inventory. If accounting is enabled, Carbon also debits inventory or <Term id="wip">WIP</Term> and credits the <Term id="gr-ir">goods-received-not-invoiced (GR/IR)</Term> clearing account.
+<Callout tone="amber" badge="INVENTORY vs LEDGER" title="Stock moves before accounting is set up; the ledger waits.">
+Posting updates inventory and writes a journal that debits inventory or <Term id="wip">WIP</Term> and credits the <Term id="gr-ir">goods-received-not-invoiced (GR/IR)</Term> clearing account. Before the company sets up accounting, that journal is Provisional and counts in no balance.
 </Callout>
 
 <Callout tone="green" badge="QUALITY HANDOFF" title="Inspected parts land on hold, not on the shelf.">
@@ -56,7 +56,7 @@ Carbon reconciles order, receipt, and invoice quantities on the purchase-order l
 
 ## Match and post
 
-Posting increments each order line's `quantityInvoiced`, updates `invoicedComplete`, recalculates the order status, and moves the invoice to **"Open"**. If accounting is enabled, Carbon credits Accounts Payable, debits inventory or WIP, clears GR/IR, and posts price differences to variance.
+Posting increments each order line's `quantityInvoiced`, updates `invoicedComplete`, recalculates the order status, and moves the invoice to **"Open"**. Its journal credits Accounts Payable, debits inventory or WIP, clears GR/IR, and posts price differences to variance.
 
 Posting does not mark the invoice **"Paid"**. Record outgoing cash as a **<Term>payment</Term>** of type **"Disbursement"** and apply it through a **<Term id="invoice-settlement">settlement</Term>**. A settlement records principal plus any discount or write-off; a debit memo uses the same process without cash. Carbon derives **"Partially Paid"**, **"Paid"**, and **"Overdue"** from the applied amount and due date. Voiding a posted invoice writes reversing entries.
 

@@ -108,6 +108,7 @@ After the cutover, a document dated before it keeps its status, with some limits
 - Void a payment or a memo from before the cutover as usual. Carbon posts the reversal today.
 - A sales invoice from before the cutover cannot be voided: issue a credit memo instead. A purchase invoice: record a debit memo instead.
 - A receipt or a shipment from before the cutover cannot be voided: record a return or an inventory adjustment instead.
+- A charge or a reimbursement from before the cutover cannot be voided: record a journal entry to correct it instead.
 
 ## Related
 
@@ -144,6 +145,9 @@ A sales or purchase invoice dated before the cutover cannot be voided. Its balan
 
 ### "This document is from before your accounting cutover. Record a return or an inventory adjustment instead."
 A receipt or shipment dated before the cutover cannot be voided; the setup reset the stock it moved.
+
+### "This charge is from before your accounting cutover. Record a journal entry to correct it instead." / "This reimbursement is …"
+A charge or reimbursement dated before the cutover cannot be voided. Setting up accounting replaced its journal with the opening journal, so reversing that journal would change nothing. Record a manual journal entry for the correction.
 
 ### "This credit memo is from before your accounting cutover and credits a contract or a rental agreement. Invoice the customer for the amount instead."
 Voiding such a memo would need a contract or rental posting the opening journal does not carry.

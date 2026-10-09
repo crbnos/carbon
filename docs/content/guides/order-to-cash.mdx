@@ -37,7 +37,7 @@ Create a **Draft** shipment from the order. The shipment records **Sales Order**
 Creating a shipment does not change inventory. **<Term id="posting">Posting</Term>** it moves the shipment to **"Posted"**, reduces inventory through the item ledger, increments `quantitySent`, and recalculates the order status. `sentComplete` becomes true only when cumulative shipments reach the ordered quantity.
 
 <Callout tone="amber" badge="POSTING ≠ CREATING" title="Posting moves inventory and the order — and stops there.">
-A posted shipment reduces stock and advances the order. If accounting is enabled, it also writes the <Term id="cogs">COGS</Term> entries. It does not create an invoice.
+A posted shipment reduces stock and advances the order. It also writes the <Term id="cogs">COGS</Term> entries. It does not create an invoice.
 </Callout>
 
 <Screenshot src="/screens/otc-post-shipment.png" label="Post shipment" caption="The Post Shipment confirmation. Posting is the move that drops inventory, raises the line's sent quantity, and advances the order." ratio="wide" />
@@ -52,7 +52,7 @@ The invoice is editable while **"Draft"** and locks when it leaves Draft.
 
 ## Post and get paid
 
-Posting increments each line's `quantityInvoiced`, records the posting date, and moves the invoice to **"Submitted"**. If accounting is enabled, it posts Accounts Receivable against Sales and COGS against Inventory. Posting does not mark the invoice **"Paid"**.
+Posting increments each line's `quantityInvoiced`, records the posting date, and moves the invoice to **"Submitted"**. It posts Accounts Receivable against Sales and COGS against Inventory. Posting does not mark the invoice **"Paid"**.
 
 Record cash received as a **<Term>payment</Term>** of type **"Receipt"**. Apply it to one or more invoices through **<Term id="invoice-settlement">settlements</Term>**. Each settlement records applied principal plus any discount or write-off. Apply a posted credit memo through the same mechanism. A payment moves through **"Draft"**, **"Posted"**, and **"Voided"**; posting writes the cash and Accounts Receivable entries.
 

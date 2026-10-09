@@ -18,17 +18,17 @@ A **fixed asset** is a piece of capital equipment you capitalize and depreciate 
 
 An asset comes onto the books four ways. Registering and buying start from a **Draft** asset you created; building and capitalizing create the asset for you.
 
-- **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No cash moves; with accounting enabled the entry offsets equity, since you're recording something you already have.
+- **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No cash moves; the entry offsets equity, since you're recording something you already have.
 - **Buy** one through purchasing: a <Term id="purchase-order">purchase-order</Term> line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**. A purchase invoice with no receipt does the same. The asset page's **"Purchase"** action drafts the purchase order for you, and it is offered while the asset is Draft.
 - **Build** one on a job: set the job's **"Complete To"** to **"Fixed Asset Class"** and choose the class. When the job completes, each finished unit becomes its own asset priced at the <Term>WIP</Term> cost it absorbed, and the unit never enters stock. This is <Term id="make-to-asset">Make to Asset</Term>.
-- **Capitalize** a unit already in stock: on the item's inventory page, the storage-unit row action **"Capitalize as Fixed Asset"** moves one <Term id="serial">serialized</Term> unit out of stock at its carrying cost and creates the asset, or fills a Draft one, as **Active**. The form shows that cost before you confirm. The serial number travels with it. A unit inventory carries at no cost, such as one a job completed with no production or material recorded, or one issued into stock at no cost, takes the **Acquisition Cost** you enter instead. With accounting enabled you also choose the **Offset Account** the value was spent from (Retained Earnings by default). Entering a cost takes permission to update accounting. To carry the unit at that cost in inventory first, use **Recost** on its storage-unit row.
+- **Capitalize** a unit already in stock: on the item's inventory page, the storage-unit row action **"Capitalize as Fixed Asset"** moves one <Term id="serial">serialized</Term> unit out of stock at its carrying cost and creates the asset, or fills a Draft one, as **Active**. The form shows that cost before you confirm. The serial number travels with it. A unit inventory carries at no cost, such as one a job completed with no production or material recorded, or one issued into stock at no cost, takes the **Acquisition Cost** you enter instead. You also choose the **Offset Account** the value was spent from (Retained Earnings by default). Entering a cost takes permission to update accounting. To carry the unit at that cost in inventory first, use **Recost** on its storage-unit row.
 
 <Callout type="note" title="A job that builds assets has two rules">
 A job that completes to a fixed asset class needs a serialized item, so every finished unit maps to one numbered asset that the fleet can rent, return and capitalize. And it cannot be linked to a sales order line, because that job is a sale. Carbon refuses the job when you save it, and again at release.
 </Callout>
 
 <Callout type="note">
-The purchase-receipt path activates the asset and posts its acquisition entry **only when accounting is enabled** for the company. Cost is added cumulatively, so an asset can accrue value across several receipts; with accounting off, the line is received but the asset is left in Draft. A job that builds an asset with accounting off still creates it, at a cost of zero.
+The purchase-receipt path activates the asset and posts its acquisition entry. Cost is added cumulatively, so an asset can accrue value across several receipts. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), the acquisition journal is Provisional, but the asset still takes its cost and its status.
 </Callout>
 
 ## Fleet register
@@ -58,7 +58,7 @@ The seeded **<Term id="rental-fleet">Rental Fleet</Term>** class is the default 
 
 ## Adjusting cost
 
-An Active or Fully Depreciated asset that came onto the books for less than it cost, such as a unit a job built with no labor or material recorded, takes the rest through **"Adjust Cost"** in the asset's menu. Enter the increase and, with accounting enabled, the **Offset Account** it was spent from: Retained Earnings (the default) for an earlier year, or this year's labor or material expense account. Carbon debits the class's asset account, credits the offset account, raises the acquisition cost and records a **Cost Adjustment** transfer on the asset. A Fully Depreciated asset with value above its residual again returns to **Active**. Cost can only be raised here, and adjusting it takes permission to update accounting.
+An Active or Fully Depreciated asset that came onto the books for less than it cost, such as a unit a job built with no labor or material recorded, takes the rest through **"Adjust Cost"** in the asset's menu. Enter the increase and the **Offset Account** it was spent from: Retained Earnings (the default) for an earlier year, or this year's labor or material expense account. Carbon debits the class's asset account, credits the offset account, raises the acquisition cost and records a **Cost Adjustment** transfer on the asset. A Fully Depreciated asset with value above its residual again returns to **Active**. Cost can only be raised here, and adjusting it takes permission to update accounting.
 
 If depreciation already ran at the old cost, the next run catches up a straight-line asset: its first month carries the depreciation the earlier months missed, so the asset still finishes on its original schedule. Declining balance and MACRS correct themselves, since both depreciate what is left over the life that is left; units of production does not catch up.
 
@@ -144,7 +144,7 @@ The unit is carried at zero and no cost was entered. Enter its **Acquisition Cos
 A cost was entered for a unit that inventory already values. The transfer moves the value inventory holds; capitalize it without a cost, then use **Adjust Cost** on the asset for anything more.
 
 ### "Choose the account the cost was booked to when it was spent" / "The offset account must be an active posting account"
-With accounting enabled, an entered cost or a cost adjustment needs an active, non-group account to credit.
+An entered cost or a cost adjustment needs an active, non-group account to credit.
 
 ### "… only an Active or Fully Depreciated asset's cost can be adjusted"
 Adjust Cost is offered for Active and Fully Depreciated assets. Register a Draft asset instead; a disposed asset is off the books.

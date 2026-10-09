@@ -31,6 +31,7 @@ export const ACCOUNTS = [
   { name: "bank", class: "Asset" },
   { name: "grni", class: "Liability" },
   { name: "payables", class: "Liability" },
+  { name: "card", class: "Liability" },
   { name: "retained-earnings", class: "Equity" },
   { name: "migration-clearing", class: "Equity" },
   { name: "sales", class: "Revenue" },
@@ -252,6 +253,18 @@ export async function activationFixture() {
         await trx
           .updateTable("salesInvoice")
           .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .updateTable("charge")
+          .set({
+            status: "Draft",
+            journalId: null,
+            postedAt: null,
+            postedBy: null,
+            voidedAt: null,
+            voidedBy: null
+          })
           .where("companyId", "=", companyId)
           .execute();
         await sql`SET LOCAL session_replication_role = origin`.execute(trx);

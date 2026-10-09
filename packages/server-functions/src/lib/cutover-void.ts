@@ -18,6 +18,10 @@ export const SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR =
   "This invoice is from before your accounting cutover. Issue a credit memo instead.";
 export const PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR =
   "This invoice is from before your accounting cutover. Record a debit memo instead.";
+export const CHARGE_VOID_BEFORE_CUTOVER_ERROR =
+  "This charge is from before your accounting cutover. Record a journal entry to correct it instead.";
+export const REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR =
+  "This reimbursement is from before your accounting cutover. Record a journal entry to correct it instead.";
 
 /**
  * Throws `message` when the document's posting date is before the company's

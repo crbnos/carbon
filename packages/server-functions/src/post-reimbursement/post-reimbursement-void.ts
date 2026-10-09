@@ -7,6 +7,10 @@ import {
   OPEN_ITEM_JOURNAL_STATUSES
 } from "@carbon/database/accounting-posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import {
+  REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import type { ReimbursementContext } from "./post-reimbursement-post";
@@ -23,6 +27,16 @@ export async function voidReimbursement(
     timestamp,
     today
   } = context;
+
+  // The enable superseded the journal of a reimbursement dated before the
+  // cutover and opened its balances in the opening journal, so a reversal of
+  // its own lines would undo nothing. The date is the one the posting used.
+  await refuseVoidBeforeCutover(
+    trx,
+    companyId,
+    reimbursement.postingDate ?? reimbursement.reimbursementDate,
+    REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR
+  );
 
   // A paid-out reimbursement cannot be voided. Without this the void wrote a
   // second journal crediting the employee payable again, leaving that account

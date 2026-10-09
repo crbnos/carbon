@@ -1161,8 +1161,8 @@ async function loadConsumeAccountingContext(
 
 // Spare parts issued to a maintenance dispatch are an expense the moment they
 // leave stock. The caller writes the item ledger rows; this values them: each
-// movement relieves (or, on a return, restores) the item's cost layers and,
-// with accounting enabled, posts Dr maintenanceAccount / Cr inventory through
+// movement relieves (or, on a return, restores) the item's cost layers and
+// posts Dr maintenanceAccount / Cr inventory through
 // the shared adjustment core — one journal per call, tagged with the dispatch's
 // work center. A return reverses at what the dispatch actually booked
 // (`resolveMaintenanceReturnCost`), so a part issued before maintenance

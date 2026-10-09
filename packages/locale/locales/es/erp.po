@@ -12938,9 +12938,6 @@ msgstr "Nueva línea"
 msgid "New Line"
 msgstr "Nueva Línea"
 
-msgid "New Line Item"
-msgstr "Nuevo Artículo de Línea"
-
 msgid "New Location"
 msgstr "Nueva Ubicación"
 
@@ -20558,8 +20555,8 @@ msgstr "El lote de producción va a la planta. Sus órdenes de trabajo ya están
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "El lote se ejecuta según su miembro más urgente — los demás se adelantan"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "El libro de todos los asientos contabilizados, sumados por cuenta — escrito solo cuando la empresa tiene la contabilidad habilitada."
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "Los depósitos contra los que rastrear costos"

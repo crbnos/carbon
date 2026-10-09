@@ -12938,9 +12938,6 @@ msgstr "नई पंक्ति"
 msgid "New Line"
 msgstr "नई लाइन"
 
-msgid "New Line Item"
-msgstr "नई लाइन आइटम"
-
 msgid "New Location"
 msgstr "नया स्थान"
 
@@ -20558,8 +20555,8 @@ msgstr "बैच शॉप फ्लोर पर जाता है। इस
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "बैच अपने सबसे जरूरी सदस्य के समय चलता है — बाकी पहले खींचे जाते हैं"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr ""
 
 msgid "The buckets you track costs against"
 msgstr "वह बाल्टियाँ जिनके विरुद्ध आप लागत को ट्रैक करते हैं"

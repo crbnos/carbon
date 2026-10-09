@@ -115,7 +115,7 @@ export function validateChargeAccountMapping(args: {
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync card charge: no posted Charge journal lines found. Post the charge with accounting enabled, then retry.",
+        "Cannot sync card charge: no posted Charge journal lines found. Set up accounting and post the charge, then retry.",
       metadata: { chargeId: charge.id }
     });
   }
