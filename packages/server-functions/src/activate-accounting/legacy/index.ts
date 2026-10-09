@@ -6,18 +6,21 @@
 // 5a): the journals of legacy documents dated on or after the cutover. Each
 // is the journal the document's posting writes today, Provisional and dated
 // the document's posting date, so the later steps re-cost, period, re-point
-// and promote it like every other Provisional journal. Invoices, memos,
-// charges and reimbursements come first; payments follow in posting order,
-// because a payment reads the control line of what it settles. Movements
-// that stored a cost row come last: receipts, return receipts, shipments
-// with their sale cost row, return shipments, and the movements of the
-// adjustment core. The inventory reset and re-cost after this step find
-// their inventory lines.
+// and promote it like every other Provisional journal. First the cost rows
+// of movements that stored none (movement-cost.ts): the shipment and invoice
+// builders then read a sale row like any other. Invoices, memos, charges and
+// reimbursements come next; payments follow in posting order, because a
+// payment reads the control line of what it settles. Movements come last:
+// receipts, return receipts, shipments with their sale cost row, return
+// shipments, the movements of the adjustment core, then job issues and job
+// completions. The inventory reset and re-cost after this step find their
+// inventory lines.
 
 import type { KyselyTx } from "@carbon/database/client";
 import { buildLegacyAdjustmentJournals } from "./adjustment";
 import { buildLegacyChargeJournals } from "./charge";
 import { buildLegacyMemoJournals } from "./memo";
+import { writeLegacyMovementCosts } from "./movement-cost";
 import { journalLegacyPayments } from "./payment";
 import { buildLegacyPurchaseInvoiceJournals } from "./purchase-invoice";
 import {
@@ -53,6 +56,10 @@ export type LegacyJournalCounts = {
   inventoryCounts: number;
   nonConformances: number;
   maintenanceConsumptions: number;
+  jobConsumptions: number;
+  jobOutputs: number;
+  /** Cost rows written for movements that stored none. */
+  movementCostRows: number;
 };
 
 export async function journalLegacyDocuments(
@@ -76,6 +83,13 @@ export async function journalLegacyDocuments(
     .where("companyId", "=", companyId)
     .executeTakeFirstOrThrow();
   const args = { companyId, companyGroupId, cutoverDate, defaults };
+
+  // Before the builders that read the sale rows.
+  const movementCosts = await writeLegacyMovementCosts(trx, {
+    companyId,
+    cutoverDate,
+    defaults
+  });
 
   const salesInvoices = await buildLegacySalesInvoiceJournals(trx, args);
   const purchaseInvoices = await buildLegacyPurchaseInvoiceJournals(trx, args);
@@ -154,7 +168,9 @@ export async function journalLegacyDocuments(
       ...adjustments.inventoryAdjustments,
       ...adjustments.inventoryCounts,
       ...adjustments.nonConformances,
-      ...adjustments.maintenanceConsumptions
+      ...adjustments.maintenanceConsumptions,
+      ...movementCosts.jobConsumptions,
+      ...movementCosts.jobOutputs
     ]
   });
 
@@ -175,6 +191,9 @@ export async function journalLegacyDocuments(
     inventoryAdjustments: written(adjustments.inventoryAdjustments),
     inventoryCounts: written(adjustments.inventoryCounts),
     nonConformances: written(adjustments.nonConformances),
-    maintenanceConsumptions: written(adjustments.maintenanceConsumptions)
+    maintenanceConsumptions: written(adjustments.maintenanceConsumptions),
+    jobConsumptions: written(movementCosts.jobConsumptions),
+    jobOutputs: written(movementCosts.jobOutputs),
+    movementCostRows: movementCosts.costRows
   };
 }

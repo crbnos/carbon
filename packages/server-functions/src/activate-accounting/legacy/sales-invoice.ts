@@ -12,8 +12,8 @@
 //   reference, the intercompany partner) and metadata (~1157-1295);
 // - the COGS pair of a direct line (no sales order, not Make to Order,
 //   inventory-tracked) at the cost its cost row stored (~1368-1415,
-//   ~1861-1920). A line with no cost row gets no pair here: the movement
-//   families of the enable write that cost row and its journal;
+//   ~1861-1920). A legacy direct line stored no cost row; the enable writes
+//   it first (movement-cost.ts), so its pair is built here, once;
 // - the dimensions of every line (~1960-2045).
 // A contract, rental or fixed-asset line books plain revenue on the sales
 // account. A line with Deferral schedule rows dated on or after the cutover

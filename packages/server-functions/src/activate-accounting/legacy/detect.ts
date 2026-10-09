@@ -266,7 +266,8 @@ export function legacyReceipts(
  * Posted shipments of one source document dated on or after the cutover
  * that stored a cost row and have no journal line under `journalDocumentType`.
  * A sales shipment stored its "Sale" cost row only when the company had
- * accounting on; one without it relieved no layer (Task 42's family).
+ * accounting on; the enable writes the row of one without it first
+ * (`legacySaleMovements`, movement-cost.ts).
  */
 export function legacyShipments(
   trx: KyselyTx,
@@ -442,5 +443,126 @@ export function legacyAdjustmentCostRows(
     )
     .orderBy("cost.postingDate")
     .orderBy("cost.entryNumber")
+    .execute();
+}
+
+/** A timestamp as a fixed-width UTC instant: it sorts as text, and inserts
+ *  back as the same timestamp. */
+export function utcInstant(column: string) {
+  return sql<string>`to_char(${sql.ref(column)} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+}
+
+/**
+ * The sale movements dated on or after the cutover, per document and item:
+ * the item ledger rows of a posted sales order shipment, and of a posted
+ * sales invoice (a direct line ships through its invoice, under the
+ * invoice's id). `covered` is the quantity the document's "Sale" cost rows
+ * hold. A company with accounting off stored none: a sales order shipment
+ * never costed its movement, and a direct line relieved its layers but wrote
+ * no row. A correction is left out: it books its own cost row.
+ */
+export function legacySaleMovements(
+  trx: KyselyTx,
+  { companyId, cutoverDate }: Args
+) {
+  return trx
+    .selectFrom("itemLedger as ledger")
+    .select([
+      "ledger.documentId",
+      "ledger.itemId",
+      sql<number>`-sum("ledger"."quantity")`.as("quantity"),
+      sql<string>`min("ledger"."postingDate")::text`.as("postingDate"),
+      sql<string>`min(${utcInstant("ledger.createdAt")})`.as("createdAt"),
+      sql<number>`coalesce((
+        SELECT -sum("cost"."quantity")
+        FROM "costLedger" AS "cost"
+        WHERE "cost"."companyId" = "ledger"."companyId"
+          AND "cost"."documentId" = "ledger"."documentId"
+          AND "cost"."itemId" = "ledger"."itemId"
+          AND "cost"."documentType" = 'Sales Shipment'
+          AND "cost"."itemLedgerType" = 'Sale'
+          AND "cost"."adjustment" = false
+          AND "cost"."appliesToCostLedgerId" IS NULL
+          AND "cost"."quantity" < 0
+      ), 0)`.as("covered")
+    ])
+    .where("ledger.companyId", "=", companyId)
+    .where("ledger.documentType", "=", "Sales Shipment")
+    .where("ledger.entryType", "=", "Negative Adjmt.")
+    .where("ledger.postingDate", ">=", cutoverDate)
+    .where("ledger.quantity", "<", 0)
+    .where("ledger.correctionOfItemLedgerId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb.exists(
+          eb
+            .selectFrom("shipment")
+            .select("shipment.id")
+            .whereRef("shipment.companyId", "=", "ledger.companyId")
+            .whereRef("shipment.id", "=", "ledger.documentId")
+            .where("shipment.status", "=", "Posted")
+            .where("shipment.sourceDocument", "=", "Sales Order")
+        ),
+        eb.exists(
+          eb
+            .selectFrom("salesInvoice as invoice")
+            .select("invoice.id")
+            .whereRef("invoice.companyId", "=", "ledger.companyId")
+            .whereRef("invoice.id", "=", "ledger.documentId")
+            .where("invoice.status", "not in", [...NOT_POSTED])
+        )
+      ])
+    )
+    .groupBy(["ledger.companyId", "ledger.documentId", "ledger.itemId"])
+    .orderBy(sql`min("ledger"."postingDate")`)
+    .orderBy(sql`min("ledger"."createdAt")`)
+    .orderBy("ledger.documentId")
+    .orderBy("ledger.itemId")
+    .execute();
+}
+
+/**
+ * The job movements dated on or after the cutover: material issued to a job
+ * or returned from it, and the output a completion received. A correction
+ * is left out: it books its own cost row.
+ */
+export function legacyJobMovements(
+  trx: KyselyTx,
+  { companyId, cutoverDate }: Args
+) {
+  return trx
+    .selectFrom("itemLedger as ledger")
+    .select([
+      "ledger.id",
+      "ledger.entryType",
+      "ledger.documentId",
+      "ledger.documentLineId",
+      "ledger.itemId",
+      "ledger.quantity",
+      "ledger.locationId",
+      sql<string>`"ledger"."postingDate"::text`.as("postingDate"),
+      utcInstant("ledger.createdAt").as("createdAt")
+    ])
+    .where("ledger.companyId", "=", companyId)
+    .where("ledger.postingDate", ">=", cutoverDate)
+    .where("ledger.correctionOfItemLedgerId", "is", null)
+    .where("ledger.documentId", "is not", null)
+    .where("ledger.quantity", "!=", 0)
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("ledger.entryType", "=", "Consumption"),
+          eb("ledger.documentType", "=", "Job Consumption")
+        ]),
+        eb.and([
+          eb("ledger.entryType", "=", "Assembly Output"),
+          eb("ledger.documentType", "=", "Job Receipt"),
+          eb("ledger.quantity", ">", 0)
+        ])
+      ])
+    )
+    .orderBy("ledger.postingDate")
+    .orderBy("ledger.createdAt")
+    .orderBy("ledger.entryNumber")
     .execute();
 }

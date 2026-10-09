@@ -58,7 +58,7 @@
 - [x] Task 39: Write the journals of legacy sales and purchase invoices at enable
 - [x] Task 40: Write the journals of legacy memos, payments, charges and reimbursements
 - [x] Task 41: Write the journals of legacy movements that stored a cost row
-- [ ] Task 42: Write the cost rows and journals of legacy movements that stored none
+- [x] Task 42: Write the cost rows and journals of legacy movements that stored none
 - [ ] Task 43: Write the journals of legacy asset and revenue runs again
 - [ ] Task 44: Show the legacy journals in the wizard and update the docs
 - [ ] Task 45: Verify the legacy window in the browser
@@ -1515,3 +1515,4 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
   2. The trial balance CSV import is its own intent, `import-tb`. It saves nothing when a row has an error.
   3. `no-unscoped-kysely-write` exempts `companySettings`. Its `id` is the company id, as for `company`.
 - Task 40 added migration `20261009060609_legacy-journal-attach.sql`. The charge and reimbursement draft guards refused every Posted to Posted change, so the enable could not set `journalId`. The guards now allow one more change: a Posted row with no journal gets one, and nothing else changes.
+- Task 42 also journals job issue and completion cost rows whose journals the reset deleted (companies that had accounting on). Without it the re-cost refuses such a row with 409. A zero-cost pair takes its sign from the offset account class in `postRecostJournals`.

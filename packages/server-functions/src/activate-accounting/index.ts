@@ -28,7 +28,15 @@ import {
 import type { KyselyTx } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
-import { credit, datetime, EPSILON, equals, round } from "@carbon/utils";
+import {
+  accountTypeFromClass,
+  credit,
+  datetime,
+  debit,
+  EPSILON,
+  equals,
+  round
+} from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -565,6 +573,7 @@ async function resetAndRecostInventory(
   const outboundById = new Map(outboundAfter.map((row) => [row.id, row]));
   await postRecostJournals(trx, {
     companyId,
+    companyGroupId,
     userId,
     cutoverDate,
     defaults,
@@ -598,18 +607,24 @@ type RecostDelta = {
  * positive delta and the paired line moves the other way, signed as the
  * original pair is; the lines copy the
  * original's document keys, so a reader of the document's chain (close-job's
- * WIP sum, a void) sees the new cost. Refuses rather than guess an account.
+ * WIP sum, a void) sees the new cost. A pair posted at zero (a movement
+ * costed at nothing) carries no sign, so the offset takes the debit sign of
+ * its own account's class: every re-costed movement is outbound, so its
+ * inventory line is a credit and the offset a debit. Refuses rather than
+ * guess an account.
  */
 async function postRecostJournals(
   trx: KyselyTx,
   {
     companyId,
+    companyGroupId,
     userId,
     cutoverDate,
     defaults,
     deltas
   }: {
     companyId: string;
+    companyGroupId: string;
     userId: string;
     cutoverDate: string;
     defaults: AccountDefaults;
@@ -732,6 +747,48 @@ async function postRecostJournals(
     resolved.push({ delta, pair: candidates[0]! });
   }
 
+  // The class of each offset in a pair posted at zero, which signs it. A
+  // stand-in line is signed for the default it stands in for, which no
+  // account class records, so it keeps the refusal below.
+  const zeroOffsetIds = [
+    ...new Set(
+      resolved
+        .filter(
+          ({ pair }) =>
+            Number(pair.inventory.amount) === 0 &&
+            Number(pair.offset.amount) === 0 &&
+            !pair.offset.accountDefaultRole
+        )
+        .flatMap(({ pair }) =>
+          pair.offset.accountId ? [pair.offset.accountId] : []
+        )
+    )
+  ];
+  const classByAccount = new Map(
+    (zeroOffsetIds.length > 0
+      ? await trx
+          .selectFrom("account")
+          .select(["id", "class"])
+          .where("companyGroupId", "=", companyGroupId)
+          .where("id", "in", zeroOffsetIds)
+          .execute()
+      : []
+    ).map((account) => [account.id, account.class])
+  );
+  const signRelation = (pair: Pair): number => {
+    const relation =
+      Math.sign(Number(pair.inventory.amount)) *
+      Math.sign(Number(pair.offset.amount));
+    if (relation !== 0) return relation;
+    if (pair.offset.accountDefaultRole) return 0;
+    const offsetClass = classByAccount.get(pair.offset.accountId ?? "");
+    if (!offsetClass) return 0;
+    return (
+      Math.sign(credit("asset", 1)) *
+      Math.sign(debit(accountTypeFromClass(offsetClass), 1))
+    );
+  };
+
   // One journal per document and posting date.
   const groups = new Map<
     string,
@@ -786,9 +843,7 @@ async function postRecostJournals(
       // The offset mirrors the original pair's sign relation rather than
       // re-deriving it from the offset's account class: a stand-in line sits
       // on retained earnings but is signed for the account it stands in for.
-      const relation =
-        Math.sign(Number(pair.inventory.amount)) *
-        Math.sign(Number(pair.offset.amount));
+      const relation = signRelation(pair);
       if (relation === 0) {
         throw new ServerFnError(
           `The inventory line of ${label(delta)} or the line paired with it has no amount, so the cutover re-cost cannot sign its adjustment.`,

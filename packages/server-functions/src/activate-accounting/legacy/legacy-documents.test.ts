@@ -16,12 +16,14 @@ import {
 } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
 import { expect } from "vitest";
+import issue from "../../issue";
 import { databaseTest } from "../../local-database-test-fixture";
 import postCharge from "../../post-charge";
 import postInventoryAdjustment from "../../post-inventory-adjustment";
 import postMemo from "../../post-memo";
 import postPayment from "../../post-payment";
 import postPurchaseInvoice from "../../post-purchase-invoice";
+import postSalesInvoice from "../../post-sales-invoice";
 import activateAccounting from "..";
 import {
   activationFixture,
@@ -127,7 +129,10 @@ databaseTest(
         inventoryAdjustments: 0,
         inventoryCounts: 0,
         nonConformances: 0,
-        maintenanceConsumptions: 0
+        maintenanceConsumptions: 0,
+        jobConsumptions: 0,
+        jobOutputs: 0,
+        movementCostRows: 0
       });
 
       // The same journals, now Posted.
@@ -274,7 +279,10 @@ databaseTest(
         inventoryAdjustments: 0,
         inventoryCounts: 0,
         nonConformances: 0,
-        maintenanceConsumptions: 0
+        maintenanceConsumptions: 0,
+        jobConsumptions: 0,
+        jobOutputs: 0,
+        movementCostRows: 0
       });
 
       // The same journals, now Posted, with no Provisional left.
@@ -438,7 +446,10 @@ databaseTest(
         inventoryAdjustments: 2,
         inventoryCounts: 0,
         nonConformances: 0,
-        maintenanceConsumptions: 0
+        maintenanceConsumptions: 0,
+        jobConsumptions: 0,
+        jobOutputs: 0,
+        movementCostRows: 0
       });
 
       // The same journals, now Posted. The re-cost found nothing to move:
@@ -558,6 +569,524 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "enabling accounting costs a legacy shipment that stored no cost row against the reset layers",
+  async () => {
+    const f = await activationFixture();
+    try {
+      await legacyShipmentWithNoCostRow(f);
+      // Today's unit cost is 12: the re-cost moves the shipment to the
+      // opening layer's 10.
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 12 })
+        .where("itemId", "=", f.partId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const result = await enableWithStockAtTen(f);
+      expect(result.legacyJournals).toMatchObject({
+        salesShipments: 1,
+        movementCostRows: 1
+      });
+      await expectShipmentCostedFromOpeningLayer(f);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the re-cost signs the pair of a legacy shipment costed at zero",
+  async () => {
+    const f = await activationFixture();
+    try {
+      await legacyShipmentWithNoCostRow(f);
+      // Today's unit cost is nothing, so the shipment's pair posts at zero
+      // and the re-cost takes its sign from the cost of goods account.
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 0 })
+        .where("itemId", "=", f.partId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const result = await enableWithStockAtTen(f);
+      expect(result.legacyJournals).toMatchObject({
+        salesShipments: 1,
+        movementCostRows: 1
+      });
+      const recost = await f.db
+        .selectFrom("journal")
+        .select(["sourceType", "status"])
+        .where("companyId", "=", f.companyId)
+        .where("description", "=", "Cutover recost")
+        .execute();
+      expect(recost).toEqual([
+        { sourceType: "Sales Shipment", status: "Posted" }
+      ]);
+      await expectShipmentCostedFromOpeningLayer(f);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "enabling accounting books the COGS of a legacy direct invoice line once, in the invoice journal",
+  async () => {
+    const f = await activationFixture();
+    try {
+      // Before the cutover: 5 parts at 8 and 5 at 12. After it: 5 sold on
+      // an invoice with no sales order, which relieved the 8 layer but kept
+      // no "Sale" cost row and no journal, as main left it.
+      await receiveFiveParts(f, { id: "po-1", unitPrice: 8 });
+      await receiveFiveParts(f, { id: "po-2", unitPrice: 12 });
+      await moveBeforeCutover(f);
+      const invoiceId = await postDirectPartInvoice(f);
+      await f.db
+        .deleteFrom("costLedger")
+        .where("companyId", "=", f.companyId)
+        .where("itemLedgerType", "=", "Sale")
+        .execute();
+      await deleteJournals(f, ["Sales Invoice"]);
+      // Today's unit cost is 12: the re-cost moves the line to the opening
+      // layer's 10.
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 12 })
+        .where("itemId", "=", f.partId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const result = await enableWithStockAtTen(f);
+      expect(result.legacyJournals).toMatchObject({
+        salesInvoices: 1,
+        salesShipments: 0,
+        movementCostRows: 1
+      });
+
+      // One COGS pair, in the invoice journal, and the re-cost found it.
+      const cogs = await f.db
+        .selectFrom("journalLine")
+        .innerJoin("journal", "journal.id", "journalLine.journalId")
+        .select([
+          "journal.sourceType",
+          "journal.description",
+          "journalLine.amount"
+        ])
+        .where("journalLine.companyId", "=", f.companyId)
+        .where("journalLine.accountId", "=", f.account("cogs"))
+        .orderBy("journal.description")
+        .execute();
+      expect(
+        cogs.map((line) => ({ ...line, amount: Number(line.amount) }))
+      ).toEqual([
+        {
+          sourceType: "Sales Invoice",
+          description: "Cutover recost",
+          amount: -10
+        },
+        {
+          sourceType: "Sales Invoice",
+          description: "Sales Invoice INV-2",
+          amount: 60
+        }
+      ]);
+      expect(await glBalance(f, "receivables")).toBeCloseTo(125, 6);
+      expect(await glBalance(f, "sales")).toBeCloseTo(125, 6);
+      const sale = await f.db
+        .selectFrom("costLedger")
+        .select(["documentId", "quantity", "cost"])
+        .where("companyId", "=", f.companyId)
+        .where("itemLedgerType", "=", "Sale")
+        .executeTakeFirstOrThrow();
+      expect(sale.documentId).toBe(invoiceId);
+      expect([Number(sale.quantity), Number(sale.cost)]).toEqual([-5, -50]);
+      expect(await glBalance(f, "cogs")).toBeCloseTo(50, 6);
+      expect(await glBalance(f, "inventory")).toBeCloseTo(50, 6);
+      expect(await openLayersValue(f)).toBeCloseTo(50, 4);
+      expect(await provisionalJournals(f)).toEqual([]);
+      expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "enabling accounting costs a legacy job issue and completion that stored no cost row",
+  async () => {
+    const f = await activationFixture();
+    try {
+      // Before the cutover: 5 parts at 8 and 5 at 12. After it: 2 issued to
+      // a job and the job completed with 1 assembly. Then the cost rows and
+      // journals are gone, as a company with accounting off left them.
+      await receiveFiveParts(f, { id: "po-1", unitPrice: 8 });
+      await receiveFiveParts(f, { id: "po-2", unitPrice: 12 });
+      await moveBeforeCutover(f);
+      const job = await jobFixture(f);
+      unwrap(
+        await issue(f.ctx, {
+          type: "partToOperation",
+          id: job.operationId,
+          itemId: f.partId,
+          materialId: job.materialId,
+          quantity: 2,
+          adjustmentType: "Negative Adjmt."
+        })
+      );
+      await sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, ${null}, ${f.locationId}, ${f.companyId}, ${USER})`.execute(
+        f.db
+      );
+      await f.db
+        .deleteFrom("costLedger")
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "in", ["Job Consumption", "Job Receipt"])
+        .execute();
+      await f.db
+        .updateTable("costLedger")
+        .set({ remainingQuantity: sql`"quantity"` })
+        .where("companyId", "=", f.companyId)
+        .where("itemLedgerType", "=", "Purchase")
+        .execute();
+      await deleteJournals(f, ["Job Consumption", "Job Receipt"]);
+      // Today's unit cost of the part is 9: the re-cost moves the issue to
+      // the opening layer's 10.
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 9 })
+        .where("itemId", "=", f.partId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const result = await enableWithStockAtTen(f);
+      expect(result.legacyJournals).toMatchObject({
+        salesShipments: 0,
+        jobConsumptions: 1,
+        jobOutputs: 1,
+        movementCostRows: 2
+      });
+
+      // The issue, re-costed against the opening layer; the output layer at
+      // the material cost the issue had when the job completed.
+      const rows = await f.db
+        .selectFrom("costLedger")
+        .select([
+          "itemLedgerType",
+          "documentType",
+          "documentId",
+          "itemId",
+          "quantity",
+          "cost",
+          "remainingQuantity"
+        ])
+        .where("companyId", "=", f.companyId)
+        .where("documentId", "=", job.jobId)
+        .orderBy("entryNumber")
+        .execute();
+      expect(
+        rows.map((row) => ({
+          ...row,
+          quantity: Number(row.quantity),
+          cost: Number(row.cost),
+          remainingQuantity: Number(row.remainingQuantity)
+        }))
+      ).toEqual([
+        {
+          itemLedgerType: "Consumption",
+          documentType: "Job Consumption",
+          documentId: job.jobId,
+          itemId: f.partId,
+          quantity: -2,
+          cost: -20,
+          remainingQuantity: 0
+        },
+        {
+          itemLedgerType: "Output",
+          documentType: "Job Receipt",
+          documentId: job.jobId,
+          itemId: job.assemblyId,
+          quantity: 1,
+          cost: 18,
+          remainingQuantity: 1
+        }
+      ]);
+
+      // The issue's pair names its operation, and the re-cost found it.
+      const references = await f.db
+        .selectFrom("journalLine")
+        .innerJoin("journal", "journal.id", "journalLine.journalId")
+        .select([
+          "journal.sourceType",
+          "journal.description",
+          "journalLine.documentLineReference"
+        ])
+        .distinct()
+        .where("journalLine.companyId", "=", f.companyId)
+        .where("journalLine.documentId", "=", job.jobId)
+        .orderBy("journal.sourceType")
+        .orderBy("journal.description")
+        .execute();
+      expect(references).toEqual([
+        {
+          sourceType: "Job Consumption",
+          description: "Cutover recost",
+          documentLineReference: `material-issue:${job.operationId}`
+        },
+        {
+          sourceType: "Job Consumption",
+          description: "Material Issue to Job J-1",
+          documentLineReference: `material-issue:${job.operationId}`
+        },
+        {
+          sourceType: "Job Receipt",
+          description: "Job Completion J-1",
+          documentLineReference: `job:${job.jobId}`
+        }
+      ]);
+
+      // Stock on the GL equals the open layers: 8 parts at 10 and the
+      // assembly at 18. The 2 the re-cost added after the completion stay
+      // in WIP: the output layer is not valued again.
+      expect(await glBalance(f, "inventory")).toBeCloseTo(80, 6);
+      expect(await glBalance(f, "finished-goods")).toBeCloseTo(18, 6);
+      expect(await glBalance(f, "wip")).toBeCloseTo(2, 6);
+      expect(await openLayersValue(f)).toBeCloseTo(98, 4);
+      expect(await provisionalJournals(f)).toEqual([]);
+      expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/**
+ * Before the cutover: 5 parts at 8 and 5 at 12 received. After it: 5
+ * shipped, then the shipment's "Sale" cost row, its relief of the layer and
+ * its journal undone, as main left a shipment with accounting off.
+ */
+async function legacyShipmentWithNoCostRow(f: Fixture) {
+  await receiveFiveParts(f, { id: "po-1", unitPrice: 8 });
+  await receiveFiveParts(f, { id: "po-2", unitPrice: 12 });
+  await moveBeforeCutover(f);
+  await shipFiveParts(f);
+  await f.db
+    .deleteFrom("costLedger")
+    .where("companyId", "=", f.companyId)
+    .where("itemLedgerType", "=", "Sale")
+    .execute();
+  await f.db
+    .updateTable("costLedger")
+    .set({ remainingQuantity: sql`"quantity"` })
+    .where("companyId", "=", f.companyId)
+    .where("itemLedgerType", "=", "Purchase")
+    .execute();
+  await deleteJournals(f, ["Sales Shipment"]);
+}
+
+/** A posted sales invoice with no sales order: 5 parts at 25. */
+async function postDirectPartInvoice(f: Fixture): Promise<string> {
+  const invoiceId = `${f.prefix}-direct-invoice`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("salesInvoice")
+      .values({
+        id: invoiceId,
+        invoiceId: "INV-2",
+        customerId: f.customerId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        postingDate: f.today,
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceShipment")
+      .values({
+        id: invoiceId,
+        shippingCost: 0,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceLine")
+      .values({
+        invoiceId,
+        invoiceLineType: "Part",
+        itemId: f.partId,
+        methodType: "Pull from Inventory",
+        quantity: 5,
+        unitPrice: 25,
+        exchangeRate: 1,
+        unitOfMeasureCode: "EA",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postSalesInvoice(f.ctx, { type: "post", invoiceId }));
+  return invoiceId;
+}
+
+/** Enables with the opening stock (10 parts at 10) against GR/IR. */
+async function enableWithStockAtTen(f: Fixture) {
+  await f.db
+    .updateTable("accountDefault")
+    .set({ scrapAccount: f.account("scrap") })
+    .where("companyId", "=", f.companyId)
+    .execute();
+  const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+  const [part] = await getCutoverInventory(f.db, args);
+  expect(part!.unitCost).toBe(10);
+  await saveOpeningTrialBalance(f.db, {
+    ...args,
+    userId: USER,
+    lines: [
+      { accountId: f.account("inventory"), debit: 100, credit: 0 },
+      { accountId: f.account("grni"), debit: 0, credit: 100 }
+    ]
+  });
+  return unwrap(
+    await activateAccounting(f.ctx, { ...args, confirmation: f.companyName })
+  );
+}
+
+/** The 5 shipped cost 50 from the opening layer, which keeps 5 at 10. */
+async function expectShipmentCostedFromOpeningLayer(f: Fixture) {
+  const sale = await f.db
+    .selectFrom("costLedger")
+    .select(["quantity", "cost"])
+    .where("companyId", "=", f.companyId)
+    .where("itemLedgerType", "=", "Sale")
+    .executeTakeFirstOrThrow();
+  expect([Number(sale.quantity), Number(sale.cost)]).toEqual([-5, -50]);
+  expect(await glBalance(f, "cogs")).toBeCloseTo(50, 6);
+  expect(await glBalance(f, "inventory")).toBeCloseTo(50, 6);
+  expect(await openLayersValue(f)).toBeCloseTo(50, 4);
+  expect(await provisionalJournals(f)).toEqual([]);
+  expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
+}
+
+/** The value of the cost layers still open. */
+async function openLayersValue(f: Fixture) {
+  const row = await f.db
+    .selectFrom("costLedger")
+    .select(
+      sql<number>`coalesce(sum("cost" * "remainingQuantity" / "quantity"), 0)`.as(
+        "value"
+      )
+    )
+    .where("companyId", "=", f.companyId)
+    .where("remainingQuantity", ">", 0)
+    .where("adjustment", "=", false)
+    .executeTakeFirstOrThrow();
+  return Number(row.value);
+}
+
+function provisionalJournals(f: Fixture) {
+  return f.db
+    .selectFrom("journal")
+    .select(["description", "sourceType"])
+    .where("companyId", "=", f.companyId)
+    .where("status", "=", "Provisional")
+    .execute();
+}
+
+/** A made assembly and a job for one of it: one operation, and two of the
+ *  part planned. */
+async function jobFixture(f: Fixture) {
+  const assemblyId = `${f.prefix}-assembly`;
+  const jobId = `${f.prefix}-job`;
+  const processId = `${f.prefix}-process`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("item")
+      .values({
+        id: assemblyId,
+        readableId: `${f.prefix}-ASSY`,
+        name: "Assembly",
+        type: "Part",
+        itemTrackingType: "Inventory",
+        replenishmentSystem: "Make",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("job")
+      .values({
+        id: jobId,
+        jobId: "J-1",
+        itemId: assemblyId,
+        quantity: 1,
+        unitOfMeasureCode: "EA",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("process")
+      .values({
+        id: processId,
+        name: "Assemble",
+        defaultStandardFactor: "Hours/Piece",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  // The job insert creates its top-level make method.
+  const makeMethod = await f.db
+    .selectFrom("jobMakeMethod")
+    .select("id")
+    .where("jobId", "=", jobId)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const operation = await f.db
+    .insertInto("jobOperation")
+    .values({
+      jobId,
+      jobMakeMethodId: makeMethod.id,
+      processId,
+      description: "Assemble",
+      companyId: f.companyId,
+      createdBy: USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  const material = await f.db
+    .insertInto("jobMaterial")
+    .values({
+      jobId,
+      jobMakeMethodId: makeMethod.id,
+      jobOperationId: operation.id,
+      itemId: f.partId,
+      itemType: "Part",
+      methodType: "Pull from Inventory",
+      description: "Bracket",
+      quantity: 2,
+      estimatedQuantity: 2,
+      unitOfMeasureCode: "EA",
+      companyId: f.companyId,
+      createdBy: USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return {
+    assemblyId,
+    jobId,
+    operationId: operation.id,
+    materialId: material.id
+  };
+}
 
 /** A posted credit memo of `amount` for the customer, dated today. */
 async function postCreditMemo(f: Fixture, amount: number): Promise<string> {
