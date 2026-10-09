@@ -8,6 +8,35 @@ import {
   type ZonedDateTime
 } from "@internationalized/date";
 
+// Can this browser receive Web Push at all? (iOS only inside a Home Screen app.)
+export function supportsPush() {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
+// localStorage throws in private mode or when storage is disabled; both
+// settings below then read as unset, which only means the bell asks again.
+function readStorage(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string | null) {
+  try {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  } catch {
+    // see readStorage
+  }
+}
+
 // The VAPID public key arrives base64url-encoded; pushManager.subscribe()
 // wants the raw bytes.
 export function urlBase64ToUint8Array(base64Url: string) {
@@ -69,25 +98,14 @@ export function nextPromptDismissal(
 }
 
 export function readPromptDismissal(): PromptDismissal {
-  try {
-    return parsePromptDismissal(
-      window.localStorage.getItem(PROMPT_STORAGE_KEY)
-    );
-  } catch {
-    // private mode / storage disabled: ask again
-    return NO_DISMISSAL;
-  }
+  return parsePromptDismissal(readStorage(PROMPT_STORAGE_KEY));
 }
 
 export function dismissBrowserNotificationsPrompt(options?: {
   permanently?: boolean;
 }) {
   const next = nextPromptDismissal(readPromptDismissal(), options);
-  try {
-    window.localStorage.setItem(PROMPT_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // storage disabled: the row simply comes back next time
-  }
+  writeStorage(PROMPT_STORAGE_KEY, JSON.stringify(next));
 }
 
 // Browser notifications are a setting of the browser, not of a user: once
@@ -98,20 +116,11 @@ export function dismissBrowserNotificationsPrompt(options?: {
 const ENABLED_STORAGE_KEY = "browserNotificationsEnabled";
 
 export function rememberBrowserNotifications(on: boolean) {
-  try {
-    if (on) window.localStorage.setItem(ENABLED_STORAGE_KEY, "1");
-    else window.localStorage.removeItem(ENABLED_STORAGE_KEY);
-  } catch {
-    // storage disabled: the next user is asked instead
-  }
+  writeStorage(ENABLED_STORAGE_KEY, on ? "1" : null);
 }
 
 export function areBrowserNotificationsEnabled() {
-  try {
-    return window.localStorage.getItem(ENABLED_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
+  return readStorage(ENABLED_STORAGE_KEY) === "1";
 }
 
 // What a page load does about this browser's notifications for the user

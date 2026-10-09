@@ -106,6 +106,20 @@ export async function upsertPushSubscription(
     .single();
 }
 
+/** Removes every user's push subscription for a browser endpoint, or every
+ * user's but one with `exceptUserId`. Pass the service-role client: RLS shows
+ * a user only their own rows. */
+export async function deleteBrowserPushSubscriptions(
+  client: SupabaseClient<Database>,
+  args: { endpoint: string; exceptUserId?: string }
+) {
+  const query = client
+    .from("pushSubscription")
+    .delete()
+    .eq("endpoint", args.endpoint);
+  return args.exceptUserId ? query.neq("userId", args.exceptUserId) : query;
+}
+
 /** Removes this browser's push subscription for the user. */
 export async function deletePushSubscription(
   client: SupabaseClient<Database>,

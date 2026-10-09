@@ -12,6 +12,7 @@ import {
   hasApplicationServerKey,
   rememberBrowserNotifications,
   restoreStep,
+  supportsPush,
   urlBase64ToUint8Array
 } from "~/utils/push";
 
@@ -20,15 +21,6 @@ const logger = getLogger("erp", "usepushsubscription");
 const WORKER_URL = "/push-worker.js";
 
 export type PushState = "loading" | "unsupported" | "denied" | "off" | "on";
-
-function supportsPush() {
-  return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
-  );
-}
 
 async function currentSubscription() {
   const registration = await navigator.serviceWorker.getRegistration("/");
@@ -93,7 +85,7 @@ function saveSubscription(
 }
 
 function sendSubscription(
-  method: "PUT" | "DELETE" | "POST",
+  method: "PUT" | "DELETE",
   body: Record<string, unknown>
 ) {
   return fetch(path.to.api.pushSubscription, {

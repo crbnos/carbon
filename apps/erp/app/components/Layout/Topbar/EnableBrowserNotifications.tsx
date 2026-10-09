@@ -10,7 +10,8 @@ import {
   areBrowserNotificationsEnabled,
   dismissBrowserNotificationsPrompt,
   isPromptSnoozed,
-  readPromptDismissal
+  readPromptDismissal,
+  supportsPush
 } from "~/utils/push";
 
 // The soft ask: our own row, so a user who is not interested says no to us,
@@ -21,13 +22,7 @@ import {
 // only until anyone enables them here; after that, whoever signs in gets
 // their own (useRestoreBrowserNotifications).
 function canAsk() {
-  return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window &&
-    Notification.permission !== "denied"
-  );
+  return supportsPush() && Notification.permission !== "denied";
 }
 
 export function EnableBrowserNotifications({
@@ -37,7 +32,7 @@ export function EnableBrowserNotifications({
 }) {
   // Decided once, when the row mounts. The bell's popover renders its content
   // only while open, so this never runs on the server; the window check in
-  // canAsk keeps it safe if that changes.
+  // supportsPush keeps it safe if that changes.
   const [eligible, setEligible] = useState(
     () =>
       Boolean(publicKey) &&

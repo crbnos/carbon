@@ -597,7 +597,7 @@ pnpm exec turbo run typecheck --filter=erp
 **Depends on:** none
 **Files:**
 - Create: `apps/erp/public/push-worker.js`
-- Copy from (precedent): the SPDX header of `apps/erp/public/serviceWorker.js`
+- Copy from (precedent): the SPDX header of `apps/erp/public/serviceWorker.js` (deleted 2026-10-09; use `pnpm --filter @carbon/checks license-headers`)
 
 **Steps:**
 1. Write the file with 3 listeners and no `fetch` listener:
@@ -680,7 +680,7 @@ pnpm exec biome check apps/erp/public/push-worker.js
 # Expected: no errors
 ```
 
-**Out of scope:** `apps/erp/public/serviceWorker.js` (leave it unregistered), MES.
+**Out of scope:** `apps/erp/public/serviceWorker.js` (left unregistered here; deleted 2026-10-09), MES.
 
 ---
 

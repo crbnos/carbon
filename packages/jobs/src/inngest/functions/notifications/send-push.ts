@@ -39,7 +39,10 @@ export const sendPushFunction = inngest.createFunction(
         .eq("userId", userId)
         .maybeSingle();
       if (error) {
-        console.error("Failed to load push subscription", error);
+        log.error("Failed to load push subscription", {
+          error,
+          subscriptionId
+        });
         throw error;
       }
       return data;
@@ -105,7 +108,10 @@ export const sendPushFunction = inngest.createFunction(
           .delete()
           .eq("id", subscription.id);
         if (error) {
-          console.error("Failed to delete a gone push subscription", error);
+          log.error("Failed to delete a gone push subscription", {
+            error,
+            subscriptionId: subscription.id
+          });
           throw error;
         }
       });

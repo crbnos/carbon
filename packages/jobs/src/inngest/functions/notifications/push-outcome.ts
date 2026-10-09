@@ -4,9 +4,10 @@
 
 import type { ZonedDateTime } from "@internationalized/date";
 
-export type PushOutcome = "delivered" | "gone" | "rejected" | "retry" | "fail";
+export type PushOutcome = "gone" | "rejected" | "retry" | "fail";
 
-// What a push service's HTTP status means for the subscription row.
+// What a push service's error status means for the subscription row. web-push
+// throws a WebPushError only for a non-2xx response, so a 2xx never gets here.
 // 404 / 410: the subscription is gone for good, so the caller deletes it.
 // 401 / 403: the push service refused our signature. Usually the subscription
 // was made with another VAPID key (WNS answers 401, FCM 403), and the browser
@@ -16,7 +17,6 @@ export type PushOutcome = "delivered" | "gone" | "rejected" | "retry" | "fail";
 // 429 / 5xx: transient, so the caller throws and Inngest retries.
 // Any other non-2xx: a bad request that a retry would repeat.
 export function pushDeliveryOutcome(statusCode: number): PushOutcome {
-  if (statusCode >= 200 && statusCode < 300) return "delivered";
   if (statusCode === 404 || statusCode === 410) return "gone";
   if (statusCode === 401 || statusCode === 403) return "rejected";
   if (statusCode === 429 || statusCode >= 500) return "retry";

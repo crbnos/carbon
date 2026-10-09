@@ -6,7 +6,11 @@ import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { Edition, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
-import { createCookie, createCookieSessionStorage } from "react-router";
+import {
+  type CookieOptions,
+  createCookie,
+  createCookieSessionStorage
+} from "react-router";
 
 import {
   CarbonEdition,
@@ -57,16 +61,18 @@ export const isTestEdition = CarbonEdition === Edition.Test;
 
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 
+// Shared by every signed cookie in this file.
+const signedCookieOptions: CookieOptions = {
+  httpOnly: true,
+  path: "/",
+  sameSite: isTestEdition ? "none" : "lax",
+  secrets: [SESSION_SECRET!],
+  secure: isTestEdition || !!cookieDomain,
+  domain: cookieDomain
+};
+
 const sessionStorage = createCookieSessionStorage({
-  cookie: {
-    name: "carbon",
-    httpOnly: true,
-    path: "/",
-    sameSite: isTestEdition ? "none" : "lax",
-    secrets: [SESSION_SECRET!],
-    secure: isTestEdition || !!cookieDomain,
-    domain: cookieDomain
-  }
+  cookie: { name: "carbon", ...signedCookieOptions }
 });
 
 const log = getLogger("auth", "session");
@@ -76,12 +82,7 @@ const log = getLogger("auth", "session");
 // subscription rows, so a browser nobody is signed into stops receiving
 // pushes — whichever path signed it out.
 export const pushEndpointCookie = createCookie("carbon-push", {
-  httpOnly: true,
-  path: "/",
-  sameSite: isTestEdition ? "none" : "lax",
-  secrets: [SESSION_SECRET!],
-  secure: isTestEdition || !!cookieDomain,
-  domain: cookieDomain,
+  ...signedCookieOptions,
   // Browsers cap a cookie's lifetime at 400 days.
   maxAge: 60 * 60 * 24 * 400
 });

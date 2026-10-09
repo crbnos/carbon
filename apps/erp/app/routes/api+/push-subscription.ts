@@ -10,6 +10,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  deleteBrowserPushSubscriptions,
   deletePushSubscription,
   getPushSubscription,
   pushSubscriptionEndpointValidator,
@@ -105,16 +106,14 @@ export async function action({ request }: ActionFunctionArgs) {
           ? deletePushSubscription(client, { userId, endpoint: oldEndpoint })
           : Promise.resolve({ error: null }),
         previousEndpoint
-          ? getCarbonServiceRole()
-              .from("pushSubscription")
-              .delete()
-              .eq("endpoint", previousEndpoint)
+          ? deleteBrowserPushSubscriptions(getCarbonServiceRole(), {
+              endpoint: previousEndpoint
+            })
           : Promise.resolve({ error: null }),
-        getCarbonServiceRole()
-          .from("pushSubscription")
-          .delete()
-          .eq("endpoint", endpoint)
-          .neq("userId", userId)
+        deleteBrowserPushSubscriptions(getCarbonServiceRole(), {
+          endpoint,
+          exceptUserId: userId
+        })
       ]);
       // Best effort: the first push to a dead row (404 / 410) removes it too.
       if (forgotten.error) {

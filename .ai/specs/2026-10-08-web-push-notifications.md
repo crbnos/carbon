@@ -42,7 +42,7 @@ sequenceDiagram
 3. Email is a paid feature (`EMAIL_NOTIFICATIONS`, Business and Partner plans). On other plans, a user with no ERP tab open gets no signal at all.
 4. A planner who closes the browser at the end of a shift misses an approval request or a job assignment until the next login.
 
-Before this change, no code in `apps/` or `packages/` called the Notification API, the Push API or `navigator.serviceWorker`. The file `apps/erp/public/serviceWorker.js` exists, but no code registers it.
+Before this change, no code in `apps/` or `packages/` called the Notification API, the Push API or `navigator.serviceWorker`. The file `apps/erp/public/serviceWorker.js` existed, but no code registered it. It is deleted (2026-10-09).
 
 ## Proposed Solution
 
@@ -118,7 +118,7 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | Retries | Retry on 429 and 5xx; no retry on other 4xx | A 4xx other than 404, 410 and 429 is a bad request, and a retry fails again. |
 | Delivery options | `TTL` = 86 400 s (1 day), `urgency` = `normal` | A notification older than 1 day is old news. The bell still has it. |
 | Fan-out shape | `notify` sends one `carbon/send-push` event per subscription row | Same pattern as `carbon/send-email` and `carbon/send-slack`. Each browser retries on its own. |
-| Service worker | New file `apps/erp/public/push-worker.js`, scope `/`; the old `serviceWorker.js` stays unregistered | The old file caches logos and avatars, and that behavior was never live. |
+| Service worker | New file `apps/erp/public/push-worker.js`, scope `/`; the old `serviceWorker.js` is deleted | The old file cached logos and avatars, and that behavior was never live. A browser allows one worker per scope, so registering it at `/` later would have replaced `push-worker.js` and stopped every push. |
 | Worker updates | `skipWaiting()` on install and `clients.claim()` on activate | The worker caches nothing, so a new version can take over at once. |
 | Repeated pushes | The worker never passes `tag` to `showNotification`. It closes older notifications with the same `data.tag`, then shows the new one under a fresh identifier. | The browser gives the tag to macOS as the identifier, and macOS replaces a notification with the same identifier silently. `renotify` does not help. |
 | Rotated subscription | The worker handles `pushsubscriptionchange`. It subscribes again and sends the new subscription with the old endpoint. | A browser can rotate the subscription at any time. Without this step, push stops with no signal. |
@@ -204,7 +204,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
 ### `@carbon/lib`
 
 1. Add the event `"carbon/send-push"` to `Events` with `data: { subscriptionId, userId, companyId, title, body, url, tag }`. `userId` is the recipient, and `companyId` is the notification's company.
-2. Add `"send-push": "carbon/send-push"` to the `trigger` map.
+2. Do not add `"send-push"` to the `trigger` map. Only `notify` sends `carbon/send-push`, with `step.sendEvent`.
 
 ### `@carbon/auth`
 
@@ -239,6 +239,7 @@ No change to the destinations or the preference channels. Push is neither a `Not
    1. `getPushSubscription(client, { userId, endpoint })`
    2. `upsertPushSubscription(client, { userId, companyId, endpoint, p256dh, auth, userAgent })`, `onConflict: "endpoint"`
    3. `deletePushSubscription(client, { userId, endpoint })`
+   4. `deleteBrowserPushSubscriptions(client, { endpoint, exceptUserId? })`: every user's rows for a browser endpoint. The route passes the service-role client.
 3. The resource route `apps/erp/app/routes/api+/push-subscription.ts`, gated by `requirePermissions(request, {})`. If push is not configured, `GET` returns `{ enabled: false }` and every write returns 404.
    1. `GET ?endpoint=`: return `{ enabled }` for the signed-in user. If the row exists, set the `carbon-push` cookie again, so a row saved before the cookie existed still ends at sign-out.
    2. `PUT`: validate the body. If `oldEndpoint` is set, delete that row. If the `carbon-push` cookie names a different endpoint, delete that endpoint's rows (service role): it is this browser's previous subscription. Delete the rows of other users with the same endpoint (service role). Upsert the row. Set the `carbon-push` cookie.
@@ -364,7 +365,7 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
 - [x] Which events push? — **Answer (user, replaces the first autonomous answer "destinations with Push, Email or Slack"):** Every notification, exactly like in-app, including in-app-only events.
 - [x] How does the user check that push works? — **Autonomous at first:** a "Send a test notification" button. **Answer (user, later):** remove it; a real notification is the check.
 - [x] What happens when the browser rotates a subscription? — **Autonomous:** `push-worker.js` handles `pushsubscriptionchange` and sends the new subscription.
-- [x] Should Carbon register the existing `serviceWorker.js`? — **Autonomous:** No. A new `push-worker.js` holds only the push handlers.
+- [x] Should Carbon register the existing `serviceWorker.js`? — **Autonomous:** No. A new `push-worker.js` holds only the push handlers. **Later (user, 2026-10-09):** delete `serviceWorker.js`.
 - [x] Should Carbon skip the push when a Carbon tab has focus? — **Autonomous:** No. Chrome requires a visible notification for each push.
 
 ## Changelog
@@ -407,3 +408,5 @@ No change to MES or to `useNotifications`. `AvatarMenu.tsx` is unchanged: sign-o
   2. `notificationclick` uses only the tabs the worker controls, and opens a new window when the focus or the navigation fails. Before, `navigate()` rejected on an uncontrolled tab and the click opened nothing.
   3. `PUT /api/push-subscription` deletes the endpoint that the `carbon-push` cookie remembers when it differs from the new one. A browser that lost its subscription makes a new one with no `oldEndpoint`, and its old row waited for a failed push.
   4. `deriveVapidDetails` has a known-answer test, cross-checked with OpenSSL. A change to the hash, the salt or the info label changes every deployment's key, so the test fails.
+- 2026-10-09: Cleanup from self-review. The `"send-push"` entry left the `trigger` map: nothing called it, and only `notify` sends pushes. `pushDeliveryOutcome` lost its `delivered` result, because web-push throws only for a non-2xx status. `supportsPush` moved to `apps/erp/app/utils/push.ts`, so the bell row and the hook share one check. The route's two service-role deletes became `deleteBrowserPushSubscriptions`. The push cookie and the session cookie share one options object.
+- 2026-10-09: `apps/erp/public/serviceWorker.js` is deleted, at the user's request. No code registered it. Registered at scope `/`, it would replace `push-worker.js`.
