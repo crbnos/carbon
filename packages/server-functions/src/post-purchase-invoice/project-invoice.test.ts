@@ -224,3 +224,157 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a late cost on an Active capital asset debits its class account, and a void takes it off",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { fixedAssetId } = await f.addCapitalAsset({
+        status: "Active",
+        finalAssetElement: true,
+        acquisitionCost: 1000
+      });
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const po = await f.addPurchaseOrder("late", { locationId, lines: [] });
+      const invoice = await f.addPurchaseInvoice("late", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "G/L Account",
+            accountId: f.account("indirect"),
+            quantity: 1,
+            unitPrice: 200,
+            charged: true
+          }
+        ]
+      });
+
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      const debits = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Invoice")
+        .where("documentId", "=", invoice.invoiceId)
+        .where("accountId", "!=", f.account("payables"))
+        .execute();
+      expect(
+        debits.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([[f.account("machinery"), 200]]);
+
+      const cipRows = await f.db
+        .selectFrom("fixedAssetCipCost")
+        .select([
+          "fixedAssetId",
+          "sourceType",
+          "amount",
+          "postCapitalization",
+          "projectElementId"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(cipRows).toHaveLength(1);
+      expect(cipRows[0]).toMatchObject({
+        fixedAssetId,
+        sourceType: "Purchase Invoice",
+        postCapitalization: true,
+        projectElementId: f.elementId
+      });
+      expect(Number(cipRows[0]!.amount)).toEqual(200);
+
+      const assetCost = async () =>
+        Number(
+          (
+            await f.db
+              .selectFrom("fixedAsset")
+              .select("acquisitionCost")
+              .where("id", "=", fixedAssetId)
+              .where("companyId", "=", f.companyId)
+              .executeTakeFirstOrThrow()
+          ).acquisitionCost
+        );
+      expect(await assetCost()).toEqual(1200);
+
+      const voided = await postPurchaseInvoice(f.ctx, {
+        type: "void",
+        invoiceId: invoice.invoiceId
+      });
+      expect(voided.error).toBeNull();
+
+      const remaining = await f.db
+        .selectFrom("fixedAssetCipCost")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(remaining).toEqual([]);
+      expect(await assetCost()).toEqual(1000);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a void is refused once the asset its cost built went into service",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { fixedAssetId, classId } = await f.addCapitalAsset({
+        status: "Under Construction",
+        finalAssetElement: true
+      });
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const po = await f.addPurchaseOrder("built", { locationId, lines: [] });
+      const invoice = await f.addPurchaseInvoice("built", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "G/L Account",
+            accountId: f.account("indirect"),
+            quantity: 1,
+            unitPrice: 300,
+            charged: true
+          }
+        ]
+      });
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      // The asset went into service since.
+      await f.db
+        .updateTable("fixedAsset")
+        .set({ status: "Active", fixedAssetClassId: classId })
+        .where("id", "=", fixedAssetId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const voided = await postPurchaseInvoice(f.ctx, {
+        type: "void",
+        invoiceId: invoice.invoiceId
+      });
+      expect(voided.error?.message).toMatch(/was capitalized/);
+
+      const rows = await f.db
+        .selectFrom("fixedAssetCipCost")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(rows).toHaveLength(1);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

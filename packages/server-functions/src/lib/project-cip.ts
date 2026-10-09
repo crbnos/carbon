@@ -120,3 +120,86 @@ export async function writeProjectCipRows(
     WHERE a."id" = v."id" AND a."companyId" = ${args.companyId}
   `.execute(trx);
 }
+
+/**
+ * Removes the project CIP rows of a voided document and lowers each asset's
+ * acquisitionCost by their sum, in one delete and one
+ * `UPDATE … FROM (VALUES …)`. Refuses, before any write, when a row went in
+ * under construction (`postCapitalization` false) and its asset has since
+ * been capitalized: the capitalization already moved that cost out of CIP.
+ * A late cost (`postCapitalization` true) comes off the in-service asset.
+ * The Fixed Asset line rows of receipts and invoices (no `projectId`) keep
+ * their own path.
+ */
+export async function reverseProjectCipRows(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    sourceType: ProjectCipSourceType;
+    sourceDocumentId: string;
+  }
+): Promise<void> {
+  const rows = await trx
+    .selectFrom("fixedAssetCipCost")
+    .innerJoin("fixedAsset", "fixedAsset.id", "fixedAssetCipCost.fixedAssetId")
+    .select([
+      "fixedAssetCipCost.id",
+      "fixedAssetCipCost.fixedAssetId",
+      "fixedAssetCipCost.amount",
+      "fixedAssetCipCost.postCapitalization",
+      "fixedAsset.fixedAssetId as assetReadableId",
+      "fixedAsset.status"
+    ])
+    .where("fixedAssetCipCost.companyId", "=", args.companyId)
+    .where("fixedAssetCipCost.sourceType", "=", args.sourceType)
+    .where("fixedAssetCipCost.sourceDocumentId", "=", args.sourceDocumentId)
+    .where("fixedAssetCipCost.projectId", "is not", null)
+    .execute();
+  if (rows.length === 0) return;
+
+  for (const row of rows) {
+    if (!row.postCapitalization && row.status !== "Under Construction") {
+      throw new Error(
+        `Asset ${row.assetReadableId} was capitalized; reverse the capitalization first`
+      );
+    }
+    if (row.postCapitalization && row.status === "Disposed") {
+      throw new Error(
+        `Asset ${row.assetReadableId} was disposed; its late cost cannot be reversed`
+      );
+    }
+  }
+
+  await trx
+    .deleteFrom("fixedAssetCipCost")
+    .where("companyId", "=", args.companyId)
+    .where(
+      "id",
+      "in",
+      rows.map((row) => row.id)
+    )
+    .execute();
+
+  const decrements = [
+    ...assetCostIncrements(
+      rows.map((row) => ({
+        fixedAssetId: row.fixedAssetId,
+        amount: Number(row.amount)
+      }))
+    )
+  ].filter(([, amount]) => amount !== 0);
+  if (decrements.length === 0) return;
+  await sql`
+    UPDATE "fixedAsset" a
+    SET "acquisitionCost" = a."acquisitionCost" - v."amount",
+        "updatedBy" = ${args.userId},
+        "updatedAt" = NOW()
+    FROM (VALUES ${sql.join(
+      decrements.map(
+        ([fixedAssetId, amount]) => sql`(${fixedAssetId}, ${amount}::numeric)`
+      )
+    )}) AS v("id", "amount")
+    WHERE a."id" = v."id" AND a."companyId" = ${args.companyId}
+  `.execute(trx);
+}

@@ -50,7 +50,11 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
-import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
   reverseProjectLedgerRows
@@ -998,6 +1002,12 @@ const postReceipt = defineServerFn({
             documentId: receiptId,
             postingDate: today,
             userId
+          });
+          await reverseProjectCipRows(trx, {
+            companyId,
+            userId,
+            sourceType: "Receipt",
+            sourceDocumentId: receiptId
           });
 
           if (Object.keys(trackedEntityUpdatesVoid).length > 0) {

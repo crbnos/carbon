@@ -40,7 +40,11 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
-import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
   reverseProjectLedgerRows
@@ -547,6 +551,12 @@ const postPurchaseInvoice = defineServerFn({
             documentId: invoiceId,
             postingDate: today,
             userId
+          });
+          await reverseProjectCipRows(trx, {
+            companyId,
+            userId,
+            sourceType: "Purchase Invoice",
+            sourceDocumentId: invoiceId
           });
 
           if (reversingCostLedger.length > 0) {

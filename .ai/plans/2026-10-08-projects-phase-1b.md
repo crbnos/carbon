@@ -46,7 +46,7 @@
 - [x] Task 8: Write CIP cost rows from the project posting paths
 - [x] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
 - [x] Task 10: Add Place in service
-- [ ] Task 11: Post late costs to the Active asset and fix the void guards
+- [x] Task 11: Post late costs to the Active asset and fix the void guards
 - [ ] Task 12: Move Straight Line depreciation to a remaining-life basis
 - [ ] Task 13: Add the capital project fields to the project and element UI
 - [ ] Task 14: Add the trace link and suspect service functions
@@ -1479,3 +1479,6 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 10: the action calls `invokeAssetTransfer` once per selected asset. Each call is its own transfer document and transaction, so one refusal leaves the others capitalized. That is the plan's intent; it is not a query loop.
 - Task 10: `projects.server.ts` gains `getProjectCapitalAssets` (the project's asset and each final-asset element's asset, with the CIP total of rows that are not `postCapitalization`, in one query) and `completeElementSubtrees` (the elements and all descendants to the default Completed state, else the first Completed state, in one recursive `UPDATE`). The plan named `updateProjectElementField`; it takes one id list and has no descendant walk, so one statement replaces it.
 - Task 10: a throwaway vitest run against this worktree's database listed both assets of a new capital project with a CIP total of 45 from 2 rows, and completed a final-asset element and its child while a third element kept its state. The rows were deleted. The script was not committed.
+- Task 11: `lib/project-cip.ts` gains `reverseProjectCipRows` (the rows of one document with a `projectId`). It refuses a row with `postCapitalization` false whose asset is no longer Under Construction, and a late-cost row whose asset is Disposed. Then it deletes the rows and lowers `acquisitionCost` with one `UPDATE … FROM (VALUES …)`. The receipt, invoice, charge and reimbursement voids call it next to `reverseProjectLedgerRows`. The plan named the receipt and invoice voids only, but a charge or reimbursement void would otherwise leave its CIP rows behind.
+- Task 11: the Fixed Asset line guards of `post-receipt` and `post-purchase-invoice` did not change. Their rows never set `postCapitalization`, so the existing "status is not Under Construction" refusal already is the plan's rule for them. The project rows take the new helper.
+- Task 11: `project-cip.test.ts` already has the `postCapitalization` case (Task 8). `project-invoice.test.ts` adds 2 cases: a late cost on an Active asset (Dr `machinery`, a `postCapitalization` row, 1000 → 1200 → 1000 after the void), and a refused void after the asset went into service.

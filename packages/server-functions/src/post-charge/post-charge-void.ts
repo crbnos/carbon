@@ -4,6 +4,7 @@
 
 import { getNextSequence } from "@carbon/database/sequence";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { reverseProjectCipRows } from "../lib/project-cip";
 import { reverseProjectLedgerRows } from "../lib/project-posting";
 import { allocateJournalLineIds } from "./journal-line-ids";
 import type { ChargeContext } from "./post-charge-post";
@@ -139,6 +140,12 @@ export async function voidCharge(
     documentId: charge.id,
     postingDate: today,
     userId
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Charge",
+    sourceDocumentId: charge.id
   });
 
   await trx
