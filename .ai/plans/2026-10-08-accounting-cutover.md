@@ -37,7 +37,7 @@
 ### Phase C — The cutover
 - [x] Task 25: Accept the Opening Balance source type in the AR/AP readers and payment lookups
 - [x] Task 26: Add the pure cutover planner
-- [ ] Task 27: Add the cutover read services
+- [x] Task 27: Add the cutover read services
 - [ ] Task 28: Add the `activate-accounting` server function
 - [ ] Task 29: Handle voids of documents dated before the cutover
 - [x] Task 30: Start depreciation at the cutover
@@ -45,9 +45,9 @@
 
 ### Phase D — Retire the flag
 - [ ] Task 32: Replace every ERP read of `accountingEnabled`
-- [ ] Task 33: Remove Mark Paid and Mark Unpaid
+- [x] Task 33: Remove Mark Paid and Mark Unpaid
 - [ ] Task 34: Replace the settings switch
-- [ ] Task 35: Set the cutover for new companies and demo datasets
+- [x] Task 35: Set the cutover for new companies and demo datasets
 - [ ] Task 36: Show the Provisional and Superseded statuses
 - [ ] Task 37: Update the docs, rules and AGENTS.md files
 
@@ -1415,6 +1415,9 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 - Task 20: capitalize with an entered cost and adjustCost now always need an offset account, so `capitalize.tsx` and `$fixedAssetId.adjust-cost.tsx` must always show that field (Task 32). Lease Interest schedule rows refuse with the existing message when their defaults are empty (no stand-in in a non-journal row).
 - Task 26: `recostOutbound` takes FIFO/LIFO movements only; Standard and Average items cost from `itemCost`, not layers.
 - Task 30: the floor is the pure `depreciationFloor` in `accounting.utils.ts`, tested there.
+- Task 27 changed while executing: the cutover reads live once, in Kysely, in `packages/database/src/accounting-cutover-reads.ts` (export `./accounting-cutover-reads`, server-only). The wizard loaders call them through `accounting.server.ts` with `getDatabaseClient()`; Task 28 calls the same functions with its transaction. Two implementations of the open-item reads would drift. The writes (`saveOpeningTrialBalance`, `updateCutoverAccumulatedDepreciation`) take a Kysely handle too.
+- Task 27: deferred revenue opening items use the schedule row's DEBIT account (a Deferral row is the future recognition entry, Dr Deferred Revenue / Cr Sales). Purchase invoices are always described "Accounts Payable", as the posting writes. Received-not-invoiced must carry quantity for the purchase invoice's GR/IR walk; Task 28 adds it (see spec section 4).
+- Task 35: tier 01 sets the cutover only when the company has none (a re-apply keeps it, the cutover is one-way).
 - New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.

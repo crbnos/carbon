@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { single, updateRows } from "@carbon/database/rows";
 import {
@@ -29,6 +30,8 @@ import {
   unitOfMeasures
 } from "@carbon/database/seed-data";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
+import { startOfMonth } from "@internationalized/date";
 import type { Insertable, Kysely } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -484,6 +487,22 @@ const seedCompany = defineServerFn({
         await trx
           .insertInto("fiscalYearSettings")
           .values([{ ...fiscalYearSettings, companyId }])
+          .execute();
+
+        // A new company keeps its ledger in Carbon from day one: its
+        // accounting cutover is the first day of the current period, so
+        // every posting is Posted and there is nothing to migrate
+        // (.ai/specs/2026-10-08-accounting-cutover.md section 7).
+        const today = datetime.today(await getCompanyTimeZone(trx, companyId));
+        await trx
+          .updateTable("companySettings")
+          .set({
+            accountingCutoverDate: startOfMonth(today).toString(),
+            accountingActivatedAt: datetime.timestamp(),
+            accountingActivatedBy: userId
+          })
+          .where("id", "=", companyId)
+          .where("accountingCutoverDate", "is", null)
           .execute();
 
         await trx
