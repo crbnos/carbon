@@ -9,7 +9,12 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getProject, updateProjectElementOrder } from "~/modules/projects";
-import { moveProjectElement } from "~/modules/projects/projects.server";
+import {
+  moveElementInChangeRequest,
+  moveProjectElement,
+  orderElementsInChangeRequest,
+  readChangeRequestId
+} from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-move");
@@ -48,6 +53,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  // While a change request is open, a move or a new order goes into it.
+  const changeRequestId = readChangeRequestId(request, formData);
 
   if (intent === "move") {
     const elementId = formData.get("elementId");
@@ -57,6 +64,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     const parentId =
       typeof parentValue === "string" && parentValue ? parentValue : null;
+
+    if (changeRequestId) {
+      try {
+        await moveElementInChangeRequest(getDatabaseClient(), {
+          companyId,
+          userId,
+          projectId,
+          changeRequestId,
+          elementId,
+          parentId
+        });
+      } catch (err) {
+        logger.error("Failed to move an element in a change request", {
+          companyId,
+          projectId,
+          changeRequestId,
+          error: err
+        });
+        return refuse(
+          err,
+          err instanceof Error ? err.message : "Failed to move the element"
+        );
+      }
+      return data({ success: true }, await flash(request, success("Moved")));
+    }
 
     let lastSibling = client
       .from("projectElement")
@@ -120,6 +152,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (updates.length === 0) return data({ success: true });
 
     try {
+      if (changeRequestId) {
+        await orderElementsInChangeRequest(getDatabaseClient(), {
+          companyId,
+          userId,
+          projectId,
+          changeRequestId,
+          updates
+        });
+        return data({ success: true });
+      }
       await updateProjectElementOrder(
         getDatabaseClient(),
         companyId,
@@ -133,7 +175,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         projectId,
         error: err
       });
-      return refuse(err, "Failed to save the order");
+      return refuse(
+        err,
+        err instanceof Error && changeRequestId
+          ? err.message
+          : "Failed to save the order"
+      );
     }
     return data({ success: true });
   }

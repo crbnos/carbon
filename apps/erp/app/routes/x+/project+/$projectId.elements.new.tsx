@@ -9,7 +9,11 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getProject, projectElementValidator } from "~/modules/projects";
-import { insertProjectElement } from "~/modules/projects/projects.server";
+import {
+  addElementToChangeRequest,
+  insertProjectElement,
+  readChangeRequestId
+} from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-new");
@@ -24,8 +28,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
+  const formData = await request.formData();
+  const changeRequestId = readChangeRequestId(request, formData);
   const validation = await validator(projectElementValidator).validate(
-    await request.formData()
+    formData
   );
   if (validation.error) return validationError(validation.error);
 
@@ -50,12 +56,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...element } = validation.data;
   try {
-    const created = await insertProjectElement(getDatabaseClient(), {
-      ...element,
-      projectId,
-      companyId,
-      userId
-    });
+    // While a change request is open, the element goes into it instead.
+    const created = changeRequestId
+      ? await addElementToChangeRequest(getDatabaseClient(), {
+          companyId,
+          userId,
+          projectId,
+          changeRequestId,
+          element
+        })
+      : await insertProjectElement(getDatabaseClient(), {
+          ...element,
+          projectId,
+          companyId,
+          userId
+        });
     return data(
       { id: created.id, readableId: created.readableId },
       { status: 201 }

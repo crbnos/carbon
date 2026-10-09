@@ -14,7 +14,12 @@ import {
   projectElementLinkValidator,
   upsertProjectElementLink
 } from "~/modules/projects";
-import { saveParameterFormula } from "~/modules/projects/projects.server";
+import {
+  addLinkToChangeRequest,
+  deleteLinkInChangeRequest,
+  readChangeRequestId,
+  saveParameterFormula
+} from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-links");
@@ -49,6 +54,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const id = formData.get("id");
+  // While a change request is open, adding or deleting a link goes into it.
+  // Reviewing a suspect link is progress and stays live.
+  const changeRequestId = readChangeRequestId(request, formData);
+  const inChangeRequest = async (write: () => Promise<unknown>) => {
+    try {
+      await write();
+      return { success: true };
+    } catch (err) {
+      logger.error("Failed to change a link in a change request", {
+        companyId,
+        projectId,
+        changeRequestId,
+        intent,
+        error: err
+      });
+      return {
+        error: {
+          message:
+            err instanceof Error ? err.message : "Failed to change the link"
+        }
+      };
+    }
+  };
 
   switch (intent) {
     case "upsert": {
@@ -57,6 +85,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
       if (validation.error) {
         return { error: { message: "Choose an element and a link type" } };
+      }
+      if (changeRequestId) {
+        return inChangeRequest(() =>
+          addLinkToChangeRequest(getDatabaseClient(), {
+            companyId,
+            userId,
+            projectId,
+            changeRequestId,
+            link: validation.data
+          })
+        );
       }
       const result = await upsertProjectElementLink(client, {
         ...validation.data,
@@ -80,6 +119,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     case "clearSuspect": {
       if (typeof id !== "string" || !id) {
         return { error: { message: "No link selected" } };
+      }
+      if (changeRequestId && intent === "delete") {
+        return inChangeRequest(() =>
+          deleteLinkInChangeRequest(getDatabaseClient(), {
+            companyId,
+            userId,
+            projectId,
+            changeRequestId,
+            linkId: id
+          })
+        );
       }
       const result =
         intent === "delete"
@@ -105,6 +155,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const formula = formData.get("formula");
       if (typeof elementId !== "string" || typeof formula !== "string") {
         return { error: { message: "Enter a formula" } };
+      }
+      // A formula rewrites its feeds links, which a change request does not
+      // carry yet.
+      if (changeRequestId) {
+        return {
+          error: {
+            message:
+              "A formula cannot change in a change request. Leave the change request to edit it."
+          }
+        };
       }
       try {
         const result = await saveParameterFormula(getDatabaseClient(), {

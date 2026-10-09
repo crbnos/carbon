@@ -16,16 +16,23 @@ import { getMethodTree } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
   BuildSourceNode,
+  ChangeOperationMark,
+  ChangeRequestChange,
+  ChangeRequestItem,
   ElementVerification,
   logTimeValidator,
   PlannedBuildElement,
+  PlanRow,
   ProjectBaselineSource,
+  ProjectChangeOperation,
   ProjectCopyElement,
   ProjectCopySource,
+  ProjectElementEditableField,
   ProjectElementType,
   ProjectPlanSnapshot,
   ProjectPlanTable,
   ProjectStateGroup,
+  projectElementLinkValidator,
   projectElementValidator,
   projectIssueValidator,
   projectValidator,
@@ -33,18 +40,27 @@ import type {
   VerificationElement
 } from "./projects.models";
 import {
+  applyChangeRequestItems,
   BUILD_FROM_PART_MAX_NODES,
+  canLink,
   chargeableByDefault,
   computeVerification,
   defaultProjectStates,
+  mergeChangeRequestItem,
+  overlayPlanRows,
   PLAN_LAYER_FIELDS,
   PROJECT_BASELINE_FORMAT_VERSION,
+  parseElementPlanFieldValue,
   parseParameterFormula,
+  pickPlanLayerFields,
   planElementsFromSource,
   planProjectCopy,
+  planRowParentIds,
+  planSnapshotKeys,
   projectCopyIdPrefixes,
   rollUpRequirementStatus,
-  toPlanSnapshot
+  toPlanSnapshot,
+  typeSpecificElementFields
 } from "./projects.models";
 import {
   getElementHistoryByItem,
@@ -367,6 +383,875 @@ export async function createProjectBaseline(
   args: CreateProjectBaselineArgs
 ): Promise<{ id: string; sequence: number }> {
   return db.transaction().execute((trx) => insertProjectBaseline(trx, args));
+}
+
+// --- Change requests (Phase 1c) -------------------------------------------------
+
+/** A refusal a change request write raises; the route shows its message. */
+export class ProjectChangeRequestError extends Error {
+  status = 422;
+}
+
+/**
+ * The change request a plan-layer write goes to: the form field
+ * `changeRequestId`, else `?cr=` on the action URL. Null writes live.
+ */
+export function readChangeRequestId(request: Request, formData: FormData) {
+  const field = formData.get("changeRequestId");
+  if (typeof field === "string" && field) return field;
+  return new URL(request.url).searchParams.get("cr") || null;
+}
+
+export type ChangeRequestItemRow = ChangeRequestItem & {
+  id: string;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+function itemKey(table: string, id: string) {
+  return `${table}:${id}`;
+}
+
+function toChangeRequestItem(row: {
+  id: string;
+  operation: ProjectChangeOperation;
+  targetTable: ProjectPlanTable;
+  targetId: string;
+  payload: unknown;
+  baseRow: unknown;
+  createdAt: unknown;
+  updatedAt: unknown;
+}): ChangeRequestItemRow {
+  const asRecord = (value: unknown) =>
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : null;
+  const asText = (value: unknown) =>
+    value == null
+      ? null
+      : value instanceof Date
+        ? value.toISOString()
+        : String(value);
+  return {
+    id: row.id,
+    operation: row.operation,
+    targetTable: row.targetTable,
+    targetId: row.targetId,
+    payload: asRecord(row.payload),
+    baseRow: asRecord(row.baseRow),
+    createdAt: asText(row.createdAt) ?? "",
+    updatedAt: asText(row.updatedAt)
+  };
+}
+
+/** The items of a change request, oldest first. */
+export async function loadChangeRequestItems(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: { companyId: string; changeRequestId: string }
+): Promise<ChangeRequestItemRow[]> {
+  const rows = await db
+    .selectFrom("projectChangeRequestItem")
+    .select([
+      "id",
+      "operation",
+      "targetTable",
+      "targetId",
+      "payload",
+      "baseRow",
+      "createdAt",
+      "updatedAt"
+    ])
+    .where("changeRequestId", "=", args.changeRequestId)
+    .where("companyId", "=", args.companyId)
+    .orderBy("createdAt", "asc")
+    .orderBy("id", "asc")
+    .execute();
+  return rows.map(toChangeRequestItem);
+}
+
+/**
+ * A change request with its items, the live plan and the plan as the change
+ * request would leave it. Null when it is not a change request of the
+ * project.
+ */
+export async function loadChangeRequestOverlay(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string; changeRequestId: string }
+) {
+  const [changeRequest, items, live] = await Promise.all([
+    db
+      .selectFrom("projectChangeRequest")
+      .select(["id", "projectId", "readableId", "title", "status"])
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst(),
+    loadChangeRequestItems(db, args),
+    loadPlanSnapshot(db, args)
+  ]);
+  if (!changeRequest || changeRequest.projectId !== args.projectId) {
+    return null;
+  }
+  return {
+    changeRequest,
+    items,
+    live,
+    overlay: applyChangeRequestItems(live, items)
+  };
+}
+
+export type ChangeRequestOverlay = NonNullable<
+  Awaited<ReturnType<typeof loadChangeRequestOverlay>>
+>;
+
+/**
+ * Writes changes into a Draft change request, in one transaction. Each change
+ * folds into the item of its row (`mergeChangeRequestItem`). Deleting an
+ * element the change request added also drops the rows it added under that
+ * element. Refuses unless the change request is a Draft of the project.
+ */
+export async function upsertChangeRequestItems(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    changeRequestId: string;
+    changes: ChangeRequestChange[];
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const changeRequest = await trx
+      .selectFrom("projectChangeRequest")
+      .select(["projectId", "status", "readableId"])
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!changeRequest || changeRequest.projectId !== args.projectId) {
+      throw new ProjectChangeRequestError("The change request does not exist");
+    }
+    if (changeRequest.status !== "Draft") {
+      throw new ProjectChangeRequestError(
+        `${changeRequest.readableId} is ${changeRequest.status}. Only a Draft change request takes changes.`
+      );
+    }
+
+    const existing = await loadChangeRequestItems(trx, args);
+    const items = new Map<string, ChangeRequestItem & { rowId?: string }>(
+      existing.map((item) => [
+        itemKey(item.targetTable, item.targetId),
+        { ...item, rowId: item.id }
+      ])
+    );
+
+    // The live rows a change touches for the first time: one query per table.
+    const firstTouch = new Map<ProjectPlanTable, Set<string>>();
+    for (const change of args.changes) {
+      if (change.operation === "Add") continue;
+      if (items.has(itemKey(change.targetTable, change.targetId))) continue;
+      const ids = firstTouch.get(change.targetTable) ?? new Set<string>();
+      ids.add(change.targetId);
+      firstTouch.set(change.targetTable, ids);
+    }
+    const liveRows = new Map<string, Record<string, unknown>>();
+    await Promise.all(
+      [...firstTouch.entries()].map(async ([table, ids]) => {
+        const rows = (await trx
+          .selectFrom(table as "projectElement")
+          .select(PLAN_LAYER_FIELDS[table] as never)
+          .where("id", "in", [...ids])
+          .where("projectId", "=", args.projectId)
+          .where("companyId", "=", args.companyId)
+          .execute()) as Record<string, unknown>[];
+        for (const row of rows) {
+          liveRows.set(itemKey(table, row.id as string), row);
+        }
+      })
+    );
+
+    const removedAddedElements = new Set<string>();
+    const changedKeys = new Set<string>();
+    const deletedRowIds: string[] = [];
+    for (const change of args.changes) {
+      const key = itemKey(change.targetTable, change.targetId);
+      const current = items.get(key) ?? null;
+      const merged = mergeChangeRequestItem(
+        current,
+        change,
+        liveRows.get(key) ?? null
+      );
+      if ("error" in merged) throw new ProjectChangeRequestError(merged.error);
+      if (merged.item) {
+        items.set(key, { ...merged.item, rowId: current?.rowId });
+        changedKeys.add(key);
+        continue;
+      }
+      if (!current) continue;
+      items.delete(key);
+      changedKeys.delete(key);
+      if (current.rowId) deletedRowIds.push(current.rowId);
+      if (
+        current.operation === "Add" &&
+        current.targetTable === "projectElement"
+      ) {
+        removedAddedElements.add(current.targetId);
+      }
+    }
+
+    // Rows the change request added under a removed added element go too.
+    let dropped = removedAddedElements.size > 0;
+    while (dropped) {
+      dropped = false;
+      for (const [key, item] of items) {
+        if (item.operation !== "Add") continue;
+        const parents = planRowParentIds(item.targetTable, item.payload ?? {});
+        if (!parents.some((id) => removedAddedElements.has(id))) continue;
+        items.delete(key);
+        changedKeys.delete(key);
+        if (item.rowId) deletedRowIds.push(item.rowId);
+        if (item.targetTable === "projectElement") {
+          removedAddedElements.add(item.targetId);
+          dropped = true;
+        }
+      }
+    }
+    for (const item of items.values()) {
+      const parents = planRowParentIds(item.targetTable, item.payload ?? {});
+      if (parents.some((id) => removedAddedElements.has(id))) {
+        throw new ProjectChangeRequestError(
+          "A change in this change request still uses the element. Change it first."
+        );
+      }
+    }
+
+    if (deletedRowIds.length > 0) {
+      await trx
+        .deleteFrom("projectChangeRequestItem")
+        .where("id", "in", deletedRowIds)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+    const upserts = [...changedKeys].map((key) => items.get(key)!);
+    if (upserts.length > 0) {
+      await trx
+        .insertInto("projectChangeRequestItem")
+        .values(
+          upserts.map((item) => ({
+            companyId: args.companyId,
+            changeRequestId: args.changeRequestId,
+            operation: item.operation,
+            targetTable: item.targetTable,
+            targetId: item.targetId,
+            payload: (item.payload ? toJson(item.payload) : null) as never,
+            baseRow: (item.baseRow ? toJson(item.baseRow) : null) as never,
+            createdBy: args.userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns([
+              "changeRequestId",
+              "targetTable",
+              "targetId",
+              "companyId"
+            ])
+            .doUpdateSet((eb) => ({
+              operation: eb.ref("excluded.operation"),
+              payload: eb.ref("excluded.payload"),
+              baseRow: eb.ref("excluded.baseRow"),
+              updatedBy: args.userId,
+              updatedAt: sql`NOW()`
+            }))
+        )
+        .execute();
+    }
+    await trx
+      .updateTable("projectChangeRequest")
+      .set({ updatedBy: args.userId, updatedAt: sql`NOW()` })
+      .where("id", "=", args.changeRequestId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+  });
+}
+
+function overlayElement(overlay: ChangeRequestOverlay, id: string | null) {
+  return id ? overlay.overlay.elements.find((row) => row.id === id) : undefined;
+}
+
+function nextSortOrder(overlay: ChangeRequestOverlay, parentId: string | null) {
+  const siblings = overlay.overlay.elements.filter(
+    (row) => ((row.parentId as string | null) ?? null) === parentId
+  );
+  return (
+    siblings.reduce(
+      (max, row) => Math.max(max, Number(row.sortOrder ?? 0)),
+      0
+    ) + 1
+  );
+}
+
+async function requireOverlay(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string; changeRequestId: string }
+) {
+  const overlay = await loadChangeRequestOverlay(db, args);
+  if (!overlay) {
+    throw new ProjectChangeRequestError("The change request does not exist");
+  }
+  return overlay;
+}
+
+type ChangeRequestWriteArgs = {
+  companyId: string;
+  userId: string;
+  projectId: string;
+  changeRequestId: string;
+};
+
+/**
+ * Adds an element to a change request. Its id is made now and kept; its
+ * readable id stays empty until the apply step numbers it. An empty state
+ * takes the default Unstarted state, as `insertProjectElement` does.
+ */
+export async function addElementToChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & {
+    element: Omit<z.infer<typeof projectElementValidator>, "id">;
+  }
+) {
+  const overlay = await requireOverlay(db, args);
+  const { element } = args;
+  const parentId = element.parentId ?? null;
+  if (parentId) {
+    const parent = overlayElement(overlay, parentId);
+    if (!parent)
+      throw new ProjectChangeRequestError("The parent element does not exist");
+    if (parent.type === "Parameter" && element.type !== "Parameter") {
+      throw new ProjectChangeRequestError(
+        "A Parameter can only have Parameters as children"
+      );
+    }
+  }
+
+  let stateId = element.stateId ?? null;
+  if (!stateId) {
+    const state = await db
+      .selectFrom("projectState")
+      .select("id")
+      .where("projectId", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .where("group", "=", "Unstarted")
+      .orderBy("isDefault", "desc")
+      .orderBy("sortOrder", "asc")
+      .limit(1)
+      .executeTakeFirst();
+    if (!state)
+      throw new ProjectChangeRequestError("The project has no Unstarted state");
+    stateId = state.id;
+  }
+
+  const id = makeCopyId(projectCopyIdPrefixes.element);
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: "Add",
+        targetTable: "projectElement",
+        targetId: id,
+        payload: {
+          projectId: args.projectId,
+          parentId,
+          readableId: "",
+          sortOrder: nextSortOrder(overlay, parentId),
+          type: element.type,
+          name: element.name,
+          stateId,
+          ownerId: element.ownerId ?? null,
+          priority: element.priority ?? "None",
+          milestoneId: element.milestoneId ?? null,
+          startDate: element.startDate ?? null,
+          targetDate: element.targetDate ?? null,
+          estimatedHours: element.estimatedHours ?? null,
+          isChargeable:
+            element.type === "Parameter"
+              ? false
+              : (element.isChargeable ?? chargeableByDefault[element.type]),
+          budget: element.budget ?? null,
+          itemId: element.itemId ?? null
+        }
+      }
+    ]
+  });
+  return { id, readableId: "" };
+}
+
+/**
+ * Sets one plan-layer field on elements in a change request. The value is
+ * parsed as the live update parses it, and a type-specific field is refused on
+ * an element of another type.
+ */
+export async function updateElementFieldInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & {
+    ids: string[];
+    field: ProjectElementEditableField;
+    value: string | null | undefined;
+  }
+) {
+  const raw = args.value === undefined || args.value === "" ? null : args.value;
+  const parsed = parseElementPlanFieldValue(args.field, raw);
+  if ("error" in parsed) throw new ProjectChangeRequestError(parsed.error);
+
+  const overlay = await requireOverlay(db, args);
+  const elements = args.ids.map((id) => {
+    const row = overlayElement(overlay, id);
+    if (!row) throw new ProjectChangeRequestError("The element does not exist");
+    return row;
+  });
+  const requiredType = typeSpecificElementFields[args.field];
+  const other = requiredType
+    ? elements.find((row) => row.type !== requiredType)
+    : undefined;
+  if (other) {
+    throw new ProjectChangeRequestError(
+      `${other.readableId || other.name} is a ${other.type}, not a ${requiredType}`
+    );
+  }
+  const parameter = elements.find((row) => row.type === "Parameter");
+  if (parameter && args.field === "isChargeable" && parsed.value === true) {
+    throw new ProjectChangeRequestError("A Parameter cannot take charges");
+  }
+  if (
+    parameter &&
+    (args.field === "itemId" || args.field === "trackedEntityId") &&
+    parsed.value !== null
+  ) {
+    throw new ProjectChangeRequestError("A Parameter cannot link a part");
+  }
+
+  const payload: Record<string, unknown> = { [args.field]: parsed.value };
+  // A new part drops the serial of the old one.
+  if (args.field === "itemId") payload.trackedEntityId = null;
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: args.ids.map((id) => ({
+      operation: "Update" as const,
+      targetTable: "projectElement" as const,
+      targetId: id,
+      payload
+    }))
+  });
+}
+
+/**
+ * Moves an element in a change request, after its new last sibling. Refuses
+ * a parent in its own subtree and a Parameter parent for another type.
+ */
+export async function moveElementInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & { elementId: string; parentId: string | null }
+) {
+  const overlay = await requireOverlay(db, args);
+  const element = overlayElement(overlay, args.elementId);
+  if (!element)
+    throw new ProjectChangeRequestError("The element does not exist");
+  if (args.parentId) {
+    const parent = overlayElement(overlay, args.parentId);
+    if (!parent)
+      throw new ProjectChangeRequestError("The parent element does not exist");
+    let current: PlanRow | undefined = parent;
+    const seen = new Set<string>();
+    while (current && !seen.has(current.id)) {
+      if (current.id === args.elementId) {
+        throw new ProjectChangeRequestError(
+          "An element cannot move under itself or one of its descendants"
+        );
+      }
+      seen.add(current.id);
+      current = overlayElement(overlay, current.parentId as string | null);
+    }
+    if (parent.type === "Parameter" && element.type !== "Parameter") {
+      throw new ProjectChangeRequestError(
+        "A Parameter can only have Parameters as children"
+      );
+    }
+  }
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: "Update",
+        targetTable: "projectElement",
+        targetId: args.elementId,
+        payload: {
+          parentId: args.parentId,
+          sortOrder: nextSortOrder(overlay, args.parentId)
+        }
+      }
+    ]
+  });
+}
+
+/** Saves a drag-sort order of sibling elements in a change request. */
+export async function orderElementsInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & {
+    updates: { id: string; sortOrder: number }[];
+  }
+) {
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: args.updates.map((update) => ({
+      operation: "Update" as const,
+      targetTable: "projectElement" as const,
+      targetId: update.id,
+      payload: { sortOrder: update.sortOrder }
+    }))
+  });
+}
+
+/** Deletes an element (with its subtree) in a change request. */
+export async function deleteElementInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & { elementId: string }
+) {
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: "Delete",
+        targetTable: "projectElement",
+        targetId: args.elementId,
+        payload: null
+      }
+    ]
+  });
+}
+
+/** Adds a trace link in a change request; `canLink` checks the overlaid plan. */
+export async function addLinkToChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & {
+    link: z.infer<typeof projectElementLinkValidator>;
+  }
+) {
+  const overlay = await requireOverlay(db, args);
+  const from = overlayElement(overlay, args.link.fromElementId);
+  const to = overlayElement(overlay, args.link.toElementId);
+  if (!from || !to) {
+    throw new ProjectChangeRequestError(
+      "Both elements must be in this project"
+    );
+  }
+  const check = canLink(
+    { id: from.id, type: from.type as ProjectElementType },
+    { id: to.id, type: to.type as ProjectElementType },
+    args.link.linkType,
+    overlay.overlay.links as unknown as Parameters<typeof canLink>[3]
+  );
+  if (!check.ok) throw new ProjectChangeRequestError(check.reason);
+
+  const id = makeCopyId(projectCopyIdPrefixes.link);
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: "Add",
+        targetTable: "projectElementLink",
+        targetId: id,
+        payload: { projectId: args.projectId, ...args.link }
+      }
+    ]
+  });
+  return { id };
+}
+
+/** Deletes a trace link in a change request. A `feeds` link is refused. */
+export async function deleteLinkInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & { linkId: string }
+) {
+  const overlay = await requireOverlay(db, args);
+  const link = overlay.overlay.links.find((row) => row.id === args.linkId);
+  if (!link) throw new ProjectChangeRequestError("The link does not exist");
+  if (link.linkType === "feeds") {
+    throw new ProjectChangeRequestError(
+      "A formula writes this link. Edit the formula instead."
+    );
+  }
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: "Delete",
+        targetTable: "projectElementLink",
+        targetId: args.linkId,
+        payload: null
+      }
+    ]
+  });
+}
+
+const PLAN_LINE_PREFIXES = {
+  projectElementMaterial: projectCopyIdPrefixes.material,
+  projectElementLabor: projectCopyIdPrefixes.labor,
+  projectElementCost: projectCopyIdPrefixes.cost
+} as const;
+
+export type PlanLineTable = keyof typeof PLAN_LINE_PREFIXES;
+
+/**
+ * Adds (no `id`) or updates a plan line of an element in a change request.
+ * `fields` are the line's validated plan-layer columns.
+ */
+export async function upsertPlanLineInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & {
+    table: PlanLineTable;
+    id?: string;
+    elementId: string;
+    fields: Record<string, unknown>;
+  }
+) {
+  const overlay = await requireOverlay(db, args);
+  if (!overlayElement(overlay, args.elementId)) {
+    throw new ProjectChangeRequestError("The element does not exist");
+  }
+  const id = args.id ?? makeCopyId(PLAN_LINE_PREFIXES[args.table]);
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: args.id ? "Update" : "Add",
+        targetTable: args.table,
+        targetId: id,
+        payload: {
+          ...args.fields,
+          projectId: args.projectId,
+          projectElementId: args.elementId
+        }
+      }
+    ]
+  });
+  return { id };
+}
+
+/** Deletes a plan line in a change request. */
+export async function deletePlanLineInChangeRequest(
+  db: Kysely<KyselyDatabase>,
+  args: ChangeRequestWriteArgs & { table: PlanLineTable; id: string }
+) {
+  await upsertChangeRequestItems(db, {
+    ...args,
+    changes: [
+      {
+        operation: "Delete",
+        targetTable: args.table,
+        targetId: args.id,
+        payload: null
+      }
+    ]
+  });
+}
+
+/** The item ids of each table that a change request updates. */
+function updatedIdsOf(items: ChangeRequestItem[], table: ProjectPlanTable) {
+  return new Set(
+    items
+      .filter(
+        (item) => item.targetTable === table && item.operation === "Update"
+      )
+      .map((item) => item.targetId)
+  );
+}
+
+function liveIdsOf(overlay: ChangeRequestOverlay, table: ProjectPlanTable) {
+  return new Set(overlay.live[planSnapshotKeys[table]].map((row) => row.id));
+}
+
+function addPayloadsOf(items: ChangeRequestItem[], table: ProjectPlanTable) {
+  return new Map(
+    items
+      .filter((item) => item.targetTable === table && item.operation === "Add")
+      .map((item) => [item.targetId, item.payload ?? {}])
+  );
+}
+
+/**
+ * Lays a change request over the element list of a page: changed rows take
+ * the overlaid plan-layer fields, added rows are built from their payload
+ * with the project's state, and every row carries its `changeOperation`.
+ */
+export async function overlayElementList<
+  T extends { id: string; sortOrder: number | null }
+>(
+  client: SupabaseClient<Database>,
+  overlay: ChangeRequestOverlay,
+  rows: T[],
+  args: { companyId: string; projectId: string }
+) {
+  const payloads = addPayloadsOf(overlay.items, "projectElement");
+  const stateIds = [
+    ...new Set(
+      [...payloads.values()]
+        .map((payload) => payload.stateId)
+        .filter((id): id is string => typeof id === "string")
+    )
+  ];
+  const states =
+    stateIds.length > 0
+      ? await client
+          .from("projectState")
+          .select("id, name, group, color")
+          .in("id", stateIds)
+          .eq("companyId", args.companyId)
+      : { data: [], error: null };
+  if (states.error) throw states.error;
+  const stateById = new Map((states.data ?? []).map((s) => [s.id, s]));
+
+  const merged = overlayPlanRows(
+    rows,
+    overlay.overlay.elements,
+    liveIdsOf(overlay, "projectElement"),
+    updatedIdsOf(overlay.items, "projectElement"),
+    (row) => {
+      const payload = payloads.get(row.id) ?? {};
+      return {
+        ...payload,
+        ...row,
+        projectId: args.projectId,
+        sequence: 0,
+        completedAt: null,
+        verdict: null,
+        verdictAt: null,
+        verdictBy: null,
+        createdAt: null,
+        updatedAt: null,
+        state: stateById.get(payload.stateId as string) ?? null,
+        labels: []
+      } as unknown as T;
+    }
+  );
+  return merged.sort(
+    (a, b) =>
+      Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0) ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  );
+}
+
+/** Lays a change request over the links a page loaded. */
+export function overlayLinkList<T extends { id: string }>(
+  overlay: ChangeRequestOverlay,
+  rows: T[]
+) {
+  return overlayPlanRows(
+    rows,
+    overlay.overlay.links,
+    liveIdsOf(overlay, "projectElementLink"),
+    updatedIdsOf(overlay.items, "projectElementLink"),
+    (row) =>
+      ({
+        suspectSince: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        ...row
+      }) as unknown as T
+  );
+}
+
+/**
+ * Lays a change request over the plan lines of one element. Added material
+ * lines read their item's readable id and name in one query.
+ */
+export async function overlayPlanLines<
+  M extends { id: string },
+  L extends { id: string },
+  C extends { id: string }
+>(
+  client: SupabaseClient<Database>,
+  overlay: ChangeRequestOverlay,
+  planLines: { materials: M[]; labor: L[]; costs: C[] },
+  args: { companyId: string; elementId: string }
+) {
+  const ofElement = (rows: PlanRow[]) =>
+    rows.filter((row) => row.projectElementId === args.elementId);
+  const materialPayloads = addPayloadsOf(
+    overlay.items,
+    "projectElementMaterial"
+  );
+  const itemIds = [
+    ...new Set(
+      [...materialPayloads.values()]
+        .map((payload) => payload.itemId)
+        .filter((id): id is string => typeof id === "string")
+    )
+  ];
+  const items =
+    itemIds.length > 0
+      ? await client
+          .from("item")
+          .select("id, readableIdWithRevision, name")
+          .in("id", itemIds)
+          .eq("companyId", args.companyId)
+      : { data: [], error: null };
+  if (items.error) throw items.error;
+  const itemById = new Map((items.data ?? []).map((item) => [item.id, item]));
+  const categoryIds = [
+    ...new Set(
+      [...addPayloadsOf(overlay.items, "projectElementLabor").values()]
+        .map((payload) => payload.laborCategoryId)
+        .filter((id): id is string => typeof id === "string")
+    )
+  ];
+  const categories =
+    categoryIds.length > 0
+      ? await client
+          .from("laborCategory")
+          .select("id, name")
+          .in("id", categoryIds)
+          .eq("companyId", args.companyId)
+      : { data: [], error: null };
+  if (categories.error) throw categories.error;
+  const categoryById = new Map(
+    (categories.data ?? []).map((category) => [category.id, category])
+  );
+
+  return {
+    materials: overlayPlanRows(
+      planLines.materials,
+      ofElement(overlay.overlay.materials),
+      liveIdsOf(overlay, "projectElementMaterial"),
+      updatedIdsOf(overlay.items, "projectElementMaterial"),
+      (row) =>
+        ({
+          ...row,
+          quantityIssued: 0,
+          jobId: null,
+          purchaseOrderLineId: null,
+          item: itemById.get(row.itemId as string) ?? null,
+          job: null,
+          purchaseOrderLine: null
+        }) as unknown as M
+    ),
+    labor: overlayPlanRows(
+      planLines.labor,
+      ofElement(overlay.overlay.labor),
+      liveIdsOf(overlay, "projectElementLabor"),
+      updatedIdsOf(overlay.items, "projectElementLabor"),
+      (row) =>
+        ({
+          ...row,
+          laborCategory: categoryById.get(row.laborCategoryId as string) ?? null
+        }) as unknown as L
+    ),
+    costs: overlayPlanRows(
+      planLines.costs,
+      ofElement(overlay.overlay.costs),
+      liveIdsOf(overlay, "projectElementCost"),
+      updatedIdsOf(overlay.items, "projectElementCost"),
+      (row) => ({ ...row }) as unknown as C
+    )
+  };
 }
 
 /**
@@ -1687,6 +2572,8 @@ export async function getProjectElementPage(
     projectId: string;
     elementId: string;
     userId: string;
+    /** An element a change request adds: it has no row to read yet. */
+    element?: ProjectElementRow;
   }
 ) {
   const [
@@ -1699,7 +2586,9 @@ export async function getProjectElementPage(
     employeeJob,
     timeAndMaterials
   ] = await Promise.all([
-    getProjectElement(client, args.elementId, args.companyId),
+    args.element
+      ? Promise.resolve({ data: args.element, error: null })
+      : getProjectElement(client, args.elementId, args.companyId),
     getProjectElements(client, args.projectId, args.companyId),
     getProjectElementComments(client, args.elementId, args.companyId),
     getProjectElementPlanLines(client, args.elementId, args.companyId),
@@ -1835,6 +2724,137 @@ export async function getProjectElementPage(
 export type ProjectElementPage = NonNullable<
   Awaited<ReturnType<typeof getProjectElementPage>>["data"]
 >;
+
+type ProjectElementRow = NonNullable<
+  Awaited<ReturnType<typeof getProjectElement>>["data"]
+>;
+
+/**
+ * The element page, with `changeRequestId` laid over it when set: the
+ * element, the element list, its plan lines and the links show as the change
+ * request would leave them, each row with its `changeOperation`. An element
+ * the change request adds is built from its payload.
+ */
+export async function getProjectElementPageInChangeRequest(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    projectId: string;
+    elementId: string;
+    userId: string;
+    changeRequestId: string | null;
+  }
+) {
+  if (!args.changeRequestId) {
+    const page = await getProjectElementPage(client, args);
+    return page.data
+      ? {
+          data: {
+            ...page.data,
+            changeRequest: null,
+            changeOperation: null as ChangeOperationMark
+          },
+          error: null
+        }
+      : { data: null, error: page.error };
+  }
+
+  const overlay = await loadChangeRequestOverlay(getDatabaseClient(), {
+    companyId: args.companyId,
+    projectId: args.projectId,
+    changeRequestId: args.changeRequestId
+  });
+  if (!overlay) {
+    return {
+      data: null,
+      error: new Error("The change request does not exist")
+    };
+  }
+
+  const added = overlay.items.find(
+    (item) =>
+      item.operation === "Add" &&
+      item.targetTable === "projectElement" &&
+      item.targetId === args.elementId
+  );
+  let element: ProjectElementRow | undefined;
+  if (added) {
+    const row = overlay.overlay.elements.find((e) => e.id === args.elementId);
+    if (!row) return { data: null, error: null };
+    const payload = added.payload ?? {};
+    const parentRow = row.parentId
+      ? overlay.overlay.elements.find((e) => e.id === row.parentId)
+      : undefined;
+    const state = await client
+      .from("projectState")
+      .select("id, name, group, color")
+      .eq("id", String(payload.stateId ?? ""))
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (state.error) return { data: null, error: state.error };
+    element = {
+      ...payload,
+      ...row,
+      projectId: args.projectId,
+      companyId: args.companyId,
+      sequence: 0,
+      completedAt: null,
+      fixedAssetId: null,
+      isFinalAsset: false,
+      verdict: null,
+      verdictAt: null,
+      verdictBy: null,
+      state: state.data,
+      owner: null,
+      milestone: null,
+      labels: [],
+      item: null,
+      trackedEntity: null,
+      parent: parentRow
+        ? {
+            id: parentRow.id,
+            readableId: String(parentRow.readableId ?? ""),
+            name: String(parentRow.name ?? "")
+          }
+        : null
+    } as unknown as ProjectElementRow;
+  }
+
+  const page = await getProjectElementPage(client, { ...args, element });
+  if (!page.data) return { data: null, error: page.error };
+
+  const elements = await overlayElementList(
+    client,
+    overlay,
+    page.data.elements,
+    args
+  );
+  const planLines = await overlayPlanLines(
+    client,
+    overlay,
+    page.data.planLines,
+    args
+  );
+  const current = elements.find((e) => e.id === args.elementId);
+  return {
+    data: {
+      ...page.data,
+      element: current
+        ? {
+            ...page.data.element,
+            ...pickPlanLayerFields("projectElement", current)
+          }
+        : page.data.element,
+      changeOperation: (current?.changeOperation ??
+        null) as ChangeOperationMark,
+      elements,
+      planLines,
+      links: overlayLinkList(overlay, page.data.links),
+      changeRequest: overlay.changeRequest
+    },
+    error: null
+  };
+}
 
 const logger = getLogger("erp", "projects");
 

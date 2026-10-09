@@ -31,9 +31,12 @@ import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
+  ChangeOperationMark,
   Project,
   ProjectDisplayOptions,
   ProjectDisplayState,
+  ProjectElementLink,
+  ProjectElementListItem,
   ProjectElementType,
   ProjectLabel,
   ProjectMilestone,
@@ -55,7 +58,13 @@ import {
   projectStateGroups,
   rollUpCostSummary
 } from "~/modules/projects";
-import { getProjectVerification } from "~/modules/projects/projects.server";
+import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
+import {
+  getProjectVerification,
+  loadChangeRequestOverlay,
+  overlayElementList,
+  overlayLinkList
+} from "~/modules/projects/projects.server";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
@@ -74,6 +83,7 @@ import { ElementsHeader } from "~/modules/projects/ui/Elements/ElementsHeader";
 import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
 import { ElementTimeline } from "~/modules/projects/ui/Elements/ElementTimeline";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
+import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -153,6 +163,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       next = new URLSearchParams(searchParams);
       next.set("layout", source?.layout ?? "list");
     }
+    // An open change request stays open across the redirect.
+    const changeRequestId = searchParams.get("cr");
+    if (changeRequestId) next.set("cr", changeRequestId);
     throw redirect(`${url.pathname}?${next}`);
   }
 
@@ -214,10 +227,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  // `?cr=` shows the plan as an open change request would leave it. Each row
+  // carries its `changeOperation`, so the layouts can badge it.
+  let elementRows: (ProjectElementListItem & {
+    changeOperation?: ChangeOperationMark;
+  })[] = elements.data ?? [];
+  let linkRows: (ProjectElementLink & {
+    changeOperation?: ChangeOperationMark;
+  })[] = verification.data?.links ?? [];
+  let changeRequest: ChangeRequestOverlay["changeRequest"] | null = null;
+  const changeRequestId = searchParams.get("cr");
+  if (changeRequestId) {
+    const overlay = await loadChangeRequestOverlay(getDatabaseClient(), {
+      companyId,
+      projectId,
+      changeRequestId
+    });
+    if (!overlay) {
+      throw redirect(
+        path.to.projectElements(projectId),
+        await flash(request, error(null, "The change request does not exist"))
+      );
+    }
+    changeRequest = overlay.changeRequest;
+    elementRows = await overlayElementList(client, overlay, elementRows, {
+      companyId,
+      projectId
+    });
+    linkRows = overlayLinkList(overlay, linkRows);
+  }
+
   return {
-    elements: elements.data ?? [],
+    elements: elementRows,
+    changeRequest,
     costSummary: costSummary.data ?? [],
-    links: verification.data?.links ?? [],
+    links: linkRows,
     requirementStatus: verification.data?.requirementStatus ?? {},
     verification: verification.data?.verification ?? {},
     descriptions: Object.fromEntries(

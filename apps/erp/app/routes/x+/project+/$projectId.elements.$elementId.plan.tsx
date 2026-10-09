@@ -21,6 +21,13 @@ import {
   upsertProjectElementLabor,
   upsertProjectElementMaterial
 } from "~/modules/projects";
+import {
+  deletePlanLineInChangeRequest,
+  type PlanLineTable,
+  readChangeRequestId,
+  upsertPlanLineInChangeRequest
+} from "~/modules/projects/projects.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-plan");
 
@@ -68,6 +75,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
   formData.set("projectElementId", elementId);
   const id = formData.get("id");
 
+  // While a change request is open, plan lines change in it instead.
+  const changeRequestId = readChangeRequestId(request, formData);
+  const inChangeRequest = async (
+    table: PlanLineTable,
+    line: { id?: string; projectElementId: string } & Record<string, unknown>,
+    message: string
+  ) => {
+    if (!changeRequestId) return null;
+    const { id: lineId, projectElementId: _element, ...fields } = line;
+    try {
+      await upsertPlanLineInChangeRequest(getDatabaseClient(), {
+        companyId,
+        userId,
+        projectId,
+        changeRequestId,
+        table,
+        id: lineId,
+        elementId,
+        fields
+      });
+    } catch (err) {
+      return failed(err, err instanceof Error ? err.message : message);
+    }
+    return done(message);
+  };
+
   const failed = (err: unknown, message: string) => {
     logger.error(message, {
       companyId,
@@ -85,6 +118,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         projectElementMaterialValidator
       ).validate(formData);
       if (validation.error) return validationError(validation.error);
+      const staged = await inChangeRequest(
+        "projectElementMaterial",
+        validation.data,
+        "Material saved"
+      );
+      if (staged) return staged;
       const { id: lineId, ...line } = validation.data;
       const result = lineId
         ? await upsertProjectElementMaterial(client, {
@@ -108,6 +147,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         formData
       );
       if (validation.error) return validationError(validation.error);
+      const staged = await inChangeRequest(
+        "projectElementLabor",
+        validation.data,
+        "Labor saved"
+      );
+      if (staged) return staged;
       const { id: lineId, ...line } = validation.data;
       const result = lineId
         ? await upsertProjectElementLabor(client, {
@@ -130,6 +175,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         formData
       );
       if (validation.error) return validationError(validation.error);
+      const staged = await inChangeRequest(
+        "projectElementCost",
+        validation.data,
+        "Cost saved"
+      );
+      if (staged) return staged;
       const { id: lineId, ...line } = validation.data;
       const result = lineId
         ? await upsertProjectElementCost(client, {
@@ -152,6 +203,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     case "deleteCost": {
       if (typeof id !== "string" || !id)
         return refuse(null, "No line was given");
+      if (changeRequestId) {
+        const table: PlanLineTable =
+          intent === "deleteMaterial"
+            ? "projectElementMaterial"
+            : intent === "deleteLabor"
+              ? "projectElementLabor"
+              : "projectElementCost";
+        try {
+          await deletePlanLineInChangeRequest(getDatabaseClient(), {
+            companyId,
+            userId,
+            projectId,
+            changeRequestId,
+            table,
+            id
+          });
+        } catch (err) {
+          return failed(
+            err,
+            err instanceof Error ? err.message : "Failed to delete the line"
+          );
+        }
+        return done("Line deleted");
+      }
       const remove =
         intent === "deleteMaterial"
           ? deleteProjectElementMaterial

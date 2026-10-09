@@ -9,11 +9,16 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
   getProject,
+  isPlanLayerField,
   projectElementFieldUpdateValidator,
   setProjectElementLabels,
   updateProjectElementField
 } from "~/modules/projects";
-import { ensureCapitalAssets } from "~/modules/projects/projects.server";
+import {
+  ensureCapitalAssets,
+  readChangeRequestId,
+  updateElementFieldInChangeRequest
+} from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-update");
@@ -82,6 +87,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { ids, field, value } = validation.data;
+
+  // A plan-layer field goes into the open change request; a progress field
+  // always writes live.
+  const changeRequestId = readChangeRequestId(request, formData);
+  if (changeRequestId && isPlanLayerField("projectElement", field)) {
+    try {
+      await updateElementFieldInChangeRequest(getDatabaseClient(), {
+        companyId,
+        userId,
+        projectId,
+        changeRequestId,
+        ids,
+        field,
+        value
+      });
+      return { success: true };
+    } catch (err) {
+      logger.error("Failed to change an element in a change request", {
+        companyId,
+        projectId,
+        changeRequestId,
+        field,
+        error: err
+      });
+      return {
+        error: {
+          message:
+            err instanceof Error ? err.message : "Failed to save the change"
+        }
+      };
+    }
+  }
+
   const result = await updateProjectElementField(client, {
     ids,
     field,

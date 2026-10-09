@@ -10,6 +10,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { deleteProjectElement, getProject } from "~/modules/projects";
+import {
+  deleteElementInChangeRequest,
+  readChangeRequestId
+} from "~/modules/projects/projects.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-element-delete");
@@ -20,7 +25,7 @@ const logger = getLogger("erp", "project-element-delete");
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "projects"
   });
 
@@ -44,6 +49,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data(
       { success: false },
       await flash(request, error(null, "A Closed project cannot change"))
+    );
+  }
+
+  // While a change request is open, the delete goes into it. The apply step
+  // refuses it if the element or one below it has charges.
+  const changeRequestId = readChangeRequestId(
+    request,
+    await request.formData()
+  );
+  if (changeRequestId) {
+    try {
+      await deleteElementInChangeRequest(getDatabaseClient(), {
+        companyId,
+        userId,
+        projectId,
+        changeRequestId,
+        elementId
+      });
+    } catch (err) {
+      logger.error("Failed to delete an element in a change request", {
+        companyId,
+        projectId,
+        changeRequestId,
+        elementId,
+        error: err
+      });
+      return data(
+        { success: false },
+        await flash(
+          request,
+          error(err, err instanceof Error ? err.message : "Failed to delete")
+        )
+      );
+    }
+    throw redirect(
+      `${path.to.projectElements(projectId)}?cr=${changeRequestId}`,
+      await flash(request, success("Element removed in the change request"))
     );
   }
 

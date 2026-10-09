@@ -7,7 +7,7 @@ import { EPSILON, equals, formatPercent, formatQuantity } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { type DiffEntry, diffRows } from "../shared/diff";
+import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
 import { methodType } from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
@@ -2955,3 +2955,316 @@ export const projectBaselineValidator = z.object({
 
 /** The baseline a compare reads as its target: a baseline id or the live plan. */
 export const CURRENT_PLAN = "current";
+
+/**
+ * One item of a change request: an Add, Update or Delete of one row of a plan
+ * table. `payload` is the proposed row (Add, Update). `baseRow` is the live
+ * row's plan-layer fields when the draft first touched it (Update, Delete).
+ */
+export type ChangeRequestItem = {
+  operation: ProjectChangeOperation;
+  targetTable: ProjectPlanTable;
+  targetId: string;
+  payload: Record<string, unknown> | null;
+  baseRow: Record<string, unknown> | null;
+};
+
+/** The plan-layer fields of `payload` that it sets; `id` never changes. */
+function presentPlanFields(
+  table: ProjectPlanTable,
+  payload: Record<string, unknown> | null
+) {
+  const fields: Record<string, unknown> = {};
+  if (!payload) return fields;
+  for (const field of PLAN_LAYER_FIELDS[table]) {
+    if (field !== "id" && field in payload) fields[field] = payload[field];
+  }
+  return fields;
+}
+
+/**
+ * The plan as a change request would leave it. An Add appends its payload, an
+ * Update replaces the row's plan-layer fields with its payload, and a Delete
+ * removes the row. Deleting an element also removes its descendants, and the
+ * links and plan lines of every removed element, as the database cascades do.
+ */
+export function applyChangeRequestItems(
+  live: ProjectPlanSnapshot,
+  items: ChangeRequestItem[]
+): ProjectPlanSnapshot {
+  const tables = Object.fromEntries(
+    projectPlanTables.map((table) => [
+      table,
+      new Map(live[planSnapshotKeys[table]].map((row) => [row.id, row]))
+    ])
+  ) as Record<ProjectPlanTable, Map<string, PlanRow>>;
+
+  for (const item of items) {
+    const rows = tables[item.targetTable];
+    if (item.operation === "Add") {
+      rows.set(
+        item.targetId,
+        pickPlanLayerFields(item.targetTable, {
+          ...(item.payload ?? {}),
+          id: item.targetId
+        })
+      );
+    } else if (item.operation === "Update") {
+      const row = rows.get(item.targetId);
+      if (row) {
+        rows.set(item.targetId, {
+          ...row,
+          ...presentPlanFields(item.targetTable, item.payload)
+        });
+      }
+    } else {
+      rows.delete(item.targetId);
+    }
+  }
+
+  // An element whose parent is gone goes too, down the whole subtree.
+  const elements = tables.projectElement;
+  let removed = true;
+  while (removed) {
+    removed = false;
+    for (const [id, row] of elements) {
+      const parentId = row.parentId as string | null;
+      if (parentId && !elements.has(parentId)) {
+        elements.delete(id);
+        removed = true;
+      }
+    }
+  }
+  for (const [id, row] of tables.projectElementLink) {
+    if (
+      !elements.has(row.fromElementId as string) ||
+      !elements.has(row.toElementId as string)
+    ) {
+      tables.projectElementLink.delete(id);
+    }
+  }
+  for (const table of [
+    "projectElementMaterial",
+    "projectElementLabor",
+    "projectElementCost"
+  ] as const) {
+    for (const [id, row] of tables[table]) {
+      if (!elements.has(row.projectElementId as string)) {
+        tables[table].delete(id);
+      }
+    }
+  }
+
+  const rowsOf = (table: ProjectPlanTable) => [...tables[table].values()];
+  return {
+    elements: rowsOf("projectElement").sort(byId),
+    links: rowsOf("projectElementLink").sort(byId),
+    materials: rowsOf("projectElementMaterial").sort(byId),
+    labor: rowsOf("projectElementLabor").sort(byId),
+    costs: rowsOf("projectElementCost").sort(byId)
+  };
+}
+
+/** The element a row of a plan table hangs from, for the cascade checks. */
+export function planRowParentIds(
+  table: ProjectPlanTable,
+  row: Record<string, unknown>
+): string[] {
+  const ids =
+    table === "projectElement"
+      ? [row.parentId]
+      : table === "projectElementLink"
+        ? [row.fromElementId, row.toElementId]
+        : [row.projectElementId];
+  return ids.filter((id): id is string => typeof id === "string" && !!id);
+}
+
+export type ChangeOperationMark = ProjectChangeOperation | null;
+
+/**
+ * Lays a change request over the rows a page loaded. A live row the change
+ * request removes stays, marked Delete. A live row it changes takes the
+ * overlaid plan-layer fields, marked Update. A row it adds is built by
+ * `build` from the overlaid row, marked Add. Other rows are marked null.
+ */
+export function overlayPlanRows<T extends { id: string }>(
+  liveRows: T[],
+  overlaid: PlanRow[],
+  liveIds: Set<string>,
+  updatedIds: Set<string>,
+  build: (row: PlanRow) => T
+): (T & { changeOperation: ChangeOperationMark })[] {
+  const overlaidById = new Map(overlaid.map((row) => [row.id, row]));
+  const rows: (T & { changeOperation: ChangeOperationMark })[] = liveRows.map(
+    (row) => {
+      const next = overlaidById.get(row.id);
+      if (!next) return { ...row, changeOperation: "Delete" as const };
+      if (updatedIds.has(row.id)) {
+        return { ...row, ...next, changeOperation: "Update" as const };
+      }
+      return { ...row, changeOperation: null };
+    }
+  );
+  for (const row of overlaid) {
+    if (!liveIds.has(row.id)) {
+      rows.push({ ...build(row), changeOperation: "Add" as const });
+    }
+  }
+  return rows;
+}
+
+/**
+ * Parses a field value for a change request item. It refuses what the live
+ * update would refuse on its own value, but it does not read other rows.
+ */
+export function parseElementPlanFieldValue(
+  field: string,
+  raw: string | null
+): { value: unknown } | { error: string } {
+  const number = (min?: number, max?: number) => {
+    if (raw === null) return { value: null };
+    const value = Number(raw);
+    if (
+      !Number.isFinite(value) ||
+      (min !== undefined && value < min) ||
+      (max !== undefined && value > max)
+    ) {
+      return null;
+    }
+    return { value };
+  };
+  const oneOf = (values: readonly string[], message: string) =>
+    raw === null || values.includes(raw) ? { value: raw } : { error: message };
+
+  switch (field) {
+    case "name":
+      return raw ? { value: raw } : { error: "Name is required" };
+    case "estimatedHours":
+    case "budget":
+      return number(0) ?? { error: "Enter a number of 0 or more" };
+    case "isChargeable":
+      return { value: raw === "true" || raw === "on" };
+    case "description":
+      if (raw === null) return { value: null };
+      try {
+        return { value: JSON.parse(raw) };
+      } catch {
+        return { error: "The description is not valid" };
+      }
+    case "targetValue":
+    case "targetUpperValue":
+    case "parameterValue":
+      return number() ?? { error: "Enter a number" };
+    case "parameterContingencyPercent":
+    case "allocationPercent":
+      return number(0, 1) ?? { error: "Enter a percent from 0 to 100" };
+    case "requirementCategory":
+      return oneOf(requirementCategories, "Choose a requirement category");
+    case "verificationMethod":
+      return oneOf(
+        requirementVerificationMethods,
+        "Choose a verification method"
+      );
+    case "targetOperator":
+      return oneOf(requirementTargetOperators, "Choose a target operator");
+    case "parameterSource":
+      return oneOf(parameterSources, "Choose a source");
+    case "parameterItemField":
+      return raw === null ? { error: "Choose an item field" } : { value: raw };
+    default:
+      return { value: raw };
+  }
+}
+
+/** One write a plan-layer route sends to a change request. */
+export type ChangeRequestChange = {
+  operation: ProjectChangeOperation;
+  targetTable: ProjectPlanTable;
+  targetId: string;
+  payload: Record<string, unknown> | null;
+};
+
+const NO_IGNORED_FIELDS: ReadonlySet<string> = new Set();
+
+/**
+ * Folds one change into the change request's item for the same row.
+ * Returns the item to keep, or null when no item should remain:
+ * - an Update after an Add merges into the Add's payload;
+ * - a Delete after an Add removes the Add;
+ * - the first Update or Delete of a live row stores its plan-layer fields
+ *   as `baseRow`;
+ * - an Update that brings a row back to its `baseRow` removes the item.
+ */
+export function mergeChangeRequestItem(
+  existing: ChangeRequestItem | null,
+  change: ChangeRequestChange,
+  liveRow: Record<string, unknown> | null
+): { item: ChangeRequestItem | null } | { error: string } {
+  const table = change.targetTable;
+  const updated = (
+    baseRow: Record<string, unknown>,
+    payload: Record<string, unknown>
+  ) =>
+    diffFields(baseRow, payload, NO_IGNORED_FIELDS)
+      ? {
+          item: {
+            operation: "Update" as const,
+            targetTable: table,
+            targetId: change.targetId,
+            payload,
+            baseRow
+          }
+        }
+      : { item: null };
+
+  if (existing?.operation === "Delete") {
+    return change.operation === "Delete"
+      ? { item: existing }
+      : { error: "This row is deleted in the change request" };
+  }
+  if (change.operation === "Add") {
+    if (existing) return { error: "This row is already in the change request" };
+    return {
+      item: {
+        operation: "Add",
+        targetTable: table,
+        targetId: change.targetId,
+        payload: { ...(change.payload ?? {}), id: change.targetId },
+        baseRow: null
+      }
+    };
+  }
+  if (existing?.operation === "Add") {
+    if (change.operation === "Delete") return { item: null };
+    return {
+      item: {
+        ...existing,
+        payload: {
+          ...(existing.payload ?? {}),
+          ...(change.payload ?? {}),
+          id: change.targetId
+        }
+      }
+    };
+  }
+
+  const baseRow =
+    existing?.baseRow ?? (liveRow ? pickPlanLayerFields(table, liveRow) : null);
+  if (!baseRow) return { error: "The row no longer exists" };
+
+  if (change.operation === "Delete") {
+    return {
+      item: {
+        operation: "Delete",
+        targetTable: table,
+        targetId: change.targetId,
+        payload: null,
+        baseRow
+      }
+    };
+  }
+  return updated(baseRow, {
+    ...(existing?.payload ?? baseRow),
+    ...presentPlanFields(table, change.payload)
+  });
+}

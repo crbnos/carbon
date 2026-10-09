@@ -16,7 +16,7 @@ import type {
   ProjectMilestone,
   ProjectState
 } from "~/modules/projects";
-import { getProjectElementPage } from "~/modules/projects/projects.server";
+import { getProjectElementPageInChangeRequest } from "~/modules/projects/projects.server";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -39,11 +39,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!projectId) throw new Error("Could not find projectId");
   if (!elementId) throw new Error("Could not find elementId");
 
-  const page = await getProjectElementPage(client, {
+  // `?cr=` shows the element as an open change request would leave it.
+  const page = await getProjectElementPageInChangeRequest(client, {
     companyId,
     projectId,
     elementId,
-    userId
+    userId,
+    changeRequestId: new URL(request.url).searchParams.get("cr")
   });
   if (page.error || !page.data) {
     logger.error("Failed to load project element", {
