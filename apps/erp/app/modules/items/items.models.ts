@@ -6,6 +6,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { nonConformancePriority } from "../quality/quality.models";
+import type { DiffEntry, DiffStatus } from "../shared/diff";
 import {
   methodItemType,
   methodOperationOrders,
@@ -1307,15 +1308,11 @@ export const changeNoticeRequiredActionValidator = z.object({
 // Diff types (Q5 git-style) — one shape reused for the pre-release "tips"
 // (staged-vs-live) and the post-release revision redline (oldRev-vs-newRev).
 // -----------------------------------------------------------------------------
-export type MethodDiffStatus = "added" | "removed" | "modified" | "unchanged";
+// The generic engine lives in `../shared/diff`; these names stay for the
+// change-notice callers.
+export type MethodDiffStatus = DiffStatus;
 
-export type MethodDiffEntry<T> = {
-  status: MethodDiffStatus;
-  before: T | null;
-  after: T | null;
-  // Field-level changes for a "modified" entry: { field: { before, after } }.
-  changedFields?: Record<string, { before: unknown; after: unknown }>;
-};
+export type MethodDiffEntry<T> = DiffEntry<T>;
 
 // One operation's child-level diff (steps / parameters / tools), each bucket
 // classified added/removed/modified/unchanged. Defined here (not in
