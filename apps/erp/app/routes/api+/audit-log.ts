@@ -68,8 +68,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return Response.json({ entries });
     }
 
+    // Reads past the cap by up to one page, so a history longer than the cap
+    // is reported as truncated rather than passed off as complete.
     const entries: Awaited<ReturnType<typeof getEntityAuditLog>> = [];
-    while (entries.length < DOWNLOAD_MAX_ENTRIES) {
+    while (entries.length <= DOWNLOAD_MAX_ENTRIES) {
       const page = await getEntityAuditLog(
         client,
         companyId,
@@ -84,7 +86,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       entries.push(...page);
       if (page.length < DOWNLOAD_PAGE_SIZE) break;
     }
-    return Response.json({ entries: entries.slice(0, DOWNLOAD_MAX_ENTRIES) });
+    return Response.json({
+      entries: entries.slice(0, DOWNLOAD_MAX_ENTRIES),
+      truncated: entries.length > DOWNLOAD_MAX_ENTRIES
+    });
   } catch (err) {
     logger.error("Failed to fetch audit log", {
       companyId,

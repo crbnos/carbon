@@ -51,8 +51,9 @@ export function useAuditLogDownload({
 
       const response = await fetch(`/api/audit-log?${params.toString()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const { entries } = (await response.json()) as {
+      const { entries, truncated } = (await response.json()) as {
         entries: AuditLogEntry[];
+        truncated?: boolean;
       };
 
       const labels: AuditLogCsvLabels = {
@@ -85,6 +86,11 @@ export function useAuditLogDownload({
         `${name}-history-${today(getLocalTimeZone()).toString()}.csv`,
         { fields: Object.values(labels.columns) }
       );
+      if (truncated) {
+        toast.warning(
+          t`This history is too long to download in full. The file has the ${entries.length} most recent entries.`
+        );
+      }
     } catch {
       toast.error(t`Failed to download history`);
     } finally {
