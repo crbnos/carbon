@@ -254,6 +254,24 @@ Provisional journal.
   (`LegacyJournalCounts`: `LegacyDocumentCounts` plus `movementCostRows`). A document
   whose journal has no lines gets none.
 
+#### `journal-legacy-documents` (the repair after the enable)
+
+A company enabled before step 1a existed, and a demo-template company (migration
+20261009004448 backfilled its cutover), can still hold legacy documents. The
+server function (input `{}`, permission `update: accounting`) runs step 1a
+again in one transaction, under `companySettings` `FOR UPDATE`. It refuses a
+company with no cutover. It passes `outboundCosting: "open-layers"`: with no
+re-cost after the enable, an outbound FIFO or LIFO movement with no cost row
+relieves the layers open now (`relieveOpenLayers`, the arithmetic of
+`calculateCOGS`, children included, one read for every movement). Then
+`assignPeriods`, `repointStandInLines` and `promoteJournals`
+(`src/activate-accounting/promote.ts`, shared with the enable) take only the
+journals it wrote, by id. `insertProvisionalJournals` refuses a journal dated
+in a Closed or Locked period with the period's name, before any is written.
+Settings → Accounting shows the count and a "Write missing journals" button.
+The one-off script `scripts/one-off/journal-legacy-documents.ts` runs it for
+every company (`journal-legacy-documents/companies.ts`).
+
 `seed-company` sets a new company's cutover to the first day of the current month, so
 a new company posts `Posted` journals from its first document.
 

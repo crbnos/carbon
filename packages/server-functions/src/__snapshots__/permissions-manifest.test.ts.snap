@@ -283,6 +283,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "journal-legacy-documents": {
+    "update": "accounting",
+  },
   "post-asset-transfer": {
     "by": "type",
     "rules": {

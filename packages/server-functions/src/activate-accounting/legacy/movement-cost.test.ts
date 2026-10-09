@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { type JobMovement, planLegacyJobCosts } from "./movement-cost";
+import {
+  type JobMovement,
+  planLegacyJobCosts,
+  relieveOpenLayers
+} from "./movement-cost";
 
 const DAY = "2026-10-02";
 
@@ -139,5 +143,78 @@ describe("planLegacyJobCosts", () => {
       [0, 0, null],
       [1, 0, null]
     ]);
+  });
+});
+
+describe("relieveOpenLayers", () => {
+  const layer = (
+    id: string,
+    quantity: number,
+    cost: number,
+    children: { id: string; quantity: number; cost: number }[] = []
+  ) => ({
+    id,
+    quantity,
+    cost,
+    remainingQuantity: quantity,
+    children: children.map((child) => ({
+      ...child,
+      remainingQuantity: child.quantity
+    }))
+  });
+
+  it("relieves the layers in order, with each child's per-unit bump", () => {
+    const { costByKey, remainingById } = relieveOpenLayers({
+      // 5 at 8 written up by 1 each on its first 3, then 5 at 12.
+      layersByItem: new Map([
+        [
+          "part",
+          [
+            layer("a", 5, 40, [{ id: "a-up", quantity: 3, cost: 3 }]),
+            layer("b", 5, 60)
+          ]
+        ]
+      ]),
+      reliefs: [
+        { key: "ship-1", itemId: "part", quantity: 4 },
+        { key: "ship-2", itemId: "part", quantity: 4 }
+      ],
+      fallbackUnitCostByItem: new Map([["part", 100]])
+    });
+    // 4 × 8 + 3 × 1; then 1 × 8 + 3 × 12.
+    expect(costByKey).toEqual(
+      new Map([
+        ["ship-1", 35],
+        ["ship-2", 44]
+      ])
+    );
+    expect(remainingById).toEqual(
+      new Map([
+        ["a", 0],
+        ["a-up", 0],
+        ["b", 2]
+      ])
+    );
+  });
+
+  it("costs a quantity no layer covers at the fallback unit cost", () => {
+    const { costByKey, remainingById } = relieveOpenLayers({
+      layersByItem: new Map([["part", [layer("a", 2, 20)]]]),
+      reliefs: [
+        { key: "ship-1", itemId: "part", quantity: 3 },
+        { key: "ship-2", itemId: "bolt", quantity: 2 }
+      ],
+      fallbackUnitCostByItem: new Map([
+        ["part", 15],
+        ["bolt", 0.5]
+      ])
+    });
+    expect(costByKey).toEqual(
+      new Map([
+        ["ship-1", 35],
+        ["ship-2", 1]
+      ])
+    );
+    expect(remainingById).toEqual(new Map([["a", 0]]));
   });
 });

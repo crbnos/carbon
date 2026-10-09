@@ -48,6 +48,7 @@ export type Workspace = {
   active: boolean;
   seeded: boolean;
   connection_string: string | null;
+  database_connection_pooler_url: string | null;
   database_url: string | null;
   project_id: string | null;
   access_token: string | null;
@@ -172,6 +173,7 @@ async function migrate(): Promise<void> {
       console.log(`✅ 🥚 Migrating ${workspace.id}`);
       const {
         connection_string,
+        database_connection_pooler_url,
         database_url,
         database_password,
         service_role_key,
@@ -186,23 +188,24 @@ async function migrate(): Promise<void> {
 
       console.log(`✅ 🔑 Setting up environment for ${workspace.id}`);
 
+      const env = {
+        SUPABASE_ACCESS_TOKEN:
+          access_token === null ? SUPABASE_ACCESS_TOKEN : access_token,
+        SUPABASE_URL: database_url ?? undefined,
+        SUPABASE_DB_PASSWORD: database_password ?? undefined,
+        SUPABASE_PROJECT_ID: project_id ?? undefined,
+        SUPABASE_ANON_KEY: anon_key ?? undefined,
+        SUPABASE_SERVICE_ROLE_KEY: service_role_key ?? undefined,
+        SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+        SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET,
+        SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
+        ...(connection_string?.startsWith("postgresql://") && {
+          PGSSLMODE: "disable",
+        }),
+      };
       let $$ = $({
         // @ts-ignore
-        env: {
-          SUPABASE_ACCESS_TOKEN:
-            access_token === null ? SUPABASE_ACCESS_TOKEN : access_token,
-          SUPABASE_URL: database_url ?? undefined,
-          SUPABASE_DB_PASSWORD: database_password ?? undefined,
-          SUPABASE_PROJECT_ID: project_id ?? undefined,
-          SUPABASE_ANON_KEY: anon_key ?? undefined,
-          SUPABASE_SERVICE_ROLE_KEY: service_role_key ?? undefined,
-          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
-          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET,
-          SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
-          ...(connection_string?.startsWith("postgresql://") && {
-            PGSSLMODE: "disable",
-          }),
-        },
+        env,
         cwd: "supabase",
       });
 
@@ -281,7 +284,21 @@ async function migrate(): Promise<void> {
       // After the success log: the schema is pushed and correct regardless of
       // how the scripts go, so a script failure must not read as a failed
       // migration. It still fails the overall run via `hasErrors`.
-      if (!(await runPendingScripts(workspace, $$))) {
+      // A script that needs Postgres (not only the API) gets the URL the app
+      // gets (deploy.ts), or the self-hosted connection string. Only the
+      // scripts get it: `$(options)` replaces `env` rather than merging it.
+      const scripts$ = $$({
+        // @ts-ignore
+        env: {
+          ...env,
+          SUPABASE_DB_URL:
+            database_connection_pooler_url ??
+            (connection_string?.startsWith("postgresql://")
+              ? connection_string
+              : undefined),
+        },
+      });
+      if (!(await runPendingScripts(workspace, scripts$))) {
         hasErrors = true;
       }
     } catch (error) {

@@ -2,12 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
+  Alert,
+  AlertDescription,
   Button,
   Card,
   CardContent,
@@ -22,12 +25,19 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP, redirect } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import {
+  getErrorMessage,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  redirect
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Link, useLoaderData } from "react-router";
+import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -36,16 +46,22 @@ import {
   Number as NumberInput,
   Submit
 } from "~/components/Form";
-import { useDateFormatter } from "~/hooks";
+import { useDateFormatter, usePermissions } from "~/hooks";
 import { getDefaultAccounts, hasAccountingCutover } from "~/modules/accounting";
+import { getLegacyDocumentCounts } from "~/modules/accounting/accounting.server";
 import {
   getCompanySettings,
   updateAssetTaxDepreciationSettings,
   updateLeasePolicySettings,
   updateShowCurrencyTrailingZerosSetting
 } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings/accounting");
+
+const JOURNAL_LEGACY_INTENT = "journal-legacy";
 
 const taxDepreciationSettingsValidator = z.object({
   intent: z.literal("assetTaxDepreciation"),
@@ -101,19 +117,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
 
+  // Documents posted on or after the cutover with no journal: a company
+  // enabled before the enable wrote them.
+  const cutoverDate = companySettings.data.accountingCutoverDate;
+  const legacyCounts = cutoverDate
+    ? await getLegacyDocumentCounts(getDatabaseClient(), {
+        companyId,
+        cutoverDate
+      })
+    : null;
+
   return {
     companySettings: companySettings.data,
-    accountDefaults: accountDefaults.data
+    accountDefaults: accountDefaults.data,
+    legacyDocumentCount: legacyCounts
+      ? Object.values(legacyCounts).reduce((sum, count) => sum + count, 0)
+      : 0
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === JOURNAL_LEGACY_INTENT) {
+    return journalLegacyDocuments(request);
+  }
+
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
 
   if (intent === "showCurrencyTrailingZeros") {
     const enabled = formData.get("enabled") === "true";
@@ -193,8 +226,54 @@ export async function action({ request }: ActionFunctionArgs) {
   return { success: false, message: "Unknown intent" };
 }
 
+/** Writes the journals the enable would have written for legacy documents. */
+async function journalLegacyDocuments(request: Request) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "accounting"
+  });
+  const result = await serverFns
+    .as({ client, db: getDatabaseClient(), companyId, userId })
+    .invoke("journal-legacy-documents", {});
+  if (result.error) {
+    logger.error("Failed to write the missing journals", {
+      companyId,
+      error: result.error
+    });
+    // The flash carries the message; the other intents' toast stays quiet.
+    return data(
+      { success: false, message: null },
+      await flash(
+        request,
+        error(
+          result.error,
+          getErrorMessage(result.error, "Failed to write the missing journals")
+        )
+      )
+    );
+  }
+  const { movementCostRows: _, ...families } = result.data.legacyJournals;
+  const documents = Object.values(families).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  return data(
+    { success: true, message: null },
+    await flash(
+      request,
+      success(
+        documents === 1
+          ? "Wrote the missing journal of 1 document"
+          : `Wrote the missing journals of ${documents} documents`
+      )
+    )
+  );
+}
+
 export default function AccountingSettingsRoute() {
-  const { companySettings, accountDefaults } = useLoaderData<typeof loader>();
+  const { companySettings, accountDefaults, legacyDocumentCount } =
+    useLoaderData<typeof loader>();
+  const permissions = usePermissions();
+  const legacyFetcher = useFetcher<typeof action>();
   const fetcher = useAction<typeof action>({
     onSettled: (data) => {
       if (data && "success" in data) {
@@ -316,6 +395,41 @@ export default function AccountingSettingsRoute() {
                 </Button>
               )}
             </HStack>
+            {accountingSetUp && legacyDocumentCount > 0 && (
+              // One centred row: the Alert's grid (icon column, text column)
+              // would put the icon on the first line and the button under
+              // the text.
+              <Alert variant="warning" className="mt-4 flex items-center gap-3">
+                <LuTriangleAlert className="shrink-0" />
+                <AlertDescription className="flex-1 text-sm">
+                  <Plural
+                    value={legacyDocumentCount}
+                    one="# document posted before Carbon kept journals has no journal."
+                    other="# documents posted before Carbon kept journals have no journal."
+                  />
+                </AlertDescription>
+                <legacyFetcher.Form method="post" className="shrink-0">
+                  <input
+                    type="hidden"
+                    name="intent"
+                    value={JOURNAL_LEGACY_INTENT}
+                  />
+                  {/* The alert's amber text would cascade into the button. */}
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    className="text-foreground"
+                    isLoading={legacyFetcher.state !== "idle"}
+                    isDisabled={
+                      legacyFetcher.state !== "idle" ||
+                      !permissions.can("update", "accounting")
+                    }
+                  >
+                    <Trans>Write missing journals</Trans>
+                  </Button>
+                </legacyFetcher.Form>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 

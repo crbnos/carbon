@@ -439,6 +439,9 @@ msgstr "{inserted} wstawiono, {updated} zaktualizowano, {0} wymagają naprawy, {
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}"
 
+msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linia} other {# linii}}"
 
@@ -2477,15 +2480,8 @@ msgstr "Wygląd"
 msgid "Applied"
 msgstr "Zastosowano"
 
-#. placeholder {0}: r.invoiceId
-msgid "Applied amount for {0}"
-msgstr "Zastosowana kwota dla {0}"
-
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Zastosowane kwoty są w bazowej walucie firmy ({baseCurrency})."
-
-msgid "Applied Date"
-msgstr "Data zastosowania"
 
 msgid "Applied To"
 msgstr "Zastosowano do"
@@ -2534,6 +2530,10 @@ msgstr "Zastosuj propozycje"
 
 msgid "Apply To"
 msgstr "Zastosuj do"
+
+#. placeholder {0}: row.original.invoiceId
+msgid "Apply to {0}"
+msgstr ""
 
 msgid "Apply to invoice"
 msgstr "Zastosuj do faktury"
@@ -7286,10 +7286,6 @@ msgstr "Dni rabatu po {selectedCalculationMethod}"
 msgid "Discount Ends On"
 msgstr "Rabat wygasa"
 
-#. placeholder {0}: r.invoiceId
-msgid "Discount for {0}"
-msgstr "Rabat dla {0}"
-
 msgid "Discount Percent"
 msgstr "Procent rabatu"
 
@@ -9680,6 +9676,9 @@ msgstr "Całkowicie zamortyzowane"
 msgid "FX G/L"
 msgstr "FX Z/S"
 
+msgid "FX Gain/Loss"
+msgstr ""
+
 msgid "FY {year}"
 msgstr "Rok obrotowy {year}"
 
@@ -10802,9 +10801,6 @@ msgstr "Notatki wewnętrzne"
 msgid "inv"
 msgstr "inv"
 
-msgid "Inv Rate"
-msgstr "Kurs Fakt"
-
 msgid "Invalid applications"
 msgstr "Nieprawidłowe rozliczenia"
 
@@ -10945,6 +10941,9 @@ msgstr "Lokalizacja faktury"
 
 msgid "Invoice Number"
 msgstr "Numer faktury"
+
+msgid "Invoice Rate"
+msgstr ""
 
 msgid "Invoice schedule"
 msgstr "Harmonogram fakturowania"
@@ -14345,6 +14344,9 @@ msgstr "Ups! Link, do którego próbujesz uzyskać dostęp, jest nieprawidłowy.
 msgid "Open"
 msgstr "Otwórz"
 
+msgid "Open ({paymentCurrency})"
+msgstr ""
+
 msgid "Open a change notice"
 msgstr "Otwórz zawiadomienie o zmianie"
 
@@ -15020,9 +15022,6 @@ msgstr "Opłacić"
 msgid "Pay expense"
 msgstr "Opłacić wydatek"
 
-msgid "Pay Rate"
-msgstr "Kurs płatności"
-
 msgid "Payables"
 msgstr "Zobowiązania (domyślnie)"
 
@@ -15049,6 +15048,9 @@ msgstr "Płatność od Klienta"
 
 msgid "Payment ID"
 msgstr "Identyfikator płatności"
+
+msgid "Payment Rate"
+msgstr ""
 
 msgid "payment term"
 msgstr "warunki płatności"
@@ -22503,9 +22505,6 @@ msgstr "Niezastosowane"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Niezastosowana gotówka jest przechowywana jako zaliczka klienta dla tego dokumentu zamiast kredytu na rachunek."
 
-msgid "Unapplied:"
-msgstr "Niezastosowane:"
-
 msgid "Unapproved Supplier"
 msgstr "Niezatwierdzony dostawca"
 
@@ -24115,6 +24114,9 @@ msgstr "Sesje robocze dotyczące konfiguracji i danych"
 msgid "Worst Performing Machines"
 msgstr "Maszyny o najgorszych wynikach"
 
+msgid "Write missing journals"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "Konto odpisu aktualizującego"
 
@@ -24126,10 +24128,6 @@ msgstr "Spisanie"
 
 msgid "Write-Off Account"
 msgstr "Konto spisania"
-
-#. placeholder {0}: r.invoiceId
-msgid "Write-off for {0}"
-msgstr "Spisanie dla {0}"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Spisanie zapasu odrzuconego lub zwróconego w wyniku odrzuceń w kontroli i dyspozycji NCR"

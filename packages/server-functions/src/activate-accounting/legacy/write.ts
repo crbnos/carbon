@@ -10,8 +10,12 @@
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { getNextSequences } from "@carbon/database/sequence";
-import { datetime } from "@carbon/utils";
+import { getLogger } from "@carbon/logger";
+import { datetime, formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
+import { InvalidInputError } from "../../errors";
+
+const logger = getLogger("server-functions", "legacy-journals");
 
 type Enums = Database["public"]["Enums"];
 type JournalLineInsert = Database["public"]["Tables"]["journalLine"]["Insert"];
@@ -122,9 +126,62 @@ export async function readPostingGroups(
 }
 
 /**
+ * Refuses journals dated in a Closed or Locked period, naming the period,
+ * before any is written: the journal trigger refuses a Closed period with a
+ * bare error, and a Locked one fails later, when the journal gets its
+ * period. The enable meets none (no period on or after the cutover can be
+ * closed before it); a repair after it can.
+ */
+async function assertPeriodsOpen(
+  trx: KyselyTx,
+  companyId: string,
+  postingDates: string[]
+) {
+  const dates = [...new Set(postingDates)].sort();
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  if (!first || !last) return;
+  const periods = await trx
+    .selectFrom("accountingPeriod")
+    .select([
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string>`"endDate"::text`.as("endDate"),
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId)
+    .where("endDate", ">=", first)
+    .where("startDate", "<=", last)
+    .where((eb) =>
+      eb.or([
+        eb("closeStatus", "in", ["Closed", "Locked"]),
+        eb("closedAt", "is not", null)
+      ])
+    )
+    .orderBy("startDate")
+    .execute();
+  const blocked = periods.find((period) =>
+    dates.some((date) => period.startDate <= date && date <= period.endDate)
+  );
+  if (!blocked) return;
+  const name = formatPeriodLabel(blocked.startDate);
+  const locked = blocked.closeStatus === "Locked" && blocked.closedAt === null;
+  logger.warn("Refused legacy journals in a closed period", {
+    companyId,
+    period: blocked.startDate,
+    closeStatus: blocked.closeStatus
+  });
+  throw new InvalidInputError(
+    locked
+      ? `The period ${name} is locked. Unlock it, then write the missing journals.`
+      : `The period ${name} is closed. Reopen it, then write the missing journals.`
+  );
+}
+
+/**
  * Inserts the journals, their lines and the lines' dimensions in a few
  * statements. A journal with no lines is skipped, as a posting skips a
- * zero-value document. The journal entry numbers are allocated in order.
+ * zero-value document. Refuses a journal dated in a Closed or Locked period. The journal entry numbers are allocated in order.
  * Returns the id of each journal, in the order given (null when skipped).
  */
 export async function insertProvisionalJournals(
@@ -143,6 +200,11 @@ export async function insertProvisionalJournals(
 ): Promise<(string | null)[]> {
   const writable = journals.filter((journal) => journal.lines.length > 0);
   if (writable.length === 0) return journals.map(() => null);
+  await assertPeriodsOpen(
+    trx,
+    companyId,
+    writable.map((journal) => journal.postingDate)
+  );
 
   const entryIds = await getNextSequences(
     trx,

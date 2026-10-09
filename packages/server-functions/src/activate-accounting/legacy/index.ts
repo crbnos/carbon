@@ -23,7 +23,10 @@ import type { LegacyDocumentCounts } from "@carbon/database/legacy-documents";
 import { buildLegacyAdjustmentJournals } from "./adjustment";
 import { buildLegacyChargeJournals } from "./charge";
 import { buildLegacyMemoJournals } from "./memo";
-import { writeLegacyMovementCosts } from "./movement-cost";
+import {
+  type OutboundCosting,
+  writeLegacyMovementCosts
+} from "./movement-cost";
 import { journalLegacyPayments } from "./payment";
 import { buildLegacyPurchaseInvoiceJournals } from "./purchase-invoice";
 import {
@@ -51,13 +54,23 @@ export type LegacyJournalCounts = LegacyDocumentCounts & {
   movementCostRows: number;
 };
 
+export type { OutboundCosting } from "./movement-cost";
+
 export async function journalLegacyDocuments(
   trx: KyselyTx,
   {
     companyId,
     userId,
-    cutoverDate
-  }: { companyId: string; userId: string; cutoverDate: string }
+    cutoverDate,
+    outboundCosting = "unit-cost"
+  }: {
+    companyId: string;
+    userId: string;
+    cutoverDate: string;
+    /** "unit-cost" in the enable, which re-costs after this step;
+     *  "open-layers" in a repair after it, which does not. */
+    outboundCosting?: OutboundCosting;
+  }
 ): Promise<LegacyJournalCounts> {
   const company = await trx
     .selectFrom("company")
@@ -77,7 +90,8 @@ export async function journalLegacyDocuments(
   const movementCosts = await writeLegacyMovementCosts(trx, {
     companyId,
     cutoverDate,
-    defaults
+    defaults,
+    outboundCosting
   });
 
   const salesInvoices = await buildLegacySalesInvoiceJournals(trx, args);

@@ -37,7 +37,6 @@ import {
   equals,
   round
 } from "@carbon/utils";
-import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -50,6 +49,7 @@ import {
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import { journalLegacyDocuments, type LegacyJournalCounts } from "./legacy";
 import { chunks } from "./legacy/write";
+import { assignPeriods, promoteJournals, repointStandInLines } from "./promote";
 
 export const activateAccountingInput = z.object({
   cutoverDate: z
@@ -265,26 +265,15 @@ const activateAccounting = defineServerFn({
 
         // 11. Periods for the journals that stay. A Superseded journal keeps
         // none.
-        await assignPeriods(trx, companyId, cutoverDate);
+        const staying = { cutoverDate };
+        await assignPeriods(trx, companyId, staying);
 
         // 12–13. Stand-ins written while a default was empty.
         await repointStandInScheduleRows(trx, companyId, userId, defaults);
-        await repointStandInLines(trx, companyId, cutoverDate, defaults);
+        await repointStandInLines(trx, companyId, staying, defaults);
 
         // 14. Promote.
-        await trx
-          .updateTable("journal")
-          .set({
-            status: "Posted",
-            postedAt: now(),
-            postedBy: userId,
-            updatedBy: userId,
-            updatedAt: now()
-          })
-          .where("companyId", "=", companyId)
-          .where("status", "=", "Provisional")
-          .where("postingDate", ">=", cutoverDate)
-          .execute();
+        await promoteJournals(trx, companyId, userId, staying);
 
         // 15. Close every period before the cutover, oldest first. Not
         // closeAccountingPeriod: it opens its own transaction.
@@ -897,56 +886,6 @@ async function postRecostJournals(
 }
 
 /**
- * Step 11. Gives every Provisional journal dated on or after the cutover the
- * period that holds its date, resolving each month once.
- */
-async function assignPeriods(
-  trx: KyselyTx,
-  companyId: string,
-  cutoverDate: string
-) {
-  const dates = await trx
-    .selectFrom("journal")
-    .select("postingDate")
-    .distinct()
-    .where("companyId", "=", companyId)
-    .where("status", "=", "Provisional")
-    .where("postingDate", ">=", cutoverDate)
-    .execute();
-  const months = new Map<string, { start: string; end: string }>();
-  for (const { postingDate } of dates) {
-    const date = parseDate(String(postingDate));
-    const start = startOfMonth(date).toString();
-    months.set(start, { start, end: endOfMonth(date).toString() });
-  }
-  if (months.size === 0) return;
-
-  const periods: { start: string; end: string; periodId: string }[] = [];
-  for (const month of months.values()) {
-    const period = await resolveAccountingPeriod(
-      trx,
-      companyId,
-      month.start,
-      "historical"
-    );
-    periods.push({ ...month, periodId: period.id });
-  }
-  await sql`
-    UPDATE "journal" AS j
-    SET "accountingPeriodId" = v."periodId"
-    FROM (VALUES ${sql.join(
-      periods.map(
-        (period) =>
-          sql`(${period.start}::date, ${period.end}::date, ${period.periodId})`
-      )
-    )}) AS v("start", "end", "periodId")
-    WHERE j."companyId" = ${companyId}
-      AND j."status" = 'Provisional'
-      AND j."postingDate" BETWEEN v."start" AND v."end"
-  `.execute(trx);
-}
-
-/**
  * Step 12. A schedule row has no role column, and retained earnings never
  * belongs on one, so a Planned row on retained earnings is a stand-in the
  * sales invoice wrote while a default was empty.
@@ -1020,44 +959,4 @@ async function repointStandInScheduleRows(
     )}) AS v("id", "debitAccountId", "creditAccountId")
     WHERE r."id" = v."id" AND r."companyId" = ${companyId}
   `.execute(trx);
-}
-
-/**
- * Step 13. A stand-in line sits on retained earnings and names the default it
- * wanted. Before promotion it moves to that default, one UPDATE per role.
- */
-async function repointStandInLines(
-  trx: KyselyTx,
-  companyId: string,
-  cutoverDate: string,
-  defaults: AccountDefaults
-) {
-  const staying = trx
-    .selectFrom("journal")
-    .select("id")
-    .where("companyId", "=", companyId)
-    .where("status", "=", "Provisional")
-    .where("postingDate", ">=", cutoverDate);
-  const roles = await trx
-    .selectFrom("journalLine")
-    .select("accountDefaultRole")
-    .distinct()
-    .where("companyId", "=", companyId)
-    .where("accountDefaultRole", "is not", null)
-    .where("journalId", "in", staying)
-    .execute();
-  for (const { accountDefaultRole: role } of roles) {
-    if (!role) continue;
-    const accountId = (defaults as Record<string, unknown>)[role];
-    if (typeof accountId !== "string" || !accountId) {
-      throw new InvalidInputError(`Set the ${role} account default.`);
-    }
-    await trx
-      .updateTable("journalLine")
-      .set({ accountId, accountDefaultRole: null })
-      .where("companyId", "=", companyId)
-      .where("accountDefaultRole", "=", role)
-      .where("journalId", "in", staying)
-      .execute();
-  }
 }

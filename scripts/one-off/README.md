@@ -27,8 +27,11 @@ Nobody runs these by hand in production. Merging is what ships them.
    (dotted names, underscores, capitals, non-`.ts` files) fails the deploy
    with an error rather than being silently skipped.
 2. Take configuration from `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in
-   the environment; the runner injects the per-workspace values. Support
-   `--dry-run` if the script writes anything.
+   the environment; the runner injects the per-workspace values. A script that
+   needs Postgres itself (a Kysely transaction, a server function) reads
+   `SUPABASE_DB_URL`: the workspace's pooler URL, as the deployed app gets it,
+   or its self-hosted connection string. Support `--dry-run` if the script
+   writes anything.
 3. Ship it **alongside a migration**, or it will not deploy on its own — the
    workflow only triggers on `packages/database/supabase/**` changes. Without
    one, run the workflow manually (`workflow_dispatch`).
