@@ -31,6 +31,7 @@ import {
   type OptionalDefaultRole,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
+import { legacySalesInvoices } from "@carbon/database/legacy-documents";
 import {
   allocateSalesHeaderShipping,
   buildSalesPostingLines,
@@ -44,7 +45,6 @@ import {
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
-import { legacySalesInvoices } from "./detect";
 import { type LegacyJournal, type LegacyJournalLine, readByIds } from "./write";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
@@ -83,7 +83,10 @@ export async function buildLegacySalesInvoiceJournals(
     defaults: AccountDefaults;
   }
 ): Promise<LegacyJournal[]> {
-  const invoices = await legacySalesInvoices(trx, { companyId, cutoverDate });
+  const invoices = await legacySalesInvoices(trx, {
+    companyId,
+    cutoverDate
+  }).execute();
   if (invoices.length === 0) return [];
   const invoiceIds = invoices.map((invoice) => invoice.id);
 

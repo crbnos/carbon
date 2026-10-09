@@ -15,15 +15,18 @@
 // from positions and schedule rows that are not journal lines.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { legacyMemos } from "@carbon/database/legacy-documents";
 import { rebuildMemoJournals } from "../../post-memo/post-memo-transaction";
-import { legacyMemos } from "./detect";
 import { chunks, type LegacyDocumentJournal } from "./write";
 
 export async function buildLegacyMemoJournals(
   trx: KyselyTx,
   { companyId, cutoverDate }: { companyId: string; cutoverDate: string }
 ): Promise<LegacyDocumentJournal[]> {
-  const memos = await legacyMemos(trx, { companyId, cutoverDate });
+  const memos = await legacyMemos(trx, {
+    companyId,
+    cutoverDate
+  }).execute();
   const journals: LegacyDocumentJournal[] = [];
   for (const batch of chunks(memos)) {
     const rebuilt = await rebuildMemoJournals(trx, batch, companyId, {

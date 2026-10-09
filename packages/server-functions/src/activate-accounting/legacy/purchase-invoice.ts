@@ -36,15 +36,15 @@ import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveDefaultAccount } from "@carbon/database/journal-posting-status";
+import {
+  legacyPurchaseInvoices,
+  POSTED_INVOICE_EXCLUDED_STATUSES
+} from "@carbon/database/legacy-documents";
 import { credit, debit, EPSILON, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import { calculatePurchasePostingAmounts } from "../../post-purchase-invoice/purchase-posting-amounts";
-import {
-  legacyPurchaseInvoices,
-  POSTED_INVOICE_EXCLUDED_STATUSES
-} from "./detect";
 import { type LegacyJournal, type LegacyJournalLine, readByIds } from "./write";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
@@ -71,7 +71,7 @@ export async function buildLegacyPurchaseInvoiceJournals(
   const invoices = await legacyPurchaseInvoices(trx, {
     companyId,
     cutoverDate
-  });
+  }).execute();
   if (invoices.length === 0) return [];
   const invoiceIds = invoices.map((invoice) => invoice.id);
 

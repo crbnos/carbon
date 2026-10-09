@@ -56,8 +56,11 @@ export {
   getCutoverFixedAssets,
   getCutoverInventory,
   getCutoverOpenItems,
+  getLegacyDocumentCounts,
   getMigrationClearing,
   getOpeningTrialBalance,
+  type LegacyDocumentCounts,
+  type LegacyDocumentFamily,
   saveOpeningTrialBalance,
   updateCutoverAccumulatedDepreciation
 } from "@carbon/database/accounting-cutover-reads";

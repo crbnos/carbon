@@ -45,11 +45,13 @@
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import {
+  legacyJobMovements,
+  legacySaleMovements
+} from "@carbon/database/legacy-documents";
 import { credit, debit, EPSILON, round } from "@carbon/utils";
-import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
-import { legacyJobMovements, legacySaleMovements } from "./detect";
 import {
   chunks,
   groupBy,
@@ -233,10 +235,8 @@ export async function writeLegacyMovementCosts(
   }: { companyId: string; cutoverDate: string; defaults: AccountDefaults }
 ): Promise<LegacyMovementCosts> {
   const args = { companyId, cutoverDate };
-  const sales = (await legacySaleMovements(trx, args)).filter(
-    (row) => Number(row.quantity) - Number(row.covered) > EPSILON
-  );
-  const ledgerRows = await legacyJobMovements(trx, args);
+  const sales = await legacySaleMovements(trx, args).execute();
+  const ledgerRows = await legacyJobMovements(trx, args).execute();
   if (sales.length === 0 && ledgerRows.length === 0) {
     return { costRows: 0, jobConsumptions: [], jobOutputs: [] };
   }
@@ -276,25 +276,6 @@ export async function writeLegacyMovementCosts(
       )
       .orderBy("postingDate")
       .orderBy("entryNumber")
-      .execute()
-  );
-  const journaled = await readByIds(jobIds, (ids) =>
-    trx
-      .selectFrom("journalLine as line")
-      .innerJoin("journal", (join) =>
-        join
-          .onRef("journal.id", "=", "line.journalId")
-          .onRef("journal.companyId", "=", "line.companyId")
-      )
-      .select([
-        "line.documentId",
-        "line.documentType",
-        sql<string>`"journal"."postingDate"::text`.as("postingDate")
-      ])
-      .distinct()
-      .where("line.companyId", "=", companyId)
-      .where("line.documentId", "in", ids)
-      .where("line.documentType", "in", ["Job Consumption", "Job Receipt"])
       .execute()
   );
 
@@ -369,11 +350,14 @@ export async function writeLegacyMovementCosts(
       quantity: Number(row.quantity),
       cost: Number(row.cost)
     })),
+    // The days with a job journal, as the detection reads them.
     journaledDays: new Set(
-      journaled.map(
-        (row) =>
-          `${row.documentType === "Job Receipt" ? "Output" : "Consumption"}:${row.documentId}:${row.postingDate}`
-      )
+      ledgerRows
+        .filter((row) => row.journaled)
+        .map(
+          (row) =>
+            `${row.entryType === "Consumption" ? "Consumption" : "Output"}:${row.documentId}:${row.postingDate}`
+        )
     ),
     unitCostByItem
   });

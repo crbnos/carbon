@@ -3207,6 +3207,9 @@ msgstr "Asset GL account recognized when a sales-type lease starts, holding the 
 msgid "Asset ID"
 msgstr "Asset ID"
 
+msgid "Asset scrap disposals"
+msgstr "Asset scrap disposals"
+
 msgid "Asset Under Construction"
 msgstr "Asset Under Construction"
 
@@ -4188,6 +4191,9 @@ msgstr "Carbon Value"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 
 msgid "Carbon-only"
 msgstr "Carbon-only"
@@ -5964,6 +5970,9 @@ msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 
+msgid "Credit and debit memos"
+msgstr "Credit and debit memos"
+
 msgid "Credit applied"
 msgstr "Credit applied"
 
@@ -7139,6 +7148,9 @@ msgstr "Depreciation reversal when a fixed asset is disposed"
 msgid "Depreciation Run"
 msgstr "Depreciation Run"
 
+msgid "Depreciation runs"
+msgstr "Depreciation runs"
+
 msgid "Depreciation Start"
 msgstr "Depreciation Start"
 
@@ -7395,6 +7407,9 @@ msgstr "Documents"
 
 msgid "Documents and activity"
 msgstr "Documents and activity"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr "Documents posted before Carbon kept journals"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
@@ -10817,6 +10832,9 @@ msgstr "Inventory Adjustment"
 msgid "Inventory Adjustment (default)"
 msgstr "Inventory Adjustment (default)"
 
+msgid "Inventory adjustments and scrap"
+msgstr "Inventory adjustments and scrap"
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "Inventory and purchasing, with automated planning"
 
@@ -10831,6 +10849,9 @@ msgstr "Inventory control and counts"
 
 msgid "Inventory Count"
 msgstr "Inventory Count"
+
+msgid "Inventory counts"
+msgstr "Inventory counts"
 
 msgid "Inventory History"
 msgstr "Inventory History"
@@ -11210,6 +11231,9 @@ msgstr "Job"
 msgid "Job · {itemReadableId}"
 msgstr "Job · {itemReadableId}"
 
+msgid "Job completions"
+msgstr "Job completions"
+
 msgid "Job ID"
 msgstr "Job ID"
 
@@ -11221,6 +11245,9 @@ msgstr "Job Location"
 
 msgid "Job make method"
 msgstr "Job make method"
+
+msgid "Job material issues"
+msgstr "Job material issues"
 
 msgid "Job Materials"
 msgstr "Job Materials"
@@ -11958,6 +11985,9 @@ msgstr "Maintenance Expense"
 
 msgid "Maintenance Expense (default)"
 msgstr "Maintenance Expense (default)"
+
+msgid "Maintenance parts"
+msgstr "Maintenance parts"
 
 msgid "Maintenance Schedules"
 msgstr "Maintenance Schedules"
@@ -13890,6 +13920,9 @@ msgstr "Non conformance workflow"
 
 msgid "Non-conformance (issue)"
 msgstr "Non-conformance (issue)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr "Non-conformance and inspection scrap"
 
 msgid "Non-conformances"
 msgstr "Non-conformances"
@@ -16070,6 +16103,9 @@ msgstr "Purchase Price Variance (default)"
 msgid "Purchase Qty"
 msgstr "Purchase Qty"
 
+msgid "Purchase receipts"
+msgstr "Purchase receipts"
+
 msgid "Purchase Return"
 msgstr "Purchase Return"
 
@@ -17470,6 +17506,9 @@ msgstr "Return Reason"
 msgid "Return Reasons"
 msgstr "Return Reasons"
 
+msgid "Return shipments"
+msgstr "Return shipments"
+
 msgid "Return To"
 msgstr "Return To"
 
@@ -17574,6 +17613,9 @@ msgstr "Revenue Recognition"
 
 msgid "Revenue Recognition Run"
 msgstr "Revenue Recognition Run"
+
+msgid "Revenue recognition runs"
+msgstr "Revenue recognition runs"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Revenue recognized at commencement of a sales-type lease"
@@ -18019,6 +18061,9 @@ msgstr "Sales Person"
 msgid "Sales Return"
 msgstr "Sales Return"
 
+msgid "Sales return receipts"
+msgstr "Sales return receipts"
+
 msgid "Sales Revenue"
 msgstr "Sales Revenue"
 
@@ -18037,6 +18082,9 @@ msgstr "Sales rules"
 
 msgid "Sales Rules"
 msgstr "Sales Rules"
+
+msgid "Sales shipments"
+msgstr "Sales shipments"
 
 msgid "Sales Tax Payable"
 msgstr "Sales Tax Payable"

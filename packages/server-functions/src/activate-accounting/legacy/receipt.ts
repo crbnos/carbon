@@ -32,11 +32,11 @@
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import { legacyReceipts } from "@carbon/database/legacy-documents";
 import { credit, debit, EPSILON, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
-import { legacyReceipts } from "./detect";
 import {
   groupBy,
   type LegacyJournal,
@@ -151,7 +151,7 @@ export async function buildLegacyPurchaseReceiptJournals(
     trx,
     { companyId, cutoverDate },
     "Purchase Order"
-  );
+  ).execute();
   if (receipts.length === 0) return [];
   const receiptIds = receipts.map((receipt) => receipt.id);
   const purchaseOrderIds = receipts.map((receipt) => receipt.sourceDocumentId);
@@ -397,7 +397,7 @@ export async function buildLegacySalesReturnReceiptJournals(
     trx,
     { companyId, cutoverDate },
     "Sales Return Order"
-  );
+  ).execute();
   if (receipts.length === 0) return [];
   const receiptIds = receipts.map((receipt) => receipt.id);
 

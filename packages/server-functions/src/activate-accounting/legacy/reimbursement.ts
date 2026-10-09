@@ -20,11 +20,11 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import { legacyReimbursements } from "@carbon/database/legacy-documents";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { buildReimbursementJournal } from "../../post-reimbursement/build-reimbursement-journal";
 import { costCenterAndProjectDimensions } from "./charge";
-import { legacyReimbursements } from "./detect";
 import { type LegacyDocumentJournal, readByIds } from "./write";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
@@ -46,7 +46,7 @@ export async function buildLegacyReimbursementJournals(
   const reimbursements = await legacyReimbursements(trx, {
     companyId,
     cutoverDate
-  });
+  }).execute();
   if (reimbursements.length === 0) return [];
 
   const lines = await readByIds(

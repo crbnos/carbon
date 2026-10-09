@@ -26,8 +26,11 @@
 // The ERP dates a month in a Closed period on the run's period end; there is
 // no period yet, so every journal takes its own month.
 //
+// The rows each step reads are the detection's
+// (@carbon/database/legacy-documents), which the wizard counts.
+//
 // Not rebuilt: the depreciation of an asset that left the books with no
-// journal (`getAssetsLeavingWithoutJournal`): the opening fixed assets leave
+// journal (`assetsLeavingWithoutJournal`): the opening fixed assets leave
 // it out too.
 //
 // A rebuilt journal may already sit in the accounting provider: the reset
@@ -37,12 +40,15 @@
 // never push it (`keepOutOfProviderSync`).
 
 import type { Database } from "@carbon/database";
-import {
-  getAssetsLeavingWithoutJournal,
-  REBUILT_DISPOSAL_METHOD
-} from "@carbon/database/accounting-cutover-reads";
 import type { KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
+import {
+  type LegacyDocumentCounts,
+  legacyDepreciationRunLines,
+  legacyDisposals,
+  legacyRecognitionSchedule,
+  REBUILT_DISPOSAL_METHOD
+} from "@carbon/database/legacy-documents";
 import {
   type AccountClass,
   datetime,
@@ -68,11 +74,10 @@ type Enums = Database["public"]["Enums"];
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 
 /** The runs and disposals the enable wrote a journal for. */
-export type LegacyRunCounts = {
-  depreciationRuns: number;
-  assetDisposals: number;
-  revenueRecognitionRuns: number;
-};
+export type LegacyRunCounts = Pick<
+  LegacyDocumentCounts,
+  "depreciationRuns" | "assetDisposals" | "revenueRecognitionRuns"
+>;
 
 /** A journal and the rows that store its id. */
 type Built<T> = { journal: LegacyJournal; attach: T };
@@ -248,78 +253,25 @@ async function loadDepreciationRunLines(
   companyId: string,
   cutoverDate: string
 ): Promise<DepreciationRunLineRow[]> {
-  const leavingWithoutJournal = await getAssetsLeavingWithoutJournal(trx, {
+  const rows = await legacyDepreciationRunLines(trx, {
     companyId,
     cutoverDate
-  });
-  const rows = await trx
-    .selectFrom("depreciationRunLine as line")
-    .innerJoin("depreciationRun as run", (join) =>
-      join
-        .onRef("run.id", "=", "line.depreciationRunId")
-        .onRef("run.companyId", "=", "line.companyId")
-    )
-    .innerJoin("fixedAsset as asset", (join) =>
-      join
-        .onRef("asset.id", "=", "line.fixedAssetId")
-        .onRef("asset.companyId", "=", "line.companyId")
-    )
-    .innerJoin("fixedAssetClass as class", (join) =>
-      join
-        .onRef("class.id", "=", "asset.fixedAssetClassId")
-        .onRef("class.companyId", "=", "asset.companyId")
-    )
-    .select([
-      "line.id",
-      "line.depreciationRunId",
-      "run.depreciationRunId as runReadableId",
-      sql<string>`coalesce("line"."periodEnd", "run"."periodEnd")::text`.as(
-        "monthEnd"
-      ),
-      "line.amount",
-      "line.taxAmount",
-      "line.journalId",
-      "line.deferredTaxJournalId",
-      "line.fixedAssetId",
-      "asset.fixedAssetId as assetReadableId",
-      "asset.locationId",
-      "asset.fixedAssetClassId",
-      "class.depreciationExpenseAccountId",
-      "class.accumulatedDepreciationAccountId"
-    ])
-    .where("line.companyId", "=", companyId)
-    .where("run.status", "=", "Posted")
-    .where(
-      sql<string>`coalesce("line"."periodEnd", "run"."periodEnd")`,
-      ">=",
-      cutoverDate
-    )
-    .where((eb) =>
-      eb.or([
-        eb("line.journalId", "is", null),
-        eb("line.deferredTaxJournalId", "is", null)
-      ])
-    )
-    .orderBy("run.periodEnd")
-    .orderBy("line.id")
-    .execute();
-  return rows
-    .filter((row) => !leavingWithoutJournal.has(row.fixedAssetId))
-    .map((row) => ({
-      id: row.id,
-      depreciationRunId: row.depreciationRunId,
-      runReadableId: row.runReadableId,
-      monthEnd: row.monthEnd,
-      amount: Number(row.amount),
-      taxAmount: row.taxAmount === null ? null : Number(row.taxAmount),
-      journalId: row.journalId,
-      deferredTaxJournalId: row.deferredTaxJournalId,
-      assetReadableId: row.assetReadableId,
-      locationId: row.locationId,
-      fixedAssetClassId: row.fixedAssetClassId,
-      depreciationExpenseAccountId: row.depreciationExpenseAccountId,
-      accumulatedDepreciationAccountId: row.accumulatedDepreciationAccountId
-    }));
+  }).execute();
+  return rows.map((row) => ({
+    id: row.id,
+    depreciationRunId: row.depreciationRunId,
+    runReadableId: row.runReadableId,
+    monthEnd: row.monthEnd,
+    amount: Number(row.amount),
+    taxAmount: row.taxAmount === null ? null : Number(row.taxAmount),
+    journalId: row.journalId,
+    deferredTaxJournalId: row.deferredTaxJournalId,
+    assetReadableId: row.assetReadableId,
+    locationId: row.locationId,
+    fixedAssetClassId: row.fixedAssetClassId,
+    depreciationExpenseAccountId: row.depreciationExpenseAccountId,
+    accumulatedDepreciationAccountId: row.accumulatedDepreciationAccountId
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -388,37 +340,7 @@ async function loadDisposals(
   companyId: string,
   cutoverDate: string
 ): Promise<DisposalRow[]> {
-  const rows = await trx
-    .selectFrom("fixedAssetDisposal as disposal")
-    .innerJoin("fixedAsset as asset", (join) =>
-      join
-        .onRef("asset.id", "=", "disposal.fixedAssetId")
-        .onRef("asset.companyId", "=", "disposal.companyId")
-    )
-    .innerJoin("fixedAssetClass as class", (join) =>
-      join
-        .onRef("class.id", "=", "asset.fixedAssetClassId")
-        .onRef("class.companyId", "=", "asset.companyId")
-    )
-    .select([
-      "disposal.id",
-      sql<string>`"disposal"."disposalDate"::text`.as("disposalDate"),
-      "asset.fixedAssetId as assetReadableId",
-      "asset.acquisitionCost",
-      "asset.accumulatedDepreciation",
-      "asset.locationId",
-      "asset.fixedAssetClassId",
-      "class.assetAccountId",
-      "class.accumulatedDepreciationAccountId",
-      "class.lossOnDisposalAccountId"
-    ])
-    .where("disposal.companyId", "=", companyId)
-    .where("disposal.disposalMethod", "=", REBUILT_DISPOSAL_METHOD)
-    .where("disposal.journalId", "is", null)
-    .where("disposal.disposalDate", ">=", cutoverDate)
-    .orderBy("disposal.disposalDate")
-    .orderBy("disposal.id")
-    .execute();
+  const rows = await legacyDisposals(trx, { companyId, cutoverDate }).execute();
   return rows.map((row) => ({
     ...row,
     acquisitionCost: Number(row.acquisitionCost),
@@ -553,42 +475,10 @@ async function loadRecognitionRows(
   companyGroupId: string,
   cutoverDate: string
 ): Promise<{ rows: RecognitionRow[]; classById: Map<string, AccountClass> }> {
-  const scheduled = await trx
-    .selectFrom("revenueRecognitionSchedule as schedule")
-    .innerJoin("revenueRecognitionRunLine as runLine", (join) =>
-      join
-        .onRef("runLine.id", "=", "schedule.runLineId")
-        .onRef("runLine.companyId", "=", "schedule.companyId")
-    )
-    .innerJoin("revenueRecognitionRun as run", (join) =>
-      join
-        .onRef("run.id", "=", "runLine.runId")
-        .onRef("run.companyId", "=", "runLine.companyId")
-    )
-    .select([
-      "schedule.id as scheduleId",
-      "run.id as runId",
-      "run.runId as runReadableId",
-      sql<string>`"run"."periodEnd"::text`.as("runPeriodEnd"),
-      sql<string>`"schedule"."scheduledDate"::text`.as("scheduledDate"),
-      "schedule.type",
-      "runLine.amount",
-      "schedule.debitAccountId",
-      "schedule.creditAccountId",
-      "schedule.salesInvoiceLineId",
-      "schedule.rentalAgreementLineId",
-      "schedule.rentalLeaseScheduleLineId",
-      "schedule.customerContractLineId"
-    ])
-    .where("schedule.companyId", "=", companyId)
-    .where("schedule.status", "=", "Posted")
-    .where("schedule.journalId", "is", null)
-    .where("schedule.scheduledDate", ">=", cutoverDate)
-    .where("run.status", "=", "Posted")
-    .orderBy("run.periodEnd")
-    .orderBy("schedule.scheduledDate")
-    .orderBy("schedule.id")
-    .execute();
+  const scheduled = await legacyRecognitionSchedule(trx, {
+    companyId,
+    cutoverDate
+  }).execute();
   if (scheduled.length === 0) return { rows: [], classById: new Map() };
 
   const invoiceLines = await readByIds(

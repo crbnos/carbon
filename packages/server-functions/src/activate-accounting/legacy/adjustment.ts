@@ -47,10 +47,10 @@ import {
   type OptionalDefaultRole,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
+import { legacyAdjustmentCostRows } from "@carbon/database/legacy-documents";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { buildAdjustmentJournalLines } from "../../lib/plan-adjustment";
-import { legacyAdjustmentCostRows } from "./detect";
 import {
   type DimensionEntityType,
   groupBy,
@@ -99,7 +99,10 @@ export async function buildLegacyAdjustmentJournals(
     nonConformances: [],
     maintenanceConsumptions: []
   };
-  const rows = await legacyAdjustmentCostRows(trx, { companyId, cutoverDate });
+  const rows = await legacyAdjustmentCostRows(trx, {
+    companyId,
+    cutoverDate
+  }).execute();
   if (rows.length === 0) return result;
 
   const ledgerColumns = [
@@ -272,7 +275,9 @@ export async function buildLegacyAdjustmentJournals(
     const own = ownLedger(row);
     const ledger = own ?? pairedLedger.get(row.id);
     let key: string;
-    let family: keyof LegacyAdjustmentJournals = "inventoryAdjustments";
+    // The family the detection names (legacy-documents.ts), so the wizard's
+    // counts and these journals agree.
+    const family: keyof LegacyAdjustmentJournals = row.family;
     let description: string;
     let sourceType: LegacyJournal["sourceType"] = "Inventory Adjustment";
     let offset = variance;
@@ -310,7 +315,6 @@ export async function buildLegacyAdjustmentJournals(
       }
       case "Inventory Count": {
         key = `count:${documentId}:${row.createdAt}`;
-        family = "inventoryCounts";
         const count = countById.get(documentId);
         description = count
           ? `Inventory Count ${count.inventoryCountId}`
@@ -320,7 +324,6 @@ export async function buildLegacyAdjustmentJournals(
       case "Non-Conformance":
       case "Inbound Inspection": {
         key = `${row.documentType}:${documentId}:${row.createdAt}`;
-        family = "nonConformances";
         sourceType = row.documentType;
         description =
           row.documentType === "Non-Conformance"
@@ -331,7 +334,6 @@ export async function buildLegacyAdjustmentJournals(
       }
       case "Maintenance Consumption": {
         key = `maintenance:${documentId}:${row.createdAt}`;
-        family = "maintenanceConsumptions";
         const dispatch = dispatchById.get(documentId);
         description = `Maintenance Consumption ${dispatch?.maintenanceDispatchId ?? documentId}`;
         // An empty maintenance account falls back to the variance account

@@ -3207,6 +3207,9 @@ msgstr "Satış türü bir kiralama başladığında muhasebeleştirilen muhaseb
 msgid "Asset ID"
 msgstr "Varlık Kimliği"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "İnşaat Halindeki Varlık"
 
@@ -4188,6 +4191,9 @@ msgstr "Carbon Değeri"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon, {0} eşleştirilmemiş hesaplarınızın her biri için bir sağlayıcı hesabını tahmin etmek için yapay zeka kullanacaktır. Öneriler bir başlangıç noktasıdır — her şey kaydedilmeden önce bunları gözden geçirebilirsiniz."
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Yalnızca Carbon"
@@ -5964,6 +5970,9 @@ msgstr "Üretim maliyetleri yarı mamule dahil edildiğinde kullanılan alacak h
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "Alacak tutarları şirketin temel para birimi ({currency}) cinsindendir. Bu ödeme muhasebeleştirildiğinde alacaklar geçerli olur."
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "Alacak uygulandı"
 
@@ -7139,6 +7148,9 @@ msgstr "Sabit kıymet elden çıkarıldığında amortisman geri çevirme"
 msgid "Depreciation Run"
 msgstr "Amortisman Çalıştırması"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "Amortisman Başlangıcı"
 
@@ -7395,6 +7407,9 @@ msgstr "Belgeler"
 
 msgid "Documents and activity"
 msgstr "Belgeler ve aktivite"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Belgeler, faturaları, fatura bedelleri ve ödemeleri yerel sağlayıcı belgeleri olarak gönderir; muhasebe fişleri belge tarafından kapsandığı olarak kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çeker, eşleşen faturayı kapatır ve bir Carbon Büyük defter muhasebe fişi muhasebeleştirir. Kapalı, bunları kasıtlı olarak dışarıda bırakılanlar olarak kaydeder."
@@ -10817,6 +10832,9 @@ msgstr "Stok düzeltme"
 msgid "Inventory Adjustment (default)"
 msgstr "Stok düzeltme (varsayılan)"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "Envanter ve satın alma, otomatik planlama ile"
 
@@ -10831,6 +10849,9 @@ msgstr "Envanter kontrolü ve sayımları"
 
 msgid "Inventory Count"
 msgstr "Envanter Sayımı"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "Envanter Geçmişi"
@@ -11210,6 +11231,9 @@ msgstr "İş"
 msgid "Job · {itemReadableId}"
 msgstr "İş emri · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "İş Emri Kimliği"
 
@@ -11221,6 +11245,9 @@ msgstr "İş Yeri Konumu"
 
 msgid "Job make method"
 msgstr "İş emri üretim yöntemi"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "İş emri malzemeleri"
@@ -11958,6 +11985,9 @@ msgstr "Bakım Gideri"
 
 msgid "Maintenance Expense (default)"
 msgstr "Bakım Gideri (varsayılan)"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Bakım Programları"
@@ -13890,6 +13920,9 @@ msgstr "Uygunsuzluk İş Akışı"
 
 msgid "Non-conformance (issue)"
 msgstr "Uygunsuzluk (sorun)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "Uygunsuzluklar"
@@ -16070,6 +16103,9 @@ msgstr "Satın alma fiyat sapması (varsayılan)"
 msgid "Purchase Qty"
 msgstr "Satın Alma Miktarı"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "Satın alma iadesi"
 
@@ -17470,6 +17506,9 @@ msgstr "İade Nedeni"
 msgid "Return Reasons"
 msgstr "İade Nedenleri"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "Geri Döndür"
 
@@ -17574,6 +17613,9 @@ msgstr "Hasılat Muhasebeleştirmesi"
 
 msgid "Revenue Recognition Run"
 msgstr "Hasılat Muhasebeleştirme Çalışması"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Satış türü kiralamanın başlangıcında muhasebeleştirilen Hasılat"
@@ -18019,6 +18061,9 @@ msgstr "Satış Temsilcisi"
 msgid "Sales Return"
 msgstr "Satış İadesi"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "Satış Hasılat"
 
@@ -18037,6 +18082,9 @@ msgstr "Satış kuralları"
 
 msgid "Sales Rules"
 msgstr "Satış Kuralları"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "Ödenmesi gereken satış vergisi"

@@ -3207,6 +3207,9 @@ msgstr "विक्रय प्रकार के पट्टे के श�
 msgid "Asset ID"
 msgstr "परिसंपत्ति ID"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "निर्माणाधीन संपत्ति"
 
@@ -4188,6 +4191,9 @@ msgstr "कार्बन मान"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "कार्बन आपके {0} असंगत खातों में से प्रत्येक के लिए एक प्रदाता खाता अनुमान लगाने के लिए एआई का उपयोग करेगा। सुझाव एक शुरुआती बिंदु हैं — आप कुछ भी सहेजने से पहले उनकी समीक्षा कर सकते हैं।"
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "कार्बन-केवल"
@@ -5964,6 +5970,9 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "क्रेडिट राशियाँ कंपनी की आधार मुद्रा ({currency}) में हैं। यह भुगतान पोस्ट होने पर क्रेडिट लागू होते हैं।"
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "जमा लागू किया गया"
 
@@ -7139,6 +7148,9 @@ msgstr "जब अचल संपत्ति निपटाई जाती �
 msgid "Depreciation Run"
 msgstr "मूल्यह्रास रन"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "मूल्यह्रास शुरुआत"
 
@@ -7395,6 +7407,9 @@ msgstr "दस्तावेज़"
 
 msgid "Documents and activity"
 msgstr "दस्तावेज़ और गतिविधि"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को नेटिव प्रदाता दस्तावेज़ के रूप में पुश करता है; उनकी जर्नल दस्तावेज़ द्वारा कवर किए गए के रूप में रिकॉर्ड की जाती है। यह प्रदाता में रिकॉर्ड किए गए भुगतान को Carbon में वापस पुल करता है, मिलान किए गए चालान या बिल को बंद करता है और एक Carbon सामान्य खाता बही जर्नल की पोस्टिंग करता है। बंद होने पर यह उन्हें जानबूझकर बाहर रखे जाने के रूप में रिकॉर्ड करता है।"
@@ -10817,6 +10832,9 @@ msgstr "इन्वेंटरी समायोजन"
 msgid "Inventory Adjustment (default)"
 msgstr "इन्वेंटरी समायोजन (डिफ़ॉल्ट)"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "इन्वेंटरी और क्रय, स्वचालित योजना के साथ"
 
@@ -10831,6 +10849,9 @@ msgstr "इन्वेंटरी नियंत्रण और गणना
 
 msgid "Inventory Count"
 msgstr "इन्वेंटरी काउंट"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "इन्वेंटरी इतिहास"
@@ -11210,6 +11231,9 @@ msgstr "Job"
 msgid "Job · {itemReadableId}"
 msgstr "जॉब · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "जॉब आईडी"
 
@@ -11221,6 +11245,9 @@ msgstr "जॉब स्थान"
 
 msgid "Job make method"
 msgstr "जॉब निर्माण विधि"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "जॉब सामग्री"
@@ -11958,6 +11985,9 @@ msgstr "रखरखाव व्यय"
 
 msgid "Maintenance Expense (default)"
 msgstr "रखरखाव व्यय (डिफ़ॉल्ट)"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "रखरखाव शेड्यूल"
@@ -13890,6 +13920,9 @@ msgstr "गैर-अनुरूपता वर्कफ़्लो"
 
 msgid "Non-conformance (issue)"
 msgstr "गैर-अनुरूपता (निर्गम)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "गैर-अनुरूपताएँ"
@@ -16070,6 +16103,9 @@ msgstr "क्रय मूल्य विचलन (डिफ़ॉल्ट)"
 msgid "Purchase Qty"
 msgstr "खरीद मात्रा"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "क्रय रिटर्न"
 
@@ -17470,6 +17506,9 @@ msgstr "रिटर्न कारण"
 msgid "Return Reasons"
 msgstr "रिटर्न कारण"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "को वापस करें"
 
@@ -17574,6 +17613,9 @@ msgstr "राजस्व मान्यता"
 
 msgid "Revenue Recognition Run"
 msgstr "राजस्व मान्यता रन"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में राजस्व मान्य"
@@ -18019,6 +18061,9 @@ msgstr "विक्रय प्रतिनिधि"
 msgid "Sales Return"
 msgstr "विक्रय रिटर्न"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
 
@@ -18037,6 +18082,9 @@ msgstr "बिक्री नियम"
 
 msgid "Sales Rules"
 msgstr "बिक्री नियम"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "देय बिक्रय कर"

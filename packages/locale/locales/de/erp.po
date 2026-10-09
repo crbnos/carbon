@@ -3207,6 +3207,9 @@ msgstr "Sachkonto, das anerkannt wird, wenn ein Sales-Leasing beginnt und den Ba
 msgid "Asset ID"
 msgstr "Anlagen-ID"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "Anlagen im Bau"
 
@@ -4188,6 +4191,9 @@ msgstr "Carbon-Wert"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon wird KI verwenden, um für jedes Ihrer {0} nicht zugeordneten Konten ein Anbieterkonto vorzuschlagen. Vorschläge sind ein Ausgangspunkt — Sie können diese überprüfen, bevor etwas gespeichert wird."
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Nur Carbon"
@@ -5964,6 +5970,9 @@ msgstr "Habenkonten bei der Absorption von Fertigungskosten in WIP"
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "Guthabenbeträge werden in der Basiswährung des Unternehmens ({currency}) angegeben. Die Verrechnung der Guthaben wird wirksam, sobald diese Zahlung gebucht wird."
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "Haben angewendet"
 
@@ -7139,6 +7148,9 @@ msgstr "Abschreibungsumkehrung bei Entsorgung eines Anlagevermögens"
 msgid "Depreciation Run"
 msgstr "Abschreibungslauf"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "Abschreibungsbeginn"
 
@@ -7395,6 +7407,9 @@ msgstr "Dokumente"
 
 msgid "Documents and activity"
 msgstr "Dokumente und Aktivität"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Dokumente sendet Rechnungen, Lieferscheine und Zahlungen als native Anbieter-Dokumente; ihre Buchungssätze werden als durch das Dokument abgedeckt erfasst. Es zieht auch im Anbieter erfasste Zahlungen in Carbon zurück, schließt die übereinstimmende Rechnung oder den Lieferschein und bucht einen Carbon-Hauptbuch-Buchungssatz. Off erfasst sie als absichtlich ausgeschlossen."
@@ -10817,6 +10832,9 @@ msgstr "Bestandskorrektur"
 msgid "Inventory Adjustment (default)"
 msgstr "Bestandskorrektur (Standard)"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "Bestand und Einkauf mit automatisierter Planung"
 
@@ -10831,6 +10849,9 @@ msgstr "Bestandskontrolle und Zählungen"
 
 msgid "Inventory Count"
 msgstr "Bestandszählung"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "Bestandsverlauf"
@@ -11210,6 +11231,9 @@ msgstr "Job"
 msgid "Job · {itemReadableId}"
 msgstr "Fertigungsauftrag · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "Auftrags-ID"
 
@@ -11221,6 +11245,9 @@ msgstr "Auftragsort"
 
 msgid "Job make method"
 msgstr "Auftragsfertigungsmethode"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "Auftragsmaterialien"
@@ -11958,6 +11985,9 @@ msgstr "Instandhaltung-Aufwand"
 
 msgid "Maintenance Expense (default)"
 msgstr "Instandhaltung-Aufwand (Standard)"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Instandhaltungspläne"
@@ -13890,6 +13920,9 @@ msgstr "Nichtkonformitäts-Workflow"
 
 msgid "Non-conformance (issue)"
 msgstr "Nichtkonformität (Problem)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "Nichtkonformitäten"
@@ -16070,6 +16103,9 @@ msgstr "Einkaufspreisabweichung (Standard)"
 msgid "Purchase Qty"
 msgstr "Kaufmenge"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "Rückgabe"
 
@@ -17470,6 +17506,9 @@ msgstr "Rückgabegrund"
 msgid "Return Reasons"
 msgstr "Rückgabegründe"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "Rückgabe an"
 
@@ -17574,6 +17613,9 @@ msgstr "Erlöserfassung"
 
 msgid "Revenue Recognition Run"
 msgstr "Umsatzerlöse-Anerkennungslauf"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Bei Beginn eines Finanzierungsleasingverhältnisses erfasste Umsatzerlöse"
@@ -18019,6 +18061,9 @@ msgstr "Verkäufer"
 msgid "Sales Return"
 msgstr "Rücklieferung"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "Umsatzerlöse"
 
@@ -18037,6 +18082,9 @@ msgstr "Verkaufsregeln"
 
 msgid "Sales Rules"
 msgstr "Verkaufsregeln"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "Umsatzsteuer zu zahlen"

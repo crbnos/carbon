@@ -29,6 +29,8 @@ import {
   activationFixture,
   type Fixture,
   glBalance,
+  journaledFamilies,
+  legacyDocumentCounts,
   moveBeforeCutover,
   USER,
   unwrap
@@ -125,12 +127,15 @@ databaseTest(
       });
       expect((await getMigrationClearing(f.db, args)).total).toBe(0);
 
+      // The wizard counts the runs before the enable journals them.
+      const counted = await legacyDocumentCounts(f);
       const result = unwrap(
         await activateAccounting(f.ctx, {
           ...args,
           confirmation: f.companyName
         })
       );
+      expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
       expect(result.legacyJournals).toMatchObject({
         depreciationRuns: 1,
         assetDisposals: 1,
@@ -289,12 +294,15 @@ databaseTest(
       });
       expect((await getMigrationClearing(f.db, args)).total).toBe(0);
 
+      // The wizard counts the runs before the enable journals them.
+      const counted = await legacyDocumentCounts(f);
       const result = unwrap(
         await activateAccounting(f.ctx, {
           ...args,
           confirmation: f.companyName
         })
       );
+      expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
       expect(result.legacyJournals.revenueRecognitionRuns).toBe(1);
 
       const after = await f.db
@@ -569,12 +577,15 @@ databaseTest(
       });
       expect((await getMigrationClearing(f.db, args)).total).toBe(0);
 
+      // The wizard counts the runs before the enable journals them.
+      const counted = await legacyDocumentCounts(f);
       const result = unwrap(
         await activateAccounting(f.ctx, {
           ...args,
           confirmation: f.companyName
         })
       );
+      expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
       expect(result.legacyJournals.depreciationRuns).toBe(1);
 
       // Opening, the rebuilt run and the sale: both accounts net to 0.

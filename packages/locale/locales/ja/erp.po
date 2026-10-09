@@ -3207,6 +3207,9 @@ msgstr "売却型リース開始時に認識される資産勘定科目で、支
 msgid "Asset ID"
 msgstr "資産 ID"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "建設中資産"
 
@@ -4188,6 +4191,9 @@ msgstr "カーボン値"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbonはあなたの{0}個のマップされていないアカウントのそれぞれについて、プロバイダーアカウントをAIで推測します。提案は出発点です — 保存する前にそれらをレビューできます。"
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Carbon専用"
@@ -5964,6 +5970,9 @@ msgstr "製造原価が仕掛品に吸収されたときに使用される貸方
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "クレジット金額は会社の基本通貨（{currency}）で表示されます。この支払を転記すると、クレジットの適用が反映されます。"
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "貸方が適用されました"
 
@@ -7139,6 +7148,9 @@ msgstr "固定資産を処分する場合の減価償却の逆転"
 msgid "Depreciation Run"
 msgstr "減価償却実行"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "減価償却開始"
 
@@ -7395,6 +7407,9 @@ msgstr "ドキュメント"
 
 msgid "Documents and activity"
 msgstr "ドキュメントと活動"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "ドキュメントはネイティブプロバイダ文書として請求書および支払をプッシュします。それらの仕訳は文書でカバーされたものとして記録されます。また、プロバイダで記録された支払をCarbonに取り込み、対応する請求書をクローズし、Carbon総勘定元帳仕訳を転記します。オフはそれらを意図的に除外したものとして記録します。"
@@ -10817,6 +10832,9 @@ msgstr "在庫調整"
 msgid "Inventory Adjustment (default)"
 msgstr "在庫調整（デフォルト）"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "在庫と購買、自動計画機能付き"
 
@@ -10831,6 +10849,9 @@ msgstr "在庫管理と棚卸"
 
 msgid "Inventory Count"
 msgstr "在庫数"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "在庫履歴"
@@ -11210,6 +11231,9 @@ msgstr "ジョブ"
 msgid "Job · {itemReadableId}"
 msgstr "製造指図 · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ジョブID"
 
@@ -11221,6 +11245,9 @@ msgstr "ジョブロケーション"
 
 msgid "Job make method"
 msgstr "ジョブ製造方法"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "指図材料"
@@ -11958,6 +11985,9 @@ msgstr "保全費用"
 
 msgid "Maintenance Expense (default)"
 msgstr "保全費用（デフォルト）"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "保全スケジュール"
@@ -13890,6 +13920,9 @@ msgstr "不適合ワークフロー"
 
 msgid "Non-conformance (issue)"
 msgstr "不適合（問題）"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "不適合"
@@ -16070,6 +16103,9 @@ msgstr "仕入価格差異（デフォルト）"
 msgid "Purchase Qty"
 msgstr "購入数量"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "購買返品"
 
@@ -17470,6 +17506,9 @@ msgstr "返品理由"
 msgid "Return Reasons"
 msgstr "返品理由一覧"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "返却先"
 
@@ -17574,6 +17613,9 @@ msgstr "売上高認識"
 
 msgid "Revenue Recognition Run"
 msgstr "売上高認識実行"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "セールスタイプリースの開始時に認識された売上高"
@@ -18019,6 +18061,9 @@ msgstr "営業担当者"
 msgid "Sales Return"
 msgstr "販売返品"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "販売売上高"
 
@@ -18037,6 +18082,9 @@ msgstr "販売ルール"
 
 msgid "Sales Rules"
 msgstr "販売ルール"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "支払い売上税"

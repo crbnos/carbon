@@ -19,6 +19,7 @@
 // sync.
 
 import type { KyselyTx } from "@carbon/database/client";
+import type { LegacyDocumentCounts } from "@carbon/database/legacy-documents";
 import { buildLegacyAdjustmentJournals } from "./adjustment";
 import { buildLegacyChargeJournals } from "./charge";
 import { buildLegacyMemoJournals } from "./memo";
@@ -30,7 +31,7 @@ import {
   buildLegacySalesReturnReceiptJournals
 } from "./receipt";
 import { buildLegacyReimbursementJournals } from "./reimbursement";
-import { journalLegacyRuns, type LegacyRunCounts } from "./runs";
+import { journalLegacyRuns } from "./runs";
 import { buildLegacySalesInvoiceJournals } from "./sales-invoice";
 import {
   buildLegacyReturnShipmentJournals,
@@ -43,24 +44,9 @@ import {
   type LegacyDocumentJournal
 } from "./write";
 
-/** The documents the enable wrote a journal for, per family. */
-export type LegacyJournalCounts = LegacyRunCounts & {
-  salesInvoices: number;
-  purchaseInvoices: number;
-  memos: number;
-  charges: number;
-  reimbursements: number;
-  payments: number;
-  purchaseReceipts: number;
-  salesReturnReceipts: number;
-  salesShipments: number;
-  returnShipments: number;
-  inventoryAdjustments: number;
-  inventoryCounts: number;
-  nonConformances: number;
-  maintenanceConsumptions: number;
-  jobConsumptions: number;
-  jobOutputs: number;
+/** The documents the enable wrote a journal for, per family: the families
+ *  `getLegacyDocumentCounts` counts before the enable. */
+export type LegacyJournalCounts = LegacyDocumentCounts & {
   /** Cost rows written for movements that stored none. */
   movementCostRows: number;
 };

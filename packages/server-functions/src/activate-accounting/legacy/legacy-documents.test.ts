@@ -29,6 +29,8 @@ import {
   activationFixture,
   type Fixture,
   glBalance,
+  journaledFamilies,
+  legacyDocumentCounts,
   moveBeforeCutover,
   pay,
   postServiceInvoice,
@@ -109,12 +111,15 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
 
+      // The wizard counts the documents before the enable journals them.
+      const counted = await legacyDocumentCounts(f);
       const result = unwrap(
         await activateAccounting(f.ctx, {
           cutoverDate: f.cutoverDate,
           confirmation: f.companyName
         })
       );
+      expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
       expect(result.legacyJournals).toEqual({
         salesInvoices: 1,
         purchaseInvoices: 1,
@@ -262,12 +267,15 @@ databaseTest(
         .set({ scrapAccount: f.account("scrap") })
         .where("companyId", "=", f.companyId)
         .execute();
+      // The wizard counts the documents before the enable journals them.
+      const counted = await legacyDocumentCounts(f);
       const result = unwrap(
         await activateAccounting(f.ctx, {
           cutoverDate: f.cutoverDate,
           confirmation: f.companyName
         })
       );
+      expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
       expect(result.legacyJournals).toEqual({
         salesInvoices: 1,
         purchaseInvoices: 0,
@@ -432,12 +440,15 @@ databaseTest(
       await deleteJournals(f, MOVEMENT_SOURCES);
       expect(await documentJournals(f, MOVEMENT_SOURCES)).toEqual([]);
 
+      // The wizard counts the documents before the enable journals them.
+      const counted = await legacyDocumentCounts(f);
       const result = unwrap(
         await activateAccounting(f.ctx, {
           cutoverDate: f.cutoverDate,
           confirmation: f.companyName
         })
       );
+      expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
       expect(result.legacyJournals).toEqual({
         salesInvoices: 0,
         purchaseInvoices: 0,
@@ -961,9 +972,13 @@ async function enableWithStockAtTen(f: Fixture) {
       { accountId: f.account("grni"), debit: 0, credit: 100 }
     ]
   });
-  return unwrap(
+  // The wizard counts the documents before the enable journals them.
+  const counted = await legacyDocumentCounts(f);
+  const result = unwrap(
     await activateAccounting(f.ctx, { ...args, confirmation: f.companyName })
   );
+  expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
+  return result;
 }
 
 /** The 5 shipped cost 50 from the opening layer, which keeps 5 at 10. */

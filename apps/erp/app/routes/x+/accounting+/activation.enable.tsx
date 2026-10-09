@@ -10,8 +10,10 @@ import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Fragment } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useLoaderData } from "react-router";
@@ -27,7 +29,9 @@ import { activateAccountingValidator } from "~/modules/accounting";
 import {
   getActivationCutover,
   getActivationReadiness,
-  getMigrationClearing
+  getLegacyDocumentCounts,
+  getMigrationClearing,
+  type LegacyDocumentFamily
 } from "~/modules/accounting/accounting.server";
 import {
   ActivationFooter,
@@ -50,6 +54,29 @@ const AGGREGATE_ITEM_TYPES = new Set([
   "Accumulated Depreciation"
 ]);
 
+/** A family of documents posted before Carbon kept journals. */
+const LEGACY_FAMILY_LABELS: Record<LegacyDocumentFamily, MessageDescriptor> = {
+  salesInvoices: msg`Sales invoices`,
+  purchaseInvoices: msg`Purchase invoices`,
+  memos: msg`Credit and debit memos`,
+  charges: msg`Charges`,
+  reimbursements: msg`Reimbursements`,
+  payments: msg`Payments`,
+  purchaseReceipts: msg`Purchase receipts`,
+  salesReturnReceipts: msg`Sales return receipts`,
+  salesShipments: msg`Sales shipments`,
+  returnShipments: msg`Return shipments`,
+  inventoryAdjustments: msg`Inventory adjustments and scrap`,
+  inventoryCounts: msg`Inventory counts`,
+  nonConformances: msg`Non-conformance and inspection scrap`,
+  maintenanceConsumptions: msg`Maintenance parts`,
+  jobConsumptions: msg`Job material issues`,
+  jobOutputs: msg`Job completions`,
+  depreciationRuns: msg`Depreciation runs`,
+  assetDisposals: msg`Asset scrap disposals`,
+  revenueRecognitionRuns: msg`Revenue recognition runs`
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
@@ -60,9 +87,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     request
   );
   const db = getDatabaseClient();
-  const [readiness, clearing] = await Promise.all([
+  const [readiness, clearing, legacyCounts] = await Promise.all([
     getActivationReadiness(db, { companyId, cutoverDate }),
-    getMigrationClearing(db, { companyId, cutoverDate })
+    getMigrationClearing(db, { companyId, cutoverDate }),
+    getLegacyDocumentCounts(db, { companyId, cutoverDate })
   ]);
   return {
     cutoverDate,
@@ -70,7 +98,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openItemCount: clearing.items.filter(
       (item) => !AGGREGATE_ITEM_TYPES.has(item.openItemType)
     ).length,
-    migrationClearingTotal: clearing.total
+    migrationClearingTotal: clearing.total,
+    // In the order the enable journals them.
+    legacyDocuments: (
+      Object.entries(legacyCounts) as [LegacyDocumentFamily, number][]
+    )
+      .filter(([, count]) => count > 0)
+      .map(([family, count]) => ({ family, count }))
   };
 }
 
@@ -126,12 +160,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
 /** Step 5: what the enable will do, and the one-way confirmation. */
 export default function AccountingActivationEnableRoute() {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const {
     cutoverDate,
     readinessPassed,
     openItemCount,
-    migrationClearingTotal
+    migrationClearingTotal,
+    legacyDocuments
   } = useLoaderData<typeof loader>();
   const { company } = useUser();
   const permissions = usePermissions();
@@ -178,6 +213,31 @@ export default function AccountingActivationEnableRoute() {
               {formatter.format(migrationClearingTotal)}
             </dd>
           </dl>
+          {legacyDocuments.length > 0 && (
+            <div className="flex w-full max-w-xl flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-sm font-medium text-foreground">
+                  <Trans>Documents posted before Carbon kept journals</Trans>
+                </h3>
+                <p className="text-sm text-muted-foreground text-pretty">
+                  <Trans>
+                    Carbon writes their journals when you enable accounting,
+                    with today's accounts and costs.
+                  </Trans>
+                </p>
+              </div>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
+                {legacyDocuments.map(({ family, count }) => (
+                  <Fragment key={family}>
+                    <dt className="text-muted-foreground">
+                      {i18n._(LEGACY_FAMILY_LABELS[family])}
+                    </dt>
+                    <dd className="tabular-nums">{count}</dd>
+                  </Fragment>
+                ))}
+              </dl>
+            </div>
+          )}
           {!readinessPassed && (
             <p className="text-sm text-destructive">
               <Trans>

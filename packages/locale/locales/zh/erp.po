@@ -3207,6 +3207,9 @@ msgstr "销售型租赁开始时确认的资产总账科目，记录付款和残
 msgid "Asset ID"
 msgstr "资产ID"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "在建资产"
 
@@ -4188,6 +4191,9 @@ msgstr "碳值"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon将使用AI为您的{0}个未映射账户各猜测一个供应商账户。建议是一个起点 — 您可以在保存前审查它们。"
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "仅限Carbon"
@@ -5964,6 +5970,9 @@ msgstr "当制造成本吸收入在制品时使用的贷方科目"
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "抵扣金额以公司基本货币（{currency}）表示。此付款过账后，抵扣才会生效。"
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "已应用信用"
 
@@ -7139,6 +7148,9 @@ msgstr "固定资产已处置时的折旧冲销"
 msgid "Depreciation Run"
 msgstr "折旧运行"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "折旧开始"
 
@@ -7395,6 +7407,9 @@ msgstr "文档"
 
 msgid "Documents and activity"
 msgstr "文档和活动"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "文档推送发票、账单和付款作为本地提供商文件；其凭证被记录为由该文件覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并过账一个Carbon总账凭证。关闭时将其记录为故意排除。"
@@ -10817,6 +10832,9 @@ msgstr "库存调整"
 msgid "Inventory Adjustment (default)"
 msgstr "库存调整（默认）"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "库存管理和采购，具有自动化计划"
 
@@ -10831,6 +10849,9 @@ msgstr "库存管理控制和盘点"
 
 msgid "Inventory Count"
 msgstr "库存盘点"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "库存历史记录"
@@ -11210,6 +11231,9 @@ msgstr "工作"
 msgid "Job · {itemReadableId}"
 msgstr "工单 · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "工作ID"
 
@@ -11221,6 +11245,9 @@ msgstr "工作地点"
 
 msgid "Job make method"
 msgstr "工单制造方法"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "工单物料"
@@ -11958,6 +11985,9 @@ msgstr "维护费用"
 
 msgid "Maintenance Expense (default)"
 msgstr "维护费用 (默认)"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "维护排程"
@@ -13890,6 +13920,9 @@ msgstr "不合格工作流"
 
 msgid "Non-conformance (issue)"
 msgstr "不合格(领料)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "不合格项"
@@ -16070,6 +16103,9 @@ msgstr "采购价格差异（默认）"
 msgid "Purchase Qty"
 msgstr "采购数量"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "采购退货"
 
@@ -17470,6 +17506,9 @@ msgstr "退货原因"
 msgid "Return Reasons"
 msgstr "退货原因"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "返回至"
 
@@ -17574,6 +17613,9 @@ msgstr "收入确认"
 
 msgid "Revenue Recognition Run"
 msgstr "收入确认运行"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "在销售型租赁开始时确认的收入"
@@ -18019,6 +18061,9 @@ msgstr "销售人员"
 msgid "Sales Return"
 msgstr "销售退货"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "销售收入"
 
@@ -18037,6 +18082,9 @@ msgstr "销售规则"
 
 msgid "Sales Rules"
 msgstr "销售规则"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "应付销售税"

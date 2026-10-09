@@ -56,6 +56,7 @@
     "./accounting-cutover": "./src/accounting-cutover.ts",
     "./accounting-cutover-dates": "./src/accounting-cutover-dates.ts",
     "./accounting-cutover-reads": "./src/accounting-cutover-reads.ts",
+    "./legacy-documents": "./src/legacy-documents.ts",
     "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
     "./ledger": "./src/ledger.ts",
     "./deposit-scope": "./src/deposit-scope.ts"

@@ -12,7 +12,7 @@
 // same reads.
 
 import { parseDate, startOfMonth, today } from "@internationalized/date";
-import { type Kysely, sql, type Transaction } from "kysely";
+import { type Expression, type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import {
   type AccountClass,
@@ -31,10 +31,37 @@ import {
 } from "./accounting-posting";
 import type { KyselyDatabase } from "./client";
 import { isAccountClass } from "./ledger";
+import {
+  assetsLeavingWithoutJournal,
+  LEGACY_DOCUMENT_FAMILIES,
+  LEGACY_PURCHASE_RETURN_SHIPMENT,
+  LEGACY_SALES_RETURN_SHIPMENT,
+  LEGACY_SALES_SHIPMENT,
+  type LegacyDocumentCounts,
+  legacyAdjustmentCostRows,
+  legacyCharges,
+  legacyDepreciationRunLines,
+  legacyDisposals,
+  legacyJobMovements,
+  legacyMemos,
+  legacyPayments,
+  legacyPurchaseInvoices,
+  legacyReceipts,
+  legacyRecognitionSchedule,
+  legacyReimbursements,
+  legacySalesInvoices,
+  legacyShipments
+} from "./legacy-documents";
 import { EPSILON, round } from "./precision";
 import { getNextSequence } from "./sequence";
 import { getCompanyTimeZone } from "./timezone";
 import { journalReference } from "./utils";
+
+export {
+  type LegacyDocumentCounts,
+  type LegacyDocumentFamily,
+  REBUILT_DISPOSAL_METHOD
+} from "./legacy-documents";
 
 export type CutoverDb = Kysely<KyselyDatabase> | Transaction<KyselyDatabase>;
 
@@ -1586,108 +1613,18 @@ export type CutoverFixedAsset = {
   accumulatedDepreciationAccountId: string;
 };
 
-/** The disposal `postDisposal` writes. The enable writes its journal again. */
-export const REBUILT_DISPOSAL_METHOD = "Scrapping" as const;
-
-/** The journals that still move the books: a Reversed one is cancelled. */
-const DISPOSAL_JOURNAL_STATUSES = ["Provisional", "Posted"] as const;
-
 /**
  * Assets disposed on or after the cutover whose disposal has no journal and
- * gets none at the enable: a sale, a return to inventory or a lease
- * commencement posted before the reset, whose journal the reset deleted. The
- * enable rebuilds only the scrap (`REBUILT_DISPOSAL_METHOD`). A disposal
- * posted after the reset keeps its own journal. The asset transfer and the
- * lease commencement store it on `fixedAssetDisposal.journalId`. A sale
- * stores none: its journal is the shipment's or the sales invoice's, so the
- * asset keeps a journal when that document credits the asset account for it
- * (`post-shipment` on `shipment:<salesOrderLineId>`, a direct
- * `post-sales-invoice` line on the invoice). The enable does not write that
- * leg for a legacy sale (legacy/shipment.ts, legacy/sales-invoice.ts).
- * Such an asset leaves the books with no journal, so it is not in the opening
- * fixed assets, and its depreciation after the cutover is not rebuilt.
+ * gets none at the enable (`assetsLeavingWithoutJournal`,
+ * legacy-documents.ts). Such an asset leaves the books with no journal, so it
+ * is not in the opening fixed assets, and its depreciation after the cutover
+ * is not rebuilt.
  */
 export async function getAssetsLeavingWithoutJournal(
   db: CutoverDb,
-  { companyId, cutoverDate }: CutoverArgs
+  args: CutoverArgs
 ): Promise<Set<string>> {
-  const shipmentPrefix = journalReference.to.shipment("");
-  const rows = await db
-    .selectFrom("fixedAsset as asset")
-    .innerJoin("fixedAssetClass as class", (join) =>
-      join
-        .onRef("class.id", "=", "asset.fixedAssetClassId")
-        .onRef("class.companyId", "=", "asset.companyId")
-    )
-    .select("asset.id")
-    .where("asset.companyId", "=", companyId)
-    .where("asset.status", "=", "Disposed")
-    .where("asset.disposalDate", ">=", cutoverDate)
-    .where((eb) =>
-      eb.or([
-        eb("asset.disposalMethod", "is", null),
-        eb("asset.disposalMethod", "!=", REBUILT_DISPOSAL_METHOD)
-      ])
-    )
-    .where(({ not, exists, selectFrom }) =>
-      not(
-        exists(
-          selectFrom("fixedAssetDisposal as disposal")
-            .select("disposal.id")
-            .whereRef("disposal.fixedAssetId", "=", "asset.id")
-            .whereRef("disposal.companyId", "=", "asset.companyId")
-            .where("disposal.journalId", "is not", null)
-        )
-      )
-    )
-    // The sale's own journal: the asset account line of the shipment or the
-    // sales invoice that sold the asset.
-    .where(({ not, exists, selectFrom }) =>
-      not(
-        exists(
-          selectFrom("journalLine as line")
-            .innerJoin("journal", (join) =>
-              join
-                .onRef("journal.id", "=", "line.journalId")
-                .onRef("journal.companyId", "=", "line.companyId")
-            )
-            .select("line.id")
-            .whereRef("line.companyId", "=", "asset.companyId")
-            .whereRef("line.accountId", "=", "class.assetAccountId")
-            .where("journal.status", "in", [...DISPOSAL_JOURNAL_STATUSES])
-            .where((eb) =>
-              eb.or([
-                eb.and([
-                  eb("line.documentType", "=", "Sales Shipment"),
-                  eb.exists(
-                    eb
-                      .selectFrom("salesOrderLine as orderLine")
-                      .select("orderLine.id")
-                      .whereRef("orderLine.companyId", "=", "asset.companyId")
-                      .whereRef("orderLine.assetId", "=", "asset.id")
-                      .where(
-                        sql<boolean>`"line"."documentLineReference" = ${shipmentPrefix} || "orderLine"."id"`
-                      )
-                  )
-                ]),
-                eb.and([
-                  eb("line.documentType", "=", "Invoice"),
-                  eb.exists(
-                    eb
-                      .selectFrom("salesInvoiceLine as invoiceLine")
-                      .select("invoiceLine.id")
-                      .whereRef("invoiceLine.companyId", "=", "asset.companyId")
-                      .whereRef("invoiceLine.invoiceId", "=", "line.documentId")
-                      .whereRef("invoiceLine.assetId", "=", "asset.id")
-                      .where("invoiceLine.invoiceLineType", "=", "Fixed Asset")
-                  )
-                ])
-              ])
-            )
-        )
-      )
-    )
-    .execute();
+  const rows = await assetsLeavingWithoutJournal(db, args).execute();
   return new Set(rows.map((row) => row.id));
 }
 
@@ -2199,4 +2136,97 @@ export async function updateCutoverAccumulatedDepreciation(
       )
     };
   });
+}
+
+/**
+ * The legacy documents the enable journals (spec section 5a), per family, in
+ * one statement: posted on or after the cutover with no journal. It counts
+ * the rows of the detection the enable runs (legacy-documents.ts). A sales
+ * shipment that stored no cost row counts: the enable writes the row first.
+ * The enable returns the journals it wrote, and writes none for a document
+ * whose journal has no lines, so its count can be lower.
+ *
+ * Grouped as the enable groups its journals: a job issue per job and posting
+ * date, and a job completion per completion, on a day with no job journal;
+ * an adjustment per document and instant (a movement with no document per
+ * instant, so a CSV import is one); a depreciation or recognition run per
+ * run. The keys are in the order the enable writes the families
+ * (`LEGACY_DOCUMENT_FAMILIES`).
+ */
+export async function getLegacyDocumentCounts(
+  db: CutoverDb,
+  args: CutoverArgs
+): Promise<LegacyDocumentCounts> {
+  const adjustmentFamily = (
+    family: Extract<
+      keyof LegacyDocumentCounts,
+      | "inventoryAdjustments"
+      | "inventoryCounts"
+      | "nonConformances"
+      | "maintenanceConsumptions"
+    >
+  ) => sql<number>`(
+    SELECT count(DISTINCT CASE
+      WHEN "documentType" IS NULL THEN "createdAt"
+      ELSE "documentType"::text || ':' || "documentId" || ':' || "createdAt"
+    END)::int
+    FROM "adjustment"
+    WHERE "family" = ${family}
+  )`;
+  // A query in the template is a parenthesized subquery.
+  const count = (query: { clearOrderBy(): Expression<unknown> }) =>
+    sql<number>`(SELECT count(*)::int FROM ${query.clearOrderBy()} AS "row")`;
+
+  const counts = await sql<LegacyDocumentCounts>`
+    WITH
+      "adjustment" AS ${legacyAdjustmentCostRows(db, args).clearOrderBy()},
+      "jobMovement" AS ${legacyJobMovements(db, args).clearOrderBy()}
+    SELECT
+      ${count(legacySalesInvoices(db, args))} AS "salesInvoices",
+      ${count(legacyPurchaseInvoices(db, args))} AS "purchaseInvoices",
+      ${count(legacyMemos(db, args))} AS "memos",
+      ${count(legacyCharges(db, args))} AS "charges",
+      ${count(legacyReimbursements(db, args))} AS "reimbursements",
+      ${count(legacyPayments(db, args))} AS "payments",
+      ${count(legacyReceipts(db, args, "Purchase Order"))} AS "purchaseReceipts",
+      ${count(legacyReceipts(db, args, "Sales Return Order"))} AS "salesReturnReceipts",
+      ${count(
+        legacyShipments(db, args, LEGACY_SALES_SHIPMENT, {
+          withUncostedSales: true
+        })
+      )} AS "salesShipments",
+      ${count(legacyShipments(db, args, LEGACY_SALES_RETURN_SHIPMENT))}
+        + ${count(legacyShipments(db, args, LEGACY_PURCHASE_RETURN_SHIPMENT))}
+        AS "returnShipments",
+      ${adjustmentFamily("inventoryAdjustments")} AS "inventoryAdjustments",
+      ${adjustmentFamily("inventoryCounts")} AS "inventoryCounts",
+      ${adjustmentFamily("nonConformances")} AS "nonConformances",
+      ${adjustmentFamily("maintenanceConsumptions")} AS "maintenanceConsumptions",
+      (
+        SELECT count(DISTINCT ("documentId", "postingDate"))::int
+        FROM "jobMovement"
+        WHERE "entryType" = 'Consumption' AND NOT "journaled"
+      ) AS "jobConsumptions",
+      (
+        SELECT count(DISTINCT ("documentId", "itemId", "postingDate", "createdAt"))::int
+        FROM "jobMovement"
+        WHERE "entryType" = 'Assembly Output' AND NOT "journaled"
+      ) AS "jobOutputs",
+      (
+        SELECT count(DISTINCT "depreciationRunId")::int
+        FROM ${legacyDepreciationRunLines(db, args).clearOrderBy()} AS "line"
+      ) AS "depreciationRuns",
+      ${count(legacyDisposals(db, args))} AS "assetDisposals",
+      (
+        SELECT count(DISTINCT "runId")::int
+        FROM ${legacyRecognitionSchedule(db, args).clearOrderBy()} AS "schedule"
+      ) AS "revenueRecognitionRuns"
+  `.execute(db);
+  const row = counts.rows[0];
+  return Object.fromEntries(
+    LEGACY_DOCUMENT_FAMILIES.map((family) => [
+      family,
+      Number(row?.[family] ?? 0)
+    ])
+  ) as LegacyDocumentCounts;
 }

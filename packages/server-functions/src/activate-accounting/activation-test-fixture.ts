@@ -6,6 +6,7 @@
 // with no cutover, documents it posts before and after the cutover date, and
 // the reads the tests assert with.
 
+import { getLegacyDocumentCounts } from "@carbon/database/accounting-cutover-reads";
 import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { OPTIONAL_DEFAULT_ROLES } from "@carbon/database/journal-posting-status";
@@ -18,6 +19,7 @@ import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursemen
 import postSalesInvoice from "../post-sales-invoice";
 import postShipment from "../post-shipment";
 import { ServerFnContext } from "../server-fn-context";
+import type { LegacyJournalCounts } from "./legacy";
 
 export const USER = "system";
 export const TIME_ZONE = "America/New_York";
@@ -300,6 +302,24 @@ export type Fixture = Awaited<ReturnType<typeof activationFixture>>;
 export function unwrap<T>(result: { data: T | null; error: Error | null }): T {
   if (result.error) throw result.error;
   return result.data as T;
+}
+
+/** What the enable's wizard shows before the enable: the legacy documents
+ *  per family (`getLegacyDocumentCounts`). */
+export function legacyDocumentCounts(f: Fixture) {
+  return getLegacyDocumentCounts(f.db, {
+    companyId: f.companyId,
+    cutoverDate: f.cutoverDate
+  });
+}
+
+/** The enable's counts without the cost rows: one per family the wizard
+ *  counts. */
+export function journaledFamilies({
+  movementCostRows: _,
+  ...families
+}: LegacyJournalCounts) {
+  return families;
 }
 
 /** Receives 5 parts at `unitPrice` on a purchase order of its own. */

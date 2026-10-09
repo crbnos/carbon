@@ -21,11 +21,16 @@
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import {
+  LEGACY_PURCHASE_RETURN_SHIPMENT,
+  LEGACY_SALES_RETURN_SHIPMENT,
+  LEGACY_SALES_SHIPMENT,
+  legacyShipments
+} from "@carbon/database/legacy-documents";
 import { credit, debit, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
-import { legacyShipments } from "./detect";
 import {
   groupBy,
   type LegacyJournal,
@@ -49,13 +54,8 @@ export async function buildLegacySalesShipmentJournals(
   const shipments = await legacyShipments(
     trx,
     { companyId, cutoverDate },
-    {
-      sourceDocument: "Sales Order",
-      journalDocumentType: "Sales Shipment",
-      costDocumentType: "Sales Shipment",
-      itemLedgerType: "Sale"
-    }
-  );
+    LEGACY_SALES_SHIPMENT
+  ).execute();
   if (shipments.length === 0) return [];
   const shipmentIds = shipments.map((shipment) => shipment.id);
 
@@ -212,23 +212,13 @@ export async function buildLegacyReturnShipmentJournals(
   const salesReturns = await legacyShipments(
     trx,
     { companyId, cutoverDate },
-    {
-      sourceDocument: "Sales Return Order",
-      journalDocumentType: "Return Order",
-      costDocumentType: "Sales Return Shipment",
-      itemLedgerType: "Sale"
-    }
-  );
+    LEGACY_SALES_RETURN_SHIPMENT
+  ).execute();
   const purchaseReturns = await legacyShipments(
     trx,
     { companyId, cutoverDate },
-    {
-      sourceDocument: "Purchase Return Order",
-      journalDocumentType: "Return Order",
-      costDocumentType: "Purchase Return Shipment",
-      itemLedgerType: "Purchase"
-    }
-  );
+    LEGACY_PURCHASE_RETURN_SHIPMENT
+  ).execute();
   if (salesReturns.length === 0 && purchaseReturns.length === 0) return [];
   const shipmentIds = [...salesReturns, ...purchaseReturns].map(
     (shipment) => shipment.id

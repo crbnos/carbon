@@ -3207,6 +3207,9 @@ msgstr "판매형 리스 개시 시 인식되는 자산 계정과목으로, 지�
 msgid "Asset ID"
 msgstr "자산 ID"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "건설 중인 자산"
 
@@ -4188,6 +4191,9 @@ msgstr "Carbon Value"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon은 AI를 사용하여 {0}개의 매핑되지 않은 계정 각각에 대한 공급자 계정을 추측합니다. 제안은 시작점입니다 — 저장하기 전에 검토할 수 있습니다."
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Carbon 전용"
@@ -5964,6 +5970,9 @@ msgstr "제조 원가가 재공품에 편입될 때 사용되는 대변 계정"
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "크레딧 금액은 회사 기본 통화({currency})로 표시됩니다. 이 지불이 전기되면 크레딧이 적용됩니다."
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "대변 적용됨"
 
@@ -7139,6 +7148,9 @@ msgstr "고정자산 처분 시 감가상각 환입"
 msgid "Depreciation Run"
 msgstr "감가상각 실행"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "감가상각 시작"
 
@@ -7395,6 +7407,9 @@ msgstr "문서"
 
 msgid "Documents and activity"
 msgstr "문서 및 활동"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 제공자 문서로 푸시합니다. 해당 전표는 문서로 커버되는 것으로 기록됩니다. 또한 제공자에 기록된 지불을 Carbon으로 다시 가져와 일치하는 송장 또는 청구서를 닫고 Carbon 총계정원장 전표를 전기합니다. 끄기는 이를 의도적으로 제외된 것으로 기록합니다."
@@ -10817,6 +10832,9 @@ msgstr "재고 조정"
 msgid "Inventory Adjustment (default)"
 msgstr "재고 조정(기본값)"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "자동화된 계획을 갖춘 재고 및 구매"
 
@@ -10831,6 +10849,9 @@ msgstr "재고 관리 및 실사"
 
 msgid "Inventory Count"
 msgstr "재고 실사"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "재고 이력"
@@ -11210,6 +11231,9 @@ msgstr "작업"
 msgid "Job · {itemReadableId}"
 msgstr "작업 지시 · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "작업 ID"
 
@@ -11221,6 +11245,9 @@ msgstr "작업 위치"
 
 msgid "Job make method"
 msgstr "작업 지시 생산 방법"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "작업 지시 자재"
@@ -11958,6 +11985,9 @@ msgstr "유지보수 비용"
 
 msgid "Maintenance Expense (default)"
 msgstr "유지보수 비용(기본값)"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "유지보수 일정"
@@ -13890,6 +13920,9 @@ msgstr "부적합 워크플로우"
 
 msgid "Non-conformance (issue)"
 msgstr "부적합(이슈)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "부적합"
@@ -16070,6 +16103,9 @@ msgstr "구매가격차이(기본값)"
 msgid "Purchase Qty"
 msgstr "구매 수량"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "구매 반품"
 
@@ -17470,6 +17506,9 @@ msgstr "반품 사유"
 msgid "Return Reasons"
 msgstr "반품 사유"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "반환 대상"
 
@@ -17574,6 +17613,9 @@ msgstr "매출 인식"
 
 msgid "Revenue Recognition Run"
 msgstr "매출 인식 실행"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "판매형 리스 개시 시 인식된 매출"
@@ -18019,6 +18061,9 @@ msgstr "영업 담당자"
 msgid "Sales Return"
 msgstr "판매 반품"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "매출"
 
@@ -18037,6 +18082,9 @@ msgstr "영업 규칙"
 
 msgid "Sales Rules"
 msgstr "판매 규칙"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "매출 세금 납부"

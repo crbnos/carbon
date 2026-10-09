@@ -16,10 +16,10 @@
 // no class.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { legacyCharges } from "@carbon/database/legacy-documents";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { buildChargeJournal } from "../../post-charge/build-charge-journal";
-import { legacyCharges } from "./detect";
 import { type LegacyDocumentJournal, readByIds } from "./write";
 
 export async function buildLegacyChargeJournals(
@@ -30,7 +30,10 @@ export async function buildLegacyChargeJournals(
     cutoverDate
   }: { companyId: string; companyGroupId: string; cutoverDate: string }
 ): Promise<LegacyDocumentJournal[]> {
-  const charges = await legacyCharges(trx, { companyId, cutoverDate });
+  const charges = await legacyCharges(trx, {
+    companyId,
+    cutoverDate
+  }).execute();
   if (charges.length === 0) return [];
 
   const lines = await readByIds(

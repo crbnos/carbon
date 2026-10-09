@@ -38,6 +38,19 @@ what syncs follows from the statuses each path already filters on.
   earlier that the event path missed reaches the provider only through the journal backfill.
   The enable's "Cutover recost" journals are inserted Provisional with the source document's
   `sourceType` and are promoted with the rest.
+- **Rebuilt run journals are recorded `Excluded` (`CUTOVER_REBUILT`).** The enable writes
+  again the journals of legacy depreciation runs, scrap disposals and revenue recognition runs
+  dated on or after the cutover (`activate-accounting/legacy/runs.ts`). The reset deleted those
+  journals and their sync records, not the provider's copy. So `keepOutOfProviderSync` inserts,
+  for each such journal and each accounting integration of the company (active or not), an
+  `Excluded` `journalEntry` `push-to-accounting` operation with `errorCode` `CUTOVER_REBUILT`
+  (`CUTOVER_REBUILT_SYNC_CODE`) and idempotency key
+  `journalEntry:<id>:push-to-accounting:cutover-rebuilt`. The reconciler then decides
+  "journal disposition already recorded", the journal backfill counts it as covered, and the
+  period close's external-GL-sync check counts Excluded as terminal, so nothing pushes it. A
+  re-send from Sync Activity still pushes one on purpose. The other legacy journals the enable
+  writes (invoices, memos, payments, charges, reimbursements, movements) get no such row: they
+  are promoted and sync by the posting policy like any other promoted journal.
 - **The opening journal never syncs.** It is a Posted `sourceType 'Opening Balance'` journal,
   and `POSTING_POLICY['Opening Balance'].syncable` is `false` (same exclusion as `Manual`).
 - **Documents sync by the DOCUMENT's status, not the journal's.** The cutover does not gate

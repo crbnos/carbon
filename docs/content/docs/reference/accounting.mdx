@@ -81,22 +81,29 @@ Setting up accounting opens your books in Carbon at a **cutover date**. Carbon t
 **Inventory.** Each item's on-hand quantity at the cutover date across all locations, and its unit cost. You can edit the unit cost of an Average item only. A FIFO or LIFO item uses the value of its cost layers dated before the cutover, and a Standard item uses its standard cost. The page totals the opening value per inventory account.
 </Step>
 <Step>
-**Fixed assets.** Each asset's cost, accumulated depreciation and net book value at the cutover date. No depreciation run happens before the cutover, so enter each asset's accumulated depreciation here.
+**Fixed assets.** Each asset on the books the day before the cutover, with its cost, accumulated depreciation and net book value as of that day. No depreciation run happens before the cutover, so enter each asset's accumulated depreciation here.
 </Step>
 <Step>
 **Trial balance.** Enter your prior system's trial balance as of the day before the cutover, for every account, or **Import CSV** with the columns `accountNumber`, `debit` and `credit`. An import replaces the whole trial balance and saves nothing when a row has an error. Accounts marked **Control** (receivables, payables, inventory, work in process and the others Carbon opens from its own records) are only compared: the **Migration Clearing** table shows, per control account, the trial balance amount, Carbon's opening total and the difference.
 </Step>
 <Step>
-**Enable.** Migration Clearing must total zero and every readiness check must pass. Type the company name and press **Enable accounting**.
+**Enable.** The summary lists the documents posted before Carbon kept journals, per type, when there are any (see below). Migration Clearing must total zero and every readiness check must pass. Type the company name and press **Enable accounting**.
 </Step>
 </Steps>
 
 When you enable, Carbon:
 
+- Writes the journals of documents posted before Carbon kept journals that are dated on or after the cutover.
 - Resets each item's stock to its on-hand quantity at the cutover date at the reviewed unit cost, and recosts the outbound stock movements of FIFO and LIFO items dated on or after it.
 - Posts the opening journal, dated the day before the cutover, against Migration Clearing. Each open invoice, unapplied payment, received but not invoiced order line and open job gets its own opening line, so a later payment, supplier invoice or job close finds it as if the original posting had written it.
 - Turns Provisional journals dated on or after the cutover into **Posted**, and those dated before it into **Before cutover**.
 - Closes every accounting period that ends before the cutover date.
+
+**Documents posted before Carbon kept journals.** A posted document can have no journal: one posted while Carbon wrote no journals for the company. The opening journal covers such a document only when it is dated before the cutover. For one dated on or after the cutover, Carbon writes the journal its posting writes today, when you enable.
+
+That journal uses today's account defaults and item costs, because the original ones are not stored. This covers invoices, memos, payments, charges, reimbursements, receipts, shipments, inventory adjustments and counts, non-conformance scrap, maintenance parts, job material issues and completions, depreciation runs, scrap disposals and revenue recognition runs.
+
+Labor and machine absorption of a job is not written again. Carbon does not send a rewritten depreciation, disposal or recognition journal to your accounting provider on its own, because the provider may already hold the original.
 
 <Callout type="warn" title="Enabling accounting cannot be undone">
 The cutover date never changes after you enable. The base currency and the fiscal year start month lock too. Before the cutover, manual journal entries, depreciation runs, revenue recognition runs, intercompany eliminations and period close are refused.

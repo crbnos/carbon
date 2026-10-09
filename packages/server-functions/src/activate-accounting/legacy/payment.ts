@@ -23,9 +23,9 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import { legacyPayments } from "@carbon/database/legacy-documents";
 import type { PaymentJournalFeeInput } from "@carbon/database/posting";
 import { rebuildPaymentJournals } from "../../post-payment/post-payment-transaction";
-import { legacyPayments } from "./detect";
 import {
   attachJournalIds,
   chunks,
@@ -55,7 +55,10 @@ export async function journalLegacyPayments(
     defaults: AccountDefaults;
   }
 ): Promise<number> {
-  const payments = await legacyPayments(trx, { companyId, cutoverDate });
+  const payments = await legacyPayments(trx, {
+    companyId,
+    cutoverDate
+  }).execute();
   if (payments.length === 0) return 0;
   const feeByPaymentId = await processorFees(trx, {
     companyId,
@@ -119,7 +122,7 @@ async function processorFees(
   }: {
     companyId: string;
     defaults: AccountDefaults;
-    payments: Awaited<ReturnType<typeof legacyPayments>>;
+    payments: Awaited<ReturnType<ReturnType<typeof legacyPayments>["execute"]>>;
   }
 ): Promise<Map<string, PaymentJournalFeeInput>> {
   const mappings = await readByIds(

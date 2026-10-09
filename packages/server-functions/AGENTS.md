@@ -195,6 +195,7 @@ through `serverFns.as(...)`. It runs in one Kysely transaction:
 2. Runs `getActivationReadiness` and `getMigrationClearing`
    (`@carbon/database/accounting-cutover-reads`) again under the lock. Refuses on a
    failed check, or when Migration Clearing does not total zero within 0.01.
+   Then writes the journals of the legacy documents (spec step 1a, below).
 3. Closes the cost layers dated before the cutover and inserts one opening layer per
    item at the reviewed unit cost (`planInventoryReset`). Re-costs the outbound
    movements of FIFO and LIFO items dated on or after the cutover
@@ -213,6 +214,45 @@ through `serverFns.as(...)`. It runs in one Kysely transaction:
 8. Sets `accountingCutoverDate`, `accountingActivatedAt` and `accountingActivatedBy`.
    The `check_accounting_config_locked` trigger then refuses any change to them, to the
    base currency and to the fiscal year start month.
+
+#### Legacy documents (step 1a)
+
+A legacy document is posted (not Draft, Pending or Voided), dated on or after the
+cutover, and has no journal line under its document keys in a journal of any status.
+A company with accounting off wrote no journal, and the reset deleted the others'.
+`journalLegacyDocuments` (`src/activate-accounting/legacy/`) writes, for each one, the
+journal its posting writes today: today's account defaults and item costs, in base
+currency at the document's exchange rate, `Provisional`, dated the document's posting
+date. The steps above then re-cost, period, re-point and promote it like any other
+Provisional journal.
+
+- **Detection** is one definition, `@carbon/database/legacy-documents`. Each function
+  returns a query; the enable executes it, and `getLegacyDocumentCounts`
+  (`@carbon/database/accounting-cutover-reads`) counts the same rows for the wizard's
+  Enable step. Change the detection there, never in a builder.
+- **Order** (`legacy/index.ts`): first the cost rows of movements that stored none
+  (`writeLegacyMovementCosts`: sales order shipments, direct sales invoice lines, job
+  issues and completions); then sales invoices, purchase invoices, memos, charges and
+  reimbursements; then payments in posting order, because a payment reads the control
+  line of what it settles; then purchase receipts, sales return receipts, sales
+  shipments, return shipments, the adjustment core's movements, job issues and job
+  completions; then depreciation runs, scrap disposals and revenue recognition runs
+  (`legacy/runs.ts`).
+- **Memos and payments** are built by `rebuildMemoJournals` and
+  `rebuildPaymentJournals`, exported from `src/post-memo/post-memo-transaction.ts` and
+  `src/post-payment/post-payment-transaction.ts`. The pre-cutover voids use the same
+  builders for one document (`rebuildMemoJournal`, `rebuildPaymentJournal`).
+- **Rebuilt run journals stay out of provider sync.** The provider may already hold the
+  original, so `keepOutOfProviderSync` writes an `Excluded` `accountingSyncOperation`
+  per accounting integration with `errorCode` `CUTOVER_REBUILT`
+  (`CUTOVER_REBUILT_SYNC_CODE`). Re-send in Sync Activity still pushes one.
+- **Not rebuilt** (no stored basis): labor and machine absorption of a legacy job, the
+  offset of a serial recost or an asset cost adjustment, asset registrations and
+  transfers, and the depreciation of an asset that left the books with no journal
+  (`assetsLeavingWithoutJournal`).
+- The result's `legacyJournals` counts the journals written per family
+  (`LegacyJournalCounts`: `LegacyDocumentCounts` plus `movementCostRows`). A document
+  whose journal has no lines gets none.
 
 `seed-company` sets a new company's cutover to the first day of the current month, so
 a new company posts `Posted` journals from its first document.

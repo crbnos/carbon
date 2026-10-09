@@ -3207,6 +3207,9 @@ msgstr "Счет учета активов, признанный при нача
 msgid "Asset ID"
 msgstr "ID активов"
 
+msgid "Asset scrap disposals"
+msgstr ""
+
 msgid "Asset Under Construction"
 msgstr "Основное средство в процессе строительства"
 
@@ -4188,6 +4191,9 @@ msgstr "Значение Carbon"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon будет использовать ИИ для определения счета провайдера для каждого из {0} несопоставленных счетов. Предложения — это отправная точка — вы можете проверить их перед сохранением."
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Только для Carbon"
@@ -5964,6 +5970,9 @@ msgstr "Счета учета кредита, используемые при к
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "Суммы зачётов указаны в базовой валюте организации ({currency}). Зачёты учитываются после проведения этого платежа."
 
+msgid "Credit and debit memos"
+msgstr ""
+
 msgid "Credit applied"
 msgstr "Кредит применен"
 
@@ -7139,6 +7148,9 @@ msgstr "Сторно амортизации при выбытии основно
 msgid "Depreciation Run"
 msgstr "Запуск амортизации"
 
+msgid "Depreciation runs"
+msgstr ""
+
 msgid "Depreciation Start"
 msgstr "Начало амортизации"
 
@@ -7395,6 +7407,9 @@ msgstr "Документы"
 
 msgid "Documents and activity"
 msgstr "Документы и деятельность"
+
+msgid "Documents posted before Carbon kept journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "«Документы» отправляет счета-фактуры, счета и платежи как встроенные документы провайдера; их операции помечаются как соответствующие документу. Также он вытягивает платежи, записанные в провайдере, обратно в Carbon, закрывая соответствующие счет-фактуру или счет и проводя операцию главной книги Carbon. При отключении они записываются как намеренно исключенные."
@@ -10817,6 +10832,9 @@ msgstr "Корректировка запасов"
 msgid "Inventory Adjustment (default)"
 msgstr "Корректировка запасов (по умолчанию)"
 
+msgid "Inventory adjustments and scrap"
+msgstr ""
+
 msgid "Inventory and purchasing, with automated planning"
 msgstr "Инвентаризация и закупки с автоматизированным планированием"
 
@@ -10831,6 +10849,9 @@ msgstr "Контроль и учет запасов"
 
 msgid "Inventory Count"
 msgstr "Инвентаризация"
+
+msgid "Inventory counts"
+msgstr ""
 
 msgid "Inventory History"
 msgstr "История инвентаря"
@@ -11210,6 +11231,9 @@ msgstr "Задание"
 msgid "Job · {itemReadableId}"
 msgstr "Производственный заказ · {itemReadableId}"
 
+msgid "Job completions"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ID задания"
 
@@ -11221,6 +11245,9 @@ msgstr "Местоположение задания"
 
 msgid "Job make method"
 msgstr "Метод производства заказа"
+
+msgid "Job material issues"
+msgstr ""
 
 msgid "Job Materials"
 msgstr "Материалы заказа"
@@ -11958,6 +11985,9 @@ msgstr "Расходы на техобслуживание"
 
 msgid "Maintenance Expense (default)"
 msgstr "Расходы на техобслуживание (по умолчанию)"
+
+msgid "Maintenance parts"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Графики техобслуживания"
@@ -13890,6 +13920,9 @@ msgstr "Рабочий процесс несоответствия"
 
 msgid "Non-conformance (issue)"
 msgstr "Несоответствие (проблема)"
+
+msgid "Non-conformance and inspection scrap"
+msgstr ""
 
 msgid "Non-conformances"
 msgstr "Несоответствия"
@@ -16070,6 +16103,9 @@ msgstr "Отклонение цены закупки (по умолчанию)"
 msgid "Purchase Qty"
 msgstr "Кол-во покупки"
 
+msgid "Purchase receipts"
+msgstr ""
+
 msgid "Purchase Return"
 msgstr "Возврат товара"
 
@@ -17470,6 +17506,9 @@ msgstr "Причина возврата"
 msgid "Return Reasons"
 msgstr "Причины возврата"
 
+msgid "Return shipments"
+msgstr ""
+
 msgid "Return To"
 msgstr "Возврат"
 
@@ -17574,6 +17613,9 @@ msgstr "Признание выручки"
 
 msgid "Revenue Recognition Run"
 msgstr "Период признания выручки"
+
+msgid "Revenue recognition runs"
+msgstr ""
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Выручка, признанная при начале лизинга продажного типа"
@@ -18019,6 +18061,9 @@ msgstr "Менеджер по продажам"
 msgid "Sales Return"
 msgstr "Возврат продажи"
 
+msgid "Sales return receipts"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "Выручка от продаж"
 
@@ -18037,6 +18082,9 @@ msgstr "Правила продаж"
 
 msgid "Sales Rules"
 msgstr "Правила продаж"
+
+msgid "Sales shipments"
+msgstr ""
 
 msgid "Sales Tax Payable"
 msgstr "Налог на продажи к уплате"
