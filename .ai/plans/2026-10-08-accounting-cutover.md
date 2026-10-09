@@ -48,7 +48,7 @@
 - [x] Task 33: Remove Mark Paid and Mark Unpaid
 - [x] Task 34: Replace the settings switch
 - [x] Task 35: Set the cutover for new companies and demo datasets
-- [ ] Task 36: Show the Provisional and Superseded statuses
+- [x] Task 36: Show the Provisional and Superseded statuses
 - [ ] Task 37: Update the docs, rules and AGENTS.md files
 
 ### Phase E — Verify

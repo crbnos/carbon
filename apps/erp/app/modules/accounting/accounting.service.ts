@@ -5741,6 +5741,17 @@ export async function getJournalEntries(
     );
   }
 
+  // A Superseded journal is a Provisional one the opening journal replaced at
+  // the cutover. It stays out of the list unless a status filter asks for it.
+  const filtersOnStatus =
+    Boolean(args.status) ||
+    (args.filters ?? []).some(
+      (filter) => filter.column === "status" && Boolean(filter.value)
+    );
+  if (!filtersOnStatus) {
+    query = query.neq("status", "Superseded");
+  }
+
   query = setGenericQueryFilters(query, args, [
     { column: "createdAt", ascending: false }
   ]);
