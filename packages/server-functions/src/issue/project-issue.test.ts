@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { projectPostingFixture } from "../lib/project-posting-test-fixture";
 import { databaseTest } from "../local-database-test-fixture";
@@ -145,6 +146,249 @@ databaseTest(
         [f.account("wip"), 30],
         [f.account("inventory"), -30]
       ]);
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(ledger).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+async function completeJob(
+  f: Awaited<ReturnType<typeof projectPostingFixture>>,
+  jobId: string,
+  quantity: number,
+  locationId: string
+) {
+  await sql`
+    SELECT complete_job_to_inventory(
+      ${jobId}, ${quantity}, NULL, ${locationId}, ${f.companyId}, 'system'
+    )
+  `.execute(f.db);
+}
+
+databaseTest(
+  "completing a consume-to-project job charges the project and receives nothing",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("a", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 1
+      });
+
+      const backflush = await issue(f.ctx, {
+        type: "jobOperation",
+        id: job.operationId,
+        quantity: 1
+      });
+      expect(backflush.error).toBeNull();
+
+      // A labor event that was never posted on its own: completion posts it.
+      await f.db
+        .insertInto("productionEvent")
+        .values({
+          jobOperationId: job.operationId,
+          type: "Labor",
+          startTime: "2026-10-05T08:00:00Z",
+          endTime: "2026-10-05T10:00:00Z",
+          employeeId: "system",
+          workCenterId: job.workCenterId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+
+      await completeJob(f, job.jobId, 1, locationId);
+
+      const receipts = await f.db
+        .selectFrom("itemLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .execute();
+      expect(receipts).toEqual([]);
+
+      const outputLayers = await f.db
+        .selectFrom("costLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .execute();
+      expect(outputLayers).toEqual([]);
+
+      const wipLines = await f.db
+        .selectFrom("journalLine")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("accountId", "=", f.account("wip"))
+        .where("documentId", "=", job.jobId)
+        .execute();
+      expect(wipLines).toEqual([]);
+
+      const laborLines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Production Event")
+        .where("documentId", "=", job.jobId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        laborLines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("project-expense"), 100],
+        [f.account("labor-absorption"), -100]
+      ]);
+      const laborTags = await f.db
+        .selectFrom("journalLineDimension")
+        .select("valueId")
+        .where("companyId", "=", f.companyId)
+        .where("journalLineId", "=", laborLines[0]!.id)
+        .where("dimensionId", "in", [
+          f.dimension("Project"),
+          f.dimension("ProjectElement")
+        ])
+        .execute();
+      expect(laborTags.map((tag) => tag.valueId).sort()).toEqual(
+        [f.elementId, f.projectId].sort()
+      );
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "documentType", "amount", "journalLineId"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("costType")
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentType,
+          Number(row.amount)
+        ])
+      ).toEqual([
+        ["Material", "Job Consumption", 30],
+        ["Labor", "Production Event", 100]
+      ]);
+      expect(ledger[1]!.journalLineId).toEqual(laborLines[0]!.id);
+
+      const completed = await f.db
+        .selectFrom("job")
+        .select(["status", "quantityComplete", "quantityReceivedToInventory"])
+        .where("id", "=", job.jobId)
+        .executeTakeFirstOrThrow();
+      expect(completed.status).toEqual("Completed");
+      expect(Number(completed.quantityComplete)).toEqual(1);
+      expect(Number(completed.quantityReceivedToInventory ?? 0)).toEqual(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "completing a consume-to-project job backflushes its material to the project",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("washer", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("c", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 1
+      });
+
+      await completeJob(f, job.jobId, 1, locationId);
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("project-expense"), 30],
+        [f.account("inventory"), -30]
+      ]);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "itemId", "quantity", "amount", "journalLineId"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.itemId,
+          Number(row.quantity),
+          Number(row.amount),
+          row.journalLineId
+        ])
+      ).toEqual([["Material", itemId, 3, 30, lines[0]!.id]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "completing a job with no charge number still receives it and discharges WIP",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("pin", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("d", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+
+      await completeJob(f, job.jobId, 1, locationId);
+
+      const receipts = await f.db
+        .selectFrom("itemLedger")
+        .select("quantity")
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .execute();
+      expect(receipts.map((row) => Number(row.quantity))).toEqual([1]);
+
+      const wipLines = await f.db
+        .selectFrom("journalLine")
+        .select("amount")
+        .where("companyId", "=", f.companyId)
+        .where("accountId", "=", f.account("wip"))
+        .where("documentId", "=", job.jobId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(wipLines.map((line) => Number(line.amount))).toEqual([30, -30]);
+
       const ledger = await f.db
         .selectFrom("projectLedger")
         .select("id")
