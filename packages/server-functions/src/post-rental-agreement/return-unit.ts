@@ -279,9 +279,8 @@ export async function returnRentalUnit(
  * them, and their interest posts through recognition runs after the return,
  * bringing Net Investment in Leases to zero. Only what is dated AFTER the
  * return is dropped — nothing accrues on a lease that has ended (normally
- * nothing, since a unit comes back on or after the end date). With
- * accounting off, the asset / stock moves identically and no journal is
- * posted.
+ * nothing, since a unit comes back on or after the end date). Before the
+ * accounting cutover the journal is Provisional.
  */
 async function returnResidual(
   trx: Trx,
@@ -353,11 +352,6 @@ async function returnResidual(
     .select("companyGroupId")
     .where("id", "=", companyId)
     .executeTakeFirstOrThrow();
-  const settings = await trx
-    .selectFrom("companySettings")
-    .select("accountingEnabled")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
   const item = await trx
     .selectFrom("item")
     .select([
@@ -400,13 +394,11 @@ async function returnResidual(
     : undefined;
   if (!item) throw new NotFoundError("Item not found");
   const serial = entity?.readableId ?? item.readableId;
-  const accounting = settings.accountingEnabled
-    ? await loadLeaseAccounting(trx, {
-        companyId,
-        companyGroupId: company.companyGroupId,
-        today
-      })
-    : null;
+  const accounting = await loadLeaseAccounting(trx, {
+    companyId,
+    companyGroupId: company.companyGroupId,
+    today
+  });
   const tags = {
     customerId: agreement.customerId,
     itemId: line.itemId,
@@ -460,7 +452,7 @@ async function returnResidual(
     }
 
     let journalId: string | null = null;
-    if (accounting && closing > 0) {
+    if (closing > 0) {
       journalId = await postLeaseJournal(trx, {
         accounting,
         companyId,
@@ -589,7 +581,7 @@ async function returnResidual(
       fixedUnitCost: closing
     });
 
-    if (accounting && closing > 0) {
+    if (closing > 0) {
       const inventoryAccount = resolveInventoryAccount(
         item.replenishmentSystem,
         accounting.accounts

@@ -6,10 +6,12 @@
 // back on the return date at the receipt's location, a Pending unit can come
 // back too, and a posted rental receipt is never voided.
 
-import { sql } from "kysely";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { type Insertable, sql } from "kysely";
 import { expect } from "vitest";
 import create from "../create";
 import { databaseTest } from "../local-database-test-fixture";
+import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursement-test-fixture";
 import { rentalFixture } from "../post-rental-agreement/rental-test-fixture";
 import postReceipt from "./index";
 
@@ -255,6 +257,26 @@ databaseTest(
           createdBy: "system"
         })
         .execute();
+      // Every account default points at the fixture's one account, except
+      // the empty lease defaults.
+      const assetClass = await f.db
+        .selectFrom("fixedAssetClass")
+        .select("assetAccountId")
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("accountDefault")
+        .values({
+          companyId: f.companyId,
+          ...Object.fromEntries(
+            FILLER_ACCOUNT_DEFAULTS.map((column) => [
+              column,
+              assetClass.assetAccountId
+            ])
+          ),
+          payablesAccount: assetClass.assetAccountId
+        } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
+        .execute();
       const receiptId = await draftReceipt(f);
       await setReceived(f, receiptId, f.lineIds.slice(1), false);
       await setAssetLine(f, receiptId, saleLine, {
@@ -278,6 +300,46 @@ databaseTest(
           documentType: "Rental Agreement",
           quantity: 1,
           locationId: f.otherLocationId
+        }
+      ]);
+
+      // No cutover: the residual return journal is Provisional, has no
+      // period, and its empty Net Investment in Leases default is a stand-in
+      // line that names the default it wanted.
+      const lease = await f.db
+        .selectFrom("journal")
+        .innerJoin("journalLine", (join) =>
+          join
+            .onRef("journalLine.journalId", "=", "journal.id")
+            .onRef("journalLine.companyId", "=", "journal.companyId")
+        )
+        .select([
+          "journal.status",
+          "journal.accountingPeriodId",
+          "journalLine.description",
+          "journalLine.amount",
+          "journalLine.accountDefaultRole"
+        ])
+        .where("journal.companyId", "=", f.companyId)
+        .where("journal.sourceType", "=", "Lease")
+        .orderBy("journalLine.description")
+        .execute();
+      expect(
+        lease.map((row) => ({ ...row, amount: Number(row.amount) }))
+      ).toEqual([
+        {
+          status: "Provisional",
+          accountingPeriodId: null,
+          description: "Net Investment in Leases",
+          amount: -1000,
+          accountDefaultRole: "netInvestmentInLeasesAccount"
+        },
+        {
+          status: "Provisional",
+          accountingPeriodId: null,
+          description: "Raw Materials Account",
+          amount: 1000,
+          accountDefaultRole: null
         }
       ]);
     } finally {

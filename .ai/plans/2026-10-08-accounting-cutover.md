@@ -27,8 +27,8 @@
 - [x] Task 16: Always post in `post-payment` and `post-memo`
 - [x] Task 17: Always post in `post-charge` and `post-reimbursement`
 - [x] Task 18: Always post in `issue`
-- [ ] Task 19: Always post in `close-job` and `post-production-event`
-- [ ] Task 20: Always post in `post-asset-transfer` and `post-rental-agreement`
+- [x] Task 19: Always post in `close-job` and `post-production-event`
+- [x] Task 20: Always post in `post-asset-transfer` and `post-rental-agreement`
 - [x] Task 21: Always post in the SQL job-costing functions
 - [x] Task 22: Always post in the ERP fixed-asset paths, Stripe fees and the revenue recognition cron
 - [x] Task 23: Refuse manual accounting work before the cutover
@@ -1410,6 +1410,7 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 - Task 16: a rental or contract credit memo still refuses before the cutover when `deferredRevenueAccount`, `contractAssetAccount` or `rentalIncomeAccount` is empty; its error names the default.
 - Voids copy `accountDefaultRole` from each original line to its reversal (Tasks 14, 15, 16).
 - Task 23: the guard tests live in `accounting.periods.test.ts` (it already has the client stub and module mocks). The payment test fixture now gives its company a cutover.
+- Task 20: capitalize with an entered cost and adjustCost now always need an offset account, so `capitalize.tsx` and `$fixedAssetId.adjust-cost.tsx` must always show that field (Task 32). Lease Interest schedule rows refuse with the existing message when their defaults are empty (no stand-in in a non-journal row).
 - New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
