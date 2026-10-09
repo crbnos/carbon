@@ -20943,6 +20943,9 @@ msgstr "您用来追踪成本的分类"
 msgid "The capital assets you own and depreciate"
 msgstr "您拥有并折旧的固定资产"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "当前负责处理此记录的 Carbon 用户，按记录设置，独立于所有权字段（如客户经理或销售人员）。"
 

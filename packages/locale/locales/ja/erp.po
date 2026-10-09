@@ -20943,6 +20943,9 @@ msgstr "原価を追跡する集計単位"
 msgid "The capital assets you own and depreciate"
 msgstr "所有・減価償却する固定資産"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "このレコード作業に現在責任を持つCarbonユーザー。レコードごとに設定でき、Account ManagerやSales Personなどの所有フィールドとは独立しています。"
 

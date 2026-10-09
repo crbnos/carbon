@@ -205,10 +205,26 @@ const JobForm = ({
   const [consumeToProject, setConsumeToProject] = useState<boolean>(
     initialValues.consumeToProject ?? false
   );
+  // A Capitalize charge number builds its asset under construction: the job
+  // sweeps its cost onto that asset (job.fixedAssetId) and never consumes to
+  // the project.
+  const isCapitalCharge = chargeTreatment === "Capitalize";
+  // Undefined until the user picks, as for the treatment above.
+  const [pickedAssetLabel, setPickedAssetLabel] = useState<
+    string | null | undefined
+  >(undefined);
+  const capitalAssetLabel =
+    pickedAssetLabel !== undefined
+      ? pickedAssetLabel
+      : fixedAssetId
+        ? (chargeNumbers.find((row) => row.targetFixedAssetId === fixedAssetId)
+            ?.targetFixedAssetLabel ?? null)
+        : null;
   const canConsumeToProject =
     completeTo === "inventory" &&
     chargeTreatment !== null &&
-    chargeTreatment !== "Statistical";
+    chargeTreatment !== "Statistical" &&
+    !isCapitalCharge;
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     setType(t as MethodItemType);
@@ -458,7 +474,7 @@ const JobForm = ({
                               ]
                             : [])
                         ]}
-                        isDisabled={!canEditCompleteTo}
+                        isDisabled={!canEditCompleteTo || isCapitalCharge}
                       />
 
                       {completeTo === "class" && (
@@ -477,7 +493,19 @@ const JobForm = ({
                         />
                       )}
 
-                      {completeTo === "asset" && (
+                      {completeTo === "asset" && isCapitalCharge && (
+                        <div className="flex flex-col gap-1 text-sm">
+                          <span className="text-muted-foreground">
+                            <Trans>Asset Under Construction</Trans>
+                          </span>
+                          <span>
+                            {capitalAssetLabel ??
+                              t`The capital project has no asset under construction yet`}
+                          </span>
+                        </div>
+                      )}
+
+                      {completeTo === "asset" && !isCapitalCharge && (
                         <Combobox
                           name="fixedAssetSelect"
                           label={t`Asset Under Construction`}
@@ -500,8 +528,24 @@ const JobForm = ({
                         onChange={(row) => {
                           const treatment = row?.costTreatment ?? null;
                           setPickedTreatment(treatment);
+                          if (treatment === "Capitalize") {
+                            setConsumeToProject(false);
+                            setCompleteTo("asset");
+                            setFixedAssetId(row?.targetFixedAssetId ?? "");
+                            setPickedAssetLabel(
+                              row?.targetFixedAssetLabel ?? null
+                            );
+                            return;
+                          }
+                          if (isCapitalCharge) {
+                            // Leaving a capital charge number frees the
+                            // job to complete to inventory again.
+                            setCompleteTo("inventory");
+                            setFixedAssetId("");
+                            setPickedAssetLabel(null);
+                          }
                           setConsumeToProject(
-                            completeTo === "inventory" &&
+                            (isCapitalCharge || completeTo === "inventory") &&
                               (treatment === "Expense" ||
                                 treatment === "Contract")
                           );

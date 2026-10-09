@@ -94836,6 +94836,15 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      project_cost_treatment: {
+        Args: {
+          p_company_id: string
+          p_element_id: string
+          p_posting_date: string
+          p_project_id: string
+        }
+        Returns: Database["public"]["Enums"]["projectCostTreatment"]
+      }
       project_posting_account: {
         Args: {
           p_company_id: string

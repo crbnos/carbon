@@ -20943,6 +20943,9 @@ msgstr "Zasobniki, w których śledzisz koszty"
 msgid "The capital assets you own and depreciate"
 msgstr "Środki trwałe, które posiadasz i amortyzujesz"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "Użytkownik Carbon aktualnie odpowiedzialny za pracę nad tym rekordem, ustawiony dla każdego rekordu i niezależny od pól własności, takich jak Kierownik konta lub Osoba sprzedaży."
 

@@ -576,3 +576,144 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a capital job keeps WIP, writes projectLedger rows and sweeps onto its asset",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { fixedAssetId } = await f.addCapitalAsset({
+        status: "Under Construction",
+        finalAssetElement: true
+      });
+      const { itemId, locationId } = await f.addStockedItem("bracket", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("cap", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+      await f.db
+        .updateTable("job")
+        .set({
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          fixedAssetId
+        })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const backflush = await issue(f.ctx, {
+        type: "jobOperation",
+        id: job.operationId,
+        quantity: 1
+      });
+      expect(backflush.error).toBeNull();
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount", "description"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("wip"), 30],
+        [f.account("inventory"), -30]
+      ]);
+      expect(lines[0]!.description).toEqual("WIP Account");
+
+      const issued = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "amount", "journalLineId", "projectElementId"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(issued).toHaveLength(1);
+      expect(issued[0]).toMatchObject({
+        costType: "Material",
+        journalLineId: lines[0]!.id,
+        projectElementId: f.elementId
+      });
+      expect(Number(issued[0]!.amount)).toEqual(30);
+
+      // A labor event that was never posted on its own: completion posts it
+      // to WIP and writes its projectLedger row.
+      await f.db
+        .insertInto("productionEvent")
+        .values({
+          jobOperationId: job.operationId,
+          type: "Labor",
+          startTime: "2026-10-05T08:00:00Z",
+          endTime: "2026-10-05T10:00:00Z",
+          employeeId: "system",
+          workCenterId: job.workCenterId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+
+      await completeJob(f, job.jobId, 1, locationId);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "amount"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("costType")
+        .execute();
+      expect(ledger.map((row) => [row.costType, Number(row.amount)])).toEqual([
+        ["Material", 30],
+        ["Labor", 100]
+      ]);
+
+      const cipRows = await f.db
+        .selectFrom("fixedAssetCipCost")
+        .select([
+          "fixedAssetId",
+          "sourceType",
+          "jobId",
+          "amount",
+          "projectId",
+          "projectElementId"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(cipRows).toHaveLength(1);
+      expect(cipRows[0]).toMatchObject({
+        fixedAssetId,
+        sourceType: "Job",
+        jobId: job.jobId,
+        projectId: f.projectId,
+        projectElementId: f.elementId
+      });
+      expect(Number(cipRows[0]!.amount)).toEqual(130);
+
+      const asset = await f.db
+        .selectFrom("fixedAsset")
+        .select(["acquisitionCost", "status"])
+        .where("id", "=", fixedAssetId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(asset.acquisitionCost)).toEqual(130);
+      expect(asset.status).toEqual("Under Construction");
+
+      const wipBalance = await f.db
+        .selectFrom("journalLine")
+        .select((eb) => eb.fn.sum<number>("amount").as("balance"))
+        .where("companyId", "=", f.companyId)
+        .where("accountId", "=", f.account("wip"))
+        .where("documentId", "=", job.jobId)
+        .executeTakeFirstOrThrow();
+      expect(Number(wipBalance.balance)).toEqual(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

@@ -113480,6 +113480,101 @@ export default {
         tags: ["(rpc) sync_create_supplier_org_group"]
       }
     },
+    "/rpc/project_cost_treatment": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_project_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_element_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_posting_date",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) project_cost_treatment"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_element_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_posting_date: {
+                  format: "date",
+                  type: "string"
+                },
+                p_project_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_project_id",
+                "p_element_id",
+                "p_posting_date"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) project_cost_treatment"]
+      }
+    },
     "/rpc/populate_sales_search_results": {
       post: {
         parameters: [

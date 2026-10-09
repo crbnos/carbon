@@ -20943,6 +20943,9 @@ msgstr "Los depósitos contra los que rastrear costos"
 msgid "The capital assets you own and depreciate"
 msgstr "Los activos fijos que posee y deprecia"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "El usuario de Carbon actualmente responsable de trabajar en este registro, establecido por registro e independiente de campos de propiedad como Account Manager o Sales Person."
 

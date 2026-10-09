@@ -830,5 +830,12 @@ export async function chargeNumberError(
         "A Statistical project has no account, so a job cannot consume to it"
     };
   }
+  if (args.consumeToProject && project.data.costTreatment === "Capitalize") {
+    return {
+      field: "consumeToProject",
+      message:
+        "A capital project's job builds its asset under construction, so it cannot consume to the project"
+    };
+  }
   return null;
 }

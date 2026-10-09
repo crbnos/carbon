@@ -559,20 +559,33 @@ export async function startElementsOnFirstCharge(
   `.execute(trx);
 }
 
-/** Where a consume-to-project job's costs post instead of WIP. */
+/**
+ * Where a project job's costs post. A consume-to-project job posts to the
+ * project account in place of WIP. A capital job (`keepsWip`) keeps WIP as
+ * `accountId`: its completion sweeps WIP onto the asset under construction,
+ * and the projectLedger rows let the project see each cost as it happens.
+ */
 export type JobProjectCharge = {
   projectId: string;
   projectElementId: string | null;
   accountId: string;
   /** The company's today, the date the account was resolved for. */
   postingDate: string;
+  /** True for a capital job: the cost stays on WIP. */
+  keepsWip: boolean;
 };
 
 /**
- * The project charge of a job, or null when the job does not consume to a
- * project (every other job keeps posting to WIP). Refuses a project or
- * element that takes no postings, and a Statistical treatment, which a
+ * The project charge of a job, or null when the job neither consumes to a
+ * project nor builds a capital project's asset (every other job keeps
+ * posting to WIP with no projectLedger row). Refuses a project or element
+ * that takes no postings, and a Statistical treatment, which a
  * consume-to-project job cannot have.
+ *
+ * A capital job is one with a charge number whose treatment is Capitalize,
+ * `consumeToProject` off and a `fixedAssetId`: it returns the WIP account
+ * with `keepsWip`. A job with an asset target and any other treatment
+ * returns null, as before.
  */
 export async function loadJobProjectCharge(
   trx: Kysely<DB>,
@@ -581,11 +594,23 @@ export async function loadJobProjectCharge(
 ): Promise<JobProjectCharge | null> {
   const job = await trx
     .selectFrom("job")
-    .select(["projectId", "projectElementId", "consumeToProject"])
+    .select([
+      "projectId",
+      "projectElementId",
+      "consumeToProject",
+      "fixedAssetId"
+    ])
     .where("id", "=", jobId)
     .where("companyId", "=", companyId)
     .executeTakeFirst();
-  if (!job?.consumeToProject || !job.projectId) return null;
+  if (!job?.projectId) return null;
+  if (!job.consumeToProject) {
+    if (!job.fixedAssetId) return null;
+    return loadCapitalJobCharge(trx, companyId, {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId
+    });
+  }
 
   const [contexts, timezone] = await inOrder([
     () =>
@@ -616,7 +641,45 @@ export async function loadJobProjectCharge(
     projectId: job.projectId,
     projectElementId: job.projectElementId,
     accountId,
-    postingDate
+    postingDate,
+    keepsWip: false
+  };
+}
+
+async function loadCapitalJobCharge(
+  trx: Kysely<DB>,
+  companyId: string,
+  ref: { projectId: string; projectElementId: string | null }
+): Promise<JobProjectCharge | null> {
+  const [contexts, timezone, defaults] = await inOrder([
+    () => loadProjectPostingContexts(trx, companyId, [ref]),
+    () => getCompanyTimeZone(trx, companyId),
+    () =>
+      trx
+        .selectFrom("accountDefault")
+        .select(["workInProgressAccount"])
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+  ]);
+  const context = contexts.get(
+    projectPostingKey(ref.projectId, ref.projectElementId)
+  );
+  if (!context) {
+    throw new ProjectChargeError("The job's project or element does not exist");
+  }
+  const postingDate = datetime.today(timezone).toString();
+  if (resolveProjectTreatment(context, postingDate) !== "Capitalize") {
+    return null;
+  }
+  assertChargeable(context, "commitment");
+  if (!defaults?.workInProgressAccount) {
+    throw new Error("workInProgressAccount not configured in account defaults");
+  }
+  return {
+    ...ref,
+    accountId: defaults.workInProgressAccount,
+    postingDate,
+    keepsWip: true
   };
 }
 

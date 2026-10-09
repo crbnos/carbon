@@ -20943,6 +20943,9 @@ msgstr "Die Behälter, gegen die Sie Kosten nachverfolgen"
 msgid "The capital assets you own and depreciate"
 msgstr "Die Anlagegüter, die Sie besitzen und abschreiben"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "Der Carbon-Benutzer, der derzeit für die Bearbeitung dieses Datensatzes verantwortlich ist. Wird pro Datensatz festgelegt und ist unabhängig von Eigentümerfeldern wie Kontoführer oder Vertriebsmitarbeiter."
 

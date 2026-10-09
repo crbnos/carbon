@@ -20943,6 +20943,9 @@ msgstr "Os buckets nos quais você rastreia custos"
 msgid "The capital assets you own and depreciate"
 msgstr "Os ativos de capital que você possui e deprecia"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "O usuário do Carbon atualmente responsável por trabalhar neste registro, definido por registro e independente de campos de propriedade como Gerenciador de Contas ou Vendedor."
 

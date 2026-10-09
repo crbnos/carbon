@@ -20943,6 +20943,9 @@ msgstr "Les compartiments par rapport auxquels vous suivez les coûts"
 msgid "The capital assets you own and depreciate"
 msgstr "Les immobilisations que vous possédez et dépréciiez"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "L'utilisateur Carbon actuellement responsable du traitement de cet enregistrement, défini par enregistrement et indépendant des champs de propriété comme Gestionnaire de compte ou Commercial."
 

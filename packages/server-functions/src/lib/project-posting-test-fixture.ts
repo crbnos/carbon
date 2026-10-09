@@ -342,6 +342,18 @@ export async function projectPostingFixture(
           .onConflict((oc) => oc.doNothing())
           .execute();
         await trx
+          .insertInto("sequence")
+          .values(
+            (["fixedAsset", "fixedAssetTransfer"] as const).map((table) => ({
+              table,
+              name: table,
+              prefix: table === "fixedAsset" ? "FA" : "FAT",
+              companyId
+            }))
+          )
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
           .insertInto("fixedAsset")
           .values({
             id: fixedAssetId,

@@ -326,7 +326,10 @@ const postProductionEvent = defineServerFn({
         ? [
             {
               accountId: costAccount,
-              description: projectCharge ? "Project Labor" : "WIP Account",
+              description:
+                projectCharge && !projectCharge.keepsWip
+                  ? "Project Labor"
+                  : "WIP Account",
               amount: round(debit("asset", cost)),
               quantity: 1,
               documentType: "Production Event" as const,
@@ -352,9 +355,10 @@ const postProductionEvent = defineServerFn({
         ? [
             {
               accountId: costAccount,
-              description: projectCharge
-                ? "Project Overhead"
-                : "WIP Account (Overhead)",
+              description:
+                projectCharge && !projectCharge.keepsWip
+                  ? "Project Overhead"
+                  : "WIP Account (Overhead)",
               amount: round(debit("asset", overheadCost)),
               quantity: 1,
               documentType: "Production Event" as const,

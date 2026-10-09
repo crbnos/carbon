@@ -20943,6 +20943,9 @@ msgstr "Maliyetleri takip ettiğiniz gruplar"
 msgid "The capital assets you own and depreciate"
 msgstr "Sahip olduğunuz ve amortiye ettiğiniz sabit kıymetler"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "Bu kaydı işlemekten şu anda sorumlu olan Carbon kullanıcısı, kayıt başına ayarlanır ve Hesap Yöneticisi veya Satış Temsilcisi gibi sahiplik alanlarından bağımsızdır."
 

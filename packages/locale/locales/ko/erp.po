@@ -20943,6 +20943,9 @@ msgstr "원가를 추적하는 버킷"
 msgid "The capital assets you own and depreciate"
 msgstr "소유하고 감가상각하는 고정자산"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "현재 이 레코드 작업을 담당하는 Carbon 사용자로, 레코드별로 설정되며 영업담당자 또는 판매담당자 같은 소유권 필드와 무관합니다."
 

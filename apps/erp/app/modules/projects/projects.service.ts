@@ -281,6 +281,14 @@ export type ChargeNumber = {
   projectName: string;
   /** The project's cost treatment: Statistical cannot consume a job. */
   costTreatment: ProjectCostTreatment;
+  /**
+   * Capitalize only: the asset under construction a job of this charge
+   * number builds (the element's own asset when it is a final asset, else
+   * its nearest final-asset ancestor's, else the project's). Null otherwise.
+   */
+  targetFixedAssetId: string | null;
+  /** `FA000012 — name` of the target asset, for display. */
+  targetFixedAssetLabel: string | null;
 };
 
 /**
@@ -290,7 +298,7 @@ export type ChargeNumber = {
  * @mcp read
  */
 export async function getChargeNumbers(client: Client, companyId: string) {
-  const [settings, projects, elements] = await Promise.all([
+  const [settings, projects, elements, capitalElements] = await Promise.all([
     client
       .from("companySettings")
       .select("requireProjectElement")
@@ -301,10 +309,11 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       identifier: string;
       name: string;
       costTreatment: ProjectCostTreatment;
+      fixedAssetId: string | null;
     }>(() =>
       client
         .from("project")
-        .select("id, identifier, name, costTreatment")
+        .select("id, identifier, name, costTreatment, fixedAssetId")
         .eq("companyId", companyId)
         .eq("status", "Released")
         .eq("active", true)
@@ -329,12 +338,57 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         .in("state.group", ["Unstarted", "Started"])
         .order("projectId", { ascending: true })
         .order("sequence", { ascending: true })
+    ),
+    // Every element of a Released Capitalize project, for the nearest
+    // final-asset walk.
+    fetchAll<{
+      id: string;
+      parentId: string | null;
+      isFinalAsset: boolean;
+      fixedAssetId: string | null;
+    }>(() =>
+      client
+        .from("projectElement")
+        .select(
+          "id, parentId, isFinalAsset, fixedAssetId, project:project!projectElement_project_fkey!inner(id)"
+        )
+        .eq("companyId", companyId)
+        .eq("project.status", "Released")
+        .eq("project.costTreatment", "Capitalize")
+        .order("id", { ascending: true })
     )
   ]);
 
   if (settings.error) return { data: null, error: settings.error };
   if (projects.error) return { data: null, error: projects.error };
   if (elements.error) return { data: null, error: elements.error };
+  if (capitalElements.error) {
+    return { data: null, error: capitalElements.error };
+  }
+
+  const projectById = new Map(
+    (projects.data ?? []).map((project) => [project.id, project])
+  );
+  const capitalElementById = new Map(
+    (capitalElements.data ?? []).map((element) => [element.id, element])
+  );
+  const targetFixedAssetId = (
+    projectId: string,
+    elementId: string | null
+  ): string | null => {
+    const project = projectById.get(projectId);
+    if (project?.costTreatment !== "Capitalize") return null;
+    const seen = new Set<string>();
+    let current = elementId ? capitalElementById.get(elementId) : undefined;
+    while (current && !seen.has(current.id)) {
+      if (current.isFinalAsset) return current.fixedAssetId;
+      seen.add(current.id);
+      current = current.parentId
+        ? capitalElementById.get(current.parentId)
+        : undefined;
+    }
+    return project.fixedAssetId;
+  };
 
   const requireElement = settings.data?.requireProjectElement ?? false;
 
@@ -347,7 +401,9 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         readableId: project.identifier,
         name: project.name,
         projectName: project.name,
-        costTreatment: project.costTreatment
+        costTreatment: project.costTreatment,
+        targetFixedAssetId: targetFixedAssetId(project.id, null),
+        targetFixedAssetLabel: null
       }));
 
   const elementRows: ChargeNumber[] = (elements.data ?? []).map((element) => ({
@@ -357,10 +413,40 @@ export async function getChargeNumbers(client: Client, companyId: string) {
     readableId: element.readableId,
     name: element.name,
     projectName: element.project?.name ?? "",
-    costTreatment: element.project?.costTreatment ?? "Statistical"
+    costTreatment: element.project?.costTreatment ?? "Statistical",
+    targetFixedAssetId: targetFixedAssetId(element.projectId, element.id),
+    targetFixedAssetLabel: null
   }));
 
-  return { data: [...projectRows, ...elementRows], error: null };
+  const rows = [...projectRows, ...elementRows];
+  const targetIds = [
+    ...new Set(
+      rows
+        .map((row) => row.targetFixedAssetId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (targetIds.length > 0) {
+    const assets = await client
+      .from("fixedAsset")
+      .select("id, fixedAssetId, name")
+      .in("id", targetIds)
+      .eq("companyId", companyId);
+    if (assets.error) return { data: null, error: assets.error };
+    const labelById = new Map(
+      assets.data.map((asset) => [
+        asset.id,
+        `${asset.fixedAssetId} — ${asset.name}`
+      ])
+    );
+    for (const row of rows) {
+      row.targetFixedAssetLabel = row.targetFixedAssetId
+        ? (labelById.get(row.targetFixedAssetId) ?? null)
+        : null;
+    }
+  }
+
+  return { data: rows, error: null };
 }
 
 /**

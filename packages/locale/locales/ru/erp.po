@@ -20943,6 +20943,9 @@ msgstr "Категории затрат, по которым вы отслежи
 msgid "The capital assets you own and depreciate"
 msgstr "Основные средства, которыми вы владеете и амортизируете"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "Пользователь Carbon, в настоящее время отвечающий за работу с этой записью, установлен для каждой записи и независим от полей владения, таких как Менеджер аккаунта или Продавец."
 

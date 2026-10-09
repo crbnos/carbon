@@ -20943,6 +20943,9 @@ msgstr "वह बाल्टियाँ जिनके विरुद्ध
 msgid "The capital assets you own and depreciate"
 msgstr "पूंजीगत संपत्ति जिसे आप मालिक हैं और मूल्यह्रास करते हैं"
 
+msgid "The capital project has no asset under construction yet"
+msgstr ""
+
 msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
 msgstr "कार्बन उपयोगकर्ता वर्तमान में इस रिकॉर्ड पर काम करने के लिए जिम्मेदार है, प्रति रिकॉर्ड सेट किया गया है और खाता प्रबंधक या बिक्रय व्यक्ति जैसे स्वामित्व क्षेत्रों से स्वतंत्र है।"
 

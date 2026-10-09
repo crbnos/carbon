@@ -479,7 +479,10 @@ async function issueJobOperationMaterials(
         accountId:
           projectCharge?.accountId ??
           accountDefaults.data.workInProgressAccount,
-        description: projectCharge ? "Project Material" : "WIP Account",
+        description:
+          projectCharge && !projectCharge.keepsWip
+            ? "Project Material"
+            : "WIP Account",
         amount: debit("asset", cogsResult.totalCost),
         quantity: materialQuantity,
         documentType: "Job Consumption",
@@ -846,7 +849,10 @@ async function createMaterialWipEntries(
         lineIndex: journalLineInserts.length + (isConsumption ? 0 : 1)
       });
     }
-    const wipDescription = projectCharge ? "Project Material" : "WIP Account";
+    const wipDescription =
+      projectCharge && !projectCharge.keepsWip
+        ? "Project Material"
+        : "WIP Account";
 
     if (isConsumption) {
       journalLineInserts.push(
@@ -3130,9 +3136,10 @@ const issue = defineServerFn({
                     accountId:
                       scrapProjectCharge?.accountId ??
                       accountDefaultsScrapOp.data.workInProgressAccount,
-                    description: scrapProjectCharge
-                      ? "Project Material"
-                      : "WIP Account",
+                    description:
+                      scrapProjectCharge && !scrapProjectCharge.keepsWip
+                        ? "Project Material"
+                        : "WIP Account",
                     amount: credit("asset", scrapCost),
                     quantity,
                     documentType: "Scrap",
@@ -3979,9 +3986,10 @@ const issue = defineServerFn({
                     accountId:
                       scrapProjectCharge?.accountId ??
                       accountDefaultsScrap.data.workInProgressAccount,
-                    description: scrapProjectCharge
-                      ? "Project Material"
-                      : "WIP Account",
+                    description:
+                      scrapProjectCharge && !scrapProjectCharge.keepsWip
+                        ? "Project Material"
+                        : "WIP Account",
                     amount: credit("asset", scrapCost),
                     quantity,
                     documentType: "Scrap",

@@ -44,7 +44,7 @@
 - [x] Task 6: Add Capitalize to the posting helpers and the SQL mirror
 - [x] Task 7: Create CIP assets on release and on marking a final asset
 - [x] Task 8: Write CIP cost rows from the project posting paths
-- [ ] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
+- [x] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
 - [ ] Task 10: Add Place in service
 - [ ] Task 11: Post late costs to the Active asset and fix the void guards
 - [ ] Task 12: Move Straight Line depreciation to a remaining-life basis
@@ -1466,3 +1466,11 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 8: a price variance of a line its receipt charged to a Capitalize project resolves its account again on the invoice date (`chargedAtReceipt`). The receipt's account would be the CIP account even after the asset went into service, which would leave a balance on CIP. Other treatments keep the receipt's account, as before. `resolveProjectTreatment` (the treatment alone, never throws) makes that choice without new refusals.
 - Task 8: `project-cip.test.ts` has 4 cases: the plan's 3 and a `postCapitalization` case for Task 11. The fixture gains `addCapitalAsset` (a CIP class on account `cip`, an in-service class on `machinery`, one asset), and its cleanup deletes the CIP rows, assets and classes.
 - Task 8: voids of charges and reimbursements do not yet remove their CIP rows; Task 11 handles every void.
+- Task 9: a capital job is a job whose charge number resolves to Capitalize today, with `consumeToProject` off and a `fixedAssetId`. `loadJobProjectCharge` returns it with `keepsWip: true` and the WIP account as `accountId`, so `issue`, `post-production-event` and both scrap paths keep their WIP lines and write `projectLedger` rows on them. A job with an asset target and any other treatment still returns null. The 6 line descriptions stay "WIP Account" for a capital job.
+- Task 9: the plan's condition had no treatment check. Without it, an Expense or Statistical charge number on an attached job would write ledger rows, and a Statistical charge writes none by rule. SQL `project_cost_treatment` (new in the migration) mirrors `resolveProjectTreatment`, so the SQL and TS rules match.
+- Task 9: migration `20261009105739_complete-job-cip-project.sql` copies both functions from `20261009071629`. Beyond the plan's CIP insert columns, a capital job's catch-up labor, machine and overhead lines and its backflushed material lines get the Project tags and `projectLedger` rows. Without that, completion-time costs would reach the asset but not the project ledger. The early return and the debit account still follow `consumeToProject` only.
+- Task 9: the zod refine cannot see the treatment, so `chargeNumberError` refuses `consumeToProject` on a Capitalize project. `jobValidator` already allows `fixedAssetId` with a charge number, and `job+/new.tsx` already passes `fixedAssetId` to `insertJob`.
+- Task 9: `ChargeNumber` rows gain `targetFixedAssetId` and `targetFixedAssetLabel`. `getChargeNumbers` reads every element of a Released Capitalize project for the walk (one extra paged read), and the asset labels in one `.in()` read. `costTreatment` stays the project's treatment; an element override is not shown in the picker.
+- Task 9: in `JobForm`, a Capitalize charge number sets Complete To to Asset Under Construction and disables it, shows the target asset read-only, and turns Consume to project off. Picking another charge number returns Complete To to Inventory. The `new.tsx` loader still offers no asset list while `CONSTRUCTION_IN_PROGRESS_ENABLED` is false, so the label comes from the charge number row.
+- Task 9: a capital job keeps the Make to Asset item rule: an untracked item needs a quantity of 1.
+- Task 9: the fixture's `addCapitalAsset` adds the `fixedAsset` and `fixedAssetTransfer` sequences. The pgTAP scripts `job-completion-to-asset`, `job-completion-received-quantity`, `job-completion-operation-quantities` and `rpc-privileges` pass.
