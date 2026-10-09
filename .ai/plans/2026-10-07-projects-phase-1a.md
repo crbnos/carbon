@@ -55,7 +55,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 16: Add the `post-timesheet` server function
 - [x] Task 17: Add the `post-project-issue` server function
 - [x] Task 18: Route job material issues to the project account
-- [ ] Task 19: Route production events to the project account
+- [x] Task 19: Route production events to the project account
 - [ ] Task 20: Change job completion for consume-to-project jobs
 - [ ] Task 21: Route PO receipts to the project account
 - [ ] Task 22: Route purchase invoice lines to the project account
@@ -2443,3 +2443,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 18: `issue` computes a consumption's cost (calculateCOGS and the costLedger row) only when accounting is enabled, in all four paths, so the `projectLedger` row is written there too. With accounting disabled no cost exists and no row is written; computing one would change the cost layers of every job. The row's `journalLineId` is the project debit line.
 - Task 18: `createMaterialWipEntries` takes an optional `projectCharge`. Its three callers (tracked consumption, `partToOperation`, `unconsumeTrackedEntities`) pass the project account as `wipAccount` and the charge; a return writes a negative `projectLedger` row and tags the credit line. `project-issue.test.ts` also covers a manual return (−10.00) and an ordinary job that still posts to WIP.
 - Task 18 (known gap, out of scope by the plan): `jobOperationScrap` still credits WIP with the material cost the backflush relieved, so for a consume-to-project job the scrap journal credits WIP that the issue never debited.
+- Task 19: the job's charge comes from `loadJobProjectCharge` (Task 18). It and `loadProjectPostingContexts` now take any `Kysely<DB>`, because `post-production-event` reads on `db` and opens its transaction only to write. The labor or machine debit and the overhead debit go to the project account; the lines on that account, new and reversing, carry the Project and ProjectElement tags.
+- Task 19: `post-production-event` returns before any work when accounting is disabled, so it writes `projectLedger` rows only with accounting on (as Task 18). A Setup event is costed at the labor rate, so its row's `costType` is `Labor`.
+- Task 19: the repost mirror reverses every open row of the event (a row that is not a reversal and has none), whatever its `costType`, then writes the current rows. `reverse: true` (before a delete) writes only the reversals, so the event nets to zero. `project-event.test.ts` covers the post, the 2 h → 3 h repost and the reverse.
+- Tasks 16–19: the full `@carbon/server-functions` suite (406 tests) passes, but about half of the runs show one or two failures in tests that share the database across parallel files: `post-charge-transaction.test.ts` ("a failure after journal creation…", which runs `CREATE/DROP TRIGGER` on `charge`) and `preview-asset-capitalization.test.ts` fail with `deadlock detected`, and `rows.test.ts` ("a filter value shaped like a comparison…") counts every company twice and sees a fixture company come or go. The first failed once in the baseline run before Task 16. The new database tests create and delete more scratch companies in parallel, so the races hit more often. Each failing file passes on its own.

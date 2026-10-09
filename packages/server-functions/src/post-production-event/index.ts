@@ -20,6 +20,10 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import {
+  buildProjectLedgerRow,
+  loadJobProjectCharge
+} from "../lib/project-posting";
 
 export const postProductionEventInput = z.object({
   productionEventId: z.string(),
@@ -116,7 +120,9 @@ const postProductionEvent = defineServerFn({
                   "Location",
                   "Employee",
                   "WorkCenter",
-                  "Process"
+                  "Process",
+                  "Project",
+                  "ProjectElement"
                 ]
               },
               { columns: ["id", "entityType"] }
@@ -166,6 +172,11 @@ const postProductionEvent = defineServerFn({
     }
 
     const jobId = (event.jobOperation as any).jobId as string;
+
+    // A consume-to-project job charges its project account instead of WIP.
+    const projectCharge = await loadJobProjectCharge(db, companyId, jobId);
+    const costAccount =
+      projectCharge?.accountId ?? accountDefaults.data.workInProgressAccount;
 
     let cost = 0;
     let overheadCost = 0;
@@ -314,8 +325,8 @@ const postProductionEvent = defineServerFn({
       ...(!reverse && cost > 0
         ? [
             {
-              accountId: accountDefaults.data.workInProgressAccount,
-              description: "WIP Account",
+              accountId: costAccount,
+              description: projectCharge ? "Project Labor" : "WIP Account",
               amount: round(debit("asset", cost)),
               quantity: 1,
               documentType: "Production Event" as const,
@@ -340,8 +351,10 @@ const postProductionEvent = defineServerFn({
       ...(!reverse && overheadCost > 0
         ? [
             {
-              accountId: accountDefaults.data.workInProgressAccount,
-              description: "WIP Account (Overhead)",
+              accountId: costAccount,
+              description: projectCharge
+                ? "Project Overhead"
+                : "WIP Account (Overhead)",
               amount: round(debit("asset", overheadCost)),
               quantity: 1,
               documentType: "Production Event" as const,
@@ -420,7 +433,7 @@ const postProductionEvent = defineServerFn({
           companyId: string;
         }[] = [];
 
-        journalLineResults.forEach((jl) => {
+        journalLineResults.forEach((jl, index) => {
           if (
             finishedItemCost?.data?.itemPostingGroupId &&
             dimensionMap.has("ItemPostingGroup")
@@ -475,6 +488,31 @@ const postProductionEvent = defineServerFn({
               companyId
             });
           }
+          // The project lines (new and reversing) carry the project tags.
+          if (
+            projectCharge &&
+            journalLineInserts[index]?.accountId === projectCharge.accountId
+          ) {
+            if (dimensionMap.has("Project")) {
+              dimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("Project")!,
+                valueId: projectCharge.projectId,
+                companyId
+              });
+            }
+            if (
+              projectCharge.projectElementId &&
+              dimensionMap.has("ProjectElement")
+            ) {
+              dimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("ProjectElement")!,
+                valueId: projectCharge.projectElementId,
+                companyId
+              });
+            }
+          }
         });
 
         if (dimensionInserts.length > 0) {
@@ -483,6 +521,84 @@ const postProductionEvent = defineServerFn({
             .values(dimensionInserts)
             .execute();
         }
+      }
+
+      // The project ledger mirrors the journal: reverse what this event wrote
+      // before, then write its current cost.
+      const priorProjectRows = await trx
+        .selectFrom("projectLedger")
+        .selectAll()
+        .where("documentType", "=", "Production Event")
+        .where("documentId", "=", productionEventId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const reversedIds = new Set(
+        priorProjectRows
+          .map((row) => row.reversalOfId)
+          .filter((id): id is string => Boolean(id))
+      );
+      const openProjectRows = priorProjectRows.filter(
+        (row) => !row.reversalOfId && !reversedIds.has(row.id)
+      );
+      const hours = (event.duration ?? 0) / 3600;
+      const projectLedgerInserts = [
+        ...openProjectRows.map((row) =>
+          buildProjectLedgerRow({
+            companyId,
+            projectId: row.projectId,
+            projectElementId: row.projectElementId,
+            postingDate: today,
+            costType: row.costType,
+            documentType: "Production Event",
+            documentId: productionEventId,
+            jobId: row.jobId,
+            employeeId: row.employeeId,
+            quantity: row.quantity === null ? null : -Number(row.quantity),
+            amount: -Number(row.amount),
+            reversalOfId: row.id,
+            createdBy: userId
+          })
+        ),
+        ...(projectCharge && !reverse
+          ? (
+              [
+                [
+                  event.type === "Machine" ? "Machine" : "Labor",
+                  cost,
+                  reversalLines.length
+                ],
+                [
+                  "Overhead",
+                  overheadCost,
+                  reversalLines.length + (cost > 0 ? 2 : 0)
+                ]
+              ] as const
+            )
+              .filter(([, amount]) => amount > 0)
+              .map(([costType, amount, lineIndex]) =>
+                buildProjectLedgerRow({
+                  companyId,
+                  projectId: projectCharge.projectId,
+                  projectElementId: projectCharge.projectElementId,
+                  postingDate: today,
+                  costType,
+                  documentType: "Production Event",
+                  documentId: productionEventId,
+                  jobId,
+                  employeeId: event.employeeId,
+                  quantity: hours,
+                  amount,
+                  journalLineId: journalLineResults[lineIndex]?.id ?? null,
+                  createdBy: userId
+                })
+              )
+          : [])
+      ];
+      if (projectLedgerInserts.length > 0) {
+        await trx
+          .insertInto("projectLedger")
+          .values(projectLedgerInserts)
+          .execute();
       }
 
       await trx

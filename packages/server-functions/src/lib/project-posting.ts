@@ -13,7 +13,7 @@ import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
 import { datetime, round } from "@carbon/utils";
-import { sql, type Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
 
 export type ProjectCostTreatment =
   Database["public"]["Enums"]["projectCostTreatment"];
@@ -253,7 +253,7 @@ type ElementRow = {
  * belongs to another project, has no entry in the map.
  */
 export async function loadProjectPostingContexts(
-  trx: Transaction<DB>,
+  trx: Kysely<DB>,
   companyId: string,
   refs: { projectId: string; projectElementId: string | null }[]
 ): Promise<Map<string, ProjectPostingContext>> {
@@ -431,7 +431,7 @@ export type JobProjectCharge = {
  * consume-to-project job cannot have.
  */
 export async function loadJobProjectCharge(
-  trx: Transaction<DB>,
+  trx: Kysely<DB>,
   companyId: string,
   jobId: string
 ): Promise<JobProjectCharge | null> {
