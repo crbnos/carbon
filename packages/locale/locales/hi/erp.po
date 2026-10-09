@@ -227,6 +227,10 @@ msgstr "{0} स्टॉक में है; शेष {1} को {2} के �
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} चालान आपकी पिछली प्रणाली में बिल किए गए थे और फिर से ड्राफ्ट नहीं किए गए हैं।"
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} जॉब बनाए गए"
@@ -3890,6 +3894,9 @@ msgstr "प्रत्येक अवधि का बिल तब तक द
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "जब तक यह रद्द न हो जाए तब तक बिल करता है"
 
@@ -6051,6 +6058,9 @@ msgstr "बनाएं और स्नैपशॉट लें"
 msgid "Create a change notice for the new revision and open it"
 msgstr "नए रिवीजन के लिए एक परिवर्तन सूचना बनाएँ और इसे खोलें"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "एक नौकरी बनाएँ"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "पूर्वानुमान बनाएं"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "पोर्टल संपादित करें"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "मूल्य ओवरराइड संपादित करें"
 
@@ -9742,6 +9758,9 @@ msgstr "स्लाइड्स को सहेजने में विफ�
 msgid "Failed to save the change"
 msgstr "परिवर्तन को सहेजने में विफल"
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "कोटेशन पंक्ति अपडेट करने म�
 
 msgid "Failed to update supplier quote line"
 msgstr "आपूर्तिकर्ता कोटेशन पंक्ति अपडेट करने में विफल"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "थंबनेल अपलोड करने में विफल"
 
 msgid "Failed to upload: {reason}"
 msgstr "अपलोड करने में विफल: {reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "विफलता"
@@ -10061,6 +10089,9 @@ msgstr "निर्धारित लागत परिशोधन विच
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "एक बार लेखा अवधियों को पोस्ट किया जाने या बंद किए जाने के बाद निर्धारित। इसे बदलने के लिए सभी खुली अवधियों को हटाएँ।"
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "आमंत्रित"
 msgid "Invoice"
 msgstr "चालान"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "चालान {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "आइटम"
 
 msgid "Item / Location"
 msgstr "आइटम / स्थान"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "आइटम फ़िल्टर"
@@ -15001,6 +15042,9 @@ msgstr "कुछ भी शेड्यूल नहीं किया गय�
 msgid "Nothing selected yet"
 msgstr "अभी कुछ नहीं चुना गया"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
 
@@ -15664,6 +15708,9 @@ msgstr "मूल गणना"
 
 msgid "Other"
 msgstr "अन्य"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "कॉन्फ़िगरेशन और डेटा पर का�
 msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "अवमूल्यन खाता"
 
@@ -25533,6 +25583,9 @@ msgstr "निरीक्षण अस्वीकृतियों और NCR
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "किसी संपत्ति के मूल्य को उसके जीवन काल में कम करना — एक मासिक बैच जो आप बनाते हैं, ड्राफ्ट के रूप में समीक्षा करते हैं, फिर पोस्ट करते हैं।"
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "साल"

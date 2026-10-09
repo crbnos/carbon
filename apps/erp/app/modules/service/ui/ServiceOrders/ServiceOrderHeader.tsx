@@ -20,6 +20,7 @@ import {
   LuCircleCheck,
   LuCircleStop,
   LuEllipsisVertical,
+  LuFileText,
   LuLock,
   LuPanelRight,
   LuPause,
@@ -50,9 +51,10 @@ const ServiceOrderHeader = () => {
   if (!id) throw new Error("id not found");
 
   const { toggleProperties } = usePanels();
-  const routeData = useRouteData<{ serviceOrder: ServiceOrder }>(
-    path.to.serviceOrder(id)
-  );
+  const routeData = useRouteData<{
+    serviceOrder: ServiceOrder;
+    unbilledCount: number;
+  }>(path.to.serviceOrder(id));
   if (!routeData?.serviceOrder) {
     throw new Error("Failed to load service order");
   }
@@ -61,6 +63,8 @@ const ServiceOrderHeader = () => {
   const status = order.status;
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "service");
+  const canInvoice = canUpdate && permissions.can("create", "invoicing");
+  const unbilledCount = routeData.unbilledCount ?? 0;
   const navigation = useServiceOrderNavigation();
 
   const statusFetcher = useFetcher<{ success: boolean }>();
@@ -76,6 +80,7 @@ const ServiceOrderHeader = () => {
   const completeDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
   const closeDisclosure = useDisclosure();
+  const invoiceDisclosure = useDisclosure();
 
   const isOpen =
     status === "Draft" || status === "Scheduled" || status === "In Progress";
@@ -164,7 +169,18 @@ const ServiceOrderHeader = () => {
               </Button>
             )}
 
-            {status === "Completed" && (
+            {status === "Completed" && unbilledCount > 0 && (
+              <Button
+                variant="primary"
+                leftIcon={<LuFileText />}
+                isDisabled={!canInvoice || isMoving}
+                onClick={invoiceDisclosure.onOpen}
+              >
+                <Trans>Create Invoice</Trans>
+              </Button>
+            )}
+
+            {status === "Completed" && unbilledCount === 0 && (
               <Button
                 variant="primary"
                 leftIcon={<LuLock />}
@@ -220,6 +236,17 @@ const ServiceOrderHeader = () => {
         >
           <input type="hidden" name="status" value="Closed" />
         </Confirm>
+      )}
+
+      {invoiceDisclosure.isOpen && (
+        <Confirm
+          action={path.to.serviceOrderInvoice(id)}
+          title={t`Invoice ${order.serviceOrderId}`}
+          text={t`Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed.`}
+          confirmText={t`Create Invoice`}
+          onCancel={invoiceDisclosure.onClose}
+          onSubmit={invoiceDisclosure.onClose}
+        />
       )}
 
       {cancelDisclosure.isOpen && (

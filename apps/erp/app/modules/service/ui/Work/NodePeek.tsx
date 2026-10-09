@@ -29,8 +29,10 @@ import {
   Th,
   Thead,
   Tr,
+  toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -41,8 +43,15 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { DateTime } from "~/components";
-import { Hidden, Select, Submit, TextArea } from "~/components/Form";
-import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
+import {
+  Hidden,
+  Number as NumberField,
+  Select,
+  Submit,
+  TextArea
+} from "~/components/Form";
+import { useCurrencyFormatter, useQuantityFormatter, useUser } from "~/hooks";
+import { useCurrencyDecimals } from "~/hooks/useCurrencies";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
 import { LogTimeModal } from "~/modules/projects/ui/Element/LogTimeModal";
 import { ElementTypeIcon } from "~/modules/projects/ui/Elements/ElementTypeIcon";
@@ -51,7 +60,8 @@ import type { ServiceCoverage } from "../../service.models";
 import {
   canOverrideCoverage,
   coverageOverrideValidator,
-  serviceCoverages
+  serviceCoverages,
+  serviceNodeFixedPriceValidator
 } from "../../service.models";
 import type { ServiceCharge, ServiceNode } from "../../types";
 import AddExpenseModal from "./AddExpenseModal";
@@ -63,6 +73,8 @@ export type NodePeekProps = ServiceNode & {
   projectId: string;
   /** The order's charge route. */
   chargeAction: string;
+  /** The node's route, which saves its fixed price. */
+  nodeAction: string;
   laborCategories: { id: string; name: string }[];
   defaultLaborCategoryId: string | null;
   /** The signed-in user's van: where a part is issued from first. */
@@ -71,6 +83,8 @@ export type NodePeekProps = ServiceNode & {
   serviceVisitId?: string | null;
   canCharge: boolean;
   canIssue: boolean;
+  /** May set the node's fixed price (the order is not Closed). */
+  canEditPrice: boolean;
   onClose: () => void;
 };
 
@@ -85,12 +99,14 @@ export default function NodePeek({
   lastServiceDate,
   projectId,
   chargeAction,
+  nodeAction,
   laborCategories,
   defaultLaborCategoryId,
   van,
   serviceVisitId,
   canCharge,
   canIssue,
+  canEditPrice,
   onClose
 }: NodePeekProps) {
   const { t } = useLingui();
@@ -197,6 +213,13 @@ export default function NodePeek({
                   <Trans>Add Expense</Trans>
                 </Button>
               </div>
+
+              <FixedPriceForm
+                key={element.fixedPrice ?? "none"}
+                action={nodeAction}
+                fixedPrice={element.fixedPrice}
+                isDisabled={!canEditPrice}
+              />
 
               <div className="flex w-full flex-col gap-2">
                 <h3 className="text-sm font-medium">
@@ -425,5 +448,73 @@ function OverrideCoverageModal({
         </ValidatedForm>
       </ModalContent>
     </Modal>
+  );
+}
+
+/**
+ * The node's fixed price. With one, the invoice bills the node and its
+ * subtree as one line at that price; the items keep their own prices.
+ */
+function FixedPriceForm({
+  action,
+  fixedPrice,
+  isDisabled
+}: {
+  action: string;
+  fixedPrice: number | null;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const { company } = useUser();
+  const currencyCode = company.baseCurrencyCode ?? "USD";
+  const decimals = useCurrencyDecimals(currencyCode);
+  const fetcher = useAction<{ error?: { message: string } | null }>({
+    onError: (data) =>
+      toast.error(data?.error?.message ?? t`Failed to save the fixed price`)
+  });
+  const isSaving = fetcher.state !== "idle";
+
+  return (
+    <ValidatedForm
+      validator={serviceNodeFixedPriceValidator}
+      method="post"
+      action={action}
+      fetcher={fetcher}
+      defaultValues={{ fixedPrice: fixedPrice ?? undefined }}
+      className="flex w-full flex-col gap-2"
+    >
+      <Hidden name="intent" value="fixedPrice" />
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <NumberField
+            name="fixedPrice"
+            label={t`Fixed Price`}
+            helperText={t`Bills this node and the work under it as one line. Leave it empty to bill each item.`}
+            minValue={0}
+            isDisabled={isDisabled}
+            formatOptions={INPUT_FORMAT.money(currencyCode, decimals)}
+            step={INPUT_STEP.money(decimals)}
+          />
+        </div>
+        <Submit isDisabled={isDisabled} withBlocker={false}>
+          <Trans>Save</Trans>
+        </Submit>
+        {fixedPrice !== null && (
+          <Button
+            variant="secondary"
+            isDisabled={isDisabled}
+            isLoading={isSaving}
+            onClick={() =>
+              fetcher.submit(
+                { intent: "fixedPrice", fixedPrice: "" },
+                { method: "post", action }
+              )
+            }
+          >
+            <Trans>Remove</Trans>
+          </Button>
+        )}
+      </div>
+    </ValidatedForm>
   );
 }

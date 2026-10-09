@@ -227,6 +227,10 @@ msgstr "{0} stokta; kalan {1} {2} olarak toplanacak"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} fatura önceki sisteminizde faturalandırıldı ve tekrar taslak olarak oluşturulmadı."
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} İş emirleri oluşturuldu"
@@ -3890,6 +3894,9 @@ msgstr "Tüm adetler iade edilene kadar her dönem faturalandırılır."
 msgid "Bills of material"
 msgstr "Malzeme Faturaları"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "İptal edilene kadar faturalandırır"
 
@@ -6051,6 +6058,9 @@ msgstr "Oluştur & Anlık Görüntü"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Yeni revizyon için bir değişiklik bildirisi oluştur ve aç"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "İş oluştur"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "Tahmin Oluştur"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "Portal Düzenle"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "Fiyat Geçersiz Kılma Düzenle"
 
@@ -9742,6 +9758,9 @@ msgstr "Slayt kaydedilemedi"
 msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "Teklif satırını güncelleme başarısız oldu"
 
 msgid "Failed to update supplier quote line"
 msgstr "Tedarikçi teklif satırı güncellenemedi"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "Küçük resim yüklenemedi"
 
 msgid "Failed to upload: {reason}"
 msgstr "Yükleme başarısız: {reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "Başarısızlık"
@@ -10061,6 +10089,9 @@ msgstr "Sabit maliyet amortisman sapması parti boyutu standarttan farklı oldu�
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Muhasebe dönemleri bir kez nakliye yapıldığında veya kapatıldığında sabitlenir. Değiştirmek için tüm açık dönemleri silin."
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "Davetli"
 msgid "Invoice"
 msgstr "Fatura"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "Fatura {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "Ürün"
 
 msgid "Item / Location"
 msgstr "Ürün / Konum"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "Ürün filtreleri"
@@ -15001,6 +15042,9 @@ msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
 msgid "Nothing selected yet"
 msgstr "Henüz hiçbir şey seçilmedi"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
 
@@ -15664,6 +15708,9 @@ msgstr "Orijinal Sayım"
 
 msgid "Other"
 msgstr "Diğer"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "Yapılandırma ve veri üzerinde çalışma oturumları"
 msgid "Worst Performing Machines"
 msgstr "En kötü performans gösteren makineler"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "Değer Düşüklüğü Hesabı"
 
@@ -25533,6 +25583,9 @@ msgstr "Muayene reddiyesi ve NCR kararları yoluyla hurdaya çıkarılan veya ia
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Bir varlığın değerini yaşamı boyunca azaltma — her ay oluşturduğunuz, taslak olarak incelediğiniz ve sonra muhasebeleştirdiğiniz bir işlem."
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "Yıl"

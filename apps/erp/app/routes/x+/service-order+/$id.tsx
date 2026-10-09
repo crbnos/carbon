@@ -47,20 +47,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // The coverage contracts the order may still name: its customer's Active
-  // contracts.
-  const contracts = serviceOrder.data.customerId
-    ? await client
-        .from("customerContract")
-        .select("id, customerContractId, name")
-        .eq("companyId", companyId)
-        .eq("customerId", serviceOrder.data.customerId)
-        .eq("status", "Active")
-        .order("customerContractId")
-    : null;
+  // contracts. The unbilled count decides between Create Invoice and Close.
+  const [contracts, unbilled] = await Promise.all([
+    serviceOrder.data.customerId
+      ? client
+          .from("customerContract")
+          .select("id, customerContractId, name")
+          .eq("companyId", companyId)
+          .eq("customerId", serviceOrder.data.customerId)
+          .eq("status", "Active")
+          .order("customerContractId")
+      : null,
+    client
+      .from("projectBillableItem")
+      .select("id", { count: "exact", head: true })
+      .eq("projectId", serviceOrder.data.projectId)
+      .eq("companyId", companyId)
+      .eq("status", "Unbilled")
+  ]);
 
   return {
     serviceOrder: serviceOrder.data,
-    contracts: contracts?.data ?? []
+    contracts: contracts?.data ?? [],
+    unbilledCount: unbilled.count ?? 0
   };
 }
 

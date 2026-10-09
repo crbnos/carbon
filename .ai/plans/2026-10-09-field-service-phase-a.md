@@ -56,7 +56,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 22: Add visits and the Schedule page
 - [x] Task 23: Add the `SignaturePad` component
 - [x] Task 24: Add My Visits and the visit page
-- [ ] Task 25: Add invoicing and the billable item review
+- [x] Task 25: Add invoicing and the billable item review
 - [ ] Task 26: Add Print estimate
 - [ ] Task 27: Add service templates
 - [ ] Task 28: Add the settings fields
@@ -1282,4 +1282,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 24: a technician without `update: "service"` works only their own open visit. The charge route now needs `view: "service"` (plus `update: "inventory"` for a part); without `update: "service"` it requires the form's `serviceVisitId` to be the user's own visit that is not Completed or Cancelled (`requireOwnServiceVisit`, `service.server.ts`) and refuses a reclass. The notes and signature routes check the same, because their writes would otherwise rely on RLS alone.
 - Task 24: `serviceVisit` has no work-start column, so **Start Work** keeps its clock on the device (`localStorage`, one key per visit). **Stop Work** opens Log Time with the elapsed hours, and the time posts through the charge route when the technician confirms it. `LogTimeModal` gains `defaultHours` and `onLogged`; the project pages pass neither.
 - Task 24: `inTreeOrder` moved from `WorkTree.tsx` to `service.models.ts`, so the node picker shares it. New service functions: `getServiceVisit`, `updateServiceVisit`, `getCustomerAssetRecentOrders` and `getServiceNodeLastServiceDates` (two queries: by serial, else by item). The map link opens a Google Maps search for the site's address. The signature pad draws black ink on white, so the PNG reads on paper in dark mode too. The Schedule row and a new **Open Visit** button on the Visits tab open the visit page.
+- Task 25: billing is a route tab of the order (`$id.billing.tsx`, **Billing**), as Work and Visits are. `BillableItemsTable` groups the items by node in tree order (`inTreeOrder`), lists a fixed-price node even with no item, and puts items on no node last under "Other charges". Its row menu offers **Edit Price** (a rate input), **Hold** or **Release**, and **Write Off** (reason required), all through `updateServiceBillableItem`; the route first checks the item is on the order's project. A reversal row takes no action. `@carbon/utils` gains `BILLABLE_ITEM_STATUS_COLOR_MAP` (registered as `billableItem`, tested) for the new `BillableItemStatus`.
+- Task 25: the fixed price is edited in the node peek and saved by a new action on `$id.work.$elementId.tsx` (`intent=fixedPrice`, `updateServiceNodeFixedPrice`, `serviceNodeFixedPriceValidator`); an empty value removes it. A Closed or Cancelled order refuses it.
+- Task 25: **Create Invoice** (header, primary, on a Completed order with an Unbilled item) confirms, then posts to `$id.invoice.tsx`, which invokes `create-service-order-invoice` as a system call behind `update: "service"` and `create: "invoicing"` and redirects to the Draft invoice. The order loader counts the Unbilled items; with none, a Completed order shows **Close**. **Invoice detail** was already a Properties field (Task 20).
 

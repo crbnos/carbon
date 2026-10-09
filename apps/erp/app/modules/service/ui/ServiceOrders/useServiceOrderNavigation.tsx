@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { LuCalendarDays, LuFileText, LuListTree } from "react-icons/lu";
+import {
+  LuCalendarDays,
+  LuFileText,
+  LuListTree,
+  LuReceipt
+} from "react-icons/lu";
 import { useParams } from "react-router";
 import { path } from "~/utils/path";
 
@@ -28,6 +33,11 @@ export function useServiceOrderNavigation() {
       name: t`Visits`,
       to: path.to.serviceOrderVisits(id),
       icon: LuCalendarDays
+    },
+    {
+      name: t`Billing`,
+      to: path.to.serviceOrderBilling(id),
+      icon: LuReceipt
     }
   ];
 }

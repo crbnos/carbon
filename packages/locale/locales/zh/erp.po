@@ -227,6 +227,10 @@ msgstr "{0}库存；剩余的{1}将按{2}拣货"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
@@ -3890,6 +3894,9 @@ msgstr "每个周期计费，直到所有设备都归还。"
 msgid "Bills of material"
 msgstr "物料清单"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "持续开票直到被取消"
 
@@ -6051,6 +6058,9 @@ msgstr "创建并快照"
 msgid "Create a change notice for the new revision and open it"
 msgstr "为新修订版创建变更通知并打开"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "创建工作"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "创建预测"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "编辑门户"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "编辑价格覆盖"
 
@@ -9742,6 +9758,9 @@ msgstr "保存幻灯片失败"
 msgid "Failed to save the change"
 msgstr "保存更改失败"
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "未能更新报价行"
 
 msgid "Failed to update supplier quote line"
 msgstr "未能更新供应商报价行"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "上传缩略图失败"
 
 msgid "Failed to upload: {reason}"
 msgstr "上传失败：{reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "故障"
@@ -10061,6 +10089,9 @@ msgstr "当批量与标准不符时的固定成本摊销差异"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "一旦会计期间已过账或已关闭即被固定。删除所有未结期间以更改它。"
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "已邀请"
 msgid "Invoice"
 msgstr "发票"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "发票 {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "物品"
 
 msgid "Item / Location"
 msgstr "物品 / 位置"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "项目筛选器"
@@ -15001,6 +15042,9 @@ msgstr "未安排任何事项——在下方添加工位。"
 msgid "Nothing selected yet"
 msgstr "尚未选择任何内容"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
 
@@ -15664,6 +15708,9 @@ msgstr "原始盘点"
 
 msgid "Other"
 msgstr "其他"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "配置和数据工作会议"
 msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "减值账户"
 
@@ -25533,6 +25583,9 @@ msgstr "库存核销报废或通过检验拒收和 NCR 处置退回"
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "在资产的生命周期内减少其价值——你创建的每月批次,作为草稿进行评审,然后过账。"
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "年份"

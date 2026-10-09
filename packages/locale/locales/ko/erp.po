@@ -227,6 +227,10 @@ msgstr "{0}개 재고 있음; 나머지 {1}개는 {2}로 피킹할 예정"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
@@ -3890,6 +3894,9 @@ msgstr "모든 단위가 반환될 때까지 각 기간마다 청구합니다."
 msgid "Bills of material"
 msgstr "자재명세서"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "취소될 때까지 청구됩니다."
 
@@ -6051,6 +6058,9 @@ msgstr "생성 및 스냅샷"
 msgid "Create a change notice for the new revision and open it"
 msgstr "새 리비전에 대한 변경 통지를 생성하고 엽니다."
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "작업 생성"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "예측 생성"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "이슈 생성"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "포털 편집"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "가격 재정의 편집"
 
@@ -9742,6 +9758,9 @@ msgstr "슬라이드 저장 실패"
 msgid "Failed to save the change"
 msgstr "변경 사항을 저장하지 못했습니다."
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "견적 라인을 업데이트하지 못했습니다"
 
 msgid "Failed to update supplier quote line"
 msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "썸네일을 업로드하지 못했습니다"
 
 msgid "Failed to upload: {reason}"
 msgstr "업로드 실패: {reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "실패"
@@ -10061,6 +10089,9 @@ msgstr "배치 크기가 표준과 다를 때 고정 원가 상각 차이"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "회계 기간이 게시되거나 종료되면 고정됩니다. 변경하려면 모든 공개 기간을 삭제하십시오."
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "초대됨"
 msgid "Invoice"
 msgstr "송장"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "송장 {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "품목"
 
 msgid "Item / Location"
 msgstr "항목 / 위치"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "품목 필터"
@@ -15001,6 +15042,9 @@ msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요.
 msgid "Nothing selected yet"
 msgstr "아직 선택된 항목이 없습니다"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
 
@@ -15664,6 +15708,9 @@ msgstr "원본 계산"
 
 msgid "Other"
 msgstr "기타"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "설정 및 데이터에 대한 작업 세션"
 msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "평가감 계정"
 
@@ -25533,6 +25583,9 @@ msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 생성하여 초안으로 검토한 후 전기하는 배치 작업입니다."
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "연도"

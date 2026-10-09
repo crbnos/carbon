@@ -66,4 +66,13 @@ describe("field service status colors", () => {
       Returned: "gray"
     });
   });
+
+  it("registers the billable item statuses", () => {
+    expect(maps.billableItem).toEqual({
+      Unbilled: "blue",
+      "On Hold": "orange",
+      Billed: "green",
+      "Written Off": "gray"
+    });
+  });
 });

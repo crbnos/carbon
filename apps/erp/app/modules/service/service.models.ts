@@ -332,6 +332,13 @@ export const serviceBillableItemValidator = z
     path: ["statusReason"]
   });
 
+/** A node's fixed price; an empty value removes it. */
+export const serviceNodeFixedPriceValidator = z.object({
+  fixedPrice: zfd.numeric(
+    z.number().min(0, { message: "The price cannot be negative" }).optional()
+  )
+});
+
 // --- Work --------------------------------------------------------------------
 
 /** The node types a service order's work tree offers (no engineering types). */

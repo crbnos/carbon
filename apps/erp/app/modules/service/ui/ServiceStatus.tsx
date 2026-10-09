@@ -4,6 +4,7 @@
 
 import { Badge, Status } from "@carbon/react";
 import {
+  BILLABLE_ITEM_STATUS_COLOR_MAP,
   CUSTOMER_ASSET_STATUS_COLOR_MAP,
   SERVICE_ORDER_STATUS_COLOR_MAP,
   SERVICE_VISIT_STATUS_COLOR_MAP
@@ -12,6 +13,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useCompanyToday } from "~/hooks";
 import type {
   CustomerAssetStatus as CustomerAssetStatusType,
+  ProjectBillableItemStatus,
   ServiceOrderStatus as ServiceOrderStatusType,
   ServiceVisitStatus as ServiceVisitStatusType,
   WarrantyStatus
@@ -121,5 +123,33 @@ export function WarrantyBadge({
   const status = warrantyStatus(asset, today);
   return (
     <Badge variant={WARRANTY_BADGE_VARIANT[status]}>{labels[status]}</Badge>
+  );
+}
+
+export function useBillableItemStatusLabels(): Record<
+  ProjectBillableItemStatus,
+  string
+> {
+  const { t } = useLingui();
+  return {
+    Unbilled: t`Unbilled`,
+    "On Hold": t`On Hold`,
+    Billed: t`Billed`,
+    "Written Off": t`Written Off`
+  };
+}
+
+/** Where a billable item stands: waiting, held, invoiced or written off. */
+export function BillableItemStatus({
+  status
+}: {
+  status?: ProjectBillableItemStatus | null;
+}) {
+  const labels = useBillableItemStatusLabels();
+  if (!status) return null;
+  return (
+    <Status color={BILLABLE_ITEM_STATUS_COLOR_MAP[status]}>
+      {labels[status]}
+    </Status>
   );
 }

@@ -243,6 +243,15 @@ export const CUSTOMER_ASSET_STATUS_COLOR_MAP = {
   Returned: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// A billable item (projectBillableItemStatus): waiting for an invoice, held
+// back by a reviewer, on an invoice, or written off.
+export const BILLABLE_ITEM_STATUS_COLOR_MAP = {
+  Unbilled: "blue",
+  "On Hold": "orange",
+  Billed: "green",
+  "Written Off": "gray"
+} as const satisfies Record<string, StatusColor>;
+
 // A timesheet entry: Draft is open, Submitted waits on approval like a
 // pending review, Approved is accepted but not yet costed, Posted is done and
 // Rejected goes back to its owner.
@@ -472,6 +481,7 @@ export const statusColorMaps = {
   serviceOrder: SERVICE_ORDER_STATUS_COLOR_MAP,
   serviceVisit: SERVICE_VISIT_STATUS_COLOR_MAP,
   customerAsset: CUSTOMER_ASSET_STATUS_COLOR_MAP,
+  billableItem: BILLABLE_ITEM_STATUS_COLOR_MAP,
   assemblyInstruction: ASSEMBLY_INSTRUCTION_STATUS_COLOR_MAP,
   assemblyStep: ASSEMBLY_STEP_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,

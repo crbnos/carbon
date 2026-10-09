@@ -807,6 +807,34 @@ export async function getServiceNodeLastServiceDates(
   return { data: dates, error: null };
 }
 
+/**
+ * Sets or removes a node's fixed price. The invoice bills a fixed-price node
+ * as one line at its price instead of its items (`create-service-order-invoice`).
+ */
+export async function updateServiceNodeFixedPrice(
+  client: Client,
+  node: {
+    projectId: string;
+    elementId: string;
+    fixedPrice: number | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("projectElement")
+    .update({
+      fixedPrice: node.fixedPrice,
+      updatedBy: node.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", node.elementId)
+    .eq("projectId", node.projectId)
+    .eq("companyId", node.companyId)
+    .select("id")
+    .single();
+}
+
 // --- Billable items ----------------------------------------------------------
 
 /** An order's billable items, with the node they sit on. */

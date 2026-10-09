@@ -2418,6 +2418,8 @@ export const path = {
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
     serviceOrder: (id: string) => generatePath(`${x}/service-order/${id}`),
+    serviceOrderBilling: (id: string) =>
+      generatePath(`${x}/service-order/${id}/billing`),
     serviceOrderCharge: (id: string) =>
       generatePath(`${x}/service-order/${id}/charge`),
     serviceOrderDetails: (id: string) =>

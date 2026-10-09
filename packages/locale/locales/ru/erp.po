@@ -227,6 +227,10 @@ msgstr "{0} в наличии; остаток {1} будет отобран ка
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} счета-фактур были выставлены в вашей предыдущей системе и не создаются снова."
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} производственных заказов создано"
@@ -3890,6 +3894,9 @@ msgstr "Выставляет счета в каждом периоде до во
 msgid "Bills of material"
 msgstr "Спецификации материалов"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "Выставляет счета до отмены"
 
@@ -6051,6 +6058,9 @@ msgstr "Создать и снимок"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Создать извещение об изменении для новой ревизии и открыть его"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Создать задание"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "Создать прогноз"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Создать проблему"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "Изменить Портал"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "Изменить Переопределение цены"
 
@@ -9742,6 +9758,9 @@ msgstr "Ошибка при сохранении слайдов"
 msgid "Failed to save the change"
 msgstr "Не удалось сохранить изменение"
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "Не удалось обновить строку предложения
 
 msgid "Failed to update supplier quote line"
 msgstr "Не удалось обновить строку предложения поставщика"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "Не удалось загрузить миниатюру"
 
 msgid "Failed to upload: {reason}"
 msgstr "Ошибка загрузки: {reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "Сбой"
@@ -10061,6 +10089,9 @@ msgstr "Отклонение амортизации постоянных зат�
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Зафиксирован после размещения или закрытия учетных периодов. Удалите все открытые периоды, чтобы его изменить."
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "Приглашено"
 msgid "Invoice"
 msgstr "Счет-фактура"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "Счет-фактура {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "Товар"
 
 msgid "Item / Location"
 msgstr "Товар / Местоположение"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "Фильтры номенклатуры"
@@ -15001,6 +15042,9 @@ msgstr "Ничего не запланировано — добавьте раб
 msgid "Nothing selected yet"
 msgstr "Ничего не выбрано"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
 
@@ -15664,6 +15708,9 @@ msgstr "Исходный подсчет"
 
 msgid "Other"
 msgstr "Прочее"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "Рабочие сессии по конфигурации и данны�
 msgid "Worst Performing Machines"
 msgstr "Худшие станки"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "Счет уценки"
 
@@ -25533,6 +25583,9 @@ msgstr "Списание запасов, забракованных или во�
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Уменьшение стоимости актива в течение его жизни — ежемесячная серия, которую вы создаете, рассматриваете как черновик, затем проводите."
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "Год"

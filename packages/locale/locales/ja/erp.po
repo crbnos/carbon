@@ -227,6 +227,10 @@ msgstr "{0}在庫あり；残り{1}は{2}としてピッキング"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}件の請求書は前のシステムで請求済みであり、再度作成されません。"
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} 件の製造指図が作成されました"
@@ -3890,6 +3894,9 @@ msgstr "すべての個が返却されるまで、各期間に請求されます
 msgid "Bills of material"
 msgstr "部品表"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "キャンセルされるまで請求します。"
 
@@ -6051,6 +6058,9 @@ msgstr "作成とスナップショット"
 msgid "Create a change notice for the new revision and open it"
 msgstr "新しいリビジョンの変更通知を作成して開く"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "ジョブを作成"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "予測を作成"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "問題を作成"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "ポータルを編集"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "価格上書きを編集"
 
@@ -9742,6 +9758,9 @@ msgstr "スライドの保存に失敗しました"
 msgid "Failed to save the change"
 msgstr "変更の保存に失敗しました。"
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "見積明細を更新できませんでした"
 
 msgid "Failed to update supplier quote line"
 msgstr "仕入先見積行の更新に失敗しました"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "サムネイルのアップロードに失敗しました"
 
 msgid "Failed to upload: {reason}"
 msgstr "アップロードに失敗しました: {reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "失敗"
@@ -10061,6 +10089,9 @@ msgstr "バッチサイズが標準と異なる場合の固定原価配賦差異
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "会計期間に転記またはクローズされた後は固定されます。変更するにはすべてのオープン期間を削除してください。"
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "招待済み"
 msgid "Invoice"
 msgstr "請求書"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "請求書 {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "アイテム"
 
 msgid "Item / Location"
 msgstr "品目 / 場所"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "品目の絞り込み"
@@ -15001,6 +15042,9 @@ msgstr "スケジュールがありません。以下にステーションを追
 msgid "Nothing selected yet"
 msgstr "まだ選択されていません"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "まだ認識するものがありません。売上高は請求書が請求する金額に従います。"
 
@@ -15664,6 +15708,9 @@ msgstr "元のカウント"
 
 msgid "Other"
 msgstr "その他"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "設定とデータに関するワーキングセッション"
 msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "評価減勘定"
 
@@ -25533,6 +25583,9 @@ msgstr "検査却下およびNCR処置によってスクラップされたまた
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "資産の価値を耐用年数にわたって減額する―毎月作成し、下書きとしてレビューしてから転記するバッチです。"
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "年"

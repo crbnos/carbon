@@ -227,6 +227,10 @@ msgstr "{0} in stock; the remaining {1} will be picked as {2}"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} invoices were billed in your previous system and are not drafted again."
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr "{0} is never billed. Its cost stays on the order."
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} jobs created"
@@ -3890,6 +3894,9 @@ msgstr "Bills each period until every unit is returned."
 msgid "Bills of material"
 msgstr "Bills of material"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr "Bills this node and the work under it as one line. Leave it empty to bill each item."
+
 msgid "Bills until it is cancelled"
 msgstr "Bills until it is cancelled"
 
@@ -6051,6 +6058,9 @@ msgstr "Create & Snapshot"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Create a change notice for the new revision and open it"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+
 msgid "Create a job"
 msgstr "Create a job"
 
@@ -6113,6 +6123,9 @@ msgstr "Create elements"
 
 msgid "Create Forecast"
 msgstr "Create Forecast"
+
+msgid "Create Invoice"
+msgstr "Create Invoice"
 
 msgid "Create Issue"
 msgstr "Create Issue"
@@ -8473,6 +8486,9 @@ msgstr "Edit Plan"
 msgid "Edit Portal"
 msgstr "Edit Portal"
 
+msgid "Edit Price"
+msgstr "Edit Price"
+
 msgid "Edit Price Override"
 msgstr "Edit Price Override"
 
@@ -9742,6 +9758,9 @@ msgstr "Failed to save slides"
 msgid "Failed to save the change"
 msgstr "Failed to save the change"
 
+msgid "Failed to save the fixed price"
+msgstr "Failed to save the fixed price"
+
 msgid "Failed to save the signature"
 msgstr "Failed to save the signature"
 
@@ -9783,6 +9802,12 @@ msgstr "Failed to update quote line"
 
 msgid "Failed to update supplier quote line"
 msgstr "Failed to update supplier quote line"
+
+msgid "Failed to update the item"
+msgstr "Failed to update the item"
+
+msgid "Failed to update the price"
+msgstr "Failed to update the price"
 
 msgid "Failed to update the visit"
 msgstr "Failed to update the visit"
@@ -9831,6 +9856,9 @@ msgstr "Failed to upload thumbnail"
 
 msgid "Failed to upload: {reason}"
 msgstr "Failed to upload: {reason}"
+
+msgid "Failed to write off the item"
+msgstr "Failed to write off the item"
 
 msgid "Failure"
 msgstr "Failure"
@@ -10061,6 +10089,9 @@ msgstr "Fixed cost amortization variance when batch size differs from standard"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
+
+msgid "Fixed price"
+msgstr "Fixed price"
 
 msgid "Fixed Price"
 msgstr "Fixed Price"
@@ -10693,6 +10724,9 @@ msgstr "History by Component"
 
 msgid "History by Order"
 msgstr "History by Order"
+
+msgid "Hold"
+msgstr "Hold"
 
 msgid "Hold the journal as a warning to fix."
 msgstr "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "Invited"
 msgid "Invoice"
 msgstr "Invoice"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr "Invoice {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "Invoice {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "Item"
 
 msgid "Item / Location"
 msgstr "Item / Location"
+
+msgid "Item actions"
+msgstr "Item actions"
 
 msgid "Item filters"
 msgstr "Item filters"
@@ -15001,6 +15042,9 @@ msgstr "Nothing scheduled — add a station below."
 msgid "Nothing selected yet"
 msgstr "Nothing selected yet"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nothing to recognize yet. Revenue follows what the invoices bill."
 
@@ -15664,6 +15708,9 @@ msgstr "Original Count"
 
 msgid "Other"
 msgstr "Other"
+
+msgid "Other charges"
+msgstr "Other charges"
 
 msgid "Other cost"
 msgstr "Other cost"
@@ -25512,6 +25559,9 @@ msgstr "Working sessions on configuration and data"
 msgid "Worst Performing Machines"
 msgstr "Worst Performing Machines"
 
+msgid "Write Off"
+msgstr "Write Off"
+
 msgid "Write-Down Account"
 msgstr "Write-Down Account"
 
@@ -25533,6 +25583,9 @@ msgstr "Write-off of stock scrapped or returned via inspection rejects and NCR d
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
+
+msgid "Written Off"
+msgstr "Written Off"
 
 msgid "Year"
 msgstr "Year"

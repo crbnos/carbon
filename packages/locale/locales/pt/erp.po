@@ -227,6 +227,10 @@ msgstr "{0} em estoque; o restante {1} será separado como {2}"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} faturas foram faturadas em seu sistema anterior e não são criadas novamente como rascunho."
 
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} ordens de produção criadas"
@@ -3890,6 +3894,9 @@ msgstr "Fatura cada período até que cada unidade seja devolvida."
 msgid "Bills of material"
 msgstr "Listas de materiais"
 
+msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
+msgstr ""
+
 msgid "Bills until it is cancelled"
 msgstr "Faturas até ser cancelado"
 
@@ -6051,6 +6058,9 @@ msgstr "Criar e Capturar"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Criar um aviso de alteração para a nova revisão e abri-lo"
 
+msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Criar um trabalho"
 
@@ -6113,6 +6123,9 @@ msgstr ""
 
 msgid "Create Forecast"
 msgstr "Criar Previsão"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Criar Problema"
@@ -8473,6 +8486,9 @@ msgstr ""
 msgid "Edit Portal"
 msgstr "Editar Portal"
 
+msgid "Edit Price"
+msgstr ""
+
 msgid "Edit Price Override"
 msgstr "Editar Sobrescrita de preço"
 
@@ -9742,6 +9758,9 @@ msgstr "Falha ao salvar slides"
 msgid "Failed to save the change"
 msgstr "Falha ao salvar a alteração"
 
+msgid "Failed to save the fixed price"
+msgstr ""
+
 msgid "Failed to save the signature"
 msgstr ""
 
@@ -9783,6 +9802,12 @@ msgstr "Falha ao atualizar linha do orçamento"
 
 msgid "Failed to update supplier quote line"
 msgstr "Falha ao atualizar linha de cotação do fornecedor"
+
+msgid "Failed to update the item"
+msgstr ""
+
+msgid "Failed to update the price"
+msgstr ""
 
 msgid "Failed to update the visit"
 msgstr ""
@@ -9831,6 +9856,9 @@ msgstr "Falha ao enviar arquivo de miniatura"
 
 msgid "Failed to upload: {reason}"
 msgstr "Falha ao enviar arquivo: {reason}"
+
+msgid "Failed to write off the item"
+msgstr ""
 
 msgid "Failure"
 msgstr "Falha"
@@ -10061,6 +10089,9 @@ msgstr "Variação de amortização de custo fixo quando o tamanho do lote difer
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Fixado após períodos contábeis serem contabilizados ou fechados. Exclua todos os períodos abertos para alterá-lo."
+
+msgid "Fixed price"
+msgstr ""
 
 msgid "Fixed Price"
 msgstr ""
@@ -10692,6 +10723,9 @@ msgid "History by Component"
 msgstr ""
 
 msgid "History by Order"
+msgstr ""
+
+msgid "Hold"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -11507,6 +11541,10 @@ msgstr "Convidado"
 msgid "Invoice"
 msgstr "Fatura"
 
+#. placeholder {0}: order.serviceOrderId
+msgid "Invoice {0}"
+msgstr ""
+
 msgid "Invoice {invoiceDate}"
 msgstr "Fatura {invoiceDate}"
 
@@ -11779,6 +11817,9 @@ msgstr "Item"
 
 msgid "Item / Location"
 msgstr "Item / Local"
+
+msgid "Item actions"
+msgstr ""
 
 msgid "Item filters"
 msgstr "Filtros de itens"
@@ -15001,6 +15042,9 @@ msgstr "Nada agendado — adicione uma estação abaixo."
 msgid "Nothing selected yet"
 msgstr "Nenhum selecionado ainda"
 
+msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
+msgstr ""
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nada a reconhecer ainda. A receita segue o que as faturas faturam."
 
@@ -15664,6 +15708,9 @@ msgstr "Contagem Original"
 
 msgid "Other"
 msgstr "Outros"
+
+msgid "Other charges"
+msgstr ""
 
 msgid "Other cost"
 msgstr ""
@@ -25512,6 +25559,9 @@ msgstr "Sessões de trabalho sobre configuração e dados"
 msgid "Worst Performing Machines"
 msgstr "Máquinas com Pior Desempenho"
 
+msgid "Write Off"
+msgstr ""
+
 msgid "Write-Down Account"
 msgstr "Conta de desvalorização"
 
@@ -25533,6 +25583,9 @@ msgstr "Baixa contábil de estoque refugado ou devolvido via rejeições de insp
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Reduzir o valor de um ativo ao longo de sua vida útil — um lote mensal que você cria, revisa como rascunho e depois contabiliza."
+
+msgid "Written Off"
+msgstr ""
 
 msgid "Year"
 msgstr "Ano"
