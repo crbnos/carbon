@@ -7,6 +7,7 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   contains,
@@ -337,11 +338,20 @@ const postReceipt = defineServerFn({
                   companyId
                 }),
               () =>
-                many(db, "journalLine", {
-                  documentId: receiptId,
-                  documentType: "Receipt",
-                  companyId
-                }),
+                db
+                  .selectFrom("journalLine")
+                  .innerJoin("journal", (join) =>
+                    join
+                      .onRef("journal.id", "=", "journalLine.journalId")
+                      .onRef("journal.companyId", "=", "journalLine.companyId")
+                  )
+                  .selectAll("journalLine")
+                  .where("journalLine.documentId", "=", receiptId)
+                  .where("journalLine.documentType", "=", "Receipt")
+                  .where("journalLine.companyId", "=", companyId)
+                  .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+                  .execute()
+                  .then((data) => ({ data, error: null })),
               () =>
                 many(db, "salesReturnOrderLine", {
                   salesReturnOrderId,
@@ -591,11 +601,20 @@ const postReceipt = defineServerFn({
               companyId
             }),
           () =>
-            many(db, "journalLine", {
-              documentId: receiptId,
-              documentType: "Receipt",
-              companyId
-            }),
+            db
+              .selectFrom("journalLine")
+              .innerJoin("journal", (join) =>
+                join
+                  .onRef("journal.id", "=", "journalLine.journalId")
+                  .onRef("journal.companyId", "=", "journalLine.companyId")
+              )
+              .selectAll("journalLine")
+              .where("journalLine.documentId", "=", receiptId)
+              .where("journalLine.documentType", "=", "Receipt")
+              .where("journalLine.companyId", "=", companyId)
+              .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+              .execute()
+              .then((data) => ({ data, error: null })),
           () =>
             many(db, "purchaseOrderLine", {
               purchaseOrderId: receiptHeader.sourceDocumentId
@@ -1542,23 +1561,29 @@ const postReceipt = defineServerFn({
                 (id) => journalReference.to.purchaseInvoice(id)
               );
 
-              const accrualJournalLines = await many(
-                db,
-                "journalLine",
-                {
-                  documentLineReference: accrualDocRefs,
-                  accrual: true,
-                  companyId
-                },
-                {
-                  columns: [
-                    "documentLineReference",
-                    "amount",
-                    "quantity",
-                    "accountId"
-                  ]
-                }
-              );
+              const accrualJournalLines = await db
+                .selectFrom("journalLine")
+                .innerJoin("journal", (join) =>
+                  join
+                    .onRef("journal.id", "=", "journalLine.journalId")
+                    .onRef("journal.companyId", "=", "journalLine.companyId")
+                )
+                .select([
+                  "journalLine.documentLineReference",
+                  "journalLine.amount",
+                  "journalLine.quantity",
+                  "journalLine.accountId"
+                ])
+                .where(
+                  "journalLine.documentLineReference",
+                  "in",
+                  accrualDocRefs
+                )
+                .where("journalLine.accrual", "=", true)
+                .where("journalLine.companyId", "=", companyId)
+                .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+                .execute()
+                .then((data) => ({ data, error: null }));
 
               if (accrualJournalLines.error) {
                 throw new Error("Failed to fetch accrual journal lines");

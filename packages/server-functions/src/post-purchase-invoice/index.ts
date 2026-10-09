@@ -7,6 +7,7 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   inOrder,
   many,
@@ -112,11 +113,20 @@ const postPurchaseInvoice = defineServerFn({
           await inOrder([
             () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
             () =>
-              many(db, "journalLine", {
-                documentId: invoiceId,
-                documentType: "Invoice",
-                companyId
-              }),
+              db
+                .selectFrom("journalLine")
+                .innerJoin("journal", (join) =>
+                  join
+                    .onRef("journal.id", "=", "journalLine.journalId")
+                    .onRef("journal.companyId", "=", "journalLine.companyId")
+                )
+                .selectAll("journalLine")
+                .where("journalLine.documentId", "=", invoiceId)
+                .where("journalLine.documentType", "=", "Invoice")
+                .where("journalLine.companyId", "=", companyId)
+                .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+                .execute()
+                .then((data) => ({ data, error: null })),
             () =>
               many(db, "costLedger", {
                 documentId: invoiceId,
@@ -903,21 +913,38 @@ const postPurchaseInvoice = defineServerFn({
         return acc;
       }, {});
 
-      const journalLines = await many(db, "journalLine", {
-        documentLineReference: purchaseOrderLines.data.reduce<string[]>(
-          (acc, purchaseOrderLine) => {
-            if (
-              (purchaseOrderLine.quantityReceived ?? 0) >
-              (purchaseOrderLine.quantityInvoiced ?? 0)
-            ) {
-              acc.push(journalReference.to.receipt(purchaseOrderLine.id));
-            }
-            return acc;
-          },
-          []
-        ),
-        companyId
-      });
+      const receiptReferences = purchaseOrderLines.data.reduce<string[]>(
+        (acc, purchaseOrderLine) => {
+          if (
+            (purchaseOrderLine.quantityReceived ?? 0) >
+            (purchaseOrderLine.quantityInvoiced ?? 0)
+          ) {
+            acc.push(journalReference.to.receipt(purchaseOrderLine.id));
+          }
+          return acc;
+        },
+        []
+      );
+      const journalLines =
+        receiptReferences.length > 0
+          ? await db
+              .selectFrom("journalLine")
+              .innerJoin("journal", (join) =>
+                join
+                  .onRef("journal.id", "=", "journalLine.journalId")
+                  .onRef("journal.companyId", "=", "journalLine.companyId")
+              )
+              .selectAll("journalLine")
+              .where(
+                "journalLine.documentLineReference",
+                "in",
+                receiptReferences
+              )
+              .where("journalLine.companyId", "=", companyId)
+              .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+              .execute()
+              .then((data) => ({ data, error: null }))
+          : { data: [], error: null };
       if (journalLines.error) {
         throw new Error("Failed to fetch journal entries to reverse");
       }
@@ -2401,6 +2428,11 @@ const postPurchaseInvoice = defineServerFn({
             // (i) inline capitalization on this invoice's journal
             const invoiceCapLines = await trx
               .selectFrom("journalLine as jl")
+              .innerJoin("journal as j", (join) =>
+                join
+                  .onRef("j.id", "=", "jl.journalId")
+                  .onRef("j.companyId", "=", "jl.companyId")
+              )
               .innerJoin("account as a", "a.id", "jl.accountId")
               .select([
                 "jl.id as id",
@@ -2412,6 +2444,7 @@ const postPurchaseInvoice = defineServerFn({
               .where("jl.companyId", "=", companyId)
               .where("a.class", "=", "Asset")
               .where("jl.amount", ">", 0)
+              .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
               .execute();
             for (const cap of invoiceCapLines) {
               eliminationLineInserts.push({
@@ -2446,6 +2479,11 @@ const postPurchaseInvoice = defineServerFn({
               if (receiptIds.length > 0) {
                 const receiptCapLines = await trx
                   .selectFrom("journalLine as jl")
+                  .innerJoin("journal as j", (join) =>
+                    join
+                      .onRef("j.id", "=", "jl.journalId")
+                      .onRef("j.companyId", "=", "jl.companyId")
+                  )
                   .innerJoin("account as a", "a.id", "jl.accountId")
                   .select([
                     "jl.id as id",
@@ -2458,6 +2496,7 @@ const postPurchaseInvoice = defineServerFn({
                   .where("jl.documentId", "in", receiptIds)
                   .where("a.class", "=", "Asset")
                   .where("jl.amount", ">", 0)
+                  .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
                   .execute();
                 for (const cap of receiptCapLines) {
                   // documentLineReference is `receipt:<purchaseOrderLineId>`; map

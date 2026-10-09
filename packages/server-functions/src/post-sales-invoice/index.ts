@@ -7,6 +7,7 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   addMovement,
   type ContractPosition,
@@ -2210,6 +2211,11 @@ const postSalesInvoice = defineServerFn({
                 if (cogsAccount && salesOrderIds.length > 0) {
                   const shipmentCogsLines = await trx
                     .selectFrom("journalLine as jl")
+                    .innerJoin("journal as j", (join) =>
+                      join
+                        .onRef("j.id", "=", "jl.journalId")
+                        .onRef("j.companyId", "=", "jl.companyId")
+                    )
                     .innerJoin("shipment as s", "s.id", "jl.documentId")
                     .select([
                       "jl.id as id",
@@ -2222,6 +2228,7 @@ const postSalesInvoice = defineServerFn({
                     .where("s.companyId", "=", companyId)
                     .where("s.sourceDocument", "=", "Sales Order")
                     .where("s.sourceDocumentId", "in", salesOrderIds)
+                    .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
                     .execute();
                   for (const cogs of shipmentCogsLines) {
                     eliminationLineInserts.push({
@@ -2372,10 +2379,20 @@ const postSalesInvoice = defineServerFn({
 
         case "void": {
           // Get journal entries to reverse
-          const { data: journalEntries } = await many(db, "journalLine", {
-            documentId: invoiceId,
-            documentType: "Invoice"
-          });
+          const { data: journalEntries } = await db
+            .selectFrom("journalLine")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "journalLine.journalId")
+                .onRef("journal.companyId", "=", "journalLine.companyId")
+            )
+            .selectAll("journalLine")
+            .where("journalLine.documentId", "=", invoiceId)
+            .where("journalLine.documentType", "=", "Invoice")
+            .where("journalLine.companyId", "=", companyId)
+            .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+            .execute()
+            .then((data) => ({ data, error: null }));
 
           if (!journalEntries) {
             throw new Error("No journal entries found for invoice");
@@ -2417,12 +2434,30 @@ const postSalesInvoice = defineServerFn({
             ];
             const rentalLegs =
               references.length > 0
-                ? await many(db, "journalLine", {
-                    companyId,
-                    documentType: ["Rental Agreement", "Contract"],
-                    journalId: journalIds,
-                    journalLineReference: references
-                  })
+                ? await db
+                    .selectFrom("journalLine")
+                    .innerJoin("journal", (join) =>
+                      join
+                        .onRef("journal.id", "=", "journalLine.journalId")
+                        .onRef(
+                          "journal.companyId",
+                          "=",
+                          "journalLine.companyId"
+                        )
+                    )
+                    .selectAll("journalLine")
+                    .where("journalLine.companyId", "=", companyId)
+                    .where("journalLine.documentType", "in", [
+                      "Rental Agreement",
+                      "Contract"
+                    ])
+                    .where("journalLine.journalId", "in", journalIds)
+                    .where("journalLine.journalLineReference", "in", references)
+                    .where("journal.status", "in", [
+                      ...DOCUMENT_JOURNAL_STATUSES
+                    ])
+                    .execute()
+                    .then((data) => ({ data, error: null }))
                 : { data: [] as JournalLineRecord[], error: null };
             if (rentalLegs.error)
               throw new Error("Failed to fetch rental journal lines");

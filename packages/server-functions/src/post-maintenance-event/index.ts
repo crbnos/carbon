@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import { single } from "@carbon/database/rows";
 import { credit, datetime, debit, indexBy } from "@carbon/utils";
 import { nanoid } from "nanoid";
@@ -82,16 +83,22 @@ const postMaintenanceEvent = defineServerFn({
             .execute(),
           trx
             .selectFrom("journalLine")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "journalLine.journalId")
+                .onRef("journal.companyId", "=", "journalLine.companyId")
+            )
             .select([
-              "id",
-              "documentId",
-              "documentLineReference",
-              "accountId",
-              "amount"
+              "journalLine.id",
+              "journalLine.documentId",
+              "journalLine.documentLineReference",
+              "journalLine.accountId",
+              "journalLine.amount"
             ])
-            .where("documentType", "=", "Maintenance Event")
-            .where("documentId", "in", dispatchIds)
-            .where("companyId", "=", companyId)
+            .where("journalLine.documentType", "=", "Maintenance Event")
+            .where("journalLine.documentId", "in", dispatchIds)
+            .where("journalLine.companyId", "=", companyId)
+            .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
             .execute(),
           trx
             .selectFrom("accountDefault")

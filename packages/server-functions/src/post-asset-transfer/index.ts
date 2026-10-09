@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase as DB, Kysely } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
@@ -1105,7 +1106,7 @@ async function attachJob(
         )
         .where("jl.documentId", "=", jobId)
         .where("jl.companyId", "=", companyId)
-        .where("j.status", "<>", "Draft")
+        .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
         .executeTakeFirst();
       balance = round(Number(wip?.balance ?? 0));
     }

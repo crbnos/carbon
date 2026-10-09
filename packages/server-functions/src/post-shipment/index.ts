@@ -8,6 +8,7 @@ import {
   type Json,
   journalReference
 } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   contains,
@@ -3090,11 +3091,26 @@ const postShipment = defineServerFn({
                     salesOrderId: shipmentHeader.sourceDocumentId
                   }),
                 () =>
-                  many(db, "journalLine", {
-                    documentId: shipmentId,
-                    documentType: "Sales Shipment",
-                    companyId
-                  }),
+                  db
+                    .selectFrom("journalLine")
+                    .innerJoin("journal", (join) =>
+                      join
+                        .onRef("journal.id", "=", "journalLine.journalId")
+                        .onRef(
+                          "journal.companyId",
+                          "=",
+                          "journalLine.companyId"
+                        )
+                    )
+                    .selectAll("journalLine")
+                    .where("journalLine.documentId", "=", shipmentId)
+                    .where("journalLine.documentType", "=", "Sales Shipment")
+                    .where("journalLine.companyId", "=", companyId)
+                    .where("journal.status", "in", [
+                      ...DOCUMENT_JOURNAL_STATUSES
+                    ])
+                    .execute()
+                    .then((data) => ({ data, error: null })),
                 () =>
                   single(
                     db,
@@ -4121,11 +4137,26 @@ const postShipment = defineServerFn({
                 originalCostRows
               ] = await inOrder([
                 () =>
-                  many(db, "journalLine", {
-                    documentId: shipmentId,
-                    documentType: "Return Order",
-                    companyId
-                  }),
+                  db
+                    .selectFrom("journalLine")
+                    .innerJoin("journal", (join) =>
+                      join
+                        .onRef("journal.id", "=", "journalLine.journalId")
+                        .onRef(
+                          "journal.companyId",
+                          "=",
+                          "journalLine.companyId"
+                        )
+                    )
+                    .selectAll("journalLine")
+                    .where("journalLine.documentId", "=", shipmentId)
+                    .where("journalLine.documentType", "=", "Return Order")
+                    .where("journalLine.companyId", "=", companyId)
+                    .where("journal.status", "in", [
+                      ...DOCUMENT_JOURNAL_STATUSES
+                    ])
+                    .execute()
+                    .then((data) => ({ data, error: null })),
                 () =>
                   many(db, "itemLedger", {
                     documentId: shipmentId,
@@ -4407,11 +4438,26 @@ const postShipment = defineServerFn({
                 originalCostRows
               ] = await inOrder([
                 () =>
-                  many(db, "journalLine", {
-                    documentId: shipmentId,
-                    documentType: "Return Order",
-                    companyId
-                  }),
+                  db
+                    .selectFrom("journalLine")
+                    .innerJoin("journal", (join) =>
+                      join
+                        .onRef("journal.id", "=", "journalLine.journalId")
+                        .onRef(
+                          "journal.companyId",
+                          "=",
+                          "journalLine.companyId"
+                        )
+                    )
+                    .selectAll("journalLine")
+                    .where("journalLine.documentId", "=", shipmentId)
+                    .where("journalLine.documentType", "=", "Return Order")
+                    .where("journalLine.companyId", "=", companyId)
+                    .where("journal.status", "in", [
+                      ...DOCUMENT_JOURNAL_STATUSES
+                    ])
+                    .execute()
+                    .then((data) => ({ data, error: null })),
                 () =>
                   many(db, "itemLedger", {
                     documentId: shipmentId,

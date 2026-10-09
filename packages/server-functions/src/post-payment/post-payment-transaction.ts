@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  DOCUMENT_JOURNAL_STATUSES,
+  OPEN_ITEM_JOURNAL_STATUSES
+} from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   type InvoiceDocumentIds,
@@ -160,10 +164,16 @@ export function postPaymentTransaction(
         }
         const original = await trx
           .selectFrom("journalLine")
-          .selectAll()
-          .where("journalId", "=", payment.journalId)
-          .where("companyId", "=", companyId)
-          .orderBy("id")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "journalLine.journalId")
+              .onRef("journal.companyId", "=", "journalLine.companyId")
+          )
+          .selectAll("journalLine")
+          .where("journalLine.journalId", "=", payment.journalId)
+          .where("journalLine.companyId", "=", companyId)
+          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+          .orderBy("journalLine.id")
           .execute();
         if (original.length) {
           const reversed = await trx
@@ -531,7 +541,7 @@ export function postPaymentTransaction(
                   ? "Sales Invoice"
                   : "Purchase Invoice"
           )
-          .where("journal.status", "=", "Posted")
+          .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
           .execute()
       : [];
     const carryingById = new Map<string, number>();
@@ -807,7 +817,7 @@ export function postPaymentTransaction(
               : [onAccountCreditDescription(isAR)]
           )
           .where("journal.sourceType", "=", "Payment")
-          .where("journal.status", "=", "Posted")
+          .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
           .execute()
       : [];
     const sourceControlById = new Map<string, string>();

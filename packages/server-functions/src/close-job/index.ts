@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import { inOrder, single } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { credit, datetime, debit, round } from "@carbon/utils";
@@ -74,6 +75,7 @@ const closeJob = defineServerFn({
         )
         .where("journalLine.documentId", "=", jobId)
         .where("journal.companyId", "=", companyId)
+        .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
         .executeTakeFirst();
 
       const remainingWip = Number(wipBalance?.balance ?? 0);

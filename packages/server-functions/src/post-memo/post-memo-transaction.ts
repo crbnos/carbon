@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  DOCUMENT_JOURNAL_STATUSES,
+  OPEN_ITEM_JOURNAL_STATUSES
+} from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   applyContractMovement,
@@ -144,7 +148,9 @@ export function postMemoTransaction(
           .executeTakeFirst();
         if (
           !originalJournal ||
-          originalJournal.status !== "Posted" ||
+          !(OPEN_ITEM_JOURNAL_STATUSES as readonly string[]).includes(
+            originalJournal.status
+          ) ||
           originalJournal.sourceType !==
             (memo.direction === "Credit" ? "Credit Memo" : "Debit Memo")
         )
@@ -153,10 +159,16 @@ export function postMemoTransaction(
           );
         const original = await trx
           .selectFrom("journalLine")
-          .selectAll()
-          .where("journalId", "=", memo.journalId)
-          .where("companyId", "=", companyId)
-          .orderBy("id")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "journalLine.journalId")
+              .onRef("journal.companyId", "=", "journalLine.companyId")
+          )
+          .selectAll("journalLine")
+          .where("journalLine.journalId", "=", memo.journalId)
+          .where("journalLine.companyId", "=", companyId)
+          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+          .orderBy("journalLine.id")
           .execute();
         if (!original.length) {
           throw new Error("Original memo journal has no lines to reverse");

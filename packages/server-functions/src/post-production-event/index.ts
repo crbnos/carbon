@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   inOrder,
   many,
@@ -204,10 +205,19 @@ const postProductionEvent = defineServerFn({
     const priorLines = event.postedToGL
       ? await db
           .selectFrom("journalLine")
-          .select(["accountId", (eb) => eb.fn.sum("amount").as("amount")])
-          .where("documentLineReference", "=", eventReference)
-          .where("companyId", "=", companyId)
-          .groupBy("accountId")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "journalLine.journalId")
+              .onRef("journal.companyId", "=", "journalLine.companyId")
+          )
+          .select([
+            "journalLine.accountId",
+            (eb) => eb.fn.sum("journalLine.amount").as("amount")
+          ])
+          .where("journalLine.documentLineReference", "=", eventReference)
+          .where("journalLine.companyId", "=", companyId)
+          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+          .groupBy("journalLine.accountId")
           .execute()
       : [];
     const reversalLines = priorLines.filter(
@@ -227,15 +237,21 @@ const postProductionEvent = defineServerFn({
             (
               await db
                 .selectFrom("journalLine")
+                .innerJoin("journal", (join) =>
+                  join
+                    .onRef("journal.id", "=", "journalLine.journalId")
+                    .onRef("journal.companyId", "=", "journalLine.companyId")
+                )
                 .select((eb) => eb.fn.countAll().as("count"))
-                .where("documentType", "=", "Production Event")
-                .where("documentId", "=", jobId)
+                .where("journalLine.documentType", "=", "Production Event")
+                .where("journalLine.documentId", "=", jobId)
                 .where(
-                  "documentLineReference",
+                  "journalLine.documentLineReference",
                   "=",
                   journalReference.to.job(jobId)
                 )
-                .where("companyId", "=", companyId)
+                .where("journalLine.companyId", "=", companyId)
+                .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
                 .executeTakeFirst()
             )?.count ?? 0
           ) > 0
