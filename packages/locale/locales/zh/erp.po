@@ -123,6 +123,10 @@ msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改�
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
 
+#. placeholder {0}: own.checkCount
+msgid "{0} checks"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
 msgstr "{0} 已消耗"
@@ -407,6 +411,9 @@ msgstr "{count, plural, one {已发布 # 生产批次} other {已发布 # 生产
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {已下达 # 工单} other {已下达 # 工单}}"
 
+msgid "{count} linked elements changed. Review the links."
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count} / {total} 件"
 
@@ -516,6 +523,9 @@ msgstr "{partCount, plural, one {# 零件} other {# 零件}}"
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
+msgid "{ref} not found"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -606,9 +616,18 @@ msgstr "+{0}h"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
 
+msgid "= equal to"
+msgstr ""
+
 #. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
 msgid "≈ {0}"
 msgstr "≈ {0}"
+
+msgid "≤ at most"
+msgstr ""
+
+msgid "≥ at least"
+msgstr ""
 
 msgid "0 operations"
 msgstr "0个工序"
@@ -630,6 +649,9 @@ msgstr "1 个可分组的工序不在生产批次中 — 它单独运行，直�
 
 msgid "1 can't be scheduled"
 msgstr "1无法排程"
+
+msgid "1 check"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 个冲突"
@@ -946,6 +968,9 @@ msgstr "任务的状态已变更"
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "某行结算金额超过其发票的未结余额"
+
+msgid "A linked element changed. Review the link."
+msgstr ""
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
@@ -1649,6 +1674,9 @@ msgstr "实际结束"
 msgid "Actual Failure Mode"
 msgstr "实际故障模式"
 
+msgid "Actual parameter"
+msgstr ""
+
 msgid "Actual Start"
 msgstr "实际开始"
 
@@ -1837,6 +1865,9 @@ msgstr "添加行"
 
 msgid "Add lines from document"
 msgstr "从文档添加行"
+
+msgid "Add link"
+msgstr ""
 
 msgid "Add manually"
 msgstr "手动添加"
@@ -2212,6 +2243,9 @@ msgstr "所有工作中心"
 msgid "Allocated"
 msgstr "已分配"
 
+msgid "Allocation"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
@@ -2405,6 +2439,9 @@ msgstr "连接到 Onshape 时出现意外错误。保存集成设置以重试。
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
+
+msgid "Analysis"
+msgstr ""
 
 msgid "Analytics"
 msgstr "分析"
@@ -3780,6 +3817,9 @@ msgstr "阻止，允许覆盖"
 msgid "Blocked"
 msgstr "已阻止"
 
+msgid "Blocked by"
+msgstr ""
+
 #. placeholder {0}: blockers.join(", ")
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -3787,6 +3827,9 @@ msgstr "被 {0} 阻止"
 
 msgid "Blocking sync"
 msgstr "阻止同步"
+
+msgid "Blocks"
+msgstr ""
 
 msgid "Blocks Machine"
 msgstr "阻止机器"
@@ -4474,6 +4517,9 @@ msgstr "检查您的电子邮件"
 msgid "Checked for each unit once units are added"
 msgstr "添加件数后，检查每个件"
 
+msgid "Checked value"
+msgstr ""
+
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
 
@@ -4503,6 +4549,9 @@ msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
 msgid "Choose a company"
 msgstr "选择公司"
+
+msgid "Choose a field"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
@@ -4902,6 +4951,9 @@ msgstr "计算于"
 msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
 msgstr "根据保存的条款和费率计算。激活对租赁进行分类并存储结果。"
 
+msgid "Computed value"
+msgstr ""
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "精简损益表，含利润率和关键小计"
 
@@ -5183,6 +5235,9 @@ msgstr "内容"
 
 msgid "Context"
 msgstr "上下文"
+
+msgid "Contingency"
+msgstr ""
 
 msgid "Continue"
 msgstr "继续"
@@ -6941,6 +6996,9 @@ msgstr "删除行"
 msgid "Delete Line"
 msgstr "删除行"
 
+msgid "Delete link"
+msgstr ""
+
 msgid "Delete Location"
 msgstr "删除位置"
 
@@ -7225,6 +7283,9 @@ msgstr "演示数据已应用"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "演示数据已应用到此公司。保留它，或还原以恢复之前的确切内容。"
 
+msgid "Demonstration"
+msgstr ""
+
 msgid "department"
 msgstr "部门"
 
@@ -7297,6 +7358,12 @@ msgstr "折旧开始日期"
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "从其组件的最短保质期推导该物料的保质期，忽略上面的天数字段。"
 
+msgid "Derived from"
+msgstr ""
+
+msgid "Derives"
+msgstr ""
+
 msgid "Description"
 msgstr "描述"
 
@@ -7311,6 +7378,9 @@ msgstr "变更说明"
 
 msgid "Description of Issue"
 msgstr "问题描述"
+
+msgid "Design Constraint"
+msgstr ""
 
 msgid "Detail"
 msgstr "详情"
@@ -8637,6 +8707,9 @@ msgstr "条目"
 msgid "Entry Type"
 msgstr "条目类型"
 
+msgid "Environmental"
+msgstr ""
+
 msgid "EORI"
 msgstr "EORI"
 
@@ -9094,8 +9167,14 @@ msgstr "无法添加行 — 已添加 {addedCount} / {0} 行"
 msgid "Failed to add lines"
 msgstr "添加行失败"
 
+msgid "Failed to add the link"
+msgstr ""
+
 msgid "Failed to apply pricing rules"
 msgstr "无法应用定价规则"
+
+msgid "Failed to change the link"
+msgstr ""
 
 msgid "Failed to convert image"
 msgstr "图像转换失败"
@@ -9494,6 +9573,12 @@ msgstr "传真"
 msgid "Fax Number"
 msgstr "传真号码"
 
+msgid "Fed by"
+msgstr ""
+
+msgid "Feeds"
+msgstr ""
+
 msgid "Fees"
 msgstr "费用"
 
@@ -9733,6 +9818,9 @@ msgstr "租赁设备"
 msgid "Folder"
 msgstr ""
 
+msgid "Follows"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "对于 <0/>"
 
@@ -9763,6 +9851,9 @@ msgstr "表单"
 
 msgid "Format"
 msgstr "格式"
+
+msgid "Formula"
+msgstr ""
 
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
@@ -9846,6 +9937,9 @@ msgid "Fully Depreciated"
 msgstr "已提足折旧"
 
 msgid "Function"
+msgstr ""
+
+msgid "Functional"
 msgstr ""
 
 msgid "FX G/L"
@@ -10643,6 +10737,12 @@ msgstr "实施中心"
 msgid "Implementation Lead"
 msgstr "实施主管"
 
+msgid "Implemented by"
+msgstr ""
+
+msgid "Implements"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
@@ -10787,6 +10887,9 @@ msgstr "不完整"
 
 msgid "Incomplete backup — not restorable"
 msgstr "备份不完整 — 无法恢复"
+
+msgid "Inconclusive"
+msgstr ""
 
 msgid "Incoterm"
 msgstr "贸易术语"
@@ -10974,6 +11077,9 @@ msgstr "利息收入 – 租赁（默认）"
 
 msgid "Interest income or expense from banking activities"
 msgstr "银行活动产生的利息收益或费用"
+
+msgid "Interface"
+msgstr ""
 
 msgid "Internal"
 msgstr "内部"
@@ -11637,6 +11743,9 @@ msgstr "人工单位"
 msgid "Language"
 msgstr "语言"
 
+msgid "Largest child"
+msgstr ""
+
 msgid "Last 6 Months"
 msgstr "最近6个月"
 
@@ -11675,6 +11784,9 @@ msgstr "姓氏"
 
 msgid "Last Quarter"
 msgstr "上一季度"
+
+msgid "Last run"
+msgstr ""
 
 msgid "Last Run"
 msgstr "最后运行"
@@ -11926,6 +12038,9 @@ msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe �
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
 
+msgid "Link type"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -12128,6 +12243,9 @@ msgstr "对收到的货物进行基于批次的检验（根据抽样方案）；
 
 msgid "Low"
 msgstr "低"
+
+msgid "Lower value"
+msgstr ""
 
 msgid "Lowercase item IDs are allowed"
 msgstr "允许使用小写物料编号"
@@ -12381,6 +12499,9 @@ msgstr "标记浅色模式"
 
 msgid "Mark not done"
 msgstr "标记为未完成"
+
+msgid "Mark reviewed"
+msgstr ""
 
 msgid "Mark scope as agreed"
 msgstr "将范围标记为已同意"
@@ -13596,6 +13717,9 @@ msgstr "未找到校准记录"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "没有产能预留可显示。计划一项任务以查看工作中心负荷。"
 
+msgid "No category"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "未记录任何更改"
 
@@ -13700,6 +13824,9 @@ msgstr "没有到期日"
 
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
+
+msgid "No element can take this link"
+msgstr ""
 
 msgid "No elements"
 msgstr ""
@@ -13863,6 +13990,9 @@ msgstr "没有匹配的操作"
 msgid "No materials"
 msgstr "无物料"
 
+msgid "No method"
+msgstr ""
+
 msgid "No milestone"
 msgstr ""
 
@@ -13945,6 +14075,9 @@ msgstr "没有安排加班"
 msgid "No owner"
 msgstr ""
 
+msgid "No parameter"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以刷新归因。"
 
@@ -13994,6 +14127,9 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 
 msgid "No priority"
+msgstr ""
+
+msgid "No procedure"
 msgstr ""
 
 msgid "No process selected"
@@ -14134,6 +14270,9 @@ msgstr "还没有供应商"
 msgid "No sync operations yet"
 msgstr "还没有同步操作"
 
+msgid "No target"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
 
@@ -14148,6 +14287,9 @@ msgstr "没有工具"
 
 msgid "No tools for this step"
 msgstr "此步骤没有工具"
+
+msgid "No trace links yet."
+msgstr ""
 
 msgid "No trainings assigned"
 msgstr "未分配培训"
@@ -14170,6 +14312,9 @@ msgstr "没有未映射的值与提供商选项名称匹配"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "此位置此工序上没有未开始、未批处理的操作。"
 
+msgid "No value"
+msgstr ""
+
 msgid "No value needed"
 msgstr "不需要值"
 
@@ -14181,6 +14326,9 @@ msgstr "没有变量匹配{query}"
 
 msgid "No variables available"
 msgstr "没有可用的变量"
+
+msgid "No verdict"
+msgstr ""
 
 msgid "No versions available"
 msgstr "没有可用的版本"
@@ -14277,6 +14425,9 @@ msgstr "不需要"
 
 msgid "Not restorable"
 msgstr "无法恢复"
+
+msgid "Not Run"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "未计划"
@@ -15243,6 +15394,9 @@ msgstr "零件成本"
 msgid "Part Details"
 msgstr "零件详情"
 
+msgid "Part field"
+msgstr ""
+
 msgid "Part ID"
 msgstr "零件ID"
 
@@ -15449,6 +15603,9 @@ msgstr "百分比"
 
 msgid "Percentage of Lot"
 msgstr "批次百分比"
+
+msgid "Performance"
+msgstr ""
 
 msgid "Period"
 msgstr "期间"
@@ -15883,6 +16040,9 @@ msgstr "潜在数据丢失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当有效期为固定期间时，为新物料预填充。"
+
+msgid "Precedes"
+msgstr ""
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "谓词驱动的规则在销售行触发。可以使用错误阻止或发出警告并需要确认继续。"
@@ -16772,6 +16932,9 @@ msgstr "Ramp 未返回授权代码"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp 拒绝了授权"
 
+msgid "Range"
+msgstr ""
+
 msgid "Rate"
 msgstr "汇率"
 
@@ -17201,6 +17364,9 @@ msgstr "拒绝日期"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "重新标记中心并框架化交易。"
+
+msgid "Relates to"
+msgstr ""
 
 msgid "Relative timeline · dates set in Setup & Controls"
 msgstr "相对时间表·在设置和控制中设置的日期"
@@ -18457,6 +18623,12 @@ msgstr "抽样 — 特性{featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "抽样正常检验"
+
+msgid "Satisfied by"
+msgstr ""
+
+msgid "Satisfies"
+msgstr ""
 
 msgid "Saturday"
 msgstr "星期六"
@@ -19736,6 +19908,9 @@ msgstr "幻灯片 {0}"
 msgid "Slides"
 msgstr "幻灯片"
 
+msgid "Smallest child"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "最小分批数量。留空表示无。"
 
@@ -19750,6 +19925,9 @@ msgstr "已售出"
 
 msgid "Solutions Engineer"
 msgstr "解决方案工程师"
+
+msgid "Some inputs have another unit and are left out"
+msgstr ""
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "某些行的开票金额比总额多或少。确认前修复金额。"
@@ -20364,6 +20542,9 @@ msgstr "建议通知"
 msgid "Suggestions"
 msgstr "建议"
 
+msgid "Sum of children"
+msgstr ""
+
 msgid "Sunday"
 msgstr "星期日"
 
@@ -20572,6 +20753,9 @@ msgstr "表面"
 msgid "Surplus"
 msgstr "过剩"
 
+msgid "Suspect link"
+msgstr ""
+
 msgid "Suspected Failure Mode"
 msgstr "疑似故障模式"
 
@@ -20713,6 +20897,9 @@ msgstr "定位一个或多个物料。"
 
 msgid "Target quantity"
 msgstr "目标数量"
+
+msgid "Target value"
+msgstr ""
 
 msgid "Target Version"
 msgstr "目标版本"
@@ -20866,6 +21053,9 @@ msgstr "服务条款"
 
 msgid "Test"
 msgstr "测试"
+
+msgid "Test case"
+msgstr ""
 
 msgid "Test Case"
 msgstr ""
@@ -21219,6 +21409,9 @@ msgstr "以下任务尚未完成："
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "您的原材料所采用的形式和形状"
+
+msgid "The formula writes this link"
+msgstr ""
 
 msgid "The fraction of each lot to inspect; the actual count is computed from lot size at the time of inspection."
 msgstr "每个批次的检验比例；实际数量在检验时从批量计算得出。"
@@ -22411,6 +22604,9 @@ msgstr "标题"
 msgid "Title passes to the customer when the term ends."
 msgstr "期限结束时，所有权转移给客户。"
 
+msgid "to"
+msgstr ""
+
 msgid "To"
 msgstr "至"
 
@@ -22624,6 +22820,9 @@ msgstr "总计："
 
 msgid "Totals"
 msgstr "总计"
+
+msgid "Trace links"
+msgstr ""
 
 msgid "Traceability"
 msgstr "可追溯性"
@@ -22940,6 +23139,9 @@ msgstr "单位"
 msgid "Unit actions"
 msgstr "件操作"
 
+msgid "Unit cost"
+msgstr ""
+
 msgid "Unit Cost"
 msgstr "单位成本"
 
@@ -23111,6 +23313,9 @@ msgstr "未追踪"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
+
+msgid "Unverified"
+msgstr ""
 
 msgid "UoM"
 msgstr "计量单位"
@@ -23286,6 +23491,9 @@ msgstr "上传中…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "点击转换后，将使用以下内部零件编号创建零件："
+
+msgid "Upper value"
+msgstr ""
 
 msgid "Urgent"
 msgstr ""
@@ -23500,8 +23708,17 @@ msgstr "验证错误"
 msgid "Verification failed"
 msgstr "验证失败"
 
+msgid "Verification method"
+msgstr ""
+
 msgid "Verified"
 msgstr "已验证"
+
+msgid "Verified by"
+msgstr ""
+
+msgid "Verifies"
+msgstr ""
 
 msgid "Verify"
 msgstr "验证"
@@ -23517,6 +23734,10 @@ msgstr "验证您的电子邮件"
 
 msgid "Version"
 msgstr "版本"
+
+#. placeholder {0}: doc.version
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -24386,6 +24607,10 @@ msgstr "窗口："
 
 msgid "WIP"
 msgstr "在制品"
+
+#. placeholder {0}: percentFormatter.format(contingency)
+msgid "with {0} contingency"
+msgstr ""
 
 msgid "With children"
 msgstr ""

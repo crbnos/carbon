@@ -54,7 +54,8 @@ import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type {
   ProjectElementPriority,
-  ProjectElementType
+  ProjectElementType,
+  RequirementStatus
 } from "../../projects.models";
 import { buildElementTree, projectElementTypes } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
@@ -71,6 +72,7 @@ import {
   usePriorityLabels
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
+import { SuspectBadge, VerificationStatus } from "./VerificationStatus";
 
 export type ElementLayoutProps = {
   projectId: string;
@@ -88,6 +90,10 @@ export type ElementLayoutProps = {
 };
 
 type ElementListProps = ElementLayoutProps & {
+  /** By Requirement id, the rolled-up verification status. */
+  requirementStatus?: Record<string, RequirementStatus>;
+  /** Elements with a suspect trace link at either end. */
+  suspectIds?: Set<string>;
   newType: ProjectElementType;
   onNewTypeChange: (type: ProjectElementType) => void;
   quickAddRef: RefObject<HTMLInputElement>;
@@ -111,7 +117,9 @@ export function ElementList({
   newType,
   onNewTypeChange,
   quickAddRef,
-  onCreateFirst
+  onCreateFirst,
+  requirementStatus,
+  suspectIds
 }: ElementListProps) {
   const { t } = useLingui();
   const { elementId: openElementId } = useParams();
@@ -261,6 +269,16 @@ export function ElementList({
                   >
                     <span className="truncate font-medium">{element.name}</span>
                   </Link>
+                  {suspectIds?.has(element.id) && <SuspectBadge />}
+                  {element.type === "Requirement" &&
+                    requirementStatus?.[element.id] && (
+                      <span className="shrink-0">
+                        <VerificationStatus
+                          status={requirementStatus[element.id]}
+                          iconOnly
+                        />
+                      </span>
+                    )}
                   <ElementProperties
                     projectId={projectId}
                     element={element}

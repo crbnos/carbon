@@ -63,12 +63,14 @@ import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import { ElementChildren } from "./ElementChildren";
 import { ElementComments } from "./ElementComments";
 import { ElementDescription } from "./ElementDescription";
+import { ElementLinks } from "./ElementLinks";
 import { ElementPlanLines } from "./ElementPlanLines";
 import { ElementSidebar } from "./ElementSidebar";
 import {
   ElementTimeAndMaterials,
   TimeAndMaterialsActions
 } from "./ElementTimeAndMaterials";
+import { ElementTypeBlock, hasTypeBlock } from "./ElementTypeBlock";
 import { IssueMaterialModal } from "./IssueMaterialModal";
 import { LogTimeModal } from "./LogTimeModal";
 
@@ -97,6 +99,10 @@ export function ElementView({
   defaultLaborCategoryId,
   ledger,
   openTime,
+  links,
+  verification,
+  requirementStatus,
+  qualityDocuments,
   states,
   labels,
   milestones,
@@ -170,6 +176,11 @@ export function ElementView({
         .sort((a, b) => a.sortOrder - b.sortOrder),
     [elements, element.id]
   );
+
+  const elementLinkCount = links.filter(
+    (link) =>
+      link.fromElementId === element.id || link.toElementId === element.id
+  ).length;
 
   const query = searchParams.toString();
   const listPath = `${path.to.projectElements(projectId)}${query ? `?${query}` : ""}`;
@@ -272,6 +283,37 @@ export function ElementView({
             {chargeActions}
           </div>
 
+          {hasTypeBlock(element.type) && (
+            <Section
+              title={
+                element.type === "Requirement"
+                  ? t`Requirement`
+                  : element.type === "Test Case"
+                    ? t`Test case`
+                    : t`Parameter`
+              }
+            >
+              <ElementTypeBlock
+                key={element.id}
+                projectId={projectId}
+                element={element}
+                elements={elements}
+                verification={verification}
+                requirementStatus={requirementStatus}
+                qualityDocuments={qualityDocuments}
+                isDisabled={!canUpdate}
+              />
+            </Section>
+          )}
+          <Section title={t`Trace links`} count={elementLinkCount}>
+            <ElementLinks
+              projectId={projectId}
+              element={element}
+              elements={elements}
+              links={links}
+              isDisabled={!canUpdate}
+            />
+          </Section>
           <Section
             title={t`Children`}
             open={childrenOpen}

@@ -12,24 +12,32 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
+  ElementVerification,
+  ItemValues,
   logTimeValidator,
   projectElementValidator,
   projectIssueValidator,
-  projectValidator
+  projectValidator,
+  RequirementStatus,
+  VerificationElement
 } from "./projects.models";
 import {
   chargeableByDefault,
+  computeVerification,
   defaultProjectStates,
-  parseParameterFormula
+  parseParameterFormula,
+  rollUpRequirementStatus
 } from "./projects.models";
 import {
   getLaborCategoriesList,
   getProjectCostSummary,
   getProjectElement,
   getProjectElementComments,
+  getProjectElementLinks,
   getProjectElementPlanLines,
   getProjectElements
 } from "./projects.service";
+import type { ProjectElementLink } from "./types";
 
 /**
  * Creates a project with its six default states, in one transaction. A new
@@ -471,6 +479,78 @@ export async function insertProjectElement(
   });
 }
 
+export type ProjectVerification = {
+  links: ProjectElementLink[];
+  /** By element id: a Parameter's value or a Requirement's own status. */
+  verification: Record<string, ElementVerification>;
+  /** By Requirement id: the status rolled up over its child Requirements. */
+  requirementStatus: Record<string, RequirementStatus>;
+};
+
+/**
+ * Loads a project's trace links and computes the verification of its
+ * Parameters and Requirements. Pass the unfiltered elements when the caller
+ * already has them; a filtered list would leave out the inputs of a value.
+ * The linked parts give their unit cost (`itemCost`).
+ */
+export async function getProjectVerification(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    projectId: string;
+    elements?: VerificationElement[];
+  }
+): Promise<{ data: ProjectVerification | null; error: unknown }> {
+  const [links, loaded] = await Promise.all([
+    getProjectElementLinks(client, args.projectId, args.companyId),
+    args.elements
+      ? Promise.resolve({ data: args.elements, error: null })
+      : getProjectElements(client, args.projectId, args.companyId)
+  ]);
+  if (links.error) return { data: null, error: links.error };
+  if (loaded.error) return { data: null, error: loaded.error };
+  const elements = (loaded.data ?? []) as VerificationElement[];
+
+  const itemIds = [
+    ...new Set(
+      elements
+        .map((element) => element.itemId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const itemValues = new Map<string, ItemValues>();
+  if (itemIds.length > 0) {
+    const costs = await client
+      .from("itemCost")
+      .select("itemId, unitCost")
+      .in("itemId", itemIds)
+      .eq("companyId", args.companyId);
+    if (costs.error) return { data: null, error: costs.error };
+    for (const cost of costs.data ?? []) {
+      itemValues.set(cost.itemId, {
+        unitCost: cost.unitCost === null ? null : Number(cost.unitCost),
+        customFields: null
+      });
+    }
+  }
+
+  const verification = computeVerification(
+    elements,
+    links.data ?? [],
+    itemValues
+  );
+  return {
+    data: {
+      links: links.data ?? [],
+      verification: Object.fromEntries(verification),
+      requirementStatus: Object.fromEntries(
+        rollUpRequirementStatus(elements, verification)
+      )
+    },
+    error: null
+  };
+}
+
 /**
  * Saves a Parameter's formula, in one transaction. It refuses a parse error,
  * a ref that is not a Parameter of the project, and a cycle of `feeds` links.
@@ -485,6 +565,8 @@ export async function saveParameterFormula(
     userId: string;
     elementId: string;
     formula: string;
+    /** When set, the element must belong to this project. */
+    projectId?: string;
   }
 ): Promise<{ error: string; position?: number } | { refs: string[] }> {
   const formula = args.formula.trim();
@@ -501,7 +583,9 @@ export async function saveParameterFormula(
       .where("companyId", "=", args.companyId)
       .forUpdate()
       .executeTakeFirst();
-    if (!element) return { error: "The element does not exist" };
+    if (!element || (args.projectId && element.projectId !== args.projectId)) {
+      return { error: "The element does not exist" };
+    }
     if (element.type !== "Parameter") {
       return { error: "Only a Parameter has a formula" };
     }
@@ -794,6 +878,32 @@ export async function getProjectElementPage(
     return { data: null, error: null };
   }
 
+  const [verification, qualityDocuments] = await Promise.all([
+    getProjectVerification(client, {
+      companyId: args.companyId,
+      projectId: args.projectId,
+      elements: (elements.data ?? []) as VerificationElement[]
+    }),
+    // A Test Case names the quality procedure it runs.
+    element.data.type === "Test Case"
+      ? client
+          .from("qualityDocument")
+          .select("id, name, version")
+          .eq("companyId", args.companyId)
+          .order("name", { ascending: true })
+          .order("version", { ascending: false })
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (verification.error || !verification.data) {
+    return {
+      data: null,
+      error: (verification.error ?? new Error("No verification")) as Error
+    };
+  }
+  if (qualityDocuments.error) {
+    return { data: null, error: qualityDocuments.error };
+  }
+
   // A final asset's asset under construction (or in service), for its status.
   const capitalAsset = element.data.fixedAssetId
     ? await client
@@ -816,7 +926,9 @@ export async function getProjectElementPage(
       laborCategories: laborCategories.data ?? [],
       defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
       ledger: timeAndMaterials.ledger,
-      openTime: timeAndMaterials.openTime
+      openTime: timeAndMaterials.openTime,
+      ...verification.data,
+      qualityDocuments: qualityDocuments.data ?? []
     },
     error: null
   };

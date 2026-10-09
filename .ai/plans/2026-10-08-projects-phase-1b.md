@@ -51,7 +51,7 @@
 - [x] Task 13: Add the capital project fields to the project and element UI
 - [x] Task 14: Add the trace link and suspect service functions
 - [x] Task 15: Add the Requirement, Test Case and Parameter fields and the verification read
-- [ ] Task 16: Add the trace link, verification and parameter sections to the element page
+- [x] Task 16: Add the trace link, verification and parameter sections to the element page
 - [ ] Task 17: Build the Tree layout
 - [ ] Task 18: Build the Timeline layout
 - [ ] Task 19: Build the Reader layout
@@ -1499,3 +1499,8 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 15: `budgetValue` uses the direct parent when it is a Parameter. `formatAllocation` takes a `locale` (default `en`) and uses `formatPercent`, so it returns `"≤ 600 kg (30% of 2,000 kg)"`. The plan's `"30.0 %"` needs inline fraction digits, which `no-inline-fraction-digits` forbids.
 - Task 15: `updateProjectElementField` checks the type of every type-specific field (`typeSpecificElementFields`). A Range target with no upper value starts the upper value at the target. The Formula source is refused until a formula is saved (the DB CHECK needs one), and the Item source fills `parameterItemField` with `unitCost` when it is empty. A Parameter that leaves Formula keeps its formula and its `feeds` links, so it can go back. Deleting the links there made the function destructive for the MCP generator, and only the Formula source reads them.
 - Task 15: `saveParameterFormula` locks the element row, refuses a ref to the Parameter itself, and walks the project's `feeds` links with the element's incoming links replaced by the new refs.
+- Task 16: `getProjectVerification` (`projects.server.ts`) loads the links and the linked parts' unit costs, then runs `computeVerification` and `rollUpRequirementStatus`. The Elements loader passes its own elements only when no filter is set; with a filter it reads the unfiltered list, because a filter can hide the inputs of a value. The element page (peek and full page) reuses the elements it already loads. `PROJECT_ELEMENT_LIST_COLUMNS` now carries the Requirement, Test Case and Parameter columns.
+- Task 16: item values carry only `unitCost` for now (`customFields` null). The custom fields of a part live on the per-type tables (`part`, `material`, `tool`), so the **Part field** select offers Unit cost only. Task 27 adds the custom fields.
+- Task 16: the List row shows the suspect triangle on an element with a suspect link at EITHER end. The changed element is the `to` end, and the element that must re-check is the `from` end, so both need the cue. The Requirement status shows as an icon-only `Status` in the row.
+- Task 16: the formula field checks the text as it is typed with `parseParameterFormula` and saves on blur or Enter. Picking Formula before a formula exists only opens the field; the formula save sets the source. `saveParameterFormula` takes an optional `projectId`, and the links route passes it, so a formula cannot target an element of another project.
+- Task 16: the Test Case procedure combobox reads `qualityDocument` (name and version) only on a Test Case page.

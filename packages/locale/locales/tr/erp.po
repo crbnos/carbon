@@ -123,6 +123,10 @@ msgstr "{0} hâlâ {where} tarafından kullanıldığı için silinemez. Önce b
 msgid "{0} cells with deltas"
 msgstr "{0} deltaları olan hücreler"
 
+#. placeholder {0}: own.checkCount
+msgid "{0} checks"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
 msgstr "{0} tüketildi"
@@ -407,6 +411,9 @@ msgstr "{count, plural, one {# parti serbest bırakıldı} other {# partiler ser
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# iş emri serbest bırakıldı} other {# iş emirleri serbest bırakıldı}}"
 
+msgid "{count} linked elements changed. Review the links."
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count}/{total} adet"
 
@@ -516,6 +523,9 @@ msgstr "{partCount, plural, one {# parça} other {# parça}}"
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
+msgid "{ref} not found"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -606,9 +616,18 @@ msgstr "+{0}s"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
 
+msgid "= equal to"
+msgstr ""
+
 #. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
 msgid "≈ {0}"
 msgstr "≈ {0}"
+
+msgid "≤ at most"
+msgstr ""
+
+msgid "≥ at least"
+msgstr ""
 
 msgid "0 operations"
 msgstr "0 operasyon"
@@ -630,6 +649,9 @@ msgstr "1 partiye alınabilir operasyon partide değil — partiye alınıncaya 
 
 msgid "1 can't be scheduled"
 msgstr "1 planlanmıyor"
+
+msgid "1 check"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 çakışma"
@@ -946,6 +968,9 @@ msgstr "Bir işin durumu değiştirildi"
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "Bir satır, faturasının açık bakiyesinden fazlasını kapatıyor"
+
+msgid "A linked element changed. Review the link."
+msgstr ""
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
@@ -1649,6 +1674,9 @@ msgstr "Gerçek Bitiş"
 msgid "Actual Failure Mode"
 msgstr "Gerçekleşen Arıza Modu"
 
+msgid "Actual parameter"
+msgstr ""
+
 msgid "Actual Start"
 msgstr "Gerçek Başlangıç"
 
@@ -1837,6 +1865,9 @@ msgstr "Satır Ekle"
 
 msgid "Add lines from document"
 msgstr "Belgeden satır ekle"
+
+msgid "Add link"
+msgstr ""
 
 msgid "Add manually"
 msgstr "Manuel olarak ekle"
@@ -2212,6 +2243,9 @@ msgstr "Tüm İş Merkezleri"
 msgid "Allocated"
 msgstr "Tahsis edildi"
 
+msgid "Allocation"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
 
@@ -2405,6 +2439,9 @@ msgstr "Onshape'e bağlanırken beklenmedik bir hata oluştu. Tekrar denemek iç
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape'e bağlanırken beklenmeyen bir hata oluştu. Yeniden bağlanmayı deneyin."
+
+msgid "Analysis"
+msgstr ""
 
 msgid "Analytics"
 msgstr "Analitik"
@@ -3780,6 +3817,9 @@ msgstr "Engelle, geçersiz kılmaya izin ver"
 msgid "Blocked"
 msgstr "Engellendi"
 
+msgid "Blocked by"
+msgstr ""
+
 #. placeholder {0}: blockers.join(", ")
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -3787,6 +3827,9 @@ msgstr "Bloklandı: {0}"
 
 msgid "Blocking sync"
 msgstr "Engelleme senkronizasyonu"
+
+msgid "Blocks"
+msgstr ""
 
 msgid "Blocks Machine"
 msgstr "Makineyi Engeller"
@@ -4474,6 +4517,9 @@ msgstr "E-postanızı kontrol edin"
 msgid "Checked for each unit once units are added"
 msgstr "Birimler eklendikten sonra her adet için kontrol edilir"
 
+msgid "Checked value"
+msgstr ""
+
 msgid "Checking Stripe for this customer…"
 msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 
@@ -4503,6 +4549,9 @@ msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebili
 
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
+
+msgid "Choose a field"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
@@ -4902,6 +4951,9 @@ msgstr "Hesaplama Tarihi"
 msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
 msgstr "Kaydedilen şartlar ve oranlardan hesaplanır. Aktivasyon kira sözleşmesini sınıflandırır ve sonucu depolar."
 
+msgid "Computed value"
+msgstr ""
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Kenar boşluklarına ve anahtar ara toplamlarına sahip Sıkıştırılmış Kâr ve Zarar"
 
@@ -5183,6 +5235,9 @@ msgstr "İçerik"
 
 msgid "Context"
 msgstr "Bağlam"
+
+msgid "Contingency"
+msgstr ""
 
 msgid "Continue"
 msgstr "Devam Et"
@@ -6941,6 +6996,9 @@ msgstr "Satırı Sil"
 msgid "Delete Line"
 msgstr "Satırı Sil"
 
+msgid "Delete link"
+msgstr ""
+
 msgid "Delete Location"
 msgstr "Konumu Sil"
 
@@ -7225,6 +7283,9 @@ msgstr "Demo verisi uygulandı"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Demo verisi bu şirkete uygulandı. Tutun veya önceki duruma geri döndürmek için geri al."
 
+msgid "Demonstration"
+msgstr ""
+
 msgid "department"
 msgstr "departman"
 
@@ -7297,6 +7358,12 @@ msgstr "Amortisman Başlangıç Tarihi"
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Bu öğenin raf ömrünü, bileşenlerinin en kısa raf ömründen türet, yukarıdaki Günler alanını yok say."
 
+msgid "Derived from"
+msgstr ""
+
+msgid "Derives"
+msgstr ""
+
 msgid "Description"
 msgstr "Açıklama"
 
@@ -7311,6 +7378,9 @@ msgstr "Değişiklimin Açıklaması"
 
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
+
+msgid "Design Constraint"
+msgstr ""
 
 msgid "Detail"
 msgstr "Detay"
@@ -8637,6 +8707,9 @@ msgstr "Giriş"
 msgid "Entry Type"
 msgstr "Giriş Türü"
 
+msgid "Environmental"
+msgstr ""
+
 msgid "EORI"
 msgstr "EORI"
 
@@ -9094,8 +9167,14 @@ msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"
 msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
 
+msgid "Failed to add the link"
+msgstr ""
+
 msgid "Failed to apply pricing rules"
 msgstr "Fiyatlandırma kuralları uygulanamadı"
+
+msgid "Failed to change the link"
+msgstr ""
 
 msgid "Failed to convert image"
 msgstr "Resim dönüştürme başarısız oldu"
@@ -9494,6 +9573,12 @@ msgstr "Faks"
 msgid "Fax Number"
 msgstr "Faks Numarası"
 
+msgid "Fed by"
+msgstr ""
+
+msgid "Feeds"
+msgstr ""
+
 msgid "Fees"
 msgstr "Ücretler"
 
@@ -9733,6 +9818,9 @@ msgstr "Filo Adetleri"
 msgid "Folder"
 msgstr ""
 
+msgid "Follows"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "İçin <0/>"
 
@@ -9763,6 +9851,9 @@ msgstr "Form"
 
 msgid "Format"
 msgstr "Biçim"
+
+msgid "Formula"
+msgstr ""
 
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
@@ -9846,6 +9937,9 @@ msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
 
 msgid "Function"
+msgstr ""
+
+msgid "Functional"
 msgstr ""
 
 msgid "FX G/L"
@@ -10643,6 +10737,12 @@ msgstr "Uygulama Merkezi"
 msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"
 
+msgid "Implemented by"
+msgstr ""
+
+msgid "Implements"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
@@ -10787,6 +10887,9 @@ msgstr "Eksik"
 
 msgid "Incomplete backup — not restorable"
 msgstr "Eksik yedek — geri yüklenemez"
+
+msgid "Inconclusive"
+msgstr ""
 
 msgid "Incoterm"
 msgstr "Incoterm"
@@ -10974,6 +11077,9 @@ msgstr "Faiz Geliri – Finansal Kiralama (varsayılan)"
 
 msgid "Interest income or expense from banking activities"
 msgstr "Bankacılık faaliyetlerinden faiz geliri veya gideri"
+
+msgid "Interface"
+msgstr ""
 
 msgid "Internal"
 msgstr "Dahili"
@@ -11637,6 +11743,9 @@ msgstr "İşçilik Birimi"
 msgid "Language"
 msgstr "Dil"
 
+msgid "Largest child"
+msgstr ""
+
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
 
@@ -11675,6 +11784,9 @@ msgstr "Soyadı"
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
+
+msgid "Last run"
+msgstr ""
 
 msgid "Last Run"
 msgstr "Son Çalıştırma"
@@ -11926,6 +12038,9 @@ msgstr "Bu Carbon müşterisini bunlardan birine bağlayın veya ayrı bir Strip
 msgid "Link to sales order line"
 msgstr "Satış siparişi satırına bağla"
 
+msgid "Link type"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -12128,6 +12243,9 @@ msgstr "Lot tabanlı alınan malların örnekleme planına karşı muayenesi; bi
 
 msgid "Low"
 msgstr "Düşük"
+
+msgid "Lower value"
+msgstr ""
 
 msgid "Lowercase item IDs are allowed"
 msgstr "Küçük harf Ürün Kimlikleri izin verilir"
@@ -12381,6 +12499,9 @@ msgstr "Aydınlık Mod Markası"
 
 msgid "Mark not done"
 msgstr "Bitmedi olarak işaretle"
+
+msgid "Mark reviewed"
+msgstr ""
 
 msgid "Mark scope as agreed"
 msgstr "Kapsamı kabul edildi olarak işaretle"
@@ -13596,6 +13717,9 @@ msgstr "Kalibrasyon kaydı bulunamadı"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü görmek için bir işi planlayın."
 
+msgid "No category"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Değişiklik kaydedilmedi"
 
@@ -13700,6 +13824,9 @@ msgstr "Son tarih yok"
 
 msgid "No editable properties for this item."
 msgstr "Bu öğe için düzenlenebilir özellik yok."
+
+msgid "No element can take this link"
+msgstr ""
 
 msgid "No elements"
 msgstr ""
@@ -13863,6 +13990,9 @@ msgstr "Eşleşen operasyon yok"
 msgid "No materials"
 msgstr "Malzeme yok"
 
+msgid "No method"
+msgstr ""
+
 msgid "No milestone"
 msgstr ""
 
@@ -13945,6 +14075,9 @@ msgstr "Planlanmış fazla mesai yok"
 msgid "No owner"
 msgstr ""
 
+msgid "No parameter"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Henüz üst kaynaklar kaydedilmedi. Atıfı yenilemek için planlama sayfasındaki Yeniden Hesapla düğmesine tıklayın."
 
@@ -13994,6 +14127,9 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı Ekle\"'ye tıklayın."
 
 msgid "No priority"
+msgstr ""
+
+msgid "No procedure"
 msgstr ""
 
 msgid "No process selected"
@@ -14134,6 +14270,9 @@ msgstr "Henüz tedarikçi yok"
 msgid "No sync operations yet"
 msgstr "Henüz senkronizasyon operasyonu yok"
 
+msgid "No target"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
@@ -14148,6 +14287,9 @@ msgstr "Araç yok"
 
 msgid "No tools for this step"
 msgstr "Bu adım için araç yok"
+
+msgid "No trace links yet."
+msgstr ""
 
 msgid "No trainings assigned"
 msgstr "Atanan eğitim yok"
@@ -14170,6 +14312,9 @@ msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşle�
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
 
+msgid "No value"
+msgstr ""
+
 msgid "No value needed"
 msgstr "Değer gerekmiyor"
 
@@ -14181,6 +14326,9 @@ msgstr "Değişken {query} ile eşleşmiyor"
 
 msgid "No variables available"
 msgstr "Kullanılabilir değişken yok"
+
+msgid "No verdict"
+msgstr ""
 
 msgid "No versions available"
 msgstr "Kullanılabilir sürüm yok"
@@ -14277,6 +14425,9 @@ msgstr "Gerekli Değil"
 
 msgid "Not restorable"
 msgstr "Geri yüklenemez"
+
+msgid "Not Run"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "Planlanmadı"
@@ -15243,6 +15394,9 @@ msgstr "Parça Maliyeti"
 msgid "Part Details"
 msgstr "Parça Detayları"
 
+msgid "Part field"
+msgstr ""
+
 msgid "Part ID"
 msgstr "Parça Kimliği"
 
@@ -15449,6 +15603,9 @@ msgstr "Yüzde"
 
 msgid "Percentage of Lot"
 msgstr "Lot Yüzdesi"
+
+msgid "Performance"
+msgstr ""
 
 msgid "Period"
 msgstr "Dönem"
@@ -15883,6 +16040,9 @@ msgstr "Potansiyel Veri Kaybı"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
+
+msgid "Precedes"
+msgstr ""
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Satış satırlarında çalışan koşul tabanlı korumalar. Hatayla engelle veya kabul ederek devam etmek için uyar."
@@ -16772,6 +16932,9 @@ msgstr "Ramp bir yetkilendirme kodu döndürmedi"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp yetkilendirmeyi reddetti"
 
+msgid "Range"
+msgstr ""
+
 msgid "Rate"
 msgstr "Kur"
 
@@ -17201,6 +17364,9 @@ msgstr "Reddeden Tarihi"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Hub'u yeniden etiketler ve anlaşmayı çerçevelendirir."
+
+msgid "Relates to"
+msgstr ""
 
 msgid "Relative timeline · dates set in Setup & Controls"
 msgstr "Göreceli zaman çizelgesi · tarihler Setup & Controls'te ayarlandı"
@@ -18457,6 +18623,12 @@ msgstr "Örnekleme — Özellik {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Örnekleme Standardı"
+
+msgid "Satisfied by"
+msgstr ""
+
+msgid "Satisfies"
+msgstr ""
 
 msgid "Saturday"
 msgstr "Cumartesi"
@@ -19736,6 +19908,9 @@ msgstr "Slayt {0}"
 msgid "Slides"
 msgstr "Slaytlar"
 
+msgid "Smallest child"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın."
 
@@ -19750,6 +19925,9 @@ msgstr "Satıldı"
 
 msgid "Solutions Engineer"
 msgstr "Çözüm Mühendisi"
+
+msgid "Some inputs have another unit and are left out"
+msgstr ""
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Bazı satırlar, toplamından daha fazla veya daha az fatura kesilmiş. Onaylamadan önce tutarları düzeltin."
@@ -20364,6 +20542,9 @@ msgstr "Öneri Bildirimleri"
 msgid "Suggestions"
 msgstr "Öneriler"
 
+msgid "Sum of children"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Pazar"
 
@@ -20572,6 +20753,9 @@ msgstr "Yüzeyler"
 msgid "Surplus"
 msgstr "Fazlalık"
 
+msgid "Suspect link"
+msgstr ""
+
 msgid "Suspected Failure Mode"
 msgstr "Şüpheli Arıza Modu"
 
@@ -20713,6 +20897,9 @@ msgstr "Bir veya daha fazla öğeyi hedefleyin."
 
 msgid "Target quantity"
 msgstr "Hedef miktarı"
+
+msgid "Target value"
+msgstr ""
 
 msgid "Target Version"
 msgstr "Hedef Sürüm"
@@ -20866,6 +21053,9 @@ msgstr "Hizmet Şartları"
 
 msgid "Test"
 msgstr "Test"
+
+msgid "Test case"
+msgstr ""
 
 msgid "Test Case"
 msgstr ""
@@ -21219,6 +21409,9 @@ msgstr "Aşağıdaki Görevler henüz Bitti değil:"
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "Hammaddelerinizin sahip olduğu şekil ve türler"
+
+msgid "The formula writes this link"
+msgstr ""
 
 msgid "The fraction of each lot to inspect; the actual count is computed from lot size at the time of inspection."
 msgstr "Her Lot'un Muayeneye alınacak kısmı; gerçek sayı Muayene zamanında Lot'un büyüklüğünden hesaplanır."
@@ -22411,6 +22604,9 @@ msgstr "Unvan"
 msgid "Title passes to the customer when the term ends."
 msgstr "Mülkiyet, dönem sona erdiğinde müşteri'ye geçer."
 
+msgid "to"
+msgstr ""
+
 msgid "To"
 msgstr "Kime"
 
@@ -22624,6 +22820,9 @@ msgstr "Toplam:"
 
 msgid "Totals"
 msgstr "Toplamlar"
+
+msgid "Trace links"
+msgstr ""
 
 msgid "Traceability"
 msgstr "İzlenebilirlik"
@@ -22940,6 +23139,9 @@ msgstr "Birim"
 msgid "Unit actions"
 msgstr "Adet İşlemleri"
 
+msgid "Unit cost"
+msgstr ""
+
 msgid "Unit Cost"
 msgstr "Birim Maliyeti"
 
@@ -23111,6 +23313,9 @@ msgstr "İzlenmeyen"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme."
+
+msgid "Unverified"
+msgstr ""
 
 msgid "UoM"
 msgstr "Birim"
@@ -23286,6 +23491,9 @@ msgstr "Yükleniyor…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Dönüştür'e tıklanması durumunda parçalar aşağıdaki dahili parça numaralarıyla oluşturulacaktır:"
+
+msgid "Upper value"
+msgstr ""
 
 msgid "Urgent"
 msgstr ""
@@ -23500,8 +23708,17 @@ msgstr "Doğrulama Hatası"
 msgid "Verification failed"
 msgstr "Doğrulama başarısız"
 
+msgid "Verification method"
+msgstr ""
+
 msgid "Verified"
 msgstr "Doğrulandı"
+
+msgid "Verified by"
+msgstr ""
+
+msgid "Verifies"
+msgstr ""
 
 msgid "Verify"
 msgstr "Doğrula"
@@ -23517,6 +23734,10 @@ msgstr "E-posta adresinizi doğrulayın"
 
 msgid "Version"
 msgstr "Sürüm"
+
+#. placeholder {0}: doc.version
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -24386,6 +24607,10 @@ msgstr "Pencere:"
 
 msgid "WIP"
 msgstr "Yarı Mamul"
+
+#. placeholder {0}: percentFormatter.format(contingency)
+msgid "with {0} contingency"
+msgstr ""
 
 msgid "With children"
 msgstr ""

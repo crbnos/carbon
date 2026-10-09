@@ -1982,6 +1982,8 @@ export const path = {
       generatePath(`${x}/project/${id}/elements/${elementId}/comments`),
     projectElementFull: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/element/${elementId}`),
+    projectElementLinks: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/links`),
     projectElementMove: (id: string) =>
       generatePath(`${x}/project/${id}/elements/move`),
     projectElementPlan: (id: string, elementId: string) =>

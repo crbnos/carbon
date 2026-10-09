@@ -123,6 +123,10 @@ msgstr "{0} нельзя удалить, так как она всё ещё ис
 msgid "{0} cells with deltas"
 msgstr "{0} ячеек с разницами"
 
+#. placeholder {0}: own.checkCount
+msgid "{0} checks"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
 msgstr "{0} израсходовано"
@@ -407,6 +411,9 @@ msgstr "{count, plural, one {Запущена # серия} few {Запущен�
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Запущен # производственный заказ} few {Запущено # производственных заказа} many {Запущено # производственных заказов} other {Запущено # производственных заказов}}"
 
+msgid "{count} linked elements changed. Review the links."
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count} из {total} единиц"
 
@@ -516,6 +523,9 @@ msgstr "{partCount, plural, one {# деталь} other {# деталей}}"
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
 
+msgid "{ref} not found"
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -606,9 +616,18 @@ msgstr "+{0}ч"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Добавить поставщика деталей</0> для этой номенклатуры, чтобы установить основного поставщика."
 
+msgid "= equal to"
+msgstr ""
+
 #. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
 msgid "≈ {0}"
 msgstr "≈ {0}"
+
+msgid "≤ at most"
+msgstr ""
+
+msgid "≥ at least"
+msgstr ""
 
 msgid "0 operations"
 msgstr "0 операций"
@@ -630,6 +649,9 @@ msgstr "1 группируемая операция не входит в сер�
 
 msgid "1 can't be scheduled"
 msgstr "1 не может быть спланировано"
+
+msgid "1 check"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 конфликт"
@@ -946,6 +968,9 @@ msgstr "Статус работы изменяется"
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "Строка превышает открытый остаток счета-фактуры при погашении"
+
+msgid "A linked element changed. Review the link."
+msgstr ""
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
@@ -1649,6 +1674,9 @@ msgstr "Фактическое окончание"
 msgid "Actual Failure Mode"
 msgstr "Фактический режим отказа"
 
+msgid "Actual parameter"
+msgstr ""
+
 msgid "Actual Start"
 msgstr "Фактическое начало"
 
@@ -1837,6 +1865,9 @@ msgstr "Добавить строки"
 
 msgid "Add lines from document"
 msgstr "Добавить строки из документа"
+
+msgid "Add link"
+msgstr ""
 
 msgid "Add manually"
 msgstr "Добавить вручную"
@@ -2212,6 +2243,9 @@ msgstr "Все рабочие центры"
 msgid "Allocated"
 msgstr "Распределено"
 
+msgid "Allocation"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
 
@@ -2405,6 +2439,9 @@ msgstr "Во время подключения к Onshape произошла н�
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
+
+msgid "Analysis"
+msgstr ""
 
 msgid "Analytics"
 msgstr "Аналитика"
@@ -3780,6 +3817,9 @@ msgstr "Блокировать, разрешить переопределени�
 msgid "Blocked"
 msgstr "Заблокировано"
 
+msgid "Blocked by"
+msgstr ""
+
 #. placeholder {0}: blockers.join(", ")
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -3787,6 +3827,9 @@ msgstr "Заблокировано {0}"
 
 msgid "Blocking sync"
 msgstr "Блокировка синхронизации"
+
+msgid "Blocks"
+msgstr ""
 
 msgid "Blocks Machine"
 msgstr "Блокирует станок"
@@ -4474,6 +4517,9 @@ msgstr "Проверьте вашу почту"
 msgid "Checked for each unit once units are added"
 msgstr "Проверяется для каждой единицы после добавления единиц"
 
+msgid "Checked value"
+msgstr ""
+
 msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
 
@@ -4503,6 +4549,9 @@ msgstr "Выберите пакетируемый процесс, чтобы у�
 
 msgid "Choose a company"
 msgstr "Выберите организацию"
+
+msgid "Choose a field"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
@@ -4902,6 +4951,9 @@ msgstr "Вычислено в"
 msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
 msgstr "Вычислено на основе сохраненных условий и ставок. Активация классифицирует аренду и сохраняет результат."
 
+msgid "Computed value"
+msgstr ""
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Сокращенный отчет о прибылях и убытках с маржами и ключевыми промежуточными итогами"
 
@@ -5183,6 +5235,9 @@ msgstr "Содержание"
 
 msgid "Context"
 msgstr "Контекст"
+
+msgid "Contingency"
+msgstr ""
 
 msgid "Continue"
 msgstr "Продолжить"
@@ -6941,6 +6996,9 @@ msgstr "Удалить строку"
 msgid "Delete Line"
 msgstr "Удалить строку"
 
+msgid "Delete link"
+msgstr ""
+
 msgid "Delete Location"
 msgstr "Удалить местоположение"
 
@@ -7225,6 +7283,9 @@ msgstr "Демо-данные применены"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Демоданные применены к этой организации. Сохраните их или отмените, чтобы восстановить то, что было раньше."
 
+msgid "Demonstration"
+msgstr ""
+
 msgid "department"
 msgstr "отдел"
 
@@ -7297,6 +7358,12 @@ msgstr "Дата начала амортизации"
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Рассчитать срок хранения этой номенклатуры на основе кратчайшего срока хранения её компонентов, игнорируя поле «Дни» выше."
 
+msgid "Derived from"
+msgstr ""
+
+msgid "Derives"
+msgstr ""
+
 msgid "Description"
 msgstr "Описание"
 
@@ -7311,6 +7378,9 @@ msgstr "Описание изменения"
 
 msgid "Description of Issue"
 msgstr "Описание проблемы"
+
+msgid "Design Constraint"
+msgstr ""
 
 msgid "Detail"
 msgstr "Подробности"
@@ -8637,6 +8707,9 @@ msgstr "Запись"
 msgid "Entry Type"
 msgstr "Тип записи"
 
+msgid "Environmental"
+msgstr ""
+
 msgid "EORI"
 msgstr "EORI"
 
@@ -9094,8 +9167,14 @@ msgstr "Не удалось добавить строку — добавлено
 msgid "Failed to add lines"
 msgstr "Ошибка при добавлении строк"
 
+msgid "Failed to add the link"
+msgstr ""
+
 msgid "Failed to apply pricing rules"
 msgstr "Не удалось применить правила ценообразования"
+
+msgid "Failed to change the link"
+msgstr ""
 
 msgid "Failed to convert image"
 msgstr "Ошибка преобразования изображения"
@@ -9494,6 +9573,12 @@ msgstr "Факс"
 msgid "Fax Number"
 msgstr "Номер факса"
 
+msgid "Fed by"
+msgstr ""
+
+msgid "Feeds"
+msgstr ""
+
 msgid "Fees"
 msgstr "Сборы"
 
@@ -9733,6 +9818,9 @@ msgstr "Единицы флота"
 msgid "Folder"
 msgstr ""
 
+msgid "Follows"
+msgstr ""
+
 msgid "For <0/>"
 msgstr "На <0/>"
 
@@ -9763,6 +9851,9 @@ msgstr "Форма"
 
 msgid "Format"
 msgstr "Формат"
+
+msgid "Formula"
+msgstr ""
 
 msgid "Forward deployed engineer"
 msgstr "Инженер на месте"
@@ -9846,6 +9937,9 @@ msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
 
 msgid "Function"
+msgstr ""
+
+msgid "Functional"
 msgstr ""
 
 msgid "FX G/L"
@@ -10643,6 +10737,12 @@ msgstr "Центр внедрения"
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
 
+msgid "Implemented by"
+msgstr ""
+
+msgid "Implements"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
 
@@ -10787,6 +10887,9 @@ msgstr "Неполная"
 
 msgid "Incomplete backup — not restorable"
 msgstr "Неполная резервная копия — восстановление невозможно"
+
+msgid "Inconclusive"
+msgstr ""
 
 msgid "Incoterm"
 msgstr "Инкотермс"
@@ -10974,6 +11077,9 @@ msgstr "Процентный доход – Лизинг (по умолчани�
 
 msgid "Interest income or expense from banking activities"
 msgstr "Процентный доход или расход от банковской деятельности"
+
+msgid "Interface"
+msgstr ""
 
 msgid "Internal"
 msgstr "Внутренние"
@@ -11637,6 +11743,9 @@ msgstr "Единица труда"
 msgid "Language"
 msgstr "Язык"
 
+msgid "Largest child"
+msgstr ""
+
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
 
@@ -11675,6 +11784,9 @@ msgstr "Фамилия"
 
 msgid "Last Quarter"
 msgstr "Последний квартал"
+
+msgid "Last run"
+msgstr ""
 
 msgid "Last Run"
 msgstr "Последний запуск"
@@ -11926,6 +12038,9 @@ msgstr "Свяжите этого покупателя Carbon с одним из
 msgid "Link to sales order line"
 msgstr "Ссылка на строку заказа покупателя"
 
+msgid "Link type"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -12128,6 +12243,9 @@ msgstr "Контроль партии полученных товаров сог
 
 msgid "Low"
 msgstr "Низкий"
+
+msgid "Lower value"
+msgstr ""
 
 msgid "Lowercase item IDs are allowed"
 msgstr "Коды элементов в нижнем регистре разрешены"
@@ -12381,6 +12499,9 @@ msgstr "Логотип в светлом режиме"
 
 msgid "Mark not done"
 msgstr "Отметить как не готово"
+
+msgid "Mark reviewed"
+msgstr ""
 
 msgid "Mark scope as agreed"
 msgstr "Отметить область как согласованную"
@@ -13596,6 +13717,9 @@ msgstr "Записи о калибровке не найдены"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Нет резервирований мощности для визуализации. Запланируйте задание, чтобы увидеть нагрузку рабочего центра."
 
+msgid "No category"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Изменений не записано"
 
@@ -13700,6 +13824,9 @@ msgstr "Нет срока выполнения"
 
 msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
+
+msgid "No element can take this link"
+msgstr ""
 
 msgid "No elements"
 msgstr ""
@@ -13863,6 +13990,9 @@ msgstr "Нет совпадающих операций"
 msgid "No materials"
 msgstr "Нет материалов"
 
+msgid "No method"
+msgstr ""
+
 msgid "No milestone"
 msgstr ""
 
@@ -13945,6 +14075,9 @@ msgstr "Нет запланированных переработок"
 msgid "No owner"
 msgstr ""
 
+msgid "No parameter"
+msgstr ""
+
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Родительские источники еще не записаны. Нажмите \"Пересчитать\" на странице планирования, чтобы обновить атрибуцию."
 
@@ -13994,6 +14127,9 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Принтеры не настроены. Нажмите «Добавить принтер» для создания."
 
 msgid "No priority"
+msgstr ""
+
+msgid "No procedure"
 msgstr ""
 
 msgid "No process selected"
@@ -14134,6 +14270,9 @@ msgstr "Поставщиков еще нет"
 msgid "No sync operations yet"
 msgstr "Операции синхронизации еще не выполнены"
 
+msgid "No target"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
 
@@ -14148,6 +14287,9 @@ msgstr "Нет инструментов"
 
 msgid "No tools for this step"
 msgstr "Нет инструментов для этого шага"
+
+msgid "No trace links yet."
+msgstr ""
 
 msgid "No trainings assigned"
 msgstr "Обучение не назначено"
@@ -14170,6 +14312,9 @@ msgstr "Никакие неотображенные значения не сов
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
 
+msgid "No value"
+msgstr ""
+
 msgid "No value needed"
 msgstr "Значение не требуется"
 
@@ -14181,6 +14326,9 @@ msgstr "Нет переменных соответствующих {query}"
 
 msgid "No variables available"
 msgstr "Нет доступных переменных"
+
+msgid "No verdict"
+msgstr ""
 
 msgid "No versions available"
 msgstr "Нет доступных версий"
@@ -14277,6 +14425,9 @@ msgstr "Не требуется"
 
 msgid "Not restorable"
 msgstr "Восстановление невозможно"
+
+msgid "Not Run"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "Не запланировано"
@@ -15243,6 +15394,9 @@ msgstr "Стоимость детали"
 msgid "Part Details"
 msgstr "Детали детали"
 
+msgid "Part field"
+msgstr ""
+
 msgid "Part ID"
 msgstr "ID детали"
 
@@ -15449,6 +15603,9 @@ msgstr "Процент"
 
 msgid "Percentage of Lot"
 msgstr "Процент партии"
+
+msgid "Performance"
+msgstr ""
 
 msgid "Period"
 msgstr "Период"
@@ -15883,6 +16040,9 @@ msgstr "Потенциальная потеря данных"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предзаполнено для новой номенклатуры, если срок годности установлен на фиксированную продолжительность."
+
+msgid "Precedes"
+msgstr ""
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Предикатные защиты, которые срабатывают на строках продаж. Блокировать с ошибками или предупреждать с подтверждением продолжения."
@@ -16772,6 +16932,9 @@ msgstr "Ramp не вернул код авторизации"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp отклонил авторизацию"
 
+msgid "Range"
+msgstr ""
+
 msgid "Rate"
 msgstr "Курс"
 
@@ -17201,6 +17364,9 @@ msgstr "Дата отклонения"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Переименовывает хаб и определяет условия сделки."
+
+msgid "Relates to"
+msgstr ""
 
 msgid "Relative timeline · dates set in Setup & Controls"
 msgstr "Относительная шкала времени · даты установлены в Setup & Controls"
@@ -18457,6 +18623,12 @@ msgstr "Выборочный контроль — Характеристика {
 
 msgid "Sampling Standard"
 msgstr "Стандарт выборочного контроля"
+
+msgid "Satisfied by"
+msgstr ""
+
+msgid "Satisfies"
+msgstr ""
 
 msgid "Saturday"
 msgstr "Суббота"
@@ -19736,6 +19908,9 @@ msgstr "Слайд {0}"
 msgid "Slides"
 msgstr "Слайды"
 
+msgid "Smallest child"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
 
@@ -19750,6 +19925,9 @@ msgstr "Продано"
 
 msgid "Solutions Engineer"
 msgstr "Инженер решений"
+
+msgid "Some inputs have another unit and are left out"
+msgstr ""
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Некоторые строки выставлены счетом на сумму, большую или меньшую, чем их итоговая сумма. Исправьте суммы перед подтверждением."
@@ -20364,6 +20542,9 @@ msgstr "Уведомления о предложениях"
 msgid "Suggestions"
 msgstr "Предложения"
 
+msgid "Sum of children"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Воскресенье"
 
@@ -20572,6 +20753,9 @@ msgstr "Поверхности"
 msgid "Surplus"
 msgstr "Избыток"
 
+msgid "Suspect link"
+msgstr ""
+
 msgid "Suspected Failure Mode"
 msgstr "Предполагаемый режим отказа"
 
@@ -20713,6 +20897,9 @@ msgstr "Целевая версия"
 
 msgid "Target quantity"
 msgstr "Целевое количество"
+
+msgid "Target value"
+msgstr ""
 
 msgid "Target Version"
 msgstr "Целевая версия"
@@ -20866,6 +21053,9 @@ msgstr "Условия обслуживания"
 
 msgid "Test"
 msgstr "Тест"
+
+msgid "Test case"
+msgstr ""
 
 msgid "Test Case"
 msgstr ""
@@ -21219,6 +21409,9 @@ msgstr "Следующие задачи еще не готовы:"
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "Формы и виды, в которых поступают ваши сырьевые материалы"
+
+msgid "The formula writes this link"
+msgstr ""
 
 msgid "The fraction of each lot to inspect; the actual count is computed from lot size at the time of inspection."
 msgstr "Доля каждой партии для проверки; фактическое количество рассчитывается на основе размера партии при проведении контроля."
@@ -22411,6 +22604,9 @@ msgstr "Название"
 msgid "Title passes to the customer when the term ends."
 msgstr "Право собственности переходит к покупателю по окончании срока."
 
+msgid "to"
+msgstr ""
+
 msgid "To"
 msgstr "До"
 
@@ -22624,6 +22820,9 @@ msgstr "Итого:"
 
 msgid "Totals"
 msgstr "Итоги"
+
+msgid "Trace links"
+msgstr ""
 
 msgid "Traceability"
 msgstr "Прослеживаемость"
@@ -22940,6 +23139,9 @@ msgstr "Единица"
 msgid "Unit actions"
 msgstr "Действия с единицей"
 
+msgid "Unit cost"
+msgstr ""
+
 msgid "Unit Cost"
 msgstr "Себестоимость за единицу"
 
@@ -23111,6 +23313,9 @@ msgstr "Без отслеживания"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."
+
+msgid "Unverified"
+msgstr ""
 
 msgid "UoM"
 msgstr "УИ"
@@ -23286,6 +23491,9 @@ msgstr "Загрузка…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "При нажатии кнопки «Преобразовать» будут созданы детали со следующими внутренними номерами деталей:"
+
+msgid "Upper value"
+msgstr ""
 
 msgid "Urgent"
 msgstr ""
@@ -23500,8 +23708,17 @@ msgstr "Ошибка проверки"
 msgid "Verification failed"
 msgstr "Ошибка проверки"
 
+msgid "Verification method"
+msgstr ""
+
 msgid "Verified"
 msgstr "Проверено"
+
+msgid "Verified by"
+msgstr ""
+
+msgid "Verifies"
+msgstr ""
 
 msgid "Verify"
 msgstr "Проверить"
@@ -23517,6 +23734,10 @@ msgstr "Подтвердите вашу электронную почту"
 
 msgid "Version"
 msgstr "Версия"
+
+#. placeholder {0}: doc.version
+msgid "Version {0}"
+msgstr ""
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -24386,6 +24607,10 @@ msgstr "Окно:"
 
 msgid "WIP"
 msgstr "Незавершенное производство"
+
+#. placeholder {0}: percentFormatter.format(contingency)
+msgid "with {0} contingency"
+msgstr ""
 
 msgid "With children"
 msgstr ""

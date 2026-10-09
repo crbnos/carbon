@@ -25,7 +25,8 @@ import type {
   ProjectLabel,
   ProjectMilestone,
   ProjectState,
-  ProjectStateGroup
+  ProjectStateGroup,
+  VerificationElement
 } from "~/modules/projects";
 import {
   getProjectCostSummary,
@@ -34,6 +35,7 @@ import {
   projectStateGroups,
   rollUpCostSummary
 } from "~/modules/projects";
+import { getProjectVerification } from "~/modules/projects/projects.server";
 import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
 import {
   ElementList,
@@ -89,15 +91,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     projectStateGroups.includes(g as ProjectStateGroup)
   ) as ProjectStateGroup[] | undefined;
 
+  const elementFilters = {
+    type: type ? [type] : null,
+    stateGroup: stateGroup && stateGroup.length > 0 ? stateGroup : null,
+    ownerId: filterValues(searchParams, "ownerId"),
+    milestoneId: filterValues(searchParams, "milestoneId"),
+    labelId: filterValues(searchParams, "labelId"),
+    search: searchParams.get("search")
+  };
+  const isFiltered = Object.values(elementFilters).some(
+    (value) => value !== null && value !== ""
+  );
+
   const [elements, costSummary] = await Promise.all([
-    getProjectElements(client, projectId, companyId, {
-      type: type ? [type] : null,
-      stateGroup: stateGroup ?? null,
-      ownerId: filterValues(searchParams, "ownerId"),
-      milestoneId: filterValues(searchParams, "milestoneId"),
-      labelId: filterValues(searchParams, "labelId"),
-      search: searchParams.get("search")
-    }),
+    getProjectElements(client, projectId, companyId, elementFilters),
     getProjectCostSummary(client, projectId, companyId)
   ]);
 
@@ -112,6 +119,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(elements.error, "Failed to load elements"))
     );
   }
+  // Verification reads every element: a filter could hide an input.
+  const verification = await getProjectVerification(client, {
+    companyId,
+    projectId,
+    elements: isFiltered
+      ? undefined
+      : ((elements.data ?? []) as VerificationElement[])
+  });
+  if (verification.error) {
+    logger.error("Failed to load project verification", {
+      companyId,
+      projectId,
+      error: verification.error
+    });
+  }
+
   if (costSummary.error) {
     logger.error("Failed to load project cost summary", {
       companyId,
@@ -123,6 +146,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     elements: elements.data ?? [],
     costSummary: costSummary.data ?? [],
+    links: verification.data?.links ?? [],
+    requirementStatus: verification.data?.requirementStatus ?? {},
     layout,
     type
   };
@@ -133,7 +158,7 @@ export default function ProjectElementsRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
 
-  const { elements, costSummary, layout, type } =
+  const { elements, costSummary, links, requirementStatus, layout, type } =
     useLoaderData<typeof loader>();
   const routeData = useRouteData<{
     project: Project;
@@ -163,6 +188,17 @@ export default function ProjectElementsRoute() {
       )
     };
   }, [elements, costSummary]);
+
+  // An element with a suspect link at either end shows the amber triangle.
+  const suspectIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const link of links) {
+      if (!link.suspectSince) continue;
+      ids.add(link.fromElementId);
+      ids.add(link.toElementId);
+    }
+    return ids;
+  }, [links]);
 
   const groupLabels: Record<ProjectStateGroup, string> = {
     Backlog: t`Backlog`,
@@ -307,6 +343,8 @@ export default function ProjectElementsRoute() {
           ) : (
             <ElementList
               {...layoutProps}
+              requirementStatus={requirementStatus}
+              suspectIds={suspectIds}
               newType={newType}
               onNewTypeChange={setNewType}
               quickAddRef={quickAddRef}
