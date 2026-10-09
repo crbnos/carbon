@@ -8329,6 +8329,9 @@ msgstr "Entrez une quantité entre 1 et {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Entrez une raison pour retirer l'unité du service"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "Entrez une adresse web, par exemple https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "Entrez un article et une quantité vous-même."
 

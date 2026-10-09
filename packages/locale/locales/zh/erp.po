@@ -8329,6 +8329,9 @@ msgstr "请输入 1 至 {0} 之间的数量。"
 msgid "Enter a reason to take the unit out of service"
 msgstr "输入停用该设备的原因"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "请输入网址，例如 https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "自己输入物料和数量。"
 

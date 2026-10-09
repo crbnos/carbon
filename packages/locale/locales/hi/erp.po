@@ -8329,6 +8329,9 @@ msgstr "1 और {0} के बीच मात्रा दर्ज करे�
 msgid "Enter a reason to take the unit out of service"
 msgstr "इकाई को सेवा से बाहर निकालने का कारण दर्ज करें"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "वेब पता दर्ज करें, जैसे https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
 
