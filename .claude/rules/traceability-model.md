@@ -71,6 +71,11 @@ and MES services — NOT a single `post-production`:
   `trigger-rework` insert `trackedActivity` + input/output link rows on posting.
 - MES `startProductionEvent` (`apps/mes/app/services/operations.service.ts`) inserts a
   `trackedActivity` and a `trackedActivityOutput` for the production event.
+- `post-project-issue` (`post-project-issue/service.ts`), for a tracked part issued to a
+  node of a service order on a customer asset: a `type: 'Service'` activity (source
+  document Service Order) with the part as its input and the asset's serial as its output.
+  Its `attributes` hold `{ "Project Issue": <itemLedger id> }`, so a return deletes exactly
+  the activity its issue wrote (`uninstallServicePart`). See `field-service.md`.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
   entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`

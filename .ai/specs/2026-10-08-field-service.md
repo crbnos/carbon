@@ -1,6 +1,6 @@
 # Field Service: service orders on serials in stock and in the field
 
-> Status: draft. Every open question is resolved (Q1 answered 2026-10-08). Updated 2026-10-08: the order owns a work tree, and modules follow job roles.
+> Status: Phase A implemented (2026-10-09, plan `.ai/plans/2026-10-09-field-service-phase-a.md`); browser verification is still due. Phases B, C and D are planned. Every open question is resolved (Q1 answered 2026-10-08).
 > Author: Brad (with Claude)
 > Date: 2026-10-08
 > Research: `.ai/research/field-service.md` (SAP S/4HANA Service and FSM, D365 Field Service, Business Central, IFS, Salesforce Field Service, Epicor) and `.ai/research/serial-service-cost-treatment.md` (capitalize or expense)
@@ -193,7 +193,7 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 
 **Refurbishment completion**, in one transaction:
 1. Sum the order's WIP: the `projectLedger` amounts of the order's Service project with coverage Capitalized.
-2. **Make sure the serial has its own layer.** If the serial has no open stamped `costLedger` layer, split 1 unit from the oldest open unstamped layer of the item:
+2. **Make sure the serial has its own layer.** The serial may have no open stamped `costLedger` layer. Then split 1 unit from the oldest open unstamped layer of the item:
    - decrease that layer's `remainingQuantity` by 1;
    - insert a stamped layer of quantity 1 at the same unit cost.
    This changes no value, so no journal is posted. The oldest layer is the one `calculateCOGS` would take for this serial anyway.
@@ -255,7 +255,7 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 - A **fixed-price node** gives one line at its price. Its subtree's items show at 0 with "Included in fixed price".
 - **Invoice detail** on the order chooses **Itemized** (the default) or **By node**, which prints one line per top-level node with its total.
 - Parts go on the invoice as `Service` lines because the stock already left at issue.
-- **No second stock relief.** `post-sales-invoice` relieves stock and posts COGS for a line with no sales order line, a method other than Make to Order, and an Inventory-tracked item, even when the line type is `Service`. So it skips stock and COGS for every line that a billable item stamps (`projectBillableItem.salesInvoiceLineId`), read with one query per invoice.
+- **No second stock relief.** `post-sales-invoice` relieves stock and posts COGS for a line of an Inventory-tracked item. The line has no sales order line and a method other than Make to Order. This holds even for a `Service` line. So it skips stock and COGS for every line that a billable item stamps (`projectBillableItem.salesInvoiceLineId`), read with one query per invoice.
 - The invoice stamps `serviceOrderId` on its header and `salesInvoiceLineId` on each billable item. Deleting the Draft invoice releases the stamps: `deleteSalesInvoiceReleasingRentals` and `deleteSalesInvoiceLineReleasingRentals` (`sales.server.ts`) also clear `projectBillableItem.salesInvoiceLineId` and return the items to Unbilled.
 - An order with no Unbilled item closes with **Close** and no invoice.
 - **Estimate.** **Print estimate** on the order prints the tree's plan as a PDF: plan lines at sale prices, and fixed-price nodes at their price. Customer approval of the estimate is out of scope.
@@ -322,6 +322,12 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 | 34 | Installed components | `customerAssetComponent`, written by a part issue to a node of a customer unit, plus a `Service` genealogy activity. | Business Central's Replace Component. Gives per-component warranty and history, and keeps the serial's as-built current. |
 | 35 | Service time posting | At Stop work or Add time; no weekly submit and no approval. | The visit and the signature are the approval. A technician should not reconcile a week before the customer is billed. |
 | 36 | Prices | On billable items, created at posting; editable while Unbilled. Fixed-price nodes bill a subtree at one price. | The flat lines that held prices are gone. One billing table serves service now and contracts in projects Phase 4. |
+| 37 | Where `resolveCoverage` lives | `@carbon/utils` (`service-coverage.ts`). | The posting server functions need it, and so does the ERP. One copy keeps the order page and the journal in agreement. Plan decision, 2026-10-09. |
+| 38 | Fixed prices | Applied at invoicing. A billable item keeps its own price; the invoice bills the fixed-price node as one line and shows its subtree's items at 0 with "Included in fixed price". | A fixed price can change until the order is invoiced, with no rewrite of posted items. Plan decision, 2026-10-09. |
+| 39 | Service time posting | `post-timesheet` posts a Service project's Draft entries. **Submit week** submits Standard entries only. | Service time posts at Stop Work or Add Time (decision 35), so it never waits in a weekly submit. Plan decision, 2026-10-09. |
+| 40 | Second stock relief | `post-sales-invoice` skips stock and COGS on a line that a billable item stamps (`billedServiceLineIds`). Revenue still posts. | The part left stock when it was issued to the node. Plan decision, 2026-10-09. |
+| 41 | My Timesheet | Moved to `x+/timesheet`, outside the Projects layout. `x+/projects+/timesheet` redirects there. | My Timesheet is personal: project and service hours in one week, for any employee. Plan decision, 2026-10-09. |
+| 42 | RLS of the project tables | The `projectModule` rule piece decides between `projects_*` and `service_*` by `projectType`. Reads of a Standard project stay open to every employee. | One rule for every project table. MES operators and the PO line picker read Standard projects without `projects_view`, as before. Plan decision, 2026-10-09; the employee read is an execution change. |
 | 26 | Multi-tenancy (H1) | Every new table has `companyId`, `PRIMARY KEY ("id","companyId")` and `id('prefix')`. | conventions-database. |
 | 27 | Service shape (H2) | Client first, `{data, error}`, never throws. Posting and completion run in server functions (Kysely transactions). | conventions-services; `packages/server-functions/AGENTS.md`. |
 | 28 | RLS (H3) | `company("service")` for orders, assets and components. Visits: an employee creates and updates their own visits (`technicianId`), and `service_create` / `service_update` holders any visit. The precedent is `timeCardEntry` (`or(and(owner(...), inCompany(..., "employee")), inCompany(..., "people_update"))`); `maintenanceDispatchEvent` has no owner check. Charges on a Service project use the projects tables; their rules check `service_*` for Service projects. | authz-manifest; the maintenance precedent. Q1 (2026-10-08). |
@@ -632,10 +638,30 @@ Phase D: the contract project roll-up
 
 Each phase gets its own plan with `/plan`:
 
-1. **Phase A: customer assets, field visits, the work tree, components, coverage, invoicing, the phone pages.** It needs projects Phases 1a and 1b. It ships the projects spec's Service projects.
+1. **Phase A: customer assets, field visits, the work tree, components, coverage, invoicing, the phone pages.** It needs projects Phases 1a and 1b. It ships the projects spec's Service projects. **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30); browser verification (Task 31) is deferred.
 2. **Phase B: depot repair through the RMA.**
 3. **Phase C: refurbishment of a serial in stock.**
 4. **Phase D: the contract project roll-up.**
+
+## Implementation notes (Phase A)
+
+The plan's *Execution notes* record each deviation. These change the design above.
+
+- **Technicians without `service_update`.** The ERP writes charges, notes and the signature through Kysely, which skips RLS. So the routes check the permission. Without it, a technician works only their own visit that is not Completed or Cancelled (`requireOwnServiceVisit`). A technician never overrides a coverage.
+- **Returns.** A return of a service part reverses one whole open issue. That is the named issue, else the latest open issue of the same item and serial to the same node (`findServiceIssueToReturn`). A partial return is refused.
+- **Contract coverage.** A Contract charge debits the contract project's account. A Statistical contract project has no account, so the charge debits Cost of Goods Sold.
+- **Expense entries.** `post-project-expense` refuses a Capitalize project, because the CIP cost source has no `Project Expense` value.
+- **Customer assets at shipment.** A reshipped serial keeps its `source`. A voided shipment sets its assets to Returned. The RMA return step updates only serials that are already assets.
+- **Invoicing.** Tax is 0, because the customer has no default tax rate. Items on no node bill last under "Other charges". Deleting the Draft invoice sets the items back to Unbilled and the order back to Completed.
+- **The work tree UI.** `WorkTree` is a component of the service module, not the projects element list. The element list posts to project routes that need `projects_*`.
+- **Pages.** Work, Visits and Billing are tabs of the order. The asset page is `x+/customer-asset+/$assetId.tsx`. The visit page is `x+/service-order+/$id_.visits.$visitId.tsx` and the template page `x+/service-orders+/templates_.$id.tsx`, so they render as full pages.
+- **Work timer.** `serviceVisit` has no work-start column, so the clock is kept on the device. **Stop Work** opens Log Time with the elapsed hours.
+- **Visit window.** The window uses the existing `DateTimePicker`, which reads the browser's time zone, not the company's.
+- **Templates.** Build from part copied a template's nodes but not their plan lines. A service order now passes `includePlanLines`, so its estimate has prices. Projects' Build from part is unchanged.
+- **Estimate PDF.** `ServiceEstimatePDF` is hand-built, like the project Reader. A template-engine document needs a new document type, which `packages/documents/AGENTS.md` puts under Ask First.
+- **Settings.** `upsertItemUnitSalePrice` now filters by `companyId`. The van must be a storage unit at the employee job's location.
+- **Demo datasets.** The templates and orders are seeded in tier 09, after the labor categories. The dataset wipe deletes the service order tables first, because nulling `customerId` breaks `serviceOrder_customer_check`.
+- **Not built.** The contract project roll-up on the Costs tab (Phase D). Search excludes Service projects by default, because no search source lists projects.
 
 ## Out of scope
 
@@ -684,3 +710,4 @@ Resolved autonomously (2026-10-08), open to veto:
 - 2026-10-08: The order owns a work tree (Brad). Each service order now owns a project of type Service (projects spec, *Service projects*). Time, parts and expenses go to any node as timesheet entries, project issues and expense entries, each with a coverage. The `serviceOrderLine` table, `post-service-order` and `post-service-part` are gone. Prices live on billable items. The tree builds from the subject serial's build history, the item's make method or a service template. A part issued to a node is installed (`customerAssetComponent`), with its own parts warranty, and coverage checks it. Invoices follow the tree, with fixed-price nodes. **Print estimate** is new. Phase A now needs projects Phase 1b.
 - 2026-10-08: Modules follow job roles (Brad). New *Who uses what* section. Q1 resolved: a Service module; `sales_view` → `service_view`, and full rights for the Admin employee type only. The order's Service project stays hidden from Projects, the dimension picker and the Ramp sync. The customer Assets tab shows with `service_view`.
 - 2026-10-09: Corrections from the Phase A planning research. The site comes from the sales order, not the shipment. `post-sales-invoice` must skip stock and COGS on lines that billable items stamp. Visit RLS follows `timeCardEntry` (owner rules), not `maintenanceDispatchEvent`. The account and default follow `revenue-recognition-core`. The demo datasets have no shipped serials, so the datasets register customer assets by hand.
+- 2026-10-09: Phase A implemented (`.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30). Browser verification (Task 31) is deferred. Decisions 37–42 record the plan's choices, and *Implementation notes (Phase A)* records the main changes found during the run.

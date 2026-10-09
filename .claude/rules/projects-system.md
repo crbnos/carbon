@@ -3,6 +3,7 @@ paths:
   - "apps/erp/app/modules/projects/**"
   - "packages/server-functions/src/post-timesheet/**"
   - "packages/server-functions/src/post-project-issue/**"
+  - "packages/server-functions/src/post-project-expense/**"
   - "packages/server-functions/src/lib/project-posting.ts"
   - "packages/server-functions/src/lib/project-cip.ts"
 ---
@@ -100,7 +101,9 @@ while a purchase order or job of the project is open.
 
 ## Readable ids
 
-`project.identifier` matches `^[A-Z][A-Z0-9]{1,5}$` and is unique per company. An
+`project.identifier` matches `^[A-Z][A-Z0-9]{1,5}$` (a Service project's is its order's
+readable id or a template's `TPL-…`, so the CHECK skips Service) and is unique per
+company. An
 element's `readableId` is `<identifier>-<n>`, where `n` comes from
 `project.nextElementSequence`, incremented in `insertProjectElement`'s transaction. A move
 (`moveProjectElement`) or a parent change never renumbers. The identifier is read-only
@@ -124,6 +127,31 @@ project the job's cost object in place of WIP:
 - On an outside processing receipt, only the job decides the route
   (`loadReceiptProjectRoutes`).
 
+## Service projects
+
+A project with `projectType = 'Service'` is a service order's work tree. Its
+`costTreatment` is always By Coverage (`project_service_treatment_check`), its
+identifier is the order's readable id (the identifier CHECK skips Service projects),
+and `parentProjectId` names a coverage contract's project. Field service owns the rest:
+`.claude/rules/field-service.md`.
+
+- **Coverage on charges.** `projectLedger`, `timesheetEntry` and `projectExpenseEntry`
+  carry `coverage` and `coverageReason`, and `post-project-issue` takes them as input;
+  Standard rows leave them null. `resolveProjectPostingAccount(ctx, date, coverage)` turns the coverage into an
+  account and refuses a By Coverage charge without one. `buildProjectLedgerRow` and
+  `reverseProjectLedgerRows` copy the coverage.
+- **Expense entries.** `projectExpenseEntry` (mileage, a meal, a part bought on a card)
+  posts through `post-project-expense` for any project: Dr the project account (a
+  Statistical project: `indirectCostAccount`, no ledger row) / Cr GRNI. A Capitalize
+  project is refused. The shared `postProjectJournal` (`lib/project-journal.ts`) posts
+  it and the coverage reclass.
+- **Billable items.** `projectBillableItem` is what a charge will bill. Only Service
+  projects write them today (`buildBillableItem`, `reverseBillableItem`).
+  `projectElement.fixedPrice` bills a node's whole subtree as one line.
+- **Hidden outside Service.** The Projects lists, Copy from, Build from part's template
+  list, the charge number pickers, the dimension picker and the Ramp sync filter
+  `projectType = 'Standard'`. Never list a Service project in Projects.
+
 ## Timesheets
 
 `timesheetEntry` status: Draft → Submitted → (Approved) → Posted, or Rejected. A
@@ -131,6 +159,12 @@ Rejected entry is editable and returns to Draft on save. A Posted entry changes 
 `createTimesheetCorrection`: a negative reversal (`reversalOfId`, `correctionReason`)
 plus a replacement entry. With `companySettings.timesheetApprovalRequired` off, submit
 posts at once.
+
+**My Timesheet** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
+the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is
+read-only there: service time posts from Draft at Stop Work or Add Time on the order,
+so `submitTimesheetEntries` submits Standard entries only and `post-timesheet` posts a
+Service project's Draft entry.
 
 `post-timesheet` costs hours × the labor category's rate on the entry date
 (`laborCategoryRate.effectiveFrom`), Dr the project account / Cr
@@ -228,7 +262,10 @@ options. A URL without `layout` redirects to the named view, else the preference
   a component a later service order removed from the asset's `customerAssetComponent`
   rows), an item's active make method (`getMethodTree`; lines
   without an `itemCost` row are counted as skipped) or a template's elements, under one
-  parent, in one transaction. `planElementsFromSource` is the pure planner.
+  parent, in one transaction. `planElementsFromSource` is the pure planner. With
+  `includePlanLines` a template source also copies the plan lines of the elements it
+  copies (a service order passes it; Projects does not). `insertElementsFromPart` is the
+  same build in the caller's transaction.
 - `get_element_history_by_item` averages hours and material cost over the elements
   that charged the same item; the Budget section shows it.
 

@@ -16,6 +16,8 @@
     "mes",
     "assembly-instructions",
     "projects",
+    "service-orders",
+    "customer-assets",
     "maintenance",
     "reordering",
     "forecast",

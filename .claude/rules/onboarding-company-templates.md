@@ -101,7 +101,9 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass.
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. The service
+   order tables (`SERVICE_ORDER_TABLES`) go first too: nulling `serviceOrder.customerId`
+   breaks `serviceOrder_customer_check`.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
