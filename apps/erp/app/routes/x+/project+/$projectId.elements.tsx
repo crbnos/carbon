@@ -13,8 +13,9 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useMemo, useRef, useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
@@ -37,6 +38,7 @@ import {
 } from "~/modules/projects";
 import { getProjectVerification } from "~/modules/projects/projects.server";
 import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
+import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
 import {
   ElementList,
   QuickAddRow
@@ -56,6 +58,10 @@ import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-elements");
+
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: XYFlowStyle }
+];
 
 /** The values of a `filter=key:eq:a` or `filter=key:in:a,b` search param. */
 function filterValues(params: URLSearchParams, key: string): string[] | null {
@@ -333,6 +339,14 @@ export default function ProjectElementsRoute() {
                 />
               )}
             </div>
+          ) : layout === "tree" ? (
+            <ElementGraph
+              projectId={projectId}
+              elements={elements}
+              links={links}
+              requirementStatus={requirementStatus}
+              canUpdate={layoutProps.canUpdate}
+            />
           ) : layout === "board" ? (
             <ElementBoard
               {...layoutProps}

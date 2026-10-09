@@ -9665,6 +9665,9 @@ msgstr "वित्तीय विवरण"
 msgid "Financing"
 msgstr "वित्तपोषण"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "तैयार माल"
 
@@ -11890,6 +11893,9 @@ msgstr "बचे हुए पार्ट्स का पता चला"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "बची हुई सामग्री पूरी जॉब पूरी होने पर वापस आती है।"
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
 
@@ -12016,6 +12022,9 @@ msgstr "लिंक"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "लिंक (वैकल्पिक) — उदा. /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "क्रय आदेश लिंक करें"
@@ -13828,6 +13837,9 @@ msgstr "इस आइटम के लिए कोई संपादन यो
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "पैरामीटर कार्यविधि से विरा
 
 msgid "Params"
 msgstr "पैरामीटर"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "मूल लागत केंद्र"
@@ -19740,6 +19755,9 @@ msgstr "अवधि दिखाएं"
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएँ"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "पंक्तियां दिखाएं"
 
@@ -19766,6 +19784,9 @@ msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "अनुगामी शून्य दिखाएं"
@@ -20752,6 +20773,9 @@ msgstr "सतहें"
 
 msgid "Surplus"
 msgstr "अतिरिक्त"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

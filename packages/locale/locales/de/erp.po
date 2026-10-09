@@ -9665,6 +9665,9 @@ msgstr "Jahresabschlussberichte"
 msgid "Financing"
 msgstr "Finanzierung"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "Fertigerzeugnisse"
 
@@ -11890,6 +11893,9 @@ msgstr "Überschüssige Teile erkannt"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Überschüssiges bereitgestelltes Material wird zurückgegeben, wenn der gesamte Auftrag abgeschlossen ist."
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Weniger manuelle Arbeit"
 
@@ -12016,6 +12022,9 @@ msgstr "Verknüpfung"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (optional) — z. B. /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "Bestellung verknüpfen"
@@ -13828,6 +13837,9 @@ msgstr "Keine bearbeitbaren Eigenschaften für dieses Element."
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "Parameter werden von der Verfahrensanweisung geerbt."
 
 msgid "Params"
 msgstr "Parameter"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "Übergeordnete Kostenstelle"
@@ -19740,6 +19755,9 @@ msgstr "Dauern anzeigen"
 msgid "Show keyboard shortcuts"
 msgstr "Tastaturkürzel anzeigen"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "Positionen anzeigen"
 
@@ -19766,6 +19784,9 @@ msgstr "Lieferanten-IDs anzeigen"
 
 msgid "Show sync options"
 msgstr "Synchronisierungsoptionen anzeigen"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Nachgestellte Nullen anzeigen"
@@ -20752,6 +20773,9 @@ msgstr "Oberflächen"
 
 msgid "Surplus"
 msgstr "Überschuss"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

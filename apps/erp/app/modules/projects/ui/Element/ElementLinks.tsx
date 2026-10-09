@@ -40,16 +40,19 @@ export function useLinkTypeLabels(): Record<
   { forward: string; reverse: string }
 > {
   const { t } = useLingui();
-  return {
-    satisfies: { forward: t`Satisfies`, reverse: t`Satisfied by` },
-    verifies: { forward: t`Verifies`, reverse: t`Verified by` },
-    derives: { forward: t`Derives`, reverse: t`Derived from` },
-    implements: { forward: t`Implements`, reverse: t`Implemented by` },
-    blocks: { forward: t`Blocks`, reverse: t`Blocked by` },
-    precedes: { forward: t`Precedes`, reverse: t`Follows` },
-    "relates to": { forward: t`Relates to`, reverse: t`Relates to` },
-    feeds: { forward: t`Feeds`, reverse: t`Fed by` }
-  };
+  return useMemo(
+    () => ({
+      satisfies: { forward: t`Satisfies`, reverse: t`Satisfied by` },
+      verifies: { forward: t`Verifies`, reverse: t`Verified by` },
+      derives: { forward: t`Derives`, reverse: t`Derived from` },
+      implements: { forward: t`Implements`, reverse: t`Implemented by` },
+      blocks: { forward: t`Blocks`, reverse: t`Blocked by` },
+      precedes: { forward: t`Precedes`, reverse: t`Follows` },
+      "relates to": { forward: t`Relates to`, reverse: t`Relates to` },
+      feeds: { forward: t`Feeds`, reverse: t`Fed by` }
+    }),
+    [t]
+  );
 }
 
 type Direction = "out" | "in";

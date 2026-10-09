@@ -9665,6 +9665,9 @@ msgstr "財務諸表"
 msgid "Financing"
 msgstr "ファイナンシング"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "完成品"
 
@@ -11890,6 +11893,9 @@ msgstr "余剰部品が検出されました"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -12016,6 +12022,9 @@ msgstr "リンク"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "リンク（オプション） — 例: /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "発注書をリンク"
@@ -13828,6 +13837,9 @@ msgstr "このアイテムの編集可能なプロパティはありません。
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "パラメータは手順書から継承されます。"
 
 msgid "Params"
 msgstr "パラメータ"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "親原価センター"
@@ -19740,6 +19755,9 @@ msgstr "期間を表示"
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "明細を表示"
 
@@ -19766,6 +19784,9 @@ msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
@@ -20752,6 +20773,9 @@ msgstr "サーフェス"
 
 msgid "Surplus"
 msgstr "余剰"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

@@ -9665,6 +9665,9 @@ msgstr "재무제표"
 msgid "Financing"
 msgstr "금융"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "마감"
 
@@ -11890,6 +11893,9 @@ msgstr "잔여 부품 발견됨"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "남은 스테이징 재료는 전체 작업이 완료될 때 반환됩니다."
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "수작업 감소"
 
@@ -12016,6 +12022,9 @@ msgstr "링크"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "링크 (선택 사항) — 예: /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "발주서 연결"
@@ -13828,6 +13837,9 @@ msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "매개변수는 절차서에서 상속됩니다."
 
 msgid "Params"
 msgstr "파라미터"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "상위 원가 센터"
@@ -19740,6 +19755,9 @@ msgstr "소요 시간 표시"
 msgid "Show keyboard shortcuts"
 msgstr "키보드 단축키 표시"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "라인 표시"
 
@@ -19766,6 +19784,9 @@ msgstr "공급업체 ID 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
@@ -20752,6 +20773,9 @@ msgstr "표면"
 
 msgid "Surplus"
 msgstr "잉여"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

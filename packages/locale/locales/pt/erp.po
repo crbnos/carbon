@@ -9665,6 +9665,9 @@ msgstr "Demonstrações Financeiras"
 msgid "Financing"
 msgstr "Financiamento"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "Produtos acabados"
 
@@ -11890,6 +11893,9 @@ msgstr "Peças Excedentes Detectadas"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "O material preparado restante retorna quando todo o trabalho é concluído."
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Menos trabalho manual"
 
@@ -12016,6 +12022,9 @@ msgstr "Ligação"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (opcional) — p.ex. /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "Vincular um pedido de compra"
@@ -13828,6 +13837,9 @@ msgstr "Nenhuma propriedade editável para este item."
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "Os parâmetros são herdados do procedimento."
 
 msgid "Params"
 msgstr "Parâmetros"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "Centro de custo pai"
@@ -19740,6 +19755,9 @@ msgstr "Mostrar Durações"
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atalhos do teclado"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "Mostrar linhas"
 
@@ -19766,6 +19784,9 @@ msgstr "Mostrar IDs de Fornecedor"
 
 msgid "Show sync options"
 msgstr "Mostrar opções de sincronização"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Mostrar Zeros Decimais"
@@ -20752,6 +20773,9 @@ msgstr "Superfícies"
 
 msgid "Surplus"
 msgstr "Excedente"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

@@ -9665,6 +9665,9 @@ msgstr "Financial Statements"
 msgid "Financing"
 msgstr "Financing"
 
+msgid "Find an element"
+msgstr "Find an element"
+
 msgid "finish"
 msgstr "finish"
 
@@ -11890,6 +11893,9 @@ msgstr "Leftover Parts Detected"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Leftover staged material returns when the whole job completes."
 
+msgid "Legend"
+msgstr "Legend"
+
 msgid "Less manual work"
 msgstr "Less manual work"
 
@@ -12016,6 +12022,9 @@ msgstr "Link"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (optional) — e.g. /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr "Link {pendingFrom} to {pendingTo}"
 
 msgid "Link a purchase order"
 msgstr "Link a purchase order"
@@ -13828,6 +13837,9 @@ msgstr "No editable properties for this item."
 msgid "No element can take this link"
 msgstr "No element can take this link"
 
+msgid "No element found"
+msgstr "No element found"
+
 msgid "No elements"
 msgstr "No elements"
 
@@ -15348,6 +15360,9 @@ msgstr "Parameters are inherited from the procedure."
 
 msgid "Params"
 msgstr "Params"
+
+msgid "Parent"
+msgstr "Parent"
 
 msgid "Parent cost center"
 msgstr "Parent cost center"
@@ -19740,6 +19755,9 @@ msgstr "Show Durations"
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
 
+msgid "Show left to right"
+msgstr "Show left to right"
+
 msgid "Show lines"
 msgstr "Show lines"
 
@@ -19766,6 +19784,9 @@ msgstr "Show Supplier IDs"
 
 msgid "Show sync options"
 msgstr "Show sync options"
+
+msgid "Show top to bottom"
+msgstr "Show top to bottom"
 
 msgid "Show Trailing Zeros"
 msgstr "Show Trailing Zeros"
@@ -20752,6 +20773,9 @@ msgstr "Surfaces"
 
 msgid "Surplus"
 msgstr "Surplus"
+
+msgid "Suspect"
+msgstr "Suspect"
 
 msgid "Suspect link"
 msgstr "Suspect link"
@@ -22973,6 +22997,9 @@ msgstr "Treatment"
 
 msgid "Treatments"
 msgstr "Treatments"
+
+msgid "Tree"
+msgstr "Tree"
 
 msgid "Trial Balance"
 msgstr "Trial Balance"

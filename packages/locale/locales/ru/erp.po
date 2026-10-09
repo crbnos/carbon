@@ -9665,6 +9665,9 @@ msgstr "Финансовые отчеты"
 msgid "Financing"
 msgstr "Финансирование"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "Готовая продукция"
 
@@ -11890,6 +11893,9 @@ msgstr "Обнаружены лишние детали"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Оставшийся подготовленный материал возвращается по завершении всей работы."
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Меньше ручной работы"
 
@@ -12016,6 +12022,9 @@ msgstr "Ссылка"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Ссылка (опционально) — например /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "Связать заказ поставщику"
@@ -13828,6 +13837,9 @@ msgstr "Нет редактируемых свойств для этого эл�
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "Параметры наследуются из процедуры."
 
 msgid "Params"
 msgstr "Параметры"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "Родительский Центр затрат"
@@ -19740,6 +19755,9 @@ msgstr "Показать длительность"
 msgid "Show keyboard shortcuts"
 msgstr "Показать сочетания клавиш"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "Показать строки"
 
@@ -19766,6 +19784,9 @@ msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Показывать завершающие нули"
@@ -20752,6 +20773,9 @@ msgstr "Поверхности"
 
 msgid "Surplus"
 msgstr "Избыток"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

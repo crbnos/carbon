@@ -9665,6 +9665,9 @@ msgstr "Mali Tablolar"
 msgid "Financing"
 msgstr "Finansman"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "Bitmiş ürünler"
 
@@ -11890,6 +11893,9 @@ msgstr "Artık Parçalar Tespit Edildi"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Kalan hazırlanan malzeme tüm iş tamamlandığında geri döner."
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
 
@@ -12016,6 +12022,9 @@ msgstr "Bağlantı"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Bağlantı (isteğe bağlı) — ör. /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "Satın alma siparişi bağla"
@@ -13828,6 +13837,9 @@ msgstr "Bu öğe için düzenlenebilir özellik yok."
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "Parametreler prosedürden miras alınır."
 
 msgid "Params"
 msgstr "Parametreler"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "Üst maliyet merkezi"
@@ -19740,6 +19755,9 @@ msgstr "Süreleri Göster"
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "Satırları Göster"
 
@@ -19766,6 +19784,9 @@ msgstr "Tedarikçi Kimliklerini Göster"
 
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Sondaki Sıfırları Göster"
@@ -20752,6 +20773,9 @@ msgstr "Yüzeyler"
 
 msgid "Surplus"
 msgstr "Fazlalık"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"

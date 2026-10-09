@@ -30,6 +30,7 @@ import {
   LuChevronDown,
   LuKanban,
   LuListTree,
+  LuNetwork,
   LuPlus,
   LuSettings2,
   LuSheet
@@ -54,13 +55,14 @@ import {
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 
-export const elementLayouts = ["list", "board", "table"] as const;
+export const elementLayouts = ["list", "board", "table", "tree"] as const;
 export type ElementLayout = (typeof elementLayouts)[number];
 
 const layoutIcons: Record<ElementLayout, IconType> = {
   list: LuListTree,
   board: LuKanban,
-  table: LuSheet
+  table: LuSheet,
+  tree: LuNetwork
 };
 
 type ElementsHeaderProps = {
@@ -110,7 +112,8 @@ export function ElementsHeader({
   const layoutLabels: Record<ElementLayout, string> = {
     list: t`List`,
     board: t`Board`,
-    table: t`Table`
+    table: t`Table`,
+    tree: t`Tree`
   };
   const LayoutIcon = layoutIcons[layout];
   const hasFilters = params.getAll("filter").filter(Boolean).length > 0;

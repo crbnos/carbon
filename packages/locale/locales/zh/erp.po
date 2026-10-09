@@ -9665,6 +9665,9 @@ msgstr "财务报表"
 msgid "Financing"
 msgstr "融资"
 
+msgid "Find an element"
+msgstr ""
+
 msgid "finish"
 msgstr "成品"
 
@@ -11890,6 +11893,9 @@ msgstr "检测到剩余零件"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "当整个工单完成时，剩余的暂存原材料将被退回。"
 
+msgid "Legend"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "更少的手动工作"
 
@@ -12016,6 +12022,9 @@ msgstr "链接"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "链接（可选）— 例如 /x/settings/…"
+
+msgid "Link {pendingFrom} to {pendingTo}"
+msgstr ""
 
 msgid "Link a purchase order"
 msgstr "关联采购订单"
@@ -13828,6 +13837,9 @@ msgstr "此项目没有可编辑的属性。"
 msgid "No element can take this link"
 msgstr ""
 
+msgid "No element found"
+msgstr ""
+
 msgid "No elements"
 msgstr ""
 
@@ -15348,6 +15360,9 @@ msgstr "参数从程序文件继承。"
 
 msgid "Params"
 msgstr "参数"
+
+msgid "Parent"
+msgstr ""
 
 msgid "Parent cost center"
 msgstr "父成本中心"
@@ -19740,6 +19755,9 @@ msgstr "显示时长"
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
 
+msgid "Show left to right"
+msgstr ""
+
 msgid "Show lines"
 msgstr "显示行"
 
@@ -19766,6 +19784,9 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+msgid "Show top to bottom"
+msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
@@ -20752,6 +20773,9 @@ msgstr "表面"
 
 msgid "Surplus"
 msgstr "过剩"
+
+msgid "Suspect"
+msgstr ""
 
 msgid "Suspect link"
 msgstr ""
@@ -22972,6 +22996,9 @@ msgid "Treatment"
 msgstr ""
 
 msgid "Treatments"
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Trial Balance"
