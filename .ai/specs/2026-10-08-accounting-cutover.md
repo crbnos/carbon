@@ -10,7 +10,7 @@
 
 ## TLDR
 
-Every company posts journals from now on, whether or not it uses accounting. Before a company's cutover, its journals have the status `Provisional`, and no balance, report or sync counts them. The `accountingEnabled` flag stops gating sub-ledger work. Every company writes cost layers, asset cost, deferral schedules and intercompany rows. A one-way enable wizard takes a cutover date D at a period start. It writes one Posted opening line for each item open at D, against a Migration Clearing account. It takes the prior system's trial balance against the same account. The wizard refuses to enable until Migration Clearing totals zero. At enable, Provisional journals dated on or after D become Posted, and Provisional journals dated before D become `Superseded`. A payment against an invoice posted before D then clears that invoice's opening line. A later migration retires the flag after the wizard ships.
+Every company posts journals from now on, whether or not it uses accounting. Before a company's cutover, its journals have the status `Provisional`, and no balance, report or sync counts them. The `accountingEnabled` flag stops gating sub-ledger work. Every company writes cost layers, asset cost, deferral schedules and intercompany rows. A one-way enable wizard takes a cutover date D at a period start. It writes one Posted opening line for each item open at D, against a Migration Clearing account. It takes the prior system's trial balance against the same account. The wizard refuses to enable until Migration Clearing totals zero. At enable, Provisional journals dated on or after D become Posted, and Provisional journals dated before D become `Superseded`. A payment against an invoice posted before D then clears that invoice's opening line. After the wizard ships, no code reads the flag. The column stays, unused.
 
 ## Overview diagram
 
@@ -58,7 +58,9 @@ Every posting function builds and writes its journal for every company. The comp
 1. Remove every sub-ledger branch on `accountingEnabled` listed in Problem Statement item 3. Every company relieves cost layers, writes finished-goods and asset cost, writes deferral schedules, contract entries and intercompany rows.
 2. Remove the journal branches on `accountingEnabled` in every posting server function and SQL function. Each one writes its journal with the status from `journalPostingStatus` (TS) or `journal_posting_status(company_id)` (SQL).
 3. The posting transaction reads `companySettings` with `FOR SHARE`. The enable transaction takes `FOR UPDATE` on the same row. So no posting can write a Provisional journal after the enable commits.
-4. If a journal builder cannot resolve an account, the posting fails. This is the same behavior as today with accounting on. A migration fills every `accountDefault` column first (Data Model Changes), so the case does not occur.
+4. 16 `accountDefault` columns are nullable, and a company that changed its chart of accounts can have them empty. Account numbers and names are user-editable, so no migration can fill them safely.
+   - Before cutover, a builder that needs an empty default posts that line to `retainedEarningsAccount` (NOT NULL for every company). It writes the default it wanted in the new column `journalLine.accountDefaultRole`, for example `scrapAccount`. A Provisional journal counts nowhere, so the stand-in account changes no balance. `resolveDefaultAccount` (API / Service Changes) is the one place that decides this.
+   - After cutover, an empty default fails the posting, as it does today with accounting on. The enable cannot happen while a default is empty (section 3).
 
 Manual accounting work stays unavailable before cutover: manual journal entries, depreciation runs, revenue recognition runs, intercompany eliminations and period close. The server functions refuse it, not only the UI. The revenue recognition cron (`revenue-recognition-proposal.ts`) skips companies with no cutover.
 
@@ -69,7 +71,8 @@ Manual accounting work stays unavailable before cutover: manual journal entries,
 | Constant | Statuses | Used by |
 |---|---|---|
 | `GL_JOURNAL_STATUSES` | `Posted`, `Reversed` | Balances, trial balance, reports, period snapshots, tie-outs, aging, provider sync, the opening-balance gate |
-| `DOCUMENT_JOURNAL_STATUSES` | `Provisional`, `Posted`, `Reversed` | Readers that follow one document's chain: payment control lookup, void builders, GR/IR lookup, WIP sums, intercompany lookups, memo, charge and reimbursement void checks |
+| `DOCUMENT_JOURNAL_STATUSES` | `Provisional`, `Posted`, `Reversed` | Readers that follow one document's chain and filter on `<> 'Draft'` or on nothing today: void builders, GR/IR lookup, WIP sums, intercompany lookups |
+| `OPEN_ITEM_JOURNAL_STATUSES` | `Provisional`, `Posted` | Readers that filter on `= 'Posted'` today and must also see a Provisional journal: payment control lookups, memo, charge and reimbursement void checks |
 
 Before cutover a company has no Posted journal. After enable it has no Provisional journal. So a chain reader always reads the lines that govern the document. `Superseded` is in neither list.
 
@@ -82,23 +85,27 @@ Readers to change (from the code map, file:line in the migrations named):
 | WIP sums: `complete_job_to_inventory` (`20261006221601:873`), `close-job/index.ts:66`, `post-production-event:206`, `:229` | no filter | `DOCUMENT_JOURNAL_STATUSES` |
 | Void builders: `post-sales-invoice:2375`, `:2420`; `post-receipt:339`, `:593`; `post-purchase-invoice:115`; `post-shipment:3093`, `:4124`, `:4410`; payment void `:162` | no filter | `DOCUMENT_JOURNAL_STATUSES` |
 | GR/IR lookup `post-purchase-invoice:906`; intercompany lookups `post-sales-invoice:2212`, `post-purchase-invoice:2403`, `:2448`; `post-asset-transfer:1090` | no filter or `<> 'Draft'` | `DOCUMENT_JOURNAL_STATUSES` |
-| Payment control lookups `post-payment-transaction:498`, `:790`; memo void `:145`; `post-charge-void:38`; `post-reimbursement-void:63` | `= 'Posted'` | `DOCUMENT_JOURNAL_STATUSES` |
+| Payment control lookups `post-payment-transaction:498`, `:790`; memo void `:145`; `post-charge-void:38`; `post-reimbursement-void:63` | `= 'Posted'` | `OPEN_ITEM_JOURNAL_STATUSES` |
+| `post-maintenance-event:84`; sales invoice void reader `post-sales-invoice:2375` (it also lacks a `companyId` filter, which this change adds) | no filter | `DOCUMENT_JOURNAL_STATUSES` |
 | `getAccountingPeriodDeletability` (`:2548`), `getFiscalCalendarCommitted` (`:2622`) | all statuses | `GL_JOURNAL_STATUSES` |
 
-A new `@carbon/checks` conformance rule refuses a status filter on `journal` that does not use one of the 2 constants, in TS and in migrations. It flags `<> 'Draft'`, `!= 'Draft'` and a `journal` join with no status filter.
+The SQL readers that filter on `= 'Posted'` (`get_ar_open_by_customer`, `get_ap_open_by_supplier`, `get_ar_tie_out`, `get_ap_tie_out`) keep that filter. They already exclude the 2 new statuses. They must also accept `sourceType 'Opening Balance'` (section 4).
+
+A new `@carbon/checks` conformance rule refuses a status filter on `journal` that does not use one of the 3 constants, in TS and in migrations. It flags `<> 'Draft'`, `!= 'Draft'` and a `journal` join with no status filter.
 
 ### 3. The enable wizard
 
 Route `/x/accounting/activation`, linked from Settings → Accounting and from the accounting module while the company has no cutover. It has 5 steps:
 
 1. **Readiness.** These checks must pass:
-   - Every `accountDefault` column is set and active.
+   - Every `accountDefault` account column is set and active, `migrationClearingAccount` included. The step lists each empty default with a link to Accounting → Defaults. The user picks or creates the Migration Clearing account there.
    - `fiscalYearSettings` exists. Base currency is set.
    - Cutover date D is the first day of a fiscal period. D is on or before today, and no more than 3 periods before the current period.
    - No Draft or Pending receipt, shipment, invoice, payment or memo is dated before D.
-   - No job that was open on the day always-posting shipped (L, a constant in the code) is still open.
-2. **Inventory.** For each item and location, the page shows the on-hand quantity at D (from `itemLedger`) and a unit cost. The unit cost defaults to the average of the remaining cost layers, else `itemCost.unitCost`. The user edits the cost in `itemCost`. The page shows the total per inventory account.
-3. **Fixed assets.** For each asset, the page shows cost and accumulated depreciation at D. The values come from the register. The user edits accumulated depreciation through the register form, because no depreciation run happens before cutover.
+   - No job created before L is still open. L is the `createdAt` of the company's first Provisional journal. If the company has none, L is now, and every open job blocks.
+   - No Posted journal with `sourceType 'Opening Balance'` exists. The unique index `journal_one_posted_opening_balance_per_company` allows one, and the enable writes it.
+2. **Inventory.** For each item, the page shows the on-hand quantity at D across all locations (from `itemLedger`) and a unit cost. Cost layers (`costLedger`) have no location, so the reset works per item. The unit cost defaults to the average of the remaining cost layers, else `itemCost.unitCost`. The user edits the cost in `itemCost`. The page shows the total per inventory account.
+3. **Fixed assets.** For each asset, the page shows cost and accumulated depreciation at D. The values come from the register. The user edits accumulated depreciation inline on this page, because no depreciation run happens before cutover. The register form cannot do it: it opens Draft assets only (`$fixedAssetId.register.tsx:40-45`).
 4. **Trial balance.** The user enters the prior system's trial balance as of D − 1, for every account. There are 2 input methods: the existing inline Opening Balances mode on the chart of accounts, or a CSV import (`accountNumber, debit, credit`). The page shows Migration Clearing per control account: the trial balance amount, the opening total from Carbon, and the difference.
 5. **Enable.** The wizard refuses to enable unless Migration Clearing totals zero within 0.01 and every step passes. The user types the company name to confirm. The page states that enable is one-way.
 
@@ -128,16 +135,16 @@ For a control account, the trial balance amount is an assertion, not a posting. 
 One server function, `activate-accounting`, runs in one Kysely transaction:
 
 1. Lock `companySettings` `FOR UPDATE`. Re-run every readiness check and every Migration Clearing total. Refuse on any failure.
-2. Reset inventory as of D. For each item and location, replace the cost layers dated before D with one layer: the on-hand quantity at D at the reviewed unit cost. Keep the layers dated on or after D.
+2. Reset inventory as of D. For each item, close the cost layers dated before D. Insert one layer: the on-hand quantity at D at the reviewed unit cost. Keep the layers dated on or after D.
 3. Re-cost every outbound movement dated on or after D against the reset layers, in date order. Rebuild the Provisional journal of each re-costed document. `recost-serial-unit` is the precedent for re-costing one unit.
 4. Set every Provisional journal dated before D to `Superseded`.
 5. Mark `revenueRecognitionSchedule` rows dated before D as Posted with no journal. Mark lease Interest rows dated before D the same way.
 6. Make no change to the assets. `buildDepreciationRunLines` takes the cutover date as a floor: with no run posted after it, a run depreciates from D, not from `depreciationStartDate` (`accounting.utils.ts:555` today). Step 3 already put the accumulated depreciation at D on the register.
 7. Post the opening journal (section 4) in the period that contains D − 1.
-8. Set every Provisional journal dated on or after D to Posted.
-9. Close every period that ends before D, through the bulk path `closePreCutoverPeriods`. It does not create close tasks.
+8. Re-point the stand-in lines. For each line in a Provisional journal dated on or after D with an `accountDefaultRole`, set `accountId` to that default's account and clear the role. Then set every Provisional journal dated on or after D to Posted.
+9. Close every period that ends before D with `closePreCutoverPeriods`. It runs inside this transaction, oldest first. It sets `closeStatus 'Closed'` and calls `snapshotAccountingPeriodBalances` for each period. It creates no close tasks. It cannot reuse `closeAccountingPeriod`, because that function opens its own transaction.
 10. Set `accountingCutoverDate = D`, `accountingActivatedAt = now()`, `accountingActivatedBy`.
-11. Write the audit log entry.
+11. Write no separate audit entry. Journals and accounting periods are auditable entities (`audit.config.ts:620-640`), so the event-driven audit records steps 4 to 9 for companies with the audit log on. `companySettings` is not auditable. The `accountingActivatedAt` and `accountingActivatedBy` columns are the record of the enable.
 
 The `check_accounting_period_open` trigger also checks a change from `Provisional` to `Posted`. Today it checks only a change from Draft to Posted (`20260713235930:59-64`), so step 8 could post into a Closed period without it.
 
@@ -163,7 +170,7 @@ Demo-template companies already hold Posted journals with accounting on. A migra
 1. Replace every read of `accountingEnabled` with a read of `accountingCutoverDate IS NOT NULL`. That covers the UI gates (`AccountingBetaGate`, the report tie-out panels, the opening-balance button, the Stripe fee account) and the readiness of manual accounting work.
 2. Delete the Mark Paid and Mark Unpaid actions in `sales-invoice+/$invoiceId.status.tsx` and `purchase-invoice+/$invoiceId.status.tsx`, and their buttons in both invoice headers. Users record payments through Payments.
 3. Delete the switch in `settings+/accounting.tsx`. Show the cutover date, or a link to the wizard.
-4. A later migration drops `companySettings.accountingEnabled`.
+4. Keep the `companySettings.accountingEnabled` column, unused. `BACKWARD_COMPATIBILITY.md` forbids dropping a column that holds data.
 
 ### 9. Provider sync
 
@@ -181,7 +188,7 @@ Demo-template companies already hold Posted journals with accounting on. A migra
 | 4 | Permission scoping | Wizard loader `view: "accounting"`. Actions `update: "accounting"`. Activate also needs the typed company name. | The July spec precedent. A one-way event needs friction, not a new role. |
 | 5 | Form pattern | `ValidatedForm` + zod validators in `accounting.models.ts`. One route action with `intent`: `import-tb`, `save-tb`, `activate`. | `settings+/accounting.tsx` precedent. |
 | 6 | Module layout | Services and UI in `apps/erp/app/modules/accounting/`. Routes in `x+/accounting+/activation*.tsx`. The server function in `packages/server-functions/src/activate-accounting/`. | One module service file. Server functions own transactional writes. |
-| 7 | Backward compatibility | Enum values and nullable columns are additive. Removing the `accountingEnabled` reads changes behavior for every company with accounting off (Q2). The column drop is a later migration. | `BACKWARD_COMPATIBILITY.md`: schema is additive-only until the drop. |
+| 7 | Backward compatibility | Enum values and nullable columns are additive. Removing the `accountingEnabled` reads changes behavior for every company with accounting off (Q2). The column stays, unused. | `BACKWARD_COMPATIBILITY.md`: schema is additive-only, and a column with data is never dropped. |
 | 8 | Journal status, not a separate ledger | A status on `journal`. | Every posting path already writes `journal`. A separate table would need a second write path in 20 server functions. |
 | 9 | One Migration Clearing account | A new `accountDefault.migrationClearingAccount`, seeded as an Equity posting account "Migration Clearing". The wizard shows it per control account. | SAP uses 4 accounts. One account with a per-account breakdown gives the same check with one default to configure. |
 | 10 | Opening journal date | D − 1, Posted, in the period that contains D − 1. That period closes in step 9. | The July spec precedent. The opening state sits before the first live day. |
@@ -190,6 +197,7 @@ Demo-template companies already hold Posted journals with accounting on. A migra
 | 13 | Manual accounting work before cutover | Refused on the server. | Its output would be Provisional and would never count. Depreciation and recognition before D come from the register and the schedules at D. |
 | 14 | Intercompany | Intercompany invoices get opening lines like receivables and payables, with the IC descriptions. The matcher ignores an `intercompanyTransaction` row whose source line is Superseded. | Eliminations of trades before D belong to the prior system. |
 | 15 | Cutover date | A fiscal period start, from 3 periods before the current period up to the current period. | Q5 and Q9, the research (SAP key date, NetSuite period start) and the July spec. The limit bounds the re-cost in one transaction. |
+| 16 | Empty account defaults before cutover | A stand-in line on `retainedEarningsAccount` with `accountDefaultRole`, re-pointed at enable. No back-fill. | Accounts have no stable key (`account` has only `number`, `name`, `isSystem`), so a back-fill is a guess. A stand-in in a Provisional journal changes no balance. |
 
 ## Data Model Changes
 
@@ -223,8 +231,8 @@ $$;
 
 Migration 2 also does these things:
 
-1. Seeds the "Migration Clearing" account in every company group. It back-fills `migrationClearingAccount` and the 17 nullable `accountDefault` columns. It maps each seeded number to an id once, which the lesson "Never resolve a control account by number/name" allows.
-2. Adds `NOT NULL` to every `accountDefault` account column once the back-fill leaves none empty. It fails loudly if one is still empty.
+1. Adds the nullable column `journalLine."accountDefaultRole" TEXT`. It names the `accountDefault` column a stand-in line wanted (section 1 item 4). It is null on every other line.
+2. Leaves `migrationClearingAccount` and the 16 nullable `accountDefault` columns as they are. It creates no account and fills no default. Account numbers and names are user-editable, so a match by number can point a default at an unrelated account. New companies get the Migration Clearing account (3400) from the seed data.
 3. Changes `check_posted_record_immutable` so that it also refuses any UPDATE or DELETE of a Superseded journal or its lines.
 4. Changes `check_accounting_period_open` so that it also checks a change from Provisional to Posted.
 5. Adds the July spec's config-lock trigger on `company."baseCurrencyCode"` and `fiscalYearSettings."startMonth"`, keyed on `accountingActivatedAt`.
@@ -235,7 +243,8 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 
 ## API / Service Changes
 
-- `@carbon/database/accounting-posting`: `GL_JOURNAL_STATUSES`, `DOCUMENT_JOURNAL_STATUSES`, `journalPostingStatus(trx, companyId)`.
+- `@carbon/database/accounting-posting`: `GL_JOURNAL_STATUSES`, `DOCUMENT_JOURNAL_STATUSES`, `OPEN_ITEM_JOURNAL_STATUSES`.
+- `@carbon/database/journal-posting-status`: `journalPostingStatus(trx, companyId)` and `resolveDefaultAccount(defaults, role, postingStatus)`. The second returns `{ accountId, accountDefaultRole }`: the default when it is set; else, before cutover, `retainedEarningsAccount` with the role; else it throws.
 - Every posting server function: remove the `accountingEnabled` branches. Write the journal with `journalPostingStatus`. Read `companySettings` `FOR SHARE`.
 - `post-payment-transaction.ts:494`, `:790`: accept `sourceType 'Opening Balance'`.
 - Void builders: for a document dated before the cutover, build the posting again and negate it (section 6).
@@ -249,7 +258,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - New wizard `x+/accounting+/activation.tsx` with the 5 steps in section 3, and `activation.import.tsx` for the CSV trial balance.
 - `settings+/accounting.tsx`: the switch goes. It shows "Accounting since {D}" or a "Set up accounting" link to the wizard.
 - `SalesInvoiceHeader`, `PurchaseInvoiceHeader`: Mark Paid and Mark Unpaid go.
-- Journal panels on documents: Superseded journals are hidden behind a "Before cutover" toggle. A Provisional journal shows a "Provisional" status badge.
+- Journal list (`JournalEntriesTable`): Superseded journals are hidden by default behind a "Before cutover" toggle. A document panel that links its one journal (`getSettlementRelatedItems`, the reimbursement and charge panels) shows the journal's status badge. `JournalEntryStatus` and `status-colors.ts` get labels and colors for Provisional and Superseded.
 - `AccountingBetaGate` and the other gates read the cutover instead of the flag.
 - Docs: rewrite `docs/content/docs/reference/accounting.mdx` for the cutover. Update `apps/erp/app/modules/accounting/AGENTS.md` and `.claude/rules/accounting-sync-handlers.md`.
 
@@ -258,6 +267,8 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - [ ] A company with no cutover posts a receipt, a shipment, a sales invoice and a payment. Each writes a Provisional journal. The trial balance, balance sheet, AR aging and AR tie-out show nothing for them.
 - [ ] A company with no cutover ships a sales order line. The cost layer's `remainingQuantity` goes down, and a Sale `costLedger` row exists.
 - [ ] A company with no cutover completes a job to inventory. The finished goods have a cost layer at the job's cost.
+- [ ] A company with no cutover and an empty `scrapAccount` scraps a nonconformance. The scrap line posts to Retained Earnings with `accountDefaultRole = 'scrapAccount'`. After the user sets `scrapAccount` and enables with D before the scrap, the line is Posted on the scrap account and its role is null.
+- [ ] The readiness step lists each empty account default, `migrationClearingAccount` included.
 - [ ] A company with no cutover pays an invoice that was posted before L (no journal). The payment posts. Its Provisional journal uses the default receivables account.
 - [ ] Mark Paid and Mark Unpaid are absent from both invoice headers, and a POST to their old intents returns an error.
 - [ ] The wizard refuses a cutover date that is not a period start, is after today, or is more than 3 periods back.
@@ -287,7 +298,8 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 | Risk | Severity | Mitigation |
 |---|---|---|
 | Removing the sub-ledger branches changes valuation and COGS numbers for every company with accounting off | Med | It corrects a wrong valuation. Note it in the changelog entry. Verify on the 4 demo datasets before and after. |
-| A journal builder throws for a company with no accounting setup, and stops a shop-floor posting | High | Migration 2 fills every default and adds NOT NULL. A test posts every document type for a freshly seeded company with no cutover. |
+| A journal builder throws for a company with no accounting setup, and stops a shop-floor posting | High | Before cutover, an empty default becomes a stand-in line (section 1 item 4). A test posts every document type for a company with no cutover and an empty `scrapAccount`. |
+| A stand-in line reaches a Posted journal | Med | The enable re-points every stand-in line dated on or after D before promotion. After cutover, `resolveDefaultAccount` never returns a stand-in. A test asserts no Posted line has an `accountDefaultRole`. |
 | A reader outside the section 2 table counts Provisional rows | High | The `journal-status-filter` check, over TS and migrations. |
 | Re-costing the window between D and enable takes too long inside one transaction | Med | D is at most 3 periods back (Q9). Measure the enable on the largest demo dataset with D 3 periods back before release. If it times out, the transaction rolls back whole and the user picks a later D. |
 | Always-posting doubles the journal volume | Low | Journals are already written for every company with accounting on. Volume grows linearly with documents. |
@@ -304,7 +316,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - [x] **Q4. How are documents posted before always-posting treated?** — **Answer:** The cutover derives every opening amount from the documents, the same way for every company. There is no baseline and no history replay. The enable resets inventory to on-hand × a reviewed unit cost. The one legacy rule: the wizard refuses the cutover while a job that was open at L is still open.
 - [x] **Q5. Can the cutover date D be in the past?** — **Answer:** Yes. The inventory reset applies as of D. Enable re-costs the movements between D and enable against the reset layers, and rebuilds their Provisional journals before promotion.
 - [x] **Q6. What happens to Provisional journals dated before D?** — **Answer:** They keep a terminal status, `Superseded`. They are immutable and hidden by default behind a "Before cutover" toggle.
-- [x] **Q7. Does a posting fail if its Provisional journal cannot be built?** — **Answer:** Yes, it fails closed. A migration first fills every account default, and a NOT NULL constraint keeps them filled.
+- [x] **Q7. Does a posting fail if its Provisional journal cannot be built?** — **Answer (revised 2026-10-08):** No back-fill. Account numbers and names are user-editable, so a back-fill by number can point a default at an unrelated account. Before cutover, an empty default becomes a stand-in line on Retained Earnings that records the default it wanted (`journalLine.accountDefaultRole`). The readiness step requires every default, and the enable re-points the stand-in lines before promotion. After cutover, an empty default fails the posting. The first answer (fill by number, then NOT NULL) assumed every chart kept the seeded numbers.
 
 > Found while writing the spec (Step 7), and resolved with Brad on 2026-10-08.
 
@@ -315,4 +327,13 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 
 - 2026-10-08: Created. Replaces the July cutover spec. Research in `.ai/research/accounting-cutover.md`. Q1–Q7 resolved with Brad before writing.
 - 2026-10-08: Q8 (no void of inventory documents dated before D, after research pattern 6) and Q9 (D at most 3 periods back) resolved. Depreciation start takes the cutover date as a floor. The purchase receipt void gap is recorded under Risks.
-- 2026-10-08: Fixed the 2 bugs found while writing: the purchase receipt void now updates `costLedger`, and the revenue recognition cron skips companies with `accountingEnabled = false` (the cutover check replaces it in this spec). Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.
+- 2026-10-08: Planning corrections from the code, in `.ai/plans/2026-10-08-accounting-cutover.md`:
+  - A third status list, `OPEN_ITEM_JOURNAL_STATUSES`, for the readers that filter on `= 'Posted'`.
+  - The AR/AP readers accept `sourceType 'Opening Balance'`.
+  - The wizard edits accumulated depreciation inline.
+  - The enable closes the pre-cutover periods inside its own transaction.
+  - The audit trail is event-driven, and the `accountingEnabled` column stays.
+  - Migration Clearing is account 3400. Readiness checks for a Posted Opening Balance.
+  - The inventory reset is per item. L is the company's first Provisional journal.
+- 2026-10-08: Q7 revised: no back-fill of account defaults; stand-in lines with `journalLine.accountDefaultRole`, required defaults at readiness, re-pointed at enable.
+- 2026-10-08: Fixed the 2 bugs found while writing. The purchase receipt void now updates `costLedger`. The revenue recognition cron skips companies with `accountingEnabled = false`; this spec replaces that check with the cutover. Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.
