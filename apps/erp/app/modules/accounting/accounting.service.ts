@@ -7286,6 +7286,26 @@ export async function buildDepreciationRunLines(
     coveredLines.data.map((line) => line.fixedAssetId)
   );
 
+  // An asset with a cost added after it went into service (a capital
+  // project's late cost, `postCapitalization`) depreciates Straight Line on
+  // its remaining life. Every other asset keeps its schedule unchanged.
+  const lateCosts = await fetchAllFromTable<{ fixedAssetId: string }>(
+    client,
+    "fixedAssetCipCost",
+    "id, fixedAssetId",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("postCapitalization", true)
+        .order("id", { ascending: true })
+  );
+  if (lateCosts.error || !lateCosts.data) {
+    return { data: null, error: lateCosts.error };
+  }
+  const remainingLifeAssetIds = new Set(
+    lateCosts.data.map((row) => row.fixedAssetId)
+  );
+
   const lines = buildDepreciationLines(
     assets.data
       .filter((asset) => !coveredAssetIds.has(asset.id))
@@ -7293,7 +7313,8 @@ export async function buildDepreciationRunLines(
         ...asset,
         accumulatedTaxDepreciation: Number(
           asset.accumulatedTaxDepreciation ?? 0
-        )
+        ),
+        remainingLifeBasis: remainingLifeAssetIds.has(asset.id)
       })),
     periodEnd,
     lastPostedPeriodEnd,

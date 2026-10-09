@@ -517,6 +517,40 @@ export function runPostingTargets(args: {
   );
 }
 
+/**
+ * Straight Line on a remaining-life basis: each month takes the remaining
+ * depreciable amount over the months left in the useful life, so a cost
+ * added after the asset went into service (a capital project's late cost)
+ * spreads over the rest of its life. With no addition it gives the same
+ * monthly amount as `depreciableBase / life`. `monthsElapsed` counts the
+ * months from the start month to the period's last month.
+ */
+function remainingLifeStraightLine(args: {
+  remainingDepreciable: number;
+  usefulLifeMonths: number;
+  monthsElapsed: number;
+  monthsToDepreciate: number;
+}): number {
+  let total = 0;
+  let remaining = args.remainingDepreciable;
+  for (let i = 0; i < args.monthsToDepreciate; i++) {
+    // The window's months run up to the period's month; month i of it has
+    // this many months of life left, itself included.
+    const remainingMonths = Math.max(
+      1,
+      args.usefulLifeMonths -
+        args.monthsElapsed +
+        args.monthsToDepreciate -
+        1 -
+        i
+    );
+    const monthly = remaining / remainingMonths;
+    total += monthly;
+    remaining -= monthly;
+  }
+  return total;
+}
+
 export function calculateDepreciation(
   asset: {
     acquisitionCost: number;
@@ -527,6 +561,12 @@ export function calculateDepreciation(
     depreciationStartDate: string | null;
     acquisitionDate: string | null;
     assetLifetimeUsage: number | null;
+    /**
+     * Straight Line on the remaining life: set for an asset with a cost added
+     * after it went into service. Every other asset keeps the plain
+     * `depreciableBase / life` schedule, unchanged.
+     */
+    remainingLifeBasis?: boolean;
   },
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
@@ -551,11 +591,20 @@ export function calculateDepreciation(
 
   switch (asset.depreciationMethod) {
     case "Straight Line": {
-      const monthlyAmount = depreciableBase / asset.usefulLifeMonths;
       const from = lastPostedPeriodEnd
         ? addOneMonth(lastPostedPeriodEnd)
         : startDate;
       const monthsToDepreciate = getMonthsBetween(from, periodEndDate);
+      if (asset.remainingLifeBasis) {
+        const total = remainingLifeStraightLine({
+          remainingDepreciable,
+          usefulLifeMonths: asset.usefulLifeMonths,
+          monthsElapsed: getMonthsElapsed(startDate, periodEndDate),
+          monthsToDepreciate
+        });
+        return Math.min(round(total, decimalPlaces), remainingDepreciable);
+      }
+      const monthlyAmount = depreciableBase / asset.usefulLifeMonths;
       const amount = monthlyAmount * monthsToDepreciate;
       return Math.min(round(amount, decimalPlaces), remainingDepreciable);
     }
@@ -614,6 +663,8 @@ export function calculateTaxDepreciation(
     macrsPropertyClass: string | null;
     macrsConvention: string | null;
     bonusDepreciationPercent: number | null;
+    /** As for `calculateDepreciation`: Straight Line on the remaining life. */
+    remainingLifeBasis?: boolean;
   },
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
@@ -674,6 +725,15 @@ export function calculateTaxDepreciation(
   const monthsToDepreciate = getMonthsBetween(from, periodEndDate);
 
   if (taxMethod === "Straight Line") {
+    if (asset.remainingLifeBasis) {
+      const total = remainingLifeStraightLine({
+        remainingDepreciable,
+        usefulLifeMonths: taxLife,
+        monthsElapsed: getMonthsElapsed(depStartDate, periodEndDate),
+        monthsToDepreciate
+      });
+      return Math.min(round(total, decimalPlaces), remainingDepreciable);
+    }
     const monthlyAmount = depreciableBase / taxLife;
     const amount = monthlyAmount * monthsToDepreciate;
     return Math.min(round(amount, decimalPlaces), remainingDepreciable);
@@ -732,6 +792,8 @@ export function buildDepreciationLines(
     macrsPropertyClass: string | null;
     macrsConvention: string | null;
     bonusDepreciationPercent: number | null;
+    /** A cost was added after the asset went into service. */
+    remainingLifeBasis?: boolean;
   }>,
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
@@ -784,7 +846,8 @@ export function buildDepreciationLines(
           acquisitionDate: asset.acquisitionDate,
           assetLifetimeUsage: asset.assetLifetimeUsage
             ? Number(asset.assetLifetimeUsage)
-            : null
+            : null,
+          remainingLifeBasis: asset.remainingLifeBasis
         },
         monthEnd,
         previous,
@@ -805,7 +868,8 @@ export function buildDepreciationLines(
             taxResidualValuePercent: asset.taxResidualValuePercent,
             macrsPropertyClass: asset.macrsPropertyClass,
             macrsConvention: asset.macrsConvention,
-            bonusDepreciationPercent: asset.bonusDepreciationPercent
+            bonusDepreciationPercent: asset.bonusDepreciationPercent,
+            remainingLifeBasis: asset.remainingLifeBasis
           },
           monthEnd,
           previous,
