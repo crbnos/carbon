@@ -216,6 +216,29 @@ export async function updateProject(
     .single();
 }
 
+/** Marks a project as a template, which the new project form lists first. */
+export async function updateProjectTemplate(
+  client: Client,
+  args: {
+    id: string;
+    companyId: string;
+    isTemplate: boolean;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("project")
+    .update({
+      isTemplate: args.isTemplate,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
 /**
  * Changes the status of a project. Closing refuses while the project has an
  * open purchase order line or an open job.

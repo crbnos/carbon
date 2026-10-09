@@ -91,6 +91,10 @@ msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0}（类型）"
@@ -5384,6 +5388,9 @@ msgstr "已复制！"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "复制换型提示给您的AI编码工具"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "复制"
 
@@ -5431,6 +5438,9 @@ msgstr "复制文件名"
 
 msgid "Copy document unique identifier"
 msgstr "复制文件唯一标识符"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "复制程序文件名"
 
 msgid "Copy procedure unique identifier"
 msgstr "复制程序文件唯一标识符"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "复制采购发票唯一标识符"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "温度"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "模板 ID"

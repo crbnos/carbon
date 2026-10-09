@@ -2,7 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, Copy, Heading, HStack, useDisclosure } from "@carbon/react";
+import {
+  Button,
+  Copy,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Heading,
+  HStack,
+  IconButton,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -10,6 +23,8 @@ import {
   LuCircleCheck,
   LuCirclePause,
   LuCirclePlay,
+  LuCopy,
+  LuEllipsisVertical,
   LuLock,
   LuRocket,
   LuRotateCcw
@@ -44,6 +59,7 @@ const ProjectHeader = () => {
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "projects");
   const statusFetcher = useFetcher<{}>();
+  const templateFetcher = useFetcher<{}>();
   const isChanging = statusFetcher.state !== "idle";
   const closeDisclosure = useDisclosure();
 
@@ -157,6 +173,45 @@ const ProjectHeader = () => {
               <Trans>Close</Trans>
             </Button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More`}
+                icon={<LuEllipsisVertical />}
+                variant="secondary"
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuCheckboxItem
+                checked={
+                  templateFetcher.formData
+                    ? templateFetcher.formData.get("isTemplate") === "true"
+                    : project.isTemplate
+                }
+                disabled={!canUpdate}
+                onCheckedChange={(checked) =>
+                  templateFetcher.submit(
+                    { isTemplate: checked ? "true" : "false" },
+                    {
+                      method: "post",
+                      action: path.to.projectTemplate(projectId)
+                    }
+                  )
+                }
+              >
+                <Trans>Template</Trans>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuItem
+                disabled={!permissions.can("create", "projects")}
+                asChild
+              >
+                <Link to={`${path.to.newProject}?copyFrom=${projectId}`}>
+                  <DropdownMenuIcon icon={<LuCopy />} />
+                  <Trans>Copy project</Trans>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DetailsTopbar links={links} />
         </HStack>
       </div>

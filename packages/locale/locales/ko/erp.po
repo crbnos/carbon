@@ -91,6 +91,10 @@ msgstr "{0, plural, one {플래너는 이 부품을 하나의 강체로 취급�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되어 있습니다} other {이 품목은 # 개의 미결 변경 통지에 포함되어 있습니다}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (유형)"
@@ -5384,6 +5388,9 @@ msgstr "복사되었습니다!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AI 코딩 도구용 셋업 프롬프트를 복사합니다"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "복사"
 
@@ -5431,6 +5438,9 @@ msgstr "문서 이름 복사"
 
 msgid "Copy document unique identifier"
 msgstr "문서 고유 식별자 복사"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "절차서 이름 복사"
 
 msgid "Copy procedure unique identifier"
 msgstr "절차서 고유 식별자 복사"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "매입 송장 고유 식별자 복사"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "온도"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "템플릿 ID"

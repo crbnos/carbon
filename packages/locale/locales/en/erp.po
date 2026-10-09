@@ -91,6 +91,10 @@ msgstr "{0, plural, one {The planner treats this component as one rigid body —
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr "{0} (template)"
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (type)"
@@ -5384,6 +5388,9 @@ msgstr "Copied!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copies a setup prompt for your AI coding tool"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr "Copies the states, labels, milestones, elements, links and plan lines"
+
 msgid "Copy"
 msgstr "Copy"
 
@@ -5431,6 +5438,9 @@ msgstr "Copy document name"
 
 msgid "Copy document unique identifier"
 msgstr "Copy document unique identifier"
+
+msgid "Copy from"
+msgstr "Copy from"
 
 msgid "Copy id"
 msgstr "Copy id"
@@ -5533,6 +5543,9 @@ msgstr "Copy procedure name"
 
 msgid "Copy procedure unique identifier"
 msgstr "Copy procedure unique identifier"
+
+msgid "Copy project"
+msgstr "Copy project"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copy purchase invoice unique identifier"
@@ -21081,6 +21094,9 @@ msgstr "Tell the employee what to fix"
 
 msgid "Temperature"
 msgstr "Temperature"
+
+msgid "Template"
+msgstr "Template"
 
 msgid "Template ID"
 msgstr "Template ID"

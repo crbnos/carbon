@@ -91,6 +91,10 @@ msgstr "{0, plural, one {योजनाकार इस घटक को एक
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (प्रकार)"
@@ -5384,6 +5388,9 @@ msgstr "कॉपी हो गया!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "आपकी AI कोडिंग टूल के लिए एक सेटअप प्रॉम्प्ट कॉपी करता है"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "कॉपी करें"
 
@@ -5431,6 +5438,9 @@ msgstr "दस्तावेज़ का नाम कॉपी करें"
 
 msgid "Copy document unique identifier"
 msgstr "दस्तावेज़ की अद्वितीय पहचान की प्रतिलिपि बनाएँ"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "कार्यविधि का नाम नकल करें"
 
 msgid "Copy procedure unique identifier"
 msgstr "कार्यविधि की अद्वितीय पहचान की नकल करें"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "क्रय चालान की विशिष्ट पहचान नकल करें"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "तापमान"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "टेम्पलेट आईडी"

@@ -91,6 +91,10 @@ msgstr "{0, plural, one {Планировщик рассматривает эт�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Эта номенклатура находится в 1 открытом извещении об изменении} other {Эта номенклатура находится в # открытых извещениях об изменении}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (тип)"
@@ -5384,6 +5388,9 @@ msgstr "Скопировано!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Копирует подсказку наладки для вашего инструмента кодирования AI"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "Копировать"
 
@@ -5431,6 +5438,9 @@ msgstr "Копировать имя документа"
 
 msgid "Copy document unique identifier"
 msgstr "Скопировать уникальный идентификатор документа"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "Копировать имя процедуры"
 
 msgid "Copy procedure unique identifier"
 msgstr "Скопировать уникальный идентификатор процедуры"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Скопировать уникальный идентификатор счета-фактуры полученного"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "Температура"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "ID шаблона"

@@ -91,6 +91,10 @@ msgstr "{0, plural, one {プランナーはこのコンポーネントを1つの
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0}（タイプ）"
@@ -5384,6 +5388,9 @@ msgstr "コピーしました！"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AIコーディングツール用の段取りプロンプトをコピーします"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "コピー"
 
@@ -5431,6 +5438,9 @@ msgstr "文書名をコピー"
 
 msgid "Copy document unique identifier"
 msgstr "文書の識別子をコピー"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "手順書名をコピー"
 
 msgid "Copy procedure unique identifier"
 msgstr "手順書の識別子をコピー"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "仕入先請求書の一意識別子をコピー"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "温度"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "テンプレートID"

@@ -55,6 +55,11 @@ type ProjectFormProps = {
   /** Set for a new project: the form opens in a drawer. */
   onClose?: () => void;
   isDisabled?: boolean;
+  /** A new project only: the projects it can copy, templates first. */
+  copyFrom?: {
+    options: { value: string; label: string }[];
+    defaultValue?: string;
+  };
 };
 
 /**
@@ -66,7 +71,8 @@ type ProjectFormProps = {
 const ProjectForm = ({
   initialValues,
   onClose,
-  isDisabled = false
+  isDisabled = false,
+  copyFrom
 }: ProjectFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -106,6 +112,17 @@ const ProjectForm = ({
     <>
       <Hidden name="id" />
       <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+        {!isEditing && copyFrom && copyFrom.options.length > 0 && (
+          <div className="@xl:col-span-2">
+            <Select
+              name="copyFromProjectId"
+              label={t`Copy from`}
+              isOptional
+              helperText={t`Copies the states, labels, milestones, elements, links and plan lines`}
+              options={copyFrom.options}
+            />
+          </div>
+        )}
         <InputControlled
           name="name"
           label={t`Name`}
@@ -204,7 +221,14 @@ const ProjectForm = ({
             validator={projectValidator}
             method="post"
             action={path.to.newProject}
-            defaultValues={initialValues}
+            defaultValues={
+              copyFrom?.defaultValue
+                ? ({
+                    ...initialValues,
+                    copyFromProjectId: copyFrom.defaultValue
+                  } as ProjectFormValues)
+                : initialValues
+            }
             fetcher={fetcher}
             className="flex flex-col h-full"
           >

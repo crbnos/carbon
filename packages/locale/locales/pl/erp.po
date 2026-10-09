@@ -91,6 +91,10 @@ msgstr "{0, plural, one {Planista traktuje ten składnik jako jedno sztywne cia�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Ten artykuł jest na 1 otwartym zawiadomieniu o zmianie} other {Ten artykuł jest na # otwartych zawiadomieniach o zmianie}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (typ)"
@@ -5384,6 +5388,9 @@ msgstr "Skopiowano!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Kopiuje instrukcję przezbrojenia dla twojego narzędzia kodowania AI"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "Kopiuj"
 
@@ -5431,6 +5438,9 @@ msgstr "Skopiuj nazwę dokumentu"
 
 msgid "Copy document unique identifier"
 msgstr "Skopiuj unikalny identyfikator dokumentu"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "Skopiuj nazwę procedury"
 
 msgid "Copy procedure unique identifier"
 msgstr "Skopiuj unikatowy identyfikator procedury"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Skopiuj unikalny identyfikator faktury zakupu"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "Temperatura"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "Identyfikator szablonu"

@@ -57,7 +57,7 @@
 - [x] Task 19: Build the Reader layout
 - [x] Task 20: Add the Reader PDF
 - [x] Task 21: Add saved views and per-user preferences
-- [ ] Task 22: Add project templates
+- [x] Task 22: Add project templates
 - [ ] Task 23: Add Create Job from a plan-line material
 - [ ] Task 24: Add Create PO line from a plan-line material
 - [ ] Task 25: Add charge numbers to reimbursement lines and show them on charges
@@ -1518,3 +1518,9 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 21: the Elements route exports a `shouldRevalidate` that skips the reload only after the `savePreference` fetcher, because the preference changes nothing the page shows and the loader reads every element and the verification. Every navigation and every other action still reloads it. `coding-conventions.md` warns against a layout that skips its loader on navigation; this skip is narrower than that.
 - Task 21: `projectLayouts`, `elementDisplayProperties`, `elementGroupings` and `timelineZooms` moved to `projects.models.ts`, so the validator can use them; the UI files re-export them. The view and preference service functions carry no `@mcp` tag, because they keep UI state.
 - Task 21: the element links of the List, Board and Table layouts now keep the query string (Task 20 found that they lost it). Without it, the peek's URL is bare and the loader would apply the preference again.
+- Task 22: `planProjectCopy` takes `makeId(prefix)`, and `copyProject` passes ids in the SQL `id()` format (`pje_` + 22 base58 characters, from `nanoid`'s `customAlphabet`), so a copied row cannot be told apart from an inserted one. It copies every column of a source row except the audit columns, so a column added later is copied too. Besides the plan's `fixedAssetId` and `suspectSince`, it clears what records the source's history: a Test Case verdict (`verdict`, `verdictAt`, `verdictBy`), a link's review (`reviewedAt`, `reviewedBy`) and a material's `quantityIssued` (the issues are charges, which are not copied). A copied element keeps its state, as the plan says.
+- Task 22: formulas are rewritten by `rewriteFormulaRefs`, which replaces the ref tokens of the formula tokenizer by position. A formula that does not tokenize is kept as it is.
+- Task 22: `copyProject` loads the source rows inside its transaction (one query per table, plus one join for the element labels) and refuses a source project of another company. With no identifier it asks `derive_project_identifier` first, because the readable ids need it.
+- Task 22: the **Copy from** value is read from the form data, not added to `projectValidator`, because `updateProject` writes every validated field to the row. The new project route lists the company's active projects, templates first, and `?copyFrom=<id>` preselects one.
+- Task 22: the project header has no menu before this task, so it gains a **More** menu with the **Template** check item and **Copy project** (the new project form with this project preselected). The Template flag posts to a new resource route, `$projectId.template.tsx` (`update: projects`), through `updateProjectTemplate`. Neither function carries an `@mcp` tag.
+- Task 22: `projects-copy.test.ts` has the plan's 4 cases. A throwaway vitest run against this worktree's database copied a project of 3 elements (2 under a parent), 1 link and 1 material: the copy was a Draft with 3 elements, the link pointed at the copied elements, and the material's issued quantity was 0. The rows were deleted. The script was not committed.

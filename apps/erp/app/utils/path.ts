@@ -2004,6 +2004,8 @@ export const path = {
     projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),
     projects: `${x}/projects`,
     projectsSettings: `${x}/settings/projects`,
+    projectTemplate: (id: string) =>
+      generatePath(`${x}/project/${id}/template`),
     projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
     projectTimesheet: `${x}/projects/timesheet`,
     projectTimesheetApprovals: `${x}/projects/approvals`,

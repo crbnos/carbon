@@ -9,12 +9,15 @@ import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import { customAlphabet } from "nanoid";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
   ElementVerification,
   ItemValues,
   logTimeValidator,
+  ProjectCopyElement,
+  ProjectCopySource,
   projectElementValidator,
   projectIssueValidator,
   projectValidator,
@@ -26,6 +29,7 @@ import {
   computeVerification,
   defaultProjectStates,
   parseParameterFormula,
+  planProjectCopy,
   rollUpRequirementStatus
 } from "./projects.models";
 import {
@@ -95,6 +99,169 @@ export async function createProject(
       .execute();
 
     return project.id;
+  });
+}
+
+/** A new row id with the prefix the SQL `id()` default would give it. */
+const makeCopyId = (() => {
+  const base58 = customAlphabet(
+    "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+    22
+  );
+  return (prefix: string) => `${prefix}_${base58()}`;
+})();
+
+/**
+ * Creates a Draft project as a copy of another project of the company, in
+ * one transaction: its states, labels, milestones, elements (renumbered from
+ * 1), element labels, links and plan lines. Charges, ledger rows, timesheets,
+ * comments, views, preferences and assets are not copied. When `identifier`
+ * is empty, `derive_project_identifier` picks one from the name.
+ */
+export async function copyProject(
+  db: Kysely<KyselyDatabase>,
+  args: Omit<z.infer<typeof projectValidator>, "id"> & {
+    companyId: string;
+    userId: string;
+    sourceProjectId: string;
+  }
+): Promise<string> {
+  const { companyId, userId, sourceProjectId } = args;
+  return db.transaction().execute(async (trx) => {
+    const sourceProject = await trx
+      .selectFrom("project")
+      .select("id")
+      .where("id", "=", sourceProjectId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!sourceProject) {
+      throw new Error("The project to copy from was not found");
+    }
+
+    const ofSource = <
+      T extends
+        | "projectState"
+        | "projectLabel"
+        | "projectMilestone"
+        | "projectElement"
+        | "projectElementLink"
+        | "projectElementMaterial"
+        | "projectElementLabor"
+        | "projectElementCost"
+    >(
+      table: T
+    ) =>
+      trx
+        .selectFrom(table as "projectState")
+        .selectAll()
+        .where("projectId", "=", sourceProjectId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+    const [
+      states,
+      labels,
+      milestones,
+      elements,
+      links,
+      materials,
+      labor,
+      costs,
+      elementLabels,
+      identifierRow
+    ] = await Promise.all([
+      ofSource("projectState"),
+      ofSource("projectLabel"),
+      ofSource("projectMilestone"),
+      ofSource("projectElement"),
+      ofSource("projectElementLink"),
+      ofSource("projectElementMaterial"),
+      ofSource("projectElementLabor"),
+      ofSource("projectElementCost"),
+      trx
+        .selectFrom("projectElementLabel as el")
+        .innerJoin("projectElement as e", (join) =>
+          join
+            .onRef("e.id", "=", "el.projectElementId")
+            .onRef("e.companyId", "=", "el.companyId")
+        )
+        .select(["el.projectElementId", "el.projectLabelId"])
+        .where("e.projectId", "=", sourceProjectId)
+        .where("el.companyId", "=", companyId)
+        .execute(),
+      args.identifier
+        ? Promise.resolve({ identifier: args.identifier })
+        : sql<{
+            identifier: string;
+          }>`SELECT derive_project_identifier(${args.name}, ${companyId}) AS "identifier"`
+            .execute(trx)
+            .then((result) => result.rows[0]!)
+    ]);
+
+    const projectId = makeCopyId("prj");
+    const plan = planProjectCopy(
+      {
+        states,
+        labels,
+        milestones,
+        elements: elements as unknown as ProjectCopyElement[],
+        elementLabels,
+        links: links as unknown as ProjectCopySource["links"],
+        materials: materials as unknown as ProjectCopySource["materials"],
+        labor: labor as unknown as ProjectCopySource["labor"],
+        costs: costs as unknown as ProjectCopySource["costs"]
+      },
+      projectId,
+      identifierRow.identifier,
+      makeCopyId
+    );
+
+    await trx
+      .insertInto("project")
+      .values({
+        id: projectId,
+        name: args.name,
+        identifier: identifierRow.identifier,
+        description: args.description ?? null,
+        status: "Draft",
+        costTreatment: args.costTreatment,
+        costAccountId: args.costAccountId ?? null,
+        fixedAssetClassId: args.fixedAssetClassId ?? null,
+        customerId: args.customerId ?? null,
+        ownerId: args.ownerId ?? null,
+        locationId: args.locationId ?? null,
+        startDate: args.startDate ?? null,
+        endDate: args.endDate ?? null,
+        priority: args.priority ?? "None",
+        nextElementSequence: plan.nextElementSequence,
+        active: true,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    // FK order: states, labels and milestones before the elements that
+    // point at them; elements (parents first) before labels, links and plan
+    // lines. Every row of one insert has the same keys.
+    const audit = { companyId, createdBy: userId };
+    const insertRows = async (table: string, rows: object[]) => {
+      if (rows.length === 0) return;
+      await trx
+        .insertInto(table as "projectState")
+        .values(rows.map((row) => ({ ...row, ...audit })) as never)
+        .execute();
+    };
+    await insertRows("projectState", plan.states);
+    await insertRows("projectLabel", plan.labels);
+    await insertRows("projectMilestone", plan.milestones);
+    await insertRows("projectElement", plan.elements);
+    await insertRows("projectElementLabel", plan.elementLabels);
+    await insertRows("projectElementLink", plan.links);
+    await insertRows("projectElementMaterial", plan.materials);
+    await insertRows("projectElementLabor", plan.labor);
+    await insertRows("projectElementCost", plan.costs);
+
+    return projectId;
   });
 }
 

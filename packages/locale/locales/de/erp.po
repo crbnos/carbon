@@ -91,6 +91,10 @@ msgstr "{0, plural, one {Der Planer behandelt diese Komponente als einen starren
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Dieser Artikel ist auf 1 offener Änderungsmitteilung} other {Dieser Artikel ist auf # offenen Änderungsmitteilungen}}"
 
+#. placeholder {0}: project.name
+msgid "{0} (template)"
+msgstr ""
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (Typ)"
@@ -5384,6 +5388,9 @@ msgstr "Kopiert!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Kopiert eine Rüst-Eingabeaufforderung für Ihr KI-Codierungstool"
 
+msgid "Copies the states, labels, milestones, elements, links and plan lines"
+msgstr ""
+
 msgid "Copy"
 msgstr "Kopieren"
 
@@ -5431,6 +5438,9 @@ msgstr "Dokumentnamen kopieren"
 
 msgid "Copy document unique identifier"
 msgstr "Eindeutige Dokumentkennung kopieren"
+
+msgid "Copy from"
+msgstr ""
 
 msgid "Copy id"
 msgstr ""
@@ -5533,6 +5543,9 @@ msgstr "Name der Verfahrensanweisung kopieren"
 
 msgid "Copy procedure unique identifier"
 msgstr "Eindeutige Kennung der Verfahrensanweisung kopieren"
+
+msgid "Copy project"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Eindeutige Kennung der Eingangsrechnung kopieren"
@@ -21081,6 +21094,9 @@ msgstr ""
 
 msgid "Temperature"
 msgstr "Temperatur"
+
+msgid "Template"
+msgstr ""
 
 msgid "Template ID"
 msgstr "Vorlagen-ID"

@@ -2252,3 +2252,240 @@ export const projectViewValidator = z.object({
   isShared: zfd.checkbox(),
   state: z.string().min(1)
 });
+
+// --- Copying a project ---------------------------------------------------------
+
+/**
+ * Rewrites the element refs of a formula through `readableIds` (old → new).
+ * Only whole ref tokens change, so `SNS-2` never rewrites the `SNS-2` inside
+ * `SNS-20`. A formula that does not parse, or a ref with no entry, is kept.
+ */
+export function rewriteFormulaRefs(
+  text: string,
+  readableIds: Map<string, string>
+): string {
+  const start = text.indexOf("=");
+  if (start < 0) return text;
+  let tokens: FormulaToken[];
+  try {
+    tokens = tokenizeFormula(text, start + 1);
+  } catch {
+    return text;
+  }
+  let result = text;
+  // From the end, so earlier positions stay valid.
+  for (const token of [...tokens].reverse()) {
+    if (token.kind !== "ref") continue;
+    const next = readableIds.get(token.id);
+    if (!next) continue;
+    result =
+      result.slice(0, token.position) +
+      next +
+      result.slice(token.position + token.id.length);
+  }
+  return result;
+}
+
+type CopyRow = Record<string, unknown>;
+
+/** The columns a copy never takes from its source; the caller sets them. */
+const COPY_AUDIT_KEYS = [
+  "companyId",
+  "createdBy",
+  "createdAt",
+  "updatedBy",
+  "updatedAt"
+] as const;
+
+/** The row without its audit columns (the type keeps them, as optional). */
+function withoutAudit<T extends CopyRow>(row: T): T {
+  const copy: CopyRow = { ...row };
+  for (const key of COPY_AUDIT_KEYS) delete copy[key];
+  return copy as T;
+}
+
+export type ProjectCopyElement = CopyRow & {
+  id: string;
+  readableId: string;
+  sequence: number;
+  parentId: string | null;
+  stateId: string;
+  milestoneId: string | null;
+  actualParameterId: string | null;
+  parameterFormula: string | null;
+};
+
+export type ProjectCopySource = {
+  states: (CopyRow & { id: string })[];
+  labels: (CopyRow & { id: string })[];
+  milestones: (CopyRow & { id: string })[];
+  elements: ProjectCopyElement[];
+  elementLabels: { projectElementId: string; projectLabelId: string }[];
+  links: (CopyRow & {
+    id: string;
+    fromElementId: string;
+    toElementId: string;
+  })[];
+  materials: (CopyRow & { id: string; projectElementId: string })[];
+  labor: (CopyRow & { id: string; projectElementId: string })[];
+  costs: (CopyRow & { id: string; projectElementId: string })[];
+};
+
+/** The id prefixes of the copied tables, as the SQL `id()` defaults use them. */
+export const projectCopyIdPrefixes = {
+  state: "pjs",
+  label: "pjb",
+  milestone: "pjm",
+  element: "pje",
+  link: "pjk",
+  material: "pjp",
+  labor: "pjr",
+  cost: "pjo"
+} as const;
+
+/**
+ * Plans the rows of a project copy, with new ids from `makeId`. Every
+ * reference is remapped to the copy: element parents, states, milestones and
+ * actual Parameters, element labels, both ends of each link. Elements are
+ * renumbered from 1 in the source's sequence order and returned parents
+ * first; formulas name the new readable ids. What belongs to the source's
+ * history is cleared: the element's asset, a test verdict, a link's suspect
+ * flag and review, a material's issued quantity.
+ */
+export function planProjectCopy(
+  source: ProjectCopySource,
+  newProjectId: string,
+  identifier: string,
+  makeId: (prefix: string) => string
+) {
+  const remap = <T extends { id: string }>(rows: T[], prefix: string) =>
+    new Map(rows.map((row) => [row.id, makeId(prefix)]));
+  const stateIds = remap(source.states, projectCopyIdPrefixes.state);
+  const labelIds = remap(source.labels, projectCopyIdPrefixes.label);
+  const milestoneIds = remap(
+    source.milestones,
+    projectCopyIdPrefixes.milestone
+  );
+
+  const ordered = [...source.elements].sort(
+    (a, b) =>
+      a.sequence - b.sequence || a.readableId.localeCompare(b.readableId)
+  );
+  const elementIds = new Map<string, string>();
+  const readableIds = new Map<string, string>();
+  const sequences = new Map<string, number>();
+  ordered.forEach((element, index) => {
+    elementIds.set(element.id, makeId(projectCopyIdPrefixes.element));
+    sequences.set(element.id, index + 1);
+    readableIds.set(element.readableId, `${identifier}-${index + 1}`);
+  });
+
+  // Parents first: an element's depth is one more than its parent's.
+  const byId = new Map(source.elements.map((element) => [element.id, element]));
+  const depth = new Map<string, number>();
+  const depthOf = (
+    element: ProjectCopyElement,
+    seen = new Set<string>()
+  ): number => {
+    const known = depth.get(element.id);
+    if (known !== undefined) return known;
+    const parent = element.parentId ? byId.get(element.parentId) : undefined;
+    const value: number =
+      parent && !seen.has(parent.id)
+        ? depthOf(parent, seen.add(element.id)) + 1
+        : 0;
+    depth.set(element.id, value);
+    return value;
+  };
+  const elements = [...ordered]
+    .sort((a, b) => depthOf(a) - depthOf(b))
+    .map((element) => ({
+      ...withoutAudit(element),
+      id: elementIds.get(element.id)!,
+      projectId: newProjectId,
+      sequence: sequences.get(element.id)!,
+      readableId: `${identifier}-${sequences.get(element.id)!}`,
+      parentId: element.parentId
+        ? (elementIds.get(element.parentId) ?? null)
+        : null,
+      stateId: stateIds.get(element.stateId) ?? element.stateId,
+      milestoneId: element.milestoneId
+        ? (milestoneIds.get(element.milestoneId) ?? null)
+        : null,
+      actualParameterId: element.actualParameterId
+        ? (elementIds.get(element.actualParameterId) ?? null)
+        : null,
+      parameterFormula: element.parameterFormula
+        ? rewriteFormulaRefs(element.parameterFormula, readableIds)
+        : null,
+      fixedAssetId: null,
+      verdict: null,
+      verdictAt: null,
+      verdictBy: null
+    }));
+
+  const planLines = <
+    T extends CopyRow & { id: string; projectElementId: string }
+  >(
+    rows: T[],
+    prefix: string
+  ) =>
+    rows
+      .filter((row) => elementIds.has(row.projectElementId))
+      .map((row) => ({
+        ...withoutAudit(row),
+        id: makeId(prefix),
+        projectId: newProjectId,
+        projectElementId: elementIds.get(row.projectElementId)!
+      }));
+
+  return {
+    states: source.states.map((state) => ({
+      ...withoutAudit(state),
+      id: stateIds.get(state.id)!,
+      projectId: newProjectId
+    })),
+    labels: source.labels.map((label) => ({
+      ...withoutAudit(label),
+      id: labelIds.get(label.id)!,
+      projectId: newProjectId
+    })),
+    milestones: source.milestones.map((milestone) => ({
+      ...withoutAudit(milestone),
+      id: milestoneIds.get(milestone.id)!,
+      projectId: newProjectId
+    })),
+    elements,
+    elementLabels: source.elementLabels
+      .filter(
+        (row) =>
+          elementIds.has(row.projectElementId) &&
+          labelIds.has(row.projectLabelId)
+      )
+      .map((row) => ({
+        projectElementId: elementIds.get(row.projectElementId)!,
+        projectLabelId: labelIds.get(row.projectLabelId)!
+      })),
+    links: source.links
+      .filter(
+        (link) =>
+          elementIds.has(link.fromElementId) && elementIds.has(link.toElementId)
+      )
+      .map((link) => ({
+        ...withoutAudit(link),
+        id: makeId(projectCopyIdPrefixes.link),
+        projectId: newProjectId,
+        fromElementId: elementIds.get(link.fromElementId)!,
+        toElementId: elementIds.get(link.toElementId)!,
+        suspectSince: null,
+        reviewedAt: null,
+        reviewedBy: null
+      })),
+    materials: planLines(source.materials, projectCopyIdPrefixes.material).map(
+      (material) => ({ ...material, quantityIssued: 0 })
+    ),
+    labor: planLines(source.labor, projectCopyIdPrefixes.labor),
+    costs: planLines(source.costs, projectCopyIdPrefixes.cost),
+    nextElementSequence: ordered.length + 1
+  };
+}
