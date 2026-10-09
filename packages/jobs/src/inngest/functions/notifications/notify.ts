@@ -537,7 +537,14 @@ export const notifyFunction = inngest.createFunction(
             const childRows = chunk.flatMap((userId) => {
               const parentId = parentIdByUser.get(userId);
               if (!parentId) {
-                throw new Error(`Failed to insert digest parent for ${userId}`);
+                const error = new Error(
+                  `Failed to insert digest parent for ${userId}`
+                );
+                console.error("Failed to insert digest parent", {
+                  companyId: payload.companyId,
+                  userId
+                });
+                throw error;
               }
               return digestItems.map((item) => ({
                 companyId: payload.companyId,
