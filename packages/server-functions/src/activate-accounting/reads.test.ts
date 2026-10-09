@@ -25,6 +25,7 @@ import {
   databaseTest
 } from "../local-database-test-fixture";
 import postPayment from "../post-payment";
+import postPurchaseInvoice from "../post-purchase-invoice";
 import postReceipt from "../post-receipt";
 import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursement-test-fixture";
 import postSalesInvoice from "../post-sales-invoice";
@@ -235,6 +236,11 @@ async function cutoverReadsFixture() {
           .set({ status: "Draft" })
           .where("companyId", "=", companyId)
           .execute();
+        await trx
+          .updateTable("purchaseInvoice")
+          .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
         await sql`SET LOCAL session_replication_role = origin`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx
@@ -318,6 +324,61 @@ async function receiveTenParts(f: Fixture): Promise<string> {
   );
   unwrap(await postReceipt(f.ctx, { type: "post", receiptId: receipt.id }));
   return purchaseOrderLine.id;
+}
+
+/** Invoices 4 of the 10 received parts at 10; returns the invoice id. */
+async function invoiceFourParts(
+  f: Fixture,
+  purchaseOrderLineId: string
+): Promise<string> {
+  const invoiceId = `${f.prefix}-purchase-invoice`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    const interaction = await trx
+      .insertInto("supplierInteraction")
+      .values({ supplierId: f.supplierId, companyId: f.companyId })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("purchaseInvoice")
+      .values({
+        id: invoiceId,
+        invoiceId: "PI-1",
+        supplierId: f.supplierId,
+        supplierInteractionId: interaction.id,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("purchaseInvoiceDelivery")
+      .values({ id: invoiceId, companyId: f.companyId })
+      .execute();
+    await trx
+      .insertInto("purchaseInvoiceLine")
+      .values({
+        invoiceId,
+        invoiceLineType: "Part",
+        itemId: f.partId,
+        purchaseOrderId: `${f.prefix}-po`,
+        purchaseOrderLineId,
+        quantity: 4,
+        supplierUnitPrice: 10,
+        exchangeRate: 1,
+        conversionFactor: 1,
+        inventoryUnitOfMeasureCode: "EA",
+        purchaseUnitOfMeasureCode: "EA",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postPurchaseInvoice(f.ctx, { type: "post", invoiceId }));
+  return invoiceId;
 }
 
 /** Ships 4 parts on a sales order. */
@@ -554,6 +615,7 @@ databaseTest(
     const f = await cutoverReadsFixture();
     try {
       const purchaseOrderLineId = await receiveTenParts(f);
+      const purchaseInvoiceId = await invoiceFourParts(f, purchaseOrderLineId);
       await shipFourParts(f);
       const invoiceId = await serviceInvoice(f, { id: "inv-1", post: true });
       await payForty(f, invoiceId);
@@ -561,9 +623,11 @@ databaseTest(
       const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
 
       // The invoice of 100 with 40 paid before the cutover keeps its
-      // original amount and the settled part; the receipt is not invoiced.
+      // original amount and the settled part. Of the 10 received, 4 are
+      // invoiced: the received line carries all 10, the cleared part sits on
+      // the purchase invoice's reference with its quantity.
       const items = await getCutoverOpenItems(f.db, args);
-      expect(items).toHaveLength(2);
+      expect(items).toHaveLength(3);
       expect(items).toContainEqual({
         openItemType: "Receivable",
         accountId: f.account("receivables"),
@@ -580,13 +644,32 @@ databaseTest(
         openItemType: "Received Not Invoiced",
         accountId: f.account("grni"),
         accountClass: "Liability",
-        amount: 100,
+        amount: 60,
         originalAmount: 100,
-        settledBeforeCutover: 0,
+        settledBeforeCutover: 40,
         documentType: null,
         documentId: null,
         documentLineReference: journalReference.to.receipt(purchaseOrderLineId),
-        description: "Goods Received Not Invoiced"
+        description: "Goods Received Not Invoiced",
+        quantity: 10,
+        settled: {
+          documentLineReference:
+            journalReference.to.purchaseInvoice(purchaseOrderLineId),
+          description: "GR/IR Clearing",
+          quantity: 4
+        }
+      });
+      expect(items).toContainEqual({
+        openItemType: "Payable",
+        accountId: f.account("payables"),
+        accountClass: "Liability",
+        amount: 40,
+        originalAmount: 40,
+        settledBeforeCutover: 0,
+        documentType: "Invoice",
+        documentId: purchaseInvoiceId,
+        documentLineReference: null,
+        description: "Accounts Payable"
       });
 
       // 10 received, 4 shipped: 6 on hand at the receipt's layer cost.
@@ -611,7 +694,8 @@ databaseTest(
           { accountId: f.account("receivables"), debit: 60, credit: 0 },
           { accountId: f.account("inventory"), debit: 60, credit: 0 },
           { accountId: f.account("bank"), debit: 40, credit: 0 },
-          { accountId: f.account("grni"), debit: 0, credit: 100 },
+          { accountId: f.account("grni"), debit: 0, credit: 60 },
+          { accountId: f.account("payables"), debit: 0, credit: 40 },
           { accountId: f.account("retained-earnings"), debit: 0, credit: 60 }
         ]
       });
@@ -641,7 +725,8 @@ databaseTest(
           { accountId: f.account("receivables"), debit: 65, credit: 0 },
           { accountId: f.account("inventory"), debit: 60, credit: 0 },
           { accountId: f.account("bank"), debit: 40, credit: 0 },
-          { accountId: f.account("grni"), debit: 0, credit: 100 },
+          { accountId: f.account("grni"), debit: 0, credit: 60 },
+          { accountId: f.account("payables"), debit: 0, credit: 40 },
           { accountId: f.account("retained-earnings"), debit: 0, credit: 65 }
         ]
       });

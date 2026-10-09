@@ -11,7 +11,8 @@ import {
   type OpeningJournalLine,
   planInventoryReset,
   recostOutbound,
-  type TrialBalanceLine
+  type TrialBalanceLine,
+  unitCostAtCutover
 } from "./accounting-cutover.ts";
 
 const AR = "acct-ar";
@@ -106,6 +107,65 @@ describe("buildOpeningJournalLines", () => {
     expect(arLines.reduce((sum, line) => sum + line.amount, 0)).toBe(60);
   });
 
+  it("keys received-not-invoiced by reference: received on receipt:, cleared on purchase-invoice:", () => {
+    const GRNI = "acct-grni";
+    const lines = buildOpeningJournalLines(
+      [
+        {
+          openItemType: "Received Not Invoiced",
+          accountId: GRNI,
+          accountClass: "Liability",
+          amount: 60,
+          originalAmount: 100,
+          settledBeforeCutover: 40,
+          documentType: null,
+          documentId: null,
+          documentLineReference: "receipt:po-line-1",
+          description: "Goods Received Not Invoiced",
+          quantity: 10,
+          settled: {
+            documentLineReference: "purchase-invoice:po-line-1",
+            description: "GR/IR Clearing",
+            quantity: 4
+          }
+        }
+      ],
+      [],
+      new Set([GRNI]),
+      CLEARING
+    );
+
+    expect(lines).toEqual([
+      {
+        accountId: GRNI,
+        amount: 100,
+        description: "Goods Received Not Invoiced",
+        documentType: null,
+        documentId: null,
+        documentLineReference: "receipt:po-line-1",
+        quantity: 10
+      },
+      {
+        accountId: GRNI,
+        amount: -40,
+        description: "GR/IR Clearing",
+        documentType: null,
+        documentId: null,
+        documentLineReference: "purchase-invoice:po-line-1",
+        quantity: 4
+      },
+      {
+        accountId: CLEARING,
+        amount: -60,
+        description: MIGRATION_CLEARING_DESCRIPTION,
+        documentType: null,
+        documentId: null,
+        documentLineReference: GRNI,
+        quantity: null
+      }
+    ]);
+  });
+
   it("shows a 5.00 difference on the receivables row when the trial balance says 5.00 more", () => {
     const items = [receivable("inv-1", 100)];
     const trialBalance: TrialBalanceLine[] = [
@@ -176,6 +236,7 @@ describe("recostOutbound", () => {
         {
           key: "opening",
           itemId: "item-a",
+          postingDate: "2026-10-01",
           quantity: 2,
           cost: 20,
           remainingQuantity: 2
@@ -183,12 +244,21 @@ describe("recostOutbound", () => {
         {
           key: "receipt",
           itemId: "item-a",
+          postingDate: "2026-10-02",
           quantity: 5,
           cost: 75,
           remainingQuantity: 5
         }
       ],
-      [{ costLedgerId: "ship-1", itemId: "item-a", quantity: 3, cost: 33 }],
+      [
+        {
+          costLedgerId: "ship-1",
+          itemId: "item-a",
+          postingDate: "2026-10-03",
+          quantity: 3,
+          cost: 33
+        }
+      ],
       new Map()
     );
 
@@ -198,5 +268,93 @@ describe("recostOutbound", () => {
     ]);
     expect(result.remainingByLayer.get("opening")).toBe(0);
     expect(result.remainingByLayer.get("receipt")).toBe(4);
+  });
+
+  const layers = [
+    {
+      key: "opening",
+      itemId: "item-a",
+      postingDate: "2026-10-01",
+      quantity: 2,
+      cost: 20,
+      remainingQuantity: 2
+    },
+    {
+      key: "receipt",
+      itemId: "item-a",
+      postingDate: "2026-10-05",
+      quantity: 5,
+      cost: 75,
+      remainingQuantity: 5
+    }
+  ];
+
+  it("never takes a layer dated after the movement", () => {
+    const result = recostOutbound(
+      layers,
+      [
+        {
+          costLedgerId: "ship-1",
+          itemId: "item-a",
+          postingDate: "2026-10-03",
+          quantity: 3,
+          cost: 30
+        }
+      ],
+      new Map([["item-a", 11]])
+    );
+
+    // 2 × 10 from the opening layer + 1 × 11 at the fallback: the receipt
+    // on the 5th was not in stock on the 3rd.
+    expect(result.movements).toEqual([
+      { costLedgerId: "ship-1", newCost: 31, delta: 1 }
+    ]);
+    expect(result.remainingByLayer.get("receipt")).toBe(5);
+  });
+
+  it("takes the newest layer first for a LIFO item", () => {
+    const result = recostOutbound(
+      layers,
+      [
+        {
+          costLedgerId: "ship-1",
+          itemId: "item-a",
+          postingDate: "2026-10-06",
+          quantity: 3,
+          cost: 30
+        }
+      ],
+      new Map(),
+      new Map([["item-a", "LIFO"]])
+    );
+
+    expect(result.movements).toEqual([
+      { costLedgerId: "ship-1", newCost: 45, delta: 15 }
+    ]);
+    expect(result.remainingByLayer.get("opening")).toBe(2);
+    expect(result.remainingByLayer.get("receipt")).toBe(2);
+  });
+});
+
+describe("unitCostAtCutover", () => {
+  // Oldest first: 4 at 10, then 4 at 20.
+  const layers = [
+    { quantity: 4, cost: 40 },
+    { quantity: 4, cost: 80 }
+  ];
+
+  it("values FIFO stock from the newest layers", () => {
+    // 5 on hand: 4 × 20 + 1 × 10.
+    expect(unitCostAtCutover(layers, 5, "FIFO", 0)).toBe(18);
+  });
+
+  it("values LIFO stock from the oldest layers", () => {
+    // 5 on hand: 4 × 10 + 1 × 20.
+    expect(unitCostAtCutover(layers, 5, "LIFO", 0)).toBe(12);
+  });
+
+  it("values the quantity no layer covers at the fallback cost", () => {
+    // 10 on hand: 80 + 40 + 2 × 15.
+    expect(unitCostAtCutover(layers, 10, "FIFO", 15)).toBe(15);
   });
 });

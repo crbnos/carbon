@@ -50,6 +50,20 @@ export type OpenItem = {
   documentId: string | null;
   documentLineReference: string | null;
   description: string;
+  /** The original line's quantity, for a reader that costs by quantity. */
+  quantity?: number | null;
+  /**
+   * How the part settled before the cutover is keyed. Without it, that line
+   * keeps the item's keys under "<description> (settled before cutover)".
+   * Received-not-invoiced uses it: the invoices before the cutover cleared
+   * GR/IR under `purchase-invoice:<poLineId>`, which the purchase invoice's
+   * GR/IR walk does not read.
+   */
+  settled?: {
+    documentLineReference: string | null;
+    description: string;
+    quantity?: number | null;
+  } | null;
 };
 
 /** A line of the prior system's trial balance as of the day before the cutover. */
@@ -68,6 +82,7 @@ export type OpeningJournalLine = {
   documentType: string | null;
   documentId: string | null;
   documentLineReference: string | null;
+  quantity: number | null;
 };
 
 export const SETTLED_BEFORE_CUTOVER_SUFFIX = " (settled before cutover)";
@@ -125,14 +140,25 @@ export function buildOpeningJournalLines(
       accountId: item.accountId,
       amount: round(item.originalAmount),
       description: item.description,
-      ...keys
+      ...keys,
+      quantity: item.quantity ?? null
     });
     if (Math.abs(item.settledBeforeCutover) > EPSILON) {
       lines.push({
         accountId: item.accountId,
         amount: round(-item.settledBeforeCutover),
-        description: `${item.description}${SETTLED_BEFORE_CUTOVER_SUFFIX}`,
-        ...keys
+        ...(item.settled
+          ? {
+              ...keys,
+              description: item.settled.description,
+              documentLineReference: item.settled.documentLineReference,
+              quantity: item.settled.quantity ?? null
+            }
+          : {
+              ...keys,
+              description: `${item.description}${SETTLED_BEFORE_CUTOVER_SUFFIX}`,
+              quantity: null
+            })
       });
     }
     debitByControlAccount.set(
@@ -150,7 +176,8 @@ export function buildOpeningJournalLines(
       description: MIGRATION_CLEARING_DESCRIPTION,
       documentType: null,
       documentId: null,
-      documentLineReference: accountId
+      documentLineReference: accountId,
+      quantity: null
     });
   }
 
@@ -164,7 +191,8 @@ export function buildOpeningJournalLines(
       description: OPENING_BALANCE_DESCRIPTION,
       documentType: null,
       documentId: null,
-      documentLineReference: null
+      documentLineReference: null,
+      quantity: null
     });
     lines.push({
       accountId: migrationClearingAccountId,
@@ -172,7 +200,8 @@ export function buildOpeningJournalLines(
       description: MIGRATION_CLEARING_DESCRIPTION,
       documentType: null,
       documentId: null,
-      documentLineReference: row.accountId
+      documentLineReference: row.accountId,
+      quantity: null
     });
   }
 
@@ -273,10 +302,47 @@ export function planInventoryReset(
   };
 }
 
-/** A layer a re-cost draws from: the opening layer or an inbound layer after the cutover. */
+/** A cost layer dated before the cutover, with its cost adjustments included. */
+export type LayerBeforeCutover = { quantity: number; cost: number };
+
+/**
+ * The value of an item's stock at the cutover, replayed from its layers
+ * dated before the cutover (oldest first). Relief before the cutover took
+ * the oldest layers for FIFO and the newest for LIFO, so the stock left sits
+ * in the newest layers for FIFO and the oldest for LIFO. Today's remaining
+ * quantity cannot answer this: relief after the cutover has changed it.
+ * A quantity no layer covers is valued at `fallbackUnitCost`.
+ */
+export function unitCostAtCutover(
+  layers: LayerBeforeCutover[],
+  onHandAtCutover: number,
+  costingMethod: "FIFO" | "LIFO",
+  fallbackUnitCost: number
+): number {
+  if (onHandAtCutover <= EPSILON) return fallbackUnitCost;
+  const ordered = costingMethod === "FIFO" ? [...layers].reverse() : layers;
+  let toCover = onHandAtCutover;
+  let value = 0;
+  for (const layer of ordered) {
+    if (toCover <= EPSILON) break;
+    if (layer.quantity <= EPSILON) continue;
+    const take = Math.min(toCover, layer.quantity);
+    value += (take * layer.cost) / layer.quantity;
+    toCover -= take;
+  }
+  if (toCover > EPSILON) value += toCover * fallbackUnitCost;
+  return round(value / onHandAtCutover);
+}
+
+/**
+ * A layer a re-cost draws from: the opening layer or an inbound layer after
+ * the cutover. `postingDate` is `YYYY-MM-DD`; the opening layer carries the
+ * cutover date.
+ */
 export type RecostLayer = {
   key: string;
   itemId: string;
+  postingDate: string;
   quantity: number;
   cost: number;
   remainingQuantity: number;
@@ -286,22 +352,25 @@ export type RecostLayer = {
 export type OutboundMovement = {
   costLedgerId: string;
   itemId: string;
+  postingDate: string;
   quantity: number;
   cost: number;
 };
 
 /**
  * Re-costs the outbound movements dated on or after the cutover against the
- * reset layers, FIFO in the order given (layers oldest first; movements in
- * date then entry order). Only FIFO/LIFO items relieve layers — the caller
- * passes those only; Standard and Average cost from `itemCost`. A quantity no
- * layer covers is costed at `fallbackUnitCostByItem`, as `calculateCOGS`
- * costs negative inventory.
+ * reset layers. Pass layers oldest first and movements in date then entry
+ * order. A movement draws only from layers dated on or before it: the oldest
+ * first for a FIFO item, the newest first for a LIFO item. Only FIFO/LIFO
+ * items relieve layers — the caller passes those only; Standard and Average
+ * cost from `itemCost`. A quantity no layer covers is costed at
+ * `fallbackUnitCostByItem`, as `calculateCOGS` costs negative inventory.
  */
 export function recostOutbound(
   layers: RecostLayer[],
   outbound: OutboundMovement[],
-  fallbackUnitCostByItem: ReadonlyMap<string, number>
+  fallbackUnitCostByItem: ReadonlyMap<string, number>,
+  costingMethodByItem: ReadonlyMap<string, "FIFO" | "LIFO"> = new Map()
 ): {
   movements: { costLedgerId: string; newCost: number; delta: number }[];
   remainingByLayer: Map<string, number>;
@@ -310,13 +379,15 @@ export function recostOutbound(
   const movements = outbound.map((movement) => {
     let toRelieve = movement.quantity;
     let newCost = 0;
-    for (const layer of open) {
+    const eligible = open.filter(
+      (layer) =>
+        layer.itemId === movement.itemId &&
+        layer.postingDate <= movement.postingDate
+    );
+    if (costingMethodByItem.get(movement.itemId) === "LIFO") eligible.reverse();
+    for (const layer of eligible) {
       if (toRelieve <= EPSILON) break;
-      if (
-        layer.itemId !== movement.itemId ||
-        layer.remainingQuantity <= EPSILON
-      )
-        continue;
+      if (layer.remainingQuantity <= EPSILON) continue;
       const unitCost = layer.quantity > 0 ? layer.cost / layer.quantity : 0;
       const take = Math.min(toRelieve, layer.remainingQuantity);
       newCost += take * unitCost;

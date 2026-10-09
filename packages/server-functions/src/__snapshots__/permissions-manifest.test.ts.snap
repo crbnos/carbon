@@ -2,6 +2,9 @@
 
 exports[`server function permissions > match the reviewed manifest 1`] = `
 {
+  "activate-accounting": {
+    "update": "accounting",
+  },
   "assign-serial-numbers": {
     "update": "production",
   },

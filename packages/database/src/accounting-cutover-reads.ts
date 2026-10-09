@@ -16,11 +16,13 @@ import { type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import {
   type AccountClass,
+  type LayerBeforeCutover,
   type MigrationClearingRow,
   migrationClearingByAccount,
   type OpenItem,
   type OpenItemType,
-  type TrialBalanceLine
+  type TrialBalanceLine,
+  unitCostAtCutover
 } from "./accounting-cutover";
 import {
   CUSTOMER_DEPOSIT_DESCRIPTION,
@@ -47,6 +49,9 @@ export const ACCOUNTING_ALREADY_SET_UP = "Accounting is already set up.";
 
 const OPENING_BALANCE_SOURCE = "Opening Balance" as const;
 const OPENING_TRIAL_BALANCE_DESCRIPTION = "Opening trial balance";
+/** The descriptions a receipt and a purchase invoice write on GR/IR. */
+const GOODS_RECEIVED_NOT_INVOICED_DESCRIPTION = "Goods Received Not Invoiced";
+const GR_IR_CLEARING_DESCRIPTION = "GR/IR Clearing";
 
 /** The day before the cutover: the date the opening journal carries. */
 export function dayBeforeCutover(cutoverDate: string): string {
@@ -518,6 +523,10 @@ type DraftItem = {
   documentId: string | null;
   documentLineReference: string | null;
   description: string;
+  /** The original line's quantity. */
+  quantity?: number | null;
+  /** How the part settled before the cutover is keyed, when not the default. */
+  settledLine?: OpenItem["settled"];
 };
 
 type OpenDocumentRow = {
@@ -866,8 +875,20 @@ function resolveLineAccount(
 }
 
 /**
- * Received, not invoiced: per purchase order line, the balance of its
- * receipt and invoice lines on the GR/IR account dated before the cutover.
+ * Received, not invoiced: per purchase order line with more received than
+ * invoiced before the cutover, what the purchase invoice's GR/IR walk needs
+ * to find. That walk reads the line's `receipt:<poLineId>` journal groups in
+ * order, skips the units already invoiced and costs the rest from each
+ * group's amount and quantity. So the item carries:
+ * - everything received before the cutover, with its quantity (inventory
+ *   unit) and receipt cost, on `receipt:<poLineId>`;
+ * - what the invoices before the cutover cleared, with the opposite sign, on
+ *   `purchase-invoice:<poLineId>`, which the walk does not read.
+ * A receipt's cost is its GR/IR journal line; a receipt with none (posted
+ * before Carbon wrote journals for every company) takes its cost layers, else
+ * quantity × unit price. An invoice's clearing is its GR/IR Clearing lines; an
+ * invoice with no journal at all clears its quantity at the line's average
+ * receipt cost.
  */
 async function getReceivedNotInvoicedItems(
   db: CutoverDb,
@@ -875,47 +896,246 @@ async function getReceivedNotInvoicedItems(
   cutoverDate: string,
   defaults: AccountDefaults
 ): Promise<DraftItem[]> {
+  const grIrAccountId = defaults.goodsReceivedNotInvoicedAccount;
+  const receiptLines = await db
+    .selectFrom("receiptLine as line")
+    .innerJoin("receipt", (join) =>
+      join
+        .onRef("receipt.id", "=", "line.receiptId")
+        .onRef("receipt.companyId", "=", "line.companyId")
+    )
+    .select([
+      "line.receiptId",
+      "line.lineId",
+      "line.itemId",
+      "line.receivedQuantity",
+      "line.unitPrice"
+    ])
+    .where("line.companyId", "=", companyId)
+    .where("receipt.status", "=", "Posted")
+    .where("receipt.sourceDocument", "=", "Purchase Order")
+    .where("receipt.postingDate", "<", cutoverDate)
+    .where("line.lineId", "is not", null)
+    .where("line.receivedQuantity", "<>", 0)
+    .execute();
+  if (receiptLines.length === 0) return [];
+
+  const receiptIds = [...new Set(receiptLines.map((line) => line.receiptId))];
+  const purchaseOrderLineIds = [
+    ...new Set(receiptLines.map((line) => line.lineId as string))
+  ];
   const receiptPrefix = journalReference.to.receipt("");
   const invoicePrefix = journalReference.to.purchaseInvoice("");
-  const lines = await db
-    .selectFrom("journalLine as line")
-    .innerJoin("journal", (join) =>
-      join
-        .onRef("journal.id", "=", "line.journalId")
-        .onRef("journal.companyId", "=", "line.companyId")
-    )
-    .select(["line.documentLineReference", "line.amount"])
-    .where("line.companyId", "=", companyId)
-    .where("line.accountId", "=", defaults.goodsReceivedNotInvoicedAccount)
-    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-    .where("journal.postingDate", "<", cutoverDate)
-    .where((eb) =>
-      eb.or([
-        eb("line.documentLineReference", "like", `${receiptPrefix}%`),
-        eb("line.documentLineReference", "like", `${invoicePrefix}%`)
-      ])
-    )
-    .execute();
 
-  const byLine = new Map<string, number>();
-  for (const line of lines) {
-    const reference = line.documentLineReference ?? "";
-    const purchaseOrderLineId = reference.startsWith(receiptPrefix)
-      ? reference.slice(receiptPrefix.length)
-      : reference.slice(invoicePrefix.length);
-    addTo(byLine, purchaseOrderLineId, Number(line.amount));
+  const [receiptGrIr, receiptLayers, invoiceLines] = await Promise.all([
+    db
+      .selectFrom("journalLine as line")
+      .innerJoin("journal", (join) =>
+        join
+          .onRef("journal.id", "=", "line.journalId")
+          .onRef("journal.companyId", "=", "line.companyId")
+      )
+      .select([
+        "line.documentId",
+        "line.documentLineReference",
+        sql<number>`sum("line"."amount")`.as("amount")
+      ])
+      .where("line.companyId", "=", companyId)
+      .where("line.accountId", "=", grIrAccountId)
+      .where("line.documentId", "in", receiptIds)
+      .where("line.documentLineReference", "like", `${receiptPrefix}%`)
+      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .groupBy(["line.documentId", "line.documentLineReference"])
+      .execute(),
+    db
+      .selectFrom("costLedger")
+      .select([
+        "documentId",
+        "itemId",
+        sql<number>`sum("cost")`.as("cost"),
+        sql<number>`sum("quantity")`.as("quantity")
+      ])
+      .where("companyId", "=", companyId)
+      .where("documentType", "=", "Purchase Receipt")
+      .where("documentId", "in", receiptIds)
+      .where("adjustment", "=", false)
+      .where("appliesToCostLedgerId", "is", null)
+      .where("quantity", ">", 0)
+      .groupBy(["documentId", "itemId"])
+      .execute(),
+    db
+      .selectFrom("purchaseInvoiceLine as line")
+      .innerJoin("purchaseInvoice as invoice", (join) =>
+        join
+          .onRef("invoice.id", "=", "line.invoiceId")
+          .onRef("invoice.companyId", "=", "line.companyId")
+      )
+      .select([
+        "invoice.id as invoiceId",
+        "line.purchaseOrderLineId",
+        "line.quantity",
+        "line.conversionFactor"
+      ])
+      .where("line.companyId", "=", companyId)
+      .where("line.purchaseOrderLineId", "in", purchaseOrderLineIds)
+      .where("invoice.status", "not in", ["Draft", "Pending", "Voided"])
+      .where("invoice.postingDate", "<", cutoverDate)
+      .execute()
+  ]);
+
+  const invoiceIds = [...new Set(invoiceLines.map((line) => line.invoiceId))];
+  const invoiceJournalLines =
+    invoiceIds.length > 0
+      ? await db
+          .selectFrom("journalLine as line")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "line.journalId")
+              .onRef("journal.companyId", "=", "line.companyId")
+          )
+          .select([
+            "line.documentId",
+            "line.documentLineReference",
+            sql<boolean>`bool_or(
+              "line"."accountId" = ${grIrAccountId}
+              AND "line"."description" = ${GR_IR_CLEARING_DESCRIPTION}
+            )`.as("isClearing"),
+            sql<number>`sum("line"."amount") FILTER (
+              WHERE "line"."accountId" = ${grIrAccountId}
+                AND "line"."description" = ${GR_IR_CLEARING_DESCRIPTION}
+            )`.as("amount"),
+            sql<number>`sum("line"."quantity") FILTER (
+              WHERE "line"."accountId" = ${grIrAccountId}
+                AND "line"."description" = ${GR_IR_CLEARING_DESCRIPTION}
+            )`.as("quantity")
+          ])
+          .where("line.companyId", "=", companyId)
+          .where("line.documentId", "in", invoiceIds)
+          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+          .groupBy(["line.documentId", "line.documentLineReference"])
+          .execute()
+      : [];
+
+  // Received before the cutover, per (receipt, PO line): quantity and the
+  // cost a receipt with no journal falls back to.
+  const layerByReceiptItem = new Map(
+    receiptLayers.map((row) => [
+      `${row.documentId}:${row.itemId}`,
+      { cost: Number(row.cost), quantity: Number(row.quantity) }
+    ])
+  );
+  const grIrByReceiptLine = new Map(
+    receiptGrIr.map((row) => [
+      `${row.documentId}:${(row.documentLineReference ?? "").slice(receiptPrefix.length)}`,
+      Number(row.amount)
+    ])
+  );
+  const received = new Map<
+    string,
+    { purchaseOrderLineId: string; quantity: number; fallbackCost: number }
+  >();
+  for (const line of receiptLines) {
+    const purchaseOrderLineId = line.lineId as string;
+    const quantity = Number(line.receivedQuantity);
+    const layer = layerByReceiptItem.get(`${line.receiptId}:${line.itemId}`);
+    const fallbackCost =
+      quantity > 0 && layer && layer.quantity > EPSILON
+        ? (quantity / layer.quantity) * layer.cost
+        : quantity * Number(line.unitPrice ?? 0);
+    const key = `${line.receiptId}:${purchaseOrderLineId}`;
+    const current = received.get(key) ?? {
+      purchaseOrderLineId,
+      quantity: 0,
+      fallbackCost: 0
+    };
+    current.quantity += quantity;
+    current.fallbackCost += fallbackCost;
+    received.set(key, current);
   }
-  return [...byLine].map(([purchaseOrderLineId, balance]) => ({
-    openItemType: "Received Not Invoiced",
-    accountId: defaults.goodsReceivedNotInvoicedAccount,
-    basis: "natural",
-    original: round(balance),
-    settled: 0,
-    documentType: null,
-    documentId: null,
-    documentLineReference: journalReference.to.receipt(purchaseOrderLineId),
-    description: "Goods Received Not Invoiced"
-  }));
+  const receivedByLine = new Map<string, { quantity: number; cost: number }>();
+  for (const [key, row] of received) {
+    const current = receivedByLine.get(row.purchaseOrderLineId) ?? {
+      quantity: 0,
+      cost: 0
+    };
+    current.quantity += row.quantity;
+    current.cost += grIrByReceiptLine.get(key) ?? row.fallbackCost;
+    receivedByLine.set(row.purchaseOrderLineId, current);
+  }
+
+  // Cleared before the cutover, per PO line: the GR/IR Clearing lines of the
+  // invoices with a journal, and the inventory quantity of those without one.
+  const invoicesWithJournal = new Set(
+    invoiceJournalLines.map((row) => row.documentId)
+  );
+  const clearedByLine = new Map<
+    string,
+    { quantity: number; amount: number; legacyQuantity: number }
+  >();
+  const cleared = (purchaseOrderLineId: string) => {
+    const current = clearedByLine.get(purchaseOrderLineId) ?? {
+      quantity: 0,
+      amount: 0,
+      legacyQuantity: 0
+    };
+    clearedByLine.set(purchaseOrderLineId, current);
+    return current;
+  };
+  for (const row of invoiceJournalLines) {
+    const reference = row.documentLineReference ?? "";
+    if (!row.isClearing || !reference.startsWith(invoicePrefix)) continue;
+    const current = cleared(reference.slice(invoicePrefix.length));
+    current.quantity += Number(row.quantity ?? 0);
+    // A debit on the liability: natural-signed negative.
+    current.amount -= Number(row.amount ?? 0);
+  }
+  for (const line of invoiceLines) {
+    if (!line.purchaseOrderLineId || invoicesWithJournal.has(line.invoiceId)) {
+      continue;
+    }
+    cleared(line.purchaseOrderLineId).legacyQuantity +=
+      Number(line.quantity) * Number(line.conversionFactor ?? 1);
+  }
+
+  const items: DraftItem[] = [];
+  for (const [purchaseOrderLineId, receipt] of receivedByLine) {
+    const clearing = clearedByLine.get(purchaseOrderLineId);
+    const unitCost =
+      Math.abs(receipt.quantity) > EPSILON
+        ? receipt.cost / receipt.quantity
+        : 0;
+    const legacyQuantity = clearing
+      ? Math.min(
+          clearing.legacyQuantity,
+          Math.max(0, receipt.quantity - clearing.quantity)
+        )
+      : 0;
+    const clearedQuantity = (clearing?.quantity ?? 0) + legacyQuantity;
+    const clearedAmount = (clearing?.amount ?? 0) + legacyQuantity * unitCost;
+    if (receipt.quantity - clearedQuantity <= EPSILON) continue;
+    items.push({
+      openItemType: "Received Not Invoiced",
+      accountId: grIrAccountId,
+      basis: "natural",
+      original: round(receipt.cost),
+      settled: round(clearedAmount),
+      documentType: null,
+      documentId: null,
+      documentLineReference: journalReference.to.receipt(purchaseOrderLineId),
+      description: GOODS_RECEIVED_NOT_INVOICED_DESCRIPTION,
+      quantity: round(receipt.quantity),
+      settledLine:
+        clearedQuantity > EPSILON || Math.abs(clearedAmount) > EPSILON
+          ? {
+              documentLineReference:
+                journalReference.to.purchaseInvoice(purchaseOrderLineId),
+              description: GR_IR_CLEARING_DESCRIPTION,
+              quantity: round(clearedQuantity)
+            }
+          : null
+    });
+  }
+  return items;
 }
 
 /**
@@ -1144,7 +1364,9 @@ async function finishItems(
       documentType: draft.documentType,
       documentId: draft.documentId,
       documentLineReference: draft.documentLineReference,
-      description: draft.description
+      description: draft.description,
+      ...(draft.quantity != null ? { quantity: draft.quantity } : {}),
+      ...(draft.settledLine ? { settled: draft.settledLine } : {})
     });
   }
   return items;
@@ -1202,15 +1424,16 @@ export type CutoverInventoryItem = {
 /**
  * Per inventory item, the on-hand quantity at the cutover across every
  * location and its default unit cost: the standard cost for a Standard item;
- * otherwise the average of the cost layers dated before the cutover that
- * still hold stock, else `itemCost.unitCost`. The inventory account follows
+ * for a FIFO or LIFO item, the value of its stock at the cutover replayed
+ * from the layers dated before it (`unitCostAtCutover`); for an Average item,
+ * `itemCost.unitCost`. The inventory account follows
  * the item's replenishment, as the postings resolve it.
  */
 export async function getCutoverInventory(
   db: CutoverDb,
   { companyId, cutoverDate }: CutoverArgs
 ): Promise<CutoverInventoryItem[]> {
-  const [defaults, onHand, layers, adjustments] = await Promise.all([
+  const [defaults, onHand, layers] = await Promise.all([
     getAccountDefaults(db, companyId),
     db
       .selectFrom("itemLedger")
@@ -1249,71 +1472,67 @@ export async function getCutoverInventory(
       .having(sql`sum("itemLedger"."quantity")`, "<>", 0)
       .orderBy("item.readableId")
       .execute(),
-    // The layers `calculateCOGS` relieves, dated before the cutover.
+    // Every layer `calculateCOGS` relieves, dated before the cutover, oldest
+    // first, with the cost adjustments posted against it before the cutover.
     db
-      .selectFrom("costLedger")
-      .select([
-        "itemId",
-        sql<number>`sum("remainingQuantity")`.as("remaining"),
-        sql<number>`sum("remainingQuantity" * "cost" / nullif("quantity", 0))`.as(
-          "value"
-        )
-      ])
-      .where("companyId", "=", companyId)
-      .where("postingDate", "<", cutoverDate)
-      .where("remainingQuantity", ">", 0)
-      .where("adjustment", "=", false)
-      .where("appliesToCostLedgerId", "is", null)
-      .where((eb) =>
-        eb.or([
-          eb("documentType", "is", null),
-          eb("documentType", "!=", "Purchase Order")
-        ])
-      )
-      .groupBy("itemId")
-      .execute(),
-    // The cost adjustments still riding on those layers.
-    db
-      .selectFrom("costLedger as child")
-      .innerJoin("costLedger as layer", (join) =>
+      .selectFrom("costLedger as layer")
+      .leftJoin("costLedger as child", (join) =>
         join
-          .onRef("layer.id", "=", "child.appliesToCostLedgerId")
-          .onRef("layer.companyId", "=", "child.companyId")
+          .onRef("child.appliesToCostLedgerId", "=", "layer.id")
+          .onRef("child.companyId", "=", "layer.companyId")
+          .on("child.postingDate", "<", cutoverDate)
       )
       .select([
         "layer.itemId",
-        sql<number>`sum("child"."remainingQuantity" * "child"."cost" / nullif("child"."quantity", 0))`.as(
-          "value"
+        "layer.quantity",
+        sql<number>`"layer"."cost" + coalesce(sum("child"."cost"), 0)`.as(
+          "cost"
         )
       ])
-      .where("child.companyId", "=", companyId)
-      .where("child.remainingQuantity", ">", 0)
+      .where("layer.companyId", "=", companyId)
       .where("layer.postingDate", "<", cutoverDate)
-      .where("layer.remainingQuantity", ">", 0)
-      .groupBy("layer.itemId")
+      .where("layer.quantity", ">", 0)
+      .where("layer.adjustment", "=", false)
+      .where("layer.appliesToCostLedgerId", "is", null)
+      .where((eb) =>
+        eb.or([
+          eb("layer.documentType", "is", null),
+          eb("layer.documentType", "!=", "Purchase Order")
+        ])
+      )
+      .groupBy([
+        "layer.id",
+        "layer.itemId",
+        "layer.quantity",
+        "layer.cost",
+        "layer.postingDate",
+        "layer.createdAt"
+      ])
+      .orderBy("layer.postingDate")
+      .orderBy("layer.createdAt")
       .execute()
   ]);
 
-  const layerByItem = new Map(
-    layers.map((row) => [
-      row.itemId,
-      { remaining: Number(row.remaining), value: Number(row.value ?? 0) }
-    ])
-  );
-  const adjustmentByItem = new Map(
-    adjustments.map((row) => [row.itemId, Number(row.value ?? 0)])
-  );
+  const layersByItem = new Map<string, LayerBeforeCutover[]>();
+  for (const layer of layers) {
+    if (!layer.itemId) continue;
+    const list = layersByItem.get(layer.itemId) ?? [];
+    list.push({ quantity: Number(layer.quantity), cost: Number(layer.cost) });
+    layersByItem.set(layer.itemId, list);
+  }
 
   return onHand.map((row) => {
     const costingMethod = row.costingMethod ?? "FIFO";
-    const layer = layerByItem.get(row.itemId);
+    const quantity = Number(row.quantity);
     const unitCost =
       costingMethod === "Standard"
         ? Number(row.standardCost ?? 0)
-        : layer && layer.remaining > EPSILON
-          ? round(
-              (layer.value + (adjustmentByItem.get(row.itemId) ?? 0)) /
-                layer.remaining
+        : costingMethod === "FIFO" || costingMethod === "LIFO"
+          ? unitCostAtCutover(
+              layersByItem.get(row.itemId) ?? [],
+              quantity,
+              costingMethod,
+              Number(row.unitCost ?? 0)
             )
           : Number(row.unitCost ?? 0);
     const isMade =
@@ -1323,7 +1542,7 @@ export async function getCutoverInventory(
       itemId: row.itemId,
       readableId: row.readableId,
       name: row.name,
-      quantity: round(Number(row.quantity)),
+      quantity: round(quantity),
       unitCost,
       costingMethod,
       inventoryAccountId: isMade

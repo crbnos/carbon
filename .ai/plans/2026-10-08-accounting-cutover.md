@@ -38,7 +38,7 @@
 - [x] Task 25: Accept the Opening Balance source type in the AR/AP readers and payment lookups
 - [x] Task 26: Add the pure cutover planner
 - [x] Task 27: Add the cutover read services
-- [ ] Task 28: Add the `activate-accounting` server function
+- [x] Task 28: Add the `activate-accounting` server function
 - [ ] Task 29: Handle voids of documents dated before the cutover
 - [x] Task 30: Start depreciation at the cutover
 - [ ] Task 31: Build the 5-step enable wizard
@@ -1423,3 +1423,9 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
 - A commit that touches a migration or `packages/database/src` needs `pnpm generate:mcp` first, then stage `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 - The dataset and backup checks read `SUPABASE_DB_URL` from `.env` (port 54322). This worktree's stack is on `.env.local` (port 65067 since the stack restart). Export it before a commit: `export $(grep -E "^SUPABASE_DB_URL=" .env.local | xargs)`.
+- Task 28 changed while executing:
+  1. The enable writes one recost journal per document and posting date, not one per document. A job can issue material on more than one day.
+  2. A recost offset line takes its sign from the original pair, not from the account class. A stand-in line sits on retained earnings but carries the sign of the account it stands in for.
+  3. `recostOutbound` takes only layers dated on or before a movement. It takes the newest layer first for a LIFO item.
+  4. The default unit cost of a FIFO or LIFO item replays its layers dated before the cutover (`unitCostAtCutover`). Today's remaining quantity is wrong because relief after the cutover changed it. An Average item uses `itemCost.unitCost`.
+  5. Open gaps: a PO line invoiced past its receipts before the cutover gets no open item. After the enable, an invoice clears GR/IR at the opening line's average cost, so receipts at different costs can leave a residual.

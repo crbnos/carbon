@@ -13,6 +13,7 @@ import type { ServerFnError } from "./errors";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
+  "activate-accounting": () => import("./activate-accounting"),
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),

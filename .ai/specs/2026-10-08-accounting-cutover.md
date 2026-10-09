@@ -136,6 +136,13 @@ A document partly settled before D gets 2 opening lines on its control account, 
 
 The control account then nets to the open amount, and every settlement after D still subtracts from the original.
 
+Received-not-invoiced follows the same rule, keyed by reference instead of description. A purchase invoice clears GR/IR by walking the PO line's `receipt:<poLineId>` journal groups in order: it skips the units already invoiced, then costs the rest from each group's amount and quantity. So per PO line open at D:
+
+1. A `receipt:<poLineId>` line carries everything received before D, with its quantity and receipt cost.
+2. A `purchase-invoice:<poLineId>` line carries the receipt cost the invoices before D cleared, with the opposite sign. The GR/IR walk does not read that reference.
+
+The account nets to the open amount, and an invoice after D skips and costs units exactly as before.
+
 Every other account comes from the trial balance only. Cash, equity, tax, payroll and accruals never come from the Provisional ledger. So a gap in Provisional data (for example, payroll that Carbon never saw) cannot reach the GL.
 
 For a control account, the trial balance amount is an assertion, not a posting. The opening journal posts the Carbon opening total on the control account. The difference to the trial balance stays on Migration Clearing. A zero total on Migration Clearing proves that Carbon's open items agree with the prior system.
@@ -346,6 +353,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
   - The audit trail is event-driven, and the `accountingEnabled` column stays.
   - Migration Clearing is account 3400. Readiness checks for a Posted Opening Balance.
   - The inventory reset is per item. L is the company's first Provisional journal.
+- 2026-10-08: Received-not-invoiced opening lines carry quantity and split received (`receipt:`) from cleared (`purchase-invoice:`), for the purchase invoice's GR/IR walk (found executing Task 27). Deferred revenue opens on the schedule row's debit account.
 - 2026-10-08: A document partly settled before D gets 2 opening lines (original amount, then the pre-cutover settlements under a description the readers ignore). Found executing Task 25: the readers subtract every settlement from the original control line.
 - 2026-10-08: A Provisional journal has no accounting period; the enable assigns periods before promotion (found executing Task 10: periods on Provisional journals would lock the fiscal calendar).
 - 2026-10-08: Q7 revised: no back-fill of account defaults; stand-in lines with `journalLine.accountDefaultRole`, required defaults at readiness, re-pointed at enable.
