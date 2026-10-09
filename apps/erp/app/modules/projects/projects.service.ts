@@ -269,6 +269,91 @@ export async function updateProjectStatus(
     .single();
 }
 
+// --- Charge numbers ----------------------------------------------------------
+
+export type ChargeNumber = {
+  /** `projectId|` for the project itself, `projectId|elementId` for an element. */
+  value: string;
+  projectId: string;
+  projectElementId: string | null;
+  readableId: string;
+  name: string;
+  projectName: string;
+};
+
+/**
+ * Lists what a user can charge: each Released project, and each chargeable
+ * element of a Released project whose state is Unstarted or Started. When
+ * the company requires an element, the project-only rows are left out.
+ * @mcp read
+ */
+export async function getChargeNumbers(client: Client, companyId: string) {
+  const [settings, projects, elements] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("requireProjectElement")
+      .eq("id", companyId)
+      .maybeSingle(),
+    fetchAll<{ id: string; identifier: string; name: string }>(() =>
+      client
+        .from("project")
+        .select("id, identifier, name")
+        .eq("companyId", companyId)
+        .eq("status", "Released")
+        .eq("active", true)
+        .order("identifier", { ascending: true })
+    ),
+    fetchAll<{
+      id: string;
+      projectId: string;
+      readableId: string;
+      name: string;
+      project: { name: string } | null;
+    }>(() =>
+      client
+        .from("projectElement")
+        .select(
+          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name), state:projectState!projectElement_state_fkey!inner(group)"
+        )
+        .eq("companyId", companyId)
+        .eq("isChargeable", true)
+        .eq("project.status", "Released")
+        .eq("project.active", true)
+        .in("state.group", ["Unstarted", "Started"])
+        .order("projectId", { ascending: true })
+        .order("sequence", { ascending: true })
+    )
+  ]);
+
+  if (settings.error) return { data: null, error: settings.error };
+  if (projects.error) return { data: null, error: projects.error };
+  if (elements.error) return { data: null, error: elements.error };
+
+  const requireElement = settings.data?.requireProjectElement ?? false;
+
+  const projectRows: ChargeNumber[] = requireElement
+    ? []
+    : (projects.data ?? []).map((project) => ({
+        value: `${project.id}|`,
+        projectId: project.id,
+        projectElementId: null,
+        readableId: project.identifier,
+        name: project.name,
+        projectName: project.name
+      }));
+
+  const elementRows: ChargeNumber[] = (elements.data ?? []).map((element) => ({
+    value: `${element.projectId}|${element.id}`,
+    projectId: element.projectId,
+    projectElementId: element.id,
+    readableId: element.readableId,
+    name: element.name,
+    projectName: element.project?.name ?? ""
+  }));
+
+  return { data: [...projectRows, ...elementRows], error: null };
+}
+
 // --- States ------------------------------------------------------------------
 
 /**

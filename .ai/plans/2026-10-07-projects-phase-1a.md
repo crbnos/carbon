@@ -67,7 +67,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 28: Build the project list and the new-project form
 - [x] Task 29: Build the project page shell and the Details tab
 - [x] Task 30: Build the project Settings tab (states and labels)
-- [ ] Task 31: Build the `ChargeNumberSelect` picker and its API route
+- [x] Task 31: Build the `ChargeNumberSelect` picker and its API route
 - [ ] Task 32: Build the Elements page with the List layout
 - [ ] Task 33: Add the Board layout
 - [ ] Task 34: Add the Table layout
@@ -2491,3 +2491,6 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 30: the route action returns `{ success }` with a flash instead of a redirect, so `useAction` closes the modal on success and keeps it open on a refusal. Refusals (state in use, last state of a group) come from the service messages.
 - Task 30: `StateIcon` draws its own Started icon. `InProgressStatusIcon` has its color fixed to `#f2be00`, so it cannot take the state color. The half fill copies its geometry.
 - Task 30: a Closed project's Settings tab is read-only.
+- Task 31: `getChargeNumbers` runs 3 reads in parallel, not 2: the Released projects, the chargeable elements (inner embeds of `project` and `projectState` filter on status, `active` and the state group), and `companySettings.requireProjectElement`. Both lists page with `fetchAll`. It returns `ChargeNumber` rows (`value`, `projectId`, `projectElementId`, `readableId`, `name`, `projectName`); a project row's helper is empty, an element row's helper is its project name.
+- Task 31: the picker is exported as `ChargeNumber` (and `useChargeNumbers`) from `~/components/Form`; the task title's `ChargeNumberSelect` is the same component. Its Combobox field is named `projectId__projectElementId`, which the zod validators strip. The two hidden inputs default to `projectId` and `projectElementId` and take other names through `projectName` / `projectElementName`. `chargeNumberValue` and `splitChargeNumber` convert between the pair and the picker value.
+- Task 31: the API route exports `clientLoader = cachedClientLoader<typeof loader>()`, as the other list routes do. On a read error it logs and returns `{ data: [] }`.
