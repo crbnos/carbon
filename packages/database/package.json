@@ -54,6 +54,7 @@
     "./accounting-posting": "./src/accounting-posting.ts",
     "./journal-posting-status": "./src/journal-posting-status.ts",
     "./accounting-cutover": "./src/accounting-cutover.ts",
+    "./accounting-cutover-dates": "./src/accounting-cutover-dates.ts",
     "./accounting-cutover-reads": "./src/accounting-cutover-reads.ts",
     "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
     "./ledger": "./src/ledger.ts",

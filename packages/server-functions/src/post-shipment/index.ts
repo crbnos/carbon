@@ -43,6 +43,10 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
 import { leavingTrackedEntityIds } from "../lib/cost-layer-order";
+import {
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -3061,6 +3065,13 @@ const postShipment = defineServerFn({
               `Cannot void a shipment in ${shipmentHeader.status} status`
             );
           }
+          // The enable reset the cost layers this shipment relieved.
+          await refuseVoidBeforeCutover(
+            db,
+            companyId,
+            shipmentHeader.postingDate,
+            INVENTORY_VOID_BEFORE_CUTOVER_ERROR
+          );
           switch (shipmentHeader.sourceDocument) {
             case "Sales Order": {
               if (!shipmentHeader.sourceDocumentId)

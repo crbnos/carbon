@@ -170,7 +170,8 @@ The `check_accounting_period_open` trigger also checks a change from `Provisiona
 
 - **Payment against an invoice dated before D.** The lookup at `post-payment-transaction.ts:494` accepts `sourceType 'Opening Balance'` as well as Sales Invoice and Purchase Invoice. It finds the opening line. The `:644` guard stays strict.
 - **Payment against an invoice dated on or after D.** It finds the promoted line. No change.
-- **Void of an invoice, payment or memo dated before D.** The void builder builds the document's posting again with the current builders. It negates the result and dates it in an open period. Its receivables or payables line nets the opening line to zero for that document. It never posts to Migration Clearing. This follows the NetSuite guidance in the research.
+- **Void of a payment or memo dated before D.** The void builds the document's posting again with `buildPaymentJournal` or `buildMemoJournal`. It negates the result and dates it in an open period. Its receivables or payables line nets the opening line to zero for that document. It never posts to Migration Clearing. This follows the NetSuite guidance in the research.
+- **Void of an invoice dated before D.** The void fails. A sales invoice gets "This invoice is from before your accounting cutover. Issue a credit memo instead." A purchase invoice gets "This invoice is from before your accounting cutover. Record a debit memo instead." The memo posts in the current period and settles against the opening line. No builder covers a whole invoice posting: the purchase invoice has none, and the sales builder leaves out cost of goods sold, asset disposal, rental purchase option and intercompany lines. Most invoices before D also have no journal, because the reset deleted it.
 - **Void of an inventory document dated before D** (a receipt, shipment, inventory adjustment, inventory count or stock transfer). The void fails with "This document is from before your accounting cutover. Record a return or an inventory adjustment instead." The reset removed its cost layer. The research found no product that voids such a document (pattern 6). The returns flows that exist today (RMA, purchase return) cover the forward path.
 - **Purchase invoice for a receipt dated before D.** The GR/IR lookup finds the opening line by its `documentLineReference`.
 - **Job open at D.** `close-job` and `complete_job_to_inventory` sum the opening WIP line and the Posted lines after D.
@@ -265,7 +266,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - `@carbon/database/journal-posting-status`: `journalPostingStatus(trx, companyId)` and `resolveDefaultAccount(defaults, role, postingStatus)`. The second returns `{ accountId, accountDefaultRole }`: the default when it is set; else, before cutover, `retainedEarningsAccount` with the role; else it throws.
 - Every posting server function: remove the `accountingEnabled` branches. Write the journal with `journalPostingStatus`. Read `companySettings` `FOR SHARE`.
 - `post-payment-transaction.ts:494`, `:790`: accept `sourceType 'Opening Balance'`.
-- Void builders: for a document dated before the cutover, build the posting again and negate it (section 6).
+- Void builders: for a payment or memo dated before the cutover, build the posting again and negate it. Refuse the void of an invoice or an inventory document dated before the cutover (section 6).
 - New server function `activate-accounting` (`{ cutoverDate, confirmation }`, permission `update: accounting`).
 - `accounting.service.ts`: `getActivationReadiness`, `getCutoverInventory`, `getCutoverOpenItems`, `getMigrationClearing`, `importOpeningTrialBalance`. Remove `createOpeningBalanceJournal`. The wizard replaces it.
 - `revenue-recognition-proposal.ts`: skip companies with no cutover.
@@ -299,7 +300,8 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - [ ] After enable, a shipment dated between D and the enable carries COGS at the reset unit cost, and its journal matches.
 - [ ] After enable, a payment against an invoice dated before D (legacy or not) posts, and AR for that invoice nets to zero.
 - [ ] After enable, a purchase invoice for a receipt dated before D clears the opening GR/IR line for that PO line.
-- [ ] After enable, voiding an invoice dated before D posts its reversal in the current period, and it never touches Migration Clearing.
+- [ ] After enable, voiding a payment dated before D posts its reversal in the current period, and it never touches Migration Clearing.
+- [ ] After enable, voiding an invoice dated before D fails with the credit memo or debit memo message. The invoice stays Posted.
 - [ ] After enable, voiding a receipt dated before D fails with the cutover message. A purchase return for the same PO line posts.
 - [ ] After enable:
   - A receipt dated before D fails with the period-closed error.
@@ -338,7 +340,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 
 > Found while writing the spec (Step 7), and resolved with Brad on 2026-10-08.
 
-- [x] **Q8. After enable, can a user void a receipt, shipment or inventory adjustment dated before D?** — **Answer:** No. The void fails and points the user to a return or an inventory adjustment. None of the 6 products with inventory in the research voids a document from before go-live (research, pattern 6). Invoices, payments and memos dated before D can still be voided.
+- [x] **Q8. After enable, can a user void a receipt, shipment or inventory adjustment dated before D?** — **Answer:** No. The void fails and points the user to a return or an inventory adjustment. None of the 6 products with inventory in the research voids a document from before go-live (research, pattern 6). Payments and memos dated before D can still be voided. Invoices dated before D cannot (see the 2026-10-08 changelog entry).
 - [x] **Q9. How far in the past can D be?** — **Answer:** Up to 3 periods before the current period. The enable stays one transaction. The limit bounds the re-cost, and a release check measures it on the largest demo dataset.
 
 ## Changelog
@@ -358,3 +360,4 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - 2026-10-08: A Provisional journal has no accounting period; the enable assigns periods before promotion (found executing Task 10: periods on Provisional journals would lock the fiscal calendar).
 - 2026-10-08: Q7 revised: no back-fill of account defaults; stand-in lines with `journalLine.accountDefaultRole`, required defaults at readiness, re-pointed at enable.
 - 2026-10-08: Fixed the 2 bugs found while writing. The purchase receipt void now updates `costLedger`. The revenue recognition cron skips companies with `accountingEnabled = false`; this spec replaces that check with the cutover. Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.
+- 2026-10-08: The void of an invoice dated before D now fails and points to a credit memo or a debit memo. No builder covers a whole invoice posting (found executing Task 29). The user chose the refusal over a new purchase invoice builder.

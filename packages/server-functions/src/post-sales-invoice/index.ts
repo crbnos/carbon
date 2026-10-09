@@ -60,6 +60,10 @@ import {
   samePosition,
   signedCreditAmount
 } from "../lib/contract-ledger";
+import {
+  refuseVoidBeforeCutover,
+  SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR
+} from "../lib/cutover-void";
 import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -2423,6 +2427,14 @@ const postSalesInvoice = defineServerFn({
         }
 
         case "void": {
+          // The enable superseded this invoice's journal and opened its
+          // receivable in the opening journal.
+          await refuseVoidBeforeCutover(
+            db,
+            companyId,
+            invoiceHeader.postingDate,
+            SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR
+          );
           // Get journal entries to reverse
           const { data: journalEntries } = await db
             .selectFrom("journalLine")

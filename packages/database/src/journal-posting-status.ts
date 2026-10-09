@@ -28,6 +28,17 @@ export async function journalPostingStatus(
   db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   companyId: string
 ): Promise<AutomaticJournalStatus> {
+  return postingStatusFor(await readAccountingCutoverDate(db, companyId));
+}
+
+/**
+ * The company's cutover date, or null before the enable. Reads with FOR
+ * SHARE, as `journalPostingStatus` does.
+ */
+export async function readAccountingCutoverDate(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string
+): Promise<string | null> {
   const settings = await db
     .selectFrom("companySettings")
     .select("accountingCutoverDate")
@@ -35,7 +46,7 @@ export async function journalPostingStatus(
     .forShare()
     .executeTakeFirst();
   if (!settings) throw new Error("Company settings not found");
-  return postingStatusFor(settings.accountingCutoverDate);
+  return settings.accountingCutoverDate;
 }
 
 /** The nullable account defaults a posting may find empty. */

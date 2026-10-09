@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   DOCUMENT_JOURNAL_STATUSES,
   OPEN_ITEM_JOURNAL_STATUSES
@@ -13,10 +14,16 @@ import {
   EMPTY_POSITION
 } from "@carbon/database/contract-position";
 import {
+  type AutomaticJournalStatus,
   journalPostingStatus,
+  type OptionalDefaultRole,
+  readAccountingCutoverDate,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
-import { buildMemoJournal } from "@carbon/database/posting";
+import {
+  buildMemoJournal,
+  type MemoJournalLine
+} from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   datetime,
@@ -25,15 +32,17 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
-import { type Kysely, sql, type Transaction } from "kysely";
+import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
 import {
   loadContractPositions,
   lockContractPositions,
   signedCreditAmount
 } from "../lib/contract-ledger";
+import { assertNoMigrationClearing } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { partyDimensionValues } from "../lib/party-dimensions";
 import type { RentalScheduleFact } from "../post-sales-invoice/rental-posting";
 import { planRentalCredit, type RentalCreditPlan } from "./rental-credit";
 
@@ -136,7 +145,72 @@ export function postMemoTransaction(
         );
       }
       let journalId: string | null = null;
-      if (memo.journalId) {
+      const insertVoidJournal = async (
+        sourceType: "Credit Memo" | "Debit Memo"
+      ) =>
+        (
+          await trx
+            .insertInto("journal")
+            .values({
+              journalEntryId: await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              ),
+              accountingPeriodId,
+              description: `VOID Memo ${memo.memoId}`,
+              postingDate: today,
+              companyId,
+              sourceType,
+              status: postingStatus,
+              postedAt: timestamp,
+              postedBy: userId,
+              createdBy: userId
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow()
+        ).id;
+      // Before the cutover the memo's own journal is Superseded, and the
+      // opening journal carries the memo's open amount. The void builds the
+      // memo's posting again and negates it, today, so it nets that line.
+      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+      if (memo.postingDate && isBeforeCutover(memo.postingDate, cutoverDate)) {
+        const rebuilt = await rebuildMemoJournal(trx, memo);
+        const reversedId = await insertVoidJournal(
+          memo.direction === "Credit" ? "Credit Memo" : "Debit Memo"
+        );
+        journalId = reversedId;
+        const lines = await trx
+          .insertInto("journalLine")
+          .values(
+            rebuilt.lines.map((line) => ({
+              journalId: reversedId,
+              accountId: line.accountId,
+              amount: -line.amount,
+              quantity: line.quantity,
+              description: `VOID: ${line.description}`,
+              documentType: "Memo" as const,
+              documentId: memoId,
+              journalLineReference: line.journalLineReference,
+              companyId
+            }))
+          )
+          .returning("id")
+          .execute();
+        const dimensionValues = rebuilt.dimensions.flatMap((dimension) =>
+          lines.map((line) => ({
+            journalLineId: line.id,
+            ...dimension,
+            companyId
+          }))
+        );
+        if (dimensionValues.length) {
+          await trx
+            .insertInto("journalLineDimension")
+            .values(dimensionValues)
+            .execute();
+        }
+      } else if (memo.journalId) {
         const originalJournal = await trx
           .selectFrom("journal")
           .select(["id", "status", "sourceType"])
@@ -170,32 +244,15 @@ export function postMemoTransaction(
         if (!original.length) {
           throw new Error("Original memo journal has no lines to reverse");
         }
-        const reversed = await trx
-          .insertInto("journal")
-          .values({
-            journalEntryId: await getNextSequence(
-              trx,
-              "journalEntry",
-              companyId
-            ),
-            accountingPeriodId,
-            description: `VOID Memo ${memo.memoId}`,
-            postingDate: today,
-            companyId,
-            sourceType: originalJournal.sourceType,
-            status: postingStatus,
-            postedAt: timestamp,
-            postedBy: userId,
-            createdBy: userId
-          })
-          .returning("id")
-          .executeTakeFirstOrThrow();
-        journalId = reversed.id;
+        const reversedId = await insertVoidJournal(
+          memo.direction === "Credit" ? "Credit Memo" : "Debit Memo"
+        );
+        journalId = reversedId;
         const lines = await trx
           .insertInto("journalLine")
           .values(
             original.map((line) => ({
-              journalId: reversed.id,
+              journalId: reversedId,
               accountId: line.accountId,
               amount: -Number(line.amount),
               quantity: line.quantity,
@@ -383,32 +440,14 @@ export function postMemoTransaction(
           fxLoss: defaults.realizedExchangeLossAccount
         }
       : null;
-    // Before the cutover an empty Sales Returns default becomes a stand-in
-    // line; after it, an empty one falls back to Sales, as it always has.
-    const salesReturns =
-      !(contractCredit || rentalCredit) && memo.salesReturnOrderId
-        ? resolveDefaultAccount(
-            {
-              ...defaults,
-              salesReturnsAccount:
-                defaults.salesReturnsAccount ??
-                (postingStatus === "Posted" ? defaults.salesAccount : null)
-            },
-            "salesReturnsAccount",
-            postingStatus
-          )
-        : null;
-    const reasonAccountDefaultRole = salesReturns?.accountDefaultRole ?? null;
-    const reasonAccountId =
+    const plainReason =
       contractCredit || rentalCredit
-        ? defaults.deferredRevenueAccount
-        : salesReturns
-          ? salesReturns.accountId
-          : memo.purchaseReturnOrderId
-            ? defaults.goodsReceivedNotInvoicedAccount
-            : isAR
-              ? defaults.salesDiscountAccount
-              : defaults.supplierPaymentDiscountAccount;
+        ? null
+        : plainMemoReasonAccount(memo, defaults, isAR, postingStatus);
+    const reasonAccountDefaultRole = plainReason?.accountDefaultRole ?? null;
+    const reasonAccountId = plainReason
+      ? plainReason.accountId
+      : defaults.deferredRevenueAccount;
     if (!controlAccountId || !reasonAccountId) {
       throw new Error("Memo control and reason account defaults are required");
     }
@@ -462,85 +501,7 @@ export function postMemoTransaction(
         "Memo accounts must be active posting accounts in this company group with the correct control class"
       );
     }
-    // Supplier returns only: the reason leg (GRNI) must clear exactly what the
-    // return SHIPMENT debited — the goods' carried cost, already in BASE
-    // currency (do NOT scale by the memo's exchange rate) — while the control
-    // leg (AP) moves by what the supplier agreed to credit. Recover the carried
-    // cost here and let the builder book the difference as a purchase price
-    // variance; without it GRNI keeps a residual for the life of the company.
-    let reasonAmountBase: number | undefined;
-    if (memo.purchaseReturnOrderId) {
-      // Posted shipments only: a voided shipment's journal was reversed but its
-      // costLedger rows survive, so counting it would over-credit GRNI.
-      const shipments = await trx
-        .selectFrom("shipment")
-        .select("id")
-        .where("sourceDocument", "=", "Purchase Return Order")
-        .where("sourceDocumentId", "=", memo.purchaseReturnOrderId)
-        .where("status", "=", "Posted")
-        .where("companyId", "=", companyId)
-        .execute();
-      const shipmentIds = shipments.map((row) => row.id);
-
-      if (shipmentIds.length > 0) {
-        const [costRows, creditLines] = await Promise.all([
-          trx
-            .selectFrom("costLedger")
-            .select(["itemId", "quantity", "cost"])
-            .where("documentType", "=", "Purchase Return Shipment")
-            .where("documentId", "in", shipmentIds)
-            .where("companyId", "=", companyId)
-            .execute(),
-          trx
-            .selectFrom("purchaseReturnOrderCreditLine")
-            .select(["purchaseReturnOrderLineId", "quantity"])
-            .where("memoId", "=", memoId)
-            .where("companyId", "=", companyId)
-            .execute()
-        ]);
-
-        // Per-item carried cost per unit, from what the shipment relieved.
-        const relieved = new Map<string, { qty: number; cost: number }>();
-        for (const row of costRows) {
-          const key = row.itemId as string;
-          const prev = relieved.get(key) ?? { qty: 0, cost: 0 };
-          relieved.set(key, {
-            qty: prev.qty + Math.abs(Number(row.quantity ?? 0)),
-            cost: prev.cost + Math.abs(Number(row.cost ?? 0))
-          });
-        }
-
-        const lineIds = creditLines.map(
-          (row) => row.purchaseReturnOrderLineId as string
-        );
-        const returnLines = lineIds.length
-          ? await trx
-              .selectFrom("purchaseReturnOrderLine")
-              .select(["id", "itemId"])
-              .where("id", "in", lineIds)
-              .where("companyId", "=", companyId)
-              .execute()
-          : [];
-        const itemByLine = new Map(
-          returnLines.map((row) => [row.id as string, row.itemId as string])
-        );
-
-        // Credited quantity x that item's per-unit carried cost.
-        let carried = 0;
-        for (const creditLine of creditLines) {
-          const itemId = itemByLine.get(
-            creditLine.purchaseReturnOrderLineId as string
-          );
-          const totals = itemId ? relieved.get(itemId) : undefined;
-          if (!totals || totals.qty === 0) continue;
-          carried +=
-            (totals.cost / totals.qty) * Number(creditLine.quantity ?? 0);
-        }
-        // Only override when we actually recovered a cost basis. A zero-cost or
-        // accounting-disabled-at-shipment return keeps the two-line shape.
-        if (carried > 0) reasonAmountBase = carried;
-      }
-    }
+    const reasonAmountBase = await supplierReturnCarriedCost(trx, memo);
 
     const { lines } = buildMemoJournal({
       memoId,
@@ -648,31 +609,19 @@ export function postMemoTransaction(
         )
         .execute();
     }
-    const dimensions = await trx
-      .selectFrom("dimension")
-      .select(["id", "entityType"])
-      .where("companyGroupId", "=", company.companyGroupId)
-      .where("active", "=", true)
-      .where(
-        "entityType",
-        "in",
-        isAR ? ["CustomerType", "Customer"] : ["SupplierType", "Supplier"]
-      )
-      .execute();
-    const dimensionValues = dimensions.flatMap((d) => {
-      const valueId =
-        d.entityType === (isAR ? "Customer" : "Supplier")
-          ? partyId
-          : party.typeId;
-      return valueId
-        ? inserted.map((line) => ({
-            journalLineId: line.id,
-            dimensionId: d.id,
-            valueId,
-            companyId
-          }))
-        : [];
+    const dimensions = await partyDimensionValues(trx, {
+      companyGroupId: company.companyGroupId,
+      isAR,
+      partyId,
+      typeId: party.typeId
     });
+    const dimensionValues = dimensions.flatMap((dimension) =>
+      inserted.map((line) => ({
+        journalLineId: line.id,
+        ...dimension,
+        companyId
+      }))
+    );
     if (dimensionValues.length) {
       await trx
         .insertInto("journalLineDimension")
@@ -933,4 +882,243 @@ async function loadRentalCredit(
     plannedDeferrals,
     rentalAgreementId
   });
+}
+
+type MemoRow = Selectable<KyselyDatabase["memo"]>;
+
+export const MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR =
+  "This credit memo is from before your accounting cutover and credits a contract or a rental agreement. Invoice the customer for the amount instead.";
+
+/**
+ * The reason account of a memo that credits no contract and no rental
+ * agreement. Before the cutover an empty Sales Returns default becomes a
+ * stand-in line; after it, an empty one falls back to Sales, as it always
+ * has.
+ */
+function plainMemoReasonAccount(
+  memo: MemoRow,
+  defaults: Selectable<KyselyDatabase["accountDefault"]>,
+  isAR: boolean,
+  postingStatus: AutomaticJournalStatus
+): {
+  accountId: string | null;
+  accountDefaultRole: OptionalDefaultRole | null;
+} {
+  if (memo.salesReturnOrderId) {
+    return resolveDefaultAccount(
+      {
+        ...defaults,
+        salesReturnsAccount:
+          defaults.salesReturnsAccount ??
+          (postingStatus === "Posted" ? defaults.salesAccount : null)
+      },
+      "salesReturnsAccount",
+      postingStatus
+    );
+  }
+  return {
+    accountId: memo.purchaseReturnOrderId
+      ? defaults.goodsReceivedNotInvoicedAccount
+      : isAR
+        ? defaults.salesDiscountAccount
+        : defaults.supplierPaymentDiscountAccount,
+    accountDefaultRole: null
+  };
+}
+
+/**
+ * The carried cost a supplier-return memo's reason leg clears, in base
+ * currency. Undefined for every other memo, and for a return with no cost
+ * basis.
+ */
+async function supplierReturnCarriedCost(
+  trx: Transaction<KyselyDatabase>,
+  memo: MemoRow
+): Promise<number | undefined> {
+  // Supplier returns only: the reason leg (GRNI) must clear exactly what the
+  // return SHIPMENT debited — the goods' carried cost, already in BASE
+  // currency (do NOT scale by the memo's exchange rate) — while the control
+  // leg (AP) moves by what the supplier agreed to credit. Recover the carried
+  // cost here and let the builder book the difference as a purchase price
+  // variance; without it GRNI keeps a residual for the life of the company.
+  if (!memo.purchaseReturnOrderId) return undefined;
+  const companyId = memo.companyId;
+  // Posted shipments only: a voided shipment's journal was reversed but its
+  // costLedger rows survive, so counting it would over-credit GRNI.
+  const shipments = await trx
+    .selectFrom("shipment")
+    .select("id")
+    .where("sourceDocument", "=", "Purchase Return Order")
+    .where("sourceDocumentId", "=", memo.purchaseReturnOrderId)
+    .where("status", "=", "Posted")
+    .where("companyId", "=", companyId)
+    .execute();
+  const shipmentIds = shipments.map((row) => row.id);
+  if (shipmentIds.length === 0) return undefined;
+
+  const [costRows, creditLines] = await Promise.all([
+    trx
+      .selectFrom("costLedger")
+      .select(["itemId", "quantity", "cost"])
+      .where("documentType", "=", "Purchase Return Shipment")
+      .where("documentId", "in", shipmentIds)
+      .where("companyId", "=", companyId)
+      .execute(),
+    trx
+      .selectFrom("purchaseReturnOrderCreditLine")
+      .select(["purchaseReturnOrderLineId", "quantity"])
+      .where("memoId", "=", memo.id)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+
+  // Per-item carried cost per unit, from what the shipment relieved.
+  const relieved = new Map<string, { qty: number; cost: number }>();
+  for (const row of costRows) {
+    const key = row.itemId as string;
+    const prev = relieved.get(key) ?? { qty: 0, cost: 0 };
+    relieved.set(key, {
+      qty: prev.qty + Math.abs(Number(row.quantity ?? 0)),
+      cost: prev.cost + Math.abs(Number(row.cost ?? 0))
+    });
+  }
+
+  const lineIds = creditLines.map(
+    (row) => row.purchaseReturnOrderLineId as string
+  );
+  const returnLines = lineIds.length
+    ? await trx
+        .selectFrom("purchaseReturnOrderLine")
+        .select(["id", "itemId"])
+        .where("id", "in", lineIds)
+        .where("companyId", "=", companyId)
+        .execute()
+    : [];
+  const itemByLine = new Map(
+    returnLines.map((row) => [row.id as string, row.itemId as string])
+  );
+
+  // Credited quantity x that item's per-unit carried cost.
+  let carried = 0;
+  for (const creditLine of creditLines) {
+    const itemId = itemByLine.get(
+      creditLine.purchaseReturnOrderLineId as string
+    );
+    const totals = itemId ? relieved.get(itemId) : undefined;
+    if (!totals || totals.qty === 0) continue;
+    carried += (totals.cost / totals.qty) * Number(creditLine.quantity ?? 0);
+  }
+  // Only override when we actually recovered a cost basis. A zero-cost or
+  // accounting-disabled-at-shipment return keeps the two-line shape.
+  return carried > 0 ? carried : undefined;
+}
+
+/**
+ * The journal a memo dated before the cutover posted, built again with
+ * `buildMemoJournal`: the control leg on today's receivables or payables
+ * default, which is where the opening journal opened the memo, and the
+ * reason leg on the memo's own reason account. The caller negates the lines.
+ * A contract or rental credit memo is refused: its legs came from contract
+ * positions and deferral rows that the enable has moved on.
+ */
+async function rebuildMemoJournal(
+  trx: Transaction<KyselyDatabase>,
+  memo: MemoRow
+): Promise<{
+  lines: MemoJournalLine[];
+  dimensions: { dimensionId: string; valueId: string }[];
+}> {
+  const companyId = memo.companyId;
+  if (Boolean(memo.customerId) === Boolean(memo.supplierId)) {
+    throw new Error("Memo must have exactly one customer or supplier");
+  }
+  const isAR = Boolean(memo.customerId);
+  if (
+    isAR &&
+    memo.direction === "Credit" &&
+    (memo.customerContractId || memo.rentalAgreementId)
+  ) {
+    throw new InvalidInputError(MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR);
+  }
+  const partyId = (isAR ? memo.customerId : memo.supplierId)!;
+  const company = await trx
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company?.companyGroupId) {
+    throw new Error("Memo currency configuration is missing");
+  }
+  const party = isAR
+    ? await trx
+        .selectFrom("customer")
+        .select(["customerTypeId as typeId"])
+        .where("id", "=", partyId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+    : await trx
+        .selectFrom("supplier")
+        .select(["supplierTypeId as typeId"])
+        .where("id", "=", partyId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+  if (!party)
+    throw new NotFoundError("Memo counterparty not found in this company");
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults) {
+    throw new Error("Accounting defaults are required before posting");
+  }
+  const controlAccountId = isAR
+    ? defaults.receivablesAccount
+    : defaults.payablesAccount;
+  // The memo keeps the reason account it posted to, unless that was a
+  // stand-in; then the default it stood in for is set by now.
+  const reasonAccountId =
+    memo.reasonAccount ??
+    plainMemoReasonAccount(memo, defaults, isAR, "Posted").accountId;
+  if (!controlAccountId || !reasonAccountId) {
+    throw new Error("Memo control and reason account defaults are required");
+  }
+  const reason = await trx
+    .selectFrom("account")
+    .select("class")
+    .where("id", "=", reasonAccountId)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+  if (!reason?.class) {
+    throw new Error(
+      "Memo accounts must be active posting accounts in this company group with the correct control class"
+    );
+  }
+  const { lines } = buildMemoJournal({
+    memoId: memo.id,
+    companyId,
+    isAR,
+    direction: memo.direction,
+    amount: Number(memo.amount),
+    exchangeRate: Number(memo.exchangeRate),
+    journalLineReference: nanoid(),
+    controlAccountId,
+    reasonAccountId,
+    reasonAccountClass: reason.class,
+    reasonAmountBase: await supplierReturnCarriedCost(trx, memo),
+    varianceAccountId: defaults.purchaseVarianceAccount,
+    reasonDescription: memo.purchaseReturnOrderId
+      ? "Goods Received Not Invoiced"
+      : undefined
+  });
+  assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
+  return {
+    lines,
+    dimensions: await partyDimensionValues(trx, {
+      companyGroupId: company.companyGroupId,
+      isAR,
+      partyId,
+      typeId: party.typeId
+    })
+  };
 }

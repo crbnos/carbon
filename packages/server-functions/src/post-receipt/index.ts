@@ -45,6 +45,10 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
+import {
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -281,6 +285,14 @@ const postReceipt = defineServerFn({
         if (receiptHeader.status !== "Posted") {
           throw new Error("Can only void posted receipts");
         }
+
+        // The enable reset the cost layers this receipt created.
+        await refuseVoidBeforeCutover(
+          db,
+          companyId,
+          receiptHeader.postingDate,
+          INVENTORY_VOID_BEFORE_CUTOVER_ERROR
+        );
 
         if (receiptHeader.invoiced) {
           throw new Error(

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   DOCUMENT_JOURNAL_STATUSES,
   OPEN_ITEM_JOURNAL_STATUSES
@@ -15,19 +16,24 @@ import {
 import {
   journalPostingStatus,
   type OptionalDefaultRole,
+  readAccountingCutoverDate,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import {
   buildPaymentJournal,
-  type PaymentJournalFeeInput
+  type PaymentJournalFeeInput,
+  type PaymentJournalLine
 } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   allocatePaymentFunding,
   assertCurrencyDecimals,
   assertExchangeRate,
+  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
   CUSTOMER_DEPOSIT_DESCRIPTION,
   datetime,
+  EPSILON,
+  equals,
   type FundingRequest,
   fundingScopeOf,
   invoiceRemainingAmounts,
@@ -41,10 +47,12 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
-import { type Kysely, sql, type Transaction } from "kysely";
+import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
+import { assertNoMigrationClearing } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { partyDimensionValues } from "../lib/party-dimensions";
 
 export type PostPaymentArgs = {
   type: "post" | "void";
@@ -159,22 +167,9 @@ export function postPaymentTransaction(
         );
       }
       let reversalId: string | null = null;
-      if (payment.journalId) {
-        const original = await trx
-          .selectFrom("journalLine")
-          .innerJoin("journal", (join) =>
-            join
-              .onRef("journal.id", "=", "journalLine.journalId")
-              .onRef("journal.companyId", "=", "journalLine.companyId")
-          )
-          .selectAll("journalLine")
-          .where("journalLine.journalId", "=", payment.journalId)
-          .where("journalLine.companyId", "=", companyId)
-          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-          .orderBy("journalLine.id")
-          .execute();
-        if (original.length) {
-          const reversed = await trx
+      const insertVoidJournal = async () =>
+        (
+          await trx
             .insertInto("journal")
             .values({
               journalEntryId: await getNextSequence(
@@ -193,13 +188,74 @@ export function postPaymentTransaction(
               createdBy: userId
             })
             .returning("id")
-            .executeTakeFirstOrThrow();
-          reversalId = reversed.id;
+            .executeTakeFirstOrThrow()
+        ).id;
+      // Before the cutover the payment's own journal is Superseded, and the
+      // opening journal carries what the payment left open. The void builds
+      // the payment's posting again and negates it, today, so it nets those
+      // opening lines.
+      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+      if (
+        payment.postingDate &&
+        isBeforeCutover(payment.postingDate, cutoverDate)
+      ) {
+        const rebuilt = await rebuildPaymentJournal(trx, payment, companyId);
+        if (rebuilt.lines.length) {
+          reversalId = await insertVoidJournal();
+          const lines = await trx
+            .insertInto("journalLine")
+            .values(
+              rebuilt.lines.map((line) => ({
+                journalId: reversalId!,
+                accountId: line.accountId,
+                amount: -line.amount,
+                quantity: line.quantity,
+                description: `VOID: ${line.description}`,
+                documentType: "Payment" as const,
+                documentId: paymentId,
+                documentLineReference: line.documentLineReference ?? null,
+                journalLineReference: line.journalLineReference,
+                companyId
+              }))
+            )
+            .returning("id")
+            .execute();
+          const values = rebuilt.dimensions.flatMap((dimension) =>
+            lines.map((line) => ({
+              journalLineId: line.id,
+              ...dimension,
+              companyId
+            }))
+          );
+          if (values.length) {
+            await trx
+              .insertInto("journalLineDimension")
+              .values(values)
+              .execute();
+          }
+        }
+      } else if (payment.journalId) {
+        const original = await trx
+          .selectFrom("journalLine")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "journalLine.journalId")
+              .onRef("journal.companyId", "=", "journalLine.companyId")
+          )
+          .selectAll("journalLine")
+          .where("journalLine.journalId", "=", payment.journalId)
+          .where("journalLine.companyId", "=", companyId)
+          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+          .orderBy("journalLine.id")
+          .execute();
+        if (original.length) {
+          const reversedId = await insertVoidJournal();
+          reversalId = reversedId;
           const lines = await trx
             .insertInto("journalLine")
             .values(
               original.map((line) => ({
-                journalId: reversed.id,
+                journalId: reversedId,
                 accountId: line.accountId,
                 amount: -Number(line.amount),
                 quantity: line.quantity,
@@ -974,30 +1030,12 @@ export function postPaymentTransaction(
     // party row and no party type to tag journal lines with — the same reason
     // post-reimbursement writes no party dimension on the document's own
     // journal.
-    const party = isReimbursement
-      ? await trx
-          .selectFrom("employee")
-          .select([
-            sql<string | null>`NULL`.as("typeId"),
-            sql<string | null>`NULL`.as("intercompanyCompanyId")
-          ])
-          .where("id", "=", partyId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst()
-      : isAR
-        ? await trx
-            .selectFrom("customer")
-            .select(["customerTypeId as typeId", "intercompanyCompanyId"])
-            .where("id", "=", partyId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst()
-        : await trx
-            .selectFrom("supplier")
-            .select(["supplierTypeId as typeId", "intercompanyCompanyId"])
-            .where("id", "=", partyId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst();
-    if (!party) throw new NotFoundError("Payment counterparty not found");
+    const party = await loadPaymentParty(trx, {
+      companyId,
+      partyId,
+      isAR,
+      isReimbursement
+    });
     const normalized = allocation.applications.map((application) => ({
       ...application,
       targetSalesInvoiceId:
@@ -1238,31 +1276,19 @@ export function postPaymentTransaction(
       // dimension the liability it clears never had.
       const dimensions = isReimbursement
         ? []
-        : await trx
-            .selectFrom("dimension")
-            .select(["id", "entityType"])
-            .where("companyGroupId", "=", company.companyGroupId)
-            .where("active", "=", true)
-            .where(
-              "entityType",
-              "in",
-              isAR ? ["CustomerType", "Customer"] : ["SupplierType", "Supplier"]
-            )
-            .execute();
-      const values = dimensions.flatMap((dimension) => {
-        const valueId =
-          dimension.entityType === (isAR ? "Customer" : "Supplier")
-            ? partyId
-            : party.typeId;
-        return valueId
-          ? lines.map((line) => ({
-              journalLineId: line.id,
-              dimensionId: dimension.id,
-              valueId,
-              companyId
-            }))
-          : [];
-      });
+        : await partyDimensionValues(trx, {
+            companyGroupId: company.companyGroupId,
+            isAR,
+            partyId,
+            typeId: party.typeId
+          });
+      const values = dimensions.flatMap((dimension) =>
+        lines.map((line) => ({
+          journalLineId: line.id,
+          ...dimension,
+          companyId
+        }))
+      );
       if (values.length) {
         await trx.insertInto("journalLineDimension").values(values).execute();
       }
@@ -1283,4 +1309,407 @@ export function postPaymentTransaction(
       .execute();
     return { journalId };
   });
+}
+
+/**
+ * The payment's counterparty: its type, for the party dimension, and its
+ * intercompany link. An employee is neither a customer nor a supplier, so
+ * it has no trade party type to tag journal lines with.
+ */
+async function loadPaymentParty(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    partyId: string;
+    isAR: boolean;
+    isReimbursement: boolean;
+  }
+): Promise<{ typeId: string | null; intercompanyCompanyId: string | null }> {
+  const { companyId, partyId, isAR, isReimbursement } = args;
+  const party = isReimbursement
+    ? await trx
+        .selectFrom("employee")
+        .select([
+          sql<string | null>`NULL`.as("typeId"),
+          sql<string | null>`NULL`.as("intercompanyCompanyId")
+        ])
+        .where("id", "=", partyId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+    : isAR
+      ? await trx
+          .selectFrom("customer")
+          .select(["customerTypeId as typeId", "intercompanyCompanyId"])
+          .where("id", "=", partyId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : await trx
+          .selectFrom("supplier")
+          .select(["supplierTypeId as typeId", "intercompanyCompanyId"])
+          .where("id", "=", partyId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+  if (!party) throw new NotFoundError("Payment counterparty not found");
+  return party;
+}
+
+/** Every description `buildPaymentJournal` writes, except the processor fee's. */
+const PAYMENT_BUILDER_DESCRIPTIONS = new Set([
+  "Bank / Cash",
+  "Accounts Receivable",
+  "Accounts Payable",
+  "Employee Reimbursements Payable",
+  "Customer Payment Discount",
+  "Supplier Payment Discount",
+  "Bad Debt Expense",
+  "Vendor Write-Off Income",
+  "Accounts Receivable (credit applied)",
+  "Accounts Payable (credit applied)",
+  "Realized FX Gain",
+  "Realized FX Loss",
+  onAccountCreditDescription(true),
+  onAccountCreditDescription(false),
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+]);
+
+/**
+ * The processor fee the payment withheld when it posted. The fee is not
+ * stored on the payment, so it is read off the payment's own journal: the
+ * bank line is short of the gross cash by the fee, and the fee line is the
+ * one line the builder does not describe.
+ */
+async function postedProcessorFee(
+  trx: Transaction<KyselyDatabase>,
+  payment: Selectable<KyselyDatabase["payment"]>,
+  companyId: string,
+  grossBase: number
+): Promise<PaymentJournalFeeInput | undefined> {
+  if (!payment.journalId) return undefined;
+  const lines = await trx
+    .selectFrom("journalLine")
+    .select(["accountId", "amount", "description"])
+    .where("companyId", "=", companyId)
+    .where("journalId", "=", payment.journalId)
+    .where("documentType", "=", "Payment")
+    .where("documentId", "=", payment.id)
+    .execute();
+  const bank = lines.find((line) => line.description === "Bank / Cash");
+  if (!bank) return undefined;
+  const feeBase = round(grossBase - Math.abs(Number(bank.amount)));
+  if (Math.abs(feeBase) <= EPSILON) return undefined;
+  const fees = lines.filter(
+    (line) => !PAYMENT_BUILDER_DESCRIPTIONS.has(line.description ?? "")
+  );
+  if (
+    fees.length !== 1 ||
+    !fees[0]!.accountId ||
+    !equals(Math.abs(Number(fees[0]!.amount)), feeBase)
+  ) {
+    throw new Error(
+      "The payment's processor fee cannot be read from its journal"
+    );
+  }
+  return {
+    // The builder converts the fee at the payment's rate; this is its inverse.
+    amount: round(feeBase * Number(payment.exchangeRate)),
+    accountId: fees[0]!.accountId,
+    description: fees[0]!.description ?? undefined
+  };
+}
+
+/**
+ * The journal a payment dated before the cutover posted, built again with
+ * `buildPaymentJournal` from its stored settlements and today's account
+ * defaults. A target or funding source books to the control account of its
+ * line in a Posted journal (the opening journal for a document open at the
+ * cutover), else to the default control account, as the opening journal
+ * does. The caller negates the lines.
+ */
+async function rebuildPaymentJournal(
+  trx: Transaction<KyselyDatabase>,
+  payment: Selectable<KyselyDatabase["payment"]>,
+  companyId: string
+): Promise<{
+  lines: PaymentJournalLine[];
+  dimensions: { dimensionId: string; valueId: string }[];
+}> {
+  const isReimbursement = payment.employeeId !== null;
+  const isAR = payment.customerId !== null;
+  const cashIn = payment.paymentType === "Receipt";
+  const isRefund = !isReimbursement && cashIn !== isAR;
+  const isDeposit = Boolean(payment.rentalAgreementId ?? payment.salesOrderId);
+  const partyId = isReimbursement
+    ? payment.employeeId
+    : isAR
+      ? payment.customerId
+      : payment.supplierId;
+  if (!partyId) {
+    throw new Error(
+      "A payment requires exactly one party (customer, supplier, or employee)"
+    );
+  }
+  const company = await trx
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  if (!company.companyGroupId) {
+    throw new Error("Payment currency configuration is missing");
+  }
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults) {
+    throw new Error("Accounting defaults are required before posting");
+  }
+  const party = await loadPaymentParty(trx, {
+    companyId,
+    partyId,
+    isAR,
+    isReimbursement
+  });
+
+  const discountAccountId = isAR
+    ? defaults.customerPaymentDiscountAccount
+    : defaults.supplierPaymentDiscountAccount;
+  const discountAccount = discountAccountId
+    ? await trx
+        .selectFrom("account")
+        .select("class")
+        .where("id", "=", discountAccountId)
+        .where("companyGroupId", "=", company.companyGroupId)
+        .executeTakeFirst()
+    : null;
+  // After the cutover every default is set, so no line is a stand-in.
+  const controlAccountId = isReimbursement
+    ? (defaults.employeeReimbursementsPayableAccount ??
+      defaults.payablesAccount)
+    : party.intercompanyCompanyId
+      ? resolveDefaultAccount(
+          defaults,
+          isAR
+            ? "intercompanyReceivablesAccount"
+            : "intercompanyPayablesAccount",
+          "Posted"
+        ).accountId
+      : isAR
+        ? defaults.receivablesAccount
+        : defaults.payablesAccount;
+
+  const settlements = await trx
+    .selectFrom("invoiceSettlement")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("paymentId", "=", payment.id)
+    .orderBy("id")
+    .execute();
+  const targetColumn = isReimbursement
+    ? "targetReimbursementId"
+    : isRefund
+      ? "targetMemoId"
+      : isAR
+        ? "targetSalesInvoiceId"
+        : "targetPurchaseInvoiceId";
+  const targetIds = [
+    ...new Set(
+      settlements
+        .map((row) => row[targetColumn])
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const targetControls = targetIds.length
+    ? await trx
+        .selectFrom("journalLine as line")
+        .innerJoin("journal as journal", (join) =>
+          join
+            .onRef("journal.id", "=", "line.journalId")
+            .onRef("journal.companyId", "=", "line.companyId")
+        )
+        .select(["line.documentId", "line.accountId"])
+        .where("line.companyId", "=", companyId)
+        .where(
+          "line.documentType",
+          "=",
+          isReimbursement ? "Reimbursement" : isRefund ? "Memo" : "Invoice"
+        )
+        .where("line.documentId", "in", targetIds)
+        .where(
+          "line.description",
+          "in",
+          isReimbursement
+            ? [REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION]
+            : isAR
+              ? RECEIVABLE_POSTING_DESCRIPTIONS
+              : PAYABLE_POSTING_DESCRIPTIONS
+        )
+        .where("journal.sourceType", "in", [
+          isReimbursement
+            ? "Reimbursement"
+            : isRefund
+              ? isAR
+                ? "Credit Memo"
+                : "Debit Memo"
+              : isAR
+                ? "Sales Invoice"
+                : "Purchase Invoice",
+          "Opening Balance"
+        ])
+        .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
+        .execute()
+    : [];
+  const targetControlById = new Map<string, string>();
+  for (const line of targetControls) {
+    if (line.documentId && line.accountId) {
+      targetControlById.set(line.documentId, line.accountId);
+    }
+  }
+
+  const sourceIds = [
+    ...new Set(
+      settlements
+        .map((row) => row.sourcePaymentId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const sources = sourceIds.length
+    ? await trx
+        .selectFrom("payment")
+        .select(["id", "rentalAgreementId", "salesOrderId"])
+        .where("companyId", "=", companyId)
+        .where("id", "in", sourceIds)
+        .execute()
+    : [];
+  const sourceControls = sourceIds.length
+    ? await trx
+        .selectFrom("journalLine as line")
+        .innerJoin("journal as journal", (join) =>
+          join
+            .onRef("journal.id", "=", "line.journalId")
+            .onRef("journal.companyId", "=", "line.companyId")
+        )
+        .select(["line.documentId", "line.accountId", "line.description"])
+        .where("line.companyId", "=", companyId)
+        .where("line.documentType", "=", "Payment")
+        .where("line.documentId", "in", sourceIds)
+        .where("line.description", "in", [
+          onAccountCreditDescription(isAR),
+          CUSTOMER_DEPOSIT_DESCRIPTION
+        ])
+        .where("journal.sourceType", "in", ["Payment", "Opening Balance"])
+        .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
+        .execute()
+    : [];
+  const sourceControlById = new Map<
+    string,
+    { accountId: string | null; isDeposit: boolean }
+  >();
+  for (const line of sourceControls) {
+    if (line.documentId && line.accountId) {
+      sourceControlById.set(line.documentId, {
+        accountId: line.accountId,
+        isDeposit: line.description === CUSTOMER_DEPOSIT_DESCRIPTION
+      });
+    }
+  }
+  for (const source of sources) {
+    if (sourceControlById.has(source.id)) continue;
+    const sourceIsDeposit =
+      isAR && Boolean(source.rentalAgreementId ?? source.salesOrderId);
+    sourceControlById.set(source.id, {
+      accountId: sourceIsDeposit
+        ? defaults.prepaymentAccount
+        : controlAccountId,
+      isDeposit: sourceIsDeposit
+    });
+  }
+
+  const applications = settlements.map((row) => {
+    const target = row[targetColumn];
+    const source = row.sourcePaymentId
+      ? sourceControlById.get(row.sourcePaymentId)
+      : undefined;
+    return {
+      targetSalesInvoiceId: row.targetSalesInvoiceId,
+      targetPurchaseInvoiceId: row.targetPurchaseInvoiceId,
+      targetMemoId: row.targetMemoId,
+      targetReimbursementId: row.targetReimbursementId,
+      sourceAmount: principal(row.sourceAmount, row.id),
+      sourcePaymentId: row.sourcePaymentId,
+      fxGainLossAmount: Number(row.fxGainLossAmount),
+      appliedAmount: Number(row.appliedAmount),
+      discountAmount: Number(row.discountAmount),
+      writeOffAmount: Number(row.writeOffAmount),
+      targetExchangeRate: Number(row.targetExchangeRate),
+      sourceExchangeRate: Number(row.sourceExchangeRate),
+      targetControlAccountId:
+        (target ? targetControlById.get(target) : undefined) ??
+        controlAccountId ??
+        undefined,
+      sourceControlAccountId: source?.accountId ?? undefined,
+      sourceIsDeposit: source?.isDeposit
+    };
+  });
+
+  // What the current cash did not apply stayed on account (or as a
+  // deposit), exactly as the funding allocation left it at posting.
+  const grossBase = toBaseAmount(
+    Number(payment.totalAmount),
+    Number(payment.exchangeRate)
+  );
+  const currentCashReleased = applications
+    .filter((application) => !application.sourcePaymentId)
+    .reduce(
+      (sum, application) =>
+        sum +
+        round(
+          application.appliedAmount +
+            (cashIn
+              ? application.fxGainLossAmount
+              : -application.fxGainLossAmount)
+        ),
+      0
+    );
+
+  const { lines } = buildPaymentJournal({
+    paymentId: payment.id,
+    companyId,
+    isAR,
+    isReimbursement,
+    cashIn,
+    totalAmount: Number(payment.totalAmount),
+    exchangeRate: Number(payment.exchangeRate),
+    bankAccount: payment.bankAccount,
+    journalLineReference: nanoid(),
+    applications,
+    newOnAccountBase: round(grossBase - currentCashReleased),
+    fee: await postedProcessorFee(trx, payment, companyId, grossBase),
+    accounts: {
+      controlAccountId,
+      discountAccountId,
+      discountAccountClass: discountAccount?.class ?? null,
+      writeOffAccountId: isAR
+        ? defaults.customerWriteOffAccount
+        : defaults.supplierWriteOffAccount,
+      fxGainAccountId: defaults.realizedExchangeGainAccount,
+      fxLossAccountId: defaults.realizedExchangeLossAccount
+    },
+    isDeposit,
+    depositAccountId: defaults.prepaymentAccount
+  });
+  assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
+
+  return {
+    lines,
+    dimensions: isReimbursement
+      ? []
+      : await partyDimensionValues(trx, {
+          companyGroupId: company.companyGroupId,
+          isAR,
+          partyId,
+          typeId: party.typeId
+        })
+  };
 }

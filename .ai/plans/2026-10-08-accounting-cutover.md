@@ -39,7 +39,7 @@
 - [x] Task 26: Add the pure cutover planner
 - [x] Task 27: Add the cutover read services
 - [x] Task 28: Add the `activate-accounting` server function
-- [ ] Task 29: Handle voids of documents dated before the cutover
+- [x] Task 29: Handle voids of documents dated before the cutover
 - [x] Task 30: Start depreciation at the cutover
 - [ ] Task 31: Build the 5-step enable wizard
 
@@ -1429,3 +1429,4 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
   3. `recostOutbound` takes only layers dated on or before a movement. It takes the newest layer first for a LIFO item.
   4. The default unit cost of a FIFO or LIFO item replays its layers dated before the cutover (`unitCostAtCutover`). Today's remaining quantity is wrong because relief after the cutover changed it. An Average item uses `itemCost.unitCost`.
   5. Open gaps: a PO line invoiced past its receipts before the cutover gets no open item. After the enable, an invoice clears GR/IR at the opening line's average cost, so receipts at different costs can leave a residual.
+- Task 29 changed while executing: the void of a sales or purchase invoice dated before the cutover fails and points to a credit memo or a debit memo. No builder covers a whole invoice posting. Only payment and memo voids build the posting again and negate it.

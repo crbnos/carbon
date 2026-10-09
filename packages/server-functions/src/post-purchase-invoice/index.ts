@@ -38,6 +38,10 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import {
+  PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -108,6 +112,15 @@ const postPurchaseInvoice = defineServerFn({
         if (invoice.data.status === "Voided") {
           throw new Error("Purchase invoice is already voided");
         }
+
+        // The enable superseded this invoice's journal and opened its
+        // payable in the opening journal.
+        await refuseVoidBeforeCutover(
+          db,
+          companyId,
+          invoice.data.postingDate,
+          PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR
+        );
 
         if (
           invoice.data.status === "Paid" ||
