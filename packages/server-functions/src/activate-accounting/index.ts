@@ -245,6 +245,7 @@ const activateAccounting = defineServerFn({
                   documentId: line.documentId,
                   documentLineReference: line.documentLineReference,
                   quantity: line.quantity ?? 0,
+                  accrual: line.accrual ?? false,
                   journalLineReference: nanoid(),
                   companyId,
                   createdBy: userId

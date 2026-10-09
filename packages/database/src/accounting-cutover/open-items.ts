@@ -5,7 +5,7 @@
 // The document-level items open at the cutover
 // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 4):
 // receivables, payables, employee reimbursements, unapplied credit, deposits,
-// received-not-invoiced, work in progress, deferred revenue and lease net
+// received-not-invoiced, invoiced-not-received, work in progress, deferred revenue and lease net
 // investment.
 
 import { sql } from "kysely";
@@ -58,6 +58,9 @@ export type DraftItem = {
   description: string;
   /** The original line's quantity. */
   quantity?: number | null;
+  /** The original line is an accrual. Kept at a zero amount: a receipt
+   *  after the cutover still claims a zero-priced accrual. */
+  accrual?: boolean;
   /** How the part settled before the cutover is keyed, when not the default. */
   settledLine?: OpenItem["settled"];
 };
@@ -862,6 +865,178 @@ async function getReceivedNotInvoicedItems(
   return items;
 }
 
+/** The invoice line types a purchase invoice accrues on GR/IR when they
+ *  are invoiced before they are received: the item lines except Service,
+ *  which the posting expenses to indirect cost. */
+const GR_IR_ACCRUING_LINE_TYPES = [
+  "Part",
+  "Consumable",
+  "Fixture",
+  "Material",
+  "Tool"
+] as const;
+
+/**
+ * Invoiced, not received: per purchase order line invoiced before the
+ * cutover for more than it received before the cutover, the GR/IR accrual
+ * the invoices left open. A receipt after the cutover costs the units
+ * invoiced before it from the GR/IR accrual lines of
+ * `purchase-invoice:<poLineId>` (Σ cost / Σ quantity) and clears them at
+ * that cost. The enable supersedes the invoices' journals, so the item
+ * carries the open quantity at that unit cost, flagged as an accrual, on
+ * `purchase-invoice:<poLineId>` with the posting's description and sign
+ * (a debit on GR/IR).
+ *
+ * The unit cost is that of the invoices' accrual lines. An invoice with no
+ * journal (posted before Carbon wrote journals for every company) has none;
+ * a PO line with no accrual line takes the average base cost of its invoice
+ * lines (price, line freight and tax, without the header freight).
+ */
+async function getInvoicedNotReceivedItems(
+  db: CutoverDb,
+  companyId: string,
+  cutoverDate: string,
+  defaults: AccountDefaults
+): Promise<DraftItem[]> {
+  const grIrAccountId = defaults.goodsReceivedNotInvoicedAccount;
+  const invoiceLines = await db
+    .selectFrom("purchaseInvoiceLine as line")
+    .innerJoin("purchaseInvoice as invoice", (join) =>
+      join
+        .onRef("invoice.id", "=", "line.invoiceId")
+        .onRef("invoice.companyId", "=", "line.companyId")
+    )
+    .select([
+      "invoice.id as invoiceId",
+      "line.purchaseOrderLineId",
+      "line.quantity",
+      "line.conversionFactor",
+      "line.unitPrice",
+      "line.shippingCost",
+      "line.taxAmount"
+    ])
+    .where("line.companyId", "=", companyId)
+    .where("line.purchaseOrderLineId", "is not", null)
+    .where("line.invoiceLineType", "in", [...GR_IR_ACCRUING_LINE_TYPES])
+    .where("invoice.status", "not in", ["Draft", "Pending", "Voided"])
+    .where("invoice.postingDate", "<", cutoverDate)
+    .execute();
+  if (invoiceLines.length === 0) return [];
+
+  const invoiced = new Map<string, { quantity: number; cost: number }>();
+  for (const line of invoiceLines) {
+    const purchaseOrderLineId = line.purchaseOrderLineId as string;
+    const current = invoiced.get(purchaseOrderLineId) ?? {
+      quantity: 0,
+      cost: 0
+    };
+    current.quantity +=
+      Number(line.quantity) * Number(line.conversionFactor ?? 1);
+    current.cost +=
+      Number(line.quantity) * Number(line.unitPrice ?? 0) +
+      Number(line.shippingCost ?? 0) +
+      Number(line.taxAmount ?? 0);
+    invoiced.set(purchaseOrderLineId, current);
+  }
+  const purchaseOrderLineIds = [...invoiced.keys()];
+  const invoiceIds = [...new Set(invoiceLines.map((line) => line.invoiceId))];
+
+  const [receiptLines, accrualLines] = await Promise.all([
+    db
+      .selectFrom("receiptLine as line")
+      .innerJoin("receipt", (join) =>
+        join
+          .onRef("receipt.id", "=", "line.receiptId")
+          .onRef("receipt.companyId", "=", "line.companyId")
+      )
+      .select([
+        "line.lineId",
+        sql<number>`sum("line"."receivedQuantity")`.as("quantity")
+      ])
+      .where("line.companyId", "=", companyId)
+      .where("receipt.status", "=", "Posted")
+      .where("receipt.sourceDocument", "=", "Purchase Order")
+      .where("receipt.postingDate", "<", cutoverDate)
+      .where("line.lineId", "in", purchaseOrderLineIds)
+      .groupBy("line.lineId")
+      .execute(),
+    // The invoices' GR/IR accrual lines, as post-receipt reads them: a debit
+    // (non-positive amount) with a positive quantity. A Superseded journal
+    // is read too, in case the enable has already superseded them.
+    db
+      .selectFrom("journalLine as line")
+      .innerJoin("journal", (join) =>
+        join
+          .onRef("journal.id", "=", "line.journalId")
+          .onRef("journal.companyId", "=", "line.companyId")
+      )
+      .select([
+        "line.documentLineReference",
+        sql<number>`sum(-"line"."amount")`.as("cost"),
+        sql<number>`sum("line"."quantity")`.as("quantity")
+      ])
+      .where("line.companyId", "=", companyId)
+      .where("line.accountId", "=", grIrAccountId)
+      .where("line.accrual", "=", true)
+      .where("line.documentId", "in", invoiceIds)
+      .where(
+        "line.documentLineReference",
+        "in",
+        purchaseOrderLineIds.map((id) =>
+          journalReference.to.purchaseInvoice(id)
+        )
+      )
+      .where("line.amount", "<=", 0)
+      .where("line.quantity", ">", 0)
+      .where("journal.status", "in", [
+        ...DOCUMENT_JOURNAL_STATUSES,
+        "Superseded"
+      ])
+      .groupBy("line.documentLineReference")
+      .execute()
+  ]);
+
+  const receivedByLine = new Map(
+    receiptLines.map((row) => [row.lineId as string, Number(row.quantity)])
+  );
+  const invoicePrefix = journalReference.to.purchaseInvoice("");
+  const accrualByLine = new Map(
+    accrualLines.map((row) => [
+      (row.documentLineReference ?? "").slice(invoicePrefix.length),
+      { cost: Number(row.cost), quantity: Number(row.quantity) }
+    ])
+  );
+
+  const items: DraftItem[] = [];
+  for (const [purchaseOrderLineId, invoice] of invoiced) {
+    const open =
+      invoice.quantity - (receivedByLine.get(purchaseOrderLineId) ?? 0);
+    if (open <= EPSILON) continue;
+    const accrual = accrualByLine.get(purchaseOrderLineId);
+    const unitCost =
+      accrual && accrual.quantity > EPSILON
+        ? accrual.cost / accrual.quantity
+        : invoice.quantity > EPSILON
+          ? invoice.cost / invoice.quantity
+          : 0;
+    items.push({
+      openItemType: "Invoiced Not Received",
+      accountId: grIrAccountId,
+      basis: "natural",
+      original: round(debit("liability", open * unitCost)),
+      settled: 0,
+      documentType: null,
+      documentId: null,
+      documentLineReference:
+        journalReference.to.purchaseInvoice(purchaseOrderLineId),
+      description: GR_IR_CLEARING_DESCRIPTION,
+      quantity: round(open),
+      accrual: true
+    });
+  }
+  return items;
+}
+
 /**
  * Work in progress: per job, its lines on the WIP account dated before the
  * cutover, as `close-job` sums them. Every job with a balance, whatever its
@@ -1094,7 +1269,7 @@ export async function finishItems(
     const originalAmount = round(sign(draft.original));
     const settledBeforeCutover = round(sign(draft.settled));
     const amount = round(originalAmount - settledBeforeCutover);
-    if (Math.abs(amount) <= EPSILON) continue;
+    if (Math.abs(amount) <= EPSILON && !draft.accrual) continue;
     items.push({
       openItemType: draft.openItemType,
       accountId: draft.accountId,
@@ -1107,6 +1282,7 @@ export async function finishItems(
       documentLineReference: draft.documentLineReference,
       description: draft.description,
       ...(draft.quantity != null ? { quantity: draft.quantity } : {}),
+      ...(draft.accrual ? { accrual: true } : {}),
       ...(draft.settledLine ? { settled: draft.settledLine } : {})
     });
   }
@@ -1116,8 +1292,8 @@ export async function finishItems(
 /**
  * Every document-level item open at the cutover, in base currency, positive
  * on the natural side of its account: receivables, payables, employee
- * reimbursements, unapplied credit, deposits, received-not-invoiced, work in
- * progress, deferred revenue and lease net investment. Inventory and fixed assets come from
+ * reimbursements, unapplied credit, deposits, received-not-invoiced,
+ * invoiced-not-received, work in progress, deferred revenue and lease net investment. Inventory and fixed assets come from
  * `getCutoverInventory` and `getCutoverFixedAssets`.
  */
 export async function getCutoverOpenItems(
@@ -1148,6 +1324,7 @@ export async function openItemsFor(
     getReimbursementItems(db, companyId, cutoverDate, defaults, settlements),
     getUnappliedPaymentItems(db, companyId, cutoverDate, defaults, settlements),
     getReceivedNotInvoicedItems(db, companyId, cutoverDate, defaults),
+    getInvoicedNotReceivedItems(db, companyId, cutoverDate, defaults),
     getWorkInProgressItems(db, companyId, cutoverDate, defaults),
     getDeferredRevenueItems(db, companyId, cutoverDate, defaults),
     getLeaseNetInvestmentItems(db, companyId, cutoverDate, defaults)

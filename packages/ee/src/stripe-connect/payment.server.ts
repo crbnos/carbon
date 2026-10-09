@@ -347,8 +347,8 @@ export async function recordStripeConnectPayment({
         );
       } else {
         // Every company books the fee: Provisional before the accounting
-        // cutover, Posted after it. A fee with no currency is booked here;
-        // `countedProcessorFee` (the resume path and a rebuild) skips it.
+        // cutover, Posted after it. A fee with no currency is booked here in
+        // the invoice currency, and the mapping records that currency below.
         journalFee = {
           amount: feeAmount,
           accountId: processorFeeAccount(
@@ -403,7 +403,11 @@ export async function recordStripeConnectPayment({
       stripeAccountId,
       chargeIds: feeDetails.chargeIds,
       feeAmount,
-      feeCurrency: feeDetails.feeCurrency,
+      // The currency the fee was booked in. A fee Stripe reported with no
+      // currency is booked in the invoice currency above, so record that:
+      // `countedProcessorFee` (the resume path and a journal rebuild) then
+      // books the same fee instead of dropping it.
+      feeCurrency: journalFee ? currencyCode : feeDetails.feeCurrency,
       settlementCurrency: feeDetails.settlementCurrency,
       exchangeRate: realizedExchangeRate,
       amountRecorded: amountToRecord,

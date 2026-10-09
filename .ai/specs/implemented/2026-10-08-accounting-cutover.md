@@ -146,6 +146,7 @@ The opening journal has `sourceType 'Opening Balance'`, status Posted, and date 
 | Unapplied payment credit | The payment and its settlements: base cash less what the payment's own applications released, less what later payments drew from it before D | The account of the payment's own control line. For a legacy payment (no journal), the receivables or payables account | `documentType 'Payment'`, `documentId`, the description of the payment's own line. For a legacy payment, the on-account description |
 | Customer deposit | The payment, the same way | The account of the payment's own line, else `prepaymentAccount` | `documentType 'Payment'`, `documentId`, description "Customer Deposit" |
 | Received, not invoiced | The PO line: the quantity received before D × the receipt cost | GR/IR account | `documentLineReference 'receipt:<poLineId>'`, the quantity, description "Goods Received Not Invoiced" |
+| Invoiced, not received | The PO line: the quantity invoiced before D minus the quantity received before D × the accrual unit cost of the invoices before D (their GR/IR accrual lines; for an invoice with no journal, the invoice line's base cost) | GR/IR account, a debit, `accrual` true | `documentLineReference 'purchase-invoice:<poLineId>'`, the quantity, description "GR/IR Clearing" |
 | WIP | Each job with a WIP balance: its lines on the WIP account, dated before D | WIP account | `documentId` = the job, description "WIP Account" |
 | Inventory | The inventory step: on-hand at D × unit cost, summed per inventory account | One line per inventory account | None. Description "Inventory" |
 | Fixed asset | The fixed assets step, summed per class account. A Draft asset gets no line. | One line per asset account ("Fixed Asset Cost") and one per accumulated depreciation account ("Accumulated Depreciation") | None |
@@ -167,6 +168,8 @@ Received-not-invoiced follows the same rule, keyed by reference instead of descr
 2. A `purchase-invoice:<poLineId>` line ("GR/IR Clearing") carries the receipt cost the invoices before D cleared, with the opposite sign. The GR/IR walk does not read that reference.
 
 The account nets to the open amount, and an invoice after D skips and costs units exactly as before.
+
+Invoiced-not-received is the other side. A purchase invoice for units not yet received accrues them on GR/IR with `accrual` true, and a receipt costs the units invoiced before it at the average cost of the PO line's accrual lines. The enable supersedes the invoice's journal, so the opening journal carries that accrual for the open quantity. A receipt after D then finds it and clears it at the invoice's cost. When a receipt finds no accrual for units invoiced before it, it costs them at PO cost and logs a warning.
 
 Every other account comes from the trial balance only. Cash, equity, tax, payroll and accruals never come from the Provisional ledger. So a gap in Provisional data (for example, payroll that Carbon never saw) cannot reach the GL.
 

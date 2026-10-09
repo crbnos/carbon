@@ -180,6 +180,55 @@ describe("buildOpeningJournalLines", () => {
     ]);
   });
 
+  it("opens an invoice-first accrual as an accrual debit on purchase-invoice:, offset on Migration Clearing", () => {
+    const GRNI = "acct-grni";
+    const lines = buildOpeningJournalLines(
+      [
+        {
+          openItemType: "Invoiced Not Received",
+          accountId: GRNI,
+          accountClass: "Liability",
+          amount: -45,
+          originalAmount: -45,
+          settledBeforeCutover: 0,
+          documentType: null,
+          documentId: null,
+          documentLineReference: "purchase-invoice:po-line-1",
+          description: "GR/IR Clearing",
+          quantity: 5,
+          accrual: true
+        }
+      ],
+      [],
+      new Set([GRNI]),
+      CLEARING_ACCOUNT
+    );
+
+    expect(lines).toEqual([
+      {
+        accountId: GRNI,
+        amount: -45,
+        description: "GR/IR Clearing",
+        documentType: null,
+        documentId: null,
+        documentLineReference: "purchase-invoice:po-line-1",
+        quantity: 5,
+        accrual: true
+      },
+      {
+        accountId: CLEARING,
+        amount: 45,
+        description: MIGRATION_CLEARING_DESCRIPTION,
+        documentType: null,
+        documentId: null,
+        documentLineReference: GRNI,
+        quantity: null
+      }
+    ]);
+    // Only the accrual line carries the flag; post-receipt reads it.
+    expect(lines[1]).not.toHaveProperty("accrual");
+  });
+
   it("shows a 5.00 difference on the receivables row when the trial balance says 5.00 more", () => {
     const items = [receivable("inv-1", 100)];
     const trialBalance: TrialBalanceLine[] = [

@@ -96,7 +96,7 @@ When you enable, Carbon:
 
 - Writes the journals of documents posted before Carbon kept journals that are dated on or after the cutover.
 - Resets each item's stock to its on-hand quantity at the cutover date at the reviewed unit cost, and recosts the outbound stock movements of FIFO and LIFO items dated on or after it.
-- Posts the opening journal, dated the day before the cutover, against <Term id="account-default-migration-clearing">Migration Clearing</Term>. Each open invoice, unapplied payment, received but not invoiced order line and open job gets its own opening line, so a later payment, supplier invoice or job close finds it as if the original posting had written it.
+- Posts the opening journal, dated the day before the cutover, against <Term id="account-default-migration-clearing">Migration Clearing</Term>. Each open invoice, unapplied payment, received but not invoiced order line, invoiced but not received order line and open job gets its own opening line, so a later payment, supplier invoice or job close finds it as if the original posting had written it.
 - Turns Provisional journals dated on or after the cutover into **Posted**, and those dated before it into **Before cutover**.
 - Closes every accounting period that ends before the cutover date.
 

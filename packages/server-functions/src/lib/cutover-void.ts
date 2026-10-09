@@ -22,6 +22,8 @@ export const CHARGE_VOID_BEFORE_CUTOVER_ERROR =
   "This charge is from before your accounting cutover. Record a journal entry to correct it instead.";
 export const REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR =
   "This reimbursement is from before your accounting cutover. Record a journal entry to correct it instead.";
+export const STOCK_CORRECTION_BEFORE_CUTOVER_ERROR =
+  "This movement is from before your accounting cutover. Record an inventory adjustment instead.";
 export const TIME_ENTRY_BEFORE_CUTOVER_ERROR =
   "This time entry was posted before your accounting cutover. Record a journal entry to correct it instead.";
 

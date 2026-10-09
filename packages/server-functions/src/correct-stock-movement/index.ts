@@ -17,6 +17,10 @@ import { equals, round, statusAfterQuantityChange } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import {
+  refuseVoidBeforeCutover,
+  STOCK_CORRECTION_BEFORE_CUTOVER_ERROR
+} from "../lib/cutover-void";
 import { getAccountingPeriodForDate } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
@@ -291,6 +295,15 @@ const correctStockMovement = defineServerFn({
     // the one containing the ORIGINAL movement's postingDate; Locked/Closed
     // periods throw here with a user-facing message. A Provisional journal has
     // no accounting period.
+    // A movement dated before the cutover sits in the opening balance: a
+    // correction would resolve (or create) a period before the cutover and
+    // post against value the opening journal already holds.
+    await refuseVoidBeforeCutover(
+      db,
+      companyId,
+      root.postingDate ? String(root.postingDate) : null,
+      STOCK_CORRECTION_BEFORE_CUTOVER_ERROR
+    );
     const accountingPeriodId =
       postingStatus === "Posted"
         ? await getAccountingPeriodForDate(companyId, db, root.postingDate)

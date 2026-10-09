@@ -61,6 +61,7 @@ export type OpenItemType =
   | "Unapplied Credit"
   | "Customer Deposit"
   | "Received Not Invoiced"
+  | "Invoiced Not Received"
   | "Work in Progress"
   | "Inventory"
   | "Fixed Asset Cost"
@@ -89,6 +90,12 @@ export type OpenItem = {
   description: string;
   /** The original line's quantity, for a reader that costs by quantity. */
   quantity?: number | null;
+  /**
+   * The original line is an accrual (`journalLine.accrual`). Invoiced-not-
+   * received uses it: a receipt after the cutover costs the units invoiced
+   * before it from the accrual lines of `purchase-invoice:<poLineId>`.
+   */
+  accrual?: boolean;
   /**
    * How the part settled before the cutover is keyed. Without it, that line
    * keeps the item's keys under "<description> (settled before cutover)".
@@ -120,6 +127,8 @@ export type OpeningJournalLine = {
   documentId: string | null;
   documentLineReference: string | null;
   quantity: number | null;
+  /** Present, and true, on an open item's accrual line only. */
+  accrual?: true;
 };
 
 export const SETTLED_BEFORE_CUTOVER_SUFFIX = " (settled before cutover)";
@@ -132,9 +141,9 @@ function netDebit(line: TrialBalanceLine) {
 
 /**
  * The opening journal's lines:
- * - per open item, its original amount with its own description and
- *   document keys, and, when part was settled before the cutover, that part
- *   with the opposite sign under a description the readers ignore;
+ * - per open item, its original amount with its own description, document
+ *   keys and accrual flag, and, when part was settled before the cutover,
+ *   that part with the opposite sign under a description the readers ignore;
  * - one Migration Clearing line per control account offsetting its items;
  * - per trial balance row on a non-control account, a line on that account
  *   and a Migration Clearing line offsetting it.
@@ -179,7 +188,8 @@ export function buildOpeningJournalLines(
       amount: round(item.originalAmount),
       description: item.description,
       ...keys,
-      quantity: item.quantity ?? null
+      quantity: item.quantity ?? null,
+      ...(item.accrual ? { accrual: true as const } : {})
     });
     if (Math.abs(item.settledBeforeCutover) > EPSILON) {
       lines.push({

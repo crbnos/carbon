@@ -297,8 +297,17 @@ export async function saveOpeningTrialBalance(
     );
     const amountByAccount = new Map<string, number>();
     for (const line of lines) {
-      if (!accounts.has(line.accountId)) {
+      const account = accounts.get(line.accountId);
+      if (!account) {
         throw new Error(`Account ${line.accountId} not found`);
+      }
+      // The same rule as the CSV import: the enable copies non-control rows
+      // onto the opening journal, which cannot post to a group or an
+      // inactive account.
+      if (account.isGroup || !account.active) {
+        throw new Error(
+          `Account ${account.name} must be an active posting account`
+        );
       }
       const accountClass = requireClass(accounts, line.accountId);
       addTo(

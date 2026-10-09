@@ -59,7 +59,7 @@ Record cash received as a **<Term>payment</Term>** of type **"Receipt"**. Apply 
 Carbon derives invoice status from its settlements: **"Partially Paid"** when partially covered, **"Paid"** when fully covered, and **"Overdue"** after the due date while a balance remains. Voiding a posted invoice writes reversing entries instead of deleting the transaction.
 
 <Callout tone="green" badge="PAYMENT IS AN ENTITY" title="Settlement is a posted payment applied to the invoice, not a field.">
-A **"Receipt"** records incoming cash. Settlements apply receipts or credit memos to invoices. Carbon computes payment status from the applied amounts. General-ledger postings require accounting to be enabled.
+A **"Receipt"** records incoming cash. Settlements apply receipts or credit memos to invoices. Carbon computes payment status from the applied amounts. Every receipt writes a journal: until the company sets up accounting it is Provisional and counts in no balance.
 </Callout>
 
 <Divider />

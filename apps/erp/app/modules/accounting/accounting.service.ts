@@ -1323,7 +1323,12 @@ export async function requireAccountingCutover(
   return { error: null };
 }
 
-/** The group form: every company of the group must have a cutover. */
+/**
+ * The group form: every operating company of the group must have a cutover.
+ * The group's elimination entity never sets up accounting, so it is left out.
+ * A company with no settings row counts as not set up: the check compares
+ * the companies with a cutover against all of them, so it fails closed.
+ */
 export async function requireGroupAccountingCutover(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -1331,17 +1336,18 @@ export async function requireGroupAccountingCutover(
   const companies = await client
     .from("company")
     .select("id")
-    .eq("companyGroupId", companyGroupId);
+    .eq("companyGroupId", companyGroupId)
+    .eq("isEliminationEntity", false);
   if (companies.error) return { error: companies.error };
   const ids = (companies.data ?? []).map((company) => company.id);
   if (ids.length === 0) return { error: null };
-  const withoutCutover = await client
+  const withCutover = await client
     .from("companySettings")
     .select("id", { count: "exact", head: true })
     .in("id", ids)
-    .is("accountingCutoverDate", null);
-  if (withoutCutover.error) return { error: withoutCutover.error };
-  if ((withoutCutover.count ?? 0) > 0) {
+    .not("accountingCutoverDate", "is", null);
+  if (withCutover.error) return { error: withCutover.error };
+  if ((withCutover.count ?? 0) !== ids.length) {
     return { error: { message: ACCOUNTING_NOT_STARTED } };
   }
   return { error: null };
