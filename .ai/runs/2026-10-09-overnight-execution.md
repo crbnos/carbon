@@ -57,6 +57,17 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 03:25 | Projects 1a | Tasks 16–19 | done (`3d8f5237bb`…`a70669a821`) |
 | 03:55 | Projects 1a | Tasks 20–23 + scrap fix | done (`bd371e2f97`…`3b4c6c22b9`); server-functions suite 416 passed |
 | 07:25 | Projects 1a fixes, 1b | catalog + `@carbon/jobs` typecheck fixes; 1b Tasks 6–13 | done (`3068cfbfbc`…`7cee2a64c2`); server-functions 429, erp 1974 |
+| 04:25 | Projects 1a | Tasks 27, 26, 28–31 | done |
+| 05:05 | Projects 1a | Tasks 32–36 | done |
+| 05:55 | Projects 1a | Tasks 37–43 | done |
+| 06:20 | Projects 1a | Tasks 44–46; 47 deferred | done — Phase 1a implemented |
+| 06:45 | Projects 1b | fixes + Tasks 1–5 | done |
+| 07:40 | Projects 1b | fixes + Tasks 6–13 | done |
+| 08:20 | Projects 1b | Tasks 14–20 | done |
+| 09:05 | Projects 1b | fix + Tasks 21–26 | done |
+| 09:55 | Projects 1b | Tasks 27–31; 32 deferred | done — Phase 1b implemented |
+| 10:30 | Projects 1c | Tasks 1–7 | done |
+| 11:20 | Projects 1c | Tasks 8–13; 14 deferred | done — Phase 1c implemented |
 
 ## Follow-ups found during execution
 
@@ -64,3 +75,10 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 - `POSTING_POLICY` syncs `Timesheet` and `Project Issue` journals to external ledgers by default, as `Maintenance Event` does. Confirm with Brad.
 - Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts` and `get-accounting-period.test.ts` fail sometimes in full runs and pass alone.
 - Phase 1b Task 12: the remaining-life Straight Line applies only to assets with a late capital cost. Confirm with Brad before it applies to every asset (it would change existing schedules).
+- Remaining-life Straight Line applies only to assets with a late cost; every other asset keeps its old schedule (Phase 1b Task 12). Brad to confirm.
+- `shouldRevalidate` on the Elements route skips the reload after a preference save (Phase 1b Task 21). Brad to confirm against `coding-conventions.md`.
+- `Template.tsx` in `packages/documents` (Ask First) now passes its font to children so italic text cannot crash a PDF (Phase 1b Task 20).
+- Restoring a backup into another company does not rewrite ids inside the baseline snapshot and change request JSON columns (Phase 1c).
+- Re-applying a demo dataset over a company with contract invoice lines fails in the wipe (`customerContractInvoiceLine_parent_check`); a contracts issue, found in Phase 1a Task 45.
+- `projects.mdx` is about 2,600 words, over the docs skill's 1,500-word entity page limit.
+- New UI strings from every phase need one `/translate` pass at the end of the run.
