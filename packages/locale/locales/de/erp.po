@@ -2062,6 +2062,9 @@ msgstr "Fügen Sie die nächste Funktionalität auf demselben System hinzu, anst
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu und klicken Sie dann auf „Überprüfen\". DNS-Änderungen können einige Minuten dauern, bis sie sich verbreitet haben."
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "Zeitkarte hinzufügen"
 
@@ -4681,6 +4684,9 @@ msgstr "Wählen Sie ein Unternehmen"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Wählen Sie ein Teil aus, das {itemReadableId} ersetzt. Die Regel wird auf diesem Teil mit {itemReadableId} als Nachfolger gespeichert."
 
@@ -4816,6 +4822,9 @@ msgstr "Ausstempeln"
 
 msgid "Clock Out"
 msgstr "Ausstempeln"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "Eingestempelt"
@@ -9673,6 +9682,9 @@ msgstr "Fehler beim Laden von verfolgten Entitäten"
 msgid "Failed to move account: {0}"
 msgstr "Konto konnte nicht verschoben werden: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Prüfmittel konnte nicht aufgezeichnet werden"
 
@@ -9730,6 +9742,9 @@ msgstr "Folien konnten nicht gespeichert werden"
 msgid "Failed to save the change"
 msgstr "Fehler beim Speichern der Änderung"
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "Vorschaubild-Pfad konnte nicht aktualisiert werden"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Fehler beim Hochladen von {0}"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "Fehler beim Hochladen des Zertifikats"
@@ -12122,6 +12140,9 @@ msgstr "Nachname"
 msgid "Last Name"
 msgstr "Nachname"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Letztes Quartal"
 
@@ -14228,6 +14249,9 @@ msgstr "Keine Entwurfsversionen verfügbar"
 msgid "No due date"
 msgstr "Kein Fälligkeitsdatum"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "Keine bearbeitbaren Eigenschaften für dieses Element."
 
@@ -14420,6 +14444,9 @@ msgstr "Keine neuen Benachrichtigungen"
 msgid "No notes"
 msgstr "Keine Notizen"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "Niemand besetzt"
 
@@ -14513,6 +14540,9 @@ msgstr "Keine Verbindlichkeiten"
 
 msgid "No payments yet."
 msgstr "Noch keine Zahlungen."
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "Es werden keine geplanten Rechnungen entfernt."
@@ -14906,6 +14936,9 @@ msgstr "Nicht festgelegt"
 
 msgid "Not set up"
 msgstr "Nicht eingerichtet"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "Nicht gestartet"
@@ -15308,6 +15341,9 @@ msgstr "In Änderungsmitteilung {ids} offen. Geben Sie sie frei, um neue Version
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "In Änderungsmitteilungen {ids} offen. Geben Sie sie frei, um neue Versionen oder Revisionen zu erstellen."
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "Im MES öffnen"
 
@@ -15388,6 +15424,9 @@ msgstr "Öffnen Sie die Setup-Karte"
 
 msgid "Open transactions"
 msgstr "Offene Transaktionen"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "Workflow öffnen"
@@ -16163,6 +16202,9 @@ msgstr "Foto erfolgreich entfernt"
 
 msgid "Photo uploaded successfully"
 msgstr "Foto erfolgreich hochgeladen"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "Physische Drucker verfügbar zur Zuweisung."
@@ -19230,6 +19272,9 @@ msgstr "Methode speichern"
 msgid "Save Rate"
 msgstr "Kurs speichern"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Das bearbeitete Formular speichern"
 
@@ -20401,6 +20446,9 @@ msgstr "Dem Kunden auf der Rechnung angezeigt"
 msgid "Shown to the user when this rule fails."
 msgstr "Wird dem Benutzer angezeigt, wenn diese Regel fehlschlägt."
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Bei Carbon anmelden"
 
@@ -20431,7 +20479,16 @@ msgstr "Freigabeüberprüfung vor dem Wechsel zum nächsten Schritt"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Zeichen-Offs, die aufgezeichnet werden müssen, bevor diese Ausgabe geschlossen werden kann; zusätzlich zu denen, die der Workflow erfordert."
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "Beginnen Sie mit"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "Versand stoppen"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Verwendung von {0} in diesem Schritt beenden"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Beendet neue Kaufvorschläge nach diesem Datum."
@@ -23027,6 +23090,9 @@ msgstr "Dieser Kundenauftrag hat zugeordnete Fertigungsaufträge. Wählen Sie, w
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Dieser Kundenauftrag hat Positionen, für die Fertigungsaufträge erstellt werden müssen"
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Diese Arbeitsstation läuft befähigungsgesteuerte Arbeit – sie läuft nur, wenn ein qualifizierter Werker in der Schicht arbeitet; Werker, die auf der Besetzungstafel zugewiesen sind, gestalten das verfügbare Personal weiter."
@@ -25530,6 +25596,9 @@ msgstr "Sie treiben es voran; wir stellen sicher, dass es richtig gemacht wird. 
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "Sie haben {0} Zeilen aus einer PDF-Datei, die keinem Bestandsartikel zugeordnet sind."
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "Du hast noch keine Kontakte erstellt."

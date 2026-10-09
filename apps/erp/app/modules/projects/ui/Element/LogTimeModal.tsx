@@ -45,6 +45,8 @@ export function LogTimeModal({
   defaultLaborCategoryId,
   action = path.to.projectLogTime,
   hiddenFields,
+  defaultHours,
+  onLogged,
   onClose
 }: {
   projectId: string;
@@ -55,6 +57,10 @@ export function LogTimeModal({
   action?: string;
   /** Extra values the action reads, such as `intent`. */
   hiddenFields?: Record<string, string>;
+  /** The hours to start from, such as a stopped work timer's. */
+  defaultHours?: number;
+  /** Called once the time is logged, before the modal closes. */
+  onLogged?: () => void;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -62,7 +68,12 @@ export function LogTimeModal({
   const fetcher = useAction<{
     success?: boolean;
     error?: { message: string } | null;
-  }>({ onSuccess: () => onClose() });
+  }>({
+    onSuccess: () => {
+      onLogged?.();
+      onClose();
+    }
+  });
   const errorMessage =
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
@@ -84,7 +95,7 @@ export function LogTimeModal({
               laborCategories.some((c) => c.id === defaultLaborCategoryId)
                 ? defaultLaborCategoryId
                 : (laborCategories[0]?.id ?? ""),
-            hours: undefined,
+            hours: defaultHours,
             note: ""
           }}
         >

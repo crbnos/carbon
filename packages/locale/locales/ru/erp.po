@@ -2062,6 +2062,9 @@ msgstr "Добавьте следующую возможность в ту же 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Добавьте эту TXT запись на хосте DNS, затем нажмите Проверить. Изменения DNS могут занять несколько минут на распространение."
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
 
@@ -4681,6 +4684,9 @@ msgstr "Выберите организацию"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
 
@@ -4816,6 +4822,9 @@ msgstr "Окончание работы"
 
 msgid "Clock Out"
 msgstr "Окончание работы"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "Зарегистрирован"
@@ -9673,6 +9682,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
 
@@ -9730,6 +9742,9 @@ msgstr "Ошибка при сохранении слайдов"
 msgid "Failed to save the change"
 msgstr "Не удалось сохранить изменение"
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "Не удалось обновить путь миниатюры"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Ошибка загрузки {0}"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "Не удалось загрузить сертификат"
@@ -12122,6 +12140,9 @@ msgstr "Фамилия"
 msgid "Last Name"
 msgstr "Фамилия"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Последний квартал"
 
@@ -14228,6 +14249,9 @@ msgstr "Нет доступных черновиков версий"
 msgid "No due date"
 msgstr "Нет срока выполнения"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
 
@@ -14420,6 +14444,9 @@ msgstr "Нет новых уведомлений"
 msgid "No notes"
 msgstr "Нет примечаний"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "Никто не назначен"
 
@@ -14513,6 +14540,9 @@ msgstr "Нет кредиторской задолженности"
 
 msgid "No payments yet."
 msgstr "Платежей пока нет."
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "Запланированные счета-фактуры не удаляются."
@@ -14906,6 +14936,9 @@ msgstr "Не установлено"
 
 msgid "Not set up"
 msgstr "Не настроено"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "Не начинается"
@@ -15308,6 +15341,9 @@ msgstr "Открыть в Извещении об изменении {ids}. За
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "Открыть в Извещениях об изменении {ids}. Запустите их в работу, чтобы создать новые версии или ревизии."
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "Открыть в MES"
 
@@ -15388,6 +15424,9 @@ msgstr "Открыть карту настройки"
 
 msgid "Open transactions"
 msgstr "Открытые транзакции"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "Открыть рабочий процесс"
@@ -16163,6 +16202,9 @@ msgstr "Фото успешно удалено"
 
 msgid "Photo uploaded successfully"
 msgstr "Фото успешно загружено"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "Физические принтеры, доступные для назначения."
@@ -19230,6 +19272,9 @@ msgstr "Сохранить метод"
 msgid "Save Rate"
 msgstr "Сохранить курс"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
 
@@ -20401,6 +20446,9 @@ msgstr "Показано покупателю на счет-фактуре"
 msgid "Shown to the user when this rule fails."
 msgstr "Показано пользователю при ошибке этого правила."
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Войти в Carbon"
 
@@ -20431,7 +20479,16 @@ msgstr "Подтверждение рассмотрения перед пере�
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Утверждения, которые должны быть записаны перед закрытием этой проблемы; в дополнение к тем, которые требуются рабочим процессом."
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "Начните с"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "Остановить отправку"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Прекратить использование {0} на этом шаге"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Останавливает новые предложения по закупкам после этой даты."
@@ -23027,6 +23090,9 @@ msgstr "Этот заказ покупателя имеет связанные �
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ покупателя имеет строки, требующие создания производственных заказов"
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."
@@ -25530,6 +25596,9 @@ msgstr "Вы его ведете; мы следим за тем, чтобы эт
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "У вас есть {0} строк, извлеченных из PDF, которые не сопоставлены ни с одним товаром в инвентаре."
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "Вы еще не создали контактных лиц."

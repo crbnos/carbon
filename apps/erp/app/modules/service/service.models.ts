@@ -358,6 +358,38 @@ export const serviceExpenseValidator = z.object({
   )
 });
 
+/**
+ * The nodes of a work tree in tree order (children by sort order), each with
+ * its depth. A node whose parent is not in the list is a root; a cycle stops
+ * the walk.
+ */
+export function inTreeOrder<
+  T extends { id: string; parentId: string | null; sortOrder: number | null }
+>(nodes: T[]): { node: T; depth: number }[] {
+  const byParent = new Map<string | null, T[]>();
+  const ids = new Set(nodes.map((node) => node.id));
+  for (const node of nodes) {
+    const parent =
+      node.parentId && ids.has(node.parentId) ? node.parentId : null;
+    byParent.set(parent, [...(byParent.get(parent) ?? []), node]);
+  }
+  const rows: { node: T; depth: number }[] = [];
+  const seen = new Set<string>();
+  const walk = (parent: string | null, depth: number) => {
+    const children = [...(byParent.get(parent) ?? [])].sort(
+      (a, b) => Number(a.sortOrder) - Number(b.sortOrder)
+    );
+    for (const node of children) {
+      if (seen.has(node.id)) continue;
+      seen.add(node.id);
+      rows.push({ node, depth });
+      walk(node.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return rows;
+}
+
 export type WorkTotals = {
   hours: number;
   partCost: number;

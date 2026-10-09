@@ -10,6 +10,7 @@ import type {
   getServiceNode,
   getServiceOrder,
   getServiceOrders,
+  getServiceVisit,
   getServiceVisits,
   getServiceWork
 } from "./service.service";
@@ -51,3 +52,7 @@ export type ServiceNode = NonNullable<
 >;
 
 export type ServiceCharge = ServiceNode["charges"][number];
+
+export type ServiceVisitDetail = NonNullable<
+  Awaited<ReturnType<typeof getServiceVisit>>["data"]
+>;

@@ -2062,6 +2062,9 @@ msgstr "अगली क्षमता को एक ही सिस्टम 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "अपने DNS होस्ट में यह TXT रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें। DNS परिवर्तन प्रसारित होने में कुछ मिनट लग सकते हैं।"
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
@@ -4681,6 +4684,9 @@ msgstr "कंपनी चुनें"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
@@ -4816,6 +4822,9 @@ msgstr "कार्य समाप्त"
 
 msgid "Clock Out"
 msgstr "कार्य समाप्त"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "समय रिकॉर्ड किया गया"
@@ -9673,6 +9682,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "गेज रिकॉर्ड करने में विफल"
 
@@ -9730,6 +9742,9 @@ msgstr "स्लाइड्स को सहेजने में विफ�
 msgid "Failed to save the change"
 msgstr "परिवर्तन को सहेजने में विफल"
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "थंबनेल पथ अपडेट करने में वि�
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "अपलोड करने में विफल {0}"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "प्रमाणपत्र अपलोड करने में विफल"
@@ -12122,6 +12140,9 @@ msgstr "अंतिम नाम"
 msgid "Last Name"
 msgstr "अंतिम नाम"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
 
@@ -14228,6 +14249,9 @@ msgstr "कोई ड्राफ्ट संस्करण उपलब्ध
 msgid "No due date"
 msgstr "कोई नियत तिथि नहीं"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
@@ -14420,6 +14444,9 @@ msgstr "कोई नई सूचनाएं नहीं"
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "कोई क्रू नहीं"
 
@@ -14513,6 +14540,9 @@ msgstr "कोई देय राशि नहीं"
 
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "कोई योजनाबद्ध चालान हटाया नहीं गया।"
@@ -14906,6 +14936,9 @@ msgstr "सेट नहीं है"
 
 msgid "Not set up"
 msgstr "सेटअप नहीं किया गया"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "शुरू नहीं किया गया"
@@ -15308,6 +15341,9 @@ msgstr "परिवर्तन सूचना {ids} में खुला �
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "परिवर्तन सूचनाओं {ids} में खुले हैं। नए संस्करण या रिवीजन बनाने के लिए उन्हें जारी करें।"
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MES में खोलें"
 
@@ -15388,6 +15424,9 @@ msgstr "सेटअप मैप खोलें"
 
 msgid "Open transactions"
 msgstr "खुले लेनदेन"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "वर्कफ़्लो खोलें"
@@ -16163,6 +16202,9 @@ msgstr "फ़ोटो सफलतापूर्वक हटा दी ग�
 
 msgid "Photo uploaded successfully"
 msgstr "फ़ोटो सफलतापूर्वक अपलोड हो गई"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "असाइनमेंट के लिए उपलब्ध भौतिक प्रिंटर।"
@@ -19230,6 +19272,9 @@ msgstr "विधि सहेजें"
 msgid "Save Rate"
 msgstr "दर सहेजें"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "जिस फॉर्म को आप संपादित कर रहे हैं उसे सहेजें"
 
@@ -20401,6 +20446,9 @@ msgstr "चालान पर ग्राहक को दिखाया ज�
 msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तब उपयोगकर्ता को दिखाया जाता है।"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Carbon में साइन इन करें"
 
@@ -20431,7 +20479,16 @@ msgstr "अगले चरण में जाने से पहले सा
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "साइन-ऑफ जो इस समस्या को बंद करने से पहले दर्ज किए जाने चाहिए; वर्कफ़्लो द्वारा आवश्यक किसी के अलावा।"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "शुरुआत करें"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "शिपिंग बंद करें"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "इस चरण में {0} का उपयोग बंद करें"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
@@ -23027,6 +23090,9 @@ msgstr "इस विक्रय आदेश के पास जुड़ी 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "इस विक्रय आदेश के पास पंक्तियां हैं जिनके लिए जॉब बनाने की आवश्यकता है"
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "यह स्टेशन कौशल-गेटेड कार्य चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मानिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आगे आकार देते हैं।"
@@ -25533,6 +25599,9 @@ msgstr "आप इसे चलाते हैं; हम सुनिश्च
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "आपके पास {0} लाइनें हैं जो PDF से निकाली गई हैं और किसी भी इन्वेंटरी आइटम से मैप नहीं की गई हैं।"
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "आपने अभी तक कोई संपर्क नहीं बनाया है।"

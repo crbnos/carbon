@@ -2062,6 +2062,9 @@ msgstr "Add the next capability on the same system instead of buying another too
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 
+msgid "Add Time"
+msgstr "Add Time"
+
 msgid "Add Timecard"
 msgstr "Add Timecard"
 
@@ -4681,6 +4684,9 @@ msgstr "Choose a company"
 msgid "Choose a field"
 msgstr "Choose a field"
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr "Choose a node to log time, issue a part or add an expense."
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
@@ -4816,6 +4822,9 @@ msgstr "Clock out"
 
 msgid "Clock Out"
 msgstr "Clock Out"
+
+msgid "Clock running"
+msgstr "Clock running"
 
 msgid "Clocked in"
 msgstr "Clocked in"
@@ -9673,6 +9682,9 @@ msgstr "Failed to load tracked entities"
 msgid "Failed to move account: {0}"
 msgstr "Failed to move account: {0}"
 
+msgid "Failed to read the signature"
+msgstr "Failed to read the signature"
+
 msgid "Failed to record gauge"
 msgstr "Failed to record gauge"
 
@@ -9730,6 +9742,9 @@ msgstr "Failed to save slides"
 msgid "Failed to save the change"
 msgstr "Failed to save the change"
 
+msgid "Failed to save the signature"
+msgstr "Failed to save the signature"
+
 msgid "Failed to save the view"
 msgstr "Failed to save the view"
 
@@ -9778,6 +9793,9 @@ msgstr "Failed to update thumbnail path"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Failed to upload {0}"
+
+msgid "Failed to upload a photo"
+msgstr "Failed to upload a photo"
 
 msgid "Failed to upload certificate"
 msgstr "Failed to upload certificate"
@@ -12122,6 +12140,9 @@ msgstr "Last name"
 msgid "Last Name"
 msgstr "Last Name"
 
+msgid "Last orders"
+msgstr "Last orders"
+
 msgid "Last Quarter"
 msgstr "Last Quarter"
 
@@ -14228,6 +14249,9 @@ msgstr "No draft versions available"
 msgid "No due date"
 msgstr "No due date"
 
+msgid "No earlier service orders."
+msgstr "No earlier service orders."
+
 msgid "No editable properties for this item."
 msgstr "No editable properties for this item."
 
@@ -14420,6 +14444,9 @@ msgstr "No new notifications"
 msgid "No notes"
 msgstr "No notes"
 
+msgid "No notes."
+msgstr "No notes."
+
 msgid "No one assigned"
 msgstr "No one assigned"
 
@@ -14513,6 +14540,9 @@ msgstr "No payables"
 
 msgid "No payments yet."
 msgstr "No payments yet."
+
+msgid "No photos."
+msgstr "No photos."
 
 msgid "No planned invoices are removed."
 msgstr "No planned invoices are removed."
@@ -14906,6 +14936,9 @@ msgstr "Not set"
 
 msgid "Not set up"
 msgstr "Not set up"
+
+msgid "Not signed."
+msgstr "Not signed."
 
 msgid "Not started"
 msgstr "Not started"
@@ -15308,6 +15341,9 @@ msgstr "Open in change notice {ids}. Release it to create new versions or revisi
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "Open in change notices {ids}. Release them to create new versions or revisions."
 
+msgid "Open in maps"
+msgstr "Open in maps"
+
 msgid "Open in MES"
 msgstr "Open in MES"
 
@@ -15388,6 +15424,9 @@ msgstr "Open the Setup Map"
 
 msgid "Open transactions"
 msgstr "Open transactions"
+
+msgid "Open Visit"
+msgstr "Open Visit"
 
 msgid "Open Workflow"
 msgstr "Open Workflow"
@@ -16163,6 +16202,9 @@ msgstr "Photo removed successfully"
 
 msgid "Photo uploaded successfully"
 msgstr "Photo uploaded successfully"
+
+msgid "Photos"
+msgstr "Photos"
 
 msgid "Physical printers available for assignment."
 msgstr "Physical printers available for assignment."
@@ -19230,6 +19272,9 @@ msgstr "Save Method"
 msgid "Save Rate"
 msgstr "Save Rate"
 
+msgid "Save Signature"
+msgstr "Save Signature"
+
 msgid "Save the form you're editing"
 msgstr "Save the form you're editing"
 
@@ -20401,6 +20446,9 @@ msgstr "Shown to the customer on the invoice"
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
 
+msgid "Sign Again"
+msgstr "Sign Again"
+
 msgid "Sign in to Carbon"
 msgstr "Sign in to Carbon"
 
@@ -20431,8 +20479,17 @@ msgstr "Sign-off review before moving to the next step"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 
+msgid "Signature"
+msgstr "Signature"
+
 msgid "Signature pad"
 msgstr "Signature pad"
+
+msgid "Signed by"
+msgstr "Signed by"
+
+msgid "Signed by {signedByName}"
+msgstr "Signed by {signedByName}"
 
 msgid "Signed in as {name}"
 msgstr "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr "Start Travel"
 msgid "Start with"
 msgstr "Start with"
 
+msgid "Start Work"
+msgstr "Start Work"
+
 msgid "Start Work From"
 msgstr "Start Work From"
 
@@ -20910,6 +20970,9 @@ msgstr "Stop Shipping"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Stop using {0} in this step"
+
+msgid "Stop Work"
+msgstr "Stop Work"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Stops new purchase suggestions after this date."
@@ -23027,6 +23090,9 @@ msgstr "This sales order has associated jobs. Choose what to do with them."
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "This sales order has lines that require jobs to be created"
+
+msgid "This service order has no work yet."
+msgstr "This service order has no work yet."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
@@ -25533,6 +25599,9 @@ msgstr "You drive it; we make sure it's done right. Expert eyes on your setup, d
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
+
+msgid "You have no visits planned in the next 7 days."
+msgstr "You have no visits planned in the next 7 days."
 
 msgid "You haven't created any contacts yet."
 msgstr "You haven't created any contacts yet."

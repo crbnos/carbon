@@ -2062,6 +2062,9 @@ msgstr "同じシステム上に次の機能を追加して、別のツールを
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
@@ -4681,6 +4684,9 @@ msgstr "会社を選択"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
@@ -4816,6 +4822,9 @@ msgstr "作業終了"
 
 msgid "Clock Out"
 msgstr "作業終了"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "打刻済み"
@@ -9673,6 +9682,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
 
@@ -9730,6 +9742,9 @@ msgstr "スライドの保存に失敗しました"
 msgid "Failed to save the change"
 msgstr "変更の保存に失敗しました。"
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "サムネイルパスの更新に失敗しました"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "アップロードに失敗しました {0}"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "証明書のアップロードに失敗しました"
@@ -12122,6 +12140,9 @@ msgstr "姓"
 msgid "Last Name"
 msgstr "姓"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "前四半期"
 
@@ -14228,6 +14249,9 @@ msgstr "利用可能な下書きバージョンはありません"
 msgid "No due date"
 msgstr "期日なし"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "このアイテムの編集可能なプロパティはありません。"
 
@@ -14420,6 +14444,9 @@ msgstr "新しい通知はありません"
 msgid "No notes"
 msgstr "メモなし"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "クルーなし"
 
@@ -14513,6 +14540,9 @@ msgstr "買掛金がありません"
 
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "計画済請求書は削除されません。"
@@ -14906,6 +14936,9 @@ msgstr "未設定"
 
 msgid "Not set up"
 msgstr "未設定"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "未開始"
@@ -15308,6 +15341,9 @@ msgstr "変更通知{ids}で開いています。新しいバージョンまた�
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "変更通知{ids}で開いています。新しいバージョンまたはリビジョンを作成するには、それらをリリースしてください。"
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MESで開く"
 
@@ -15388,6 +15424,9 @@ msgstr "セットアップマップを開く"
 
 msgid "Open transactions"
 msgstr "未処理トランザクション"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "ワークフローを開く"
@@ -16163,6 +16202,9 @@ msgstr "写真が正常に削除されました"
 
 msgid "Photo uploaded successfully"
 msgstr "写真が正常にアップロードされました"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "割り当て可能な物理プリンター。"
@@ -19230,6 +19272,9 @@ msgstr "メソッドを保存"
 msgid "Save Rate"
 msgstr "レートを保存"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "編集中のフォームを保存"
 
@@ -20401,6 +20446,9 @@ msgstr "請求書で顧客に表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Carbonにサインイン"
 
@@ -20431,7 +20479,16 @@ msgstr "次のステップに進む前のサインオフレビュー"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "この問題を閉じる前に記録する必要があるサインオフ。ワークフローで必要なもの以外に。"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "まず"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "配送を停止"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "{0} をこのステップで使用しない"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "この日付以降、新規の購買提案が行われなくなります。"
@@ -23027,6 +23090,9 @@ msgstr "この受注には関連する製造指図があります。それらで
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この受注には製造指図の作成が必要な明細があります"
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"
@@ -25530,6 +25596,9 @@ msgstr "あなたが主導し、私たちはそれが正しく完了すること
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "あなたは、PDFから抽出された{0}行を持っていますが、これらはインベントリアイテムにマップされていません。"
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "まだ担当者を作成していません。"

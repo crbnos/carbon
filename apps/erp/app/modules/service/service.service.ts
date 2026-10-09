@@ -509,6 +509,74 @@ export async function getServiceVisits(
   return query.order("plannedStart", { ascending: true, nullsFirst: false });
 }
 
+/**
+ * One visit for the visit page: its order with the customer, site address,
+ * subject and warranty dates, plus the notes and the signature.
+ */
+export async function getServiceVisit(
+  client: Client,
+  serviceVisitId: string,
+  companyId: string
+) {
+  return client
+    .from("serviceVisit")
+    .select(
+      "id, serviceOrderId, technicianId, status, plannedStart, plannedEnd, travelStartedAt, arrivedAt, completedAt, notes, signaturePath, signedByName, serviceOrder:serviceOrder!serviceVisit_order_fkey!inner(id, serviceOrderId, status, projectId, customerAssetId, trackedEntityId, itemId, customer:customer!serviceOrder_customerId_fkey(id, name), customerLocation:customerLocation!serviceOrder_customerLocationId_fkey(id, name, address:address!customerLocation_addressId_fkey(addressLine1, city, stateProvince, postalCode)), trackedEntity:trackedEntity!serviceOrder_trackedEntityId_fkey(id, readableId), item:item!serviceOrder_itemId_fkey(id, readableIdWithRevision, name), customerAsset:customerAsset!serviceOrder_asset_fkey(id, laborWarrantyEndDate, partsWarrantyEndDate))"
+    )
+    .eq("id", serviceVisitId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** Saves a visit's notes or its signature. RLS lets the technician do it. */
+export async function updateServiceVisit(
+  client: Client,
+  visit: {
+    id: string;
+    serviceOrderId: string;
+    companyId: string;
+    updatedBy: string;
+    notes?: Json;
+    signaturePath?: string;
+    signedByName?: string;
+  }
+) {
+  const { id, serviceOrderId, companyId, updatedBy, ...fields } = visit;
+  return client
+    .from("serviceVisit")
+    .update({
+      ...fields,
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("serviceOrderId", serviceOrderId)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/** The latest orders of an asset, newest first, without the given order. */
+export async function getCustomerAssetRecentOrders(
+  client: Client,
+  args: {
+    customerAssetId: string;
+    companyId: string;
+    excludeServiceOrderId?: string;
+    limit: number;
+  }
+) {
+  let query = client
+    .from("serviceOrder")
+    .select("id, serviceOrderId, status, createdAt, completedAt")
+    .eq("customerAssetId", args.customerAssetId)
+    .eq("companyId", args.companyId);
+  if (args.excludeServiceOrderId) {
+    query = query.neq("id", args.excludeServiceOrderId);
+  }
+  return query.order("createdAt", { ascending: false }).limit(args.limit);
+}
+
 /** Schedules a visit, or moves its technician and window. */
 export async function upsertServiceVisit(
   client: Client,
@@ -656,6 +724,87 @@ export async function getServiceNode(
     },
     error: null
   };
+}
+
+/**
+ * The last day any order of the company charged a node naming the same
+ * serial, else the same item, for each node of a tree. Two queries, one per
+ * link; a node with neither link has no date.
+ */
+export async function getServiceNodeLastServiceDates(
+  client: Client,
+  nodes: {
+    id: string;
+    itemId: string | null;
+    trackedEntityId: string | null;
+  }[],
+  companyId: string
+): Promise<{
+  data: Record<string, string | null> | null;
+  error: PostgrestError | null;
+}> {
+  const serialIds = [
+    ...new Set(
+      nodes.map((n) => n.trackedEntityId).filter((id): id is string => !!id)
+    )
+  ];
+  const itemIds = [
+    ...new Set(
+      nodes
+        .filter((n) => !n.trackedEntityId)
+        .map((n) => n.itemId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const [bySerial, byItem] = await Promise.all([
+    serialIds.length > 0
+      ? client
+          .from("projectLedger")
+          .select(
+            "postingDate, element:projectElement!projectLedger_element_fkey!inner(trackedEntityId)"
+          )
+          .eq("companyId", companyId)
+          .in("element.trackedEntityId", serialIds)
+      : null,
+    itemIds.length > 0
+      ? client
+          .from("projectLedger")
+          .select(
+            "postingDate, element:projectElement!projectLedger_element_fkey!inner(itemId)"
+          )
+          .eq("companyId", companyId)
+          .in("element.itemId", itemIds)
+      : null
+  ]);
+  const error = bySerial?.error ?? byItem?.error ?? null;
+  if (error) return { data: null, error };
+
+  const latest = new Map<string, string>();
+  const keep = (key: string, date: string) => {
+    const current = latest.get(key);
+    if (!current || date > current) latest.set(key, date);
+  };
+  for (const row of bySerial?.data ?? []) {
+    if (row.element?.trackedEntityId) {
+      keep(`serial:${row.element.trackedEntityId}`, row.postingDate);
+    }
+  }
+  for (const row of byItem?.data ?? []) {
+    if (row.element?.itemId)
+      keep(`item:${row.element.itemId}`, row.postingDate);
+  }
+
+  const dates: Record<string, string | null> = {};
+  for (const node of nodes) {
+    const key = node.trackedEntityId
+      ? `serial:${node.trackedEntityId}`
+      : node.itemId
+        ? `item:${node.itemId}`
+        : null;
+    dates[node.id] = key ? (latest.get(key) ?? null) : null;
+  }
+  return { data: dates, error: null };
 }
 
 // --- Billable items ----------------------------------------------------------

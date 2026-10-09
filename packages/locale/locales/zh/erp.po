@@ -2062,6 +2062,9 @@ msgstr "在同一系统上添加下一个功能，而不是购买另一个工具
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "添加工时卡"
 
@@ -4681,6 +4684,9 @@ msgstr "选择公司"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -4816,6 +4822,9 @@ msgstr "收工"
 
 msgid "Clock Out"
 msgstr "收工"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "已上班"
@@ -9673,6 +9682,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "未能记录量具"
 
@@ -9730,6 +9742,9 @@ msgstr "保存幻灯片失败"
 msgid "Failed to save the change"
 msgstr "保存更改失败"
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "无法更新缩略图路径"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "上传失败 {0}"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "证书上传失败"
@@ -12122,6 +12140,9 @@ msgstr "姓氏"
 msgid "Last Name"
 msgstr "姓氏"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "上一季度"
 
@@ -14228,6 +14249,9 @@ msgstr "没有可用的草稿版本"
 msgid "No due date"
 msgstr "没有到期日"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
 
@@ -14420,6 +14444,9 @@ msgstr "没有新通知"
 msgid "No notes"
 msgstr "没有备注"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "没有人员配备"
 
@@ -14513,6 +14540,9 @@ msgstr "没有应付款项"
 
 msgid "No payments yet."
 msgstr "还没有付款。"
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "未删除已计划的发票。"
@@ -14906,6 +14936,9 @@ msgstr "未设置"
 
 msgid "Not set up"
 msgstr "未设置"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "未开始"
@@ -15308,6 +15341,9 @@ msgstr "打开于变更通知 {ids}。下达它来创建新版本或修订版。
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "打开于变更通知 {ids}。下达它们来创建新版本或修订版。"
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "在 MES 中打开"
 
@@ -15388,6 +15424,9 @@ msgstr "打开设置地图"
 
 msgid "Open transactions"
 msgstr "未结交易"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "打开工作流"
@@ -16163,6 +16202,9 @@ msgstr "照片已成功删除"
 
 msgid "Photo uploaded successfully"
 msgstr "照片上传成功"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "可用于分配的物理打印机。"
@@ -19230,6 +19272,9 @@ msgstr "保存方法"
 msgid "Save Rate"
 msgstr "保存汇率"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "保存您正在编辑的表单"
 
@@ -20401,6 +20446,9 @@ msgstr "在发票上向客户显示"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "登录 Carbon"
 
@@ -20431,7 +20479,16 @@ msgstr "在进入下一步骤前进行签署评审"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "必须在此问题关闭前记录的签核；除工作流要求的外。"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "从以下开始"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "停止发货"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "在此步骤中停止使用 {0}"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "在此日期之后停止新采购建议。"
@@ -23027,6 +23090,9 @@ msgstr "这个销售订单有关联的工单。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"
@@ -25533,6 +25599,9 @@ msgstr "您来驾驶；我们确保做得正确。专家的目光关注您的设
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "您有从 PDF 中提取的 {0} 行未映射到任何库存物料。"
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "你还没有创建任何联系人。"

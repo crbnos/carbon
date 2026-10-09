@@ -78,8 +78,7 @@ function groupVisits(
 
 /**
  * Dispatch's view of the field: the visits of a week, by day and then by
- * technician, filtered by status and technician. A row opens its order's
- * visits.
+ * technician, filtered by status and technician. A row opens the visit.
  */
 export default function ServiceSchedule({
   visits,
@@ -211,7 +210,10 @@ export default function ServiceSchedule({
                     {list.map((visit) => (
                       <li key={visit.id}>
                         <Link
-                          to={path.to.serviceOrderVisits(visit.serviceOrderId)}
+                          to={path.to.serviceVisit(
+                            visit.serviceOrderId,
+                            visit.id
+                          )}
                           className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 text-sm hover:bg-accent/30"
                         >
                           <span className="shrink-0 whitespace-nowrap tabular-nums text-muted-foreground">

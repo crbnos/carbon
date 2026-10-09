@@ -456,6 +456,41 @@ export async function requireServiceOrderNode(
 }
 
 /**
+ * That the visit is on the order, belongs to the technician and is not done.
+ * A technician without `update: "service"` charges and edits only their own
+ * open visit; the Kysely writes do not pass through RLS, so the route checks.
+ */
+export async function requireOwnServiceVisit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    serviceOrderId: string;
+    serviceVisitId: string | null;
+    userId: string;
+  }
+): Promise<void> {
+  if (!args.serviceVisitId) {
+    throw new ServiceOrderError("You can charge only your own visits");
+  }
+  const visit = await db
+    .selectFrom("serviceVisit")
+    .select(["technicianId", "status"])
+    .where("id", "=", args.serviceVisitId)
+    .where("serviceOrderId", "=", args.serviceOrderId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!visit) throw new ServiceOrderError("The visit was not found");
+  if (visit.technicianId !== args.userId) {
+    throw new ServiceOrderError("This visit belongs to another technician");
+  }
+  if (visit.status === "Completed" || visit.status === "Cancelled") {
+    throw new ServiceOrderError(
+      `A ${visit.status.toLowerCase()} visit takes no changes`
+    );
+  }
+}
+
+/**
  * Logs time on a service order's node as a Draft timesheet entry, with the
  * visit when there is one. Service time posts from Draft: the caller posts it
  * with `postTimesheetEntries` right after. Returns the entry's id.

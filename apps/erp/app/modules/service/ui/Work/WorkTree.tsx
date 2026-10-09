@@ -48,35 +48,9 @@ import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
 import { ElementTypeIcon } from "~/modules/projects/ui/Elements/ElementTypeIcon";
 import { path } from "~/utils/path";
 import type { ServiceNodeType, WorkTotals } from "../../service.models";
-import { serviceNodeTypes } from "../../service.models";
+import { inTreeOrder, serviceNodeTypes } from "../../service.models";
 import type { ServiceWorkNode } from "../../types";
 import { CoveragePill } from "./CoveragePill";
-
-/** The nodes in tree order (children by sort order), each with its depth. */
-function inTreeOrder(nodes: ServiceWorkNode[]) {
-  const byParent = new Map<string | null, ServiceWorkNode[]>();
-  const ids = new Set(nodes.map((node) => node.id));
-  for (const node of nodes) {
-    const parent =
-      node.parentId && ids.has(node.parentId) ? node.parentId : null;
-    byParent.set(parent, [...(byParent.get(parent) ?? []), node]);
-  }
-  const rows: { node: ServiceWorkNode; depth: number }[] = [];
-  const seen = new Set<string>();
-  const walk = (parent: string | null, depth: number) => {
-    const children = [...(byParent.get(parent) ?? [])].sort(
-      (a, b) => Number(a.sortOrder) - Number(b.sortOrder)
-    );
-    for (const node of children) {
-      if (seen.has(node.id)) continue;
-      seen.add(node.id);
-      rows.push({ node, depth });
-      walk(node.id, depth + 1);
-    }
-  };
-  walk(null, 0);
-  return rows;
-}
 
 const EMPTY_TOTALS: WorkTotals = {
   hours: 0,

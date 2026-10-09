@@ -2062,6 +2062,9 @@ msgstr "다른 도구를 구매하는 대신 같은 시스템에 다음 기능�
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "DNS 호스트에서 이 TXT 레코드를 추가한 다음 확인을 클릭하세요. DNS 변경은 전파되는 데 몇 분이 걸릴 수 있습니다."
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "근무기록 추가"
 
@@ -4681,6 +4684,9 @@ msgstr "회사를 선택하세요"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
@@ -4816,6 +4822,9 @@ msgstr "작업 종료"
 
 msgid "Clock Out"
 msgstr "작업 종료"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "근무 시작"
@@ -9673,6 +9682,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "계측기 기록에 실패했습니다"
 
@@ -9730,6 +9742,9 @@ msgstr "슬라이드 저장 실패"
 msgid "Failed to save the change"
 msgstr "변경 사항을 저장하지 못했습니다."
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "썸네일 경로를 업데이트하지 못했습니다"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0}을(를) 업로드하지 못했습니다"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "인증서를 업로드하지 못했습니다"
@@ -12122,6 +12140,9 @@ msgstr "성"
 msgid "Last Name"
 msgstr "성"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "지난 분기"
 
@@ -14228,6 +14249,9 @@ msgstr "사용 가능한 초안 버전이 없습니다"
 msgid "No due date"
 msgstr "마감일 없음"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 
@@ -14420,6 +14444,9 @@ msgstr "새 알림이 없습니다"
 msgid "No notes"
 msgstr "메모 없음"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "배치된 사람이 없습니다"
 
@@ -14513,6 +14540,9 @@ msgstr "매입채무가 없습니다"
 
 msgid "No payments yet."
 msgstr "아직 지불이 없습니다."
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "계획된 송장이 제거되지 않습니다."
@@ -14906,6 +14936,9 @@ msgstr "설정되지 않음"
 
 msgid "Not set up"
 msgstr "설정되지 않음"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "시작되지 않음"
@@ -15308,6 +15341,9 @@ msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 �
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 생성하려면 릴리스하세요."
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MES에서 열기"
 
@@ -15388,6 +15424,9 @@ msgstr "설정 맵 열기"
 
 msgid "Open transactions"
 msgstr "미결 거래"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "워크플로우 열기"
@@ -16163,6 +16202,9 @@ msgstr "사진이 삭제되었습니다"
 
 msgid "Photo uploaded successfully"
 msgstr "사진이 업로드되었습니다"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "할당 가능한 물리적 프린터입니다."
@@ -19230,6 +19272,9 @@ msgstr "저장 방법"
 msgid "Save Rate"
 msgstr "환율 저장"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
@@ -20401,6 +20446,9 @@ msgstr "송장에서 고객에게 표시"
 msgid "Shown to the user when this rule fails."
 msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Carbon에 로그인"
 
@@ -20431,7 +20479,16 @@ msgstr "다음 단계로 넘어가기 전 서명 검토"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워크플로에서 요구하는 서명과는 별도입니다."
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "…부터 시작"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "배송 중지"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "이 단계에서 {0} 사용 중지"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "이 날짜 이후로 새로운 구매 제안을 중단합니다."
@@ -23027,6 +23090,9 @@ msgstr "이 수주는 관련 작업 지시가 있습니다. 이들을 어떻게 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "이 수주는 작업 지시가 생성되어야 하는 라인이 있습니다."
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "이 작업장은 역량 게이트 작업을 실행합니다 — 자격 있는 작업자가 교대조에 있을 때만 실행됩니다; 인력 배치표에 할당된 작업자는 가용 노무를 더욱 형성합니다."
@@ -25530,6 +25596,9 @@ msgstr "당신이 주도합니다; 우리는 올바르게 완료되도록 보장
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "PDF에서 추출된 라인 중 {0}개가 재고 품목에 매핑되지 않았습니다."
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "아직 담당자를 생성하지 않았습니다."

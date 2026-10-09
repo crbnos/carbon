@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, success } from "@carbon/auth";
+import { assertIsPost, hasPermission, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -22,6 +23,7 @@ import {
   addServiceExpense,
   logServiceTime,
   reclassServiceCharge,
+  requireOwnServiceVisit,
   requireServiceOrderNode,
   ServiceOrderError
 } from "~/modules/service/service.server";
@@ -48,6 +50,8 @@ const MESSAGES = {
  * - `expense`: a `projectExpenseEntry`, posted by `post-project-expense`;
  * - `reclass`: a charge moved to another coverage, with a reason, through
  *   `reclass-project-coverage`.
+ * A user without `update: "service"` charges only their own open visit (the
+ * form's `serviceVisitId`) and never reclasses.
  * A refusal is returned as fetcher data, so the modal shows it and stays open.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -66,9 +70,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return refuse("Unknown charge");
   }
 
-  // A part moves stock, so it also needs inventory rights.
+  // A part moves stock, so it also needs inventory rights. A technician
+  // without `update: "service"` charges only their own open visit.
   const { companyId, userId } = await requirePermissions(request, {
-    update: intent === "part" ? ["service", "inventory"] : "service"
+    view: "service",
+    ...(intent === "part" ? { update: "inventory" } : {})
   });
   const db = getDatabaseClient();
   const serviceVisitId = formData.get("serviceVisitId");
@@ -76,8 +82,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     typeof serviceVisitId === "string" && serviceVisitId
       ? serviceVisitId
       : null;
+  const canUpdateAny = hasPermission(
+    (await getUserClaims(userId, companyId))?.permissions,
+    "service",
+    "update",
+    companyId
+  );
 
   try {
+    if (!canUpdateAny) {
+      if (intent === "reclass") {
+        return refuse("You do not have permission to change a coverage");
+      }
+      await requireOwnServiceVisit(db, {
+        companyId,
+        serviceOrderId: id,
+        serviceVisitId: visitId,
+        userId
+      });
+    }
     if (intent === "time") {
       const validation = await validator(logTimeValidator).validate(formData);
       if (validation.error) return validationError(validation.error);

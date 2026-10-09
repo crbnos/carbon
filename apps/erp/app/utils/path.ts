@@ -2449,6 +2449,8 @@ export const path = {
     serviceTemplates: `${x}/service-orders/templates`,
     serviceVisit: (orderId: string, visitId: string) =>
       generatePath(`${x}/service-order/${orderId}/visits/${visitId}`),
+    serviceVisitSignature: (orderId: string, visitId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/${visitId}/signature`),
     serviceVisitStatus: (orderId: string, visitId: string) =>
       generatePath(`${x}/service-order/${orderId}/visits/${visitId}/status`),
     settings: `${x}/settings`,

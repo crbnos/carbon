@@ -12,7 +12,7 @@ import {
   HStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { LuCalendarPlus, LuPencil } from "react-icons/lu";
+import { LuCalendarPlus, LuExternalLink, LuPencil } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { path } from "~/utils/path";
@@ -142,6 +142,15 @@ export default function VisitsList({
                       status={visit.status}
                       isDisabled={!mayMove}
                     />
+                    <Button
+                      variant="ghost"
+                      leftIcon={<LuExternalLink />}
+                      asChild
+                    >
+                      <Link to={path.to.serviceVisit(serviceOrderId, visit.id)}>
+                        <Trans>Open Visit</Trans>
+                      </Link>
+                    </Button>
                     {visit.status === "Scheduled" && canSchedule && (
                       <Button variant="ghost" leftIcon={<LuPencil />} asChild>
                         <Link

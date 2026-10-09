@@ -2062,6 +2062,9 @@ msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya tıklayın. DNS değişiklikleri yaygınlaştırılması birkaç dakika sürebilir."
 
+msgid "Add Time"
+msgstr ""
+
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
@@ -4681,6 +4684,9 @@ msgstr "Bir şirket seçin"
 msgid "Choose a field"
 msgstr ""
 
+msgid "Choose a node to log time, issue a part or add an expense."
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
@@ -4816,6 +4822,9 @@ msgstr "İş bitişi"
 
 msgid "Clock Out"
 msgstr "İş bitişi"
+
+msgid "Clock running"
+msgstr ""
 
 msgid "Clocked in"
 msgstr "Giriş yapıldı"
@@ -9673,6 +9682,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
 
@@ -9730,6 +9742,9 @@ msgstr "Slayt kaydedilemedi"
 msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
 
+msgid "Failed to save the signature"
+msgstr ""
+
 msgid "Failed to save the view"
 msgstr ""
 
@@ -9778,6 +9793,9 @@ msgstr "Küçük resim yolu güncellenemedi"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Yüklenemedi: {0}"
+
+msgid "Failed to upload a photo"
+msgstr ""
 
 msgid "Failed to upload certificate"
 msgstr "Sertifika Yükleme Başarısız"
@@ -12122,6 +12140,9 @@ msgstr "Soyadı"
 msgid "Last Name"
 msgstr "Soyadı"
 
+msgid "Last orders"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
 
@@ -14228,6 +14249,9 @@ msgstr "Kullanılabilir taslak sürüm yok"
 msgid "No due date"
 msgstr "Son tarih yok"
 
+msgid "No earlier service orders."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "Bu öğe için düzenlenebilir özellik yok."
 
@@ -14420,6 +14444,9 @@ msgstr "Yeni bildirim yok"
 msgid "No notes"
 msgstr "Notlar yok"
 
+msgid "No notes."
+msgstr ""
+
 msgid "No one assigned"
 msgstr "Hiç kimse ekiplendirilmedi"
 
@@ -14513,6 +14540,9 @@ msgstr "Borç yok"
 
 msgid "No payments yet."
 msgstr "Henüz ödeme yok."
+
+msgid "No photos."
+msgstr ""
 
 msgid "No planned invoices are removed."
 msgstr "Planlanmış fatura kaldırılmamıştır."
@@ -14906,6 +14936,9 @@ msgstr "Belirtilmemiş"
 
 msgid "Not set up"
 msgstr "Kurulmadı"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Not started"
 msgstr "Başlanmadı"
@@ -15308,6 +15341,9 @@ msgstr "Değişiklik bildirimi {ids} içinde aç. Yeni sürümler veya revizyonl
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "Değişiklik bildirimleri {ids} içinde aç. Yeni sürümler veya revizyonlar oluşturmak için serbest bırak."
 
+msgid "Open in maps"
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MES'te Aç"
 
@@ -15388,6 +15424,9 @@ msgstr "Kurulum Haritasını Aç"
 
 msgid "Open transactions"
 msgstr "Açık işlemler"
+
+msgid "Open Visit"
+msgstr ""
 
 msgid "Open Workflow"
 msgstr "İş Akışını Aç"
@@ -16163,6 +16202,9 @@ msgstr "Fotoğraf başarıyla kaldırıldı"
 
 msgid "Photo uploaded successfully"
 msgstr "Fotoğraf başarıyla yüklendi"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Physical printers available for assignment."
 msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
@@ -19230,6 +19272,9 @@ msgstr "Yöntemi Kaydet"
 msgid "Save Rate"
 msgstr "Kuru kaydet"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Düzenlemekte olduğunuz formu kaydet"
 
@@ -20401,6 +20446,9 @@ msgstr "Müşteriye faturada gösterilir"
 msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Carbon'a giriş yapın"
 
@@ -20431,7 +20479,16 @@ msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Bu sorun kapatılmadan önce kaydedilmesi gereken onaylar; iş akışı tarafından gerekli olan olanların dışında."
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
+msgstr ""
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
 msgstr ""
 
 msgid "Signed in as {name}"
@@ -20748,6 +20805,9 @@ msgstr ""
 msgid "Start with"
 msgstr "Başla"
 
+msgid "Start Work"
+msgstr ""
+
 msgid "Start Work From"
 msgstr ""
 
@@ -20910,6 +20970,9 @@ msgstr "Gönderimi Durdur"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Bu adımda {0} kullanmayı durdur"
+
+msgid "Stop Work"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Bu tarihten sonra yeni satın alma önerilerini durdurur."
@@ -23027,6 +23090,9 @@ msgstr "Bu satış siparişinin ilişkili iş emirleri var. Bunlarla ne yapacağ
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
+
+msgid "This service order has no work yet."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."
@@ -25530,6 +25596,9 @@ msgstr "Siz yönetirsiniz; biz sağlayalım ki her şey düzgün yapılsın. Sis
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "{0} satırı PDF'den çıkarıldı ancak hiçbir envanter öğesine eşlenmedi."
+
+msgid "You have no visits planned in the next 7 days."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "Henüz hiç ilgili kişi oluşturmadınız."
