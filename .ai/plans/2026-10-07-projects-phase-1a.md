@@ -37,7 +37,7 @@ Phase 1c gets baselines and change requests.
 
 ## Progress
 
-- [ ] Task 1: Create the enum migration
+- [x] Task 1: Create the enum migration
 - [ ] Task 2: Create the Projects module and permissions migration
 - [ ] Task 3: Create the workspace tables migration
 - [ ] Task 4: Create the time and ledger tables migration

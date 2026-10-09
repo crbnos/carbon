@@ -118611,7 +118611,8 @@ export default {
             "Supplier",
             "Item",
             "ScrapReason",
-            "Project"
+            "Project",
+            "ProjectElement"
           ],
           format: 'public."dimensionEntityType"',
           type: "string"
@@ -119194,7 +119195,9 @@ export default {
             "Maintenance Event",
             "Revenue Recognition",
             "Asset Transfer",
-            "Lease"
+            "Lease",
+            "Project Issue",
+            "Timesheet"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -126000,7 +126003,8 @@ export default {
             "Sales Return Shipment",
             "Batch Merge",
             "Asset Transfer",
-            "Rental Agreement"
+            "Rental Agreement",
+            "Project Issue"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -126718,7 +126722,8 @@ export default {
             "Users",
             "Quality",
             "Printing",
-            "Workflows"
+            "Workflows",
+            "Projects"
           ],
           format: "public.module",
           type: "string"
@@ -127114,7 +127119,8 @@ export default {
             "Users",
             "Quality",
             "Printing",
-            "Workflows"
+            "Workflows",
+            "Projects"
           ],
           format: "public.module",
           type: "string"
@@ -131497,7 +131503,8 @@ export default {
             "Sales Return Shipment",
             "Batch Merge",
             "Asset Transfer",
-            "Rental Agreement"
+            "Rental Agreement",
+            "Project Issue"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -132081,7 +132088,9 @@ export default {
             "Maintenance Event",
             "Asset Transfer",
             "Rental Agreement",
-            "Contract"
+            "Contract",
+            "Project Issue",
+            "Timesheet"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -132809,7 +132818,9 @@ export default {
             "Maintenance Event",
             "Revenue Recognition",
             "Asset Transfer",
-            "Lease"
+            "Lease",
+            "Project Issue",
+            "Timesheet"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -146650,7 +146661,8 @@ export default {
             "Sales Return Shipment",
             "Batch Merge",
             "Asset Transfer",
-            "Rental Agreement"
+            "Rental Agreement",
+            "Project Issue"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -146872,7 +146884,9 @@ export default {
             "Maintenance Event",
             "Asset Transfer",
             "Rental Agreement",
-            "Contract"
+            "Contract",
+            "Project Issue",
+            "Timesheet"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -146990,7 +147004,9 @@ export default {
             "Maintenance Event",
             "Revenue Recognition",
             "Asset Transfer",
-            "Lease"
+            "Lease",
+            "Project Issue",
+            "Timesheet"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -147069,7 +147085,9 @@ export default {
             "Maintenance Event",
             "Asset Transfer",
             "Rental Agreement",
-            "Contract"
+            "Contract",
+            "Project Issue",
+            "Timesheet"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -148235,7 +148253,8 @@ export default {
             "Supplier",
             "Item",
             "ScrapReason",
-            "Project"
+            "Project",
+            "ProjectElement"
           ],
           format: 'public."dimensionEntityType"',
           type: "string"
@@ -153341,7 +153360,8 @@ export default {
             "Users",
             "Quality",
             "Printing",
-            "Workflows"
+            "Workflows",
+            "Projects"
           ],
           format: "public.module",
           type: "string"
@@ -161641,7 +161661,8 @@ export default {
             "Users",
             "Quality",
             "Printing",
-            "Workflows"
+            "Workflows",
+            "Projects"
           ],
           format: "public.module",
           type: "string"
@@ -162468,7 +162489,8 @@ export default {
             "Users",
             "Quality",
             "Printing",
-            "Workflows"
+            "Workflows",
+            "Projects"
           ],
           format: "public.module",
           type: "string"

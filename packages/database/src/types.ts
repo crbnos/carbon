@@ -92324,6 +92324,7 @@ export type Database = {
         | "Item"
         | "ScrapReason"
         | "Project"
+        | "ProjectElement"
       disposalMethod: "Sale" | "Scrapping" | "Transfer to Inventory"
       disposition:
         | "Conditional Acceptance"
@@ -92534,6 +92535,7 @@ export type Database = {
         | "Batch Merge"
         | "Asset Transfer"
         | "Rental Agreement"
+        | "Project Issue"
       itemLedgerType:
         | "Purchase"
         | "Sale"
@@ -92616,6 +92618,8 @@ export type Database = {
         | "Revenue Recognition"
         | "Asset Transfer"
         | "Lease"
+        | "Project Issue"
+        | "Timesheet"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -92647,6 +92651,8 @@ export type Database = {
         | "Asset Transfer"
         | "Rental Agreement"
         | "Contract"
+        | "Project Issue"
+        | "Timesheet"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       lessorClassification: "Rental" | "Sale" | "Financing"
@@ -92705,6 +92711,7 @@ export type Database = {
         | "Quality"
         | "Printing"
         | "Workflows"
+        | "Projects"
       month:
         | "January"
         | "February"
@@ -93804,6 +93811,7 @@ export const Constants = {
         "Item",
         "ScrapReason",
         "Project",
+        "ProjectElement",
       ],
       disposalMethod: ["Sale", "Scrapping", "Transfer to Inventory"],
       disposition: [
@@ -94033,6 +94041,7 @@ export const Constants = {
         "Batch Merge",
         "Asset Transfer",
         "Rental Agreement",
+        "Project Issue",
       ],
       itemLedgerType: [
         "Purchase",
@@ -94122,6 +94131,8 @@ export const Constants = {
         "Revenue Recognition",
         "Asset Transfer",
         "Lease",
+        "Project Issue",
+        "Timesheet",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -94154,6 +94165,8 @@ export const Constants = {
         "Asset Transfer",
         "Rental Agreement",
         "Contract",
+        "Project Issue",
+        "Timesheet",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
@@ -94218,6 +94231,7 @@ export const Constants = {
         "Quality",
         "Printing",
         "Workflows",
+        "Projects",
       ],
       month: [
         "January",
