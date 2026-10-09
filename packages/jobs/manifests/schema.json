@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009054152",
+  "schemaVersion": "20261009054539",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T05:44:58.174Z",
+  "exportedAt": "2026-10-09T05:47:55.630Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1898,21 +1898,6 @@
       ]
     },
     {
-      "name": "project",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "name",
-        "description",
-        "active",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
       "name": "purchasingRfq",
       "rows": 0,
       "columns": [
@@ -1987,38 +1972,6 @@
         "updatedBy",
         "updatedAt",
         "customFields"
-      ]
-    },
-    {
-      "name": "reimbursementLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "reimbursementId",
-        "accountId",
-        "costCenterId",
-        "projectId",
-        "description",
-        "amount",
-        "sequence",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields"
-      ]
-    },
-    {
-      "name": "reimbursementLineDimension",
-      "rows": 0,
-      "columns": [
-        "id",
-        "reimbursementLineId",
-        "dimensionId",
-        "valueId",
-        "companyId",
-        "createdAt"
       ]
     },
     {
@@ -4224,6 +4177,218 @@
         "purchaseOrderDocumentPath",
         "requestForQuoteDocumentPath",
         "customerId"
+      ]
+    },
+    {
+      "name": "project",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "description",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "identifier",
+        "nextElementSequence",
+        "status",
+        "costTreatment",
+        "costAccountId",
+        "customerId",
+        "ownerId",
+        "locationId",
+        "startDate",
+        "endDate",
+        "priority",
+        "isTemplate",
+        "customFields"
+      ]
+    },
+    {
+      "name": "projectLabel",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "name",
+        "color",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectMilestone",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "name",
+        "description",
+        "startDate",
+        "endDate",
+        "completedAt",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectState",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "name",
+        "group",
+        "color",
+        "sortOrder",
+        "isDefault",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "readableId",
+        "sequence",
+        "type",
+        "parentId",
+        "name",
+        "description",
+        "stateId",
+        "ownerId",
+        "priority",
+        "milestoneId",
+        "startDate",
+        "targetDate",
+        "completedAt",
+        "estimatedHours",
+        "isChargeable",
+        "isBilling",
+        "budget",
+        "estimateAtCompletion",
+        "costTreatment",
+        "costTreatmentEffectiveFrom",
+        "costAccountId",
+        "itemId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "projectElementComment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectElementId",
+        "content",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElementCost",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "description",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElementLabel",
+      "rows": 0,
+      "columns": [
+        "projectElementId",
+        "projectLabelId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "projectElementMaterial",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "itemId",
+        "methodType",
+        "quantity",
+        "unitOfMeasureCode",
+        "requiredDate",
+        "quantityIssued",
+        "unitCost",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "reimbursementLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "reimbursementId",
+        "accountId",
+        "costCenterId",
+        "projectId",
+        "description",
+        "amount",
+        "sequence",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "reimbursementLineDimension",
+      "rows": 0,
+      "columns": [
+        "id",
+        "reimbursementLineId",
+        "dimensionId",
+        "valueId",
+        "companyId",
+        "createdAt"
       ]
     },
     {

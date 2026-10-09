@@ -39,7 +39,7 @@ Phase 1c gets baselines and change requests.
 
 - [x] Task 1: Create the enum migration
 - [x] Task 2: Create the Projects module and permissions migration
-- [ ] Task 3: Create the workspace tables migration
+- [x] Task 3: Create the workspace tables migration
 - [ ] Task 4: Create the time and ledger tables migration
 - [ ] Task 5: Create the backfill migration
 - [ ] Task 6: Create the SQL functions migration
@@ -2395,3 +2395,5 @@ ls .ai/playbooks/projects-phase-1a.md
 
 - Tasks 1–6: each migration was applied with `pnpm db:migrate` before its commit, and the regenerated `types.ts`, `swagger-docs-schema.ts` and MCP `tool-manifest.digest.json` were committed with it. The pre-commit `check:manifest` gate refuses a migration commit whose digest is stale, so the type regeneration could not wait for Task 7.
 - The shell exports `SUPABASE_DB_URL` for port 54322, which `.env.local` does not override, so the backup check skipped silently. Commits ran with `SUPABASE_DB_URL` pointed at this worktree's database (port 60387), so the dataset and backup checks ran for real.
+- Tasks 3–7: `pnpm db:migrate` applies each migration, then its last step (`authz sync`) fails because the new tables have no manifest rule yet. That is expected until Task 8 adds the rules; each migration was confirmed applied in `supabase_migrations.schema_migrations`.
+- Task 3: composite FK columns are indexed as their full column list (`("projectId", "companyId")`, `("parentId", "projectId", "companyId")`), named `<table>_<firstColumn>_idx`.
