@@ -53,6 +53,8 @@ export type ProjectPostingContext = {
 };
 
 export class ProjectChargeError extends Error {
+  /** A refusal the caller can fix: a server function returns it as a 422. */
+  readonly status = 422;
   constructor(message: string) {
     super(message);
     this.name = "ProjectChargeError";
@@ -380,4 +382,35 @@ export async function loadProjectPostingContexts(
   }
 
   return contexts;
+}
+
+/**
+ * Moves each element still in an Unstarted state to its project's default
+ * Started state: the first charge starts the work. One statement for all
+ * elements. Mirrors `startElementOnFirstCharge` in the ERP projects module.
+ */
+export async function startElementsOnFirstCharge(
+  trx: Transaction<DB>,
+  companyId: string,
+  projectElementIds: (string | null)[]
+): Promise<void> {
+  const ids = [
+    ...new Set(projectElementIds.filter((id): id is string => Boolean(id)))
+  ];
+  if (ids.length === 0) return;
+  await sql`
+    UPDATE "projectElement" e
+    SET "stateId" = started."id",
+        "updatedAt" = NOW()
+    FROM "projectState" current, "projectState" started
+    WHERE e."id" IN (${sql.join(ids)})
+      AND e."companyId" = ${companyId}
+      AND current."id" = e."stateId"
+      AND current."companyId" = e."companyId"
+      AND current."group" = 'Unstarted'
+      AND started."projectId" = e."projectId"
+      AND started."companyId" = e."companyId"
+      AND started."group" = 'Started'
+      AND started."isDefault"
+  `.execute(trx);
 }

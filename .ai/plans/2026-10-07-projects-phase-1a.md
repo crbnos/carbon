@@ -52,7 +52,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 13: Add the element service functions
 - [x] Task 14: Add the time, labor category and ledger service functions
 - [x] Task 15: Add the pure project posting helpers and tests
-- [ ] Task 16: Add the `post-timesheet` server function
+- [x] Task 16: Add the `post-timesheet` server function
 - [ ] Task 17: Add the `post-project-issue` server function
 - [ ] Task 18: Route job material issues to the project account
 - [ ] Task 19: Route production events to the project account
@@ -2430,3 +2430,8 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 15: an explicit account comes from the same node that sets the treatment (the element or ancestor override, else the project), as in the SQL `project_posting_account`. An account on an element that has no treatment of its own is ignored.
 - Task 15: 11 pure tests pass. A throwaway database test (rolled back) checked `loadProjectPostingContexts` on a two-level tree: the ancestor override, the `stateGroup` join and a missing project. `resolveProjectPostingAccount` and the SQL `project_posting_account` gave the same account. The full `@carbon/server-functions` suite passes (398) with `SUPABASE_DB_URL` on port 60387.
 - Task 24: `packages/utils/src` has no `journal-dimensions` test file, so step 3 adds no case. `@carbon/utils` tests (606) and typecheck pass.
+- Task 16: the function writes one journal per accounting period the entries fall in, not one per call, dated the latest entry date of that period. A week can cross a month end, and a journal has one period. Each `projectLedger` row keeps its own entry date.
+- Task 16: the entry stamps are one `UPDATE … FROM (VALUES …)`, and journal line ids are allocated up front (`allocateJournalLineIds`), so the lines go in one insert and the dimension rows bind to the right line. No query runs per entry.
+- Task 16: a Statistical entry is stamped with its rate when one exists, and needs none. A non-Statistical entry with no rate on its date is refused. A reversal whose original has no `costRate` falls back to the rate on its date. The first-charge state change skips reversals.
+- Task 16: `startElementsOnFirstCharge(trx, companyId, elementIds)` in `lib/project-posting.ts` is the SQL of the ERP `startElementOnFirstCharge` for many elements in one statement; Task 17 reuses it. `ProjectChargeError` now carries `status = 422`, so a server function returns a refusal as a 422 with its message instead of a 500.
+- Task 16: `lib/project-posting-test-fixture.ts` builds the scratch company (accounts, account defaults, period, the three dimensions, a labor category at 85.00, a Released project with Todo / In Progress / Done states and one element). Tasks 17–19 extend it.
