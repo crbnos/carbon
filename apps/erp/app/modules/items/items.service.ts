@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type {
   ExpressionBuilder,
   Kysely,
@@ -2485,6 +2489,26 @@ export async function getSupplierParts(
     .eq("active", true)
     .eq("itemId", id)
     .eq("companyId", companyId);
+}
+
+/** @mcp read */
+export async function getSupplierPartsBySupplier(
+  client: SupabaseClient<Database>,
+  supplierId: string,
+  companyId: string
+) {
+  // Paged past PostgREST's 1000-row cap: a distributor can supply thousands of parts.
+  return fetchAllRecords(() =>
+    client
+      .from("supplierPart")
+      .select(
+        "*, item(id, readableIdWithRevision, name, type, thumbnailPath, unitOfMeasureCode)"
+      )
+      .eq("active", true)
+      .eq("supplierId", supplierId)
+      .eq("companyId", companyId)
+      .order("id")
+  );
 }
 
 /** @mcp read */

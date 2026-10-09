@@ -19975,6 +19975,9 @@ msgstr "공급업체 개요"
 msgid "Supplier Part"
 msgstr "공급업체 부품"
 
+msgid "Supplier part actions"
+msgstr "공급업체 부품 작업"
+
 msgid "Supplier Part ID"
 msgstr "공급업체 품번"
 
@@ -23068,6 +23071,9 @@ msgstr "프로젝트 계획에서 보기"
 
 msgid "View Issue"
 msgstr "이슈 보기"
+
+msgid "View Item"
+msgstr "품목 보기"
 
 msgid "View Item Master"
 msgstr "품목 마스터 보기"

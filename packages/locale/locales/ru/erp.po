@@ -19975,6 +19975,9 @@ msgstr "Обзор поставщика"
 msgid "Supplier Part"
 msgstr "Поставщик Детали"
 
+msgid "Supplier part actions"
+msgstr "Действия с деталью поставщика"
+
 msgid "Supplier Part ID"
 msgstr "Артикул поставщика"
 
@@ -23068,6 +23071,9 @@ msgstr "Просмотреть в плане проекта"
 
 msgid "View Issue"
 msgstr "Просмотр проблемы"
+
+msgid "View Item"
+msgstr "Просмотреть товар"
 
 msgid "View Item Master"
 msgstr "Просмотр основных данных товара"

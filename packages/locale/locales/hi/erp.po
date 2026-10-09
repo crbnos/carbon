@@ -19975,6 +19975,9 @@ msgstr "आपूर्तिकर्ता अवलोकन"
 msgid "Supplier Part"
 msgstr "आपूर्तिकर्ता भाग"
 
+msgid "Supplier part actions"
+msgstr "आपूर्तिकर्ता भाग कार्य"
+
 msgid "Supplier Part ID"
 msgstr "आपूर्तिकर्ता पार्ट ID"
 
@@ -23068,6 +23071,9 @@ msgstr "प्रोजेक्ट प्लान में देखें"
 
 msgid "View Issue"
 msgstr "समस्या देखें"
+
+msgid "View Item"
+msgstr "आइटम देखें"
 
 msgid "View Item Master"
 msgstr "आइटम मास्टर देखें"

@@ -2,12 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, success } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { isUniqueViolation, redirect } from "@carbon/utils";
+import { isUniqueViolation } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import type { MaterialSummary } from "~/modules/items";
@@ -137,10 +136,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  throw redirect(
-    path.to.materialPurchasing(itemId),
-    await flash(request, success("Supplier part updated"))
-  );
+  // Fetcher-friendly success, as on the part route: the form's fetcher effect
+  // toasts and fires onClose, so a caller outside the item page stays put.
+  return { success: true, message: "Supplier part updated" };
 }
 
 export default function EditMaterialSupplierRoute() {

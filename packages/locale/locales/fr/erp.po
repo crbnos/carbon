@@ -19975,6 +19975,9 @@ msgstr "Aperçu du fournisseur"
 msgid "Supplier Part"
 msgstr "Pièce Fournisseur"
 
+msgid "Supplier part actions"
+msgstr "Actions de la pièce fournisseur"
+
 msgid "Supplier Part ID"
 msgstr "Référence fournisseur"
 
@@ -23068,6 +23071,9 @@ msgstr "Afficher dans le plan du projet"
 
 msgid "View Issue"
 msgstr "Afficher le problème"
+
+msgid "View Item"
+msgstr "Afficher l'article"
 
 msgid "View Item Master"
 msgstr "Afficher la fiche article"

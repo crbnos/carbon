@@ -19975,6 +19975,9 @@ msgstr "Lieferantenübersicht"
 msgid "Supplier Part"
 msgstr "Lieferantenteil"
 
+msgid "Supplier part actions"
+msgstr "Aktionen für Lieferantenteil"
+
 msgid "Supplier Part ID"
 msgstr "Lieferantenartikelnummer"
 
@@ -23068,6 +23071,9 @@ msgstr "Im Projektplan anzeigen"
 
 msgid "View Issue"
 msgstr "Problem anzeigen"
+
+msgid "View Item"
+msgstr "Artikel anzeigen"
 
 msgid "View Item Master"
 msgstr "Artikelstamm anzeigen"

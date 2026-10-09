@@ -1,5 +1,5 @@
 {
-  "totalTools": 1545,
+  "totalTools": 1546,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -496,6 +496,7 @@
     {"name":"items_getSupersessionChain","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"57cd7c34e332","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getSupplierPartPriceBreaks","classification":"READ","paramCount":1,"schema":"0b5fc4acf371","response":"87777c880401","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getSupplierParts","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"4089d780d70d","injectAuth":"companyId","permission":"parts:view","paginates":false},
+    {"name":"items_getSupplierPartsBySupplier","classification":"READ","paramCount":1,"schema":"67043a31b1b5","response":"3a6b0297ae76","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getSupplierPriceBreaksForItems","classification":"READ","paramCount":1,"schema":"c4ca22fd1816","response":"dc0d300695e0","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getTool","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"85d85a501c26","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getTools","classification":"READ","paramCount":4,"schema":"5571215d4362","response":"2b6244653ec7","injectAuth":"companyId","permission":"parts:view","paginates":true,"defaults":"always"},

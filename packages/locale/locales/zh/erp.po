@@ -19975,6 +19975,9 @@ msgstr "供应商概览"
 msgid "Supplier Part"
 msgstr "供应商零件"
 
+msgid "Supplier part actions"
+msgstr "供应商零件操作"
+
 msgid "Supplier Part ID"
 msgstr "供应商料号"
 
@@ -23068,6 +23071,9 @@ msgstr "在项目计划中查看"
 
 msgid "View Issue"
 msgstr "查看问题"
+
+msgid "View Item"
+msgstr "查看物品"
 
 msgid "View Item Master"
 msgstr "查看物料主数据"

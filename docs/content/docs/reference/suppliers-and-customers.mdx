@@ -7,7 +7,7 @@ description: The parties you buy from and sell to, and the ways their records di
 
 ## Suppliers
 
-A supplier lives in purchasing and anchors the buy side: <Term id="purchase-order">purchase orders</Term>, <Term id="supplier-quote">supplier quotes</Term>, and bills all reference it. Its **status** is a fixed set: *Active*, *Inactive*, *Pending*, *Rejected*. A supplier links to the items you buy through **supplier parts**, each carrying the supplier's own part number, a minimum order quantity, and a <Term>conversion factor</Term> from their pack to your stock unit.
+A supplier lives in purchasing and anchors the buy side: <Term id="purchase-order">purchase orders</Term>, <Term id="supplier-quote">supplier quotes</Term>, and bills all reference it. Its **status** is a fixed set: *Active*, *Inactive*, *Pending*, *Rejected*. A supplier links to the items you buy through **supplier parts**, each carrying the supplier's own part number, a minimum order quantity, and a <Term>conversion factor</Term> from their pack to your stock unit. The supplier's **Parts** tab lists every supplier part that names it, and opening one edits it in place; supplier parts are added from the item's Purchasing tab.
 
 <Callout type="note">
 A supplier part has **no lead time** — purchasing lead time is set per item, not per supplier-part. The supplier part is about identity and pack size, not delivery time.

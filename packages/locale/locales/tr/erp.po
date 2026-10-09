@@ -19975,6 +19975,9 @@ msgstr "Tedarikçi Genel Bakışı"
 msgid "Supplier Part"
 msgstr "Tedarikçi Parçası"
 
+msgid "Supplier part actions"
+msgstr "Tedarikçi parçası eylemleri"
+
 msgid "Supplier Part ID"
 msgstr "Tedarikçi parça numarası"
 
@@ -23068,6 +23071,9 @@ msgstr "Proje planında görüntüle"
 
 msgid "View Issue"
 msgstr "Sorunu Görüntüle"
+
+msgid "View Item"
+msgstr "Ürünü görüntüle"
 
 msgid "View Item Master"
 msgstr "Ürün Ana Verisine Görüntüle"

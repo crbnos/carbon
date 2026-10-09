@@ -19975,6 +19975,9 @@ msgstr "仕入先概要"
 msgid "Supplier Part"
 msgstr "仕入先品"
 
+msgid "Supplier part actions"
+msgstr "仕入先品のアクション"
+
 msgid "Supplier Part ID"
 msgstr "仕入先品番"
 
@@ -23068,6 +23071,9 @@ msgstr "プロジェクトプランで表示"
 
 msgid "View Issue"
 msgstr "問題を表示"
+
+msgid "View Item"
+msgstr "アイテムを表示"
 
 msgid "View Item Master"
 msgstr "アイテムマスターを表示"
