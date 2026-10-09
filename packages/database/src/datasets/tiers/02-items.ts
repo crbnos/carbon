@@ -330,16 +330,18 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     const itemRef = needItem(sl.item);
     const supplierId = need(ctx.refs.suppliers, sl.supplier);
 
+    // Authored in the company's base currency: currencyCode stays NULL, which
+    // every reader takes as base.
     const spId = await insertId(ctx, "supplierPart", {
       itemId: itemRef.id,
       supplierId,
-      unitPrice: sl.price,
+      supplierUnitPrice: sl.price,
       minimumOrderQuantity: 1
     });
     await insertRow(ctx, "supplierPartPrice", {
       supplierPartId: spId,
       quantity: 1,
-      unitPrice: sl.price,
+      supplierUnitPrice: sl.price,
       leadTime: sl.leadTime,
       sourceType: "Manual Entry"
     });

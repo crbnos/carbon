@@ -6,6 +6,10 @@ import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
+import {
+  convertUnitPrice,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import { getLogger } from "@carbon/logger";
 import { applyRate, datetime, SCALE, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -307,7 +311,7 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
 
-        const [suppliers, supplierParts, company, currencies] =
+        const [suppliers, supplierParts, company, currencies, exchangeRates] =
           await Promise.all([
             client
               .from("supplier")
@@ -327,7 +331,9 @@ export async function action({ request }: ActionFunctionArgs) {
             client
               .from("currencies")
               .select("code, decimalPlaces")
-              .eq("companyGroupId", companyGroupId)
+              .eq("companyGroupId", companyGroupId),
+            // Today's rate for each currency a supplier part is priced in.
+            client.rpc("get_exchange_rates", { p_company_id: companyId })
           ]);
 
         if (suppliers.error) {
@@ -371,6 +377,12 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
         const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+        const exchangeRateByCurrency = new Map(
+          (exchangeRates.data ?? []).map((rate) => [
+            rate.currencyCode,
+            rate.rate
+          ])
+        );
 
         // Settlement amounts round at the currency's own decimals, so the
         // planned order carries a real money value rather than a raw product.
@@ -407,7 +419,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const openPurchaseOrders = await client
           .from("purchaseOrder")
           .select(
-            "id, purchaseOrderId, supplierId, currencyCode, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+            "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
           )
           .eq("companyId", companyId)
           .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -438,6 +450,7 @@ export async function action({ request }: ActionFunctionArgs) {
           purchaseOrderId: po.purchaseOrderId,
           supplierId: po.supplierId,
           currencyCode: po.currencyCode,
+          exchangeRate: po.exchangeRate ?? 1,
           createdFromPlanning: po.createdFromPlanning,
           purchaseOrderLine: po.purchaseOrderLine ?? []
         }));
@@ -528,6 +541,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 purchaseOrderId: createPO.data.purchaseOrderId,
                 supplierId,
                 currencyCode,
+                exchangeRate: createPO.data.exchangeRate,
                 createdFromPlanning: true,
                 purchaseOrderLine: []
               };
@@ -665,7 +679,49 @@ export async function action({ request }: ActionFunctionArgs) {
                 existing.taxPercent = tax.percent;
                 existing.supplierTaxAmount = tax.amount;
               } else {
-                const supplierUnitPrice = supplierPart?.unitPrice ?? 0;
+                // The supplier part's price is in its own currency; the line
+                // holds the order's, converted at today's rate.
+                const partCurrency = supplierPartCurrency(
+                  supplierPart?.currencyCode,
+                  baseCurrencyCode
+                );
+                // Base is always 1, whether or not the group lists it.
+                const partRate =
+                  partCurrency === baseCurrencyCode
+                    ? 1
+                    : exchangeRateByCurrency.get(partCurrency);
+                if (
+                  supplierPart?.supplierUnitPrice != null &&
+                  partCurrency !== currencyCode &&
+                  !partRate
+                ) {
+                  logger.error("No exchange rate for supplier part currency", {
+                    companyId,
+                    userId,
+                    locationId,
+                    purchaseOrderId,
+                    itemId,
+                    currencyCode: partCurrency
+                  });
+                  errors.push(
+                    `No exchange rate for ${partCurrency}: set one in Accounting → Exchange Rates`
+                  );
+                  continue;
+                }
+                const supplierUnitPrice =
+                  supplierPart?.supplierUnitPrice != null
+                    ? convertUnitPrice(
+                        supplierPart.supplierUnitPrice,
+                        {
+                          currencyCode: partCurrency,
+                          exchangeRate: partRate ?? 1
+                        },
+                        {
+                          currencyCode,
+                          exchangeRate: purchaseOrder.exchangeRate
+                        }
+                      )
+                    : 0;
                 const taxPercent = supplier.taxPercent ?? 0;
                 // supplier.taxPercent is a 0..1 fraction; the amount follows
                 // the canonical denominator. Shipping is hardcoded 0 on this
@@ -687,6 +743,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
                   conversionFactor: supplierPart?.conversionFactor ?? 1,
                   supplierUnitPrice,
+                  exchangeRate: purchaseOrder.exchangeRate,
                   taxPercent,
                   supplierTaxAmount,
                   supplierShippingCost: 0,

@@ -13923,6 +13923,12 @@ msgstr "No storage units or tracking numbers match."
 msgid "No Supplier"
 msgstr "No Supplier"
 
+msgid "No supplier parts have been added yet."
+msgstr "No supplier parts have been added yet."
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "No supplier parts match \"{searchText}\"."
+
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
 
@@ -15202,6 +15208,9 @@ msgstr "per day"
 
 msgid "per month"
 msgstr "per month"
+
+msgid "Per purchase unit"
+msgstr "Per purchase unit"
 
 msgid "per quarter"
 msgstr "per quarter"
@@ -18260,9 +18269,6 @@ msgstr "Save Draft"
 msgid "Save Method"
 msgstr "Save Method"
 
-msgid "Save Rate"
-msgstr "Save Rate"
-
 msgid "Save the form you're editing"
 msgstr "Save the form you're editing"
 
@@ -18518,6 +18524,9 @@ msgstr "Search related items..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Search storage units and tracking numbers"
+
+msgid "Search supplier parts"
+msgstr "Search supplier parts"
 
 msgid "Search suppliers..."
 msgstr "Search suppliers..."
@@ -20216,6 +20225,9 @@ msgstr "Supplier Overview"
 
 msgid "Supplier Part"
 msgstr "Supplier Part"
+
+msgid "Supplier part actions"
+msgstr "Supplier part actions"
 
 msgid "Supplier Part ID"
 msgstr "Supplier Part ID"
@@ -23337,6 +23349,9 @@ msgstr "View in project plan"
 
 msgid "View Issue"
 msgstr "View Issue"
+
+msgid "View Item"
+msgstr "View Item"
 
 msgid "View Item Master"
 msgstr "View Item Master"

@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# ऑपरेशन के लिए कोई सम�
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# रिकॉर्ड को ध्यान की आवश्यकता है} other {# रिकॉर्ड को ध्यान की आवश्यकता है}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -418,7 +418,7 @@ msgid "{count} units"
 msgstr "{count} इकाइयाँ"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} बनाया गया, {updated} अपडेट किया गया।"
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -445,7 +445,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{count} ऑपरेशन में से {from}–{to}"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {और # अधिक रिकॉर्ड।} other {और # अधिक रिकॉर्ड।}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
@@ -11523,10 +11523,10 @@ msgstr "अंतिम नाम"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "अंतिम पुश {when} विफल: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "अंतिम पुश {when}:"
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
@@ -11535,7 +11535,7 @@ msgid "Last Run"
 msgstr "अंतिम रन"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "अंतिम निर्धारित पुश {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
@@ -12701,7 +12701,7 @@ msgid "More overtime"
 msgstr "अधिक ओवरटाइम"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "अधिक रिकॉर्ड प्रतीक्षा कर रहे हैं। जारी रखने के लिए फिर से पुश करें।"
 
 msgid "Morning, {name}."
 msgstr "सुबह, {name}।"
@@ -12716,7 +12716,7 @@ msgid "Motion"
 msgstr "गति"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount में इस पहचानकर्ता के साथ {matches} रिकॉर्ड हैं। Mount में अतिरिक्त को हटाएँ या विलय करें, फिर फिर से पुश करें।"
 
 msgid "Move"
 msgstr "स्थानांतरित करें"
@@ -13446,7 +13446,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "कोई कंपनी \"{query}\" से मेल नहीं खाती"
 
 msgid "No completed jobs within range"
 msgstr "रेंज में कोई पूर्ण जॉब नहीं"
@@ -13922,6 +13922,12 @@ msgstr "कोई भंडारण इकाई या ट्रैकिं�
 
 msgid "No Supplier"
 msgstr "कोई आपूर्तिकर्ता नहीं"
+
+msgid "No supplier parts have been added yet."
+msgstr "कोई आपूर्तिकर्ता पार्ट्स अभी तक नहीं जोड़े गए हैं।"
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "कोई आपूर्तिकर्ता पार्ट्स \"{searchText}\" से मेल नहीं खाते।"
 
 msgid "No suppliers yet"
 msgstr "अभी तक कोई आपूर्तिकर्ता नहीं"
@@ -15202,6 +15208,9 @@ msgstr "प्रति दिन"
 
 msgid "per month"
 msgstr "प्रति माह"
+
+msgid "Per purchase unit"
+msgstr "प्रति खरीद इकाई"
 
 msgid "per quarter"
 msgstr "प्रति तिमाही"
@@ -18260,9 +18269,6 @@ msgstr "ड्राफ्ट सहेजें"
 msgid "Save Method"
 msgstr "विधि सहेजें"
 
-msgid "Save Rate"
-msgstr "दर सहेजें"
-
 msgid "Save the form you're editing"
 msgstr "जिस फॉर्म को आप संपादित कर रहे हैं उसे सहेजें"
 
@@ -18478,7 +18484,7 @@ msgid "Search fields..."
 msgstr "फ़ील्ड खोजें..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "एक कंपनी के लिए खोजें"
 
 msgid "Search for existing or create a new one"
 msgstr "मौजूदा को खोजें या नया बनाएं"
@@ -18518,6 +18524,9 @@ msgstr "संबंधित आइटम खोजें..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "भंडारण इकाइयों और ट्रैकिंग संख्याओं को खोजें"
+
+msgid "Search supplier parts"
+msgstr "आपूर्तिकर्ता पार्ट्स को खोजें"
 
 msgid "Search suppliers..."
 msgstr "आपूर्तिकर्ताओं को खोजें..."
@@ -19753,7 +19762,7 @@ msgid "Started"
 msgstr "शुरू किया गया"
 
 msgid "Starting"
-msgstr ""
+msgstr "शुरुआत"
 
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
@@ -20216,6 +20225,9 @@ msgstr "आपूर्तिकर्ता अवलोकन"
 
 msgid "Supplier Part"
 msgstr "आपूर्तिकर्ता भाग"
+
+msgid "Supplier part actions"
+msgstr "आपूर्तिकर्ता पार्ट क्रियाएं"
 
 msgid "Supplier Part ID"
 msgstr "आपूर्तिकर्ता पार्ट ID"
@@ -21283,16 +21295,16 @@ msgid "The purchase order"
 msgstr "क्रय आदेश"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount को पुश शुरू नहीं हुआ। फिर से कोशिश करें।"
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount को पुश विफल"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount को पुश समाप्त हुआ"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount को पुश समाप्त हुआ। कुछ रिकॉर्ड को ध्यान की आवश्यकता है"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "मात्रा विभाजन बिंदु जिन पर इस पंक्ति की कीमत है; प्रत्येक कॉलम क्रेता-आपूर्तिकर्ता बातचीत और डाउनस्ट्रीम दस्तावेजों में परिवर्तित करने के लिए अपनी स्वयं की प्रति-यूनिट कीमत रखता है।"
@@ -22520,7 +22532,7 @@ msgid "Triggers"
 msgstr "ट्रिगर"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "एक अलग नाम आज़माएँ।"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
@@ -23337,6 +23349,9 @@ msgstr "प्रोजेक्ट प्लान में देखें"
 
 msgid "View Issue"
 msgstr "समस्या देखें"
+
+msgid "View Item"
+msgstr "आइटम देखें"
 
 msgid "View Item Master"
 msgstr "आइटम मास्टर देखें"

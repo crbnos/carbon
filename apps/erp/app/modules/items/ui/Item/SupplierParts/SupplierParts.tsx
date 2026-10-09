@@ -12,17 +12,19 @@ import { SupplierAvatar } from "~/components";
 import Grid from "~/components/Grid";
 import Hyperlink from "~/components/Hyperlink";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores/suppliers";
 import type { SupplierPart } from "../../../types";
+import SupplierPartPrice from "./SupplierPartPrice";
 
 type Part = Pick<
   SupplierPart,
   | "id"
   | "supplierId"
   | "supplierPartId"
-  | "unitPrice"
+  | "currencyCode"
+  | "supplierUnitPrice"
   | "supplierUnitOfMeasureCode"
   | "minimumOrderQuantity"
   | "conversionFactor"
@@ -52,7 +54,6 @@ const SupplierParts = ({
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "parts") && !isReadOnly;
   const canDelete = permissions.can("delete", "parts") && !isReadOnly;
-  const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
 
@@ -80,13 +81,16 @@ const SupplierParts = ({
         cell: (item) => item.getValue()
       },
       {
-        accessorKey: "unitPrice",
+        // In each supplier part's own currency, so a column total would add
+        // euros to dollars — there is none.
+        accessorKey: "supplierUnitPrice",
         header: t`Unit Price`,
-        cell: (item) => formatter.format(item.getValue<number>()),
-        meta: {
-          formatter: formatter.format,
-          renderTotal: true
-        }
+        cell: ({ row }) => (
+          <SupplierPartPrice
+            price={row.original.supplierUnitPrice}
+            currencyCode={row.original.currencyCode}
+          />
+        )
       },
       {
         accessorKey: "supplierUnitOfMeasureCode",
@@ -129,7 +133,7 @@ const SupplierParts = ({
     }
 
     return cols;
-  }, [customColumns, formatter, t, canDelete, deleteSupplierPath]);
+  }, [customColumns, t, canDelete, deleteSupplierPath]);
 
   return (
     <>

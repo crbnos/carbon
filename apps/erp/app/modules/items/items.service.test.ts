@@ -503,7 +503,8 @@ function supplierPart(over: Record<string, unknown> = {}) {
     minimumOrderQuantity: 10,
     orderMultiple: 5,
     conversionFactor: 12,
-    unitPrice: 4.5,
+    currencyCode: "USD",
+    supplierUnitPrice: 4.5,
     active: true,
     customFields: null,
     tags: null,
@@ -549,7 +550,7 @@ describe("diffMethod — supplier parts", () => {
         supplierPart({ id: "sp-2", supplierId: "sup-2" })
       ],
       targetSupplierParts: [
-        supplierPart({ id: "sp-9", itemId: "item-b", unitPrice: 5 }),
+        supplierPart({ id: "sp-9", itemId: "item-b", supplierUnitPrice: 5 }),
         supplierPart({ id: "sp-11", itemId: "item-b", supplierId: "sup-3" })
       ]
     });
@@ -561,7 +562,7 @@ describe("diffMethod — supplier parts", () => {
       ["removed", "sup-2"]
     ]);
     expect(supplierParts[0].changedFields).toEqual({
-      unitPrice: { before: 4.5, after: 5 }
+      supplierUnitPrice: { before: 4.5, after: 5 }
     });
   });
 

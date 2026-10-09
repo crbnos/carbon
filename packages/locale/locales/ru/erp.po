@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# операция не имеет временных �
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# запись требует внимания} other {# записей требуют внимания}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -418,7 +418,7 @@ msgid "{count} units"
 msgstr "{count} единиц"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} создано, {updated} обновлено."
 
 msgid "{days}d"
 msgstr "{days}д"
@@ -445,7 +445,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
@@ -11523,10 +11523,10 @@ msgstr "Фамилия"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "Последняя отправка {when} не удалась: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "Последняя отправка {when}:"
 
 msgid "Last Quarter"
 msgstr "Последний квартал"
@@ -11535,7 +11535,7 @@ msgid "Last Run"
 msgstr "Последний запуск"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "Последняя запланированная отправка {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
@@ -12701,7 +12701,7 @@ msgid "More overtime"
 msgstr "Больше переработки"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "Больше записей ожидают. Отправьте еще раз, чтобы продолжить."
 
 msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
@@ -12716,7 +12716,7 @@ msgid "Motion"
 msgstr "Движение"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount содержит {matches} записей с этим идентификатором. Удалите или объедините лишние в Mount, затем отправьте снова."
 
 msgid "Move"
 msgstr "Переместить"
@@ -13446,7 +13446,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "Нет организаций, соответствующих запросу «{query}»"
 
 msgid "No completed jobs within range"
 msgstr "Нет завершенных производственных заказов в диапазоне"
@@ -13922,6 +13922,12 @@ msgstr "Единицы хранения или номера отслеживан
 
 msgid "No Supplier"
 msgstr "Нет поставщика"
+
+msgid "No supplier parts have been added yet."
+msgstr "Детали поставщика еще не добавлены."
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "Нет деталей поставщика, совпадающих с «{searchText}»."
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -15202,6 +15208,9 @@ msgstr "в день"
 
 msgid "per month"
 msgstr "в месяц"
+
+msgid "Per purchase unit"
+msgstr "За единицу закупки"
 
 msgid "per quarter"
 msgstr "в квартал"
@@ -18260,9 +18269,6 @@ msgstr "Сохранить черновик"
 msgid "Save Method"
 msgstr "Сохранить метод"
 
-msgid "Save Rate"
-msgstr "Сохранить курс"
-
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
 
@@ -18478,7 +18484,7 @@ msgid "Search fields..."
 msgstr "Поиск полей..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "Поиск организации"
 
 msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
@@ -18518,6 +18524,9 @@ msgstr "Поиск связанных элементов..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Поиск единиц хранения и номеров отслеживания"
+
+msgid "Search supplier parts"
+msgstr "Поиск деталей поставщика"
 
 msgid "Search suppliers..."
 msgstr "Поиск поставщиков..."
@@ -19753,7 +19762,7 @@ msgid "Started"
 msgstr "Начал"
 
 msgid "Starting"
-msgstr ""
+msgstr "Запуск"
 
 msgid "Starting…"
 msgstr "Начинаю…"
@@ -20216,6 +20225,9 @@ msgstr "Обзор поставщика"
 
 msgid "Supplier Part"
 msgstr "Поставщик Детали"
+
+msgid "Supplier part actions"
+msgstr "Действия с деталями поставщика"
 
 msgid "Supplier Part ID"
 msgstr "Артикул поставщика"
@@ -21283,16 +21295,16 @@ msgid "The purchase order"
 msgstr "Заказ поставщику"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Отправка на Mount не началась. Попробуйте еще раз."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Отправка на Mount не удалась"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Отправка на Mount завершена"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Отправка на Mount завершена. Некоторые записи требуют внимания"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва по количеству, при которых рассчитывается цена этой строки; каждый столбец содержит свою цену за единицу для переговоров между закупщиком и поставщиком и для преобразования в последующие документы."
@@ -22520,7 +22532,7 @@ msgid "Triggers"
 msgstr "Триггеры"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "Попробуйте другое имя."
 
 msgid "Tuesday"
 msgstr "Вторник"
@@ -23337,6 +23349,9 @@ msgstr "Просмотреть в плане проекта"
 
 msgid "View Issue"
 msgstr "Просмотр проблемы"
+
+msgid "View Item"
+msgstr "Просмотр номенклатуры"
 
 msgid "View Item Master"
 msgstr "Просмотр основных данных товара"

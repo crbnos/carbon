@@ -7,6 +7,7 @@ import { datetime, groupBy } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
+import { getSupplierPartPriceConverter } from "../lib/supplier-part-currency";
 
 export const finalizeSupplierQuoteInput = z.object({
   supplierQuoteId: z.string()
@@ -17,6 +18,10 @@ export const finalizeSupplierQuoteInput = z.object({
  * price list, in one transaction: a supplier part per quoted item (created
  * when the supplier has none), one price break per quoted quantity, and the
  * lowest quoted price as the part's own.
+ *
+ * Prices are recorded as quoted — per purchase unit, in the quote's currency.
+ * A part created here takes the quote's currency; an existing part in another
+ * currency gets the price converted into its own.
  */
 const finalizeSupplierQuote = defineServerFn({
   name: "finalize-supplier-quote",
@@ -26,7 +31,7 @@ const finalizeSupplierQuote = defineServerFn({
     await db.transaction().execute(async (trx) => {
       const quote = await trx
         .selectFrom("supplierQuote")
-        .select(["id", "supplierId"])
+        .select(["id", "supplierId", "currencyCode", "exchangeRate"])
         .where("id", "=", supplierQuoteId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
@@ -112,6 +117,7 @@ const finalizeSupplierQuote = defineServerFn({
             supplierUnitOfMeasureCode:
               line.purchaseUnitOfMeasureCode ?? undefined,
             conversionFactor: line.conversionFactor ?? 1,
+            currencyCode: quote.currencyCode,
             companyId,
             createdBy: userId
           }))
@@ -123,15 +129,24 @@ const finalizeSupplierQuote = defineServerFn({
 
       const supplierParts = await trx
         .selectFrom("supplierPart")
-        .select(["id", "itemId"])
+        .select(["id", "itemId", "currencyCode"])
         .where("supplierId", "=", supplierId)
         .where("companyId", "=", companyId)
         .where("itemId", "in", [
           ...new Set(pricedLines.map((line) => line.itemId))
         ])
         .execute();
-      const supplierPartIdByItem = new Map(
-        supplierParts.map((part) => [part.itemId, part.id])
+      const supplierPartByItem = new Map(
+        supplierParts.map((part) => [part.itemId, part])
+      );
+      const converter = await getSupplierPartPriceConverter(
+        trx,
+        companyId,
+        {
+          currencyCode: quote.currencyCode,
+          exchangeRate: quote.exchangeRate ?? 1
+        },
+        supplierParts.map((part) => part.currencyCode)
       );
 
       // Keyed by (part, quantity): when two lines quote one item at one
@@ -141,18 +156,21 @@ const finalizeSupplierQuote = defineServerFn({
         {
           supplierPartId: string;
           quantity: number;
-          unitPrice: number;
+          supplierUnitPrice: number;
           leadTime: number;
         }
       >();
       const updatedAt = datetime.timestamp();
 
       for (const line of pricedLines) {
-        const supplierPartId = supplierPartIdByItem.get(line.itemId);
-        if (!supplierPartId) {
+        const supplierPart = supplierPartByItem.get(line.itemId);
+        if (!supplierPart) {
           throw new ServerFnError("Failed to create supplier part", 500);
         }
-        const conversionFactor = line.conversionFactor ?? 1;
+        const supplierPartId = supplierPart.id;
+        // Quote prices are per purchase unit, the basis a supplier part keeps.
+        const toPartCurrency = (price: number) =>
+          converter.toPartCurrency(price, supplierPart.currencyCode);
 
         for (const price of line.prices) {
           if (!price.supplierUnitPrice) continue;
@@ -160,21 +178,19 @@ const finalizeSupplierQuote = defineServerFn({
           priceBreaks.set(`${supplierPartId}:${quantity}`, {
             supplierPartId,
             quantity,
-            unitPrice: (price.unitPrice ?? 0) / conversionFactor,
+            supplierUnitPrice: toPartCurrency(price.supplierUnitPrice),
             leadTime: price.leadTime ?? 0
           });
         }
 
         const bestPrice = line.prices
-          .filter((price) => price.unitPrice != null && price.unitPrice !== 0)
-          .sort(
-            (a, b) => (a.unitPrice ?? Infinity) - (b.unitPrice ?? Infinity)
-          )[0];
+          .filter((price) => !!price.supplierUnitPrice)
+          .sort((a, b) => a.supplierUnitPrice - b.supplierUnitPrice)[0];
         if (bestPrice) {
           await trx
             .updateTable("supplierPart")
             .set({
-              unitPrice: (bestPrice.unitPrice ?? 0) / conversionFactor,
+              supplierUnitPrice: toPartCurrency(bestPrice.supplierUnitPrice),
               minimumOrderQuantity: bestPrice.quantity ?? 1
             })
             .where("id", "=", supplierPartId)
@@ -199,7 +215,7 @@ const finalizeSupplierQuote = defineServerFn({
           )
           .onConflict((oc) =>
             oc.columns(["supplierPartId", "quantity"]).doUpdateSet((eb) => ({
-              unitPrice: eb.ref("excluded.unitPrice"),
+              supplierUnitPrice: eb.ref("excluded.supplierUnitPrice"),
               leadTime: eb.ref("excluded.leadTime"),
               sourceType: eb.ref("excluded.sourceType"),
               sourceDocumentId: eb.ref("excluded.sourceDocumentId"),

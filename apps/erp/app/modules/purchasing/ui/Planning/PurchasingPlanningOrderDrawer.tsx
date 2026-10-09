@@ -41,11 +41,12 @@ import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
+import { useQuantityFormatter } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
+import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
 import type { PlanningAction } from "~/modules/production";
 import {
   type PlanningActionHandlers,
@@ -160,7 +161,6 @@ export const PurchasingPlanningOrderDrawer = memo(
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
-    const formatter = useCurrencyFormatter();
     const formatQuantity = useQuantityFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
 
@@ -661,7 +661,12 @@ export const PurchasingPlanningOrderDrawer = memo(
                               }
                             </Td>
                             <Td>{part.conversionFactor}</Td>
-                            <Td>{formatter.format(part.unitPrice ?? 0)}</Td>
+                            <Td>
+                              <SupplierPartPrice
+                                price={part.supplierUnitPrice}
+                                currencyCode={part.currencyCode}
+                              />
+                            </Td>
                             <Td className="text-end">
                               <Button
                                 variant="secondary"
@@ -712,7 +717,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                           itemId: selectedItem.id,
                           supplierId: "",
                           supplierPartId: "",
-                          unitPrice: 0,
+                          supplierUnitPrice: 0,
                           supplierUnitOfMeasureCode: "EA",
                           minimumOrderQuantity: 1,
                           orderMultiple: 1,
