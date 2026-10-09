@@ -413,7 +413,7 @@ msgid "{dismissed} dismissed"
 msgstr "{dismissed} odrzucone"
 
 msgid "{documentTypeLabel} approval rule"
-msgstr ""
+msgstr "{documentTypeLabel} reguła zatwierdzania"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} z {total} faz ukończonych"
@@ -2542,7 +2542,7 @@ msgid "Approval is required at or above this amount, up to the next rule's minim
 msgstr "Zatwierdzenie jest wymagane przy tej kwocie lub wyższej, aż do minimum następnej reguły"
 
 msgid "Approval Rejected"
-msgstr ""
+msgstr "Zatwierdzenie odrzucone"
 
 msgid "Approval requirements"
 msgstr "Wymagania dotyczące zatwierdzenia"
@@ -2561,13 +2561,13 @@ msgstr "Zatwierdź"
 
 #. placeholder {0}: routeData?.supplier?.name ?? ""
 msgid "Approve {0}"
-msgstr ""
+msgstr "Zatwierdź {0}"
 
 msgid "Approve {changeOrderId}"
-msgstr ""
+msgstr "Zatwierdź {changeOrderId}"
 
 msgid "Approve {displayName}"
-msgstr ""
+msgstr "Zatwierdź {displayName}"
 
 msgid "Approved By"
 msgstr "Zatwierdzone przez"
@@ -2629,13 +2629,13 @@ msgid "Are you sure you want to activate this gauge?."
 msgstr "Czy chcesz aktywować ten przyrząd pomiarowy?"
 
 msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
-msgstr ""
+msgstr "Czy na pewno chcesz zatwierdzi to zawiadomienie o zmianie? Przeniesie je to do wdrożenia."
 
 msgid "Are you sure you want to approve this quality document? This will make it active."
-msgstr ""
+msgstr "Czy na pewno chcesz zatwierdzi ten dokument jakości? To uczyni go aktywnym."
 
 msgid "Are you sure you want to approve this supplier? This will make it active."
-msgstr ""
+msgstr "Czy na pewno chcesz zatwierdzi tego dostawcę? To uczyni go aktywnym."
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3039,16 +3039,16 @@ msgid "Are you sure you want to post this shipment?"
 msgstr "Czy chcesz zaksięgować tę wysyłkę?"
 
 msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
-msgstr ""
+msgstr "Czy na pewno chcesz odrzucić to zawiadomienie o zmianie? Pozostanie w stanie Engineering Complete, aby można je było zmienić i ponownie przesłać."
 
 msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
-msgstr ""
+msgstr "Czy na pewno chcesz odrzucić ten dokument jakości? Dokument pozostanie w statusie wersji roboczej."
 
 msgid "Are you sure you want to reject this quote?"
 msgstr "Czy na pewno chcesz odrzucić tę ofertę?"
 
 msgid "Are you sure you want to reject this supplier?"
-msgstr ""
+msgstr "Czy na pewno chcesz odrzucić tego dostawcę?"
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Czy na pewno chcesz zwolnić to zlecenie produkcyjne? Stanie się dostępne dla hali produkcyjnej i uruchomi procesy zakupów i produkcji."
@@ -6984,7 +6984,7 @@ msgid "Delete Workflow"
 msgstr "Usuń przepływ pracy"
 
 msgid "Deleted"
-msgstr ""
+msgstr "Usunięto"
 
 msgid "Deliver"
 msgstr "Dostarcz"
@@ -8988,7 +8988,7 @@ msgid "Failed to download file for moving"
 msgstr "Nie udało się pobrać pliku do przeniesienia."
 
 msgid "Failed to download history"
-msgstr ""
+msgstr "Nie udało się pobrać historii"
 
 msgid "Failed to fetch item costs"
 msgstr "Nie udało się pobrać kosztów pozycji"
@@ -13035,7 +13035,7 @@ msgid "New Unit of Measure"
 msgstr "Nowa jednostka miary"
 
 msgid "New Value"
-msgstr ""
+msgstr "Nowa wartość"
 
 msgid "New Version"
 msgstr "Nowa wersja"
@@ -13471,7 +13471,7 @@ msgid "No notes"
 msgstr "Brak notatek"
 
 msgid "No notes were given."
-msgstr ""
+msgstr "Nie podano żadnych notatek."
 
 msgid "No one assigned"
 msgstr "Nikogo nie przydzielono"
@@ -13999,7 +13999,7 @@ msgid "OK"
 msgstr "OK"
 
 msgid "Old Value"
-msgstr ""
+msgstr "Stara wartość"
 
 msgid "Oldest first"
 msgstr "Najstarsze najpierw"
@@ -14956,7 +14956,7 @@ msgid "Pending"
 msgstr "Oczekujące"
 
 msgid "Pending Approval"
-msgstr ""
+msgstr "Oczekujące zatwierdzenie"
 
 msgid "people"
 msgstr "pracownicy"
@@ -16075,7 +16075,7 @@ msgid "Quality"
 msgstr "Jakość"
 
 msgid "Quality Document"
-msgstr ""
+msgstr "Dokument jakości"
 
 msgid "Quality Documents"
 msgstr "Dokumenty Jakości"
@@ -16573,7 +16573,7 @@ msgid "Record Deposit"
 msgstr "Zarejestruj depozyt"
 
 msgid "Record ID"
-msgstr ""
+msgstr "ID rekordu"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Zarejestruj kontrole powiązane z częścią i zleceniem produkcyjnym"
@@ -16697,13 +16697,13 @@ msgstr "Odrzuć"
 
 #. placeholder {0}: routeData?.supplier?.name ?? ""
 msgid "Reject {0}"
-msgstr ""
+msgstr "Odrzuć {0}"
 
 msgid "Reject {changeOrderId}"
-msgstr ""
+msgstr "Odrzuć {changeOrderId}"
 
 msgid "Reject {displayName}"
-msgstr ""
+msgstr "Odrzuć {displayName}"
 
 msgid "Reject Lot"
 msgstr "Odrzuć partię"
@@ -17097,7 +17097,7 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Wymagaj aplikacji authenticator przed otwarciem tej firmy. Pozostałe firmy danej osoby nie są objęte. Odwiedź <0>stronę kont pracowników</0>, aby zobaczyć status każdej osoby."
 
 msgid "Require approval before change notices move to Implementation"
-msgstr ""
+msgstr "Wymagaj zatwierdzenia zanim zawiadomienia o zmianach przejdą do wdrożenia"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Wymagaj zatwierdzenia zanim dostawcy będą mogli być ustawieni na Aktywny"
@@ -17115,7 +17115,7 @@ msgid "Require SAML SSO"
 msgstr "Wymagaj SAML SSO"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
-msgstr ""
+msgstr "Wymagaj wielopoziomowego zatwierdzenia zamówień zakupu, dokumentów jakości, dostawców i zawiadomień o zmianach na podstawie progów kwot i grup osób zatwierdzających."
 
 msgid "Require two-factor authentication"
 msgstr "Wymagaj uwierzytelniania dwuskładnikowego"
@@ -19749,7 +19749,7 @@ msgid "Submit for approval"
 msgstr "Prześlij do zatwierdzenia"
 
 msgid "Submit for Approval"
-msgstr ""
+msgstr "Prześlij do zatwierdzenia"
 
 msgid "Submit Inspection"
 msgstr "Prześlij kontrolę"
@@ -21409,7 +21409,7 @@ msgid "This change notice is closed, so its changes are read-only."
 msgstr "To zawiadomienie o zmianie jest zamknięte, dlatego jego zmiany są tylko do odczytu."
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
-msgstr ""
+msgstr "To zawiadomienie o zmianie oczekuje na zatwierdzenie. Jego zmiany są zablokowane do czasu zatwierdzenia lub odrzucenia."
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Dane tej firmy są zastępowane zawartością tej kopii zapasowej. Dane z dzisiaj są najpierw zapisywane, aby można było cofnąć."
@@ -21443,6 +21443,10 @@ msgstr "Ten rok obrotowy"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "To nie ma żadnego wpływu do momentu weryfikacji domeny e-mail poniżej."
+
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "Ta historia jest zbyt długa, aby pobrać ją w całości. Plik zawiera {0} ostatnich wpisów."
 
 msgid "This information will be used on document headers"
 msgstr "Te informacje będą używane w nagłówkach dokumentów"

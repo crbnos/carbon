@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toDocumentApprovalState, withdrawalVerdict } from "./document";
 import {
   approveRequest,
   canApproveRequest,
@@ -30,6 +31,7 @@ export async function getDocumentApprovalState(
   serviceRole: SupabaseClient<Database>,
   doc: ApprovalDocumentRef & { userId: string; amount?: number }
 ): Promise<DocumentApprovalState> {
+  // A cancelled request is a withdrawal, not a decision.
   const [latest, isRequired, canApprove] = await Promise.all([
     serviceRole
       .from("approvalRequest")
@@ -37,6 +39,7 @@ export async function getDocumentApprovalState(
       .eq("documentType", doc.documentType)
       .eq("documentId", doc.documentId)
       .eq("companyId", doc.companyId)
+      .neq("status", "Cancelled")
       .order("requestedAt", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -57,26 +60,7 @@ export async function getDocumentApprovalState(
     )
   ]);
 
-  const request = latest.data;
-  const isPending = request?.status === "Pending";
-
-  return {
-    pendingRequestId: isPending ? request.id : null,
-    pendingRequestedBy: isPending ? request.requestedBy : null,
-    canApprove,
-    isRequired,
-    // The latest request's decision only: a newer pending or cancelled request
-    // supersedes an older approval or rejection.
-    lastDecision:
-      request?.status === "Approved" || request?.status === "Rejected"
-        ? {
-            status: request.status,
-            decisionBy: request.decisionBy,
-            notes: request.decisionNotes,
-            decisionAt: request.decisionAt
-          }
-        : null
-  };
+  return toDocumentApprovalState(latest.data, { isRequired, canApprove });
 }
 
 export type OpenApprovalResult =
@@ -106,6 +90,8 @@ export async function openApprovalRequests(
     docs.companyId,
     docs.amount
   );
+  // A failed lookup must not read as "no rule": that would skip the gate.
+  if (rule.error) return { status: "failed" };
   if (!rule.data) return { status: "not-required" };
 
   const pending = await serviceRole
@@ -180,18 +166,8 @@ export async function cancelPendingApprovals(
         docs.userId
       )
     ]);
-    const othersRequests = (pending.data ?? []).some(
-      (r) => r.requestedBy !== docs.userId
-    );
-    if (othersRequests && !canApprove) {
-      return {
-        error: {
-          code: "forbidden",
-          message:
-            "Only the requester or an approver can withdraw a pending approval request"
-        }
-      };
-    }
+    const verdict = withdrawalVerdict(pending, docs.userId, canApprove);
+    if (verdict.error) return verdict;
   }
 
   const cancelled = await serviceRole

@@ -256,10 +256,12 @@ const ChangeNoticeHeader = () => {
             </>
           )}
 
+          {/* With no rule left, no one can decide a pending request; advancing
+              withdraws it. */}
           {nextStatus &&
             nextStatus !== "Done" &&
             !isLocked &&
-            !pendingRequestId && (
+            (!pendingRequestId || !submitsForApproval) && (
               <statusFetcher.Form
                 method="post"
                 action={path.to.changeNoticeStatus(id)}

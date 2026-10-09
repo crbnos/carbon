@@ -21444,6 +21444,10 @@ msgstr "This Fiscal Year"
 msgid "This has no effect until an email domain is verified below."
 msgstr "This has no effect until an email domain is verified below."
 
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "This history is too long to download in full. The file has the {0} most recent entries."
+
 msgid "This information will be used on document headers"
 msgstr "This information will be used on document headers"
 

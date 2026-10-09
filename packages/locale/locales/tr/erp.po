@@ -413,7 +413,7 @@ msgid "{dismissed} dismissed"
 msgstr "{dismissed} reddedildi"
 
 msgid "{documentTypeLabel} approval rule"
-msgstr ""
+msgstr "{documentTypeLabel} onay kuralı"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
@@ -2542,7 +2542,7 @@ msgid "Approval is required at or above this amount, up to the next rule's minim
 msgstr "Onay, bu tutar veya daha yüksek bir tutarda ve sonraki kuralın minimumuna kadar gereklidir"
 
 msgid "Approval Rejected"
-msgstr ""
+msgstr "Onay Reddedildi"
 
 msgid "Approval requirements"
 msgstr "Onay gereklilikleri"
@@ -2561,13 +2561,13 @@ msgstr "Onayla"
 
 #. placeholder {0}: routeData?.supplier?.name ?? ""
 msgid "Approve {0}"
-msgstr ""
+msgstr "Onayla {0}"
 
 msgid "Approve {changeOrderId}"
-msgstr ""
+msgstr "Onayla {changeOrderId}"
 
 msgid "Approve {displayName}"
-msgstr ""
+msgstr "Onayla {displayName}"
 
 msgid "Approved By"
 msgstr "Onaylayan"
@@ -2629,13 +2629,13 @@ msgid "Are you sure you want to activate this gauge?."
 msgstr "Bu ölçüm aletini etkinleştirmek istediğinizden emin misiniz?."
 
 msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
-msgstr ""
+msgstr "Bu değişiklik bildirimini onaylamak istediğinizden emin misiniz? Bu, onu Uygulamaya taşıyacaktır."
 
 msgid "Are you sure you want to approve this quality document? This will make it active."
-msgstr ""
+msgstr "Bu kalite belgesini onaylamak istediğinizden emin misiniz? Bu, onu aktif hale getirecektir."
 
 msgid "Are you sure you want to approve this supplier? This will make it active."
-msgstr ""
+msgstr "Bu tedarikçiyi onaylamak istediğinizden emin misiniz? Bu, onu aktif hale getirecektir."
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3039,16 +3039,16 @@ msgid "Are you sure you want to post this shipment?"
 msgstr "Bu sevkiyatı yayınlamak istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
-msgstr ""
+msgstr "Bu değişiklik bildirimini reddetmek istediğinizden emin misiniz? Mühendislik Tamamlandı durumunda kalır, böylece değiştirilebilir ve tekrar gönderilebilir."
 
 msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
-msgstr ""
+msgstr "Bu kalite belgesini reddetmek istediğinizden emin misiniz? Belge taslak durumda kalacaktır."
 
 msgid "Are you sure you want to reject this quote?"
 msgstr "Bu teklifi reddetmek istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to reject this supplier?"
-msgstr ""
+msgstr "Bu tedarikçiyi reddetmek istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Bu iş emrini serbest bırakmak istediğinizden emin misiniz? Atölyede kullanılabilir hale gelecek ve satın almayı ve üretimi yönlendirecektir."
@@ -6984,7 +6984,7 @@ msgid "Delete Workflow"
 msgstr "İş Akışını Sil"
 
 msgid "Deleted"
-msgstr ""
+msgstr "Silindi"
 
 msgid "Deliver"
 msgstr "Teslim Et"
@@ -8988,7 +8988,7 @@ msgid "Failed to download file for moving"
 msgstr "Taşınacak dosya indirilemedi"
 
 msgid "Failed to download history"
-msgstr ""
+msgstr "Geçmiş indirilemedi"
 
 msgid "Failed to fetch item costs"
 msgstr "Ürün maliyetleri alınamadı"
@@ -13035,7 +13035,7 @@ msgid "New Unit of Measure"
 msgstr "Yeni Bir Ölçü Birimi"
 
 msgid "New Value"
-msgstr ""
+msgstr "Yeni Değer"
 
 msgid "New Version"
 msgstr "Yeni Sürüm"
@@ -13471,7 +13471,7 @@ msgid "No notes"
 msgstr "Notlar yok"
 
 msgid "No notes were given."
-msgstr ""
+msgstr "Hiç not verilmedi."
 
 msgid "No one assigned"
 msgstr "Hiç kimse ekiplendirilmedi"
@@ -13999,7 +13999,7 @@ msgid "OK"
 msgstr "Tamam"
 
 msgid "Old Value"
-msgstr ""
+msgstr "Eski Değer"
 
 msgid "Oldest first"
 msgstr "En eski önce"
@@ -14956,7 +14956,7 @@ msgid "Pending"
 msgstr "Beklemede"
 
 msgid "Pending Approval"
-msgstr ""
+msgstr "Onay Beklemede"
 
 msgid "people"
 msgstr "personel"
@@ -16075,7 +16075,7 @@ msgid "Quality"
 msgstr "Kalite"
 
 msgid "Quality Document"
-msgstr ""
+msgstr "Kalite Belgesi"
 
 msgid "Quality Documents"
 msgstr "Kalite Belgeleri"
@@ -16573,7 +16573,7 @@ msgid "Record Deposit"
 msgstr "Depozitoyu Kaydet"
 
 msgid "Record ID"
-msgstr ""
+msgstr "Kayıt ID"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
@@ -16697,13 +16697,13 @@ msgstr "Reddet"
 
 #. placeholder {0}: routeData?.supplier?.name ?? ""
 msgid "Reject {0}"
-msgstr ""
+msgstr "Reddet {0}"
 
 msgid "Reject {changeOrderId}"
-msgstr ""
+msgstr "Reddet {changeOrderId}"
 
 msgid "Reject {displayName}"
-msgstr ""
+msgstr "Reddet {displayName}"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
@@ -17097,7 +17097,7 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
 msgid "Require approval before change notices move to Implementation"
-msgstr ""
+msgstr "Değişiklik bildirimlerinin Uygulamaya taşınması için onay gerekir"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Tedarikçilerin Aktif olarak ayarlanabilmesi için onay gerektirir"
@@ -17115,7 +17115,7 @@ msgid "Require SAML SSO"
 msgstr "SAML SSO Gerekli"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
-msgstr ""
+msgstr "Satın alma siparişleri, kalite belgeleri, tedarikçiler ve değişiklik bildirimleri üzerinde tutar eşikleri ve onaylayan grupları temel alan katmanlı imza gerekir."
 
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
@@ -19749,7 +19749,7 @@ msgid "Submit for approval"
 msgstr "Onay için gönder"
 
 msgid "Submit for Approval"
-msgstr ""
+msgstr "Onay İçin Gönder"
 
 msgid "Submit Inspection"
 msgstr "Muayeneyi Gönder"
@@ -21409,7 +21409,7 @@ msgid "This change notice is closed, so its changes are read-only."
 msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt okunurdur."
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
-msgstr ""
+msgstr "Bu değişiklik bildirimi onay beklemektedir. Değişiklikleri onaylanana veya reddedilene kadar kilitlidir."
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Bu şirketin verileri bu yedeklemenin içeriği ile değiştirilir. Bugünün verileri önce kaydedilir, bu nedenle geri alabilirsiniz."
@@ -21443,6 +21443,10 @@ msgstr "Bu Mali Yıl"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "Bu, aşağıda bir e-posta etki alanı doğrulanana kadar hiçbir etkisi yoktur."
+
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "Bu geçmiş tam olarak indirilmek için çok uzundur. Dosya en son {0} girişi içerir."
 
 msgid "This information will be used on document headers"
 msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
