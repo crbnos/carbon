@@ -12029,17 +12029,11 @@ msgstr "欠席をマーク"
 msgid "Mark all as configured"
 msgstr "すべてを設定済みとしてマーク"
 
-msgid "Mark as Paid"
-msgstr "支払い済みとしてマーク"
-
 msgid "Mark as Planned"
 msgstr "計画済みとしてマーク"
 
 msgid "Mark as read"
 msgstr "読み取り済みにマーク"
-
-msgid "Mark as Unpaid"
-msgstr "未払いとしてマーク"
 
 msgid "Mark checkpoint passed"
 msgstr "チェックポイント合格をマークする"

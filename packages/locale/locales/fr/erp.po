@@ -12029,17 +12029,11 @@ msgstr "Marquer comme absent"
 msgid "Mark all as configured"
 msgstr "Marquer tout comme configuré"
 
-msgid "Mark as Paid"
-msgstr "Marquer comme payé"
-
 msgid "Mark as Planned"
 msgstr "Marquer comme planifié"
 
 msgid "Mark as read"
 msgstr "Marquer comme lu"
-
-msgid "Mark as Unpaid"
-msgstr "Marquer comme non payé"
 
 msgid "Mark checkpoint passed"
 msgstr "Marquer le point de contrôle comme réussi"

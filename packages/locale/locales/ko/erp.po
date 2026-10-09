@@ -12029,17 +12029,11 @@ msgstr "부재 표시"
 msgid "Mark all as configured"
 msgstr "모두 설정됨으로 표시"
 
-msgid "Mark as Paid"
-msgstr "결제 완료로 표시"
-
 msgid "Mark as Planned"
 msgstr "계획됨으로 표시"
 
 msgid "Mark as read"
 msgstr "읽음으로 표시"
-
-msgid "Mark as Unpaid"
-msgstr "미결제로 표시"
 
 msgid "Mark checkpoint passed"
 msgstr "체크포인트 통과로 표시"

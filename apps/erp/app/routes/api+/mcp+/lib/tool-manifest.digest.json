@@ -1,5 +1,5 @@
 {
-  "totalTools": 1545,
+  "totalTools": 1543,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -354,12 +354,10 @@
     {"name":"invoicing_updatePurchaseInvoice","classification":"WRITE","paramCount":15,"schema":"304bf354aa67","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updatePurchaseInvoiceExchangeRate","classification":"WRITE","paramCount":2,"schema":"bca4d06461aa","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updatePurchaseInvoiceLineOrder","classification":"WRITE","paramCount":2,"schema":"a1679a3eb9b5","response":"none","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
-    {"name":"invoicing_updatePurchaseInvoiceStatus","classification":"WRITE","paramCount":4,"schema":"8d7fbe05b680","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updateReimbursement","classification":"WRITE","paramCount":8,"schema":"ff96110da3d7","response":"def495be96e6","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updateSalesInvoice","classification":"WRITE","paramCount":15,"schema":"71a9939b9245","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updateSalesInvoiceExchangeRate","classification":"WRITE","paramCount":2,"schema":"bca4d06461aa","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updateSalesInvoiceLineOrder","classification":"WRITE","paramCount":2,"schema":"a1679a3eb9b5","response":"none","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
-    {"name":"invoicing_updateSalesInvoiceStatus","classification":"WRITE","paramCount":4,"schema":"ff25b3acf517","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_upsertMemo","classification":"WRITE","paramCount":12,"schema":"0369e0154c99","response":"1e0d0fa1a854","injectAuth":"companyId+createdBy+updatedBy","permission":"invoicing:create+update","paginates":false,"upsert":"id","defaults":"create"},
     {"name":"invoicing_upsertPayment","classification":"WRITE","paramCount":16,"schema":"f8f2180d8a3b","response":"1a922c685a61","injectAuth":"companyId+createdBy+updatedBy","permission":"invoicing:create+update","paginates":false,"upsert":"id","defaults":"create"},
     {"name":"invoicing_upsertPurchaseInvoiceDelivery","classification":"WRITE","paramCount":8,"schema":"02d98a1b8952","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"invoicing:update","paginates":false},

@@ -12029,17 +12029,11 @@ msgstr "Oznacz jako nieobecny"
 msgid "Mark all as configured"
 msgstr "Oznacz wszystko jako skonfigurowane"
 
-msgid "Mark as Paid"
-msgstr "Oznacz jako opłacone"
-
 msgid "Mark as Planned"
 msgstr "Oznacz jako zaplanowane"
 
 msgid "Mark as read"
 msgstr "Oznacz jako przeczytane"
-
-msgid "Mark as Unpaid"
-msgstr "Oznacz jako nieopłacone"
 
 msgid "Mark checkpoint passed"
 msgstr "Oznacz punkt kontrolny jako zaliczony"

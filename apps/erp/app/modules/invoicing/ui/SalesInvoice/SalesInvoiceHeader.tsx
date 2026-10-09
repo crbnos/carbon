@@ -27,8 +27,6 @@ import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
   LuChevronDown,
-  LuCircleCheck,
-  LuCircleX,
   LuDollarSign,
   LuEllipsisVertical,
   LuEye,
@@ -47,7 +45,7 @@ import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData, useSettings, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
 import { isInvoicePayable } from "~/modules/invoicing";
@@ -112,21 +110,6 @@ const SalesInvoiceHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
   const isPosted = salesInvoice.postingDate !== null;
   const isVoided = salesInvoice.status === "Voided";
-
-  // Manual Mark as Paid is the settled signal for companies without
-  // accounting; with accounting enabled invoices settle only via payments.
-  // baseStatus is the stored salesInvoice.status (the view's status column is
-  // derived from settlements, so a settlement-paid invoice stays untouched).
-  const settings = useSettings();
-  const accountingEnabled =
-    (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
-  const baseStatus = (salesInvoice as { baseStatus?: string | null })
-    .baseStatus;
-  const statusFetcher = useFetcher<{}>();
-  const canToggleManualPaid =
-    !accountingEnabled && isPosted && permissions.can("update", "invoicing");
-  const canMarkPaid = canToggleManualPaid && baseStatus === "Submitted";
-  const canMarkUnpaid = canToggleManualPaid && baseStatus === "Paid";
 
   // Invoice automation outcome: a held draft waits for review; a posted
   // invoice was either sent (emailed or via Stripe) or failed to send (and
@@ -256,9 +239,8 @@ const SalesInvoiceHeader = () => {
   };
 
   // Status is derived from invoiceSettlement rows, except base-status 'Paid',
-  // which is the manual/legacy/Xero "settled" signal. Companies without
-  // accounting can toggle it via Mark as Paid / Mark as Unpaid below; the
-  // status route rejects manual 'Paid' when accounting is enabled.
+  // which is the legacy/Xero "settled" signal. Payments settle an invoice;
+  // there is no manual Mark as Paid.
   // "Receive Payment" launches the payment form pre-filled for this
   // invoice — NetSuite's Accept Payment pattern. Hidden once the
   // invoice is fully settled, voided, or pre-posting.
@@ -299,46 +281,6 @@ const SalesInvoiceHeader = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {auditLogTrigger}
-                {canMarkPaid && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={statusFetcher.state !== "idle"}
-                      onClick={() =>
-                        statusFetcher.submit(
-                          { status: "Paid" },
-                          {
-                            method: "post",
-                            action: path.to.salesInvoiceStatus(invoiceId)
-                          }
-                        )
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCircleCheck />} />
-                      <Trans>Mark as Paid</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {canMarkUnpaid && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={statusFetcher.state !== "idle"}
-                      onClick={() =>
-                        statusFetcher.submit(
-                          { status: "Submitted" },
-                          {
-                            method: "post",
-                            action: path.to.salesInvoiceStatus(invoiceId)
-                          }
-                        )
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCircleX />} />
-                      <Trans>Mark as Unpaid</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
                 {isPosted && (
                   <>
                     <DropdownMenuSeparator />

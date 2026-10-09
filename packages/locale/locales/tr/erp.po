@@ -12029,17 +12029,11 @@ msgstr "Devamsız olarak işaretле"
 msgid "Mark all as configured"
 msgstr "Tümünü yapılandırılmış olarak işaretle"
 
-msgid "Mark as Paid"
-msgstr "Ödendi Olarak İşaretle"
-
 msgid "Mark as Planned"
 msgstr "Planlanmış olarak işaretle"
 
 msgid "Mark as read"
 msgstr "Okundu olarak işaretle"
-
-msgid "Mark as Unpaid"
-msgstr "Ödenmemiş Olarak İşaretle"
 
 msgid "Mark checkpoint passed"
 msgstr "Kontrol noktasını geçti olarak işaretle"

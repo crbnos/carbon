@@ -12029,17 +12029,11 @@ msgstr "标记缺席"
 msgid "Mark all as configured"
 msgstr "全部标记为已配置"
 
-msgid "Mark as Paid"
-msgstr "标记为已支付"
-
 msgid "Mark as Planned"
 msgstr "标记为已计划"
 
 msgid "Mark as read"
 msgstr "标记为已读"
-
-msgid "Mark as Unpaid"
-msgstr "标记为未支付"
 
 msgid "Mark checkpoint passed"
 msgstr "标记检查点已通过"

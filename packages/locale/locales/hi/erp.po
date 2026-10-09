@@ -12029,17 +12029,11 @@ msgstr "अनुपस्थित चिह्नित करें"
 msgid "Mark all as configured"
 msgstr "सभी को कॉन्फ़िगर किए गए के रूप में चिह्नित करें"
 
-msgid "Mark as Paid"
-msgstr "भुगतान के रूप में चिह्नित करें"
-
 msgid "Mark as Planned"
 msgstr "योजना के रूप में चिह्नित करें"
 
 msgid "Mark as read"
 msgstr "पढ़ा हुआ चिह्नित करें"
-
-msgid "Mark as Unpaid"
-msgstr "अदा न किए गए के रूप में चिह्नित करें"
 
 msgid "Mark checkpoint passed"
 msgstr "चेकपॉइंट को उत्तीर्ण चिह्नित करें"
