@@ -96,7 +96,10 @@ export async function projectPostingFixture(
     ["wip", "Work in progress", "Asset"],
     ["inventory", "Inventory", "Asset"],
     ["indirect", "Indirect cost", "Expense"],
-    ["adjustment-variance", "Inventory adjustment variance", "Expense"]
+    ["adjustment-variance", "Inventory adjustment variance", "Expense"],
+    ["grni", "Goods received not invoiced", "Liability"],
+    ["payables", "Accounts payable", "Liability"],
+    ["ppv", "Purchase price variance", "Expense"]
   ];
 
   await db.transaction().execute(async (trx) => {
@@ -156,6 +159,9 @@ export async function projectPostingFixture(
         inventoryAdjustmentVarianceAccount: account("adjustment-variance"),
         laborAbsorptionAccount: account("labor-absorption"),
         overheadAbsorptionAccount: account("overhead-absorption"),
+        goodsReceivedNotInvoicedAccount: account("grni"),
+        payablesAccount: account("payables"),
+        purchaseVarianceAccount: account("ppv"),
         projectExpenseAccount: account("project-expense"),
         projectWorkInProgressAccount: account("project-wip")
       } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
@@ -499,6 +505,170 @@ export async function projectPostingFixture(
         workCenterId,
         finishedItemId
       };
+    },
+    /** An item with no stock (`Non-Inventory` for a purchased service). */
+    async addItem(
+      key: string,
+      {
+        itemTrackingType
+      }: {
+        itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+      }
+    ) {
+      const itemId = `${prefix}-item-${key}`;
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("item")
+          .values({
+            id: itemId,
+            readableId: `${prefix}-${key}`,
+            name: `Item ${key}`,
+            type: "Part",
+            itemTrackingType,
+            replenishmentSystem: "Buy",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx.deleteFrom("itemCost").where("itemId", "=", itemId).execute();
+        await trx
+          .insertInto("itemCost")
+          .values({
+            itemId,
+            costingMethod: "FIFO",
+            unitCost: 0,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      return { itemId };
+    },
+    /** A supplier and a To Receive purchase order with one line per entry.
+     *  `charged` lines carry the fixture's project and element. */
+    async addPurchaseOrder(
+      key: string,
+      args: {
+        locationId: string;
+        lines: {
+          itemId: string;
+          quantity: number;
+          unitPrice: number;
+          charged?: boolean;
+        }[];
+      }
+    ) {
+      const supplierId = `${prefix}-supplier-${key}`;
+      const purchaseOrderId = `${prefix}-po-${key}`;
+      const lineIds = args.lines.map(
+        (_, index) => `${prefix}-pol-${key}-${index}`
+      );
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("supplier")
+          .values({ id: supplierId, name: `Supplier ${key}`, companyId })
+          .execute();
+        const interaction = await trx
+          .insertInto("supplierInteraction")
+          .values({ supplierId, companyId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("purchaseOrder")
+          .values({
+            id: purchaseOrderId,
+            purchaseOrderId: `${prefix}-PO-${key}`,
+            status: "To Receive",
+            supplierId,
+            supplierInteractionId: interaction.id,
+            currencyCode: "USD",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("purchaseOrderDelivery")
+          .values({ id: purchaseOrderId, companyId })
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .insertInto("purchaseOrderLine")
+          .values(
+            args.lines.map((line, index) => ({
+              id: lineIds[index]!,
+              purchaseOrderId,
+              purchaseOrderLineType: "Part" as const,
+              itemId: line.itemId,
+              purchaseQuantity: line.quantity,
+              supplierUnitPrice: line.unitPrice,
+              locationId: args.locationId,
+              projectId: line.charged ? projectId : null,
+              projectElementId: line.charged ? elementId : null,
+              companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      return { supplierId, purchaseOrderId, lineIds };
+    },
+    /** A Draft receipt of `quantities[i]` units of each line of `po`. */
+    async addReceipt(
+      key: string,
+      args: {
+        locationId: string;
+        purchaseOrderId: string;
+        supplierId: string;
+        lines: {
+          lineId: string;
+          itemId: string;
+          quantity: number;
+          unitPrice: number;
+        }[];
+      }
+    ) {
+      const receiptId = `${prefix}-receipt-${key}`;
+      const receiptLineIds = args.lines.map(
+        (_, index) => `${prefix}-rl-${key}-${index}`
+      );
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("receipt")
+          .values({
+            id: receiptId,
+            receiptId: `${prefix}-R-${key}`,
+            sourceDocument: "Purchase Order",
+            sourceDocumentId: args.purchaseOrderId,
+            supplierId: args.supplierId,
+            locationId: args.locationId,
+            status: "Draft",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("receiptLine")
+          .values(
+            args.lines.map((line, index) => ({
+              id: receiptLineIds[index]!,
+              receiptId,
+              lineId: line.lineId,
+              itemId: line.itemId,
+              orderQuantity: line.quantity,
+              receivedQuantity: line.quantity,
+              unitOfMeasure: "EA",
+              unitPrice: line.unitPrice,
+              locationId: args.locationId,
+              companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      return { receiptId, receiptLineIds };
     },
     async cleanup() {
       await db.transaction().execute(async (trx) => {

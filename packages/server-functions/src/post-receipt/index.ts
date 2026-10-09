@@ -50,6 +50,8 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { buildProjectLedgerRow } from "../lib/project-posting";
+import { loadReceiptProjectRoutes } from "./project-routes";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -123,7 +125,9 @@ const postReceipt = defineServerFn({
                   "Item",
                   "Location",
                   "Process",
-                  "FixedAssetClass"
+                  "FixedAssetClass",
+                  "Project",
+                  "ProjectElement"
                 ]
               },
               { columns: ["id", "entityType"] }
@@ -572,9 +576,11 @@ const postReceipt = defineServerFn({
           purchaseOrderLinesVoid
         ] = await inOrder([
           () =>
+            // A line consumed by its project at receipt also wrote a
+            // Project Issue row against the receipt.
             many(db, "itemLedger", {
               documentId: receiptId,
-              documentType: "Purchase Receipt",
+              documentType: ["Purchase Receipt", "Project Issue"],
               companyId
             }),
           () =>
@@ -981,6 +987,49 @@ const postReceipt = defineServerFn({
               .execute();
           }
 
+          // Reverse the project charges of this receipt.
+          const receiptProjectRows = await trx
+            .selectFrom("projectLedger")
+            .selectAll()
+            .where("documentType", "=", "Purchase Receipt")
+            .where("documentId", "=", receiptId)
+            .where("companyId", "=", companyId)
+            .execute();
+          const reversedProjectRowIds = new Set(
+            receiptProjectRows
+              .map((row) => row.reversalOfId)
+              .filter((id): id is string => Boolean(id))
+          );
+          const projectRowReversals = receiptProjectRows
+            .filter(
+              (row) => !row.reversalOfId && !reversedProjectRowIds.has(row.id)
+            )
+            .map((row) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: row.projectId,
+                projectElementId: row.projectElementId,
+                postingDate: today,
+                costType: row.costType,
+                documentType: "Purchase Receipt",
+                documentId: receiptId,
+                documentLineId: row.documentLineId,
+                jobId: row.jobId,
+                itemId: row.itemId,
+                supplierId: row.supplierId,
+                quantity: row.quantity === null ? null : -Number(row.quantity),
+                amount: -Number(row.amount),
+                reversalOfId: row.id,
+                createdBy: userId
+              })
+            );
+          if (projectRowReversals.length > 0) {
+            await trx
+              .insertInto("projectLedger")
+              .values(projectRowReversals)
+              .execute();
+          }
+
           if (Object.keys(trackedEntityUpdatesVoid).length > 0) {
             const voidActivity = await trx
               .insertInto("trackedActivity")
@@ -1142,10 +1191,39 @@ const postReceipt = defineServerFn({
             locationId: string | null;
             processId: string | null;
             fixedAssetClassId: string | null;
+            projectId?: string | null;
+            projectElementId?: string | null;
           }[] = [];
 
           const isOutsideProcessing =
             purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+          // Lines that charge a project debit its account. A Statistical
+          // project keeps today's posting.
+          const projectRouteByPoLineId = await loadReceiptProjectRoutes(
+            db,
+            companyId,
+            {
+              purchaseOrderLines: purchaseOrderLines.data,
+              isOutsideProcessing,
+              postingDate: today
+            }
+          );
+          // One projectLedger row per routed receipt line, written in the
+          // transaction once the journal line ids exist.
+          const projectLedgerDrafts: {
+            receiptLineId: string;
+            projectId: string;
+            projectElementId: string | null;
+            jobId: string | null;
+            costType: "Outside Processing" | "Purchased Service" | "Material";
+            itemId: string | null;
+            quantity: number;
+            amount: number;
+            journalLineIndex: number | null;
+          }[] = [];
+          // Tracked units consumed by their project at receipt.
+          const projectConsumedEntityIds: string[] = [];
 
           const processIdByJobOperationId = new Map<string, string>();
           if (isOutsideProcessing) {
@@ -1557,9 +1635,22 @@ const postReceipt = defineServerFn({
             const poUnitCost =
               absReceivedQuantity > 0 ? cost / absReceivedQuantity : 0;
 
+            const projectRoute = receiptLine.lineId
+              ? projectRouteByPoLineId.get(receiptLine.lineId)
+              : undefined;
+            // An inventory item charged to a project is consumed by the
+            // project at receipt: it is received and issued at once, so
+            // on-hand does not change and no cost layer stays in stock.
+            const consumedByProject =
+              !!projectRoute &&
+              !isOutsideProcessing &&
+              itemTrackingType !== "Non-Inventory";
+            let projectDebitLineIndex: number | null = null;
+
             const createsLayers =
               itemTrackingType !== "Non-Inventory" &&
               !isOutsideProcessing &&
+              !consumedByProject &&
               !!receiptLine.itemId &&
               absReceivedQuantity > 0;
 
@@ -1610,7 +1701,10 @@ const postReceipt = defineServerFn({
               let debitAccount: string;
               let debitDescription: string;
 
-              if (
+              if (projectRoute) {
+                debitAccount = projectRoute.accountId;
+                debitDescription = "Project Account";
+              } else if (
                 itemTrackingType !== "Non-Inventory" &&
                 !isOutsideProcessing
               ) {
@@ -1651,6 +1745,7 @@ const postReceipt = defineServerFn({
                 });
 
                 const inventoryLineIndex = journalLineInserts.length;
+                projectDebitLineIndex = inventoryLineIndex;
                 journalLineInserts.push({
                   accountId: debitAccount,
                   description: debitDescription,
@@ -1679,6 +1774,7 @@ const postReceipt = defineServerFn({
               } else {
                 // The invoice-first portion posts at accrual (invoice) cost so
                 // the invoice's GR/IR debit accrual clears exactly — no PPV.
+                projectDebitLineIndex = journalLineInserts.length;
                 journalLineInserts.push({
                   accountId: debitAccount,
                   description: debitDescription,
@@ -1769,6 +1865,8 @@ const postReceipt = defineServerFn({
                 });
               }
             }
+
+            const itemLedgerStartIdx = itemLedgerInserts.length;
 
             if (itemTrackingType === "Inventory" && !isOutsideProcessing) {
               // For inventory entries, use the appropriate entry type based on quantity sign
@@ -1861,6 +1959,50 @@ const postReceipt = defineServerFn({
               }
             }
 
+            if (consumedByProject) {
+              // Issue what was received to the project: one Project Issue row
+              // per receipt row, same quantity, opposite sign. A negative
+              // receipt returns the units from the project first.
+              const receiptRows = itemLedgerInserts.slice(itemLedgerStartIdx);
+              const issueRows = receiptRows.map((row) => ({
+                ...row,
+                quantity: round(-Number(row.quantity)),
+                entryType:
+                  Number(row.quantity) < 0
+                    ? ("Positive Adjmt." as const)
+                    : ("Negative Adjmt." as const),
+                documentType: "Project Issue" as const
+              }));
+              if (isNegativeReceipt) {
+                itemLedgerInserts.splice(itemLedgerStartIdx, 0, ...issueRows);
+              } else {
+                itemLedgerInserts.push(...issueRows);
+                for (const row of receiptRows) {
+                  if (row.trackedEntityId) {
+                    projectConsumedEntityIds.push(row.trackedEntityId);
+                  }
+                }
+              }
+            }
+
+            if (projectRoute && absReceivedQuantity > 0) {
+              projectLedgerDrafts.push({
+                receiptLineId: receiptLine.id,
+                projectId: projectRoute.projectId,
+                projectElementId: projectRoute.projectElementId,
+                jobId: projectRoute.jobId,
+                costType: isOutsideProcessing
+                  ? "Outside Processing"
+                  : itemTrackingType === "Non-Inventory"
+                    ? "Purchased Service"
+                    : "Material",
+                itemId: receiptLine.itemId ?? null,
+                quantity: receivedQuantity,
+                amount: isNegativeReceipt ? -cost : glCost,
+                journalLineIndex: projectDebitLineIndex
+              });
+            }
+
             // Track dimensions for this receipt line's journal lines
             if (accountingEnabled) {
               const jlCount = journalLineInserts.length - jlStartIdx;
@@ -1875,13 +2017,20 @@ const postReceipt = defineServerFn({
                 ? (processIdByJobOperationId.get(poLine.jobOperationId) ?? null)
                 : null;
               for (let i = 0; i < jlCount; i++) {
+                // The project tags go on the project debit only.
+                const isProjectDebit =
+                  !!projectRoute && projectDebitLineIndex === jlStartIdx + i;
                 journalLineDimensionsMeta.push({
                   supplierTypeId: supplier.data.supplierTypeId ?? null,
                   itemPostingGroupId: lineItemPostingGroupId,
                   itemId: receiptLine.itemId ?? null,
                   locationId: receiptLine.locationId ?? null,
                   processId: lineProcessId,
-                  fixedAssetClassId: null
+                  fixedAssetClassId: null,
+                  projectId: isProjectDebit ? projectRoute.projectId : null,
+                  projectElementId: isProjectDebit
+                    ? projectRoute.projectElementId
+                    : null
                 });
               }
             }
@@ -2336,6 +2485,7 @@ const postReceipt = defineServerFn({
               .execute();
 
             let receiptJournalId: string | null = null;
+            let receiptJournalLineIds: string[] = [];
             if (accountingEnabled && journalLineInserts.length > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
@@ -2371,6 +2521,7 @@ const postReceipt = defineServerFn({
                 )
                 .returning(["id"])
                 .execute();
+              receiptJournalLineIds = journalLineResults.map((jl) => jl.id);
 
               // Insert automatic dimensions for journal lines
               if (dimensionMap.size > 0) {
@@ -2450,6 +2601,25 @@ const postReceipt = defineServerFn({
                       companyId
                     });
                   }
+                  if (meta.projectId && dimensionMap.has("Project")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Project")!,
+                      valueId: meta.projectId,
+                      companyId
+                    });
+                  }
+                  if (
+                    meta.projectElementId &&
+                    dimensionMap.has("ProjectElement")
+                  ) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("ProjectElement")!,
+                      valueId: meta.projectElementId,
+                      companyId
+                    });
+                  }
                 });
 
                 if (journalLineDimensionInserts.length > 0) {
@@ -2459,6 +2629,37 @@ const postReceipt = defineServerFn({
                     .execute();
                 }
               }
+            }
+
+            if (projectLedgerDrafts.length > 0) {
+              await trx
+                .insertInto("projectLedger")
+                .values(
+                  projectLedgerDrafts.map((draft) =>
+                    buildProjectLedgerRow({
+                      companyId,
+                      projectId: draft.projectId,
+                      projectElementId: draft.projectElementId,
+                      postingDate: today,
+                      costType: draft.costType,
+                      documentType: "Purchase Receipt",
+                      documentId: receiptId,
+                      documentLineId: draft.receiptLineId,
+                      jobId: draft.jobId,
+                      itemId: draft.itemId,
+                      supplierId: purchaseOrder.data.supplierId ?? null,
+                      quantity: draft.quantity,
+                      amount: draft.amount,
+                      journalLineId:
+                        draft.journalLineIndex === null
+                          ? null
+                          : (receiptJournalLineIds[draft.journalLineIndex] ??
+                            null),
+                      createdBy: userId
+                    })
+                  )
+                )
+                .execute();
             }
 
             if (cipCostInserts.length > 0) {
@@ -2538,6 +2739,16 @@ const postReceipt = defineServerFn({
                     .execute();
                 }
               }
+            }
+
+            // Units consumed by their project at receipt hold nothing.
+            if (projectConsumedEntityIds.length > 0) {
+              await trx
+                .updateTable("trackedEntity")
+                .set({ quantity: 0, status: "Consumed" })
+                .where("id", "in", projectConsumedEntityIds)
+                .where("companyId", "=", companyId)
+                .execute();
             }
 
             if (inspectionInserts.length > 0) {
