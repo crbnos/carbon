@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import type { getProjects } from "../projects/projects.service";
 import type { periodCloseStatuses } from "./accounting.models";
 import type {
   getAccount,
@@ -19,7 +20,6 @@ import type {
   getJournalEntry,
   getPaymentTerms,
   getPeriodCloseReadiness,
-  getProjects,
   getPurchaseLinePivotLines,
   getReportViews
 } from "./accounting.service";

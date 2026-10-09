@@ -48,7 +48,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 9: Register backup id references and audit config
 - [x] Task 10: Update seed data for new companies
 - [x] Task 11: Add the projects module models
-- [ ] Task 12: Add the project and workspace service functions
+- [x] Task 12: Add the project and workspace service functions
 - [ ] Task 13: Add the element service functions
 - [ ] Task 14: Add the time, labor category and ledger service functions
 - [ ] Task 15: Add the pure project posting helpers and tests
@@ -2411,3 +2411,10 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 25: `pnpm exec turbo run typecheck --filter=@carbon/ee --filter=erp` is green (3/3). `@carbon/ee` tests pass (1928).
 - Task 25 onwards: the overnight brief names Biome and the scoped typecheck as the gates. The `/translate` fill for new UI strings (`Project`, `Project Time`) is left for one pass at the end of the plan.
 - Task 11: `projectCostTreatments` holds the three treatments the UI offers (Statistical, Expense, Contract), so `projectValidator` refuses Capitalize. `projectElementValidator.isChargeable` reads an absent value as `undefined`, not `false`, so `insertProjectElement` can apply `chargeableByDefault`. The editable field names are exported as `projectElementEditableFields`.
+- Task 12: to keep `erp` green between Task 12 and Task 26, the 4 accounting project routes and `accounting/types.ts` now import the moved functions from `~/modules/projects`. They still use the accounting `projectValidator`. Task 26 deletes or moves them as planned. `upsertProject` takes every field except `name` as optional, so the old accounting form still type-checks.
+- Task 12: `createProject` starts a new project in `Draft` (the spec's lifecycle starts there). The column default `Released` still applies to existing rows and to `upsertProject`.
+- Task 12: "open" for the Close check means a purchase order not in Completed, Closed or Rejected, and a job not in Completed, Cancelled or Closed. Both checks use `count: "exact", head: true`.
+- Task 12: `deleteProjectState` takes `db` (Kysely), not `client`. When the deleted state is its group's default, the next state of the group becomes the default in the same transaction. Without this, the group has no default and `insertProjectElement` cannot pick one.
+- Task 12: the generated `tool-manifest.digest.json` drops the 4 `accounting_*Project*` tools. They return as `projects_*` tools in Task 44, which adds the module to `MODULE_LIST`.
+- Task 12: the new module file shifted type-check order, and `x+/sales-order+/$orderId.cancel-preview.tsx` hit TS2589 on a bare `item(...)` embed from `job`. It now names the FK (`item!job_itemId_fkey`), per the lesson "A new FK on a busy table breaks bare PostgREST embeds of it".
+- Task 12: `projects.models.ts` imports `methodType` from `../shared/shared.models`, not the `../shared` barrel. The barrel pulls in the glossary's Lingui `msg` macros, and a plain vitest run fails on them.

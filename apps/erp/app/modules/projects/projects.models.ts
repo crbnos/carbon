@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { methodType } from "../shared";
+import { methodType } from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
 
@@ -150,6 +150,25 @@ export const defaultProjectStates: {
 
 /** The pattern the `project_identifier_check` constraint enforces. */
 export const PROJECT_IDENTIFIER_PATTERN = /^[A-Z][A-Z0-9]{1,5}$/;
+
+/**
+ * Suggests a project identifier from its name: the first character of each
+ * word, capitals, 2 to 4 characters. This mirrors the SQL function
+ * `derive_project_identifier` without its uniqueness loop, so both give the
+ * same base for the same name. Words split on whitespace only.
+ */
+export function suggestProjectIdentifier(name: string): string {
+  let base = name
+    .split(/\s+/)
+    .filter((word) => word !== "")
+    .map((word) => word.charAt(0))
+    .join("")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
+  if (!/^[A-Z]/.test(base)) base = `P${base}`;
+  if (base.length < 2) base = base.padEnd(2, "X");
+  return base.slice(0, 4);
+}
 
 export const projectValidator = z.object({
   id: zfd.text(z.string().optional()),

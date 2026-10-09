@@ -59,7 +59,6 @@ import type {
   periodCloseTaskSeverities,
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
-  projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
 import {
@@ -4535,97 +4534,6 @@ export async function upsertCostCenter(
     .from("costCenter")
     .update(sanitize(costCenter))
     .eq("id", costCenter.id)
-    .select("id")
-    .single();
-}
-
-/** @mcp delete */
-export async function deleteProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string,
-  updatedBy: string
-) {
-  return client
-    .from("project")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
-/** @mcp read */
-export async function getProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string
-) {
-  return client
-    .from("project")
-    .select("*")
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-/** @mcp read */
-export async function getProjects(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("project")
-    .select("*", { count: LIST_COUNT })
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-
-  return query;
-}
-
-/** @mcp upsert */
-export async function upsertProject(
-  client: SupabaseClient<Database>,
-  project:
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in project) {
-    return client
-      .from("project")
-      .insert([{ ...project, active: true }])
-      .select("id")
-      .single();
-  }
-
-  const { companyId, id, ...update } = project;
-  return client
-    .from("project")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .eq("companyId", companyId)
     .select("id")
     .single();
 }

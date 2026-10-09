@@ -10,12 +10,9 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import {
-  getProject,
-  projectValidator,
-  upsertProject
-} from "~/modules/accounting";
+import { projectValidator } from "~/modules/accounting";
 import { ProjectForm } from "~/modules/accounting/ui/Projects";
+import { getProject, upsertProject } from "~/modules/projects";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

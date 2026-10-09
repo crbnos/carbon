@@ -30,7 +30,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // the same job row), so no recursion is needed.
   const jobsResult = await client
     .from("job")
-    .select("id, jobId, status, dueDate, itemId, item(readableId)")
+    .select(
+      "id, jobId, status, dueDate, itemId, item!job_itemId_fkey(readableId)"
+    )
     .eq("salesOrderId", orderId)
     .in("status", LIVE_JOB_STATUSES);
 
