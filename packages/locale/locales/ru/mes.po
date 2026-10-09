@@ -804,14 +804,14 @@ msgstr "Продолжить отбор"
 msgid "Keyboard shortcuts"
 msgstr "Клавиатурные сокращения"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "Комплект"
 
 msgid "Labor"
 msgstr "Трудозатраты"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Последнее завершено"
@@ -1259,7 +1259,7 @@ msgstr "Отобрать {0}"
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

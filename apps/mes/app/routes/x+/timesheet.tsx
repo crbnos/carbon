@@ -565,12 +565,15 @@ function AddRowSheet({
   const { t } = useLingui();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ChargeNumber | null>(null);
-  const [laborCategoryId, setLaborCategoryId] = useState<string | null>(
-    defaultLaborCategoryId &&
-      laborCategories.some((c) => c.id === defaultLaborCategoryId)
+  // Only the user's pick is state; the fallback follows the current categories.
+  const [pickedCategoryId, setLaborCategoryId] = useState<string | null>(null);
+  const isCategory = (id: string | null) =>
+    !!id && laborCategories.some((c) => c.id === id);
+  const laborCategoryId = isCategory(pickedCategoryId)
+    ? pickedCategoryId
+    : isCategory(defaultLaborCategoryId)
       ? defaultLaborCategoryId
-      : (laborCategories[0]?.id ?? null)
-  );
+      : (laborCategories[0]?.id ?? null);
 
   const term = search.trim().toLowerCase();
   const matches = term
@@ -590,7 +593,7 @@ function AddRowSheet({
             <Trans>Add row</Trans>
           </BottomSheetTitle>
           <BottomSheetDescription>
-            <Trans>Pick what you worked on, then the kind of work.</Trans>
+            <Trans>Pick what you worked on, then the labor category.</Trans>
           </BottomSheetDescription>
         </BottomSheetHeader>
         <BottomSheetBody>
@@ -641,7 +644,7 @@ function AddRowSheet({
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">
-                <Trans>Kind of work</Trans>
+                <Trans>Labor category</Trans>
               </span>
               <div className="flex flex-wrap gap-2">
                 {laborCategories.map((category) => (

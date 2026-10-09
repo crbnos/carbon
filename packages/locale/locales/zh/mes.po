@@ -804,14 +804,14 @@ msgstr "继续拣货"
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "套件"
 
 msgid "Labor"
 msgstr "人工"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "最后完成"
@@ -1259,7 +1259,7 @@ msgstr "拣货 {0}"
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

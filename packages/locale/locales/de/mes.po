@@ -804,14 +804,14 @@ msgstr "Kommissionierung fortsetzen"
 msgid "Keyboard shortcuts"
 msgstr "Tastaturkürzel"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "Set"
 
 msgid "Labor"
 msgstr "Personal"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Zuletzt abgeschlossen"
@@ -1259,7 +1259,7 @@ msgstr "Kommissionieren {0}"
 msgid "Pick tracked item"
 msgstr "Verfolgtes Element auswählen"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

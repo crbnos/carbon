@@ -804,14 +804,14 @@ msgstr "पिकिंग जारी रखें"
 msgid "Keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "किट"
 
 msgid "Labor"
 msgstr "श्रम"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
@@ -1259,7 +1259,7 @@ msgstr "पिकिंग {0}"
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

@@ -804,14 +804,14 @@ msgstr "Kontynuuj kompletację"
 msgid "Keyboard shortcuts"
 msgstr "Skróty klawiaturowe"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "Zestaw"
 
 msgid "Labor"
 msgstr "Robocizna"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Ostatnio ukończono"
@@ -1259,7 +1259,7 @@ msgstr "Pobierz {0}"
 msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

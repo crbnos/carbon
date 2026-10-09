@@ -804,14 +804,14 @@ msgstr "Keep picking"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-msgid "Kind of work"
-msgstr "Kind of work"
-
 msgid "Kit"
 msgstr "Kit"
 
 msgid "Labor"
 msgstr "Labor"
+
+msgid "Labor category"
+msgstr "Labor category"
 
 msgid "Last completed"
 msgstr "Last completed"
@@ -1259,8 +1259,8 @@ msgstr "Pick {0}"
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
 
-msgid "Pick what you worked on, then the kind of work."
-msgstr "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
+msgstr "Pick what you worked on, then the labor category."
 
 msgid "Picked"
 msgstr "Picked"

@@ -804,14 +804,14 @@ msgstr "ピッキングを続ける"
 msgid "Keyboard shortcuts"
 msgstr "キーボード ショートカット"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "キット"
 
 msgid "Labor"
 msgstr "労務"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "最後に完了"
@@ -1259,7 +1259,7 @@ msgstr "ピッキング {0}"
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

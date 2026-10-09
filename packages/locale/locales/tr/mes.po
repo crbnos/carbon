@@ -804,14 +804,14 @@ msgstr "Toplamaya devam et"
 msgid "Keyboard shortcuts"
 msgstr "Klavye kısayolları"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "Set"
 
 msgid "Labor"
 msgstr "İşçilik"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
@@ -1259,7 +1259,7 @@ msgstr "Toplama {0}"
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"

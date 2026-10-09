@@ -804,14 +804,14 @@ msgstr "Continua il prelievo"
 msgid "Keyboard shortcuts"
 msgstr "Scorciatoie da tastiera"
 
-msgid "Kind of work"
-msgstr ""
-
 msgid "Kit"
 msgstr "Kit"
 
 msgid "Labor"
 msgstr "Manodopera"
+
+msgid "Labor category"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Ultimo completato"
@@ -1259,7 +1259,7 @@ msgstr "Prelievo {0}"
 msgid "Pick tracked item"
 msgstr "Seleziona articolo tracciato"
 
-msgid "Pick what you worked on, then the kind of work."
+msgid "Pick what you worked on, then the labor category."
 msgstr ""
 
 msgid "Picked"
