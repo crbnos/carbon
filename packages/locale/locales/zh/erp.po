@@ -3825,6 +3825,12 @@ msgstr "浏览库"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
+msgid "Browser notifications"
+msgstr "浏览器通知"
+
+msgid "Browser notifications are on for this browser."
+msgstr "此浏览器的浏览器通知已启用。"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7194,6 +7200,9 @@ msgstr "方向"
 msgid "Directions"
 msgstr "方向"
 
+msgid "Disable"
+msgstr "禁用"
+
 msgid "Disabled"
 msgstr "已禁用"
 
@@ -8151,8 +8160,14 @@ msgstr "空列表"
 msgid "Empty work centers"
 msgstr "空的工作中心"
 
+msgid "Enable"
+msgstr "启用"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "在设置中启用审计日志以开始跟踪数据的更改。"
+
+msgid "Enable browser notifications"
+msgstr "启用浏览器通知"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "为您的公司启用数字报价。这将允许您向客户发送数字报价，并允许他们在线接受。"
@@ -9000,8 +9015,14 @@ msgstr "创建工作中心失败：{0}"
 msgid "Failed to delete file from old location"
 msgstr "删除旧位置的文件失败"
 
+msgid "Failed to disable browser notifications"
+msgstr "禁用浏览器通知失败"
+
 msgid "Failed to download file for moving"
 msgstr "无法下载文件以进行移动"
+
+msgid "Failed to enable browser notifications"
+msgstr "启用浏览器通知失败"
 
 msgid "Failed to fetch item costs"
 msgstr "获取物料成本失败"
@@ -9716,6 +9737,9 @@ msgstr "开始使用"
 
 msgid "Get Started"
 msgstr "开始使用"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "实时获取您的 Carbon 通知。"
 
 msgid "Gets the summary for every agreement"
 msgstr "获取每个协议的汇总"
@@ -13875,6 +13899,9 @@ msgstr "单位数据不足"
 msgid "Not feasible"
 msgstr "不可行"
 
+msgid "Not now"
+msgstr "暂不"
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -13974,6 +14001,9 @@ msgstr "通知类型"
 
 msgid "Notifications"
 msgstr "通知"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "在此浏览器的网站设置中,Carbon 的通知被阻止。"
 
 msgid "Notify"
 msgstr "通知"
@@ -21450,6 +21480,9 @@ msgstr "无法完成此备份。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "此浏览器不支持推送通知。在 iPhone 或 iPad 上,请先将 Carbon 添加到主屏幕。"
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "这无法在之后更改 — {integrationName} 仅允许一个连接的会计系统，因此您的选择决定了 Carbon 被允许执行的操作。要切换，您需要卸载并重新连接。"

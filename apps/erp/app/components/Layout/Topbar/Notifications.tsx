@@ -18,7 +18,8 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger
+  TabsTrigger,
+  useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -55,10 +56,12 @@ import {
 import { Link, useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import { useNotifications, useUser } from "~/hooks";
+import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
 import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
+import { EnableBrowserNotifications } from "./EnableBrowserNotifications";
 
 type OutstandingTraining = {
   trainingAssignmentId: string;
@@ -658,6 +661,12 @@ const Notifications = () => {
     id: userId,
     company: { id: companyId }
   } = useUser();
+  const pushPublicKey =
+    useRouteData<{ pushPublicKey: string | null }>(path.to.authenticatedRoot)
+      ?.pushPublicKey ?? null;
+  // The bell is always mounted, so it is where a signed-back-in user's
+  // browser notifications come back.
+  useRestoreBrowserNotifications({ publicKey: pushPublicKey, userId });
   const [isOpen, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("inbox");
   // Loaded when the tab is opened, and again each time the popover reopens.
@@ -752,11 +761,15 @@ const Notifications = () => {
 
           <TabsContent value="inbox" className="relative mt-0">
             {!unreadNotifications.length && (
-              <EmptyState description={t`No new notifications`} />
+              <>
+                <EnableBrowserNotifications publicKey={pushPublicKey} />
+                <EmptyState description={t`No new notifications`} />
+              </>
             )}
 
             {unreadNotifications.length > 0 && (
               <ScrollArea className="pb-12 h-[485px]">
+                <EnableBrowserNotifications publicKey={pushPublicKey} />
                 <div className="divide-y">
                   {unreadNotifications.map((notification) => {
                     const event = notification.payload

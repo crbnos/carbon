@@ -23,6 +23,7 @@ import {
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
+import { getVapidDetails } from "@carbon/env/push.server";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
@@ -325,6 +326,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,
+    // Null hides the bell's "Enable browser notifications" row: the
+    // deployment has no push keys (no SESSION_SECRET).
+    pushPublicKey: getVapidDetails()?.publicKey ?? null,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],

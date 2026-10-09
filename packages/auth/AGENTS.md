@@ -41,7 +41,7 @@ pnpm --filter @carbon/auth test
 | `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators |
 | `./auth.server` | `requirePermissions`, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
-| `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge` |
+| `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge`; `pushEndpointCookie` (signed `carbon-push`, this browser's Web Push endpoint) — `clearAuthCookies` deletes that endpoint's `pushSubscription` rows on every same-site sign-out (a cross-site navigation skips it, per the GET-write rule) |
 | `./company.server` | Company switching, `updateCompanySession`; the cached plan lookups `getCompanyPlanId` and `isCarbonOwnedCompany` (Redis 5 min, a missing plan row cached as `""`) |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |

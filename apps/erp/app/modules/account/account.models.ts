@@ -13,6 +13,21 @@ export const notificationPreferenceValidator = z.object({
   enabled: z.enum(["true", "false"])
 });
 
+// The browser's PushSubscription.toJSON(), plus the endpoint it replaces when
+// the service worker re-subscribes after a pushsubscriptionchange.
+export const pushSubscriptionValidator = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1)
+  }),
+  oldEndpoint: z.string().url().optional()
+});
+
+export const pushSubscriptionEndpointValidator = z.object({
+  endpoint: z.string().url()
+});
+
 export const onboardingUserValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),

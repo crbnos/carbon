@@ -3825,6 +3825,12 @@ msgstr "Обзор библиотеки"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для очистки макета."
 
+msgid "Browser notifications"
+msgstr "Уведомления браузера"
+
+msgid "Browser notifications are on for this browser."
+msgstr "Уведомления браузера включены для этого браузера."
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7194,6 +7200,9 @@ msgstr "Направление"
 msgid "Directions"
 msgstr "Направления"
 
+msgid "Disable"
+msgstr "Отключить"
+
 msgid "Disabled"
 msgstr "Отключено"
 
@@ -8151,8 +8160,14 @@ msgstr "Пустой список"
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
 
+msgid "Enable"
+msgstr "Включить"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Включите аудит в настройках, чтобы начать отслеживать изменения ваших данных."
+
+msgid "Enable browser notifications"
+msgstr "Включить уведомления браузера"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Включить цифровые коммерческие предложения для вашей организации. Это позволит вам отправлять цифровые коммерческие предложения вашим покупателям и позволит им принимать их онлайн."
@@ -9000,8 +9015,14 @@ msgstr "Ошибка при создании рабочего центра: {0}"
 msgid "Failed to delete file from old location"
 msgstr "Не удалось удалить файл из старого местоположения"
 
+msgid "Failed to disable browser notifications"
+msgstr "Не удалось отключить уведомления браузера"
+
 msgid "Failed to download file for moving"
 msgstr "Не удалось скачать файл для перемещения"
+
+msgid "Failed to enable browser notifications"
+msgstr "Не удалось включить уведомления браузера"
 
 msgid "Failed to fetch item costs"
 msgstr "Ошибка при получении себестоимости номенклатуры"
@@ -9716,6 +9737,9 @@ msgstr "Начать"
 
 msgid "Get Started"
 msgstr "Начало работы"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Получайте уведомления Carbon по мере их поступления."
 
 msgid "Gets the summary for every agreement"
 msgstr "Получает резюме по каждому договору"
@@ -13875,6 +13899,9 @@ msgstr "Недостаточно данных единицы"
 msgid "Not feasible"
 msgstr "Невозможно выполнить"
 
+msgid "Not now"
+msgstr "Не сейчас"
+
 msgid "Not reached"
 msgstr "Не достигнуто"
 
@@ -13974,6 +14001,9 @@ msgstr "Тип уведомления"
 
 msgid "Notifications"
 msgstr "Уведомления"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Уведомления заблокированы для Carbon в параметрах этого браузера."
 
 msgid "Notify"
 msgstr "Уведомить"
@@ -21450,6 +21480,9 @@ msgstr "Эта резервная копия не может быть завер
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Эта резервная копия еще не была проверена. Любые различия будут обнаружены при запуске восстановления."
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Этот браузер не поддерживает push-уведомления. На iPhone или iPad сначала добавьте Carbon на главный экран."
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Это нельзя изменить позже — {integrationName} позволяет подключить только одну систему учета, поэтому выбор определяет, что Carbon может делать. Чтобы переключиться, вам нужно удалить и переподключить интеграцию."

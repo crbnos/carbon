@@ -8439,6 +8439,177 @@ export default {
         tags: ["purchaseInvoicePriceChange"]
       }
     },
+    "/pushSubscription": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.endpoint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.p256dh"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.auth"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.userAgent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/pushSubscription"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["pushSubscription"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.pushSubscription"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["pushSubscription"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.endpoint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.p256dh"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.auth"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.userAgent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["pushSubscription"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.endpoint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.p256dh"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.auth"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.userAgent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pushSubscription.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.pushSubscription"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["pushSubscription"]
+      }
+    },
     "/makeMethod": {
       get: {
         parameters: [
@@ -118185,6 +118356,65 @@ export default {
       },
       type: "object"
     },
+    pushSubscription: {
+      required: [
+        "id",
+        "userId",
+        "companyId",
+        "endpoint",
+        "p256dh",
+        "auth",
+        "createdAt",
+        "updatedAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        endpoint: {
+          format: "text",
+          type: "string"
+        },
+        p256dh: {
+          format: "text",
+          type: "string"
+        },
+        auth: {
+          format: "text",
+          type: "string"
+        },
+        userAgent: {
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     makeMethod: {
       required: [
         "id",
@@ -167010,6 +167240,69 @@ export default {
     },
     "rowFilter.purchaseInvoicePriceChange.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.pushSubscription": {
+      name: "pushSubscription",
+      description: "pushSubscription",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/pushSubscription"
+      }
+    },
+    "rowFilter.pushSubscription.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.endpoint": {
+      name: "endpoint",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.p256dh": {
+      name: "p256dh",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.auth": {
+      name: "auth",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.userAgent": {
+      name: "userAgent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pushSubscription.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

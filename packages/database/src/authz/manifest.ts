@@ -1137,6 +1137,15 @@ export const manifest = {
     update: false,
     delete: false
   }),
+  pushSubscription: policies({
+    select: and(owner("userId"), member("companyId")),
+    insert: and(owner("userId"), member("companyId")),
+    update: {
+      using: owner("userId"),
+      check: and(owner("userId"), member("companyId"))
+    },
+    delete: and(owner("userId"), member("companyId"))
+  }),
   qualityDocument: company("quality"),
   qualityDocumentStep: company("production"),
   quote: company("sales", { read: "sales_view" }),

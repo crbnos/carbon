@@ -3825,6 +3825,12 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "प्रकाशित संस्करण को केवल पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 
+msgid "Browser notifications"
+msgstr "ब्राउज़र सूचनाएँ"
+
+msgid "Browser notifications are on for this browser."
+msgstr "इस ब्राउज़र के लिए ब्राउज़र सूचनाएँ चालू हैं।"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7194,6 +7200,9 @@ msgstr "दिशा"
 msgid "Directions"
 msgstr "दिशाएं"
 
+msgid "Disable"
+msgstr "अक्षम करें"
+
 msgid "Disabled"
 msgstr "अक्षम"
 
@@ -8151,8 +8160,14 @@ msgstr "खाली सूची"
 msgid "Empty work centers"
 msgstr "खाली वर्क सेंटर"
 
+msgid "Enable"
+msgstr "सक्षम करें"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "अपने डेटा में परिवर्तनों को ट्रैक करना शुरू करने के लिए सेटिंग्स में ऑडिट लॉगिंग सक्षम करें।"
+
+msgid "Enable browser notifications"
+msgstr "ब्राउज़र सूचनाएँ सक्षम करें"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "अपनी कंपनी के लिए डिजिटल उद्धरण सक्षम करें। यह आपको अपने ग्राहकों को डिजिटल उद्धरण भेजने की अनुमति देगा, और उन्हें ऑनलाइन स्वीकार करने की अनुमति देगा।"
@@ -9000,8 +9015,14 @@ msgstr "वर्क सेंटर बनाने में विफल: {0}
 msgid "Failed to delete file from old location"
 msgstr "पुराने स्थान से फ़ाइल हटाने में विफल"
 
+msgid "Failed to disable browser notifications"
+msgstr "ब्राउज़र सूचनाओं को अक्षम करने में विफल रहा"
+
 msgid "Failed to download file for moving"
 msgstr "स्थानांतरण के लिए फ़ाइल डाउनलोड करने में विफल"
+
+msgid "Failed to enable browser notifications"
+msgstr "ब्राउज़र सूचनाओं को सक्षम करने में विफल रहा"
 
 msgid "Failed to fetch item costs"
 msgstr "आइटम लागत प्राप्त करने में विफल"
@@ -9716,6 +9737,9 @@ msgstr "शुरुआत करें"
 
 msgid "Get Started"
 msgstr "शुरुआत करें"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "अपनी Carbon सूचनाएँ तुरंत प्राप्त करें।"
 
 msgid "Gets the summary for every agreement"
 msgstr "प्रत्येक समझौते के लिए सारांश प्राप्त करता है"
@@ -13875,6 +13899,9 @@ msgstr "पर्याप्त यूनिट डेटा नहीं"
 msgid "Not feasible"
 msgstr "संभव नहीं"
 
+msgid "Not now"
+msgstr "अभी नहीं"
+
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -13974,6 +14001,9 @@ msgstr "सूचना प्रकार"
 
 msgid "Notifications"
 msgstr "सूचनाएं"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "इस ब्राउज़र की साइट सेटिंग्स में Carbon के लिए सूचनाएं अवरुद्ध हैं।"
 
 msgid "Notify"
 msgstr "सूचित करें"
@@ -21450,6 +21480,9 @@ msgstr "यह बैकअप पूर्ण नहीं किया जा 
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "इस बैकअप की अभी जांच नहीं की गई है। कोई भी अंतर पुनः स्थापित करने के समय पाया जाता है।"
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "यह ब्राउज़र पुश सूचनाओं का समर्थन नहीं करता। iPhone या iPad पर, पहले Carbon को होम स्क्रीन में जोड़ें।"
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "यह बाद में नहीं बदला जा सकता — {integrationName} केवल एक जुड़े हुए लेखांकन प्रणाली की अनुमति देता है, इसलिए यह विकल्प तय करता है कि Carbon क्या करने के लिए अनुमत है। स्विच करने के लिए, आप अनइंस्टॉल करेंगे और फिर से कनेक्ट करेंगे।"
