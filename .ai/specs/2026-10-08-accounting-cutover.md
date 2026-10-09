@@ -129,6 +129,13 @@ The opening journal has `sourceType 'Opening Balance'`, status Posted, and date 
 | Deferred revenue | `revenueRecognitionSchedule` rows still Planned, dated on or after D | The row's credit account | `documentId` = the invoice, `documentLineId` = the line |
 | Lease net investment | `rentalLeaseScheduleLine.closingNetInvestment` at D − 1 | `netInvestmentInLeasesAccount` | `documentType 'Rental Agreement'`, `documentId` |
 
+A document partly settled before D gets 2 opening lines on its control account, not 1. The payment lookup and the AR/AP readers compute the open amount as the original control line minus every settlement, the settlements before D included. So:
+
+1. The first line carries the document's original base amount, with the description its own posting writes ("Accounts Receivable", "Accounts Payable" or the on-account credit description).
+2. The second line carries the base amount settled before D, with the opposite sign and the description "<that description> (settled before cutover)". The readers match descriptions exactly, so they ignore it.
+
+The control account then nets to the open amount, and every settlement after D still subtracts from the original.
+
 Every other account comes from the trial balance only. Cash, equity, tax, payroll and accruals never come from the Provisional ledger. So a gap in Provisional data (for example, payroll that Carbon never saw) cannot reach the GL.
 
 For a control account, the trial balance amount is an assertion, not a posting. The opening journal posts the Carbon opening total on the control account. The difference to the trial balance stays on Migration Clearing. A zero total on Migration Clearing proves that Carbon's open items agree with the prior system.
@@ -339,6 +346,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
   - The audit trail is event-driven, and the `accountingEnabled` column stays.
   - Migration Clearing is account 3400. Readiness checks for a Posted Opening Balance.
   - The inventory reset is per item. L is the company's first Provisional journal.
+- 2026-10-08: A document partly settled before D gets 2 opening lines (original amount, then the pre-cutover settlements under a description the readers ignore). Found executing Task 25: the readers subtract every settlement from the original control line.
 - 2026-10-08: A Provisional journal has no accounting period; the enable assigns periods before promotion (found executing Task 10: periods on Provisional journals would lock the fiscal calendar).
 - 2026-10-08: Q7 revised: no back-fill of account defaults; stand-in lines with `journalLine.accountDefaultRole`, required defaults at readiness, re-pointed at enable.
 - 2026-10-08: Fixed the 2 bugs found while writing. The purchase receipt void now updates `costLedger`. The revenue recognition cron skips companies with `accountingEnabled = false`; this spec replaces that check with the cutover. Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.

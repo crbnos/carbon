@@ -532,9 +532,9 @@ export function postPaymentTransaction(
                 ? RECEIVABLE_POSTING_DESCRIPTIONS
                 : PAYABLE_POSTING_DESCRIPTIONS
           )
-          .where(
-            "journal.sourceType",
-            "=",
+          // A target open at the accounting cutover carries its control line
+          // in the opening journal, with the same document keys.
+          .where("journal.sourceType", "in", [
             isReimbursement
               ? "Reimbursement"
               : isRefund
@@ -543,8 +543,9 @@ export function postPaymentTransaction(
                   : "Debit Memo"
                 : isAR
                   ? "Sales Invoice"
-                  : "Purchase Invoice"
-          )
+                  : "Purchase Invoice",
+            "Opening Balance"
+          ])
           .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
           .execute()
       : [];
@@ -832,7 +833,7 @@ export function postPaymentTransaction(
               ? [onAccountCreditDescription(isAR), CUSTOMER_DEPOSIT_DESCRIPTION]
               : [onAccountCreditDescription(isAR)]
           )
-          .where("journal.sourceType", "=", "Payment")
+          .where("journal.sourceType", "in", ["Payment", "Opening Balance"])
           .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
           .execute()
       : [];
