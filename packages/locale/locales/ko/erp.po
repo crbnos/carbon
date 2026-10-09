@@ -11165,6 +11165,9 @@ msgstr "재고만"
 msgid "In stock, the remainder as {substitute}"
 msgstr "재고 있음, 나머지는 {substitute}로"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 

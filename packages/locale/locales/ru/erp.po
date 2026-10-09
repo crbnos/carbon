@@ -11165,6 +11165,9 @@ msgstr "Только в наличии"
 msgid "In stock, the remainder as {substitute}"
 msgstr "В наличии, остаток как {substitute}"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "В курсе дела вместе"
 

@@ -11165,6 +11165,9 @@ msgstr "在庫のみ"
 msgid "In stock, the remainder as {substitute}"
 msgstr "在庫あり、残りは{substitute}として"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
 

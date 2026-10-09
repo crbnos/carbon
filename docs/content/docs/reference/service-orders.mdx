@@ -112,7 +112,7 @@ Tax on the draft is 0. The invoice does not move stock again: the part left stoc
 
 ## Visits
 
-A visit sends one technician to the unit in a planned window. On the order's **Visits** tab, click **Schedule Visit** and choose the **Technician**, **Planned Start** and **Planned End**. **Reschedule** moves a visit that is still Scheduled.
+A visit sends one technician to the unit in a planned window. On the order's **Visits** tab, click **Schedule Visit** and choose the **Technician**, **Planned Start** and **Planned End**. You type the window in the company's time zone, whatever zone your browser is in. **Reschedule** moves a visit that is still Scheduled.
 
 <StatusFlow entity="serviceVisit">
   <Status name="Scheduled">Planned. **Start Travel** or **Arrive** moves it on.</Status>
@@ -237,7 +237,6 @@ The user lacks inventory_update.
 - Invoice: create-service-order-invoice (layout in plan.ts). post-sales-invoice skips stock and COGS on lines stamped by billable items. Deleting the Draft invoice runs releaseServiceOrderStamps.
 - The Start Work clock is stored in the browser's localStorage (key `carbon:service-work:<visitId>`); clearing storage or switching devices loses a running clock.
 - Visit photos: private bucket `${companyId}/service/${orderId}/${visitId}/`; signature `signature.png` in the same folder (PNG, at most 2 MB).
-- The visit window picker uses the browser's time zone, not the company's.
 - Estimate PDF: `/file/service-estimate/<id>.pdf` (ServiceEstimatePDF); not in the document template customizer.
 - Routes: list `/x/service-orders`, order `/x/service-order/<id>`, visit `/x/service-order/<id>/visits/<visitId>`, My Visits `/x/service-orders/my-visits`, Schedule `/x/service-orders/schedule`, templates `/x/service-orders/templates`.
 </AgentContext>

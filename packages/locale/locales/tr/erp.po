@@ -11165,6 +11165,9 @@ msgstr "Yalnızca stokta"
 msgid "In stock, the remainder as {substitute}"
 msgstr "Stokta, geri kalanı {substitute} olarak"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
 

@@ -11165,6 +11165,9 @@ msgstr "Solo in giacenza"
 msgid "In stock, the remainder as {substitute}"
 msgstr "In giacenza, il rimanente come {substitute}"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "Nel giro insieme"
 

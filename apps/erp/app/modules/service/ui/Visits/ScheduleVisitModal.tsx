@@ -18,14 +18,15 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { DateTimePicker, Employee, Hidden, Submit } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { useCompanyTimeZone, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { serviceVisitValidator } from "../../service.models";
 
 /**
  * Schedules a visit to the unit, or moves a scheduled one: the technician
- * and the planned window. The picker reads the window in the browser's time
- * zone and stores it as an instant.
+ * and the planned window. The pickers read the window in the company's time
+ * zone and store it as an instant, so a dispatcher in another zone books the
+ * same hours.
  */
 export default function ScheduleVisitModal({
   initialValues,
@@ -36,6 +37,7 @@ export default function ScheduleVisitModal({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const timeZone = useCompanyTimeZone();
   const isEditing = Boolean(initialValues.id);
 
   return (
@@ -65,8 +67,17 @@ export default function ScheduleVisitModal({
             <Hidden name="serviceOrderId" />
             <VStack spacing={4}>
               <Employee name="technicianId" label={t`Technician`} />
-              <DateTimePicker name="plannedStart" label={t`Planned Start`} />
-              <DateTimePicker name="plannedEnd" label={t`Planned End`} />
+              <DateTimePicker
+                name="plannedStart"
+                label={t`Planned Start`}
+                timeZone={timeZone}
+                helperText={t`In the company's time zone (${timeZone})`}
+              />
+              <DateTimePicker
+                name="plannedEnd"
+                label={t`Planned End`}
+                timeZone={timeZone}
+              />
             </VStack>
           </ModalBody>
           <ModalFooter>

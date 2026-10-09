@@ -11165,6 +11165,9 @@ msgstr "Tylko w magazynie"
 msgid "In stock, the remainder as {substitute}"
 msgstr "W zapasach, reszta jako {substitute}"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "W pętli razem"
 

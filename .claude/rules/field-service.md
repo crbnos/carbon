@@ -32,7 +32,9 @@ the technician's phone pages. Plan: `.ai/plans/2026-10-09-field-service-phase-a.
   (`project.projectType = 'Service'`, `costTreatment = 'By Coverage'`, identifier = the
   order's readable id). The project's elements are the **work tree** ("nodes"). There is
   no order line table.
-- **Visit** (`serviceVisit`): technician, planned window, status, travel / arrival /
+- **Visit** (`serviceVisit`): technician, planned window (typed in the company's time
+  zone: `ScheduleVisitModal` passes `useCompanyTimeZone()` to `DateTimePicker`'s
+  `timeZone`), status, travel / arrival /
   completion stamps, notes, `signaturePath`, `signedByName`.
 - **Installed component** (`customerAssetComponent`): a part a service order put in the
   asset, with its own parts warranty, and `removedDate` once a later part replaces it.
@@ -202,8 +204,6 @@ No charges are seeded. The wipe deletes `customerAssetComponent`, `serviceVisit`
   timesheet row, no expense reversal in the UI). Only a part return reverses a charge, so
   an order with time or an expense cannot be cancelled; complete it and write off its
   billable items.
-- The visit window uses `DateTimePicker`, which reads the browser's time zone, not the
-  company's.
 - The service tables do not broadcast, so no page declares `handle.realtime`.
 - `documentSourceType` has no service order value, so order and visit files write no
   `document` row.

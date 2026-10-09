@@ -11165,6 +11165,9 @@ msgstr "केवल स्टॉक में"
 msgid "In stock, the remainder as {substitute}"
 msgstr "स्टॉक में, शेष {substitute} के रूप में"
 
+msgid "In the company's time zone ({timeZone})"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
 

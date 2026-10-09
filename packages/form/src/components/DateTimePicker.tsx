@@ -35,6 +35,13 @@ type DateTimePickerProps = {
   maxValue?: CalendarDateTime;
   inline?: boolean;
   helperText?: string;
+  /**
+   * The IANA zone the wall-clock value is read and written in. Defaults to
+   * the browser's zone. Pass the company's zone for a time that belongs to the
+   * company's calendar (a visit window), so a dispatcher in another zone
+   * stores the same instant.
+   */
+  timeZone?: string;
   onChange?: (date: CalendarDateTime) => void;
 };
 
@@ -48,8 +55,10 @@ const DateTimePicker = ({
   maxValue,
   inline = false,
   helperText,
+  timeZone: timeZoneProp,
   onChange
 }: DateTimePickerProps) => {
+  const timeZone = timeZoneProp ?? getLocalTimeZone();
   const { locale } = useLocale();
   const formState = useFormStateContext();
   const isDisabled =
@@ -63,7 +72,7 @@ const DateTimePicker = ({
   } = useField(name);
   const [date, setDate] = useState<CalendarDateTime | undefined>(
     defaultValue
-      ? toCalendarDateTime(parseAbsolute(defaultValue, getLocalTimeZone()))
+      ? toCalendarDateTime(parseAbsolute(defaultValue, timeZone))
       : undefined
   );
 
@@ -84,10 +93,8 @@ const DateTimePicker = ({
     }
   };
 
-  // Convert local time to UTC for storage
-  const utcValue = date
-    ? toZoned(date, getLocalTimeZone()).toAbsoluteString()
-    : "";
+  // Convert the wall-clock time in `timeZone` to a UTC instant for storage
+  const utcValue = date ? toZoned(date, timeZone).toAbsoluteString() : "";
 
   const DateTimePickerPreview = (
     <span className="flex flex-grow line-clamp-1 items-center">
