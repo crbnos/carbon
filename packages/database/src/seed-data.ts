@@ -596,6 +596,15 @@ export const sequences = [
     next: 0,
     size: 6,
     step: 1
+  },
+  {
+    table: "serviceOrder",
+    name: "Service Order",
+    prefix: "SVC",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
   }
 ] as const;
 
@@ -1985,6 +1994,18 @@ export const accounts = [
     consolidatedRate: "Average",
     createdBy: "system"
   },
+  {
+    key: "6120",
+    number: "6120",
+    name: "Warranty Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
 
   // Depreciation & Amortization
   {
@@ -2159,6 +2180,7 @@ export const accountDefaults = {
   workInProgressAccount: "1230",
   projectWorkInProgressAccount: "1230",
   projectExpenseAccount: "7080",
+  warrantyExpenseAccount: "6120",
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
   bankCashAccount: "1010",

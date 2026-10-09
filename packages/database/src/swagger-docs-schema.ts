@@ -45895,6 +45895,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.projectWorkInProgressAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.warrantyExpenseAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -46146,6 +46149,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.projectWorkInProgressAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.warrantyExpenseAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -46349,6 +46355,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.projectWorkInProgressAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.warrantyExpenseAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -143323,6 +143332,12 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        warrantyExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -197033,6 +197048,12 @@ export default {
     },
     "rowFilter.accountDefault.projectWorkInProgressAccount": {
       name: "projectWorkInProgressAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.warrantyExpenseAccount": {
+      name: "warrantyExpenseAccount",
       required: false,
       in: "query",
       type: "string"

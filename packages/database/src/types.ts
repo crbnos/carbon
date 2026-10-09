@@ -409,6 +409,7 @@ export type Database = {
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
           updatedBy: string | null
+          warrantyExpenseAccount: string | null
           workInProgressAccount: string
         }
         Insert: {
@@ -475,6 +476,7 @@ export type Database = {
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
           updatedBy?: string | null
+          warrantyExpenseAccount?: string | null
           workInProgressAccount: string
         }
         Update: {
@@ -541,6 +543,7 @@ export type Database = {
           supplierPrepaymentAccount?: string
           supplierWriteOffAccount?: string
           updatedBy?: string | null
+          warrantyExpenseAccount?: string | null
           workInProgressAccount?: string
         }
         Relationships: [
@@ -1460,6 +1463,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "accountDefault_warrantyExpenseAccount_fkey"
+            columns: ["warrantyExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_warrantyExpenseAccount_fkey"
+            columns: ["warrantyExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "accountDefault_workInProgressAccount_fkey"

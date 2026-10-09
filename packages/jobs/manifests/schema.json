@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009152407",
+  "schemaVersion": "20261009153156",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T15:29:23.797Z",
+  "exportedAt": "2026-10-09T15:37:57.833Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -101,7 +101,8 @@
         "leaseInterestIncomeAccount",
         "netInvestmentInLeasesAccount",
         "projectExpenseAccount",
-        "projectWorkInProgressAccount"
+        "projectWorkInProgressAccount",
+        "warrantyExpenseAccount"
       ]
     },
     {
