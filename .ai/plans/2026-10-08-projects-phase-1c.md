@@ -34,7 +34,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 ## Progress
 
 - [x] Task 1: Create the Phase 1c enum migration
-- [ ] Task 2: Create the baselines and change requests migration
+- [x] Task 2: Create the baselines and change requests migration
 - [ ] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Move the diff engine to `modules/shared`
 - [ ] Task 5: Move the diff UI to shared components
@@ -676,3 +676,7 @@ ls .ai/playbooks/projects-phase-1c.md
 - Prerequisite check: the Phase 1a and 1b artifacts this plan names exist. Every 1a and 1b task is committed except the two browser checks, which the overnight run defers.
 - Task 1: the migration was applied with `pnpm db:migrate`, and its regenerated types were committed with it, as in Phases 1a and 1b.
 - Task 1: the new `approvalDocumentType` value broke 2 checks at once, so this commit fixes both. The first is the `@carbon/ee` typecheck: `approvalDocumentTypeLabel` is a `Record` over the enum, and `service.ts` passes the enum to `z.enum(approvalDocumentType)`. So the `models.ts` part of Task 10 step 1 moved here: the value joins `approvalDocumentType` and `approvalDocumentTypeLabel` ("Project change request"), not `approvalDocumentTypesWithAmounts`. The second is the dataset validator, which requires every enum value in the demo data. `validate.ts` now excepts `projectChangeRequest`, because no dataset seeds a change request.
+- Task 2: `projectBaseline.milestoneId`, `projectChangeRequest.baseBaselineId` and `projectChangeRequest.appliedBaselineId` have composite FKs (`ON DELETE SET NULL (<col>)`), with indexes. The plan wrote them with no FK. A tenant row id with no FK must go into the backup `ID_REF_COLUMNS`, so an FK is the simpler fix (as Phase 1b Task 3 did). `project.lockPlanAfterMilestoneId` is indexed as `("lockPlanAfterMilestoneId", "companyId")`.
+- Task 2: the `targetId` of `projectChangeRequestItem`, `projectChangeRequestComment` and `projectChangeRequestView` points at one of 5 tables, so no FK can hold it. All 3 are in `ID_REF_COLUMNS` (`packages/jobs/src/backups/id-refs.ts`). Known gap: the ids inside the JSONB columns (`projectBaseline.snapshot`, `projectChangeRequestItem.payload` and `baseRow`) are not rewritten by a restore into another company.
+- Task 2: the `approvalRequests` view joins `projectChangeRequest` on `documentId` and `companyId`; the other branches are unchanged from `20260310005407`.
+- Task 2: the migration was applied in this task, as in Phase 1a Tasks 3–7. Its `authz sync` step fails until Task 3 adds the manifest rules. The migration is recorded with 35 statements in `supabase_migrations.schema_migrations`.

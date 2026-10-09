@@ -91,6 +91,9 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   pricingRule: ["customerIds", "customerTypeIds", "itemIds"],
   printJob: ["sourceDocumentId"],
   printerRoute: ["templateId"],
+  projectChangeRequestComment: ["targetId"],
+  projectChangeRequestItem: ["targetId"],
+  projectChangeRequestView: ["targetId"],
   projectLedger: [
     "documentId",
     "documentLineId",

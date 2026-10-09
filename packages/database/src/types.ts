@@ -45246,7 +45246,10 @@ export type Database = {
           identifier: string | null
           isTemplate: boolean
           locationId: string | null
+          lockPlanAfterMilestoneId: string | null
           name: string
+          nextBaselineSequence: number
+          nextChangeRequestSequence: number
           nextElementSequence: number
           ownerId: string | null
           priority: Database["public"]["Enums"]["projectElementPriority"]
@@ -45272,7 +45275,10 @@ export type Database = {
           identifier?: string | null
           isTemplate?: boolean
           locationId?: string | null
+          lockPlanAfterMilestoneId?: string | null
           name: string
+          nextBaselineSequence?: number
+          nextChangeRequestSequence?: number
           nextElementSequence?: number
           ownerId?: string | null
           priority?: Database["public"]["Enums"]["projectElementPriority"]
@@ -45298,7 +45304,10 @@ export type Database = {
           identifier?: string | null
           isTemplate?: boolean
           locationId?: string | null
+          lockPlanAfterMilestoneId?: string | null
           name?: string
+          nextBaselineSequence?: number
+          nextChangeRequestSequence?: number
           nextElementSequence?: number
           ownerId?: string | null
           priority?: Database["public"]["Enums"]["projectElementPriority"]
@@ -45435,6 +45444,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_lockMilestone_fkey"
+            columns: ["lockPlanAfterMilestoneId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectMilestone"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "project_ownerId_fkey"
             columns: ["ownerId"]
             isOneToOne: false
@@ -45500,6 +45516,798 @@ export type Database = {
           {
             foreignKeyName: "project_updatedBy_fkey"
             columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectBaseline: {
+        Row: {
+          changeRequestId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          elementCount: number
+          formatVersion: number
+          id: string
+          linkCount: number
+          milestoneId: string | null
+          name: string
+          projectId: string
+          sequence: number
+          snapshot: Json
+          source: Database["public"]["Enums"]["projectBaselineSource"]
+        }
+        Insert: {
+          changeRequestId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          elementCount: number
+          formatVersion?: number
+          id?: string
+          linkCount: number
+          milestoneId?: string | null
+          name: string
+          projectId: string
+          sequence: number
+          snapshot: Json
+          source: Database["public"]["Enums"]["projectBaselineSource"]
+        }
+        Update: {
+          changeRequestId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          elementCount?: number
+          formatVersion?: number
+          id?: string
+          linkCount?: number
+          milestoneId?: string | null
+          name?: string
+          projectId?: string
+          sequence?: number
+          snapshot?: Json
+          source?: Database["public"]["Enums"]["projectBaselineSource"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectBaseline_changeRequest_fkey"
+            columns: ["changeRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectChangeRequest"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBaseline_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBaseline_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBaseline_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectBaseline_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectBaseline_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBaseline_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBaseline_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBaseline_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBaseline_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectBaseline_milestone_fkey"
+            columns: ["milestoneId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectMilestone"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBaseline_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
+      projectChangeRequest: {
+        Row: {
+          appliedAt: string | null
+          appliedBaselineId: string | null
+          baseBaselineId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          decidedAt: string | null
+          decidedBy: string | null
+          decisionNotes: string | null
+          id: string
+          projectId: string
+          readableId: string
+          reason: Json | null
+          status: Database["public"]["Enums"]["projectChangeRequestStatus"]
+          submittedAt: string | null
+          title: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          appliedAt?: string | null
+          appliedBaselineId?: string | null
+          baseBaselineId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          decidedAt?: string | null
+          decidedBy?: string | null
+          decisionNotes?: string | null
+          id?: string
+          projectId: string
+          readableId?: string
+          reason?: Json | null
+          status?: Database["public"]["Enums"]["projectChangeRequestStatus"]
+          submittedAt?: string | null
+          title: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          appliedAt?: string | null
+          appliedBaselineId?: string | null
+          baseBaselineId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          decidedAt?: string | null
+          decidedBy?: string | null
+          decisionNotes?: string | null
+          id?: string
+          projectId?: string
+          readableId?: string
+          reason?: Json | null
+          status?: Database["public"]["Enums"]["projectChangeRequestStatus"]
+          submittedAt?: string | null
+          title?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectChangeRequest_appliedBaseline_fkey"
+            columns: ["appliedBaselineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectBaseline"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_baseBaseline_fkey"
+            columns: ["baseBaselineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectBaseline"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_decidedBy_fkey"
+            columns: ["decidedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_decidedBy_fkey"
+            columns: ["decidedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_decidedBy_fkey"
+            columns: ["decidedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_decidedBy_fkey"
+            columns: ["decidedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_decidedBy_fkey"
+            columns: ["decidedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectChangeRequestComment: {
+        Row: {
+          changeRequestId: string
+          comment: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          field: string | null
+          id: string
+          resolvedAt: string | null
+          resolvedBy: string | null
+          targetId: string | null
+          targetTable: Database["public"]["Enums"]["projectPlanTable"] | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          changeRequestId: string
+          comment: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          field?: string | null
+          id?: string
+          resolvedAt?: string | null
+          resolvedBy?: string | null
+          targetId?: string | null
+          targetTable?: Database["public"]["Enums"]["projectPlanTable"] | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          changeRequestId?: string
+          comment?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          field?: string | null
+          id?: string
+          resolvedAt?: string | null
+          resolvedBy?: string | null
+          targetId?: string | null
+          targetTable?: Database["public"]["Enums"]["projectPlanTable"] | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectChangeRequestComment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_cr_fkey"
+            columns: ["changeRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectChangeRequest"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestComment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectChangeRequestItem: {
+        Row: {
+          baseRow: Json | null
+          changeRequestId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          operation: Database["public"]["Enums"]["projectChangeOperation"]
+          payload: Json | null
+          targetId: string
+          targetTable: Database["public"]["Enums"]["projectPlanTable"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          baseRow?: Json | null
+          changeRequestId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          operation: Database["public"]["Enums"]["projectChangeOperation"]
+          payload?: Json | null
+          targetId: string
+          targetTable: Database["public"]["Enums"]["projectPlanTable"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          baseRow?: Json | null
+          changeRequestId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          operation?: Database["public"]["Enums"]["projectChangeOperation"]
+          payload?: Json | null
+          targetId?: string
+          targetTable?: Database["public"]["Enums"]["projectPlanTable"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectChangeRequestItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_cr_fkey"
+            columns: ["changeRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectChangeRequest"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectChangeRequestView: {
+        Row: {
+          changeRequestId: string
+          companyId: string
+          targetId: string
+          targetTable: Database["public"]["Enums"]["projectPlanTable"]
+          userId: string
+          viewedAt: string
+        }
+        Insert: {
+          changeRequestId: string
+          companyId: string
+          targetId: string
+          targetTable: Database["public"]["Enums"]["projectPlanTable"]
+          userId: string
+          viewedAt?: string
+        }
+        Update: {
+          changeRequestId?: string
+          companyId?: string
+          targetId?: string
+          targetTable?: Database["public"]["Enums"]["projectPlanTable"]
+          userId?: string
+          viewedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectChangeRequestView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_cr_fkey"
+            columns: ["changeRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectChangeRequest"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectChangeRequestView_userId_fkey"
+            columns: ["userId"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]

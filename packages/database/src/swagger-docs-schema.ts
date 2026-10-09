@@ -20820,6 +20820,204 @@ export default {
         tags: ["jobOperationBatch"]
       }
     },
+    "/projectChangeRequestItem": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.operation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.payload"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.baseRow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectChangeRequestItem"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectChangeRequestItem"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectChangeRequestItem"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectChangeRequestItem"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.operation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.payload"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.baseRow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequestItem"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.operation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.payload"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.baseRow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectChangeRequestItem"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequestItem"]
+      }
+    },
     "/itemInspectionDocumentAssignment": {
       get: {
         parameters: [
@@ -40026,6 +40224,150 @@ export default {
         tags: ["contact"]
       }
     },
+    "/projectChangeRequestView": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.viewedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectChangeRequestView"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectChangeRequestView"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectChangeRequestView"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectChangeRequestView"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.viewedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequestView"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestView.viewedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectChangeRequestView"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequestView"]
+      }
+    },
     "/rentalAgreementCharge": {
       get: {
         parameters: [
@@ -51676,6 +52018,213 @@ export default {
           }
         },
         tags: ["maintenanceDispatchWorkCenter"]
+      }
+    },
+    "/projectChangeRequestComment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.field"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.comment"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectChangeRequestComment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectChangeRequestComment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectChangeRequestComment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectChangeRequestComment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.field"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.comment"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequestComment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.targetTable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.field"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.comment"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequestComment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectChangeRequestComment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequestComment"]
       }
     },
     "/purchaseReturnOrders": {
@@ -73021,6 +73570,258 @@ export default {
           }
         },
         tags: ["agentThread"]
+      }
+    },
+    "/projectChangeRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.baseBaselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.appliedBaselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.appliedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectChangeRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectChangeRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectChangeRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectChangeRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.baseBaselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.appliedBaselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.appliedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.baseBaselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.appliedBaselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.appliedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectChangeRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectChangeRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectChangeRequest"]
       }
     },
     "/customerContractInvoice": {
@@ -97285,6 +98086,15 @@ export default {
             $ref: "#/parameters/rowFilter.project.fixedAssetId"
           },
           {
+            $ref: "#/parameters/rowFilter.project.lockPlanAfterMilestoneId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.nextChangeRequestSequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.nextBaselineSequence"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -97416,6 +98226,15 @@ export default {
             $ref: "#/parameters/rowFilter.project.fixedAssetId"
           },
           {
+            $ref: "#/parameters/rowFilter.project.lockPlanAfterMilestoneId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.nextChangeRequestSequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.nextBaselineSequence"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -97499,6 +98318,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.project.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.lockPlanAfterMilestoneId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.nextChangeRequestSequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.nextBaselineSequence"
           },
           {
             $ref: "#/parameters/body.project"
@@ -105112,6 +105940,222 @@ export default {
           }
         },
         tags: ["kanban"]
+      }
+    },
+    "/projectBaseline": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.milestoneId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.formatVersion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.snapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.elementCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.linkCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectBaseline"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectBaseline"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectBaseline"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectBaseline"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.milestoneId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.formatVersion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.snapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.elementCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.linkCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectBaseline"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.milestoneId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.changeRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.formatVersion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.snapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.elementCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.linkCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBaseline.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.projectBaseline"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectBaseline"]
       }
     },
     "/salesOrderTransaction": {
@@ -128384,6 +129428,84 @@ export default {
       },
       type: "object"
     },
+    projectChangeRequestItem: {
+      required: [
+        "id",
+        "companyId",
+        "changeRequestId",
+        "operation",
+        "targetTable",
+        "targetId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pjci'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        changeRequestId: {
+          format: "text",
+          type: "string"
+        },
+        operation: {
+          enum: ["Add", "Update", "Delete"],
+          format: 'public."projectChangeOperation"',
+          type: "string"
+        },
+        targetTable: {
+          enum: [
+            "projectElement",
+            "projectElementLink",
+            "projectElementMaterial",
+            "projectElementLabor",
+            "projectElementCost"
+          ],
+          format: 'public."projectPlanTable"',
+          type: "string"
+        },
+        targetId: {
+          format: "text",
+          type: "string"
+        },
+        payload: {
+          format: "jsonb"
+        },
+        baseRow: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     itemInspectionDocumentAssignment: {
       required: [
         "itemId",
@@ -137583,6 +138705,58 @@ export default {
       },
       type: "object"
     },
+    projectChangeRequestView: {
+      required: [
+        "changeRequestId",
+        "targetTable",
+        "targetId",
+        "userId",
+        "companyId",
+        "viewedAt"
+      ],
+      properties: {
+        changeRequestId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        targetTable: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          enum: [
+            "projectElement",
+            "projectElementLink",
+            "projectElementMaterial",
+            "projectElementLabor",
+            "projectElementCost"
+          ],
+          format: 'public."projectPlanTable"',
+          type: "string"
+        },
+        targetId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        viewedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     rentalAgreementCharge: {
       required: [
         "id",
@@ -143031,6 +144205,89 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    projectChangeRequestComment: {
+      required: [
+        "id",
+        "companyId",
+        "changeRequestId",
+        "comment",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pjcc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        changeRequestId: {
+          format: "text",
+          type: "string"
+        },
+        targetTable: {
+          enum: [
+            "projectElement",
+            "projectElementLink",
+            "projectElementMaterial",
+            "projectElementLabor",
+            "projectElementCost"
+          ],
+          format: 'public."projectPlanTable"',
+          type: "string"
+        },
+        targetId: {
+          format: "text",
+          type: "string"
+        },
+        field: {
+          format: "text",
+          type: "string"
+        },
+        comment: {
+          format: "text",
+          type: "string"
+        },
+        resolvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        resolvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -152906,6 +154163,113 @@ export default {
         },
         lastContext: {
           format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    projectChangeRequest: {
+      required: [
+        "id",
+        "companyId",
+        "projectId",
+        "readableId",
+        "title",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pjcr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        readableId: {
+          default: "",
+          format: "text",
+          type: "string"
+        },
+        title: {
+          format: "text",
+          type: "string"
+        },
+        reason: {
+          format: "jsonb"
+        },
+        status: {
+          default: "Draft",
+          enum: [
+            "Draft",
+            "In Review",
+            "Approved",
+            "Rejected",
+            "Applied",
+            "Cancelled"
+          ],
+          format: 'public."projectChangeRequestStatus"',
+          type: "string"
+        },
+        baseBaselineId: {
+          format: "text",
+          type: "string"
+        },
+        appliedBaselineId: {
+          format: "text",
+          type: "string"
+        },
+        submittedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        decidedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        decidedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        decisionNotes: {
+          format: "text",
+          type: "string"
+        },
+        appliedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         },
         createdBy: {
           description:
@@ -164903,7 +166267,9 @@ export default {
         "status",
         "costTreatment",
         "priority",
-        "isTemplate"
+        "isTemplate",
+        "nextChangeRequestSequence",
+        "nextBaselineSequence"
       ],
       properties: {
         id: {
@@ -165036,6 +166402,20 @@ export default {
             "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
           format: "text",
           type: "string"
+        },
+        lockPlanAfterMilestoneId: {
+          format: "text",
+          type: "string"
+        },
+        nextChangeRequestSequence: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        nextBaselineSequence: {
+          default: 1,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -168578,6 +169958,89 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    projectBaseline: {
+      required: [
+        "id",
+        "companyId",
+        "projectId",
+        "sequence",
+        "name",
+        "source",
+        "formatVersion",
+        "snapshot",
+        "elementCount",
+        "linkCount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pjbl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        sequence: {
+          format: "integer",
+          type: "integer"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        source: {
+          enum: ["Manual", "Milestone", "Change Request"],
+          format: 'public."projectBaselineSource"',
+          type: "string"
+        },
+        milestoneId: {
+          format: "text",
+          type: "string"
+        },
+        changeRequestId: {
+          format: "text",
+          type: "string"
+        },
+        formatVersion: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        snapshot: {
+          format: "jsonb"
+        },
+        elementCount: {
+          format: "integer",
+          type: "integer"
+        },
+        linkCount: {
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -179561,6 +181024,87 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.projectChangeRequestItem": {
+      name: "projectChangeRequestItem",
+      description: "projectChangeRequestItem",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectChangeRequestItem"
+      }
+    },
+    "rowFilter.projectChangeRequestItem.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.changeRequestId": {
+      name: "changeRequestId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.operation": {
+      name: "operation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.targetTable": {
+      name: "targetTable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.targetId": {
+      name: "targetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.payload": {
+      name: "payload",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.baseRow": {
+      name: "baseRow",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestItem.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itemInspectionDocumentAssignment": {
       name: "itemInspectionDocumentAssignment",
       description: "itemInspectionDocumentAssignment",
@@ -189864,6 +191408,51 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.projectChangeRequestView": {
+      name: "projectChangeRequestView",
+      description: "projectChangeRequestView",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectChangeRequestView"
+      }
+    },
+    "rowFilter.projectChangeRequestView.changeRequestId": {
+      name: "changeRequestId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestView.targetTable": {
+      name: "targetTable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestView.targetId": {
+      name: "targetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestView.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestView.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestView.viewedAt": {
+      name: "viewedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.rentalAgreementCharge": {
       name: "rentalAgreementCharge",
       description: "rentalAgreementCharge",
@@ -195758,6 +197347,93 @@ export default {
       type: "string"
     },
     "rowFilter.maintenanceDispatchWorkCenter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.projectChangeRequestComment": {
+      name: "projectChangeRequestComment",
+      description: "projectChangeRequestComment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectChangeRequestComment"
+      }
+    },
+    "rowFilter.projectChangeRequestComment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.changeRequestId": {
+      name: "changeRequestId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.targetTable": {
+      name: "targetTable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.targetId": {
+      name: "targetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.field": {
+      name: "field",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.comment": {
+      name: "comment",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.resolvedAt": {
+      name: "resolvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.resolvedBy": {
+      name: "resolvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequestComment.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
@@ -206823,6 +208499,123 @@ export default {
       type: "string"
     },
     "rowFilter.agentThread.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.projectChangeRequest": {
+      name: "projectChangeRequest",
+      description: "projectChangeRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectChangeRequest"
+      }
+    },
+    "rowFilter.projectChangeRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.baseBaselineId": {
+      name: "baseBaselineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.appliedBaselineId": {
+      name: "appliedBaselineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.submittedAt": {
+      name: "submittedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.decidedBy": {
+      name: "decidedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.decidedAt": {
+      name: "decidedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.decisionNotes": {
+      name: "decisionNotes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.appliedAt": {
+      name: "appliedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectChangeRequest.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
@@ -220411,6 +222204,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.project.lockPlanAfterMilestoneId": {
+      name: "lockPlanAfterMilestoneId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.nextChangeRequestSequence": {
+      name: "nextChangeRequestSequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.nextBaselineSequence": {
+      name: "nextBaselineSequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.training": {
       name: "training",
       description: "training",
@@ -224232,6 +226043,99 @@ export default {
     },
     "rowFilter.kanban.fromStorageUnitId": {
       name: "fromStorageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.projectBaseline": {
+      name: "projectBaseline",
+      description: "projectBaseline",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectBaseline"
+      }
+    },
+    "rowFilter.projectBaseline.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.sequence": {
+      name: "sequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.source": {
+      name: "source",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.milestoneId": {
+      name: "milestoneId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.changeRequestId": {
+      name: "changeRequestId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.formatVersion": {
+      name: "formatVersion",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.snapshot": {
+      name: "snapshot",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.elementCount": {
+      name: "elementCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.linkCount": {
+      name: "linkCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBaseline.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"
