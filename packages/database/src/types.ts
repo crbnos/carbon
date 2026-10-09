@@ -64019,6 +64019,7 @@ export type Database = {
           conversionFactor: number
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customFields: Json | null
           id: string
           itemId: string
@@ -64027,8 +64028,8 @@ export type Database = {
           supplierId: string
           supplierPartId: string | null
           supplierUnitOfMeasureCode: string | null
+          supplierUnitPrice: number | null
           tags: string[] | null
-          unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -64038,6 +64039,7 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           itemId: string
@@ -64046,8 +64048,8 @@ export type Database = {
           supplierId: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          supplierUnitPrice?: number | null
           tags?: string[] | null
-          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64057,6 +64059,7 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           itemId?: string
@@ -64065,8 +64068,8 @@ export type Database = {
           supplierId?: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          supplierUnitPrice?: number | null
           tags?: string[] | null
-          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64231,6 +64234,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "supplierPart_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           }
         ]
       }
@@ -64244,7 +64254,7 @@ export type Database = {
           sourceDocumentId: string | null
           sourceType: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId: string
-          unitPrice: number
+          supplierUnitPrice: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -64257,7 +64267,7 @@ export type Database = {
           sourceDocumentId?: string | null
           sourceType?: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId: string
-          unitPrice: number
+          supplierUnitPrice: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64270,7 +64280,7 @@ export type Database = {
           sourceDocumentId?: string | null
           sourceType?: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId?: string
-          unitPrice?: number
+          supplierUnitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }

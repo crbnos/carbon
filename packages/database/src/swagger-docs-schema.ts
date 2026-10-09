@@ -20722,13 +20722,16 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPart.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPart.unitPrice"
+            $ref: "#/parameters/rowFilter.supplierPart.supplierUnitPrice"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPart.tags"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPart.orderMultiple"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierPart.currencyCode"
           },
           {
             $ref: "#/parameters/select"
@@ -20832,13 +20835,16 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPart.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPart.unitPrice"
+            $ref: "#/parameters/rowFilter.supplierPart.supplierUnitPrice"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPart.tags"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPart.orderMultiple"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierPart.currencyCode"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -20896,13 +20902,16 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPart.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPart.unitPrice"
+            $ref: "#/parameters/rowFilter.supplierPart.supplierUnitPrice"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPart.tags"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPart.orderMultiple"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierPart.currencyCode"
           },
           {
             $ref: "#/parameters/body.supplierPart"
@@ -37993,7 +38002,7 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPartPrice.quantity"
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPartPrice.unitPrice"
+            $ref: "#/parameters/rowFilter.supplierPartPrice.supplierUnitPrice"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPartPrice.sourceType"
@@ -38085,7 +38094,7 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPartPrice.quantity"
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPartPrice.unitPrice"
+            $ref: "#/parameters/rowFilter.supplierPartPrice.supplierUnitPrice"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPartPrice.sourceType"
@@ -38131,7 +38140,7 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPartPrice.quantity"
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPartPrice.unitPrice"
+            $ref: "#/parameters/rowFilter.supplierPartPrice.supplierUnitPrice"
           },
           {
             $ref: "#/parameters/rowFilter.supplierPartPrice.sourceType"
@@ -124632,8 +124641,10 @@ export default {
         customFields: {
           format: "jsonb"
         },
-        unitPrice: {
+        supplierUnitPrice: {
           default: 0,
+          description:
+            "Price per purchase unit (supplierUnitOfMeasureCode), in currencyCode.",
           format: "numeric",
           type: "number"
         },
@@ -124648,6 +124659,12 @@ export default {
           default: 1,
           format: "integer",
           type: "integer"
+        },
+        currencyCode: {
+          description:
+            "Currency of supplierUnitPrice and of every supplierPartPrice row. NULL = the company base currency.\n\nNote:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -132867,7 +132884,7 @@ export default {
       required: [
         "supplierPartId",
         "quantity",
-        "unitPrice",
+        "supplierUnitPrice",
         "sourceType",
         "companyId",
         "createdBy",
@@ -132886,7 +132903,9 @@ export default {
           format: "numeric",
           type: "number"
         },
-        unitPrice: {
+        supplierUnitPrice: {
+          description:
+            "Price per purchase unit at this purchase quantity, in the supplier part's currencyCode.",
           format: "numeric",
           type: "number"
         },
@@ -174331,8 +174350,10 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.supplierPart.unitPrice": {
-      name: "unitPrice",
+    "rowFilter.supplierPart.supplierUnitPrice": {
+      name: "supplierUnitPrice",
+      description:
+        "Price per purchase unit (supplierUnitOfMeasureCode), in currencyCode.",
       required: false,
       in: "query",
       type: "string"
@@ -174345,6 +174366,14 @@ export default {
     },
     "rowFilter.supplierPart.orderMultiple": {
       name: "orderMultiple",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierPart.currencyCode": {
+      name: "currencyCode",
+      description:
+        "Currency of supplierUnitPrice and of every supplierPartPrice row. NULL = the company base currency.",
       required: false,
       in: "query",
       type: "string"
@@ -183566,8 +183595,10 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.supplierPartPrice.unitPrice": {
-      name: "unitPrice",
+    "rowFilter.supplierPartPrice.supplierUnitPrice": {
+      name: "supplierUnitPrice",
+      description:
+        "Price per purchase unit at this purchase quantity, in the supplier part's currencyCode.",
       required: false,
       in: "query",
       type: "string"

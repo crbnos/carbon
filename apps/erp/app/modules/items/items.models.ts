@@ -1009,7 +1009,9 @@ export const supplierPartValidator = z.object({
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),
   orderMultiple: zfd.numeric(z.number().min(1)).optional(),
   conversionFactor: zfd.numeric(z.number().min(0)),
-  unitPrice: zfd.numeric(z.number().min(0).optional())
+  // Per purchase unit, in currencyCode — the price as the supplier quoted it.
+  currencyCode: zfd.text(z.string().optional()),
+  supplierUnitPrice: zfd.numeric(z.number().min(0).optional())
 });
 
 export const toolValidator = applyStorageAndShelfLifeRefines(

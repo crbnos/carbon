@@ -79,7 +79,7 @@ msgstr "{0, plural, one {# operación no tiene estándares de tiempo} other {# o
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# registro necesita atención} other {# registros necesitan atención}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -433,7 +433,7 @@ msgid "{count} units"
 msgstr "{count} unidades"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} creados, {updated} actualizados."
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -460,7 +460,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} de {count} operaciones"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {Y # registro más.} other {Y # registros más.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} más: {hiddenNames}"
@@ -11655,10 +11655,10 @@ msgstr "Apellido"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "Último envío {when} falló: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "Último envío {when}:"
 
 msgid "Last Quarter"
 msgstr "Trimestre Anterior"
@@ -11667,7 +11667,7 @@ msgid "Last Run"
 msgstr "Última ejecución"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "Último envío programado {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Última sincronización: <0/>"
@@ -12857,7 +12857,7 @@ msgid "More overtime"
 msgstr "Más horas extra"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "Hay más registros en espera. Envía de nuevo para continuar."
 
 msgid "Morning, {name}."
 msgstr "Mañana, {name}."
@@ -12872,7 +12872,7 @@ msgid "Motion"
 msgstr "Movimiento"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount tiene {matches} registros con este identificador. Elimina o fusiona los extras en Mount, luego envía de nuevo."
 
 msgid "Move"
 msgstr "Mover"
@@ -13599,7 +13599,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "No hay comentarios aún. Sé el primero en agregar un comentario."
 
 msgid "No companies match \"{query}\""
-msgstr "Ninguna empresa coincide con \"{query}\""
+msgstr "Ninguna empresa coincide con «{query}»"
 
 msgid "No completed jobs within range"
 msgstr "No hay órdenes de trabajo completadas dentro del rango"
@@ -14096,6 +14096,12 @@ msgstr "No coinciden unidades de almacenamiento ni números de seguimiento."
 
 msgid "No Supplier"
 msgstr "Sin proveedor"
+
+msgid "No supplier parts have been added yet."
+msgstr "Aún no se han añadido piezas de proveedor."
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "No hay piezas de proveedor que coincidan con «{searchText}»."
 
 msgid "No suppliers yet"
 msgstr "Sin proveedores aún"
@@ -15390,6 +15396,9 @@ msgstr "por día"
 
 msgid "per month"
 msgstr "por mes"
+
+msgid "Per purchase unit"
+msgstr "Por unidad de compra"
 
 msgid "per quarter"
 msgstr "por trimestre"
@@ -18466,9 +18475,6 @@ msgstr "Guardar borrador"
 msgid "Save Method"
 msgstr "Guardar Método"
 
-msgid "Save Rate"
-msgstr "Guardar tipo de cambio"
-
 msgid "Save the form you're editing"
 msgstr "Guardar el formulario que estás editando"
 
@@ -18727,6 +18733,9 @@ msgstr "Buscar elementos relacionados..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Buscar unidades de almacenamiento y números de seguimiento"
+
+msgid "Search supplier parts"
+msgstr "Buscar piezas de proveedor"
 
 msgid "Search suppliers..."
 msgstr "Buscar proveedores..."
@@ -19980,7 +19989,7 @@ msgid "Started"
 msgstr "Comenzó"
 
 msgid "Starting"
-msgstr ""
+msgstr "Iniciando"
 
 msgid "Starting…"
 msgstr "Iniciando…"
@@ -20446,6 +20455,9 @@ msgstr "Descripción General del Proveedor"
 
 msgid "Supplier Part"
 msgstr "Parte del Proveedor"
+
+msgid "Supplier part actions"
+msgstr "Acciones de piezas de proveedor"
 
 msgid "Supplier Part ID"
 msgstr "Referencia del proveedor"
@@ -21556,16 +21568,16 @@ msgid "The purchase order"
 msgstr "La orden de compra"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "El envío a Mount no se inició. Inténtalo de nuevo."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "El envío a Mount falló"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "El envío a Mount finalizó"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "El envío a Mount finalizó. Algunos registros necesitan atención"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Los puntos de ruptura de cantidad a los que se cotiza esta línea; cada columna lleva su propio precio por unidad para la negociación comprador-proveedor y para la conversión a documentos posteriores."
@@ -22806,7 +22818,7 @@ msgid "Triggers"
 msgstr "Disparadores"
 
 msgid "Try a different name."
-msgstr "Intente con un nombre diferente."
+msgstr "Intenta un nombre diferente."
 
 msgid "Tuesday"
 msgstr "Martes"
@@ -23628,6 +23640,9 @@ msgstr "Ver en plan del proyecto"
 
 msgid "View Issue"
 msgstr "Ver Problema"
+
+msgid "View Item"
+msgstr "Ver Artículo"
 
 msgid "View Item Master"
 msgstr "Ver Maestro de Artículos"

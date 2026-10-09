@@ -1,7 +1,7 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009163952",
+  "schemaVersion": "20261009181437",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
@@ -7190,9 +7190,10 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "unitPrice",
+        "supplierUnitPrice",
         "tags",
-        "orderMultiple"
+        "orderMultiple",
+        "currencyCode"
       ]
     },
     {
@@ -7201,7 +7202,7 @@
       "columns": [
         "supplierPartId",
         "quantity",
-        "unitPrice",
+        "supplierUnitPrice",
         "sourceType",
         "sourceDocumentId",
         "companyId",

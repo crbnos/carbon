@@ -29,6 +29,7 @@
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
+    "./supplier-part-price": "./src/supplier-part-price.ts",
     "./contract-schedule": "./src/contract-schedule.ts",
     "./contract-revenue-schedule": "./src/contract-revenue-schedule.ts",
     "./contract-position": "./src/contract-position.ts",

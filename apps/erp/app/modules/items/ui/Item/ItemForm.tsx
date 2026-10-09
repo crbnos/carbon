@@ -213,6 +213,23 @@ export function getLinkToItemDetails(type: ItemType, id: string) {
   }
 }
 
+export function getLinkToItemPurchasing(type: ItemType, id: string) {
+  switch (type) {
+    case "Part":
+      return path.to.partPurchasing(id);
+    case "Material":
+      return path.to.materialPurchasing(id);
+    case "Tool":
+      return path.to.toolPurchasing(id);
+    case "Consumable":
+      return path.to.consumablePurchasing(id);
+    case "Service":
+      return path.to.servicePurchasing(id);
+    default:
+      throw new Error("Invalid type");
+  }
+}
+
 export function getLinkToItemManufacturing(type: ItemType, id: string) {
   switch (type) {
     case "Part":

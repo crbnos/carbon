@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import { ACTIVATION_CUTOVER_PARAM } from "@carbon/database/accounting-cutover";
 import { CUTOVER_MAX_PERIODS_BACK } from "@carbon/database/accounting-cutover-reads";
@@ -63,6 +63,70 @@ export async function getActivationCutover(
     datetime.today(timeZone),
     CUTOVER_MAX_PERIODS_BACK
   );
+}
+
+/**
+ * Saves a currency's config and, when given, pins its exchange rate as a
+ * company override — in ONE transaction, so a failed pin never leaves the
+ * config saved behind a "failed to save" message. The route has already
+ * checked `update: accounting`; the writes are scoped to the company group
+ * (config) and the company (override). Returns null when the currency is not
+ * in the group.
+ */
+export async function saveCurrencyWithRateOverride(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    currencyId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    config: {
+      decimalPlaces: number;
+      historicalExchangeRate: number | null;
+      customFields: Json;
+    };
+    overrideRate: number | null;
+  }
+): Promise<{ code: string } | null> {
+  return db.transaction().execute(async (trx) => {
+    const currency = await trx
+      .updateTable("currency")
+      .set({
+        decimalPlaces: args.config.decimalPlaces,
+        historicalExchangeRate: args.config.historicalExchangeRate,
+        customFields: args.config.customFields,
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", args.currencyId)
+      .where("companyGroupId", "=", args.companyGroupId)
+      .returning("code")
+      .executeTakeFirst();
+
+    if (!currency) return null;
+
+    if (args.overrideRate !== null) {
+      // Update-in-place on conflict so re-pinning keeps the original creator.
+      await trx
+        .insertInto("exchangeRateOverride")
+        .values({
+          companyId: args.companyId,
+          currencyCode: currency.code,
+          rate: args.overrideRate,
+          createdBy: args.userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["companyId", "currencyCode"]).doUpdateSet({
+            rate: args.overrideRate as number,
+            updatedBy: args.userId,
+            updatedAt: datetime.timestamp()
+          })
+        )
+        .execute();
+    }
+
+    return { code: currency.code };
+  });
 }
 
 /** The company's business day, `YYYY-MM-DD`. */

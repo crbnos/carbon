@@ -1838,6 +1838,8 @@ export const path = {
       generatePath(`${x}/supplier/${id}/contacts/new`),
     newSupplierLocation: (id: string) =>
       generatePath(`${x}/supplier/${id}/locations/new`),
+    newSupplierPart: (id: string) =>
+      generatePath(`${x}/supplier/${id}/parts/new`),
     newSupplierProcess: (id: string) =>
       generatePath(`${x}/supplier/${id}/processes/new`),
     newSupplierQuote: `${x}/supplier-quote/new`,
@@ -2448,6 +2450,9 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/locations/${id}`),
     supplierLocations: (id: string) =>
       generatePath(`${x}/supplier/${id}/locations`),
+    supplierPart: (supplierId: string, id: string) =>
+      generatePath(`${x}/supplier/${supplierId}/parts/${id}`),
+    supplierParts: (id: string) => generatePath(`${x}/supplier/${id}/parts`),
     supplierPayment: (id: string) =>
       generatePath(`${x}/supplier/${id}/payments`),
     supplierProcess: (supplierId: string, id: string) =>

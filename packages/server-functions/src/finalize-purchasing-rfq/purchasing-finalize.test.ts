@@ -180,25 +180,31 @@ databaseTest(
 
       const part = await f.db
         .selectFrom("supplierPart")
-        .select(["id", "unitPrice", "minimumOrderQuantity"])
+        .select(["id", "supplierUnitPrice", "minimumOrderQuantity"])
         .where("itemId", "=", f.ids.item)
         .where("supplierId", "=", f.ids.supplier)
         .executeTakeFirstOrThrow();
-      // The lowest quoted price, per inventory unit (2 to a purchase unit).
-      expect(Number(part.unitPrice)).toBe(4);
+      // The lowest quoted price, as quoted: per purchase unit (2 inventory
+      // units to one), not divided down to an inventory unit.
+      expect(Number(part.supplierUnitPrice)).toBe(8);
       expect(Number(part.minimumOrderQuantity)).toBe(10);
 
       const breaks = await f.db
         .selectFrom("supplierPartPrice")
-        .select(["quantity", "unitPrice", "leadTime", "sourceDocumentId"])
+        .select([
+          "quantity",
+          "supplierUnitPrice",
+          "leadTime",
+          "sourceDocumentId"
+        ])
         .where("supplierPartId", "=", part.id)
         .orderBy("quantity")
         .execute();
       expect(
-        breaks.map((b) => [Number(b.quantity), Number(b.unitPrice)])
+        breaks.map((b) => [Number(b.quantity), Number(b.supplierUnitPrice)])
       ).toEqual([
-        [1, 5],
-        [10, 4]
+        [1, 10],
+        [10, 8]
       ]);
       expect(breaks.every((b) => b.sourceDocumentId === f.ids.quote)).toBe(
         true
@@ -207,6 +213,91 @@ databaseTest(
       // Finalizing again rewrites the same breaks rather than adding more.
       await finalizeSupplierQuote(f.ctx, { supplierQuoteId: f.ids.quote });
       expect(await count(f, "supplierPartPrice")).toBe(2);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a quote in the supplier's currency is recorded in that currency",
+  async () => {
+    const f = await fixture();
+    try {
+      await f.db
+        .updateTable("supplierQuote")
+        .set({ currencyCode: "EUR", exchangeRate: 0.8 })
+        .where("id", "=", f.ids.quote)
+        .execute();
+
+      const result = await finalizeSupplierQuote(f.ctx, {
+        supplierQuoteId: f.ids.quote
+      });
+      expect(result.error).toBeNull();
+
+      const part = await f.db
+        .selectFrom("supplierPart")
+        .select(["currencyCode", "supplierUnitPrice"])
+        .where("itemId", "=", f.ids.item)
+        .where("supplierId", "=", f.ids.supplier)
+        .executeTakeFirstOrThrow();
+      expect(part.currencyCode).toBe("EUR");
+      expect(Number(part.supplierUnitPrice)).toBe(8);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an existing part keeps its currency and gets the quote converted into it",
+  async () => {
+    const f = await fixture();
+    try {
+      await f.db
+        .updateTable("supplierQuote")
+        .set({ currencyCode: "EUR", exchangeRate: 0.8 })
+        .where("id", "=", f.ids.quote)
+        .execute();
+      await f.db
+        .insertInto("supplierPart")
+        .values({
+          itemId: f.ids.item,
+          supplierId: f.ids.supplier,
+          currencyCode: "USD",
+          supplierUnitPrice: 99,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+
+      const result = await finalizeSupplierQuote(f.ctx, {
+        supplierQuoteId: f.ids.quote
+      });
+      expect(result.error).toBeNull();
+
+      const part = await f.db
+        .selectFrom("supplierPart")
+        .select(["id", "currencyCode", "supplierUnitPrice"])
+        .where("itemId", "=", f.ids.item)
+        .where("supplierId", "=", f.ids.supplier)
+        .executeTakeFirstOrThrow();
+      // 8 EUR at 0.8 EUR per USD.
+      expect(part.currencyCode).toBe("USD");
+      expect(Number(part.supplierUnitPrice)).toBe(10);
+
+      const breaks = await f.db
+        .selectFrom("supplierPartPrice")
+        .select(["quantity", "supplierUnitPrice"])
+        .where("supplierPartId", "=", part.id)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        breaks.map((b) => [Number(b.quantity), Number(b.supplierUnitPrice)])
+      ).toEqual([
+        [1, 12.5],
+        [10, 10]
+      ]);
     } finally {
       await f.cleanup();
     }

@@ -79,7 +79,7 @@ msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operas
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# kayıt dikkat gerektiriyor} other {# kayıt dikkat gerektiriyor}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -433,7 +433,7 @@ msgid "{count} units"
 msgstr "{count} adet"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} oluşturuldu, {updated} güncellendi."
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -460,7 +460,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} /{count} operasyon"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {Ve # daha fazla kayıt.} other {Ve # daha fazla kayıt.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha: {hiddenNames}"
@@ -11655,10 +11655,10 @@ msgstr "Soyadı"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "Son gönderim {when} başarısız oldu: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "Son gönderim {when}:"
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
@@ -11667,7 +11667,7 @@ msgid "Last Run"
 msgstr "Son Çalıştırma"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "Son planlanan gönderim {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Son senkronizasyon: <0/>"
@@ -12857,7 +12857,7 @@ msgid "More overtime"
 msgstr "Daha fazla fazla mesai"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "Daha fazla kayıt bekleniyor. Devam etmek için yeniden gönderin."
 
 msgid "Morning, {name}."
 msgstr "Sabah, {name}."
@@ -12872,7 +12872,7 @@ msgid "Motion"
 msgstr "Hareket"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount bu tanımlayıcıya sahip {matches} kayıt içeriyor. Fazlasını Mount'ta silin veya birleştirin, sonra yeniden gönderin."
 
 msgid "Move"
 msgstr "Taşış"
@@ -13599,7 +13599,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu ekleyin."
 
 msgid "No companies match \"{query}\""
-msgstr "Hiçbir şirket \"{query}\" ile eşleşmez"
+msgstr "Hiçbir şirket \"{query}\" ile eşleşmiyor"
 
 msgid "No completed jobs within range"
 msgstr "Aralıkta tamamlanmış İş emri yok"
@@ -14096,6 +14096,12 @@ msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
 
 msgid "No Supplier"
 msgstr "Tedarikçi yok"
+
+msgid "No supplier parts have been added yet."
+msgstr "Hiçbir tedarikçi parçası henüz eklenmemiş."
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "Hiçbir tedarikçi parçası \"{searchText}\" ile eşleşmiyor."
 
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
@@ -15390,6 +15396,9 @@ msgstr "günde"
 
 msgid "per month"
 msgstr "ayda"
+
+msgid "Per purchase unit"
+msgstr "Satın alma birimi başına"
 
 msgid "per quarter"
 msgstr "çeyrek başına"
@@ -18466,9 +18475,6 @@ msgstr "Taslağı Kaydet"
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
 
-msgid "Save Rate"
-msgstr "Kuru kaydet"
-
 msgid "Save the form you're editing"
 msgstr "Düzenlemekte olduğunuz formu kaydet"
 
@@ -18687,7 +18693,7 @@ msgid "Search fields..."
 msgstr "Alanları ara..."
 
 msgid "Search for a company"
-msgstr "Şirketi ara"
+msgstr "Bir şirket arayın"
 
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
@@ -18727,6 +18733,9 @@ msgstr "İlgili öğeleri ara..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "Depolama birimlerini ve takip numaralarını ara"
+
+msgid "Search supplier parts"
+msgstr "Tedarikçi parçalarını arayın"
 
 msgid "Search suppliers..."
 msgstr "Tedarikçileri ara..."
@@ -19980,7 +19989,7 @@ msgid "Started"
 msgstr "Başlangıç"
 
 msgid "Starting"
-msgstr ""
+msgstr "Başlıyor"
 
 msgid "Starting…"
 msgstr "Başlanıyor…"
@@ -20446,6 +20455,9 @@ msgstr "Tedarikçi Genel Bakışı"
 
 msgid "Supplier Part"
 msgstr "Tedarikçi Parçası"
+
+msgid "Supplier part actions"
+msgstr "Tedarikçi parçası işlemleri"
 
 msgid "Supplier Part ID"
 msgstr "Tedarikçi parça numarası"
@@ -21556,16 +21568,16 @@ msgid "The purchase order"
 msgstr "Satın alma siparişi"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount'a gönderim başlamadı. Lütfen tekrar deneyin."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount'a gönderim başarısız oldu"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount'a gönderim tamamlandı"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount'a gönderim tamamlandı. Bazı kayıtlar dikkat gerektiriyor"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Bu Satırın fiyatlandırıldığı Miktar kırılım noktaları; her sütun Satın almacı–Tedarikçi müzakereleri ve aşağı yönlü belgelere dönüştürme için kendi birim başına Fiyatını taşır."
@@ -23628,6 +23640,9 @@ msgstr "Proje planında görüntüle"
 
 msgid "View Issue"
 msgstr "Sorunu Görüntüle"
+
+msgid "View Item"
+msgstr "Stok Kartını Görüntüle"
 
 msgid "View Item Master"
 msgstr "Ürün Ana Verisine Görüntüle"

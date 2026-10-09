@@ -79,7 +79,7 @@ msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# 件のレコードが対応を要しています} other {# 件のレコードが対応を要しています}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -433,7 +433,7 @@ msgid "{count} units"
 msgstr "{count} 個"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} 件作成、{updated} 件更新されました。"
 
 msgid "{days}d"
 msgstr "{days}日"
@@ -460,7 +460,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 件の工程"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {他に # 件のレコード} other {他に # 件のレコード}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
@@ -11655,10 +11655,10 @@ msgstr "姓"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "最後のプッシュ {when} が失敗しました: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "最後のプッシュ {when}:"
 
 msgid "Last Quarter"
 msgstr "前四半期"
@@ -11667,7 +11667,7 @@ msgid "Last Run"
 msgstr "最終実行"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "最後にスケジュールされたプッシュ {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
@@ -12857,7 +12857,7 @@ msgid "More overtime"
 msgstr "残業を増やす"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "さらに多くのレコードが待機中です。続行するにはもう一度プッシュしてください。"
 
 msgid "Morning, {name}."
 msgstr "朝、{name}さん。"
@@ -12872,7 +12872,7 @@ msgid "Motion"
 msgstr "モーション"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount に {matches} 件のこの識別子を持つレコードがあります。Mount の余分なレコードを削除するか統合してからもう一度プッシュしてください。"
 
 msgid "Move"
 msgstr "移動"
@@ -14096,6 +14096,12 @@ msgstr "保管ユニットまたはトラッキング番号に一致するもの
 
 msgid "No Supplier"
 msgstr "仕入先なし"
+
+msgid "No supplier parts have been added yet."
+msgstr "仕入先部品がまだ追加されていません。"
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "「{searchText}」に一致する仕入先部品がありません。"
 
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
@@ -15390,6 +15396,9 @@ msgstr "1日あたり"
 
 msgid "per month"
 msgstr "1か月あたり"
+
+msgid "Per purchase unit"
+msgstr "購入単位あたり"
 
 msgid "per quarter"
 msgstr "四半期あたり"
@@ -18466,9 +18475,6 @@ msgstr "下書きを保存"
 msgid "Save Method"
 msgstr "メソッドを保存"
 
-msgid "Save Rate"
-msgstr "レートを保存"
-
 msgid "Save the form you're editing"
 msgstr "編集中のフォームを保存"
 
@@ -18727,6 +18733,9 @@ msgstr "関連アイテムを検索..."
 
 msgid "Search storage units and tracking numbers"
 msgstr "保管ユニットとトラッキング番号を検索"
+
+msgid "Search supplier parts"
+msgstr "仕入先部品を検索"
 
 msgid "Search suppliers..."
 msgstr "仕入先を検索..."
@@ -19980,7 +19989,7 @@ msgid "Started"
 msgstr "開始"
 
 msgid "Starting"
-msgstr ""
+msgstr "開始中"
 
 msgid "Starting…"
 msgstr "開始中…"
@@ -20446,6 +20455,9 @@ msgstr "仕入先概要"
 
 msgid "Supplier Part"
 msgstr "仕入先品"
+
+msgid "Supplier part actions"
+msgstr "仕入先部品の操作"
 
 msgid "Supplier Part ID"
 msgstr "仕入先品番"
@@ -21556,16 +21568,16 @@ msgid "The purchase order"
 msgstr "発注書"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount へのプッシュが開始されませんでした。もう一度試してください。"
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount へのプッシュが失敗しました"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount へのプッシュが完了しました"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount へのプッシュが完了しました。いくつかのレコードが対応を要しています"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この明細が価格設定される数量ブレークポイント。各列は買い手と仕入先の交渉および下流文書への変換用に、独自の単価を持ちます。"
@@ -23628,6 +23640,9 @@ msgstr "プロジェクトプランで表示"
 
 msgid "View Issue"
 msgstr "問題を表示"
+
+msgid "View Item"
+msgstr "品目を表示"
 
 msgid "View Item Master"
 msgstr "アイテムマスターを表示"

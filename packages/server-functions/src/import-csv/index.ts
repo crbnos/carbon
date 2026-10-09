@@ -1032,6 +1032,9 @@ async function writeSupplierPartLinks(
     const numericConversion = link.conversionFactor
       ? Number.parseFloat(link.conversionFactor)
       : 1;
+    // The price is in the supplier part's currency: an existing part keeps
+    // its own, a new one is created in base (currencyCode NULL), which is
+    // what an imported price has always meant.
     const numericPrice = link.unitPrice
       ? Number.parseFloat(link.unitPrice)
       : null;
@@ -1045,7 +1048,7 @@ async function writeSupplierPartLinks(
           minimumOrderQuantity: numericMOQ,
           orderMultiple: numericOrderMultiple,
           conversionFactor: numericConversion,
-          unitPrice: numericPrice,
+          supplierUnitPrice: numericPrice,
           updatedAt: now,
           updatedBy: userId
         })
@@ -1063,7 +1066,7 @@ async function writeSupplierPartLinks(
           minimumOrderQuantity: numericMOQ,
           orderMultiple: numericOrderMultiple,
           conversionFactor: numericConversion,
-          unitPrice: numericPrice,
+          supplierUnitPrice: numericPrice,
           companyId,
           createdBy: userId
         })
