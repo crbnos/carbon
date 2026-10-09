@@ -71,8 +71,9 @@ const MAX_ROWS = 1000;
 
 // Stands in for the two list reads the batch guard makes. Supabase builders are
 // thenables, so the chain resolves on await without a terminal method. Each
-// read is answered from the ids its own `in` filter carries and truncated at
-// MAX_ROWS, so a guard that stopped batching visibly drops rows.
+// read is answered from the ids its own `in` filter carries, sliced to the
+// `range` page fetchAllByIds asks for and truncated at MAX_ROWS, so a guard
+// that stopped batching or paging visibly drops rows.
 function fakeListClient(
   rows: { item?: Row[]; changeOrder?: Row[] },
   errors: { item?: boolean; changeOrder?: boolean } = {}
@@ -82,6 +83,7 @@ function fakeListClient(
       const failed = errors[table as keyof typeof errors] === true;
       const all = rows[table as keyof typeof rows] ?? [];
       let requested: string[] | null = null;
+      let page: [number, number] | null = null;
       const builder = {
         select: () => builder,
         in: (_column: string, ids: string[]) => {
@@ -89,6 +91,11 @@ function fakeListClient(
           return builder;
         },
         eq: () => builder,
+        order: () => builder,
+        range: (from: number, to: number) => {
+          page = [from, to];
+          return builder;
+        },
         then: (
           resolve: (value: {
             data: Row[] | null;
@@ -102,6 +109,7 @@ function fakeListClient(
                   .filter(
                     (row) => !requested || requested.includes(row?.id as string)
                   )
+                  .slice(page?.[0] ?? 0, page ? page[1] + 1 : undefined)
                   .slice(0, MAX_ROWS),
             error: failed ? { message: `failed to read ${table}` } : null
           })
