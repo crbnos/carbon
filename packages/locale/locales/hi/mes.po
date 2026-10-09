@@ -216,7 +216,7 @@ msgid "Available"
 msgstr "उपलब्ध"
 
 msgid "Back"
-msgstr ""
+msgstr "वापस"
 
 msgid "Back to batch"
 msgstr "बैच पर वापस"
@@ -299,7 +299,7 @@ msgid "Choose a job"
 msgstr "एक जॉब चुनें"
 
 msgid "Choose an option"
-msgstr ""
+msgstr "एक विकल्प चुनें"
 
 msgid "Clear"
 msgstr "साफ़ करें"
@@ -368,7 +368,7 @@ msgstr "पूर्ण करें"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
-msgstr ""
+msgstr "पूर्ण करें {0}?"
 
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
@@ -678,7 +678,7 @@ msgid "First due {0}"
 msgstr "पहली देय {0}"
 
 msgid "Fit"
-msgstr ""
+msgstr "फिट करें"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
@@ -702,7 +702,7 @@ msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
 
 msgid "Heading {level}"
-msgstr ""
+msgstr "शीर्षक {level}"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
@@ -826,7 +826,7 @@ msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
 msgid "Left to Right"
-msgstr ""
+msgstr "बाएँ से दाएँ"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -898,7 +898,7 @@ msgid "Machine down for maintenance now?"
 msgstr "मशीन अब रखरखाव के लिए बंद है?"
 
 msgid "Main"
-msgstr ""
+msgstr "मुख्य"
 
 msgid "Maintenance"
 msgstr "रखरखाव"
@@ -953,7 +953,7 @@ msgid "Model"
 msgstr "मॉडल"
 
 msgid "More"
-msgstr ""
+msgstr "अधिक"
 
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
@@ -1184,7 +1184,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
 
 msgid "Open Jobs"
-msgstr ""
+msgstr "खुले जॉब"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1212,7 +1212,7 @@ msgid "Optional"
 msgstr "वैकल्पिक"
 
 msgid "Options"
-msgstr ""
+msgstr "विकल्प"
 
 msgid "or"
 msgstr "या"
@@ -1254,7 +1254,7 @@ msgid "Pause"
 msgstr "रोकें"
 
 msgid "Pause timer"
-msgstr ""
+msgstr "टाइमर रोकें"
 
 msgid "Pick"
 msgstr "चुनें"
@@ -1312,7 +1312,7 @@ msgid "Press ? on any page to open this list. Shortcuts are ignored while you ty
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
 
 msgid "Press '/' for commands"
-msgstr ""
+msgstr "आदेशों के लिए '/' दबाएँ"
 
 msgid "Prev"
 msgstr "पिछला"
@@ -1681,7 +1681,7 @@ msgid "Start or pause the operation"
 msgstr "ऑपरेशन को शुरू करें या रोकें"
 
 msgid "Start timer"
-msgstr ""
+msgstr "टाइमर शुरू करें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -1782,7 +1782,7 @@ msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 
 msgid "This marks the dispatch as completed."
-msgstr ""
+msgstr "यह रखरखाव कार्य को पूर्ण के रूप में चिह्नित करता है।"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "यह पार्ट ऑर्डर के अनुसार बनाया गया था। इसे स्क्रैप करने से इसकी रूटिंग को फिर से खोला जा सकता है ताकि एक रिप्लेसमेंट बनाया जा सके।"
@@ -1819,13 +1819,13 @@ msgid "Today"
 msgstr "आज"
 
 msgid "Toggle labor"
-msgstr ""
+msgstr "श्रम टॉगल करें"
 
 msgid "Toggle machine"
-msgstr ""
+msgstr "मशीन टॉगल करें"
 
 msgid "Toggle setup"
-msgstr ""
+msgstr "सेटअप टॉगल करें"
 
 msgid "Toggle the sidebar"
 msgstr "साइडबार को टॉगल करें"
@@ -1834,7 +1834,7 @@ msgid "Tools"
 msgstr "उपकरण"
 
 msgid "Top to Bottom"
-msgstr ""
+msgstr "ऊपर से नीचे"
 
 msgid "Total"
 msgstr "कुल"
@@ -1972,7 +1972,7 @@ msgid "Work instructions"
 msgstr "कार्य निर्देश"
 
 msgid "Write a note…"
-msgstr ""
+msgstr "एक नोट लिखें…"
 
 msgid "Yes"
 msgstr "हां"

@@ -216,7 +216,7 @@ msgid "Available"
 msgstr "利用可能"
 
 msgid "Back"
-msgstr ""
+msgstr "戻る"
 
 msgid "Back to batch"
 msgstr "バッチへ戻る"
@@ -299,7 +299,7 @@ msgid "Choose a job"
 msgstr "製造指図を選択"
 
 msgid "Choose an option"
-msgstr ""
+msgstr "オプションを選択"
 
 msgid "Clear"
 msgstr "クリア"
@@ -368,7 +368,7 @@ msgstr "完了"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
-msgstr ""
+msgstr "{0}を完了しますか?"
 
 msgid "Complete All"
 msgstr "すべて完了"
@@ -678,7 +678,7 @@ msgid "First due {0}"
 msgstr "最初の期日 {0}"
 
 msgid "Fit"
-msgstr ""
+msgstr "フィット"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "完了する前に、ハイライトされた数量を修正してください。"
@@ -702,7 +702,7 @@ msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
 msgid "Heading {level}"
-msgstr ""
+msgstr "見出し {level}"
 
 msgid "Hide description"
 msgstr "説明を非表示"
@@ -826,7 +826,7 @@ msgid "Leave this page"
 msgstr "このページを離れる"
 
 msgid "Left to Right"
-msgstr ""
+msgstr "左から右へ"
 
 msgid "Let's build something"
 msgstr "さあ、何かを作りましょう"
@@ -898,7 +898,7 @@ msgid "Machine down for maintenance now?"
 msgstr "機械が今保全中ですか？"
 
 msgid "Main"
-msgstr ""
+msgstr "メイン"
 
 msgid "Maintenance"
 msgstr "保全"
@@ -953,7 +953,7 @@ msgid "Model"
 msgstr "モデル"
 
 msgid "More"
-msgstr ""
+msgstr "もっと"
 
 msgid "More actions"
 msgstr "その他のアクション"
@@ -1184,7 +1184,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを開く"
 
 msgid "Open Jobs"
-msgstr ""
+msgstr "オープン製造指図"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1212,7 +1212,7 @@ msgid "Optional"
 msgstr "オプション"
 
 msgid "Options"
-msgstr ""
+msgstr "オプション"
 
 msgid "or"
 msgstr "または"
@@ -1254,7 +1254,7 @@ msgid "Pause"
 msgstr "一時停止"
 
 msgid "Pause timer"
-msgstr ""
+msgstr "タイマーを一時停止"
 
 msgid "Pick"
 msgstr "ピック"
@@ -1312,7 +1312,7 @@ msgid "Press ? on any page to open this list. Shortcuts are ignored while you ty
 msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"
 
 msgid "Press '/' for commands"
-msgstr ""
+msgstr "「/」を押してコマンドを表示"
 
 msgid "Prev"
 msgstr "前へ"
@@ -1681,7 +1681,7 @@ msgid "Start or pause the operation"
 msgstr "工程を開始 / 一時停止"
 
 msgid "Start timer"
-msgstr ""
+msgstr "タイマーを開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -1782,7 +1782,7 @@ msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 
 msgid "This marks the dispatch as completed."
-msgstr ""
+msgstr "この操作により保全指示が完了とマークされます。"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "この部品は受注生産で製造されました。スクラップすると、その工順を再オープンして交換部品を製造できます。"
@@ -1819,13 +1819,13 @@ msgid "Today"
 msgstr "今日"
 
 msgid "Toggle labor"
-msgstr ""
+msgstr "労務を切り替える"
 
 msgid "Toggle machine"
-msgstr ""
+msgstr "機械を切り替える"
 
 msgid "Toggle setup"
-msgstr ""
+msgstr "段取りを切り替える"
 
 msgid "Toggle the sidebar"
 msgstr "サイドバーの表示/非表示を切り替える"
@@ -1834,7 +1834,7 @@ msgid "Tools"
 msgstr "工具"
 
 msgid "Top to Bottom"
-msgstr ""
+msgstr "上から下へ"
 
 msgid "Total"
 msgstr "合計"
@@ -1972,7 +1972,7 @@ msgid "Work instructions"
 msgstr "作業手順書"
 
 msgid "Write a note…"
-msgstr ""
+msgstr "メモを書く…"
 
 msgid "Yes"
 msgstr "はい"

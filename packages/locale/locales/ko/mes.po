@@ -216,7 +216,7 @@ msgid "Available"
 msgstr "가용"
 
 msgid "Back"
-msgstr ""
+msgstr "뒤로"
 
 msgid "Back to batch"
 msgstr "배치로 돌아가기"
@@ -299,7 +299,7 @@ msgid "Choose a job"
 msgstr "작업 지시 선택"
 
 msgid "Choose an option"
-msgstr ""
+msgstr "옵션을 선택하세요"
 
 msgid "Clear"
 msgstr "지우기"
@@ -368,7 +368,7 @@ msgstr "완료"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
-msgstr ""
+msgstr "{0}를 완료 처리합니까?"
 
 msgid "Complete All"
 msgstr "모두 완료"
@@ -678,7 +678,7 @@ msgid "First due {0}"
 msgstr "첫 번째 기한 {0}"
 
 msgid "Fit"
-msgstr ""
+msgstr "맞추기"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "완료하기 전에 강조된 수량을 수정하세요."
@@ -702,7 +702,7 @@ msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
 msgid "Heading {level}"
-msgstr ""
+msgstr "{level} 제목"
 
 msgid "Hide description"
 msgstr "설명 숨기기"
@@ -826,7 +826,7 @@ msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
 msgid "Left to Right"
-msgstr ""
+msgstr "왼쪽에서 오른쪽으로"
 
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
@@ -898,7 +898,7 @@ msgid "Machine down for maintenance now?"
 msgstr "기계가 지금 유지보수 중인가요?"
 
 msgid "Main"
-msgstr ""
+msgstr "메인"
 
 msgid "Maintenance"
 msgstr "유지보수"
@@ -953,7 +953,7 @@ msgid "Model"
 msgstr "모델"
 
 msgid "More"
-msgstr ""
+msgstr "더보기"
 
 msgid "More actions"
 msgstr "더 많은 작업"
@@ -1184,7 +1184,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 
 msgid "Open Jobs"
-msgstr ""
+msgstr "미결 작업 지시"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1212,7 +1212,7 @@ msgid "Optional"
 msgstr "선택 사항"
 
 msgid "Options"
-msgstr ""
+msgstr "옵션"
 
 msgid "or"
 msgstr "또는"
@@ -1254,7 +1254,7 @@ msgid "Pause"
 msgstr "일시 중지"
 
 msgid "Pause timer"
-msgstr ""
+msgstr "타이머 일시 중지"
 
 msgid "Pick"
 msgstr "피킹"
@@ -1312,7 +1312,7 @@ msgid "Press ? on any page to open this list. Shortcuts are ignored while you ty
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
 
 msgid "Press '/' for commands"
-msgstr ""
+msgstr "'/'를 눌러 명령을 실행하세요"
 
 msgid "Prev"
 msgstr "이전"
@@ -1681,7 +1681,7 @@ msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
 
 msgid "Start timer"
-msgstr ""
+msgstr "타이머 시작"
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -1782,7 +1782,7 @@ msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
 
 msgid "This marks the dispatch as completed."
-msgstr ""
+msgstr "이것은 유지보수 지시를 완료로 표시합니다."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."
@@ -1819,13 +1819,13 @@ msgid "Today"
 msgstr "오늘"
 
 msgid "Toggle labor"
-msgstr ""
+msgstr "노무 전환"
 
 msgid "Toggle machine"
-msgstr ""
+msgstr "기계 전환"
 
 msgid "Toggle setup"
-msgstr ""
+msgstr "셋업 전환"
 
 msgid "Toggle the sidebar"
 msgstr "사이드바 전환"
@@ -1834,7 +1834,7 @@ msgid "Tools"
 msgstr "공구"
 
 msgid "Top to Bottom"
-msgstr ""
+msgstr "위에서 아래로"
 
 msgid "Total"
 msgstr "총계"
@@ -1972,7 +1972,7 @@ msgid "Work instructions"
 msgstr "작업 표준서"
 
 msgid "Write a note…"
-msgstr ""
+msgstr "메모 작성…"
 
 msgid "Yes"
 msgstr "예"

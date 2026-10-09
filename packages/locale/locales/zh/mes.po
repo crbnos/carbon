@@ -216,7 +216,7 @@ msgid "Available"
 msgstr "可用"
 
 msgid "Back"
-msgstr ""
+msgstr "返回"
 
 msgid "Back to batch"
 msgstr "返回生产批次"
@@ -299,7 +299,7 @@ msgid "Choose a job"
 msgstr "选择工单"
 
 msgid "Choose an option"
-msgstr ""
+msgstr "选择一个选项"
 
 msgid "Clear"
 msgstr "清除"
@@ -368,7 +368,7 @@ msgstr "完成"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
-msgstr ""
+msgstr "完成 {0}?"
 
 msgid "Complete All"
 msgstr "全部完成"
@@ -678,7 +678,7 @@ msgid "First due {0}"
 msgstr "最早应交期 {0}"
 
 msgid "Fit"
-msgstr ""
+msgstr "自适应"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "完成前请修正突出显示的数量。"
@@ -702,7 +702,7 @@ msgid "Go to onboarding"
 msgstr "前往入门"
 
 msgid "Heading {level}"
-msgstr ""
+msgstr "标题 {level}"
 
 msgid "Hide description"
 msgstr "隐藏描述"
@@ -826,7 +826,7 @@ msgid "Leave this page"
 msgstr "离开此页面"
 
 msgid "Left to Right"
-msgstr ""
+msgstr "从左到右"
 
 msgid "Let's build something"
 msgstr "让我们开始构建"
@@ -898,7 +898,7 @@ msgid "Machine down for maintenance now?"
 msgstr "机器现在正在维护吗？"
 
 msgid "Main"
-msgstr ""
+msgstr "主菜单"
 
 msgid "Maintenance"
 msgstr "维护"
@@ -953,7 +953,7 @@ msgid "Model"
 msgstr "模型"
 
 msgid "More"
-msgstr ""
+msgstr "更多"
 
 msgid "More actions"
 msgstr "更多操作"
@@ -1184,7 +1184,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "为MRB处置打开NCR"
 
 msgid "Open Jobs"
-msgstr ""
+msgstr "未结工单"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1212,7 +1212,7 @@ msgid "Optional"
 msgstr "可选"
 
 msgid "Options"
-msgstr ""
+msgstr "选项"
 
 msgid "or"
 msgstr "或"
@@ -1254,7 +1254,7 @@ msgid "Pause"
 msgstr "暂停"
 
 msgid "Pause timer"
-msgstr ""
+msgstr "暂停计时器"
 
 msgid "Pick"
 msgstr "拣货"
@@ -1312,7 +1312,7 @@ msgid "Press ? on any page to open this list. Shortcuts are ignored while you ty
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
 
 msgid "Press '/' for commands"
-msgstr ""
+msgstr "按'/'显示命令"
 
 msgid "Prev"
 msgstr "上一个"
@@ -1681,7 +1681,7 @@ msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
 
 msgid "Start timer"
-msgstr ""
+msgstr "启动计时器"
 
 msgid "Station User"
 msgstr "工位用户"
@@ -1782,7 +1782,7 @@ msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
 
 msgid "This marks the dispatch as completed."
-msgstr ""
+msgstr "这将标记维护工单为已完成。"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路线以制造替换件。"
@@ -1819,13 +1819,13 @@ msgid "Today"
 msgstr "今天"
 
 msgid "Toggle labor"
-msgstr ""
+msgstr "切换人工"
 
 msgid "Toggle machine"
-msgstr ""
+msgstr "切换机器"
 
 msgid "Toggle setup"
-msgstr ""
+msgstr "切换换型"
 
 msgid "Toggle the sidebar"
 msgstr "切换侧栏"
@@ -1834,7 +1834,7 @@ msgid "Tools"
 msgstr "工具"
 
 msgid "Top to Bottom"
-msgstr ""
+msgstr "从上到下"
 
 msgid "Total"
 msgstr "总计"
@@ -1972,7 +1972,7 @@ msgid "Work instructions"
 msgstr "作业指导书"
 
 msgid "Write a note…"
-msgstr ""
+msgstr "写备注…"
 
 msgid "Yes"
 msgstr "是"

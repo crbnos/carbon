@@ -216,7 +216,7 @@ msgid "Available"
 msgstr "Dostępne"
 
 msgid "Back"
-msgstr ""
+msgstr "Wstecz"
 
 msgid "Back to batch"
 msgstr "Powrót do partii produkcyjnej"
@@ -299,7 +299,7 @@ msgid "Choose a job"
 msgstr "Wybierz zlecenie produkcyjne"
 
 msgid "Choose an option"
-msgstr ""
+msgstr "Wybierz opcję"
 
 msgid "Clear"
 msgstr "Wyczyść"
@@ -368,7 +368,7 @@ msgstr "Ukończ"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
-msgstr ""
+msgstr "Zakończyć {0}?"
 
 msgid "Complete All"
 msgstr "Uzupełnij wszystko"
@@ -678,7 +678,7 @@ msgid "First due {0}"
 msgstr "Pierwszy termin {0}"
 
 msgid "Fit"
-msgstr ""
+msgstr "Dopasuj"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "Popraw podświetlone ilości przed sfinalizowaniem."
@@ -702,7 +702,7 @@ msgid "Go to onboarding"
 msgstr "Przejdź do wdrożenia"
 
 msgid "Heading {level}"
-msgstr ""
+msgstr "Nagłówek {level}"
 
 msgid "Hide description"
 msgstr "Ukryj opis"
@@ -826,7 +826,7 @@ msgid "Leave this page"
 msgstr "Opuść tę stronę"
 
 msgid "Left to Right"
-msgstr ""
+msgstr "Od lewej do prawej"
 
 msgid "Let's build something"
 msgstr "Zbudujmy coś"
@@ -898,7 +898,7 @@ msgid "Machine down for maintenance now?"
 msgstr "Maszyna niedostępna z powodu utrzymania ruchu teraz?"
 
 msgid "Main"
-msgstr ""
+msgstr "Główne"
 
 msgid "Maintenance"
 msgstr "Utrzymanie ruchu"
@@ -953,7 +953,7 @@ msgid "Model"
 msgstr "Model"
 
 msgid "More"
-msgstr ""
+msgstr "Więcej"
 
 msgid "More actions"
 msgstr "Więcej akcji"
@@ -1184,7 +1184,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Otwórz NCR dla dyspozycji MRB"
 
 msgid "Open Jobs"
-msgstr ""
+msgstr "Otwarte Zlecenia produkcyjne"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1212,7 +1212,7 @@ msgid "Optional"
 msgstr "Opcjonalnie"
 
 msgid "Options"
-msgstr ""
+msgstr "Opcje"
 
 msgid "or"
 msgstr "lub"
@@ -1254,7 +1254,7 @@ msgid "Pause"
 msgstr "Wstrzymaj"
 
 msgid "Pause timer"
-msgstr ""
+msgstr "Wstrzymaj minutnik"
 
 msgid "Pick"
 msgstr "Pobierz"
@@ -1312,7 +1312,7 @@ msgid "Press ? on any page to open this list. Shortcuts are ignored while you ty
 msgstr "Naciśnij ? na dowolnej stronie, aby otworzyć tę listę. Skróty klawiszowe są ignorowane podczas wpisywania w polu."
 
 msgid "Press '/' for commands"
-msgstr ""
+msgstr "Naciśnij „/\" aby wyświetlić polecenia"
 
 msgid "Prev"
 msgstr "Poprzedni"
@@ -1681,7 +1681,7 @@ msgid "Start or pause the operation"
 msgstr "Uruchom lub wstrzymaj operację"
 
 msgid "Start timer"
-msgstr ""
+msgstr "Uruchom minutnik"
 
 msgid "Station User"
 msgstr "Użytkownik stacji"
@@ -1782,7 +1782,7 @@ msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
 
 msgid "This marks the dispatch as completed."
-msgstr ""
+msgstr "To oznacza Zlecenie utrzymania ruchu jako zakończone."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Ta część została wyprodukowana na zamówienie. Jej skierowanie do braku może ponownie otworzyć jej marszrutę, aby stworzyć zamiennik."
@@ -1819,13 +1819,13 @@ msgid "Today"
 msgstr "Dzisiaj"
 
 msgid "Toggle labor"
-msgstr ""
+msgstr "Przełącz robociznę"
 
 msgid "Toggle machine"
-msgstr ""
+msgstr "Przełącz maszynę"
 
 msgid "Toggle setup"
-msgstr ""
+msgstr "Przełącz przezbrojenie"
 
 msgid "Toggle the sidebar"
 msgstr "Przełącz pasek boczny"
@@ -1834,7 +1834,7 @@ msgid "Tools"
 msgstr "Narzędzia"
 
 msgid "Top to Bottom"
-msgstr ""
+msgstr "Od góry do dołu"
 
 msgid "Total"
 msgstr "Suma"
@@ -1972,7 +1972,7 @@ msgid "Work instructions"
 msgstr "Instrukcje robocze"
 
 msgid "Write a note…"
-msgstr ""
+msgstr "Napisz notatkę…"
 
 msgid "Yes"
 msgstr "Tak"
