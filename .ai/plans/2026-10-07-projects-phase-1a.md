@@ -42,7 +42,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 3: Create the workspace tables migration
 - [x] Task 4: Create the time and ledger tables migration
 - [x] Task 5: Create the backfill migration
-- [ ] Task 6: Create the SQL functions migration
+- [x] Task 6: Create the SQL functions migration
 - [ ] Task 7: Apply migrations and regenerate types
 - [ ] Task 8: Add authz rules and ship the RLS migration
 - [ ] Task 9: Register backup id references and audit config
@@ -2397,3 +2397,4 @@ ls .ai/playbooks/projects-phase-1a.md
 - The shell exports `SUPABASE_DB_URL` for port 54322, which `.env.local` does not override, so the backup check skipped silently. Commits ran with `SUPABASE_DB_URL` pointed at this worktree's database (port 60387), so the dataset and backup checks ran for real.
 - Tasks 3–7: `pnpm db:migrate` applies each migration, then its last step (`authz sync`) fails because the new tables have no manifest rule yet. That is expected until Task 8 adds the rules; each migration was confirmed applied in `supabase_migrations.schema_migrations`.
 - Task 3: composite FK columns are indexed as their full column list (`("projectId", "companyId")`, `("parentId", "projectId", "companyId")`), named `<table>_<firstColumn>_idx`.
+- Task 6: the migration ends with `NOTIFY pgrst, 'reload schema';` so PostgREST sees the two new functions (lessons: "Appending SQL to an already-applied migration silently does nothing", corollary).

@@ -93331,6 +93331,18 @@ export type Database = {
           week9: number
         }[]
       }
+      get_project_cost_summary: {
+        Args: { p_company_id: string; p_project_id: string }
+        Returns: {
+          actual: number
+          actualHours: number
+          committed: number
+          planLabor: number
+          planMaterial: number
+          planOther: number
+          projectElementId: string
+        }[]
+      }
       get_purchasing_planning: {
         Args: { company_id: string; location_id: string; periods: string[] }
         Returns: {
@@ -94160,6 +94172,15 @@ export type Database = {
       prevent_posted_sales_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
+      }
+      project_posting_account: {
+        Args: {
+          p_company_id: string
+          p_element_id: string
+          p_posting_date: string
+          p_project_id: string
+        }
+        Returns: string
       }
       purchaseLineDimensionPivot: {
         Args: {
