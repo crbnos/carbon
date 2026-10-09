@@ -52,6 +52,10 @@ import type {
 import { canLink, projectElementLinkTypes } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectElementLink } from "../../types";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { useLinkTypeLabels } from "../Element/ElementLinks";
 import { ElementTypeIcon } from "./ElementTypeIcon";
 import type { ElementGraphNode } from "./graph/ElementNode";
@@ -116,6 +120,7 @@ function ElementGraphCanvas({
   const setDirection = useStore(store, (s) => s.setDirection);
   const [searching, setSearching] = useState(false);
   const [pending, setPending] = useState<Connection | null>(null);
+  const changeRequestId = useActiveChangeRequestId();
 
   const byId = useMemo(
     () => new Map(elements.map((element) => [element.id, element])),
@@ -295,7 +300,13 @@ function ElementGraphCanvas({
         fromElementId: pending.source,
         toElementId: pending.target
       },
-      { method: "post", action: path.to.projectElementLinks(projectId) }
+      {
+        method: "post",
+        action: withChangeRequest(
+          path.to.projectElementLinks(projectId),
+          changeRequestId
+        )
+      }
     );
   };
 

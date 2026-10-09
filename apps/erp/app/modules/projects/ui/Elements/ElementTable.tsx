@@ -32,6 +32,10 @@ import {
   buildElementTree,
   projectElementPriorities
 } from "../../projects.models";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
 import type { ElementLayoutProps } from "./ElementList";
 import type { ElementGrouping } from "./ElementProperties";
@@ -85,6 +89,7 @@ export function ElementTable({
   // Opening an element keeps the layout and filters in the URL.
   const { search } = useLocation();
   const save = useCellSave();
+  const changeRequestId = useActiveChangeRequestId();
   const { company } = useUser();
   const currency = company.baseCurrencyCode;
   const currencyDecimals = useCurrencyDecimals(currency);
@@ -165,12 +170,18 @@ export function ElementTable({
 
   const onCellEdit = useCallback(
     (accessorKey: string, value: unknown, row: ElementTableRow) =>
-      save(path.to.projectElementUpdate(projectId), {
-        ids: row.id,
-        field: accessorKey,
-        value: value === null || value === undefined ? "" : String(value)
-      }),
-    [projectId, save]
+      save(
+        withChangeRequest(
+          path.to.projectElementUpdate(projectId),
+          changeRequestId
+        ),
+        {
+          ids: row.id,
+          field: accessorKey,
+          value: value === null || value === undefined ? "" : String(value)
+        }
+      ),
+    [projectId, save, changeRequestId]
   );
 
   // Each EditableX call returns a NEW component, so rebuilding the editors

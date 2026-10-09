@@ -356,6 +356,11 @@ msgstr "{0} 将被保存为 {name}"
 msgid "{0}-Year"
 msgstr "{0} 年"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}天"
@@ -475,6 +480,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#天}}"
@@ -3561,6 +3569,9 @@ msgstr "返回"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "更改者"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "仅对此视图进行了更改。该物料的计划周期未更新。"
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "更新日志"
@@ -4863,6 +4884,13 @@ msgstr "逗号分隔的值"
 
 msgid "Comment"
 msgstr "评论"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "评论"
@@ -6740,6 +6768,9 @@ msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库
 msgid "Decimal Places"
 msgstr "小数位数"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "余额递减法"
 
@@ -8327,6 +8358,9 @@ msgstr "编辑权限"
 msgid "Edit Picking List"
 msgstr "编辑拣货单"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "编辑门户"
 
@@ -8473,6 +8507,11 @@ msgstr "编辑工作中心"
 
 msgid "Edited"
 msgstr "已编辑"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "进行中"
 msgid "In Progress"
 msgstr "进行中"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "在范围内"
 
@@ -11554,6 +11596,9 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
 
@@ -11643,6 +11688,10 @@ msgstr "物料"
 
 msgid "Items & Production"
 msgstr "物料与生产"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "此窗口内的物料将获得黄色徽章。"
@@ -11988,6 +12037,9 @@ msgstr "租赁收入"
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
 
@@ -12089,6 +12141,9 @@ msgstr "生命周期使用情况（单位）"
 
 msgid "Light"
 msgstr "浅色"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
@@ -13382,6 +13437,9 @@ msgstr "新建变更通知操作"
 msgid "New Change Notice Type"
 msgstr "新建变更通知类型"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "新建耗材"
 
@@ -13875,6 +13933,9 @@ msgstr "没有产能预留可显示。计划一项任务以查看工作中心负
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "未记录任何更改"
 
@@ -13895,6 +13956,9 @@ msgstr "没有清晰的路径"
 
 msgid "No collision-free path"
 msgstr "没有无碰撞路径"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "未找到位置。"
 
 msgid "No logo uploaded"
 msgstr "未上传徽标"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "没有匹配项"
@@ -15071,6 +15138,9 @@ msgstr "打开子装配"
 
 msgid "Open task details"
 msgstr "打开任务详情"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "打开 Onshape Government 集成并保存其设置以重新连接。"
@@ -17545,6 +17615,9 @@ msgstr "拒绝"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "拒绝批次"
 
@@ -18085,8 +18158,14 @@ msgstr "残值"
 msgid "Residual Value %"
 msgstr "残值 %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "已解决价格"
@@ -20644,6 +20723,9 @@ msgstr "主题"
 msgid "Subledger"
 msgstr "子分类账"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "此客户的生命周期状态——启用、潜在客户、已停用等
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "此供应商的生命周期状态 — 启用、已停用、待批准等；仅启用的供应商出现在采购订单/报价单选择器中。"
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "此地点报告时间所在的本地时区；此地点的排程、工时记录和班次小时数在此时区中解释，无论用户的浏览器区域设置如何。"
@@ -24214,6 +24303,14 @@ msgstr "查看可追溯性图表"
 msgid "View Transfer"
 msgstr "查看转移"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "这是什么类型的采购订单 — 标准货物、服务、外协或�
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "这是什么类型的报价单 — 标准供应商报价、框架协议定价报价单或合同制造报价单；在转换时驱动采购订单行布局。"
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "该维度从哪个来源获取其允许的值(自定义列表或现有实体,如客户、位置、员工)。"

@@ -31,6 +31,10 @@ import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
 import type { ElementLayoutProps } from "./ElementList";
 import { QuickAddRow } from "./ElementList";
@@ -91,6 +95,7 @@ export function ElementBoard({
   quickAddRef
 }: ElementBoardProps) {
   const submit = useSubmit();
+  const changeRequestId = useActiveChangeRequestId();
   const pendingStates = usePendingStates();
   const [active, setActive] = useState<ProjectElementListItem | null>(null);
 
@@ -137,7 +142,10 @@ export function ElementBoard({
       { ids: element.id, field: "stateId", value: stateId },
       {
         method: "post",
-        action: path.to.projectElementUpdate(projectId),
+        action: withChangeRequest(
+          path.to.projectElementUpdate(projectId),
+          changeRequestId
+        ),
         navigate: false,
         fetcherKey: elementFieldKey(element.id, "stateId")
       }

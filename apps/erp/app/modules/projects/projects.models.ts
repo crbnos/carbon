@@ -3457,3 +3457,10 @@ export const projectChangeRequestStatusValidator = z.object({
   intent: z.enum(projectChangeRequestIntents, { error: "Unknown action" }),
   notes: zfd.text(z.string().trim().optional())
 });
+
+export const projectChangeRequestCommentValidator = z.object({
+  comment: z.string().trim().min(1, { message: "Comment is required" }),
+  targetTable: zfd.text(z.enum(projectPlanTables).optional()),
+  targetId: zfd.text(z.string().optional()),
+  field: zfd.text(z.string().optional())
+});

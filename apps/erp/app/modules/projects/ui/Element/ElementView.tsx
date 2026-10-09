@@ -58,6 +58,10 @@ import type {
   ProjectMilestone,
   ProjectState
 } from "../../types";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import type { PillShortcutField } from "../Elements/ElementProperties";
 import {
   PillShortcutProvider,
@@ -119,6 +123,7 @@ export function ElementView({
   const permissions = usePermissions();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const changeRequestId = useActiveChangeRequestId();
   const childQuickAddRef = useRef<HTMLInputElement>(null);
   const [childrenOpen, setChildrenOpen] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -406,7 +411,10 @@ export function ElementView({
       )}
       {deleting && (
         <ConfirmDelete
-          action={path.to.deleteProjectElement(projectId, element.id)}
+          action={withChangeRequest(
+            path.to.deleteProjectElement(projectId, element.id),
+            changeRequestId
+          )}
           name={element.readableId}
           text={t`Delete ${element.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
           onCancel={() => setDeleting(false)}

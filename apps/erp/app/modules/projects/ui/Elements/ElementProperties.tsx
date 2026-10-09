@@ -78,6 +78,10 @@ import {
   projectStateGroups
 } from "../../projects.models";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
 
 export { elementDisplayProperties, elementGroupings };
@@ -152,6 +156,7 @@ export function useElementField(
   field: ElementUpdateField
 ) {
   const key = elementFieldKey(elementId, field);
+  const changeRequestId = useActiveChangeRequestId();
   const fetcher = useAction<{
     success?: boolean;
     error?: { message: string } | null;
@@ -174,7 +179,13 @@ export function useElementField(
   const submit = (value: string | null) => {
     fetcher.submit(
       { ids: elementId, field, value: value ?? "" },
-      { method: "post", action: path.to.projectElementUpdate(projectId) }
+      {
+        method: "post",
+        action: withChangeRequest(
+          path.to.projectElementUpdate(projectId),
+          changeRequestId
+        )
+      }
     );
   };
 

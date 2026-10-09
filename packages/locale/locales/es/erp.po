@@ -356,6 +356,11 @@ msgstr "{0} se guardará como {name}"
 msgid "{0}-Year"
 msgstr "{0}-Año"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount} más: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección, {1} omitidos."
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# día} other {# días}}"
@@ -3561,6 +3569,9 @@ msgstr "Atrás"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Volver a trazabilidad"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "Cambiado por"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "Cambió solo para esta vista. El horizonte de planificación del artículo no se actualiza."
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "Registro de cambios"
@@ -4863,6 +4884,13 @@ msgstr "valores separados por comas"
 
 msgid "Comment"
 msgstr "Comentario"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "Comentarios"
@@ -6740,6 +6768,9 @@ msgstr "Decide cuándo el material enviado a un centro de trabajo pero no consum
 msgid "Decimal Places"
 msgstr "Lugares Decimales"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "Saldo decreciente"
 
@@ -8327,6 +8358,9 @@ msgstr "Editar Permisos"
 msgid "Edit Picking List"
 msgstr "Editar Lista de Picking"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "Editar Portal"
 
@@ -8473,6 +8507,11 @@ msgstr "Editar Centro de Trabajo"
 
 msgid "Edited"
 msgstr "Editado"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "En curso"
 msgid "In Progress"
 msgstr "En Curso"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "en alcance"
 
@@ -11554,6 +11596,9 @@ msgstr "Fecha de Emisión"
 msgid "Issues"
 msgstr "Problemas"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Se detendrá hasta que publique una Versión nuevamente. Nada se elimina."
 
@@ -11643,6 +11688,10 @@ msgstr "Artículos"
 
 msgid "Items & Production"
 msgstr "Artículos y Producción"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "Los artículos dentro de esta ventana obtienen una insignia amarilla."
@@ -11988,6 +12037,9 @@ msgstr "Ingresos por arrendamiento"
 msgid "Lease Revenue (default)"
 msgstr "Ingresos por arrendamiento (predeterminado)"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Dejar los recibos relacionados sin tocar"
 
@@ -12089,6 +12141,9 @@ msgstr "Uso de Vida Útil (Unidades)"
 
 msgid "Light"
 msgstr "Claro"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "Sin luces (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "Nueva Acción del Aviso de Cambio"
 msgid "New Change Notice Type"
 msgstr "Nuevo Tipo de Aviso de Cambio"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Nuevo Consumible"
 
@@ -13875,6 +13933,9 @@ msgstr "No hay reservas de capacidad para visualizar. Programa un trabajo para v
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Sin cambios registrados"
 
@@ -13895,6 +13956,9 @@ msgstr "Sin ruta clara"
 
 msgid "No collision-free path"
 msgstr "Sin ruta libre de colisiones"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "No se encontraron ubicaciones."
 
 msgid "No logo uploaded"
 msgstr "Sin logo cargado"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "Sin coincidencias"
@@ -15071,6 +15138,9 @@ msgstr "Abrir Sub-ensamblaje"
 
 msgid "Open task details"
 msgstr "Abrir detalles de la tarea"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Abra la integración de Onshape Government y guarde su configuración para conectar de nuevo."
@@ -17545,6 +17615,9 @@ msgstr "Rechazar"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Rechazar Lote"
 
@@ -18085,8 +18158,14 @@ msgstr "Valor residual"
 msgid "Residual Value %"
 msgstr "Valor residual %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resuelve estos antes de completar la NCR: cada fila debe tener una disposición que no sea Pendiente, y sus cantidades de entidades vinculadas deben coincidir con la cantidad de la fila."
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "Precio Resuelto"
@@ -20644,6 +20723,9 @@ msgstr "Asunto"
 msgid "Subledger"
 msgstr "Subdiario"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "El estado del ciclo de vida de este cliente - Activo, Prospecto, Inactiv
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "El estado del ciclo de vida de este proveedor - Activo, Inactivo, Aprobación Pendiente, etc.; solo los proveedores Activos aparecen en PO / selectores de cotización."
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "La zona horaria local en que esta ubicación informa la hora; programas, registro de tiempos, y horas de turno en esta ubicación se interpretan en esta zona independientemente de la configuración regional del navegador del usuario."
@@ -24214,6 +24303,14 @@ msgstr "Ver Gráfico de Trazabilidad"
 msgid "View Transfer"
 msgstr "Ver Transferencia"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "Qué tipo de PO es — bienes estándar, servicios, subcontratación o a
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Tipo de cotización — cotización estándar del proveedor, cotización de acuerdo marco, o cotización de fabricación por contrato; define el diseño de línea de PO cuando se convierte."
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "De qué fuente esta dimensión obtiene sus valores permitidos (lista personalizada o una entidad existente como cliente, ubicación, empleado)."

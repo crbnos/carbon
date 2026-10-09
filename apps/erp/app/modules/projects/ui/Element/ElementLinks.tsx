@@ -28,6 +28,10 @@ import {
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type { ProjectElementLink } from "../../types";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import { SuspectBadge } from "../Elements/VerificationStatus";
 import { StateIcon } from "../Project/StateIcon";
@@ -77,6 +81,7 @@ export function ElementLinks({
 }) {
   const { t } = useLingui();
   const labels = useLinkTypeLabels();
+  const changeRequestId = useActiveChangeRequestId();
   const byId = useMemo(
     () => new Map(elements.map((e) => [e.id, e])),
     [elements]
@@ -91,7 +96,13 @@ export function ElementLinks({
   const submit = (intent: "delete" | "clearSuspect", id: string) =>
     fetcher.submit(
       { intent, id },
-      { method: "post", action: path.to.projectElementLinks(projectId) }
+      {
+        method: "post",
+        action: withChangeRequest(
+          path.to.projectElementLinks(projectId),
+          changeRequestId
+        )
+      }
     );
 
   const groups = useMemo(() => {
@@ -239,6 +250,7 @@ function AddLink({
 }) {
   const { t } = useLingui();
   const labels = useLinkTypeLabels();
+  const changeRequestId = useActiveChangeRequestId();
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState("");
   const [otherId, setOtherId] = useState("");
@@ -300,7 +312,13 @@ function AddLink({
         fromElementId: direction === "out" ? element.id : otherId,
         toElementId: direction === "out" ? otherId : element.id
       },
-      { method: "post", action: path.to.projectElementLinks(projectId) }
+      {
+        method: "post",
+        action: withChangeRequest(
+          path.to.projectElementLinks(projectId),
+          changeRequestId
+        )
+      }
     );
   };
 

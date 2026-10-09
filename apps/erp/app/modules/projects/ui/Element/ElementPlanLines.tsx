@@ -73,6 +73,10 @@ import {
   remainingMaterialQuantity
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 
 type PlanLines = ProjectElementPage["planLines"];
 type MaterialLine = PlanLines["materials"][number];
@@ -127,7 +131,11 @@ export function ElementPlanLines({
   const permissions = usePermissions();
   const canCreateJob = permissions.can("create", "production");
   const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
-  const action = path.to.projectElementPlan(projectId, elementId);
+  const changeRequestId = useActiveChangeRequestId();
+  const action = withChangeRequest(
+    path.to.projectElementPlan(projectId, elementId),
+    changeRequestId
+  );
 
   const rowActions = (
     onEdit: () => void,

@@ -356,6 +356,11 @@ msgstr "{0}이 {name}으로 저장됩니다"
 msgid "{0}-Year"
 msgstr "{0}년"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#일}}"
@@ -3561,6 +3569,9 @@ msgstr "뒤로"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "추적성으로 돌아가기"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "변경자"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "이 보기에서만 변경되었습니다. 품목의 계획 호라이즌은 변경되지 않습니다."
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "변경 로그"
@@ -4863,6 +4884,13 @@ msgstr "쉼표로 구분된 값"
 
 msgid "Comment"
 msgstr "댓글"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "댓글"
@@ -6740,6 +6768,9 @@ msgstr "작업장으로 이송했으나 소비하지 않은 재료가 창고로 
 msgid "Decimal Places"
 msgstr "소수 자릿수"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "정률법"
 
@@ -8327,6 +8358,9 @@ msgstr "권한 편집"
 msgid "Edit Picking List"
 msgstr "피킹 리스트 편집"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "포털 편집"
 
@@ -8473,6 +8507,11 @@ msgstr "작업장 편집"
 
 msgid "Edited"
 msgstr "수정됨"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "진행 중"
 msgid "In Progress"
 msgstr "진행 중"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "범위 내"
 
@@ -11554,6 +11596,9 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 내용은 없습니다."
 
@@ -11643,6 +11688,10 @@ msgstr "품목"
 
 msgid "Items & Production"
 msgstr "품목 및 생산"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
@@ -11988,6 +12037,9 @@ msgstr "리스 매출"
 msgid "Lease Revenue (default)"
 msgstr "리스 매출 (기본값)"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "관련 입고는 그대로 둡니다"
 
@@ -12089,6 +12141,9 @@ msgstr "누적 사용량(단위)"
 
 msgid "Light"
 msgstr "라이트"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "조명 꺼짐 (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "신규 변경 통지 조치"
 msgid "New Change Notice Type"
 msgstr "신규 변경 통지 유형"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "신규 소모품"
 
@@ -13875,6 +13933,9 @@ msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작�
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "기록된 변경 사항이 없습니다"
 
@@ -13895,6 +13956,9 @@ msgstr "명확한 경로 없음"
 
 msgid "No collision-free path"
 msgstr "충돌 없는 경로 없음"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "위치가 없습니다."
 
 msgid "No logo uploaded"
 msgstr "업로드된 로고가 없습니다"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "일치하는 항목 없음"
@@ -15071,6 +15138,9 @@ msgstr "부분 조립 열기"
 
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government 연동을 열고 설정을 저장하여 다시 연동하세요."
@@ -17545,6 +17615,9 @@ msgstr "거부"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "로트 거부"
 
@@ -18085,8 +18158,14 @@ msgstr "잔존가액"
 msgid "Residual Value %"
 msgstr "잔존가액 %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR을 완료하기 전에 이를 해결합니다: 모든 행에는 대기 중이 아닌 처분 결정이 있어야 하고, 연결된 엔티티 수량이 행 수량과 일치해야 합니다."
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "확정 가격"
@@ -20644,6 +20723,9 @@ msgstr "주제"
 msgid "Subledger"
 msgstr "보조원장"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "이 고객의 생애주기 상태입니다 — 활성, 잠재고객, 비
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "이 공급업체의 생명주기 상태(활성, 비활성, 승인 대기 중 등)이며, 활성 공급업체만 발주서/견적서 선택기에 표시됩니다."
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "이 사업장이 시간을 보고하는 로컬 시간대로, 사용자의 브라우저 로케일에 관계없이 이 사업장의 일정, 타임카드 및 교대조 시간이 이 시간대로 해석됩니다."
@@ -24214,6 +24303,14 @@ msgstr "추적성 그래프 보기"
 msgid "View Transfer"
 msgstr "이동 보기"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "이 구매주문의 종류입니다 — 표준 재화, 서비스, 외주
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "이 견적의 종류입니다 — 표준 공급업체 견적, 포괄계약 가격 견적, 또는 위탁제조 견적 중 하나이며, 구매주문으로 전환될 때 라인 레이아웃을 결정합니다."
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "이 차원이 허용 값을 가져오는 소스입니다(사용자 정의 목록 또는 고객, 위치, 직원 같은 기존 개체)."

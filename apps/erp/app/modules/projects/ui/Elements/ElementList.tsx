@@ -48,11 +48,13 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher, useLocation, useParams } from "react-router";
 import { Empty } from "~/components";
+import { DiffBadge } from "~/components/Diff";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type {
+  ChangeOperationMark,
   ProjectElementPriority,
   ProjectElementType,
   RequirementStatus
@@ -60,6 +62,11 @@ import type {
 import { buildElementTree, projectElementTypes } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
+import {
+  changeOperationStatus,
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
 import type { ElementDisplay, PillShortcutField } from "./ElementProperties";
 import {
@@ -73,6 +80,13 @@ import {
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 import { SuspectBadge, VerificationStatus } from "./VerificationStatus";
+
+/** The diff badge of a row an open change request adds, changes or removes. */
+function changeStatus(element: object) {
+  return changeOperationStatus(
+    (element as { changeOperation?: ChangeOperationMark }).changeOperation
+  );
+}
 
 export type ElementLayoutProps = {
   projectId: string;
@@ -124,6 +138,7 @@ export function ElementList({
   const { t } = useLingui();
   // Opening an element keeps the layout and filters in the URL.
   const { search } = useLocation();
+  const changeRequestId = useActiveChangeRequestId();
   const { elementId: openElementId } = useParams();
   const parentRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -247,10 +262,15 @@ export function ElementList({
                     className="flex shrink-0 items-center gap-2 self-stretch"
                   >
                     <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-                      {element.readableId}
+                      {element.readableId || t`New`}
                     </span>
                     <ElementTypeIcon type={element.type} />
                   </Link>
+                  {changeStatus(element) && (
+                    <span className="shrink-0">
+                      <DiffBadge status={changeStatus(element)!} />
+                    </span>
+                  )}
                   {node.hasChildren && (
                     <button
                       type="button"
@@ -341,7 +361,10 @@ export function ElementList({
         )}
         {deleting && (
           <ConfirmDelete
-            action={path.to.deleteProjectElement(projectId, deleting.id)}
+            action={withChangeRequest(
+              path.to.deleteProjectElement(projectId, deleting.id),
+              changeRequestId
+            )}
             name={deleting.readableId}
             text={t`Delete ${deleting.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
             onCancel={() => setDeleting(null)}
@@ -453,6 +476,7 @@ export function QuickAddRow({
 }) {
   const { t } = useLingui();
   const typeLabels = useElementTypeLabels();
+  const changeRequestId = useActiveChangeRequestId();
   const [name, setName] = useState("");
   const fetcher = useAction<{ id?: string; error?: { message: string } }>({
     onSuccess: () => setName(""),
@@ -470,7 +494,10 @@ export function QuickAddRow({
     if (stateId) formData.append("stateId", stateId);
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.newProjectElement(projectId)
+      action: withChangeRequest(
+        path.to.newProjectElement(projectId),
+        changeRequestId
+      )
     });
   };
 
@@ -562,6 +589,7 @@ function SelectionBar({
   onClear: () => void;
 }) {
   const priorityLabels = usePriorityLabels();
+  const changeRequestId = useActiveChangeRequestId();
   const fetcher = useFetcher<{ error?: { message: string } }>();
   const sorted = useMemo(() => sortStates(states), [states]);
   const update = (field: "stateId" | "priority", value: string) => {
@@ -571,7 +599,10 @@ function SelectionBar({
     formData.append("value", value);
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.projectElementUpdate(projectId)
+      action: withChangeRequest(
+        path.to.projectElementUpdate(projectId),
+        changeRequestId
+      )
     });
   };
 
@@ -669,6 +700,7 @@ export function MoveElementModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const changeRequestId = useActiveChangeRequestId();
   const [target, setTarget] = useState<string>(element.parentId ?? TOP_LEVEL);
   const fetcher = useAction<{ success?: boolean }>({
     onSuccess: () => onClose()
@@ -737,7 +769,10 @@ export function MoveElementModal({
                 },
                 {
                   method: "post",
-                  action: path.to.projectElementMove(projectId)
+                  action: withChangeRequest(
+                    path.to.projectElementMove(projectId),
+                    changeRequestId
+                  )
                 }
               )
             }

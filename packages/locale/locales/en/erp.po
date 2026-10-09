@@ -356,6 +356,11 @@ msgstr "{0} will be saved as {name}"
 msgid "{0}-Year"
 msgstr "{0}-Year"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr "{0}/{1} viewed"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount} more: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr "{itemCount, plural, one {# change} other {# changes}}"
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# day} other {# days}}"
@@ -3561,6 +3569,9 @@ msgstr "Back"
 msgid "Back to baselines"
 msgstr "Back to baselines"
 
+msgid "Back to change requests"
+msgstr "Back to change requests"
+
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -4442,6 +4453,12 @@ msgstr "Change priority"
 msgid "Change request"
 msgstr "Change request"
 
+msgid "Change requests"
+msgstr "Change requests"
+
+msgid "Change Requests"
+msgstr "Change Requests"
+
 msgid "Change state"
 msgstr "Change state"
 
@@ -4480,6 +4497,10 @@ msgstr "Changed By"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "Changed for this view only. The item's planning horizon is not updated."
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr "changed live: {0}"
 
 msgid "Changelog"
 msgstr "Changelog"
@@ -4863,6 +4884,13 @@ msgstr "comma-separated values"
 
 msgid "Comment"
 msgstr "Comment"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr "Comment on {0}"
+
+msgid "Comment on {fieldLabel}"
+msgstr "Comment on {fieldLabel}"
 
 msgid "Comments"
 msgstr "Comments"
@@ -6740,6 +6768,9 @@ msgstr "Decide when material picked to a work center but not consumed flows back
 msgid "Decimal Places"
 msgstr "Decimal Places"
 
+msgid "Decision notes"
+msgstr "Decision notes"
+
 msgid "Declining balance"
 msgstr "Declining balance"
 
@@ -8327,6 +8358,9 @@ msgstr "Edit Permissions"
 msgid "Edit Picking List"
 msgstr "Edit Picking List"
 
+msgid "Edit Plan"
+msgstr "Edit Plan"
+
 msgid "Edit Portal"
 msgstr "Edit Portal"
 
@@ -8473,6 +8507,11 @@ msgstr "Edit Work Center"
 
 msgid "Edited"
 msgstr "Edited"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr "Editing <0>{0}</0>: {1}. Changes go to this change request."
 
 msgid "Effective From"
 msgstr "Effective From"
@@ -10920,6 +10959,9 @@ msgstr "In progress"
 msgid "In Progress"
 msgstr "In Progress"
 
+msgid "In Review"
+msgstr "In Review"
+
 msgid "in scope"
 msgstr "in scope"
 
@@ -11554,6 +11596,9 @@ msgstr "Issued Date"
 msgid "Issues"
 msgstr "Issues"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "It will stop running until you publish a version again. Nothing is deleted."
 
@@ -11643,6 +11688,10 @@ msgstr "Items"
 
 msgid "Items & Production"
 msgstr "Items & Production"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr "Items changed {0}"
 
 msgid "Items inside this window get a yellow badge."
 msgstr "Items inside this window get a yellow badge."
@@ -11988,6 +12037,9 @@ msgstr "Lease Revenue"
 msgid "Lease Revenue (default)"
 msgstr "Lease Revenue (default)"
 
+msgid "Leave"
+msgstr "Leave"
+
 msgid "Leave any related receipts untouched"
 msgstr "Leave any related receipts untouched"
 
@@ -12089,6 +12141,9 @@ msgstr "Lifetime Usage (Units)"
 
 msgid "Light"
 msgstr "Light"
+
+msgid "Lighter harness"
+msgstr "Lighter harness"
 
 msgid "Lights Out (24×7)"
 msgstr "Lights Out (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "New Change Notice Action"
 msgid "New Change Notice Type"
 msgstr "New Change Notice Type"
 
+msgid "New Change Request"
+msgstr "New Change Request"
+
 msgid "New Consumable"
 msgstr "New Consumable"
 
@@ -13875,6 +13933,9 @@ msgstr "No capacity reservations to visualize. Schedule a job to see work-center
 msgid "No category"
 msgstr "No category"
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+
 msgid "No changes recorded"
 msgstr "No changes recorded"
 
@@ -13895,6 +13956,9 @@ msgstr "No clear path"
 
 msgid "No collision-free path"
 msgstr "No collision-free path"
+
+msgid "No comments on the change request as a whole."
+msgstr "No comments on the change request as a whole."
 
 msgid "No comments yet"
 msgstr "No comments yet"
@@ -14135,6 +14199,9 @@ msgstr "No locations found."
 
 msgid "No logo uploaded"
 msgstr "No logo uploaded"
+
+msgid "no longer exists in the live plan"
+msgstr "no longer exists in the live plan"
 
 msgid "No matches"
 msgstr "No matches"
@@ -15071,6 +15138,9 @@ msgstr "Open Sub-Assembly"
 
 msgid "Open task details"
 msgstr "Open task details"
+
+msgid "Open the first change request"
+msgstr "Open the first change request"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Open the Onshape Government integration and save its settings to connect again."
@@ -17545,6 +17615,9 @@ msgstr "Reject"
 msgid "Reject all"
 msgstr "Reject all"
 
+msgid "Reject Change Request"
+msgstr "Reject Change Request"
+
 msgid "Reject Lot"
 msgstr "Reject Lot"
 
@@ -18085,8 +18158,14 @@ msgstr "Residual Value"
 msgid "Residual Value %"
 msgstr "Residual Value %"
 
+msgid "Resolve"
+msgstr "Resolve"
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
+
+msgid "Resolved"
+msgstr "Resolved"
 
 msgid "Resolved Price"
 msgstr "Resolved Price"
@@ -20644,6 +20723,9 @@ msgstr "Subject"
 msgid "Subledger"
 msgstr "Subledger"
 
+msgid "Submit"
+msgstr "Submit"
+
 msgid "Submit and post week"
 msgstr "Submit and post week"
 
@@ -20664,6 +20746,10 @@ msgstr "Submit week"
 
 msgid "Submitted"
 msgstr "Submitted"
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
+msgstr "Submitted {0}"
 
 msgid "Submitted By"
 msgstr "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "The lifecycle state of this customer — Active, Prospect, Inactive, etc
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
+
+msgid "The live plan changed under this change request"
+msgstr "The live plan changed under this change request"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
@@ -24214,6 +24303,14 @@ msgstr "View Traceability Graph"
 msgid "View Transfer"
 msgstr "View Transfer"
 
+msgid "Viewed"
+msgstr "Viewed"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+
 msgid "Views"
 msgstr "Views"
 
@@ -24487,6 +24584,9 @@ msgstr "What kind of PO this is — standard goods, services, outside-processing
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
+
+msgid "What should the author change?"
+msgstr "What should the author change?"
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."

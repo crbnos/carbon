@@ -356,6 +356,11 @@ msgstr "{0}, {name} olarak kaydedilecek"
 msgid "{0}-Year"
 msgstr "{0}-Yıl"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}g"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# gün} other {# gün}}"
@@ -3561,6 +3569,9 @@ msgstr "Geri"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "İzlenebilirliğe geri dön"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "Değiştiren"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "Bu görünüm için değişti. Stok kartının planlama ufku güncellenmedi."
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "Değişiklik Günlüğü"
@@ -4863,6 +4884,13 @@ msgstr "virgülle ayrılmış değerler"
 
 msgid "Comment"
 msgstr "Açıklama"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "Yorumlar"
@@ -6740,6 +6768,9 @@ msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri ak�
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "Azalan Bakiye"
 
@@ -8327,6 +8358,9 @@ msgstr "Düzenleme İzinleri"
 msgid "Edit Picking List"
 msgstr "Toplama Listesi Düzenle"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "Portal Düzenle"
 
@@ -8473,6 +8507,11 @@ msgstr "İş Merkezi Düzenle"
 
 msgid "Edited"
 msgstr "Düzenlendi"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "Devam ediyor"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "kapsamında"
 
@@ -11554,6 +11596,9 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
@@ -11643,6 +11688,10 @@ msgstr "Ürünler"
 
 msgid "Items & Production"
 msgstr "Öğeler ve Üretim"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
@@ -11988,6 +12037,9 @@ msgstr "Finansal Kiralama Hasılat"
 msgid "Lease Revenue (default)"
 msgstr "Finansal Kiralama Hasılat (varsayılan)"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "İlgili tüm makbuzları dokunulmamış bırakır"
 
@@ -12089,6 +12141,9 @@ msgstr "Yaşam Boyu Kullanım (Birimler)"
 
 msgid "Light"
 msgstr "Aydınlık"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "Işıklar Kapalı (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "Yeni Değişiklik Bildirisi İşlemi"
 msgid "New Change Notice Type"
 msgstr "Yeni Değişiklik Bildirisi Türü"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
 
@@ -13875,6 +13933,9 @@ msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü g
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Değişiklik kaydedilmedi"
 
@@ -13895,6 +13956,9 @@ msgstr "Net bir yol yok"
 
 msgid "No collision-free path"
 msgstr "Çarpışmasız bir yol yok"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "Konum bulunamadı."
 
 msgid "No logo uploaded"
 msgstr "Yüklenmiş logo yok"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "Eşleşme yok"
@@ -15071,6 +15138,9 @@ msgstr "Alt Montajı Aç"
 
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government entegrasyonunu açın ve yeniden bağlanmak için ayarlarını kaydedin."
@@ -17545,6 +17615,9 @@ msgstr "Reddet"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
 
@@ -18085,8 +18158,14 @@ msgstr "Kalıntı değer"
 msgid "Residual Value %"
 msgstr "Kalıntı Değer %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR'yi tamamlamadan önce bunları çöz: her satırın Bekleme Dışı bir Karar'ı olmalı ve onun bağlı varlık miktarları satır miktarıyla eşleşmeli."
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
@@ -20644,6 +20723,9 @@ msgstr "Konu"
 msgid "Subledger"
 msgstr "Yardımcı Defter"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "Bu Müşterinin yaşam döngüsü durumu — Aktif, Potansiyel müşteri
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Bu Tedarikçinin yaşam döngüsü durumu — Aktif, Pasif, Onay Beklemede vb.; sadece Aktif Tedarikçiler Satın alma siparişi / Teklif seçicilerinde görünür."
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Bu Lokasyonda raporlanan yerel saat dilimi; bu Lokasyondaki Çizelgeler, Puantajlar ve Vardiya saatleri kullanıcının tarayıcı yerinden bağımsız olarak bu dilimde yorumlanır."
@@ -24214,6 +24303,14 @@ msgstr "İzlenebilirlik Grafiğini Görüntüle"
 msgid "View Transfer"
 msgstr "Transferi Görüntüle"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "Bu satın alma siparişinin tipi — standart mallar, hizmetler, fason i
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Bu teklif türü nedir — standart tedarikçi teklifi, genel uyum fiyatlı teklif veya sözleşmeli üretim teklifi; dönüştürülürken PO satır düzenini belirler."
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "Bu boyut izin verilen değerlerini hangi kaynaktan alır (özel liste veya müşteri, konum, çalışan gibi mevcut bir varlık)."

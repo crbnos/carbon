@@ -356,6 +356,11 @@ msgstr "{0} को {name} के रूप में सहेजा जाए�
 msgid "{0}-Year"
 msgstr "{0}-वर्ष"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}द"
@@ -475,6 +480,9 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# दिन} other {# दिन}}"
@@ -3561,6 +3569,9 @@ msgstr "वापस"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "द्वारा परिवर्तित"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "केवल इस दृश्य के लिए बदला गया। आइटम की योजना क्षितिज अपडेट नहीं की गई है।"
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "परिवर्तन लॉग"
@@ -4863,6 +4884,13 @@ msgstr "अल्पविराम से अलग किए गए मान"
 
 msgid "Comment"
 msgstr "टिप्पणी"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "टिप्पणियाँ"
@@ -6740,6 +6768,9 @@ msgstr "तय करें कि वर्क सेंटर में चु
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "ह्रासमान शेष"
 
@@ -8327,6 +8358,9 @@ msgstr "अनुमतियों को संपादित करें"
 msgid "Edit Picking List"
 msgstr "पिकिंग सूची संपादित करें"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "पोर्टल संपादित करें"
 
@@ -8473,6 +8507,11 @@ msgstr "वर्क सेंटर संपादित करें"
 
 msgid "Edited"
 msgstr "संपादित"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "प्रगति में"
 msgid "In Progress"
 msgstr "प्रगति में"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "दायरे में"
 
@@ -11554,6 +11596,9 @@ msgstr "जारी तारीख"
 msgid "Issues"
 msgstr "समस्याएं"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं गया है।"
 
@@ -11643,6 +11688,10 @@ msgstr "वस्तुएं"
 
 msgid "Items & Production"
 msgstr "आइटम और उत्पादन"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "इस विंडो के अंदर आइटम को एक पीला बैज मिलता है।"
@@ -11988,6 +12037,9 @@ msgstr "पट्टा राजस्व"
 msgid "Lease Revenue (default)"
 msgstr "पट्टा राजस्व (डिफ़ॉल्ट)"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "किसी भी संबंधित रसीदों को अछूता छोड़ें"
 
@@ -12089,6 +12141,9 @@ msgstr "जीवनकाल उपयोग (इकाइयां)"
 
 msgid "Light"
 msgstr "हल्का"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "लाइट्स आउट (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "नई परिवर्तन सूचना कार्रवाई
 msgid "New Change Notice Type"
 msgstr "नई परिवर्तन सूचना प्रकार"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "नई उपभोग्य सामग्री"
 
@@ -13875,6 +13933,9 @@ msgstr "कोई क्षमता आरक्षण नहीं है ज�
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "कोई परिवर्तन दर्ज नहीं किया गया"
 
@@ -13895,6 +13956,9 @@ msgstr "कोई स्पष्ट पथ नहीं"
 
 msgid "No collision-free path"
 msgstr "कोई टकराव-मुक्त पथ नहीं"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "कोई स्थान नहीं मिला।"
 
 msgid "No logo uploaded"
 msgstr "कोई लोगो अपलोड नहीं किया गया"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "कोई मेल नहीं"
@@ -15071,6 +15138,9 @@ msgstr "उप-असेंबली खोलें"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government एकीकरण को खोलें और फिर से कनेक्ट करने के लिए इसकी सेटिंग्स को सहेजें।"
@@ -17545,6 +17615,9 @@ msgstr "अस्वीकार करें"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "लॉट को अस्वीकार करें"
 
@@ -18085,8 +18158,14 @@ msgstr "अवशिष्ट मूल्य"
 msgid "Residual Value %"
 msgstr "अवशिष्ट मूल्य %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "इसे NCR पूरा करने से पहले हल करें: प्रत्येक पंक्ति के पास एक गैर-लंबित निपटान होना चाहिए, और इसकी जुड़ी हुई इकाई मात्रा पंक्ति मात्रा से मेल खानी चाहिए।"
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
@@ -20644,6 +20723,9 @@ msgstr "विषय"
 msgid "Subledger"
 msgstr "सहायक बहीखाता"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "इस ग्राहक की जीवन चक्र स्थि�
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "इस आपूर्तिकर्ता की जीवन चक्र स्थिति — सक्रिय, निष्क्रिय, अनुमोदन लंबित, आदि; केवल सक्रिय आपूर्तिकर्ता PO/कोटेशन चयनकर्ता में दिखाई देते हैं।"
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "स्थानीय समय क्षेत्र जिसमें यह स्थान समय रिपोर्ट करता है; इस स्थान पर शेड्यूल, टाइमकार्ड और शिफ्ट घंटों की व्याख्या इस क्षेत्र में की जाती है, भले ही उपयोगकर्ता के ब्राउज़र लोकेल की परवाह किए बिना।"
@@ -24214,6 +24303,14 @@ msgstr "ट्रेसेबिलिटी ग्राफ देखें"
 msgid "View Transfer"
 msgstr "ट्रांसफर देखें"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "यह किस प्रकार का PO है — मानक �
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "यह किस प्रकार का कोटेशन है — मानक आपूर्तिकर्ता कोटेशन, व्यापक समझौता मूल्य वाला कोटेशन, या अनुबंध विनिर्माण कोटेशन; रूपांतरण के समय PO पंक्ति लेआउट को संचालित करता है।"
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "यह आयाम अपने स्वीकृत मानों को किस स्रोत से खींचता है (कस्टम सूची या मौजूदा इकाई जैसे ग्राहक, स्थान, कर्मचारी)।"

@@ -65,6 +65,7 @@ import {
   overlayElementList,
   overlayLinkList
 } from "~/modules/projects/projects.server";
+import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
@@ -285,6 +286,7 @@ export default function ProjectElementsRoute() {
 
   const {
     elements,
+    changeRequest,
     costSummary,
     links,
     requirementStatus,
@@ -508,6 +510,12 @@ export default function ProjectElementsRoute() {
         minSize={30}
         className="flex h-full min-w-0 flex-col bg-card"
       >
+        {changeRequest && (
+          <ChangeRequestBanner
+            projectId={projectId}
+            changeRequest={changeRequest}
+          />
+        )}
         <ElementsHeader
           count={elements.length}
           layout={layout}

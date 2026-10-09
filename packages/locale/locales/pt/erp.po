@@ -356,6 +356,11 @@ msgstr "{0} será salvo como {name}"
 msgid "{0}-Year"
 msgstr "{0}-Ano"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount} mais: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseridos, {updated} atualizados, {0} precisam de correção, {1} ignorados."
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# dia} other {# dias}}"
@@ -3561,6 +3569,9 @@ msgstr "Voltar"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Voltar para rastreabilidade"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "Alterado por"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "Alterado apenas para esta visualização. O horizonte de planejamento do item não é atualizado."
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "Histórico de Mudanças"
@@ -4863,6 +4884,13 @@ msgstr "valores separados por vírgula"
 
 msgid "Comment"
 msgstr "Comentário"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "Comentários"
@@ -6740,6 +6768,9 @@ msgstr "Decida quando o material coletado para um centro de trabalho, mas não c
 msgid "Decimal Places"
 msgstr "Casas Decimais"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "Saldo Decrescente"
 
@@ -8327,6 +8358,9 @@ msgstr "Editar Permissões"
 msgid "Edit Picking List"
 msgstr "Editar Lista de separação"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "Editar Portal"
 
@@ -8473,6 +8507,11 @@ msgstr "Editar Centro de Trabalho"
 
 msgid "Edited"
 msgstr "Editado"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "Em andamento"
 msgid "In Progress"
 msgstr "Em Andamento"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "no escopo"
 
@@ -11554,6 +11596,9 @@ msgstr "Data de Emissão"
 msgid "Issues"
 msgstr "Problemas"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Ele parará de ser executado até que você publique uma versão novamente. Nada é excluído."
 
@@ -11643,6 +11688,10 @@ msgstr "Itens"
 
 msgid "Items & Production"
 msgstr "Itens e Produção"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "Itens dentro desta janela recebem um crachá amarelo."
@@ -11988,6 +12037,9 @@ msgstr "Receita de Arrendamento"
 msgid "Lease Revenue (default)"
 msgstr "Receita de Arrendamento (padrão)"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Deixar qualquer recebimento relacionado intocado"
 
@@ -12089,6 +12141,9 @@ msgstr "Uso de Vida Útil (Unidades)"
 
 msgid "Light"
 msgstr "Claro"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "Luzes Apagadas (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "Nova ação de aviso de alteração"
 msgid "New Change Notice Type"
 msgstr "Novo tipo de aviso de alteração"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Novo Consumível"
 
@@ -13875,6 +13933,9 @@ msgstr "Nenhuma reserva de capacidade para visualizar. Agende um trabalho para v
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Nenhuma alteração registrada"
 
@@ -13895,6 +13956,9 @@ msgstr "Nenhum caminho claro"
 
 msgid "No collision-free path"
 msgstr "Nenhum caminho livre de colisão"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "Nenhuma localização encontrada."
 
 msgid "No logo uploaded"
 msgstr "Nenhum logo enviado"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "Nenhuma correspondência"
@@ -15071,6 +15138,9 @@ msgstr "Abrir Sub-Conjunto"
 
 msgid "Open task details"
 msgstr "Abrir detalhes da tarefa"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Abra a integração Onshape Government e salve suas configurações para conectar novamente."
@@ -17545,6 +17615,9 @@ msgstr "Rejeitar"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Rejeitar Lote"
 
@@ -18085,8 +18158,14 @@ msgstr "Valor residual"
 msgid "Residual Value %"
 msgstr "Valor residual %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolva estes antes de concluir a NCR: cada linha deve ter uma disposição não-Pendente e suas quantidades de entidades vinculadas devem corresponder à quantidade da linha."
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "Preço Resolvido"
@@ -20644,6 +20723,9 @@ msgstr "Assunto"
 msgid "Subledger"
 msgstr "Razão Auxiliar"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "O estado do ciclo de vida deste cliente - Ativo, Perspectiva, Inativo, e
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "O estado do ciclo de vida deste fornecedor - Ativo, Inativo, Aprovação Pendente, etc.; apenas fornecedores Ativos aparecem nos seletores PO/cotação."
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "O fuso horário local em que este local reporta a hora; as programações, apontamentos e horas de turno neste local são interpretados nesta zona independentemente da localidade do navegador do usuário."
@@ -24214,6 +24303,14 @@ msgstr "Ver Gráfico de Rastreabilidade"
 msgid "View Transfer"
 msgstr "Ver Transferência"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "Que tipo de Pedido de compra é — bens padrão, serviços, beneficiame
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Que tipo de cotação é esta — cotação de fornecedor padrão, cotação com preço de acordo global ou cotação de fabricação contratual; impulsiona o layout de linha de PO quando convertido."
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "De qual fonte esta dimensão extrai seus valores permitidos (lista personalizada ou uma entidade existente como cliente, localização, funcionário)."

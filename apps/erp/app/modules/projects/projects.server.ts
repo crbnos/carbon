@@ -48,6 +48,7 @@ import {
   chargeableByDefault,
   computeVerification,
   defaultProjectStates,
+  diffPlanSnapshots,
   findConflicts,
   mergeChangeRequestItem,
   overlayPlanRows,
@@ -55,6 +56,7 @@ import {
   PROJECT_BASELINE_FORMAT_VERSION,
   parseElementPlanFieldValue,
   parseParameterFormula,
+  parsePlanSnapshot,
   pickPlanLayerFields,
   planElementsFromSource,
   planProjectCopy,
@@ -70,6 +72,9 @@ import {
   getElementHistoryByItem,
   getItemNumericCustomFields,
   getLaborCategoriesList,
+  getLaborCategoryNames,
+  getProjectBaseline,
+  getProjectChangeRequest,
   getProjectCostSummary,
   getProjectElement,
   getProjectElementComments,
@@ -1750,6 +1755,148 @@ export async function applyChangeRequest(
     return { applied: true };
   });
 }
+
+/** The element a change request item belongs to: its card on the review page. */
+export function changeRequestItemElementId(item: ChangeRequestItem) {
+  if (item.targetTable === "projectElement") return item.targetId;
+  const row = item.payload ?? item.baseRow ?? {};
+  const id =
+    item.targetTable === "projectElementLink"
+      ? row.fromElementId
+      : row.projectElementId;
+  return typeof id === "string" ? id : null;
+}
+
+/**
+ * Everything the change request review page shows: the change request, the
+ * diff it makes (the live plan against the overlay; for an Applied one, its
+ * Before and After baselines), its comments, the elements the user marked
+ * viewed since their last change, and the conflicts of an Approved one.
+ */
+export async function getChangeRequestReview(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    projectId: string;
+    changeRequestId: string;
+    userId: string;
+  }
+) {
+  const db = getDatabaseClient();
+  const [changeRequest, overlay, comments, views] = await Promise.all([
+    getProjectChangeRequest(client, args.changeRequestId, args.companyId),
+    loadChangeRequestOverlay(db, args),
+    client
+      .from("projectChangeRequestComment")
+      .select("*")
+      .eq("changeRequestId", args.changeRequestId)
+      .eq("companyId", args.companyId)
+      .order("createdAt", { ascending: true }),
+    client
+      .from("projectChangeRequestView")
+      .select("targetTable, targetId, viewedAt")
+      .eq("changeRequestId", args.changeRequestId)
+      .eq("companyId", args.companyId)
+      .eq("userId", args.userId)
+  ]);
+  if (changeRequest.error) return { data: null, error: changeRequest.error };
+  if (!overlay) return { data: null, error: null };
+  if (comments.error) return { data: null, error: comments.error };
+  if (views.error) return { data: null, error: views.error };
+
+  let diff = diffPlanSnapshots(overlay.live, overlay.overlay);
+  const { baseBaselineId, appliedBaselineId, status } = changeRequest.data;
+  if (status === "Applied" && baseBaselineId && appliedBaselineId) {
+    const [before, after] = await Promise.all([
+      getProjectBaseline(client, baseBaselineId, args.companyId),
+      getProjectBaseline(client, appliedBaselineId, args.companyId)
+    ]);
+    if (before.error || after.error) {
+      return { data: null, error: before.error ?? after.error };
+    }
+    diff = diffPlanSnapshots(
+      parsePlanSnapshot(before.data.snapshot),
+      parsePlanSnapshot(after.data.snapshot)
+    );
+  }
+
+  // A Viewed mark counts until a change of its element is newer than it.
+  const lastChange = new Map<string, number>();
+  for (const item of overlay.items) {
+    const elementId = changeRequestItemElementId(item);
+    if (!elementId) continue;
+    const at = Date.parse(item.updatedAt ?? item.createdAt);
+    lastChange.set(elementId, Math.max(lastChange.get(elementId) ?? 0, at));
+  }
+  const viewedElementIds = (views.data ?? [])
+    .filter(
+      (view) =>
+        view.targetTable === "projectElement" &&
+        Date.parse(view.viewedAt) >= (lastChange.get(view.targetId) ?? 0)
+    )
+    .map((view) => view.targetId);
+
+  const laborCategoryIds = [
+    ...new Set(
+      diff.labor
+        .flatMap((entry) => [
+          entry.before?.laborCategoryId,
+          entry.after?.laborCategoryId
+        ])
+        .filter((id): id is string => typeof id === "string")
+    )
+  ];
+  const laborCategories =
+    laborCategoryIds.length > 0
+      ? await getLaborCategoryNames(client, laborCategoryIds, args.companyId)
+      : null;
+  if (laborCategories?.error) {
+    return { data: null, error: laborCategories.error };
+  }
+
+  // A conflict names its element by the readable id it has now.
+  const elementLabel = new Map(
+    [...overlay.live.elements, ...overlay.overlay.elements].map((row) => [
+      row.id,
+      String(row.readableId || row.name || "")
+    ])
+  );
+  const conflicts =
+    status === "Approved"
+      ? findConflicts(overlay.items, overlay.live).map((conflict) => {
+          const item = overlay.items.find(
+            (i) =>
+              i.targetTable === conflict.targetTable &&
+              i.targetId === conflict.targetId
+          );
+          const elementId = item ? changeRequestItemElementId(item) : null;
+          return {
+            ...conflict,
+            elementId,
+            elementLabel: elementId ? (elementLabel.get(elementId) ?? "") : ""
+          };
+        })
+      : [];
+
+  return {
+    data: {
+      changeRequest: changeRequest.data,
+      diff,
+      laborCategoryNames: Object.fromEntries(
+        (laborCategories?.data ?? []).map((c) => [c.id, c.name])
+      ) as Record<string, string>,
+      comments: comments.data ?? [],
+      viewedElementIds,
+      conflicts,
+      liveElementIds: overlay.live.elements.map((row) => row.id)
+    },
+    error: null
+  };
+}
+
+export type ChangeRequestReview = NonNullable<
+  Awaited<ReturnType<typeof getChangeRequestReview>>["data"]
+>;
 
 /**
  * What a job created on a charge number builds into: the project's cost

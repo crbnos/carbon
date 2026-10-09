@@ -7,6 +7,7 @@ import {
   LuCoins,
   LuFileText,
   LuFlag,
+  LuGitPullRequestArrow,
   LuHistory,
   LuListTree,
   LuSettings2,
@@ -42,6 +43,12 @@ export function useProjectNavigation() {
       to: path.to.projectBaselines(projectId),
       icon: LuHistory,
       shortcut: PROJECT_TAB_SHORTCUTS.baselines
+    },
+    {
+      name: t`Change requests`,
+      to: path.to.projectChangeRequests(projectId),
+      icon: LuGitPullRequestArrow,
+      shortcut: PROJECT_TAB_SHORTCUTS.changeRequests
     },
     {
       name: t`Costs`,

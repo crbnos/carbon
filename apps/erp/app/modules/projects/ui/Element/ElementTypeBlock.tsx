@@ -38,6 +38,10 @@ import {
   testCaseVerdicts
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "../ChangeRequests/useActiveChangeRequest";
 import { useElementField } from "../Elements/ElementProperties";
 import { VerificationStatus } from "../Elements/VerificationStatus";
 
@@ -657,6 +661,7 @@ function FormulaField({
 }) {
   const { t } = useLingui();
   const [text, setText] = useState<string | null>(null);
+  const changeRequestId = useActiveChangeRequestId();
   const value = text ?? formula ?? "=";
   const fetcher = useAction<{
     success?: boolean;
@@ -682,7 +687,13 @@ function FormulaField({
     if (value === (formula ?? "=") || "error" in parsed) return;
     fetcher.submit(
       { intent: "saveFormula", elementId, formula: value },
-      { method: "post", action: path.to.projectElementLinks(projectId) }
+      {
+        method: "post",
+        action: withChangeRequest(
+          path.to.projectElementLinks(projectId),
+          changeRequestId
+        )
+      }
     );
   };
 

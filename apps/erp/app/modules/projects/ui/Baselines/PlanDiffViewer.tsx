@@ -32,13 +32,32 @@ import { path } from "~/utils/path";
 import type {
   PlanRow,
   ProjectPlanDiff,
-  ProjectPlanSnapshotKey
+  ProjectPlanSnapshotKey,
+  ProjectPlanTable
 } from "../../projects.models";
 import { buildElementTree, CURRENT_PLAN } from "../../projects.models";
 import type { ProjectBaselineListItem } from "../../types";
 
 type Entry = DiffEntry<PlanRow>;
 type LineKey = Exclude<ProjectPlanSnapshotKey, "elements">;
+
+/** What a caller adds to each element and each changed field (the review page). */
+export type PlanDiffExtras = {
+  /** Shown first in an element's body. */
+  element?: (elementId: string, entry: Entry) => ReactNode;
+  /** An action beside a changed field and content below it. */
+  field?: (
+    target: { table: ProjectPlanTable; id: string },
+    field: string,
+    label: string
+  ) => { action?: ReactNode; below?: ReactNode } | null;
+};
+
+type PlanDiffGroupsProps = {
+  diff: ProjectPlanDiff;
+  laborCategoryNames: Record<string, string>;
+  extras?: PlanDiffExtras;
+};
 
 type PlanDiffViewerProps = {
   projectId: string;
@@ -76,6 +95,13 @@ const LINKED_FIELDS = new Set(["trackedEntityId", "qualityDocumentId"]);
 
 const LINE_KEYS: LineKey[] = ["materials", "labor", "costs", "links"];
 
+const lineTables: Record<LineKey, ProjectPlanTable> = {
+  materials: "projectElementMaterial",
+  labor: "projectElementLabor",
+  costs: "projectElementCost",
+  links: "projectElementLink"
+};
+
 function rowOf(entry: Entry): PlanRow {
   return (entry.after ?? entry.before) as PlanRow;
 }
@@ -86,30 +112,67 @@ function ownerOf(key: LineKey, row: PlanRow): string | null {
   return typeof id === "string" ? id : null;
 }
 
+export type PlanDiffGroup = {
+  entry: Entry;
+  lines: { key: LineKey; entry: Entry }[];
+};
+
+/**
+ * Groups a plan diff by element, in the target's tree order, with removed
+ * elements last. An element shows when it or one of its lines changed.
+ */
+export function planDiffGroups(diff: ProjectPlanDiff): PlanDiffGroup[] {
+  const linesByElement = new Map<string, { key: LineKey; entry: Entry }[]>();
+  for (const key of LINE_KEYS) {
+    for (const entry of diff[key]) {
+      if (entry.status === "unchanged") continue;
+      const owner = ownerOf(key, rowOf(entry));
+      if (!owner) continue;
+      const lines = linesByElement.get(owner) ?? [];
+      lines.push({ key, entry });
+      linesByElement.set(owner, lines);
+    }
+  }
+
+  const targetRows = diff.elements
+    .filter((entry) => entry.after)
+    .map((entry) => entry.after as PlanRow & { parentId: string | null });
+  const order = buildElementTree(
+    targetRows.map((row) => ({
+      ...row,
+      parentId: (row.parentId as string | null) ?? null,
+      sortOrder: Number(row.sortOrder ?? 0)
+    }))
+  ).map((node) => node.id);
+  const byId = new Map(diff.elements.map((e) => [rowOf(e).id, e]));
+  const removed = diff.elements
+    .filter((entry) => entry.status === "removed")
+    .map((entry) => rowOf(entry).id);
+
+  return [...order, ...removed]
+    .map((id) => ({
+      entry: byId.get(id)!,
+      lines: linesByElement.get(id) ?? []
+    }))
+    .filter(({ entry, lines }) => entry.status !== "unchanged" || lines.length);
+}
+
 /**
  * The diff of two plan snapshots, grouped by element in the target's tree
  * order. Each changed element shows its changed fields, then its changed plan
  * lines and links. Removed elements come last.
  */
-const PlanDiffViewer = ({
-  projectId,
-  fromId,
-  toId,
+export function PlanDiffGroups({
   diff,
-  laborCategoryNames
-}: PlanDiffViewerProps) => {
+  laborCategoryNames,
+  extras
+}: PlanDiffGroupsProps) {
   const { t } = useLingui();
-  const navigate = useNavigate();
   const [items] = useItems();
   const formatMoney = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
   const formatPercent = usePercentFormatter();
   const { formatDate } = useDateFormatter();
-  const baselines =
-    useRouteData<{ baselines: ProjectBaselineListItem[] }>(
-      path.to.projectBaselines(projectId)
-    )?.baselines ?? [];
-
   const labels: Record<string, string> = {
     name: t`Name`,
     description: t`Description`,
@@ -160,43 +223,7 @@ const PlanDiffViewer = ({
     return map;
   }, [diff.elements]);
 
-  const groups = useMemo(() => {
-    const linesByElement = new Map<string, { key: LineKey; entry: Entry }[]>();
-    for (const key of LINE_KEYS) {
-      for (const entry of diff[key]) {
-        if (entry.status === "unchanged") continue;
-        const owner = ownerOf(key, rowOf(entry));
-        if (!owner) continue;
-        const lines = linesByElement.get(owner) ?? [];
-        lines.push({ key, entry });
-        linesByElement.set(owner, lines);
-      }
-    }
-
-    const targetRows = diff.elements
-      .filter((entry) => entry.after)
-      .map((entry) => entry.after as PlanRow & { parentId: string | null });
-    const order = buildElementTree(
-      targetRows.map((row) => ({
-        ...row,
-        parentId: (row.parentId as string | null) ?? null,
-        sortOrder: Number(row.sortOrder ?? 0)
-      }))
-    ).map((node) => node.id);
-    const byId = new Map(diff.elements.map((e) => [rowOf(e).id, e]));
-    const removed = diff.elements
-      .filter((entry) => entry.status === "removed")
-      .map((entry) => rowOf(entry).id);
-
-    return [...order, ...removed]
-      .map((id) => ({
-        entry: byId.get(id)!,
-        lines: linesByElement.get(id) ?? []
-      }))
-      .filter(
-        ({ entry, lines }) => entry.status !== "unchanged" || lines.length
-      );
-  }, [diff]);
+  const groups = useMemo(() => planDiffGroups(diff), [diff]);
 
   const display = (field: string, value: unknown): unknown => {
     if (value === null || value === undefined || value === "") return null;
@@ -227,19 +254,39 @@ const PlanDiffViewer = ({
         row[field] !== ""
     );
 
-  const entryBody = (entry: Entry, skip: Set<string>): ReactNode[] => {
+  const entryBody = (
+    entry: Entry,
+    skip: Set<string>,
+    table: ProjectPlanTable
+  ): ReactNode[] => {
     if (entry.status === "modified") {
       return Object.entries(entry.changedFields ?? {})
         .filter(([field]) => !HIDDEN_FIELDS.has(field) && !skip.has(field))
-        .map(([field, { before, after }]) => (
-          <FieldRow
-            key={field}
-            field={field}
-            before={display(field, before)}
-            after={display(field, after)}
-            labels={labels}
-          />
-        ));
+        .map(([field, { before, after }]) => {
+          const row = (
+            <FieldRow
+              field={field}
+              before={display(field, before)}
+              after={display(field, after)}
+              labels={labels}
+            />
+          );
+          const extra = extras?.field?.(
+            { table, id: rowOf(entry).id },
+            field,
+            labels[field] ?? field
+          );
+          if (!extra) return <div key={field}>{row}</div>;
+          return (
+            <div key={field} className="flex w-full flex-col gap-1">
+              <div className="flex w-full min-w-0 items-center gap-1">
+                <div className="min-w-0 flex-1">{row}</div>
+                {extra.action}
+              </div>
+              {extra.below}
+            </div>
+          );
+        });
     }
     if (entry.status === "added" || entry.status === "removed") {
       const row = rowOf(entry);
@@ -284,6 +331,94 @@ const PlanDiffViewer = ({
   };
 
   const elementSkip = new Set(["name"]);
+
+  return (
+    <div className="w-full rounded-lg border border-border bg-card p-3">
+      {groups.length === 0 ? (
+        <span className="text-sm italic text-muted-foreground">
+          <Trans>No differences.</Trans>
+        </span>
+      ) : (
+        <VStack spacing={4} className="w-full">
+          {groups.map(({ entry, lines }) => {
+            const row = rowOf(entry);
+            const fields = entryBody(entry, elementSkip, "projectElement");
+            // A change of position only (a reorder) has no field to show.
+            const body =
+              entry.status === "modified" && fields.length === 0
+                ? [
+                    <span key="moved" className="text-xs text-muted-foreground">
+                      <Trans>Position changed</Trans>
+                    </span>
+                  ]
+                : fields;
+            const label = `${row.readableId ? `${row.readableId} ` : ""}${String(row.name ?? "")}`;
+            return (
+              <TreeNode
+                key={row.id}
+                label={label}
+                status={entry.status}
+                collapsible={
+                  Boolean(extras?.element) ||
+                  body.length > 0 ||
+                  lines.length > 0
+                }
+              >
+                {extras?.element?.(row.id, entry)}
+                {body}
+                {LINE_KEYS.map((key) => {
+                  const changed = lines.filter((line) => line.key === key);
+                  if (changed.length === 0) return null;
+                  return (
+                    <div key={key} className="w-full">
+                      <Subheading variant="heavy" className="block pb-0.5">
+                        {lineTitles[key]}
+                      </Subheading>
+                      <TreeChildren>
+                        {changed.map(({ entry: line }) => {
+                          const lineBody = entryBody(
+                            line,
+                            lineSkip[key],
+                            lineTables[key]
+                          );
+                          return (
+                            <TreeNode
+                              key={rowOf(line).id}
+                              label={lineLabel(key, rowOf(line))}
+                              status={line.status}
+                              collapsible={lineBody.length > 0}
+                            >
+                              {lineBody}
+                            </TreeNode>
+                          );
+                        })}
+                      </TreeChildren>
+                    </div>
+                  );
+                })}
+              </TreeNode>
+            );
+          })}
+        </VStack>
+      )}
+    </div>
+  );
+}
+
+const PlanDiffViewer = ({
+  projectId,
+  fromId,
+  toId,
+  diff,
+  laborCategoryNames
+}: PlanDiffViewerProps) => {
+  const { t } = useLingui();
+  const navigate = useNavigate();
+  const baselines =
+    useRouteData<{ baselines: ProjectBaselineListItem[] }>(
+      path.to.projectBaselines(projectId)
+    )?.baselines ?? [];
+  const groups = useMemo(() => planDiffGroups(diff), [diff]);
 
   const setCompare = (from: string, to: string) =>
     navigate(path.to.projectBaselineCompare(projectId, from, to), {
@@ -346,69 +481,7 @@ const PlanDiffViewer = ({
         </span>
       </div>
 
-      <div className="w-full rounded-lg border border-border bg-card p-3">
-        {groups.length === 0 ? (
-          <span className="text-sm italic text-muted-foreground">
-            <Trans>No differences.</Trans>
-          </span>
-        ) : (
-          <VStack spacing={4} className="w-full">
-            {groups.map(({ entry, lines }) => {
-              const row = rowOf(entry);
-              const fields = entryBody(entry, elementSkip);
-              // A change of position only (a reorder) has no field to show.
-              const body =
-                entry.status === "modified" && fields.length === 0
-                  ? [
-                      <span
-                        key="moved"
-                        className="text-xs text-muted-foreground"
-                      >
-                        <Trans>Position changed</Trans>
-                      </span>
-                    ]
-                  : fields;
-              const label = `${row.readableId ? `${row.readableId} ` : ""}${String(row.name ?? "")}`;
-              return (
-                <TreeNode
-                  key={row.id}
-                  label={label}
-                  status={entry.status}
-                  collapsible={body.length > 0 || lines.length > 0}
-                >
-                  {body}
-                  {LINE_KEYS.map((key) => {
-                    const changed = lines.filter((line) => line.key === key);
-                    if (changed.length === 0) return null;
-                    return (
-                      <div key={key} className="w-full">
-                        <Subheading variant="heavy" className="block pb-0.5">
-                          {lineTitles[key]}
-                        </Subheading>
-                        <TreeChildren>
-                          {changed.map(({ entry: line }) => {
-                            const lineBody = entryBody(line, lineSkip[key]);
-                            return (
-                              <TreeNode
-                                key={rowOf(line).id}
-                                label={lineLabel(key, rowOf(line))}
-                                status={line.status}
-                                collapsible={lineBody.length > 0}
-                              >
-                                {lineBody}
-                              </TreeNode>
-                            );
-                          })}
-                        </TreeChildren>
-                      </div>
-                    );
-                  })}
-                </TreeNode>
-              );
-            })}
-          </VStack>
-        )}
-      </div>
+      <PlanDiffGroups diff={diff} laborCategoryNames={laborCategoryNames} />
     </div>
   );
 };

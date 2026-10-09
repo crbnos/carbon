@@ -50,6 +50,7 @@ export const PROJECT_TAB_SHORTCUTS = {
   elements: "mod+shift+e",
   milestones: "mod+shift+m",
   baselines: "mod+shift+b",
+  changeRequests: "mod+shift+r",
   costs: "mod+shift+c",
   time: "mod+shift+h",
   settings: "mod+shift+s",

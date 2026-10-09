@@ -356,6 +356,11 @@ msgstr "{0} будет сохранено как {name}"
 msgid "{0}-Year"
 msgstr "{0}-летний"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}д"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
@@ -3561,6 +3569,9 @@ msgstr "Назад"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Вернуться к прослеживаемости"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "Изменено"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "Изменено только для этого представления. Горизонт планирования номенклатуры не обновлен."
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "Журнал изменений"
@@ -4863,6 +4884,13 @@ msgstr "значения, разделённые запятыми"
 
 msgid "Comment"
 msgstr "Комментарий"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "Комментарии"
@@ -6740,6 +6768,9 @@ msgstr "Решение о том, когда материал, отобранн�
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "Уменьшаемый остаток"
 
@@ -8327,6 +8358,9 @@ msgstr "Изменить Права доступа"
 msgid "Edit Picking List"
 msgstr "Изменить Лист отбора"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "Изменить Портал"
 
@@ -8473,6 +8507,11 @@ msgstr "Изменить рабочий центр"
 
 msgid "Edited"
 msgstr "Изменено"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "В работе"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "в области"
 
@@ -11554,6 +11596,9 @@ msgstr "Дата выпуска"
 msgid "Issues"
 msgstr "Проблемы"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
 
@@ -11643,6 +11688,10 @@ msgstr "Товары"
 
 msgid "Items & Production"
 msgstr "Товары и производство"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "Товары в этом диапазоне получают жёлтый значок."
@@ -11988,6 +12037,9 @@ msgstr "Выручка от лизинга"
 msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Оставить все связанные квитанции без изменений"
 
@@ -12089,6 +12141,9 @@ msgstr "Использование за весь период (Единицы)"
 
 msgid "Light"
 msgstr "Светлая"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "Темное производство (24×7)"
@@ -13382,6 +13437,9 @@ msgstr "Новое действие извещения об изменении"
 msgid "New Change Notice Type"
 msgstr "Новый тип извещения об изменении"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Новый расходный материал"
 
@@ -13875,6 +13933,9 @@ msgstr "Нет резервирований мощности для визуал
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Изменений не записано"
 
@@ -13895,6 +13956,9 @@ msgstr "Нет четкого пути"
 
 msgid "No collision-free path"
 msgstr "Нет пути без столкновений"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "Локации не найдены."
 
 msgid "No logo uploaded"
 msgstr "Логотип не загружен"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "Нет совпадений"
@@ -15071,6 +15138,9 @@ msgstr "Открытая подсборка"
 
 msgid "Open task details"
 msgstr "Открыть детали задачи"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Откройте интеграцию Onshape Government и сохраните ее настройки для повторного подключения."
@@ -17545,6 +17615,9 @@ msgstr "Отклонить"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Отклонить партию"
 
@@ -18085,8 +18158,14 @@ msgstr "Ликвидационная стоимость"
 msgid "Residual Value %"
 msgstr "Ликвидационная стоимость %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Решите эти вопросы перед завершением NCR: каждая строка должна иметь решение, которое не является Ожидающим, и количества связанных сущностей должны совпадать с количеством строки."
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
@@ -20644,6 +20723,9 @@ msgstr "Предмет"
 msgid "Subledger"
 msgstr "Вспомогательная книга"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "Состояние жизненного цикла этого покуп
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Состояние жизненного цикла этого поставщика — Активный, Неактивный, В ожидании утверждения и т. д.; только активные поставщики появляются в селекторах заказов поставщикам и коммерческих предложений."
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Местный часовой пояс, в котором это местоположение сообщает время; расписания, табели учета рабочего времени и часы смены в этом месте интерпретируются в этом часовом поясе независимо от локали браузера пользователя."
@@ -24214,6 +24303,14 @@ msgstr "Просмотр графика прослеживаемости"
 msgid "View Transfer"
 msgstr "Просмотр передачи"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "Тип этого Заказа поставщику — стандарт
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Какой это тип предложения — стандартное предложение поставщика, предложение по цене бланкетного соглашения или предложение контрактного производства; определяет макет строки ПО при преобразовании."
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "Источник, из которого это Измерение получает допустимые значения (пользовательский список или существующая сущность, такая как Покупатель, Площадка, Сотрудник)."

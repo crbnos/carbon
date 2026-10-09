@@ -200,6 +200,18 @@ export const PROJECT_STATUS_COLOR_MAP = {
   Closed: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// A project change request: Draft is open, In Review waits on a decision,
+// Approved is accepted but not yet applied, Applied is done, Rejected goes back
+// to its author and Cancelled is closed.
+export const PROJECT_CHANGE_REQUEST_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  "In Review": "yellow",
+  Approved: "blue",
+  Applied: "green",
+  Rejected: "red",
+  Cancelled: "gray"
+} as const satisfies Record<string, StatusColor>;
+
 // A timesheet entry: Draft is open, Submitted waits on approval like a
 // pending review, Approved is accepted but not yet costed, Posted is done and
 // Rejected goes back to its owner.

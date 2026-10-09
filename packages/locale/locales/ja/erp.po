@@ -356,6 +356,11 @@ msgstr "{0} は {name} として保存されます"
 msgid "{0}-Year"
 msgstr "{0} 年"
 
+#. placeholder {0}: viewed.size
+#. placeholder {1}: groups.length
+msgid "{0}/{1} viewed"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}日"
@@ -475,6 +480,9 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
+
+msgid "{itemCount, plural, one {# change} other {# changes}}"
+msgstr ""
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#日}}"
@@ -3561,6 +3569,9 @@ msgstr "戻る"
 msgid "Back to baselines"
 msgstr ""
 
+msgid "Back to change requests"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -4442,6 +4453,12 @@ msgstr ""
 msgid "Change request"
 msgstr ""
 
+msgid "Change requests"
+msgstr ""
+
+msgid "Change Requests"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4480,6 +4497,10 @@ msgstr "変更者"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
 msgstr "このビューのみの変更です。品目の計画期間は更新されません。"
+
+#. placeholder {0}: conflict.fields.join(", ")
+msgid "changed live: {0}"
+msgstr ""
 
 msgid "Changelog"
 msgstr "変更ログ"
@@ -4863,6 +4884,13 @@ msgstr "カンマ区切りの値"
 
 msgid "Comment"
 msgstr "コメント"
+
+#. placeholder {0}: target.label
+msgid "Comment on {0}"
+msgstr ""
+
+msgid "Comment on {fieldLabel}"
+msgstr ""
 
 msgid "Comments"
 msgstr "コメント"
@@ -6740,6 +6768,9 @@ msgstr "作業区にピッキングされたが消費済みでない材料がい
 msgid "Decimal Places"
 msgstr "小数位数"
 
+msgid "Decision notes"
+msgstr ""
+
 msgid "Declining balance"
 msgstr "定率法"
 
@@ -8327,6 +8358,9 @@ msgstr "編集権限"
 msgid "Edit Picking List"
 msgstr "ピッキングリストを編集"
 
+msgid "Edit Plan"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "ポータルを編集"
 
@@ -8473,6 +8507,11 @@ msgstr "作業区を編集"
 
 msgid "Edited"
 msgstr "編集済み"
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
+msgstr ""
 
 msgid "Effective From"
 msgstr ""
@@ -10920,6 +10959,9 @@ msgstr "進行中"
 msgid "In Progress"
 msgstr "進行中"
 
+msgid "In Review"
+msgstr ""
+
 msgid "in scope"
 msgstr "スコープ内"
 
@@ -11554,6 +11596,9 @@ msgstr "発行日"
 msgid "Issues"
 msgstr "問題"
 
+msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "バージョンを再度公開するまで実行は停止します。削除されるものはありません。"
 
@@ -11643,6 +11688,10 @@ msgstr "アイテム"
 
 msgid "Items & Production"
 msgstr "アイテムと生産"
+
+#. placeholder {0}: groups.length
+msgid "Items changed {0}"
+msgstr ""
 
 msgid "Items inside this window get a yellow badge."
 msgstr "このウィンドウ内のアイテムは黄色いバッジが表示されます。"
@@ -11988,6 +12037,9 @@ msgstr "リース売上高"
 msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
 
+msgid "Leave"
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
 
@@ -12089,6 +12141,9 @@ msgstr "ライフタイム使用（ユニット）"
 
 msgid "Light"
 msgstr "ライト"
+
+msgid "Lighter harness"
+msgstr ""
 
 msgid "Lights Out (24×7)"
 msgstr "ライツアウト（24×7）"
@@ -13382,6 +13437,9 @@ msgstr "新規変更通知アクション"
 msgid "New Change Notice Type"
 msgstr "新規変更通知タイプ"
 
+msgid "New Change Request"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "新しい消耗品"
 
@@ -13875,6 +13933,9 @@ msgstr "表示する容量予約はありません。ジョブをスケジュー
 msgid "No category"
 msgstr ""
 
+msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "変更が記録されていません"
 
@@ -13895,6 +13956,9 @@ msgstr "パスが明確でない"
 
 msgid "No collision-free path"
 msgstr "衝突のない経路がない"
+
+msgid "No comments on the change request as a whole."
+msgstr ""
 
 msgid "No comments yet"
 msgstr ""
@@ -14135,6 +14199,9 @@ msgstr "ロケーションが見つかりません。"
 
 msgid "No logo uploaded"
 msgstr "ロゴがアップロードされていません"
+
+msgid "no longer exists in the live plan"
+msgstr ""
 
 msgid "No matches"
 msgstr "一致するものがありません"
@@ -15071,6 +15138,9 @@ msgstr "サブアセンブリを開く"
 
 msgid "Open task details"
 msgstr "タスク詳細を開く"
+
+msgid "Open the first change request"
+msgstr ""
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government連携を開いて、その設定を保存して再度接続してください。"
@@ -17545,6 +17615,9 @@ msgstr "却下"
 msgid "Reject all"
 msgstr ""
 
+msgid "Reject Change Request"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "ロットを却下"
 
@@ -18085,8 +18158,14 @@ msgstr "残存価額"
 msgid "Residual Value %"
 msgstr "残存価額 %"
 
+msgid "Resolve"
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCRを完了する前にこれらを解決してください。すべての行に保留中ではない処置が必要で、リンクされたエンティティの数量は行の数量と一致する必要があります。"
+
+msgid "Resolved"
+msgstr ""
 
 msgid "Resolved Price"
 msgstr "解決済み価格"
@@ -20644,6 +20723,9 @@ msgstr "件名"
 msgid "Subledger"
 msgstr "補助元帳"
 
+msgid "Submit"
+msgstr ""
+
 msgid "Submit and post week"
 msgstr ""
 
@@ -20663,6 +20745,10 @@ msgid "Submit week"
 msgstr ""
 
 msgid "Submitted"
+msgstr ""
+
+#. placeholder {0}: formatDate(changeRequest.submittedAt)
+msgid "Submitted {0}"
 msgstr ""
 
 msgid "Submitted By"
@@ -21757,6 +21843,9 @@ msgstr "このお客様のライフサイクル状態—有効、見込客、無
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "この仕入先のライフサイクル状態 — 有効、無効、承認待機中など；有効な仕入先のみが発注書／見積セレクターに表示されます。"
+
+msgid "The live plan changed under this change request"
+msgstr ""
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "この場所が時刻を報告する現地タイムゾーン。この場所でのスケジュール、タイムカード、シフト時間は、ユーザーのブラウザロケールに関係なく、このゾーンで解釈されます。"
@@ -24214,6 +24303,14 @@ msgstr "トレーサビリティグラフを表示"
 msgid "View Transfer"
 msgstr "転送を表示"
 
+msgid "Viewed"
+msgstr ""
+
+#. placeholder {0}: changeRequest.readableId
+#. placeholder {1}: changeRequest.title
+msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
+msgstr ""
+
 msgid "Views"
 msgstr ""
 
@@ -24487,6 +24584,9 @@ msgstr "このPOの種類（標準商品、外注サービス、外注加工、�
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "この見積の種類 — 標準仕入先見積、ブランケット契約価格見積、または契約製造見積。変換時にPOラインレイアウトを決定します。"
+
+msgid "What should the author change?"
+msgstr ""
 
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "このディメンションが許可された値を引き出すソース（カスタムリストまたは得意先、拠点、従業員などの既存エンティティ）。"

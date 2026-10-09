@@ -17,6 +17,7 @@ import type {
   ProjectState
 } from "~/modules/projects";
 import { getProjectElementPageInChangeRequest } from "~/modules/projects/projects.server";
+import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -77,16 +78,24 @@ export default function ProjectElementRoute() {
   }>(path.to.project(projectId));
 
   return (
-    <div className="h-full">
-      <ElementView
-        {...page}
-        projectId={projectId}
-        project={routeData?.project}
-        states={routeData?.states ?? []}
-        labels={routeData?.labels ?? []}
-        milestones={routeData?.milestones ?? []}
-        variant="page"
-      />
+    <div className="flex h-full flex-col">
+      {page.changeRequest && (
+        <ChangeRequestBanner
+          projectId={projectId}
+          changeRequest={page.changeRequest}
+        />
+      )}
+      <div className="min-h-0 flex-1">
+        <ElementView
+          {...page}
+          projectId={projectId}
+          project={routeData?.project}
+          states={routeData?.states ?? []}
+          labels={routeData?.labels ?? []}
+          milestones={routeData?.milestones ?? []}
+          variant="page"
+        />
+      </div>
     </div>
   );
 }
