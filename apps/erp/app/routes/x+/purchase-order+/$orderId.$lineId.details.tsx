@@ -15,6 +15,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
+import { getLineChargeNumber } from "~/modules/projects";
+import { chargeNumberError } from "~/modules/projects/projects.server";
 import {
   getPurchaseOrder,
   getPurchaseOrderLine,
@@ -45,7 +47,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getPurchaseOrderLine(client, lineId);
+  const [line, chargeNumber] = await Promise.all([
+    getPurchaseOrderLine(client, lineId),
+    getLineChargeNumber(client, "purchaseOrderLine", lineId, companyId)
+  ]);
   if (line.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -69,6 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     line: line?.data ?? null,
+    chargeNumber: chargeNumber.data ?? null,
     files: getSupplierInteractionLineDocuments(client, companyId, lineId)
   };
 }
@@ -118,7 +124,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -133,6 +139,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
+
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
 
   const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     id: lineId,
@@ -168,7 +181,7 @@ export default function EditPurchaseOrderLineRoute() {
   }>(path.to.purchaseOrder(orderId));
   const isReadOnly = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
 
-  const { line, files } = useLoaderData<typeof loader>();
+  const { line, chargeNumber, files } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: line?.id ?? undefined,
@@ -193,6 +206,8 @@ export default function EditPurchaseOrderLineRoute() {
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    projectId: chargeNumber?.projectId ?? "",
+    projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: line?.taxPercent ?? 0,
     assetReadableId: (line as any)?.assetReadableId ?? "",
     assetName: (line as any)?.assetName ?? "",

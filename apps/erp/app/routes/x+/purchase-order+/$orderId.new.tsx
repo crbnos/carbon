@@ -11,6 +11,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+import { chargeNumberError } from "~/modules/projects/projects.server";
 import {
   getPurchaseOrder,
   isPurchaseOrderLocked,
@@ -81,6 +82,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         fieldErrors: { itemId: `${unreleasedIssue} It cannot be purchased.` }
       });
     }
+  }
+
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
   }
 
   const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {

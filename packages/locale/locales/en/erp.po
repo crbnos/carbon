@@ -5112,8 +5112,14 @@ msgstr "consumables"
 msgid "Consumables"
 msgstr "Consumables"
 
+msgid "Consume to project"
+msgstr "Consume to project"
+
 msgid "Consumed"
 msgstr "Consumed"
+
+msgid "Consumes to project"
+msgstr "Consumes to project"
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
@@ -21183,6 +21189,9 @@ msgstr "the job hours due that day (a due-date basis, not the day the work runs)
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr "The job's cost goes to the project when it completes, instead of into stock"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

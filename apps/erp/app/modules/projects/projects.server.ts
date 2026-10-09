@@ -603,3 +603,72 @@ export async function getElementTimeAndMaterials(
     }))
   };
 }
+
+/** The form field of the `ChargeNumber` picker, for its field errors. */
+const CHARGE_NUMBER_FIELD = "projectId__projectElementId";
+
+/**
+ * Checks a charge number a form sends with a document (a job, a purchase
+ * order line, a purchase invoice line): the project is this company's, the
+ * element is one of its elements, and a job that consumes to the project has
+ * an account to post to (not Statistical). Returns the field and refusal, or
+ * null. Two reads at most.
+ */
+export async function chargeNumberError(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+  }
+): Promise<{ field: string; message: string } | null> {
+  if (!args.projectId) {
+    if (args.projectElementId) {
+      return {
+        field: CHARGE_NUMBER_FIELD,
+        message: "An element needs its project"
+      };
+    }
+    return null;
+  }
+
+  const [project, element] = await Promise.all([
+    client
+      .from("project")
+      .select("id, costTreatment")
+      .eq("id", args.projectId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    args.projectElementId
+      ? client
+          .from("projectElement")
+          .select("id")
+          .eq("id", args.projectElementId)
+          .eq("projectId", args.projectId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  if (project.error || !project.data) {
+    return {
+      field: CHARGE_NUMBER_FIELD,
+      message: "The project does not exist"
+    };
+  }
+  if (element && (element.error || !element.data)) {
+    return {
+      field: CHARGE_NUMBER_FIELD,
+      message: "The element is not part of the project"
+    };
+  }
+  if (args.consumeToProject && project.data.costTreatment === "Statistical") {
+    return {
+      field: "consumeToProject",
+      message:
+        "A Statistical project has no account, so a job cannot consume to it"
+    };
+  }
+  return null;
+}

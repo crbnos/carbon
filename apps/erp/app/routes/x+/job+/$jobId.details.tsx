@@ -58,6 +58,7 @@ import {
   JobRiskRegister
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
+import { chargeNumberError } from "~/modules/projects/projects.server";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { getTagsList } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
@@ -199,6 +200,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
+  const chargeError = await chargeNumberError(
+    serviceRole,
+    companyId,
+    validation.data
+  );
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
   // The same Make to Asset item rule the job form, release and completion
   // apply, so a saved target or item is refused with the field it is about.
   if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
@@ -232,6 +244,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     modelUploadId: validation.data.modelUploadId || null,
     fixedAssetClassId: validation.data.fixedAssetClassId || null,
     fixedAssetId: validation.data.fixedAssetId || null,
+    projectId: validation.data.projectId || null,
+    projectElementId: validation.data.projectElementId || null,
+    consumeToProject: validation.data.consumeToProject,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });

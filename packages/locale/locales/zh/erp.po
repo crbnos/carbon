@@ -5112,8 +5112,14 @@ msgstr "耗材"
 msgid "Consumables"
 msgstr "耗材"
 
+msgid "Consume to project"
+msgstr ""
+
 msgid "Consumed"
 msgstr "已消耗"
+
+msgid "Consumes to project"
+msgstr ""
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "从库存管理中消耗原材料到工单中，这会在物料台账中写入消耗分录。"
@@ -21183,6 +21189,9 @@ msgstr "该天到期的任务小时数（以截止日期为基础，而不是工
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "工单在其地点排程队列中的位置——一个 Carbon 根据到期日和截止日期类型计算的小数，而非低/高评级。"

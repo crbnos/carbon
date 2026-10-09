@@ -8,6 +8,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  Badge,
   Button,
   Copy,
   DropdownMenu,
@@ -57,6 +58,7 @@ import {
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
+  LuFolderKanban,
   LuList,
   LuLoaderCircle,
   LuPanelLeft,
@@ -91,6 +93,7 @@ import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
+import type { JobProjectCharge } from "../../production.service";
 import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
@@ -144,8 +147,10 @@ const JobHeader = () => {
   const expediteModal = useDisclosure();
   const routeData = useRouteData<{
     job: Job;
+    projectCharge?: JobProjectCharge | null;
     unbatchedBatchableOperations?: number;
   }>(path.to.job(jobId));
+  const projectCharge = routeData?.projectCharge;
 
   const statusFetcher = useFetcher<{}>();
   const expediteFetcher = useFetcher<{
@@ -315,6 +320,11 @@ const JobHeader = () => {
               )}
             </>
           )}
+          {projectCharge?.consumeToProject && (
+            <Badge variant="secondary">
+              <Trans>Consumes to project</Trans>
+            </Badge>
+          )}
           {unbatchedBatchableOperations > 0 && (
             <Status
               color="gray"
@@ -329,6 +339,24 @@ const JobHeader = () => {
           )}
         </HStack>
         <HStack>
+          {projectCharge?.project && (
+            <Button leftIcon={<LuFolderKanban />} variant="secondary" asChild>
+              <Link
+                to={
+                  projectCharge.element
+                    ? path.to.projectElementFull(
+                        projectCharge.project.id,
+                        projectCharge.element.id
+                      )
+                    : path.to.projectElements(projectCharge.project.id)
+                }
+              >
+                {projectCharge.element?.readableId ??
+                  projectCharge.project.identifier ??
+                  projectCharge.project.name}
+              </Link>
+            </Button>
+          )}
           {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
             <Button leftIcon={<RiProgress8Line />} variant="secondary" asChild>
               <Link

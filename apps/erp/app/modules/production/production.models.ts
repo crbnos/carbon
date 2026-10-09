@@ -269,7 +269,12 @@ const baseJobValidator = z.object({
   // either capitalised into a class, or its cost swept onto one asset that is
   // already under construction. At most one is set (DB CHECK, refined below).
   fixedAssetClassId: zfd.text(z.string().optional()),
-  fixedAssetId: zfd.text(z.string().optional())
+  fixedAssetId: zfd.text(z.string().optional()),
+  // The charge number. With consumeToProject the job's cost goes to the
+  // project at completion instead of into inventory (projects Phase 1a).
+  projectId: zfd.text(z.string().optional()),
+  projectElementId: zfd.text(z.string().optional()),
+  consumeToProject: zfd.checkbox()
 });
 
 export const bulkJobValidator = z
@@ -353,7 +358,19 @@ export const jobValidator = baseJobValidator
     message:
       "A job completes to a fixed-asset class or to one asset under construction, not both",
     path: ["fixedAssetId"]
-  });
+  })
+  .refine((data) => !data.consumeToProject || !!data.projectId, {
+    message: "Pick a charge number to consume the job to a project",
+    path: ["consumeToProject"]
+  })
+  .refine(
+    (data) =>
+      !data.consumeToProject || !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to a project or to a fixed asset, not both",
+      path: ["consumeToProject"]
+    }
+  );
 
 /**
  * The Make to Asset item rule, the same one `complete_job_to_inventory`
@@ -400,6 +417,11 @@ export const salesOrderToJobValidator = baseJobValidator
     quoteLineId: zfd.text(z.string().optional()),
     salesOrderId: zfd.text(z.string()),
     salesOrderLineId: zfd.text(z.string())
+  })
+  .refine((data) => !data.consumeToProject, {
+    message:
+      "A job for a sales order line ships to the customer and cannot consume to a project",
+    path: ["consumeToProject"]
   })
   .refine(
     (data) => {

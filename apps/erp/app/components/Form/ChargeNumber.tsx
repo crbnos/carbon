@@ -6,6 +6,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { Combobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useLocalStorage } from "@carbon/react";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import type { ChargeNumber as ChargeNumberRow } from "~/modules/projects";
 import { path } from "~/utils/path";
@@ -38,8 +39,10 @@ export function splitChargeNumber(value?: string | null) {
 
 type ChargeNumberProps = Omit<
   ComboboxProps,
-  "name" | "options" | "value" | "onChange"
+  "name" | "options" | "value" | "onChange" | "inline"
 > & {
+  /** Render as an inline property (the Properties panel). */
+  inline?: boolean;
   /** Form field names of the two hidden inputs. */
   projectName?: string;
   projectElementName?: string;
@@ -51,11 +54,18 @@ type ChargeNumberProps = Omit<
  * one. The form receives two fields, `projectId` and `projectElementId`.
  * The last 8 picks show first.
  */
+/** The inline preview: the picked option's label. */
+const ChargeNumberPreview = (
+  value: string,
+  options: { value: string; label: ReactNode }[]
+) => options.find((option) => option.value === value)?.label ?? null;
+
 const ChargeNumber = ({
   projectName = "projectId",
   projectElementName = "projectElementId",
   label,
   onChange,
+  inline = false,
   ...props
 }: ChargeNumberProps) => {
   const chargeNumbers = useChargeNumbers();
@@ -103,6 +113,7 @@ const ChargeNumber = ({
       />
       <Combobox
         {...props}
+        inline={inline ? ChargeNumberPreview : undefined}
         name={fieldName}
         label={label}
         options={options}

@@ -5112,8 +5112,14 @@ msgstr "sarf malzemeleri"
 msgid "Consumables"
 msgstr "Sarf malzemeleri"
 
+msgid "Consume to project"
+msgstr ""
+
 msgid "Consumed"
 msgstr "Tüketildi"
+
+msgid "Consumes to project"
+msgstr ""
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "Envanterdeki malzemeyi bir işe tüketmek, bu da madde defterine bir Tüketim girişi yazar."
@@ -21183,6 +21189,9 @@ msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü d
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "İşin konumunun planlama kuyruğundaki konumu — Carbon'un son tarih ve deadline türünden hesapladığı kesirli bir sayı, Düşük/Yüksek bir puanlama değil."

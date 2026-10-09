@@ -5112,8 +5112,14 @@ msgstr "consommables"
 msgid "Consumables"
 msgstr "Consommables"
 
+msgid "Consume to project"
+msgstr ""
+
 msgid "Consumed"
 msgstr "Consommé"
+
+msgid "Consumes to project"
+msgstr ""
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "Consommer du matériel du stock dans un travail, ce qui écrit une entrée de Consommation dans le ledger des articles."
@@ -21183,6 +21189,9 @@ msgstr "les heures de travail dues ce jour-là (selon la date d'échéance, pas 
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Le travail dont l'opération couvre cette ligne de traitement externe; le reçu de la ligne ferme l'opération contre ce travail."
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "La position de l'ordre de fabrication dans la file de planification de son site — un nombre fractionnaire que Carbon calcule à partir de la date d'échéance et du type d'échéance, pas une cote Faible/Élevé."

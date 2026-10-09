@@ -5112,8 +5112,14 @@ msgstr "расходные материалы"
 msgid "Consumables"
 msgstr "Расходные материалы"
 
+msgid "Consume to project"
+msgstr ""
+
 msgid "Consumed"
 msgstr "Потреблено"
+
+msgid "Consumes to project"
+msgstr ""
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "Потребление материалов из запасов для работы, в результате чего в реестр товаров записывается запись потребления."
@@ -21183,6 +21189,9 @@ msgstr "рабочие часы, подлежащие в этот день (на
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Положение производственного заказа в очереди графика его площадки — дробное число, которое Carbon вычисляет из срока выполнения и типа крайнего срока, а не рейтинг «Низкий/Высокий»."

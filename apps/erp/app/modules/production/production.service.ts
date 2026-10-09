@@ -1022,6 +1022,30 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+/**
+ * The charge number of a job: its project and element, and whether the job
+ * consumes to the project. The `jobs` view predates these columns, so they
+ * are read from `job`.
+ */
+export async function getJobProjectCharge(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("job")
+    .select(
+      "projectId, projectElementId, consumeToProject, project:project!job_project_fkey(id, identifier, name, costTreatment), element:projectElement!job_projectElement_fkey(id, readableId, name)"
+    )
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export type JobProjectCharge = NonNullable<
+  Awaited<ReturnType<typeof getJobProjectCharge>>["data"]
+>;
+
 // The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
 // in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
 // the route action — NEVER constructed here. This module is also bundled for the
@@ -3620,6 +3644,9 @@ export async function insertJob(
     configuration?: Record<string, unknown>;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
   },
   options?: {
     skipMethod?: boolean;
@@ -3742,6 +3769,9 @@ export async function insertJob(
       customFields: input.customFields,
       fixedAssetClassId: input.fixedAssetClassId ?? null,
       fixedAssetId: input.fixedAssetId ?? null,
+      projectId: input.projectId ?? null,
+      projectElementId: input.projectElementId ?? null,
+      consumeToProject: input.consumeToProject ?? false,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -3889,6 +3919,9 @@ export async function updateJob(
     itemId?: string;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, companyId, updatedBy, ...updates } = input;

@@ -28,6 +28,8 @@ import { LuDiamond, LuLayers } from "react-icons/lu";
 import type { z } from "zod";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
+  Boolean,
+  ChargeNumber,
   Combobox,
   Customer,
   CustomFormFields,
@@ -40,7 +42,8 @@ import {
   Select,
   SelectControlled,
   SequenceOrCustomId,
-  Submit
+  Submit,
+  useChargeNumbers
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUser } from "~/hooks";
@@ -184,6 +187,28 @@ const JobForm = ({
   };
   const canEditCompleteTo =
     initialValues.status === "Draft" || initialValues.status === "Planned";
+
+  // Consume to project: on by default when the picked project is Expense or
+  // Contract; never for a Statistical project (it has no account), and never
+  // with a Make to Asset target.
+  const chargeNumbers = useChargeNumbers();
+  // Undefined until the user picks: a charge number passed in by the page is
+  // looked up in the list.
+  const [pickedTreatment, setPickedTreatment] = useState<
+    string | null | undefined
+  >(undefined);
+  const chargeTreatment =
+    pickedTreatment !== undefined
+      ? pickedTreatment
+      : (chargeNumbers.find((row) => row.projectId === initialValues.projectId)
+          ?.costTreatment ?? null);
+  const [consumeToProject, setConsumeToProject] = useState<boolean>(
+    initialValues.consumeToProject ?? false
+  );
+  const canConsumeToProject =
+    completeTo === "inventory" &&
+    chargeTreatment !== null &&
+    chargeTreatment !== "Statistical";
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     setType(t as MethodItemType);
@@ -410,12 +435,13 @@ const JobForm = ({
                         name="completeTo"
                         label={t`Complete To`}
                         value={completeTo}
-                        onChange={(option) =>
-                          setCompleteTo(
+                        onChange={(option) => {
+                          const next =
                             (option?.value as CompleteTo | undefined) ??
-                              "inventory"
-                          )
-                        }
+                            "inventory";
+                          setCompleteTo(next);
+                          if (next !== "inventory") setConsumeToProject(false);
+                        }}
                         options={[
                           { value: "inventory", label: t`Inventory` },
                           { value: "class", label: t`Fixed Asset Class` },
@@ -466,6 +492,29 @@ const JobForm = ({
                           isReadOnly={!canEditCompleteTo}
                         />
                       )}
+
+                      <ChargeNumber
+                        label={t`Charge Number`}
+                        isOptional
+                        isReadOnly={!canEditCompleteTo}
+                        onChange={(row) => {
+                          const treatment = row?.costTreatment ?? null;
+                          setPickedTreatment(treatment);
+                          setConsumeToProject(
+                            completeTo === "inventory" &&
+                              (treatment === "Expense" ||
+                                treatment === "Contract")
+                          );
+                        }}
+                      />
+                      <Boolean
+                        name="consumeToProject"
+                        label={t`Consume to project`}
+                        description={t`The job's cost goes to the project when it completes, instead of into stock`}
+                        value={consumeToProject && canConsumeToProject}
+                        onChange={setConsumeToProject}
+                        isDisabled={!canConsumeToProject || !canEditCompleteTo}
+                      />
 
                       {showDueDate && (
                         <DatePicker

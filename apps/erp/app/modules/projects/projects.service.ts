@@ -279,6 +279,8 @@ export type ChargeNumber = {
   readableId: string;
   name: string;
   projectName: string;
+  /** The project's cost treatment: Statistical cannot consume a job. */
+  costTreatment: ProjectCostTreatment;
 };
 
 /**
@@ -294,10 +296,15 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       .select("requireProjectElement")
       .eq("id", companyId)
       .maybeSingle(),
-    fetchAll<{ id: string; identifier: string; name: string }>(() =>
+    fetchAll<{
+      id: string;
+      identifier: string;
+      name: string;
+      costTreatment: ProjectCostTreatment;
+    }>(() =>
       client
         .from("project")
-        .select("id, identifier, name")
+        .select("id, identifier, name, costTreatment")
         .eq("companyId", companyId)
         .eq("status", "Released")
         .eq("active", true)
@@ -308,12 +315,12 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       projectId: string;
       readableId: string;
       name: string;
-      project: { name: string } | null;
+      project: { name: string; costTreatment: ProjectCostTreatment } | null;
     }>(() =>
       client
         .from("projectElement")
         .select(
-          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name), state:projectState!projectElement_state_fkey!inner(group)"
+          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name, costTreatment), state:projectState!projectElement_state_fkey!inner(group)"
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
@@ -339,7 +346,8 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         projectElementId: null,
         readableId: project.identifier,
         name: project.name,
-        projectName: project.name
+        projectName: project.name,
+        costTreatment: project.costTreatment
       }));
 
   const elementRows: ChargeNumber[] = (elements.data ?? []).map((element) => ({
@@ -348,10 +356,29 @@ export async function getChargeNumbers(client: Client, companyId: string) {
     projectElementId: element.id,
     readableId: element.readableId,
     name: element.name,
-    projectName: element.project?.name ?? ""
+    projectName: element.project?.name ?? "",
+    costTreatment: element.project?.costTreatment ?? "Statistical"
   }));
 
   return { data: [...projectRows, ...elementRows], error: null };
+}
+
+/**
+ * The charge number of a purchase order line or a purchase invoice line. The
+ * line views predate these columns, so they are read from the table.
+ */
+export async function getLineChargeNumber(
+  client: Client,
+  table: "purchaseOrderLine" | "purchaseInvoiceLine",
+  id: string,
+  companyId: string
+) {
+  return client
+    .from(table)
+    .select("projectId, projectElementId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
 }
 
 // --- States ------------------------------------------------------------------

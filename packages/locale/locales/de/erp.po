@@ -5112,8 +5112,14 @@ msgstr "Verbrauchsmaterialien"
 msgid "Consumables"
 msgstr "Verbrauchsmaterialien"
 
+msgid "Consume to project"
+msgstr ""
+
 msgid "Consumed"
 msgstr "Verbraucht"
+
+msgid "Consumes to project"
+msgstr ""
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "Verbrauch von Material aus dem Bestand in einen Auftrag, das einen Verbrauchseintrag in das Elementledger schreibt."
@@ -21183,6 +21189,9 @@ msgstr "die Arbeitsstunden fällig an diesem Tag (basierend auf dem Fälligkeits
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Der Auftrag, dessen Operation diese Außenbearbeitungslinie abdeckt; der Beleg der Zeile schließt die Operation gegen diesen Auftrag."
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Die Position des Fertigungsauftrags in der Terminplanwarteschlange des Standorts — eine Dezimalzahl, die Carbon aus dem Fälligkeitsdatum und dem Termintyp berechnet, keine Hoch/Niedrig-Bewertung."

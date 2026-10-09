@@ -19,6 +19,7 @@ import {
   purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing";
+import { chargeNumberError } from "~/modules/projects/projects.server";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -68,6 +69,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
+
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
 
   const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     ...d,

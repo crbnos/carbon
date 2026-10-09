@@ -46,6 +46,7 @@ import {
   useOptimisticAssignment
 } from "~/components";
 import {
+  ChargeNumber,
   Customer,
   Item,
   JobSalesOrderLine,
@@ -66,6 +67,7 @@ import {
   deadlineTypes,
   isJobLocked
 } from "../../production.models";
+import type { JobProjectCharge } from "../../production.service";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
 
@@ -76,6 +78,7 @@ const JobProperties = () => {
 
   const routeData = useRouteData<{
     job: Job;
+    projectCharge?: JobProjectCharge | null;
     tags: { name: string }[];
     trackedEntities: Promise<PostgrestResponse<TrackedEntity>>;
   }>(path.to.job(jobId));
@@ -115,6 +118,24 @@ const JobProperties = () => {
     },
 
     [jobId, routeData?.job]
+  );
+
+  const currentChargeNumber = routeData?.projectCharge?.projectId
+    ? `${routeData.projectCharge.projectId}|${routeData.projectCharge.projectElementId ?? ""}`
+    : "";
+  const onUpdateChargeNumber = useCallback(
+    (value: string | null) => {
+      if ((value ?? "") === currentChargeNumber) return;
+      const formData = new FormData();
+      formData.append("ids", jobId);
+      formData.append("field", "chargeNumber");
+      formData.append("value", value ?? "");
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateJob
+      });
+    },
+    [jobId, currentChargeNumber, fetcher.submit]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -550,6 +571,34 @@ const JobProperties = () => {
           isReadOnly={isDisabled || !!routeData?.job?.salesOrderId}
           onChange={(value) => {
             onUpdate("customerId", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          projectId: routeData?.projectCharge?.projectId ?? undefined,
+          projectElementId:
+            routeData?.projectCharge?.projectElementId ?? undefined
+        }}
+        validator={z.object({
+          projectId: zfd.text(z.string().optional()),
+          projectElementId: zfd.text(z.string().optional())
+        })}
+        className="w-full"
+      >
+        {/* Chosen before release: issued material and labor carry it. */}
+        <ChargeNumber
+          label={t`Charge Number`}
+          inline
+          isOptional
+          isReadOnly={
+            isDisabled ||
+            (routeData?.job?.status !== "Draft" &&
+              routeData?.job?.status !== "Planned")
+          }
+          onChange={(row) => {
+            onUpdateChargeNumber(row?.value ?? null);
           }}
         />
       </ValidatedForm>

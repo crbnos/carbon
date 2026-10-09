@@ -23,6 +23,7 @@ import {
   makeToAssetItemError
 } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
+import { chargeNumberError } from "~/modules/projects/projects.server";
 import type { MethodItemType } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -151,6 +152,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const chargeError = await chargeNumberError(serviceRole, companyId, data);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
   // A Make to Asset job is refused here, not only at release, so the form
   // says why while the item is still being chosen.
   if (data.fixedAssetClassId || data.fixedAssetId) {
@@ -177,6 +185,9 @@ export async function action({ request }: ActionFunctionArgs) {
       jobId: data.jobId || undefined,
       fixedAssetClassId: data.fixedAssetClassId || null,
       fixedAssetId: data.fixedAssetId || null,
+      projectId: data.projectId || null,
+      projectElementId: data.projectElementId || null,
+      consumeToProject: data.consumeToProject,
       configuration,
       companyId,
       createdBy: userId,
@@ -211,6 +222,9 @@ export default function JobNewRoute() {
     dueDate: "",
     fixedAssetClassId: fixedAssetClassId ?? "",
     fixedAssetId: "",
+    projectId: params.get("projectId") ?? "",
+    projectElementId: params.get("projectElementId") ?? "",
+    consumeToProject: false,
     itemId: "",
     itemType: "Item" as MethodItemType,
     jobId: undefined,

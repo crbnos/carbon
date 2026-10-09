@@ -5112,8 +5112,14 @@ msgstr "消耗品"
 msgid "Consumables"
 msgstr "消耗品"
 
+msgid "Consume to project"
+msgstr ""
+
 msgid "Consumed"
 msgstr "消費済み"
+
+msgid "Consumes to project"
+msgstr ""
 
 msgid "Consuming material from inventory into a job, which writes a Consumption entry to the item ledger."
 msgstr "在庫からジョブへの材料の消費。これにより、アイテム帳簿に消費エントリが書き込まれます。"
@@ -21183,6 +21189,9 @@ msgstr "その日に期限切れになるジョブの時間（作業が実行さ
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
+
+msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "このジョブのロケーション内のスケジュール順序での位置。Carbonが期日と期限タイプから計算した小数値で、低/高レーティングではありません。"
