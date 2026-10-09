@@ -29,7 +29,7 @@
 - [ ] Task 18: Always post in `issue`
 - [ ] Task 19: Always post in `close-job` and `post-production-event`
 - [ ] Task 20: Always post in `post-asset-transfer` and `post-rental-agreement`
-- [ ] Task 21: Always post in the SQL job-costing functions
+- [x] Task 21: Always post in the SQL job-costing functions
 - [ ] Task 22: Always post in the ERP fixed-asset paths, Stripe fees and the revenue recognition cron
 - [ ] Task 23: Refuse manual accounting work before the cutover
 - [ ] Task 24: Prove a company with no cutover can post every document
@@ -474,7 +474,7 @@ pnpm --filter erp exec vitest run app/modules/accounting/accounting.periods.test
 Each of Tasks 11–20 applies these steps to the files it lists. Read them once.
 
 1. Replace the function's `accountingEnabled` read with `const postingStatus = await journalPostingStatus(trx, companyId);` from `@carbon/database/journal-posting-status`. Call it inside the posting transaction, so the `FOR SHARE` lock holds until commit.
-2. If the read happens before the transaction opens, move it into the transaction. If the code cannot move it without restructuring the function, STOP and report.
+2. If the function needs the status before its transaction opens (for example to resolve the accounting period first), read it there with `journalPostingStatus(db, companyId)`. Read it again inside the transaction with `journalPostingStatus(trx, companyId)`. If the two differ, throw `new Error("Accounting was just set up. Post the document again.")`. Do not restructure the function.
 3. Delete each branch on the flag that the task lists. Keep the branch body and make it unconditional.
 4. At each journal insert the task lists, replace `status: "Posted"` with `status: postingStatus`. Keep `postedAt` and `postedBy`.
 5. A branch marked J* also resolved the accounting period. Resolve it only when `postingStatus` is `"Posted"`. A Provisional journal gets `accountingPeriodId: null`, and no posting creates a period before the cutover (spec section 1 item 3).
@@ -1398,6 +1398,8 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 
 - Task 10 changed while executing: a Provisional journal has no accounting period (spec section 1 item 3). Phase B shared step 5, Task 21, Task 24 and Task 28 follow from it.
 - Task 1 widened `journalEntryStatus`; the ERP typecheck then failed in the status badge and the provider journal schema. That fix (labels, colors, `journalEntryStatuses`, `core/models.ts`) is committed with Task 10, ahead of Task 36. Task 36 keeps the journal list filter and the document panels.
+- Shared step 2 amended while executing: a status read before the transaction is re-read under the lock inside it, and a mismatch throws. Most posting functions resolve the period before the transaction.
+- Task 21 copies both functions from `pg_get_functiondef` (the live definition). Its labor-absorption journal is still skipped when `laborAbsorptionAccount` or `overheadAbsorptionAccount` is empty, as before; it uses no stand-in line.
 - New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
