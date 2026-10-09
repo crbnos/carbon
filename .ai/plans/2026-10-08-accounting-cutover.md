@@ -61,7 +61,7 @@
 - [x] Task 42: Write the cost rows and journals of legacy movements that stored none
 - [x] Task 43: Write the journals of legacy asset and revenue runs again
 - [x] Task 44: Show the legacy journals in the wizard and update the docs
-- [ ] Task 45: Verify the legacy window in the browser
+- [x] Task 45: Verify the legacy window in the browser
 
 ## Dependencies
 
