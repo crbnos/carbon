@@ -963,6 +963,9 @@ msgstr "Un nome è obbligatorio per salvare una vista"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Un prezzo negoziato fissato per un articolo specifico — per cliente, tipo di cliente o tutti i clienti — che sostituisce completamente il prezzo base, facoltativamente con scaglioni di quantità."
 
+msgid "A new element takes the default state"
+msgstr ""
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Un nuovo ordine di acquisto verrà creato per ogni fornitore. In alternativa, puoi scegliere un ordine di acquisto in bozza esistente per il fornitore per aggiungere le operazioni esterne."
 
@@ -1647,6 +1650,10 @@ msgstr "Aggiungi {0} selezionati"
 msgid "Add & Issue"
 msgstr "Aggiungi e Emetti"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Add a {0} state"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "Aggiungi una colonna di seguito per ordinare la visualizzazione"
 
@@ -1781,6 +1788,9 @@ msgstr "Aggiungi Fattura"
 
 msgid "Add Item"
 msgstr "Aggiungi Articolo"
+
+msgid "Add Label"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Aggiungi Riga"
@@ -3435,6 +3445,9 @@ msgstr "Torna alla tracciabilità"
 msgid "Backflush"
 msgstr "Backflush"
 
+msgid "Backlog"
+msgstr ""
+
 msgid "Backup"
 msgstr "Backup"
 
@@ -4610,6 +4623,9 @@ msgstr "Comprimi preparazione"
 
 msgid "Collapse subtree"
 msgstr "Comprimi sottostruttura"
+
+msgid "Color"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Dimensione colonna"
@@ -6428,6 +6444,10 @@ msgstr "Nel bel mezzo della notte, {name}."
 msgid "Default"
 msgstr "Predefinito"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Default {0} state"
+msgstr ""
+
 msgid "Default Account"
 msgstr "Conto predefinito"
 
@@ -6608,8 +6628,9 @@ msgstr "Definire BOM multilivello e Lista delle operazioni (metodi di produzione
 msgid "Delete"
 msgstr "Elimina"
 
+#. placeholder {0}: deleting.name
+#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
-#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "Elimina {0}"
 
@@ -6921,9 +6942,17 @@ msgstr "Elimina Tipo Fornitore"
 msgid "Delete the {0} invoice"
 msgstr "Elimina la fattura del {0}"
 
+#. placeholder {0}: deleting.name
+msgid "Delete the label {0}? It is removed from every element that has it."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Eliminare lo scaglione di prezzo per la quantità {0}? Questa azione non può essere annullata."
+
+#. placeholder {0}: deleting.name
+msgid "Delete the state {0}? A state that elements use cannot be deleted."
+msgstr ""
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "Eliminare questo sottoassembly e tutti i suoi passi? Questa azione non può essere annullata."
@@ -7623,6 +7652,9 @@ msgstr "Ogni importo inizia da quello che rimane da riconoscere della riga."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Ogni cella mostra le persone assegnate rispetto alle persone di cui il lavoro del giorno ha bisogno."
 
+msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Ognuno viene aggiunto come riga ricorrente dalla data della modifica, da prezzare nella griglia."
 
@@ -7703,6 +7735,11 @@ msgstr "Numero di Registrazione e Identificazione degli Operatori Economici; ric
 
 msgid "Edit"
 msgstr "Modifica"
+
+#. placeholder {0}: label.name
+#. placeholder {0}: state.name
+msgid "Edit {0}"
+msgstr ""
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Modifica Flusso di Lavoro <0>Problema</0>"
@@ -7855,6 +7892,9 @@ msgstr "Modifica Riga di registrazione"
 msgid "Edit Kanban"
 msgstr "Modifica Kanban"
 
+msgid "Edit Label"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "Modifica Riga"
 
@@ -7992,6 +8032,9 @@ msgstr "Modifica Metodo di Spedizione"
 
 msgid "Edit Size"
 msgstr "Modifica Dimensione"
+
+msgid "Edit State"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "Modifica Trasferimento Magazzino"
@@ -12714,6 +12757,9 @@ msgstr "Mai"
 msgid "New"
 msgstr "Nuovo"
 
+msgid "New {groupLabel} State"
+msgstr ""
+
 msgid "New <0>Issue</0> Workflow"
 msgstr "Nuovo Flusso di Lavoro <0>Issue</0>"
 
@@ -12845,6 +12891,9 @@ msgstr "Nuovo Gruppo Articoli"
 
 msgid "New Kanban"
 msgstr "Nuovo Kanban"
+
+msgid "New Label"
+msgstr ""
 
 msgid "New line"
 msgstr "Nuova Riga"
@@ -13416,6 +13465,9 @@ msgstr "Non sono stati creati ordini di produzione"
 
 msgid "No journal lines in scope for this period"
 msgstr "Nessuna riga di prima nota per questo periodo"
+
+msgid "No labels yet."
+msgstr ""
 
 msgid "No lines"
 msgstr "Nessuna riga"
@@ -19454,6 +19506,9 @@ msgstr "Stato / Provincia"
 msgid "State province"
 msgstr "Stato/Provincia"
 
+msgid "States"
+msgstr ""
+
 msgid "Station"
 msgstr "Stazione"
 
@@ -20091,6 +20146,9 @@ msgstr "Tabella"
 
 msgid "Table actions"
 msgstr "Azioni tabella"
+
+msgid "Tag elements across the tree, for example by discipline."
+msgstr ""
 
 msgid "Tags"
 msgstr "Etichette"
@@ -22485,6 +22543,9 @@ msgstr "Annulla scarto {label}"
 
 msgid "Unshipped orders"
 msgstr "Ordini non spediti"
+
+msgid "Unstarted"
+msgstr ""
 
 msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
 msgstr "Operazioni dell'ordine non avviate in un processo raggruppabile, raggruppate per funzionare insieme in un centro di lavoro, condividendo un attrezzaggio e un timer il cui tempo si suddivide per ogni ordine in proporzione alla quantità."

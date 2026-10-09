@@ -963,6 +963,9 @@ msgstr "A name is required to save a view"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 
+msgid "A new element takes the default state"
+msgstr "A new element takes the default state"
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 
@@ -1647,6 +1650,10 @@ msgstr "Add {0} selected"
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Add a {0} state"
+msgstr "Add a {0} state"
+
 msgid "Add a column below to sort the view"
 msgstr "Add a column below to sort the view"
 
@@ -1781,6 +1788,9 @@ msgstr "Add Invoice"
 
 msgid "Add Item"
 msgstr "Add Item"
+
+msgid "Add Label"
+msgstr "Add Label"
 
 msgid "Add Line"
 msgstr "Add Line"
@@ -3435,6 +3445,9 @@ msgstr "Back to traceability"
 msgid "Backflush"
 msgstr "Backflush"
 
+msgid "Backlog"
+msgstr "Backlog"
+
 msgid "Backup"
 msgstr "Backup"
 
@@ -4610,6 +4623,9 @@ msgstr "Collapse Setup"
 
 msgid "Collapse subtree"
 msgstr "Collapse subtree"
+
+msgid "Color"
+msgstr "Color"
 
 msgid "Column dimension"
 msgstr "Column dimension"
@@ -6428,6 +6444,10 @@ msgstr "Deep in the small hours, {name}."
 msgid "Default"
 msgstr "Default"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Default {0} state"
+msgstr "Default {0} state"
+
 msgid "Default Account"
 msgstr "Default Account"
 
@@ -6608,8 +6628,9 @@ msgstr "Define multi-level BOMs and Bill of Process (make methods)"
 msgid "Delete"
 msgstr "Delete"
 
+#. placeholder {0}: deleting.name
+#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
-#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "Delete {0}"
 
@@ -6921,9 +6942,17 @@ msgstr "Delete Supplier Type"
 msgid "Delete the {0} invoice"
 msgstr "Delete the {0} invoice"
 
+#. placeholder {0}: deleting.name
+msgid "Delete the label {0}? It is removed from every element that has it."
+msgstr "Delete the label {0}? It is removed from every element that has it."
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Delete the price break for quantity {0}? This can't be undone."
+
+#. placeholder {0}: deleting.name
+msgid "Delete the state {0}? A state that elements use cannot be deleted."
+msgstr "Delete the state {0}? A state that elements use cannot be deleted."
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "Delete this sub-assembly and all of its steps? This cannot be undone."
@@ -7623,6 +7652,9 @@ msgstr "Each amount starts at what the line has left to recognize."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
+msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
+msgstr "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Each is added as a recurring line from the change date, to be priced in the grid."
 
@@ -7703,6 +7735,11 @@ msgstr "Economic Operators Registration and Identification number; required for 
 
 msgid "Edit"
 msgstr "Edit"
+
+#. placeholder {0}: label.name
+#. placeholder {0}: state.name
+msgid "Edit {0}"
+msgstr "Edit {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Edit <0>Issue</0> Workflow"
@@ -7855,6 +7892,9 @@ msgstr "Edit Journal Entry"
 msgid "Edit Kanban"
 msgstr "Edit Kanban"
 
+msgid "Edit Label"
+msgstr "Edit Label"
+
 msgid "Edit Line"
 msgstr "Edit Line"
 
@@ -7992,6 +8032,9 @@ msgstr "Edit Shipping Method"
 
 msgid "Edit Size"
 msgstr "Edit Size"
+
+msgid "Edit State"
+msgstr "Edit State"
 
 msgid "Edit Stock Transfer"
 msgstr "Edit Stock Transfer"
@@ -12714,6 +12757,9 @@ msgstr "Never"
 msgid "New"
 msgstr "New"
 
+msgid "New {groupLabel} State"
+msgstr "New {groupLabel} State"
+
 msgid "New <0>Issue</0> Workflow"
 msgstr "New <0>Issue</0> Workflow"
 
@@ -12845,6 +12891,9 @@ msgstr "New Item Group"
 
 msgid "New Kanban"
 msgstr "New Kanban"
+
+msgid "New Label"
+msgstr "New Label"
 
 msgid "New line"
 msgstr "New line"
@@ -13416,6 +13465,9 @@ msgstr "No jobs were created"
 
 msgid "No journal lines in scope for this period"
 msgstr "No journal lines in scope for this period"
+
+msgid "No labels yet."
+msgstr "No labels yet."
 
 msgid "No lines"
 msgstr "No lines"
@@ -19454,6 +19506,9 @@ msgstr "State / Province"
 msgid "State province"
 msgstr "State province"
 
+msgid "States"
+msgstr "States"
+
 msgid "Station"
 msgstr "Station"
 
@@ -20091,6 +20146,9 @@ msgstr "Table"
 
 msgid "Table actions"
 msgstr "Table actions"
+
+msgid "Tag elements across the tree, for example by discipline."
+msgstr "Tag elements across the tree, for example by discipline."
 
 msgid "Tags"
 msgstr "Tags"
@@ -22485,6 +22543,9 @@ msgstr "Unscrap {label}"
 
 msgid "Unshipped orders"
 msgstr "Unshipped orders"
+
+msgid "Unstarted"
+msgstr "Unstarted"
 
 msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
 msgstr "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."

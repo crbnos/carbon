@@ -426,6 +426,56 @@ export async function deleteProjectState(
   }
 }
 
+/**
+ * Makes a state the default of its group, in one transaction. The group's
+ * previous default stops being the default. A new element of the group's
+ * kind takes the default state.
+ * @mcp update
+ */
+export async function setProjectStateDefault(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string; id: string; updatedBy: string }
+) {
+  try {
+    await db.transaction().execute(async (trx) => {
+      const state = await trx
+        .selectFrom("projectState")
+        .select(["id", "group"])
+        .where("id", "=", args.id)
+        .where("projectId", "=", args.projectId)
+        .where("companyId", "=", args.companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!state) throw new Error("The state does not exist");
+
+      await trx
+        .updateTable("projectState")
+        .set({ isDefault: false })
+        .where("projectId", "=", args.projectId)
+        .where("companyId", "=", args.companyId)
+        .where("group", "=", state.group)
+        .where("isDefault", "=", true)
+        .execute();
+
+      await trx
+        .updateTable("projectState")
+        .set({
+          isDefault: true,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    });
+    return { data: { id: args.id }, error: null };
+  } catch (err) {
+    return refusal(
+      err instanceof Error ? err.message : "Failed to set the default state"
+    );
+  }
+}
+
 // --- Labels ------------------------------------------------------------------
 
 /**

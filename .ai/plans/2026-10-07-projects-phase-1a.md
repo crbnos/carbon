@@ -66,7 +66,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 27: Add module navigation, layout and paths
 - [x] Task 28: Build the project list and the new-project form
 - [x] Task 29: Build the project page shell and the Details tab
-- [ ] Task 30: Build the project Settings tab (states and labels)
+- [x] Task 30: Build the project Settings tab (states and labels)
 - [ ] Task 31: Build the `ChargeNumberSelect` picker and its API route
 - [ ] Task 32: Build the Elements page with the List layout
 - [ ] Task 33: Add the Board layout
@@ -2486,3 +2486,8 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 29: the page is the header plus one full-width content pane, with no explorer or properties panel. The Elements page (Task 32) owns its own layouts.
 - Task 29: the `x+/project+/_layout.tsx` breadcrumb is removed, as in `x+/workflow+/_layout.tsx`. The detail route already emits the "Projects" link, so the layout's copy showed "Projects" twice.
 - Task 29: the Details action ignores `identifier` (the form shows it read-only). A Closed project's Details form is disabled. A project still on `Capitalize` (none can be created in Phase 1a) shows Expense in the form, because the validator refuses Capitalize.
+- Task 30: the default toggle needed a service the plan did not list. `setProjectStateDefault(db, …)` (`projects.service.ts`) clears the group's old default and sets the new one in one Kysely transaction, because `projectState_default_key` allows one default per group. The route gains the intent `setDefaultState`.
+- Task 30: a state or label row shows its name, color swatch and hex. The pencil opens a modal with the name and the `Color` picker, which posts `upsertState` / `upsertLabel`. An inline color input would post on every drag of the picker. Delete asks for confirmation (`Confirm`) and posts `deleteState` / `deleteLabel`. The last state of a group has its delete button disabled, and the service still refuses it.
+- Task 30: the route action returns `{ success }` with a flash instead of a redirect, so `useAction` closes the modal on success and keeps it open on a refusal. Refusals (state in use, last state of a group) come from the service messages.
+- Task 30: `StateIcon` draws its own Started icon. `InProgressStatusIcon` has its color fixed to `#f2be00`, so it cannot take the state color. The half fill copies its geometry.
+- Task 30: a Closed project's Settings tab is read-only.

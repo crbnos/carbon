@@ -963,6 +963,9 @@ msgstr "Un nom est requis pour enregistrer une vue"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Un prix négocié fixé pour un article spécifique — par client, type de client ou tous les clients — qui remplace le prix de base purement et simplement, optionnellement avec des paliers de quantité."
 
+msgid "A new element takes the default state"
+msgstr ""
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Un nouveau bon de commande sera créé pour chaque fournisseur. Vous pouvez également choisir un bon de commande brouillon existant du fournisseur auquel ajouter les opérations externes."
 
@@ -1647,6 +1650,10 @@ msgstr "Ajouter {0} sélectionnés"
 msgid "Add & Issue"
 msgstr "Ajouter et émettre"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Add a {0} state"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "Ajoutez une colonne ci-dessous pour trier la vue"
 
@@ -1781,6 +1788,9 @@ msgstr "Ajouter une facture"
 
 msgid "Add Item"
 msgstr "Ajouter un article"
+
+msgid "Add Label"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Ajouter une ligne"
@@ -3435,6 +3445,9 @@ msgstr "Retour à la traçabilité"
 msgid "Backflush"
 msgstr "Post-consommation"
 
+msgid "Backlog"
+msgstr ""
+
 msgid "Backup"
 msgstr "Sauvegarde"
 
@@ -4610,6 +4623,9 @@ msgstr "Réduire la configuration"
 
 msgid "Collapse subtree"
 msgstr "Réduire le sous-arbre"
+
+msgid "Color"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Axe analytique de colonne"
@@ -6428,6 +6444,10 @@ msgstr "Au cœur de la nuit, {name}."
 msgid "Default"
 msgstr "Par défaut"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Default {0} state"
+msgstr ""
+
 msgid "Default Account"
 msgstr "Compte par défaut"
 
@@ -6608,8 +6628,9 @@ msgstr "Définir des BOM multi-niveaux et des Listes des opérations (méthodes 
 msgid "Delete"
 msgstr "Supprimer"
 
+#. placeholder {0}: deleting.name
+#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
-#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "Supprimer {0}"
 
@@ -6921,9 +6942,17 @@ msgstr "Supprimer le type de fournisseur"
 msgid "Delete the {0} invoice"
 msgstr "Supprimer la facture du {0}"
 
+#. placeholder {0}: deleting.name
+msgid "Delete the label {0}? It is removed from every element that has it."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Supprimer le palier de prix pour la quantité {0} ? Cette action ne peut pas être annulée."
+
+#. placeholder {0}: deleting.name
+msgid "Delete the state {0}? A state that elements use cannot be deleted."
+msgstr ""
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "Supprimer ce sous-ensemble et toutes ses étapes ? Cette action ne peut pas être annulée."
@@ -7623,6 +7652,9 @@ msgstr "Chaque montant part de ce que la ligne a à reconnaître."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
+msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Chacun est ajouté comme ligne récurrente à partir de la date de modification, à tarifer dans la grille."
 
@@ -7703,6 +7735,11 @@ msgstr "Numéro d'Enregistrement et d'Identification des Opérateurs Économique
 
 msgid "Edit"
 msgstr "Modifier"
+
+#. placeholder {0}: label.name
+#. placeholder {0}: state.name
+msgid "Edit {0}"
+msgstr ""
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Modifier le Flux de Travail <0>Problème</0>"
@@ -7855,6 +7892,9 @@ msgstr "Modifier la ligne d'écriture"
 msgid "Edit Kanban"
 msgstr "Modifier Kanban"
 
+msgid "Edit Label"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "Modifier la ligne"
 
@@ -7992,6 +8032,9 @@ msgstr "Modifier le mode d'expédition"
 
 msgid "Edit Size"
 msgstr "Modifier la taille"
+
+msgid "Edit State"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "Modifier le transfert de stock"
@@ -12714,6 +12757,9 @@ msgstr "Jamais"
 msgid "New"
 msgstr "Nouveau"
 
+msgid "New {groupLabel} State"
+msgstr ""
+
 msgid "New <0>Issue</0> Workflow"
 msgstr "Nouveau Flux de Travail <0>Issue</0>"
 
@@ -12845,6 +12891,9 @@ msgstr "Nouveau groupe d'articles"
 
 msgid "New Kanban"
 msgstr "Nouveau Kanban"
+
+msgid "New Label"
+msgstr ""
 
 msgid "New line"
 msgstr "Nouvelle ligne"
@@ -13416,6 +13465,9 @@ msgstr "Aucun ordre de fabrication n'a été créé"
 
 msgid "No journal lines in scope for this period"
 msgstr "Aucune ligne d'écriture dans le périmètre pour cette période"
+
+msgid "No labels yet."
+msgstr ""
 
 msgid "No lines"
 msgstr "Aucune ligne"
@@ -19454,6 +19506,9 @@ msgstr "État / Province"
 msgid "State province"
 msgstr "État/Province"
 
+msgid "States"
+msgstr ""
+
 msgid "Station"
 msgstr "Station"
 
@@ -20091,6 +20146,9 @@ msgstr "Tableau"
 
 msgid "Table actions"
 msgstr "Actions du tableau"
+
+msgid "Tag elements across the tree, for example by discipline."
+msgstr ""
 
 msgid "Tags"
 msgstr "Étiquettes"
@@ -22485,6 +22543,9 @@ msgstr "Annuler la mise au rebut {label}"
 
 msgid "Unshipped orders"
 msgstr "Commandes non expédiées"
+
+msgid "Unstarted"
+msgstr ""
 
 msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
 msgstr "Opérations d'OF non démarrées sur un procédé groupable, groupées pour s'exécuter ensemble à un poste de travail, partageant un réglage et un minuteur dont la durée se répartit par ordre de fabrication en proportion de la quantité."

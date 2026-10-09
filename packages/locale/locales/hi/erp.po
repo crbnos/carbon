@@ -963,6 +963,9 @@ msgstr "एक दृश्य को सहेजने के लिए एक
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "एक समझौता किया गया मूल्य एक विशिष्ट आइटम के लिए तय किया गया — ग्राहक, ग्राहक प्रकार, या सभी ग्राहकों द्वारा — जो मूल मूल्य को पूरी तरह से प्रतिस्थापित करता है, वैकल्पिक रूप से मात्रा स्तर के साथ।"
 
+msgid "A new element takes the default state"
+msgstr ""
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "प्रत्येक आपूर्तिकर्ता के लिए एक नया क्रय आदेश बनाया जाएगा। वैकल्पिक रूप से, आप आपूर्तिकर्ता के लिए एक मौजूदा ड्राफ्ट क्रय आदेश चुन सकते हैं ताकि बाहरी ऑपरेशन जोड़े जा सकें।"
 
@@ -1647,6 +1650,10 @@ msgstr "{0} चयनित जोड़ें"
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Add a {0} state"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "इस दृश्य को सॉर्ट करने के लिए नीचे एक कॉलम जोड़ें"
 
@@ -1781,6 +1788,9 @@ msgstr "चालान जोड़ें"
 
 msgid "Add Item"
 msgstr "आइटम जोड़ें"
+
+msgid "Add Label"
+msgstr ""
 
 msgid "Add Line"
 msgstr "लाइन जोड़ें"
@@ -3435,6 +3445,9 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 msgid "Backflush"
 msgstr "बैकफ्लश"
 
+msgid "Backlog"
+msgstr ""
+
 msgid "Backup"
 msgstr "बैकअप"
 
@@ -4610,6 +4623,9 @@ msgstr "सेटअप को संक्षिप्त करें"
 
 msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
+
+msgid "Color"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "कॉलम आयाम"
@@ -6428,6 +6444,10 @@ msgstr "गहरी रात में, {name}।"
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
+#. placeholder {0}: groupLabels[group]
+msgid "Default {0} state"
+msgstr ""
+
 msgid "Default Account"
 msgstr "डिफ़ॉल्ट खाता"
 
@@ -6608,8 +6628,9 @@ msgstr "बहु-स्तरीय BOMs और प्रक्रिया स
 msgid "Delete"
 msgstr "हटाएं"
 
+#. placeholder {0}: deleting.name
+#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
-#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "{0} हटाएं"
 
@@ -6921,9 +6942,17 @@ msgstr "आपूर्तिकर्ता प्रकार हटाएं"
 msgid "Delete the {0} invoice"
 msgstr "चालान {0} को हटाएँ"
 
+#. placeholder {0}: deleting.name
+msgid "Delete the label {0}? It is removed from every element that has it."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य स्तर हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
+
+#. placeholder {0}: deleting.name
+msgid "Delete the state {0}? A state that elements use cannot be deleted."
+msgstr ""
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "इस उप-विधानसभा और इसके सभी चरणों को हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
@@ -7623,6 +7652,9 @@ msgstr "प्रत्येक राशि उस पर शुरू हो�
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
+msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "प्रत्येक को परिवर्तन तिथि से एक आवर्ती पंक्ति के रूप में जोड़ा जाता है, जिसकी कीमत ग्रिड में तय की जाती है।"
 
@@ -7703,6 +7735,11 @@ msgstr "आर्थिक ऑपरेटर पंजीकरण और प�
 
 msgid "Edit"
 msgstr "संपादित करें"
+
+#. placeholder {0}: label.name
+#. placeholder {0}: state.name
+msgid "Edit {0}"
+msgstr ""
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>समस्या</0> वर्कफ़्लो संपादित करें"
@@ -7855,6 +7892,9 @@ msgstr "जर्नल प्रविष्टि संपादित कर
 msgid "Edit Kanban"
 msgstr "कानबान संपादित करें"
 
+msgid "Edit Label"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "लाइन संपादित करें"
 
@@ -7992,6 +8032,9 @@ msgstr "शिपिंग विधि संपादित करें"
 
 msgid "Edit Size"
 msgstr "आकार संपादित करें"
+
+msgid "Edit State"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "स्टॉक ट्रांसफर संपादित करें"
@@ -12714,6 +12757,9 @@ msgstr "कभी नहीं"
 msgid "New"
 msgstr "नया"
 
+msgid "New {groupLabel} State"
+msgstr ""
+
 msgid "New <0>Issue</0> Workflow"
 msgstr "नया <0>Issue</0> वर्कफ़्लो"
 
@@ -12845,6 +12891,9 @@ msgstr "नया आइटम समूह"
 
 msgid "New Kanban"
 msgstr "नया कानबन"
+
+msgid "New Label"
+msgstr ""
 
 msgid "New line"
 msgstr "नई पंक्ति"
@@ -13416,6 +13465,9 @@ msgstr "कोई जॉब नहीं बनाया गया"
 
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
+
+msgid "No labels yet."
+msgstr ""
 
 msgid "No lines"
 msgstr "कोई पंक्तियाँ नहीं"
@@ -19454,6 +19506,9 @@ msgstr "राज्य / प्रांत"
 msgid "State province"
 msgstr "राज्य प्रांत"
 
+msgid "States"
+msgstr ""
+
 msgid "Station"
 msgstr "स्टेशन"
 
@@ -20091,6 +20146,9 @@ msgstr "तालिका"
 
 msgid "Table actions"
 msgstr "तालिका क्रियाएं"
+
+msgid "Tag elements across the tree, for example by discipline."
+msgstr ""
 
 msgid "Tags"
 msgstr "टैग"
@@ -22485,6 +22543,9 @@ msgstr "अनस्क्रैप करें {label}"
 
 msgid "Unshipped orders"
 msgstr "अभी भेजे जाने वाले ऑर्डर"
+
+msgid "Unstarted"
+msgstr ""
 
 msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
 msgstr "एक बैच-योग्य प्रक्रिया पर शुरू न किए गए जॉब ऑपरेशन वर्क सेंटर पर एक साथ चलने के लिए समूहित, एक सेटअप और एक टाइमर साझा करते हुए जिसका समय प्रति जॉब मात्रा के अनुपात में वापस विभाजित होता है।"
