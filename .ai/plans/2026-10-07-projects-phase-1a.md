@@ -49,7 +49,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 10: Update seed data for new companies
 - [x] Task 11: Add the projects module models
 - [x] Task 12: Add the project and workspace service functions
-- [ ] Task 13: Add the element service functions
+- [x] Task 13: Add the element service functions
 - [ ] Task 14: Add the time, labor category and ledger service functions
 - [ ] Task 15: Add the pure project posting helpers and tests
 - [ ] Task 16: Add the `post-timesheet` server function
@@ -2418,3 +2418,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 12: the generated `tool-manifest.digest.json` drops the 4 `accounting_*Project*` tools. They return as `projects_*` tools in Task 44, which adds the module to `MODULE_LIST`.
 - Task 12: the new module file shifted type-check order, and `x+/sales-order+/$orderId.cancel-preview.tsx` hit TS2589 on a bare `item(...)` embed from `job`. It now names the FK (`item!job_itemId_fkey`), per the lesson "A new FK on a busy table breaks bare PostgREST embeds of it".
 - Task 12: `projects.models.ts` imports `methodType` from `../shared/shared.models`, not the `../shared` barrel. The barrel pulls in the glossary's Lingui `msg` macros, and a plain vitest run fails on them.
+- Task 13: `insertProjectElement`, `moveProjectElement` and `startElementOnFirstCharge` live in `projects.server.ts`. `updateProjectElementOrder` lives in `projects.service.ts`, next to its precedent `updateQuoteLineOrder`. `moveProjectElement` also refuses a Parameter parent, as the insert does.
+- Task 13: when no `stateId` is given, the insert takes the default Unstarted state, else the first Unstarted state by `sortOrder`.
+- Task 13: `getProjectElements` resolves the `labelId` filter with one `projectElementLabel` query, then one `.in("id", …)`, so the embedded label list keeps every label. `getProjectElement` reads the parent with a second query, because a self-referencing embed is ambiguous.
+- Task 13: a throwaway vitest run against this worktree's database created a project, inserted 3 elements (`STG-1`…`STG-3`), refused a move under a descendant, moved one element to the top level and started an Unstarted element (Todo → In Progress). The test project was then deleted. The script was not committed.

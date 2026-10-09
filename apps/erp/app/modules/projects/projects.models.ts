@@ -399,3 +399,61 @@ export const projectIssueValidator = z.object({
     error: "Direction is required"
   })
 });
+
+/** The `FlatTreeItem` shape of `~/components/TreeView`. */
+export type ElementTreeItem<T> = {
+  id: string;
+  parentId: string | undefined;
+  children: string[];
+  hasChildren: boolean;
+  /** The indentation level, the root is 0 */
+  level: number;
+  data: T;
+};
+
+/**
+ * Builds a depth-first list of elements for the tree layouts. Siblings sort
+ * by `sortOrder`. An element whose parent is not in the input (a filter
+ * removed it) shows at level 0.
+ */
+export function buildElementTree<
+  T extends { id: string; parentId: string | null; sortOrder: number }
+>(elements: T[]): ElementTreeItem<T>[] {
+  const ids = new Set(elements.map((e) => e.id));
+  const byParent = new Map<string | null, T[]>();
+  for (const element of elements) {
+    const key =
+      element.parentId && ids.has(element.parentId) ? element.parentId : null;
+    const siblings = byParent.get(key) ?? [];
+    siblings.push(element);
+    byParent.set(key, siblings);
+  }
+  for (const siblings of byParent.values()) {
+    siblings.sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  const result: ElementTreeItem<T>[] = [];
+  const visited = new Set<string>();
+
+  function walk(parentId: string | null, level: number) {
+    for (const element of byParent.get(parentId) ?? []) {
+      // A cycle cannot exist (moveProjectElement refuses one), but a visited
+      // set keeps a bad row from recursing forever.
+      if (visited.has(element.id)) continue;
+      visited.add(element.id);
+      const children = (byParent.get(element.id) ?? []).map((c) => c.id);
+      result.push({
+        id: element.id,
+        parentId: parentId ?? undefined,
+        children,
+        hasChildren: children.length > 0,
+        level,
+        data: element
+      });
+      walk(element.id, level + 1);
+    }
+  }
+
+  walk(null, 0);
+  return result;
+}

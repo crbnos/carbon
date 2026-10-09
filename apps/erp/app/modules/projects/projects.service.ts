@@ -2,17 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { updateSortOrder } from "../shared/sort-order";
 import type {
   ProjectCostTreatment,
+  ProjectElementEditableField,
+  ProjectElementType,
+  ProjectStateGroup,
   ProjectStatus,
+  projectElementCostValidator,
+  projectElementLaborValidator,
+  projectElementMaterialValidator,
   projectLabelValidator,
   projectMilestoneValidator,
   projectStateValidator,
@@ -585,6 +593,722 @@ export async function deleteProjectMilestone(
 ) {
   return client
     .from("projectMilestone")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+// --- Elements ----------------------------------------------------------------
+
+const PROJECT_ELEMENT_LIST_COLUMNS =
+  "id, projectId, readableId, sequence, type, parentId, name, stateId, ownerId, priority, milestoneId, startDate, targetDate, completedAt, estimatedHours, isChargeable, budget, itemId, sortOrder, createdAt, updatedAt, state:projectState!projectElement_state_fkey!inner(name, group, color), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)" as const;
+
+function projectElementsQuery(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectElement")
+    .select(PROJECT_ELEMENT_LIST_COLUMNS)
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true })
+    .order("id", { ascending: true });
+}
+
+export type ProjectElementListItem = NonNullable<
+  Awaited<ReturnType<typeof projectElementsQuery>>["data"]
+>[number];
+
+/**
+ * Lists every element of a project with its state and label ids. Pages
+ * through the rows, because a project can have more than 1000 elements.
+ * @mcp read
+ */
+export async function getProjectElements(
+  client: Client,
+  projectId: string,
+  companyId: string,
+  filters: {
+    type?: ProjectElementType[] | null;
+    stateGroup?: ProjectStateGroup[] | null;
+    ownerId?: string[] | null;
+    milestoneId?: string[] | null;
+    labelId?: string[] | null;
+    search?: string | null;
+  } = {}
+) {
+  let labelledIds: string[] | null = null;
+  if (filters.labelId && filters.labelId.length > 0) {
+    const labelled = await client
+      .from("projectElementLabel")
+      .select("projectElementId")
+      .in("projectLabelId", filters.labelId)
+      .eq("companyId", companyId);
+    if (labelled.error) return { data: null, error: labelled.error };
+    labelledIds = [
+      ...new Set((labelled.data ?? []).map((row) => row.projectElementId))
+    ];
+    if (labelledIds.length === 0) return { data: [], error: null };
+  }
+
+  return fetchAll<ProjectElementListItem>(() => {
+    let query = projectElementsQuery(client, projectId, companyId);
+    if (filters.type && filters.type.length > 0) {
+      query = query.in("type", filters.type);
+    }
+    if (filters.stateGroup && filters.stateGroup.length > 0) {
+      query = query.in("state.group", filters.stateGroup);
+    }
+    if (filters.ownerId && filters.ownerId.length > 0) {
+      query = query.in("ownerId", filters.ownerId);
+    }
+    if (filters.milestoneId && filters.milestoneId.length > 0) {
+      query = query.in("milestoneId", filters.milestoneId);
+    }
+    if (labelledIds) {
+      query = query.in("id", labelledIds);
+    }
+    if (filters.search) {
+      query = query.or(
+        `name.ilike.%${filters.search}%,readableId.ilike.%${filters.search}%`
+      );
+    }
+    return query;
+  });
+}
+
+/**
+ * Gets one element with its state, owner, milestone, labels and parent.
+ * @mcp read
+ */
+export async function getProjectElement(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  const element = await client
+    .from("projectElement")
+    .select(
+      "*, state:projectState!projectElement_state_fkey(id, name, group, color), owner:user!projectElement_ownerId_fkey(id, fullName, avatarUrl), milestone:projectMilestone!projectElement_milestone_fkey(id, name, endDate), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (element.error || !element.data.parentId) {
+    return element.error
+      ? { data: null, error: element.error }
+      : { data: { ...element.data, parent: null }, error: null };
+  }
+
+  // The parent is read on its own: a self-referencing embed is ambiguous.
+  const parent = await client
+    .from("projectElement")
+    .select("id, readableId, name")
+    .eq("id", element.data.parentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (parent.error) return { data: null, error: parent.error };
+
+  return { data: { ...element.data, parent: parent.data }, error: null };
+}
+
+/**
+ * Sets one field on one or more elements. Moving into a Completed state
+ * stamps `completedAt`; moving to any other state clears it.
+ * @mcp update
+ */
+export async function updateProjectElementField(
+  client: Client,
+  args: {
+    ids: string[];
+    field: ProjectElementEditableField;
+    value: string | null | undefined;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const raw = args.value === undefined || args.value === "" ? null : args.value;
+  const update: Database["public"]["Tables"]["projectElement"]["Update"] = {
+    updatedBy: args.updatedBy,
+    updatedAt: datetime.timestamp()
+  };
+
+  switch (args.field) {
+    case "name":
+      if (!raw) return refusal("Name is required");
+      update.name = raw;
+      break;
+    case "stateId": {
+      if (!raw) return refusal("State is required");
+      const state = await client
+        .from("projectState")
+        .select("group")
+        .eq("id", raw)
+        .eq("companyId", args.companyId)
+        .single();
+      if (state.error) return { data: null, error: state.error };
+      update.stateId = raw;
+      update.completedAt =
+        state.data.group === "Completed" ? datetime.timestamp() : null;
+      break;
+    }
+    case "priority":
+      update.priority = (raw ??
+        "None") as Database["public"]["Enums"]["projectElementPriority"];
+      break;
+    case "estimatedHours":
+    case "budget": {
+      const value = raw === null ? null : Number(raw);
+      if (value !== null && (!Number.isFinite(value) || value < 0)) {
+        return refusal("Enter a number of 0 or more");
+      }
+      update[args.field] = value;
+      break;
+    }
+    case "isChargeable": {
+      const value = raw === "true" || raw === "on";
+      if (value) {
+        const parameters = await client
+          .from("projectElement")
+          .select("id", { count: "exact", head: true })
+          .in("id", args.ids)
+          .eq("companyId", args.companyId)
+          .eq("type", "Parameter");
+        if (parameters.error) return { data: null, error: parameters.error };
+        if ((parameters.count ?? 0) > 0) {
+          return refusal("A Parameter cannot take charges");
+        }
+      }
+      update.isChargeable = value;
+      break;
+    }
+    case "description": {
+      try {
+        update.description = raw === null ? null : (JSON.parse(raw) as Json);
+      } catch {
+        return refusal("The description is not valid");
+      }
+      break;
+    }
+    case "ownerId":
+    case "milestoneId":
+    case "startDate":
+    case "targetDate":
+    case "itemId":
+      update[args.field] = raw;
+      break;
+  }
+
+  return client
+    .from("projectElement")
+    .update(update)
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .select("id");
+}
+
+/**
+ * Replaces the labels of an element with the given set.
+ * @mcp action destructive
+ */
+export async function setProjectElementLabels(
+  client: Client,
+  args: {
+    projectElementId: string;
+    labelIds: string[];
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const existing = await client
+    .from("projectElementLabel")
+    .select("projectLabelId")
+    .eq("projectElementId", args.projectElementId)
+    .eq("companyId", args.companyId);
+  if (existing.error) return { data: null, error: existing.error };
+
+  const current = new Set(
+    (existing.data ?? []).map((row) => row.projectLabelId)
+  );
+  const wanted = new Set(args.labelIds);
+  const removed = [...current].filter((id) => !wanted.has(id));
+  const added = [...wanted].filter((id) => !current.has(id));
+
+  if (removed.length > 0) {
+    const deleted = await client
+      .from("projectElementLabel")
+      .delete()
+      .eq("projectElementId", args.projectElementId)
+      .eq("companyId", args.companyId)
+      .in("projectLabelId", removed);
+    if (deleted.error) return { data: null, error: deleted.error };
+  }
+
+  if (added.length > 0) {
+    const inserted = await client.from("projectElementLabel").insert(
+      added.map((projectLabelId) => ({
+        projectElementId: args.projectElementId,
+        projectLabelId,
+        companyId: args.companyId,
+        createdBy: args.createdBy
+      }))
+    );
+    if (inserted.error) return { data: null, error: inserted.error };
+  }
+
+  return { data: { added, removed }, error: null };
+}
+
+/**
+ * Saves the drag-sort order of sibling elements.
+ * @mcp update
+ */
+export async function updateProjectElementOrder(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  projectId: string,
+  updates: { id: string; sortOrder: number }[]
+) {
+  return updateSortOrder(db, {
+    table: "projectElement",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "projectId", id: projectId },
+    updates
+  });
+}
+
+/**
+ * Deletes an element and its descendants. Refuses when the element or a
+ * descendant has a project ledger row, a timesheet entry, a job or a
+ * purchase order line.
+ * @mcp delete destructive
+ */
+export async function deleteProjectElement(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  const element = await client
+    .from("projectElement")
+    .select("id, projectId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (element.error) return { data: null, error: element.error };
+
+  const all = await fetchAll<{ id: string; parentId: string | null }>(() =>
+    client
+      .from("projectElement")
+      .select("id, parentId")
+      .eq("projectId", element.data.projectId)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
+  if (all.error) {
+    return { data: null, error: all.error as unknown as PostgrestError };
+  }
+
+  const childrenOf = new Map<string, string[]>();
+  for (const row of all.data ?? []) {
+    if (!row.parentId) continue;
+    const children = childrenOf.get(row.parentId) ?? [];
+    children.push(row.id);
+    childrenOf.set(row.parentId, children);
+  }
+  const subtree: string[] = [];
+  const stack = [id];
+  const seen = new Set<string>();
+  while (stack.length > 0) {
+    const next = stack.pop()!;
+    if (seen.has(next)) continue;
+    seen.add(next);
+    subtree.push(next);
+    stack.push(...(childrenOf.get(next) ?? []));
+  }
+
+  const [ledger, timesheets, jobs, purchaseLines] = await Promise.all([
+    client
+      .from("projectLedger")
+      .select("id", { count: "exact", head: true })
+      .in("projectElementId", subtree)
+      .eq("companyId", companyId),
+    client
+      .from("timesheetEntry")
+      .select("id", { count: "exact", head: true })
+      .in("projectElementId", subtree)
+      .eq("companyId", companyId),
+    client
+      .from("job")
+      .select("id", { count: "exact", head: true })
+      .in("projectElementId", subtree)
+      .eq("companyId", companyId),
+    client
+      .from("purchaseOrderLine")
+      .select("id", { count: "exact", head: true })
+      .in("projectElementId", subtree)
+      .eq("companyId", companyId)
+  ]);
+  for (const result of [ledger, timesheets, jobs, purchaseLines]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+  if ((ledger.count ?? 0) > 0) {
+    return refusal(
+      "Costs are posted to this element or an element below it. It cannot be deleted."
+    );
+  }
+  if ((timesheets.count ?? 0) > 0) {
+    return refusal(
+      "Time is logged on this element or an element below it. It cannot be deleted."
+    );
+  }
+  if ((jobs.count ?? 0) > 0) {
+    return refusal(
+      "A job charges this element or an element below it. It cannot be deleted."
+    );
+  }
+  if ((purchaseLines.count ?? 0) > 0) {
+    return refusal(
+      "A purchase order line charges this element or an element below it. It cannot be deleted."
+    );
+  }
+
+  // The parent FK cascades, so the descendants go with the element.
+  return client
+    .from("projectElement")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+// --- Element comments --------------------------------------------------------
+
+/**
+ * Lists the comments on an element, oldest first.
+ * @mcp read
+ */
+export async function getProjectElementComments(
+  client: Client,
+  projectElementId: string,
+  companyId: string
+) {
+  return client
+    .from("projectElementComment")
+    .select(
+      "id, content, createdAt, updatedAt, createdBy:user!projectElementComment_createdBy_fkey(id, fullName, avatarUrl)"
+    )
+    .eq("projectElementId", projectElementId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+/**
+ * Adds a comment to an element. `content` is the editor's JSON document.
+ * @mcp create
+ */
+export async function insertProjectElementComment(
+  client: Client,
+  args: {
+    projectElementId: string;
+    content: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  let content: Json;
+  try {
+    content = JSON.parse(args.content) as Json;
+  } catch {
+    return refusal("The comment is not valid");
+  }
+  return client
+    .from("projectElementComment")
+    .insert([
+      {
+        projectElementId: args.projectElementId,
+        content,
+        companyId: args.companyId,
+        createdBy: args.createdBy
+      }
+    ])
+    .select("id")
+    .single();
+}
+
+/**
+ * Deletes a comment on an element.
+ * @mcp delete
+ */
+export async function deleteProjectElementComment(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("projectElementComment")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+// --- Plan lines --------------------------------------------------------------
+
+/**
+ * Gets the material, labor and other-cost plan lines of an element.
+ * @mcp read
+ */
+export async function getProjectElementPlanLines(
+  client: Client,
+  projectElementId: string,
+  companyId: string
+) {
+  const [materials, labor, costs] = await Promise.all([
+    client
+      .from("projectElementMaterial")
+      .select(
+        "*, item:item!projectElementMaterial_itemId_fkey(id, readableIdWithRevision, name)"
+      )
+      .eq("projectElementId", projectElementId)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true }),
+    client
+      .from("projectElementLabor")
+      .select(
+        "*, laborCategory:laborCategory!projectElementLabor_category_fkey(id, name)"
+      )
+      .eq("projectElementId", projectElementId)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true }),
+    client
+      .from("projectElementCost")
+      .select("*")
+      .eq("projectElementId", projectElementId)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true })
+  ]);
+
+  const error = materials.error ?? labor.error ?? costs.error;
+  if (error) return { data: null, error };
+
+  return {
+    data: {
+      materials: materials.data ?? [],
+      labor: labor.data ?? [],
+      costs: costs.data ?? []
+    },
+    error: null
+  };
+}
+
+type MaterialFields = Omit<
+  z.infer<typeof projectElementMaterialValidator>,
+  "id"
+>;
+
+/**
+ * Creates or updates a material plan line of an element.
+ * @mcp upsert
+ */
+export async function upsertProjectElementMaterial(
+  client: Client,
+  line:
+    | (MaterialFields & {
+        projectId: string;
+        companyId: string;
+        createdBy: string;
+      })
+    | (MaterialFields & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  const fields = {
+    itemId: line.itemId,
+    methodType: line.methodType,
+    quantity: line.quantity,
+    unitOfMeasureCode: line.unitOfMeasureCode ?? null,
+    unitCost: line.unitCost ?? null,
+    requiredDate: line.requiredDate ?? null
+  };
+  if ("createdBy" in line) {
+    return client
+      .from("projectElementMaterial")
+      .insert([
+        {
+          ...fields,
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          companyId: line.companyId,
+          createdBy: line.createdBy
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("projectElementMaterial")
+    .update({
+      ...fields,
+      updatedBy: line.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", line.id)
+    .eq("companyId", line.companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Deletes a material plan line.
+ * @mcp delete
+ */
+export async function deleteProjectElementMaterial(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("projectElementMaterial")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+type LaborFields = Omit<z.infer<typeof projectElementLaborValidator>, "id">;
+
+/**
+ * Creates or updates a labor plan line of an element.
+ * @mcp upsert
+ */
+export async function upsertProjectElementLabor(
+  client: Client,
+  line:
+    | (LaborFields & {
+        projectId: string;
+        companyId: string;
+        createdBy: string;
+      })
+    | (LaborFields & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  const fields = {
+    laborCategoryId: line.laborCategoryId,
+    hours: line.hours,
+    startDate: line.startDate ?? null,
+    endDate: line.endDate ?? null
+  };
+  if ("createdBy" in line) {
+    return client
+      .from("projectElementLabor")
+      .insert([
+        {
+          ...fields,
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          companyId: line.companyId,
+          createdBy: line.createdBy
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("projectElementLabor")
+    .update({
+      ...fields,
+      updatedBy: line.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", line.id)
+    .eq("companyId", line.companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Deletes a labor plan line.
+ * @mcp delete
+ */
+export async function deleteProjectElementLabor(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("projectElementLabor")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+type CostFields = Omit<z.infer<typeof projectElementCostValidator>, "id">;
+
+/**
+ * Creates or updates an other-cost plan line of an element.
+ * @mcp upsert
+ */
+export async function upsertProjectElementCost(
+  client: Client,
+  line:
+    | (CostFields & {
+        projectId: string;
+        companyId: string;
+        createdBy: string;
+      })
+    | (CostFields & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  const fields = { description: line.description, amount: line.amount };
+  if ("createdBy" in line) {
+    return client
+      .from("projectElementCost")
+      .insert([
+        {
+          ...fields,
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          companyId: line.companyId,
+          createdBy: line.createdBy
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("projectElementCost")
+    .update({
+      ...fields,
+      updatedBy: line.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", line.id)
+    .eq("companyId", line.companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Deletes an other-cost plan line.
+ * @mcp delete
+ */
+export async function deleteProjectElementCost(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("projectElementCost")
     .delete()
     .eq("id", id)
     .eq("companyId", companyId);
