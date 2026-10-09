@@ -326,6 +326,19 @@ employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (1
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
 
+## The company has an accounting cutover
+
+Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
+period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), with `accountingActivatedAt` and
+`accountingActivatedBy` = the applying user. So every seeded journal is on or after the
+cutover and is `Posted`, and every document the user posts afterwards writes a `Posted`
+journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover). It writes
+the three columns only when the company has no cutover yet (`ON CONFLICT … WHERE
+"accountingCutoverDate" IS NULL`): the cutover is one-way, and the
+`check_accounting_config_locked` trigger refuses any change once it is set, so a re-apply
+keeps the cutover the company already has. The `accountingEnabled` column is not seeded; no
+code reads it.
+
 ## Make methods stay Draft
 
 Every seeded make method is left `Draft` — the item interceptor's default — so a demo user can
@@ -363,14 +376,13 @@ in the same tier. Conventions, each mirroring the real code path:
   shipments and scrapped lots carry GL and `costLedger` rows (below); other inventory
   postings (RMA receipts, returns, jobs, adjustments, opening stock) carry none — opening
   stock value sits in the authored Opening Balance entry.
-- **Posted documents carry their journal, as with accounting enabled** — tier 09
+- **Posted documents carry their journal** — tier 09
   (`helpers/post-documents.ts`) journals every non-Draft sales/purchase invoice (plus a
   `VOID` entry for a Voided one), Posted memo, Posted payment (`payment.journalId` /
   `memo.journalId` set), posted PO receipt (plus its FIFO `costLedger` layer) and SO
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
-  shape, CR inventory / DR `scrapAccount`), whether or not `accountingEnabled` is on,
-  through the server functions'
+  shape, CR inventory / DR `scrapAccount`), all `Posted`, through the server functions'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,

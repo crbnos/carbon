@@ -23,10 +23,11 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
-  in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`, and
-  `update{Sales,Purchase}InvoiceStatus` returns an error rather than writing either.
-  Base-status `Paid` is the manual/legacy/Xero "settled" signal, allowed by the route only
-  when accounting is disabled.
+  in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no
+  manual status change: Mark as Paid / Mark as Unpaid, their `$invoiceId.status.tsx` routes
+  and `update{Sales,Purchase}InvoiceStatus` are gone, so a payment (through
+  `invoiceSettlement`) is the only way an invoice becomes paid. Base-status `Paid` remains on
+  rows written before the change. <!-- UNVERIFIED: whether any sync path still writes a base `Paid` status; none found in packages/ee or packages/jobs -->
 - **Due date** — `computeInvoiceDateDue` anchors `paymentTerm.daysDue` by `calculationMethod`
   (`Net` / `End of Month` / `Day of Month`, clamped). A missing term falls back to
   `DEFAULT_PAYMENT_TERM` (Net 30); a term *query failure* throws so the caller aborts instead
@@ -199,7 +200,9 @@ guarded by `requireUnlockedBulk`, not validators.
 - **sales** / **purchasing** — invoices convert from sales orders, shipments and POs; sales
   rules gate the sales-invoice post; `getCustomerPayment`/`getCustomerShipping` (and the
   supplier equivalents) seed invoice headers.
-- **settings** — `getNextSequence`, `getCompanySettings` (`accountingEnabled`),
+- **settings** — `getNextSequence`, `getCompanySettings` (`accountingCutoverDate`, read through
+  `hasAccountingCutover` from accounting: before the cutover the receivables / payables
+  workbenches and the invoicing dashboard skip the GL tie-out, and the adjust routes refuse),
   `party-contact.server`.
 - **shared** — `getCompanyTimeZone` (`timezone.server`); `incoterms`/`itemType`/`methodType` from
   `shared.models` imported DIRECTLY, never via the `../shared` barrel (which drags Lingui macros

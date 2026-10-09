@@ -130,8 +130,8 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   ticked unit through `returnRentalUnit` and moves its `fixedAsset.locationId` to the receipt's
   location; `post-receipt/rental-agreement.ts`), and `Sales Return Order`
   (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
-  (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s when
-  `accountingEnabled`, advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
+  (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s for every
+  company (the journal is Provisional before the accounting cutover, Posted after it), advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).

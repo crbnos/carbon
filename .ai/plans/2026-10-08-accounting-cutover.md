@@ -49,7 +49,7 @@
 - [x] Task 34: Replace the settings switch
 - [x] Task 35: Set the cutover for new companies and demo datasets
 - [x] Task 36: Show the Provisional and Superseded statuses
-- [ ] Task 37: Update the docs, rules and AGENTS.md files
+- [x] Task 37: Update the docs, rules and AGENTS.md files
 
 ### Phase E — Verify
 - [ ] Task 38: Run every gate and verify the enable flow in the browser

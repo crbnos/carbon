@@ -271,9 +271,10 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 **Acquire (Draft → Active, or → Under Construction).** Four paths set
 `acquisitionCost`, `depreciationStartDate` (if unset), and flip `status`:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`. When `companySettings.accountingEnabled`, the
+   `fixedAssetRegisterValidator`. For every company the
    route posts an acquisition journal via `postAssetRegistration()` inside one
-   Kysely transaction (`sourceType` `'Manual'`, description
+   Kysely transaction (Provisional before the accounting cutover, with no period
+   and no dimension check; Posted after it) (`sourceType` `'Manual'`, description
    `Asset Registration: <readableId>`) and only then flips the asset (journal
    first, so no capitalized asset exists without a GL entry; the whole
    transaction rolls back on failure). The lines come from `acquisitionLines()`:
@@ -289,8 +290,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 
    The route resolves `registeredStatus` from the class: a CIP class registers
    to `Under Construction` (and the server writes the CIP cost row), any other
-   class to `Active`. With accounting disabled it is a bare status flip (no
-   journal).
+   class to `Active`.
 2. Via posting: `post-receipt` / `post-purchase-invoice` process Fixed Asset PO
    lines, increment `acquisitionCost`, and post Debit `assetAccountId` / Credit
    GRNI (receipt) or payables (invoice). A Draft asset flips to `Active`, or to
@@ -355,8 +355,8 @@ job goes `Ready`.
   `assetAccountId` (description `Fixed Asset`) / Cr WIP as an `'Asset Transfer'`
   journal, both lines still `documentId = jobId` so the per-job WIP balance nets
   to zero for a re-completion; a `FixedAssetClass` dimension is stamped when
-  active. With accounting disabled the assets and transfers stay at cost 0 (the
-  same posture as registering with accounting off). Partial completions create
+  active. Every company writes the asset cost; before the accounting cutover the
+  journal is Provisional. Partial completions create
   assets for the units received so far. Covered by
   `packages/database/supabase/tests/job-completion-to-asset.test.sql`.
 
@@ -392,8 +392,8 @@ capitalizeCip, `update: accounting` for `adjustCost`, and a `capitalize`
 that carries an entered `cost` additionally `authorize`s `update:
 accounting` (recosting puts a number of the user's own on the books); business failures are 400
 `InvalidInputError`s with the message the app shows, a record the
-caller's company does not own is a 404. With `accountingEnabled = false` every
-ledger, entity and asset write is identical and no journal is created. Journals
+caller's company does not own is a 404. Every action writes its journal for every
+company: Provisional before the accounting cutover (no period), Posted after it. Journals
 are `sourceType 'Asset Transfer'`, lines `documentType 'Asset Transfer'`, with
 Location / FixedAssetClass / Item dimensions. Four payload variants:
 - `capitalize` (`fixedAssetClassId`, `itemId`, `trackedEntityId`, `locationId`,
@@ -413,7 +413,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   cost moves at it, and an entered `cost` is refused ("<serial> is carried in
   inventory at a cost…"); a unit whose carrying cost rounds to 0 takes the
   entered `cost` instead and the journal credits `offsetAccountId` (description
-  `Capitalized Cost`; required with accounting on, an active non-group account
+  `Capitalized Cost`; always required, an active non-group account
   of the company group — `getOffsetAccount`, `lib/offset-account.ts`, which
   returns the account's class so `buildCapitalizationLines` signs the credit
   by it: Retained Earnings is Equity, credited +x); with neither it is REFUSED —
@@ -426,8 +426,8 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   'Inventory'`. Entry points: the inventory storage-unit row action and
   `x+/fixed-asset+/capitalize.tsx` (defaults the class to the one named
   `Rental Fleet`, hides CIP classes, shows the exact cost the transfer will
-  book; when it is 0 the form asks for an Acquisition Cost and, with
-  accounting on, an Offset Account defaulting to
+  book; when it is 0 the form asks for an Acquisition Cost and an Offset
+  Account defaulting to
   `accountDefault.retainedEarningsAccount`). That cost comes from the
   `preview-asset-capitalization` server function (`{ trackedEntityId }`,
   `view: accounting`; ERP wrapper `getCapitalizationCost`): the same
@@ -455,8 +455,8 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   Dr CIP asset / Cr WIP (`'Asset Transfer'`, both lines `documentId = jobId`,
   the transfer in `documentLineReference`), one `fixedAssetCipCost` row
   (`'Job'`) and one transfer (`sourceType 'Job'`), asset → `Under Construction`
-  with `acquisitionCost += balance` (nothing is swept when the balance is 0 or
-  accounting is off). An unset asset location is filled from the job.
+  with `acquisitionCost += balance` (nothing is swept when the balance is 0; before
+  the accounting cutover the balance is read from the job's Provisional WIP lines). An unset asset location is filled from the job.
 - `capitalizeCip` (`fixedAssetId`, `toClassId`, `inServiceDate`): asset must be
   `Under Construction` in a CIP class, target must not be CIP, and the asset
   needs a location (its own, else the latest attached job's). Posts Dr target
@@ -521,7 +521,8 @@ net investment, guarded on `status IN ('Active','Fully Depreciated')` (a
 concurrent change refuses with "<unit> changed status while the agreement was
 being activated"), plus a `fixedAssetDisposal` row (`netBookValueAtDisposal`
 = C = cost − accumulated depreciation, `gainLoss` = selling profit, `journalId`
-= the commencement journal). With accounting on the `'Lease'` journal (pure
+= the commencement journal). The `'Lease'` journal (Provisional before the
+accounting cutover; pure
 builder `buildCommencementLines`, `post-rental-agreement/lessor.ts`) is: Dr Net
 Investment in Leases NI, Dr COGS C − PVres, **Dr class
 `accumulatedDepreciationAccountId`** accumulated depreciation / Cr Lease
@@ -550,7 +551,7 @@ nor lost),
 life / residual, `status` Active, the same `itemId` / `trackedEntityId` /
 serial; a Posted `fixedAssetTransfer` (`type` Capitalization, `sourceType`
 Inventory, `amount` = closing); `'Lease'` journal Dr class `assetAccountId` /
-Cr Net Investment in Leases (skipped when accounting is off or closing is 0);
+Cr Net Investment in Leases (skipped when closing is 0);
 the entity stays `Consumed` with `Fixed Asset` = the new asset and a
 `Capitalize` activity. The disposed original is untouched (the live-serial
 unique index ignores Disposed rows). `residualDestination: "Inventory"`
@@ -658,8 +659,9 @@ two-step (ship → invoice) flow.
 - Tax depreciation / deferred-tax lines only post when
   `companySettings.assetTaxDepreciationEnabled` is true.
 - Register posts an acquisition journal (Dr `assetAccountId` / Cr
-  `retainedEarningsAccount`) when accounting is enabled, then flips status; it is
-  a bare status flip only when accounting is disabled.
+  `retainedEarningsAccount`) for every company, then flips status. Before the
+  accounting cutover the journal is Provisional, has no period, and a missing
+  Location / FixedAssetClass dimension does not block it.
 - `writeOffAccountId` is the **disposal clearing / holding account** (parks NBV
   between shipment and invoice, nets to zero); `gainOnDisposalAccountId` /
   `lossOnDisposalAccountId` carry the net gain/(loss). `writeDownAccountId`

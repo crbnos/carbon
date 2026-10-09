@@ -76,7 +76,9 @@ in the migrations — **newest wins**; core tables created in
 - **Disposition GL/cost posting** (`closeIssue` + inspection reject): inventory value
   movements go through the **`post-nonconformance` server function** (`itemLedger` +
   `costLedger` relief via `calculateCOGS` + a balanced `journal` offset to
-  `accountDefault.scrapAccount`, gated on `accountingEnabled`), **not** raw `itemLedger`
+  `accountDefault.scrapAccount` for every company — Provisional before the accounting
+  cutover, when an empty `scrapAccount` becomes a stand-in line on retained earnings;
+  after it an empty one falls back to `inventoryAdjustmentVarianceAccount`), **not** raw `itemLedger`
   inserts. `closeIssue` builds `movements[]` and invokes it BEFORE the status-flip
   transaction (idempotent per `(documentType,documentId)`, so a retry is safe; a GL
   failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per

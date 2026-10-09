@@ -33,7 +33,8 @@ A user can belong to multiple companies and switch between them with the company
 `companySettings` is a single row per company, edited across the **Settings → Modules** pages. These are the real column names:
 
 <FieldTable>
-  <Field name="accountingEnabled" type="boolean">Master switch for the ledger. When off, operations complete without posting journal entries.</Field>
+  <Field name="accountingCutoverDate" type="date">The first day the company keeps its books in Carbon. Empty until accounting is set up: every posting then writes a *Provisional* journal that no report counts. Set once by the [accounting setup](/docs/reference/accounting#setting-up-accounting), with `accountingActivatedAt` and `accountingActivatedBy`, and never changed after. A new company gets the first day of its current month.</Field>
+  <Field name="accountingEnabled" type="boolean">Retired. The column still exists, but nothing reads it.</Field>
   <Field name="timeCardEnabled" type="boolean">Turns on shop-floor time cards.</Field>
   <Field name="consoleEnabled" type="boolean">Enables MES console (shared-station) mode, where operators pin in with a 4-digit PIN. Business plan; toggled from **Settings → People** by someone with `settings_update`, and only through that screen — the API refuses a direct write to this column. See [console mode](/docs/reference/mes#console-shared-station-mode).</Field>
   <Field name="requireMfa" type="boolean">Everyone needs an authenticator app to open this company. Edited from **Settings → System → Security**; locked on in controlled (ITAR) deployments. See [two-factor authentication](/docs/reference/two-factor).</Field>
@@ -62,13 +63,13 @@ A user can belong to multiple companies and switch between them with the company
 
 The row also stores **notification groups**, AP and AR email addresses, and default CC lists. See [notifications](/docs/reference/notifications) for delivery behavior.
 
-<Callout type="warn" title="Accounting is a company-wide toggle, not per-document">
-`accountingEnabled` gates the *entire* ledger: off means jobs, shipments, and invoices complete but nothing posts, with no per-transaction exceptions. Turning it on mid-stream doesn't backfill past activity.
+<Callout type="warn" title="Accounting has no on/off switch">
+Every company posts journals for every receipt, shipment, invoice, payment and job. Before accounting is set up they are *Provisional* and count nowhere. Setting up accounting is one-way: Settings → Accounting shows "Accounting since" the cutover date, or a **Set up accounting** button. See [setting up accounting](/docs/reference/accounting#setting-up-accounting).
 </Callout>
 
 ## Base currency
 
-Each company has one `baseCurrencyCode`. Carbon converts foreign-currency transactions at their exchange rate and stores posted amounts in the base currency. The value is chosen during onboarding and denominates the company's posting history. A subsidiary can use a different base currency from its parent; consolidation handles the conversion.
+Each company has one `baseCurrencyCode`. Carbon converts foreign-currency transactions at their exchange rate and stores posted amounts in the base currency. The value is chosen during onboarding and denominates the company's posting history. After accounting is set up, a database trigger refuses any change to it. A subsidiary can use a different base currency from its parent; consolidation handles the conversion.
 
 ## Theme and tags
 
@@ -94,14 +95,14 @@ Internal-operator-only (`internalOnlyRoutes`). Tenants create and switch compani
 ### I can't see the Billing settings page
 Billing needs company ownership *and* a Cloud environment; self-hosted editions and non-owners don't get it.
 
-### Nothing posts to the ledger though jobs and invoices complete
-`accountingEnabled` is off. Turn it on under Settings → Modules; it does not backfill past activity.
+### Nothing shows in the reports though jobs and invoices complete
+The company has no `accountingCutoverDate`, so its journals are Provisional and no report counts them. Set up accounting from Settings → Accounting. Journals dated on or after the cutover date become Posted; earlier ones become "Before cutover" and the opening journal replaces them.
 
 ### My theme changed but a colleague still sees the old one
 Theme is per-user (a cookie), not per-company. Document templates carry a separate theme setting.
 
 ### I can't change the base currency
-By design: it's the denomination of the whole posted history, chosen at onboarding. Subsidiary/parent currency differences reconcile at consolidation, not by switching a base.
+By design: it's the denomination of the whole posted history, chosen at onboarding. After accounting is set up the trigger `check_accounting_config_locked` refuses the change (*"The base currency is locked: accounting was set up …"*). Subsidiary/parent currency differences reconcile at consolidation, not by switching a base.
 
 ### A Modules toggle does nothing I expect
 Flags are read by modules at runtime, and the feature may also be gated by plan/edition. Check licensing before assuming the toggle is broken.

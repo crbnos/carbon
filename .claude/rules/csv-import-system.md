@@ -156,9 +156,10 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   insert a new `trackedEntity` (sourceDocument "Item", `"Inventory Adjustment"`
   attributes stamp with reason "Created via CSV import", Fixed Duration shelf-life
   fallback when no expiry), then every row gets an `itemLedger` row, a `costLedger`
-  layer at current item cost and (accounting on) a balanced `journalLine` pair with
+  layer at current item cost and a balanced `journalLine` pair with
   its `journalLineDimension` tags — posting date = company today, `documentType`
-  NULL. With accounting enabled the whole file shares ONE journal, created only if
+  NULL. The whole file shares ONE journal (Provisional before the accounting
+  cutover, with no period; Posted after it), created only if
   some row carries value (post-inventory-count pattern). Accounting context is
   resolved before the transaction; the whole file writes in one transaction.
 - **Bulk writes, not `bookAdjustment` per row.** `bookAdjustment` costs ~7 round

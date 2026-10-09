@@ -12,6 +12,50 @@ Syncs Carbon entities <-> external accounting providers. **Three live providers*
 
 Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (v5 — ONE state-shaped decision core; events are hints; the authoritative design of record) and `.ai/specs/implemented/2026-08-05-accounting-document-representation.md` (AR/AP documents replay their posting journal; provider items non-tracked). The superseded v2/v3/v4 specs (engine + ledger + pull sweep + Phase F/G payment sync-back; journal policy/dimensions/tie-out; delivery robustness — converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement) were removed 2026-08-13 — their shipped behavior is documented in THIS rule; their history is in git. **Always-on (implemented 2026-08-13, plan `.ai/plans/2026-08-13-accounting-sync-automated-postings-only.md` Tasks 1–6+8):** posting sync mirrors Carbon's automated GL postings whenever an accounting integration is connected — no master `postingSync.enabled` toggle, no per-source-type on/off, no `journalEntry` entity gate (defaulted on in `DEFAULT_SYNC_CONFIG` and forced on in every `build*SyncConfig`). `Manual` and `Opening Balance` journals NEVER sync (`POSTING_POLICY[...].syncable: false` → the `MANUAL_DISABLED` exclude at `posting.ts`; the external ledger owns manual journals and its own opening balances). Note the exclude `reason`/`message` are still worded "Manual" for both — the gate is `syncable === false`, not a name check. Legacy `enabled` fields stay in the stored schema for parse-compat but are never read; per-type granularity (individual vs daily-summary) remains the only per-type setting. Plan Tasks 7 (reversal/void propagation audit) and 9 (lock AR/AP families to documents) remain open.
 
+## The accounting cutover — what syncs before and after
+
+Every company posts journals; before its accounting cutover they are `Provisional`, and the
+enable turns them into `Posted` (dated on or after the cutover date) or `Superseded` (dated
+before it) — see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover.
+Nothing in the sync engine reads `accountingCutoverDate` (or the unused `accountingEnabled`);
+what syncs follows from the statuses each path already filters on.
+
+- **Journals: a Provisional or Superseded journal never syncs.** Every journal path admits
+  Posted (and Reversed for the `:reversal` push) only: `getJournalPostingDecision`
+  (`accounting-sync-operations.ts` — an INSERT enqueues only when born Posted; an UPDATE only
+  when status moves to Posted or Reversed); `reconcileJournal` (`integrations/reconcile.ts` —
+  any other status decides `nothing`); the outbound sweep's journal candidates and the journal
+  backfill (`status IN ('Posted','Reversed')`); the reconciliation tie-out; the consolidation
+  (skips a non-Posted journal); and each provider's journal syncer, which refuses a non-Posted
+  journal (`xero/entities/journal-entry.ts`, `quickbooks-online/…`, `rillet/…`: "Journal must be
+  Posted before syncing").
+- **Promotion syncs through the ordinary journal event.** `activate-accounting` promotes with a
+  plain `UPDATE` inside its transaction and does not set `app.sync_in_progress`, so the
+  `journal` event trigger queues an UPDATE event per promoted row for the `${provider}-sync`
+  subscription. `events/sync.ts` reconciles each from its current state (Posted) and the shared
+  policy core decides push or exclusion as for any Posted journal. The outbound sweep only
+  re-walks journals whose `postingDate` is inside its 7-day window, so a promoted journal dated
+  earlier that the event path missed reaches the provider only through the journal backfill.
+  The enable's "Cutover recost" journals are inserted Provisional with the source document's
+  `sourceType` and are promoted with the rest.
+- **The opening journal never syncs.** It is a Posted `sourceType 'Opening Balance'` journal,
+  and `POSTING_POLICY['Opening Balance'].syncable` is `false` (same exclusion as `Manual`).
+- **Documents sync by the DOCUMENT's status, not the journal's.** The cutover does not gate
+  them, so before the cutover:
+  - A bill, a charge and an invoice's revenue accounts are replayed from the document's
+    journal, and those reads take `journal.status = 'Posted'` only (`loadBillCostingLines` /
+    `loadChargeCostingLines` in `core/document-costing.ts`, the revenue-account read in
+    `core/sales-invoice-source.ts`). With a Provisional journal they find nothing and park the
+    structured `UNMAPPED_ACCOUNTS` Warning (the bill message still says "Post the invoice with
+    accounting enabled, then retry"). After the enable a document dated on or after the cutover
+    has a Posted journal again (the bill re-drive picks a parked bill up once its journal is
+    Posted); one dated before it has a Superseded journal and never finds one.
+  - Payments, memos (`creditMemo` / `supplierCredit`) and reimbursements read no journal: each
+    syncer gates on the document's own `Posted` / `Voided` status (plus the documents-mode family
+    gate for payments, and a payment whose settled document has no mapping is skipped). So a
+    Posted payment, memo or reimbursement pushes to a connected provider before the cutover
+    while its Carbon journal is still Provisional.
+
 ## Architecture: class-per-entity syncers, not a handler map
 
 The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/accounting`):

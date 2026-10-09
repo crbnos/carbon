@@ -115,6 +115,104 @@ resets after a failed build, so one bad start does not poison later calls.
   over `ctx.db` and the service-role client is built here. `pnpm --filter erp build`
   catches it; typecheck does not.
 
+## Journals and the accounting cutover
+
+Every posting function writes its journal for every company. The company's
+`companySettings.accountingCutoverDate` decides only the journal's status
+(`.ai/specs/2026-10-08-accounting-cutover.md`). The `accountingEnabled` column still
+exists, but no code reads it.
+
+- **Status.** `journalPostingStatus(db, companyId)` (`@carbon/database/journal-posting-status`)
+  returns `Provisional` when the company has no cutover and `Posted` when it has one.
+  `postingStatusFor(cutoverDate)` is the same decision without a read, and
+  `readAccountingCutoverDate` returns the date. All reads take `FOR SHARE`. The SQL
+  posting functions (`complete_job_to_inventory`, `backflush_job_materials`) call
+  `journal_posting_status(company_id)`.
+- **The double read.** A function reads the status once before its transaction, to
+  decide whether to resolve an accounting period. It reads it again inside the
+  transaction, where `FOR SHARE` holds it until commit. A mismatch throws "Accounting
+  was just set up. Post the document again." `activate-accounting` takes `FOR UPDATE`
+  on the same row, so no posting writes a Provisional journal after the enable commits.
+- **No period before the cutover.** A Provisional journal has `accountingPeriodId`
+  null, and no posting creates a period for it. Resolve a period only when the status
+  is `Posted`.
+- **Stand-in lines.** `resolveDefaultAccount(defaults, role, postingStatus)` picks the
+  account for a line that needs one of the nullable defaults in `OPTIONAL_DEFAULT_ROLES`.
+  A set default is used as is. Before the cutover an empty one returns
+  `retainedEarningsAccount` with `accountDefaultRole = role`, and the line stores that
+  role in `journalLine.accountDefaultRole`. After the cutover an empty one throws "Set
+  the <role> account default in Accounting → Defaults." A void copies
+  `accountDefaultRole` from each original line to its reversal. Exceptions: after the
+  cutover an empty `scrapAccount` still falls back to
+  `inventoryAdjustmentVarianceAccount` (`issue`, `post-nonconformance`), and an empty `salesReturnsAccount`
+  to `salesAccount` (`post-memo`). `revenueRecognitionSchedule` rows have no role
+  column, so `post-sales-invoice` writes retained earnings on them and the enable
+  re-points them by account.
+- **Journal readers filter by a named status list** from
+  `@carbon/database/accounting-posting`: `GL_JOURNAL_STATUSES` (Posted, Reversed) for
+  balances, reports and tie-outs; `DOCUMENT_JOURNAL_STATUSES` (Provisional, Posted,
+  Reversed) for a reader that follows one document's chain (void builders, GR/IR, WIP
+  sums, intercompany lookups); `OPEN_ITEM_JOURNAL_STATUSES` (Provisional, Posted) for
+  the payment control lookups and the memo, charge and reimbursement void checks. The
+  `journal-status-filter` check (`@carbon/checks`) fails a `status <> 'Draft'` filter
+  on a journal.
+- **Opening lines.** The opening journal of the enable (`sourceType 'Opening Balance'`)
+  copies the document keys and descriptions the original posting wrote. So the payment
+  control lookups in `post-payment` accept `sourceType 'Opening Balance'` as well as the
+  invoice, memo and `Payment` source types.
+- **Voids of a document dated before the cutover** (`src/lib/cutover-void.ts`,
+  `isBeforeCutover` in `@carbon/database/accounting-cutover-dates`):
+  - A receipt or shipment void throws `INVENTORY_VOID_BEFORE_CUTOVER_ERROR` ("… Record a
+    return or an inventory adjustment instead.").
+  - A sales invoice void throws `SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR` ("… Issue a
+    credit memo instead."). A purchase invoice void throws
+    `PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR` ("… Record a debit memo instead.").
+  - A payment or memo void builds the document's posting again
+    (`rebuildPaymentJournal`, `rebuildMemoJournal`) and posts it negated, dated today,
+    so it nets the opening lines. `assertNoMigrationClearing` refuses a rebuilt line on
+    the Migration Clearing account. A customer credit memo that credits a contract or a
+    rental agreement throws `MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR` instead.
+  - A company with no cutover has nothing before it, so every void works as before.
+- **Manual accounting work is refused before the cutover.**
+  `assertAccountingCutover` (`src/lib/require-accounting-cutover.ts`) throws
+  `ACCOUNTING_NOT_STARTED` ("Set up accounting before you post journals, runs or period
+  closes."). `propose-revenue-recognition-run` and
+  `recalculate-revenue-recognition-run` call it. The ERP service functions refuse the
+  same work with the same message.
+
+### `activate-accounting`
+
+The one-way enable (`src/activate-accounting/index.ts`, input `{ cutoverDate,
+confirmation }`, permission `update: accounting`). The wizard's Enable step calls it
+through `serverFns.as(...)`. It runs in one Kysely transaction:
+
+1. Locks `companySettings` `FOR UPDATE`. Refuses when the company already has a cutover
+   (`ACCOUNTING_ALREADY_SET_UP`) or when `confirmation` is not the company name.
+2. Runs `getActivationReadiness` and `getMigrationClearing`
+   (`@carbon/database/accounting-cutover-reads`) again under the lock. Refuses on a
+   failed check, or when Migration Clearing does not total zero within 0.01.
+3. Closes the cost layers dated before the cutover and inserts one opening layer per
+   item at the reviewed unit cost (`planInventoryReset`). Re-costs the outbound
+   movements of FIFO and LIFO items dated on or after the cutover
+   (`recostOutbound`), and books each document's difference as a Provisional
+   "Cutover recost" journal, one per document and posting date.
+4. Sets every Provisional journal dated before the cutover to `Superseded`, and every
+   Planned `revenueRecognitionSchedule` row dated before it to Posted with no journal.
+5. Deletes the Draft trial balance journal and posts the opening journal
+   (`buildOpeningJournalLines`), Posted, dated the day before the cutover.
+6. Gives each Provisional journal dated on or after the cutover the period of its date,
+   re-points the stand-in schedule rows and lines, and promotes those journals to
+   `Posted`.
+7. Closes every period that ends before the cutover and snapshots its balances
+   (`snapshotAccountingPeriodBalances`). It does not call `closeAccountingPeriod`,
+   which opens its own transaction.
+8. Sets `accountingCutoverDate`, `accountingActivatedAt` and `accountingActivatedBy`.
+   The `check_accounting_config_locked` trigger then refuses any change to them, to the
+   base currency and to the fiscal year start month.
+
+`seed-company` sets a new company's cutover to the first day of the current month, so
+a new company posts `Posted` journals from its first document.
+
 ## Validation Commands
 
 ```bash
@@ -131,7 +229,7 @@ pnpm --filter @carbon/checks test
 | `./errors` | `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError` — the classes, for `instanceof` and `new` |
 | `./<name>` | one server function as the default export, plus its input schema and result types (`src/<name>/index.ts`) |
 
-Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), `asset-transfer` (the capitalization / return-to-inventory journal line builders, used by `post-asset-transfer` and `post-rental-agreement`), `cost-layer-order` (`orderLayersForConsumption` / `leavingTrackedEntityIds` — a serial unit is costed from its own layer first, used by `calculate-cogs`, `issue` and `post-shipment`), `contract-ledger` (`lockContractPositions`, `loadContractPositions` — the contract movement ledger's position lock and grouped read, shared by `post-sales-invoice`, `post-memo` and the recognition run's `synthesizeContractRevenue`; `samePosition`, the float-tolerant equality of two positions, used by `post-sales-invoice`; `signedCreditAmount`, a signed credit as an account's natural-balance journal amount, used by `post-sales-invoice` and `post-memo`), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
+Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, `require-accounting-cutover` (`assertAccountingCutover`, see Journals and the accounting cutover), `cutover-void` (`refuseVoidBeforeCutover`, `assertNoMigrationClearing` and the three void messages), `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), `asset-transfer` (the capitalization / return-to-inventory journal line builders, used by `post-asset-transfer` and `post-rental-agreement`), `cost-layer-order` (`orderLayersForConsumption` / `leavingTrackedEntityIds` — a serial unit is costed from its own layer first, used by `calculate-cogs`, `issue` and `post-shipment`), `contract-ledger` (`lockContractPositions`, `loadContractPositions` — the contract movement ledger's position lock and grouped read, shared by `post-sales-invoice`, `post-memo` and the recognition run's `synthesizeContractRevenue`; `samePosition`, the float-tolerant equality of two positions, used by `post-sales-invoice`; `signedCreditAmount`, a signed credit as an account's natural-balance journal amount, used by `post-sales-invoice` and `post-memo`), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
 
 Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
 (the company's expired-entity policy and expiry checks, used by `issue` and
