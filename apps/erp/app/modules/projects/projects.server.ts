@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { error } from "@carbon/auth";
+import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
@@ -11,6 +13,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { customAlphabet } from "nanoid";
+import { data } from "react-router";
 import type { z } from "zod";
 import { getMethodTree } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -50,6 +53,7 @@ import {
   defaultProjectStates,
   diffPlanSnapshots,
   findConflicts,
+  isProjectPlanLocked,
   mergeChangeRequestItem,
   overlayPlanRows,
   PLAN_LAYER_FIELDS,
@@ -63,6 +67,7 @@ import {
   planRowParentIds,
   planSnapshotKeys,
   projectCopyIdPrefixes,
+  projectPlanLockedMessage,
   rebaseChangeRequestItems,
   rollUpRequirementStatus,
   toPlanSnapshot,
@@ -1897,6 +1902,71 @@ export async function getChangeRequestReview(
 export type ChangeRequestReview = NonNullable<
   Awaited<ReturnType<typeof getChangeRequestReview>>["data"]
 >;
+
+// --- Plan lock (Phase 1c) -------------------------------------------------------
+
+/**
+ * Null when a plan-layer write may run: the plan is not locked, or the write
+ * goes into a Draft change request of the project. Otherwise the refusal
+ * message (`projectPlanLockedMessage`). `applyChangeRequest` never calls it:
+ * the apply is the one writer allowed to change a locked plan.
+ */
+export async function requireProjectPlanEditable(
+  client: SupabaseClient<Database>,
+  args: {
+    projectId: string;
+    companyId: string;
+    changeRequestId: string | null;
+  }
+): Promise<string | null> {
+  const project = await client
+    .from("project")
+    .select(
+      "lockPlanAfterMilestoneId, lockMilestone:projectMilestone!project_lockMilestone_fkey(name, completedAt)"
+    )
+    .eq("id", args.projectId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (project.error) throw project.error;
+  const lockMilestone = project.data?.lockMilestone ?? null;
+  if (!isProjectPlanLocked({ lockMilestone })) return null;
+
+  if (args.changeRequestId) {
+    const changeRequest = await client
+      .from("projectChangeRequest")
+      .select("status")
+      .eq("id", args.changeRequestId)
+      .eq("projectId", args.projectId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (changeRequest.error) throw changeRequest.error;
+    if (changeRequest.data?.status === "Draft") return null;
+  }
+  return projectPlanLockedMessage(lockMilestone?.name ?? "");
+}
+
+/**
+ * The route form of `requireProjectPlanEditable`: null, or a refusal with
+ * `error.message` and, unless `withFlash` is false, a flash.
+ */
+export async function requireEditablePlanRoute(
+  request: Request,
+  args: {
+    client: SupabaseClient<Database>;
+    projectId: string;
+    companyId: string;
+    changeRequestId: string | null;
+    /** False for the routes whose fetchers toast `error.message` themselves. */
+    withFlash?: boolean;
+  }
+) {
+  const message = await requireProjectPlanEditable(args.client, args);
+  if (!message) return null;
+  const body = { success: false, error: { message } };
+  return args.withFlash === false
+    ? data(body)
+    : data(body, await flash(request, error(null, message)));
+}
 
 /**
  * What a job created on a charge number builds into: the project's cost

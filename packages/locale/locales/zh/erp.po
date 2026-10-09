@@ -12351,6 +12351,9 @@ msgstr "锁定"
 msgid "Lock Period"
 msgstr "锁定期间"
 
+msgid "Lock Plan After Milestone"
+msgstr ""
+
 msgid "Locked"
 msgstr "已锁定"
 
@@ -15055,6 +15058,9 @@ msgstr "打开审计日志"
 msgid "Open batch"
 msgstr "未结生产批次"
 
+msgid "Open Change Request"
+msgstr ""
+
 msgid "Open date"
 msgstr "打开日期"
 
@@ -16063,6 +16069,9 @@ msgstr "计划"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "通过按物料和地点投影需求进行超前规划，然后将其直接送入MRP和排程。"
+
+msgid "Plan locked"
+msgstr ""
 
 msgid "Plan the work"
 msgstr "规划工作"
@@ -24749,6 +24758,9 @@ msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "当这看起来正确时，将其标记为已同意。这将完成您的指挥中心上的发现步骤。"
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr ""
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "何时承诺发货此特定行；订单抬头承诺日期的按行覆盖用于拆分发货。"

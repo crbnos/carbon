@@ -32,6 +32,9 @@ import {
   PopoverContent,
   PopoverTrigger,
   Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   useShortcutKeyMap,
   VStack
@@ -47,8 +50,10 @@ import {
   LuChartGantt,
   LuChevronDown,
   LuFileText,
+  LuGitPullRequestArrow,
   LuKanban,
   LuListTree,
+  LuLock,
   LuNetwork,
   LuPlus,
   LuRefreshCw,
@@ -57,6 +62,7 @@ import {
   LuTrash,
   LuX
 } from "react-icons/lu";
+import { Link } from "react-router";
 import { SearchFilter } from "~/components";
 import {
   Boolean as BooleanField,
@@ -140,6 +146,11 @@ type ElementsHeaderProps = {
   onSelectView: (view: ElementViewOption | null) => void;
   /** A new view was saved from the current state. */
   onViewSaved: (id: string) => void;
+  /**
+   * Set while the plan is locked and no change request is open: the lock
+   * message, and the change requests page that opens one.
+   */
+  planLock?: { message: string; changeRequestsHref: string } | null;
 };
 
 export function ElementsHeader({
@@ -155,6 +166,7 @@ export function ElementsHeader({
   grouping,
   onGroupingChange,
   exportHref,
+  planLock,
   projectId,
   views,
   activeViewId,
@@ -221,6 +233,29 @@ export function ElementsHeader({
         </HStack>
 
         <HStack spacing={2} className="shrink-0">
+          {planLock && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <LuLock className="size-3.5" />
+                    <Trans>Plan locked</Trans>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{planLock.message}</TooltipContent>
+              </Tooltip>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<LuGitPullRequestArrow />}
+                asChild
+              >
+                <Link to={planLock.changeRequestsHref}>
+                  <Trans>Open Change Request</Trans>
+                </Link>
+              </Button>
+            </>
+          )}
           <SearchFilter param="search" size="sm" placeholder={t`Search`} />
           <ElementViewsMenu
             projectId={projectId}

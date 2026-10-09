@@ -12,7 +12,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Project } from "~/modules/projects";
+import type { Project, ProjectMilestone } from "~/modules/projects";
 import {
   getProject,
   projectValidator,
@@ -44,6 +44,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The identifier is fixed once the project exists: every element's stored
   // readable id starts with it.
   const { id: _id, identifier: _identifier, ...fields } = validation.data;
+
+  // The lock milestone must be one of this project's milestones.
+  if (fields.lockPlanAfterMilestoneId) {
+    const milestone = await client
+      .from("projectMilestone")
+      .select("id")
+      .eq("id", fields.lockPlanAfterMilestoneId)
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (milestone.error || !milestone.data) {
+      return validationError({
+        fieldErrors: {
+          lockPlanAfterMilestoneId: "Choose a milestone of this project"
+        }
+      });
+    }
+  }
 
   const update = await updateProject(client, {
     ...fields,
@@ -97,9 +115,10 @@ export default function ProjectDetailsRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
 
-  const routeData = useRouteData<{ project: Project }>(
-    path.to.project(projectId)
-  );
+  const routeData = useRouteData<{
+    project: Project;
+    milestones: ProjectMilestone[];
+  }>(path.to.project(projectId));
   const project = routeData?.project;
   if (!project) return null;
 
@@ -121,8 +140,14 @@ export default function ProjectDetailsRoute() {
           locationId: project.locationId ?? undefined,
           startDate: project.startDate ?? undefined,
           endDate: project.endDate ?? undefined,
-          priority: project.priority ?? undefined
+          priority: project.priority ?? undefined,
+          lockPlanAfterMilestoneId:
+            project.lockPlanAfterMilestoneId ?? undefined
         }}
+        milestones={(routeData?.milestones ?? []).map((milestone) => ({
+          value: milestone.id,
+          label: milestone.name
+        }))}
       />
     </VStack>
   );

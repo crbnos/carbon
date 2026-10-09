@@ -18,6 +18,7 @@ import {
   addLinkToChangeRequest,
   deleteLinkInChangeRequest,
   readChangeRequestId,
+  requireEditablePlanRoute,
   saveParameterFormula
 } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -57,6 +58,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // While a change request is open, adding or deleting a link goes into it.
   // Reviewing a suspect link is progress and stays live.
   const changeRequestId = readChangeRequestId(request, formData);
+  // A locked plan takes link and formula changes only through a change
+  // request. Reviewing a suspect link is progress and passes.
+  if (intent !== "clearSuspect") {
+    const locked = await requireEditablePlanRoute(request, {
+      client,
+      projectId,
+      companyId,
+      changeRequestId,
+      withFlash: false
+    });
+    if (locked) return locked;
+  }
   const inChangeRequest = async (write: () => Promise<unknown>) => {
     try {
       await write();

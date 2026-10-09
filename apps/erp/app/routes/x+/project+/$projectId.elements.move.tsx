@@ -13,7 +13,8 @@ import {
   moveElementInChangeRequest,
   moveProjectElement,
   orderElementsInChangeRequest,
-  readChangeRequestId
+  readChangeRequestId,
+  requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -55,6 +56,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const intent = formData.get("intent");
   // While a change request is open, a move or a new order goes into it.
   const changeRequestId = readChangeRequestId(request, formData);
+  // A locked plan takes plan-layer changes only through a change request.
+  const locked = await requireEditablePlanRoute(request, {
+    client,
+    projectId,
+    companyId,
+    changeRequestId
+  });
+  if (locked) return locked;
 
   if (intent === "move") {
     const elementId = formData.get("elementId");

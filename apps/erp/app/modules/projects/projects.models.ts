@@ -200,7 +200,10 @@ export const projectValidator = z
     locationId: zfd.text(z.string().optional()),
     startDate: zfd.text(z.string().optional()),
     endDate: zfd.text(z.string().optional()),
-    priority: zfd.text(z.enum(projectElementPriorities).optional())
+    priority: zfd.text(z.enum(projectElementPriorities).optional()),
+    // After this milestone completes, the plan layer changes only through a
+    // change request.
+    lockPlanAfterMilestoneId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => data.costTreatment !== "Capitalize" || !!data.fixedAssetClassId,
@@ -3464,3 +3467,19 @@ export const projectChangeRequestCommentValidator = z.object({
   targetId: zfd.text(z.string().optional()),
   field: zfd.text(z.string().optional())
 });
+
+/**
+ * True when the project locks its plan layer: it names a lock milestone and
+ * that milestone is completed. After that, plan-layer fields change only
+ * through a change request.
+ */
+export function isProjectPlanLocked(args: {
+  lockMilestone: { completedAt: string | null } | null | undefined;
+}) {
+  return Boolean(args.lockMilestone?.completedAt);
+}
+
+/** The refusal a plan-layer write gets on a locked plan. */
+export function projectPlanLockedMessage(milestoneName: string) {
+  return `The plan is locked after ${milestoneName}. Open a change request to change it.`;
+}

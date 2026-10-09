@@ -53,8 +53,10 @@ import {
   getProjectUserPreference,
   getProjectViews,
   isBareElementsUrl,
+  isProjectPlanLocked,
   parseElementFilters,
   parseProjectDisplayState,
+  projectPlanLockedMessage,
   projectStateGroups,
   rollUpCostSummary
 } from "~/modules/projects";
@@ -489,6 +491,14 @@ export default function ProjectElementsRoute() {
     requestAnimationFrame(() => quickAddRef.current?.focus());
   };
 
+  // After the lock milestone completes, the plan changes only through a
+  // Draft change request: no create or delete in the live plan.
+  const lockMilestone = milestones.find(
+    (milestone) => milestone.id === routeData?.project?.lockPlanAfterMilestoneId
+  );
+  const planLocked =
+    isProjectPlanLocked({ lockMilestone }) && changeRequest?.status !== "Draft";
+
   const layoutProps = {
     projectId,
     identifier: routeData?.project?.identifier ?? "",
@@ -499,8 +509,9 @@ export default function ProjectElementsRoute() {
     display,
     actualByElement,
     canUpdate: permissions.can("update", "projects") && !isClosed,
-    canCreate: permissions.can("create", "projects") && !isClosed,
-    canDelete: permissions.can("delete", "projects") && !isClosed
+    canCreate:
+      permissions.can("create", "projects") && !isClosed && !planLocked,
+    canDelete: permissions.can("delete", "projects") && !isClosed && !planLocked
   };
 
   return (
@@ -539,6 +550,14 @@ export default function ProjectElementsRoute() {
           currentState={currentState}
           onSelectView={selectView}
           onViewSaved={viewSaved}
+          planLock={
+            planLocked && lockMilestone
+              ? {
+                  message: projectPlanLockedMessage(lockMilestone.name),
+                  changeRequestsHref: path.to.projectChangeRequests(projectId)
+                }
+              : null
+          }
         />
         <div className="min-h-0 flex-1">
           {layout === "table" ? (

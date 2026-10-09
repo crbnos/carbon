@@ -17,6 +17,7 @@ import {
 import {
   ensureCapitalAssets,
   readChangeRequestId,
+  requireEditablePlanRoute,
   updateElementFieldInChangeRequest
 } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -91,6 +92,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // A plan-layer field goes into the open change request; a progress field
   // always writes live.
   const changeRequestId = readChangeRequestId(request, formData);
+  if (isPlanLayerField("projectElement", field)) {
+    // A locked plan takes plan-layer changes only through a change request.
+    const locked = await requireEditablePlanRoute(request, {
+      client,
+      projectId,
+      companyId,
+      changeRequestId,
+      withFlash: false
+    });
+    if (locked) return locked;
+  }
   if (changeRequestId && isPlanLayerField("projectElement", field)) {
     try {
       await updateElementFieldInChangeRequest(getDatabaseClient(), {

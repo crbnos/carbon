@@ -25,6 +25,7 @@ import {
   deletePlanLineInChangeRequest,
   type PlanLineTable,
   readChangeRequestId,
+  requireEditablePlanRoute,
   upsertPlanLineInChangeRequest
 } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -77,6 +78,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // While a change request is open, plan lines change in it instead.
   const changeRequestId = readChangeRequestId(request, formData);
+  // A locked plan takes plan-layer changes only through a change request.
+  const locked = await requireEditablePlanRoute(request, {
+    client,
+    projectId,
+    companyId,
+    changeRequestId
+  });
+  if (locked) return locked;
   const inChangeRequest = async (
     table: PlanLineTable,
     line: { id?: string; projectElementId: string } & Record<string, unknown>,

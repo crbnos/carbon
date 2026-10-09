@@ -12351,6 +12351,9 @@ msgstr "잠금"
 msgid "Lock Period"
 msgstr "기간 잠금"
 
+msgid "Lock Plan After Milestone"
+msgstr ""
+
 msgid "Locked"
 msgstr "잠김"
 
@@ -15055,6 +15058,9 @@ msgstr "감사 로그 열기"
 msgid "Open batch"
 msgstr "미결 배치"
 
+msgid "Open Change Request"
+msgstr ""
+
 msgid "Open date"
 msgstr "개설 날짜"
 
@@ -16063,6 +16069,9 @@ msgstr "계획"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "품목 및 사업장별 소요량을 예측하여 미리 계획하고, 이를 직접 MRP 및 일정에 입력하세요."
+
+msgid "Plan locked"
+msgstr ""
 
 msgid "Plan the work"
 msgstr "작업 계획 수립"
@@ -24749,6 +24758,9 @@ msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "이 내용이 맞으면 합의됨으로 표시하세요. 그러면 커맨드 센터의 발견(Discovery) 단계가 완료됩니다."
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr ""
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "이 특정 라인의 출하 약속일; 분할 출하에 대한 주문 헤더의 약속일에 대한 라인별 재정의"

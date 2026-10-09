@@ -12351,6 +12351,9 @@ msgstr "Lock"
 msgid "Lock Period"
 msgstr "Lock Period"
 
+msgid "Lock Plan After Milestone"
+msgstr "Lock Plan After Milestone"
+
 msgid "Locked"
 msgstr "Locked"
 
@@ -15055,6 +15058,9 @@ msgstr "Open Audit Log"
 msgid "Open batch"
 msgstr "Open batch"
 
+msgid "Open Change Request"
+msgstr "Open Change Request"
+
 msgid "Open date"
 msgstr "Open date"
 
@@ -16063,6 +16069,9 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+
+msgid "Plan locked"
+msgstr "Plan locked"
 
 msgid "Plan the work"
 msgstr "Plan the work"
@@ -24749,6 +24758,9 @@ msgstr "When this is on, time, material and purchases charge an element of a pro
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "When this looks right, mark it agreed. That completes the Discovery step on your command center."
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr "When this milestone completes, the plan changes only through a change request"
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."

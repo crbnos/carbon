@@ -60,6 +60,8 @@ type ProjectFormProps = {
     options: { value: string; label: string }[];
     defaultValue?: string;
   };
+  /** An existing project only: its milestones, for the plan lock. */
+  milestones?: { value: string; label: string }[];
 };
 
 /**
@@ -72,7 +74,8 @@ const ProjectForm = ({
   initialValues,
   onClose,
   isDisabled = false,
-  copyFrom
+  copyFrom,
+  milestones
 }: ProjectFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -179,6 +182,15 @@ const ProjectForm = ({
         <Select name="priority" label={t`Priority`} options={priorityOptions} />
         <DatePicker name="startDate" label={t`Start Date`} />
         <DatePicker name="endDate" label={t`End Date`} />
+        {isEditing && (
+          <Select
+            name="lockPlanAfterMilestoneId"
+            label={t`Lock Plan After Milestone`}
+            isOptional
+            helperText={t`When this milestone completes, the plan changes only through a change request`}
+            options={milestones ?? []}
+          />
+        )}
       </div>
     </>
   );

@@ -12,7 +12,8 @@ import { data } from "react-router";
 import { deleteProjectElement, getProject } from "~/modules/projects";
 import {
   deleteElementInChangeRequest,
-  readChangeRequestId
+  readChangeRequestId,
+  requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -58,6 +59,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request,
     await request.formData()
   );
+  // A locked plan takes plan-layer changes only through a change request.
+  const locked = await requireEditablePlanRoute(request, {
+    client,
+    projectId,
+    companyId,
+    changeRequestId
+  });
+  if (locked) return locked;
   if (changeRequestId) {
     try {
       await deleteElementInChangeRequest(getDatabaseClient(), {

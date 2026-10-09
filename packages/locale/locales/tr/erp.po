@@ -12351,6 +12351,9 @@ msgstr "Kilitle"
 msgid "Lock Period"
 msgstr "Dönemi Kilitle"
 
+msgid "Lock Plan After Milestone"
+msgstr ""
+
 msgid "Locked"
 msgstr "Kilitli"
 
@@ -15055,6 +15058,9 @@ msgstr "Açık Denetim günlüğü"
 msgid "Open batch"
 msgstr "Açık Parti"
 
+msgid "Open Change Request"
+msgstr ""
+
 msgid "Open date"
 msgstr "Açılış tarihi"
 
@@ -16063,6 +16069,9 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Stok kartı ve lokasyon başına talep projeksiyonu yaparak önceden planlayın, sonra bunu doğrudan MRP ve planlama'ya besleyin."
+
+msgid "Plan locked"
+msgstr ""
 
 msgid "Plan the work"
 msgstr "Çalışmayı planlayın"
@@ -24749,6 +24758,9 @@ msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Bu doğru göründüğünde, kabul edildi olarak işaretleyin. Bu, komut merkezinizde Keşif adımını tamamlar."
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr ""
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "Bu satırın sevk edilmesi için taahhüt edilen tarih; bölünmüş sevkiyatlar için sipariş başlığının Taahhüt Tarihi'nin satır başına geçersiz kılınması."

@@ -12351,6 +12351,9 @@ msgstr "ロック"
 msgid "Lock Period"
 msgstr "期間をロック"
 
+msgid "Lock Plan After Milestone"
+msgstr ""
+
 msgid "Locked"
 msgstr "ロック中"
 
@@ -15055,6 +15058,9 @@ msgstr "監査ログを開く"
 msgid "Open batch"
 msgstr "バッチを開く"
 
+msgid "Open Change Request"
+msgstr ""
+
 msgid "Open date"
 msgstr "開始日"
 
@@ -16063,6 +16069,9 @@ msgstr "計画"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、MRP とスケジューリングに直接フィードします。"
+
+msgid "Plan locked"
+msgstr ""
 
 msgid "Plan the work"
 msgstr "作業を計画する"
@@ -24749,6 +24758,9 @@ msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "これが正しく見えたら、同意済みとしてマークしてください。これでコマンドセンターの検出ステップが完了します。"
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr ""
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "この特定の明細が出荷される予定の日。分割出荷のために注文ヘッダーの回答納期を明細ごとに置き換えます。"

@@ -12351,6 +12351,9 @@ msgstr "Verrouiller"
 msgid "Lock Period"
 msgstr "Verrouiller la période"
 
+msgid "Lock Plan After Milestone"
+msgstr ""
+
 msgid "Locked"
 msgstr "Verrouillé"
 
@@ -15055,6 +15058,9 @@ msgstr "Ouvrir le journal d'audit"
 msgid "Open batch"
 msgstr "Lot de production ouvert"
 
+msgid "Open Change Request"
+msgstr ""
+
 msgid "Open date"
 msgstr "Date d'ouverture"
 
@@ -16063,6 +16069,9 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Planifiez à l'avance en projetant les besoins par article et par site, puis alimentez-les directement dans MRP et le planning."
+
+msgid "Plan locked"
+msgstr ""
 
 msgid "Plan the work"
 msgstr "Planifier le travail"
@@ -24749,6 +24758,9 @@ msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Quand cela vous semble correct, marquez-le comme convenu. Cela complète l'étape Discovery de votre centre de commande."
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr ""
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "Quand cette ligne spécifique est promise à l'expédition ; substitution par ligne de la date promise de l'en-tête de la commande pour les expéditions fractionnées."

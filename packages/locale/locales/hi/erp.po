@@ -12351,6 +12351,9 @@ msgstr "लॉक करें"
 msgid "Lock Period"
 msgstr "अवधि को लॉक करें"
 
+msgid "Lock Plan After Milestone"
+msgstr ""
+
 msgid "Locked"
 msgstr "लॉक किया गया"
 
@@ -15055,6 +15058,9 @@ msgstr "ऑडिट लॉग खोलें"
 msgid "Open batch"
 msgstr "खुली बैच"
 
+msgid "Open Change Request"
+msgstr ""
+
 msgid "Open date"
 msgstr "खोलने की तारीख"
 
@@ -16063,6 +16069,9 @@ msgstr "योजना"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "आइटम और स्थान के अनुसार मांग का अनुमान लगाकर आगे की योजना बनाएं, फिर इसे सीधे MRP और शेड्यूलिंग में डालें।"
+
+msgid "Plan locked"
+msgstr ""
 
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
@@ -24749,6 +24758,9 @@ msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "जब यह सही लगे, तो इसे सहमत के रूप में चिह्नित करें। यह आपके कमांड सेंटर पर डिस्कवरी चरण को पूरा करता है।"
+
+msgid "When this milestone completes, the plan changes only through a change request"
+msgstr ""
 
 msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 msgstr "जब यह विशिष्ट पंक्ति भेजने के लिए वादा की जाती है; विभाजित शिपमेंट के लिए आदेश हेडर के वादा की गई तिथि का प्रति-पंक्ति ओवरराइड।"

@@ -44,7 +44,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 - [x] Task 9: Add submit, approve, reject and apply
 - [x] Task 10: Add the approvals engine branch and notifications
 - [x] Task 11: Build the change request pages
-- [ ] Task 12: Add the plan lock
+- [x] Task 12: Add the plan lock
 - [ ] Task 13: Update the rule file, module AGENTS.md, docs and spec
 - [ ] Task 14: Verify in the browser
 
@@ -722,4 +722,9 @@ ls .ai/playbooks/projects-phase-1c.md
 - Task 11: the review route is a child of the list route. So the list renders the review in place of itself (`useOutlet()`), as the baselines compare does. The tab sits after Baselines, with ⌘⇧R (`PROJECT_TAB_SHORTCUTS.changeRequests`). `@carbon/utils` gains `PROJECT_CHANGE_REQUEST_STATUS_COLOR_MAP` (Draft gray, In Review yellow, Approved blue, Applied green, Rejected red, Cancelled gray).
 - Task 11: the banner shows on the Elements page (above its header, so the peek shares it) and on the full element page.
 - Task 11: `erp` typechecks green, the full `erp` suite passes (2027) and the `@carbon/checks` tests pass (278). Browser verification is deferred with Task 14.
+- Task 12: `requireProjectPlanEditable(client, …)` returns the refusal message or null; it reads the lock milestone through the `project_lockMilestone_fkey` embed in one query. `requireEditablePlanRoute` wraps it for the routes. Its refusal carries `error.message` and a flash. The update, new and links routes pass `withFlash: false`, because their fetchers already toast `error.message`; a flash would show the message twice.
+- Task 12: each plan-layer route runs the guard after it reads the form and the change request id, because a Draft change request passes. The update route runs it only for a plan-layer field, and the links route skips a suspect link review.
+- Task 12 (UI scope): on a locked plan with no Draft change request open, the Elements page turns off create and delete. That covers the quick-add row, **+ New** and the row menu's Delete. The header shows **Plan locked** with the message as a tooltip and **Open Change Request**, which goes to the change requests page. The other plan-layer controls (the budget and estimate pills, the element sidebar, the plan lines, links and moves) stay enabled. The server refuses them with the message, which shows as a toast. Disabling each of them would touch every pill and the element page.
+- Task 12: the Details tab has **Lock Plan After Milestone**, a select of the project's milestones (existing projects only). `projectValidator` gains `lockPlanAfterMilestoneId`. The route refuses a milestone of another project, because the composite FK only pins the company. The MCP digest changes with the validator.
+- Task 12: the 3 `projects-lock.test.ts` cases pass, and `erp` typechecks green.
 

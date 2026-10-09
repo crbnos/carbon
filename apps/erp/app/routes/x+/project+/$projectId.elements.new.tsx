@@ -12,7 +12,8 @@ import { getProject, projectElementValidator } from "~/modules/projects";
 import {
   addElementToChangeRequest,
   insertProjectElement,
-  readChangeRequestId
+  readChangeRequestId,
+  requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -30,6 +31,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const changeRequestId = readChangeRequestId(request, formData);
+  // A locked plan takes plan-layer changes only through a change request.
+  const locked = await requireEditablePlanRoute(request, {
+    client,
+    projectId,
+    companyId,
+    changeRequestId,
+    withFlash: false
+  });
+  if (locked) return locked;
   const validation = await validator(projectElementValidator).validate(
     formData
   );
