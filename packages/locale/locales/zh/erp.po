@@ -1902,6 +1902,9 @@ msgstr "添加属性"
 msgid "Add Question"
 msgstr "添加问题"
 
+msgid "Add Rate"
+msgstr ""
+
 msgid "Add Receipt"
 msgstr "添加收据"
 
@@ -1910,6 +1913,12 @@ msgstr "添加要求"
 
 msgid "Add Risk"
 msgstr "添加风险"
+
+msgid "Add row"
+msgstr ""
+
+msgid "Add Row"
+msgstr ""
 
 msgid "Add rule"
 msgstr "添加规则"
@@ -2599,6 +2608,9 @@ msgstr "审批"
 
 msgid "Approve"
 msgstr "审批"
+
+msgid "Approve all"
+msgstr ""
 
 msgid "Approved"
 msgstr ""
@@ -5518,6 +5530,12 @@ msgstr "正确答案"
 msgid "Correct Answers"
 msgstr "正确答案"
 
+msgid "Correct hours"
+msgstr ""
+
+msgid "Correct Posted Time"
+msgstr ""
+
 msgid "Correct Quantity"
 msgstr "修正数量"
 
@@ -5532,6 +5550,10 @@ msgstr "纠正"
 
 msgid "Correction {correctionNumber}"
 msgstr "修正 {correctionNumber}"
+
+#. placeholder {0}: entry.correctionReason
+msgid "Correction: {0}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "纠正"
@@ -5580,6 +5602,15 @@ msgstr "销售成本（默认）"
 
 msgid "Cost of Sales"
 msgstr "销售成本"
+
+msgid "Cost Rate"
+msgstr ""
+
+msgid "Cost Rate per Hour"
+msgstr ""
+
+msgid "Cost rates"
+msgstr ""
 
 msgid "Cost Treatment"
 msgstr ""
@@ -8007,6 +8038,9 @@ msgstr ""
 msgid "Edit Labor"
 msgstr ""
 
+msgid "Edit Labor Category"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "编辑行"
 
@@ -8102,6 +8136,12 @@ msgstr "编辑采购订单行类型"
 
 msgid "Edit Question"
 msgstr "编辑问题"
+
+msgid "Edit rate"
+msgstr ""
+
+msgid "Edit Rate"
+msgstr ""
 
 msgid "Edit Reason"
 msgstr "编辑原因"
@@ -8213,6 +8253,9 @@ msgstr "编辑工作中心"
 
 msgid "Edited"
 msgstr "已编辑"
+
+msgid "Effective From"
+msgstr ""
 
 msgid "Element"
 msgstr ""
@@ -10232,6 +10275,9 @@ msgstr "主机"
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
 
+msgid "hours"
+msgstr ""
+
 msgid "Hours"
 msgstr "时数"
 
@@ -10252,6 +10298,11 @@ msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "未分配的小时数"
+
+#. placeholder {0}: formatDate(day)
+#. placeholder {1}: row.readableId
+msgid "Hours on {0} for {1}"
+msgstr ""
 
 msgid "Hours per Week"
 msgstr "每周小时数"
@@ -10634,6 +10685,9 @@ msgstr "已停用"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "已停用的操作不会出现在选择列表中"
+
+msgid "Inactive categories cannot be picked for new time"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "来料检验"
@@ -13091,6 +13145,9 @@ msgstr "新看板"
 msgid "New Label"
 msgstr ""
 
+msgid "New Labor Category"
+msgstr ""
+
 msgid "New line"
 msgstr "新行"
 
@@ -13174,6 +13231,9 @@ msgstr "新报价"
 
 msgid "New Quote Line"
 msgstr "新报价行"
+
+msgid "New Rate"
+msgstr ""
 
 msgid "New Receipt"
 msgstr "新收据"
@@ -13894,6 +13954,9 @@ msgstr "不报价原因"
 msgid "No rate"
 msgstr "无汇率"
 
+msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
+msgstr ""
+
 msgid "No receipts yet"
 msgstr "尚无收据"
 
@@ -14007,6 +14070,12 @@ msgstr "还没有同步操作"
 
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
+
+msgid "No time is waiting for approval."
+msgstr ""
+
+msgid "No time this week. Add a row for each charge number you worked on."
+msgstr ""
 
 msgid "No tools"
 msgstr "没有工具"
@@ -15707,6 +15776,9 @@ msgstr "过账人"
 msgid "Posted By"
 msgstr "过账人"
 
+msgid "Posted hours, open the correction menu"
+msgstr ""
+
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "具有这些来源类型的已过账凭证始终同步。每日汇总将一天的凭证按账户分组为一个供应商条目。"
 
@@ -17016,11 +17088,17 @@ msgstr "报销"
 msgid "Reject"
 msgstr "拒绝"
 
+msgid "Reject all"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "拒绝批次"
 
 msgid "Reject Quote"
 msgstr "拒绝报价"
+
+msgid "Reject Time"
+msgstr ""
 
 msgid "Rejected"
 msgstr "已拒绝"
@@ -20073,14 +20151,23 @@ msgstr "主题"
 msgid "Subledger"
 msgstr "子分类账"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "匿名提交"
+
+msgid "Submit Correction"
+msgstr ""
 
 msgid "Submit for approval"
 msgstr "提交以审批"
 
 msgid "Submit Inspection"
 msgstr "提交检验"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Submitted"
 msgstr ""
@@ -20642,6 +20729,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Tell the employee what to fix"
+msgstr ""
+
 msgid "Temperature"
 msgstr "温度"
 
@@ -20934,6 +21024,9 @@ msgstr "您从客户收到此询价单的日期。默认为今天。"
 
 msgid "The deadline to send your quote to the customer."
 msgstr "向客户发送报价的截止日期。"
+
+msgid "The default for time this person logs on projects"
+msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "订单拣货使用的默认方式，用于提供被跟踪实体：先到期先出（最早过期优先）、先进先出（最旧优先）或后进先出（最新优先）。"
@@ -21312,6 +21405,9 @@ msgstr "您的工作和库存所在的工厂、仓库和场所"
 msgid "The position counts invoices drafted or billed externally and months recognized. Planned months are still to come."
 msgstr "该位置计算外部草稿或开票的发票和已确认的月份。计划月份尚未到来。"
 
+msgid "The posted hours are reversed and these hours are charged instead"
+msgstr ""
+
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖问题类型的默认工作流。"
 
@@ -21405,6 +21501,9 @@ msgstr "结果不会出现在运行页面上。"
 
 msgid "The revision number of the part"
 msgstr "零件的修订版号"
+
+msgid "The row shows empty until you enter hours."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "为供应而创建此作业的销售订单行，将作业与其后的客户需求联系起来。"

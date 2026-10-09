@@ -658,6 +658,7 @@ export async function updateEmployeeJob(
       shiftId: sanitized.shiftId,
       departmentId: sanitized.departmentId,
       managerId: sanitized.managerId,
+      laborCategoryId: sanitized.laborCategoryId,
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),
@@ -670,7 +671,7 @@ export async function updateEmployeeJob(
       // Kysely bypasses RLS and every id below comes from the caller, so each
       // one is re-read under companyId: the single-column FKs would accept a
       // location, shift, department or manager from any company.
-      const [employee, location, shift, department, manager] =
+      const [employee, location, shift, department, manager, laborCategory] =
         await Promise.all([
           trx
             .selectFrom("employee")
@@ -709,6 +710,14 @@ export async function updateEmployeeJob(
                 .where("id", "=", employeeJob.managerId)
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
+            : null,
+          employeeJob.laborCategoryId
+            ? trx
+                .selectFrom("laborCategory")
+                .select("id")
+                .where("id", "=", employeeJob.laborCategoryId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
             : null
         ]);
       if (!employee) throw new Error("Employee not found");
@@ -721,6 +730,9 @@ export async function updateEmployeeJob(
       }
       if (employeeJob.managerId && !manager) {
         throw new Error("Manager not found");
+      }
+      if (employeeJob.laborCategoryId && !laborCategory) {
+        throw new Error("Labor category not found");
       }
 
       const updated = await trx

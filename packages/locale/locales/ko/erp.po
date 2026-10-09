@@ -1902,6 +1902,9 @@ msgstr "속성 추가"
 msgid "Add Question"
 msgstr "질문 추가"
 
+msgid "Add Rate"
+msgstr ""
+
 msgid "Add Receipt"
 msgstr "입고 추가"
 
@@ -1910,6 +1913,12 @@ msgstr "요구사항 추가"
 
 msgid "Add Risk"
 msgstr "리스크 추가"
+
+msgid "Add row"
+msgstr ""
+
+msgid "Add Row"
+msgstr ""
 
 msgid "Add rule"
 msgstr "규칙 추가"
@@ -2599,6 +2608,9 @@ msgstr "승인"
 
 msgid "Approve"
 msgstr "승인"
+
+msgid "Approve all"
+msgstr ""
 
 msgid "Approved"
 msgstr ""
@@ -5518,6 +5530,12 @@ msgstr "정답"
 msgid "Correct Answers"
 msgstr "정답"
 
+msgid "Correct hours"
+msgstr ""
+
+msgid "Correct Posted Time"
+msgstr ""
+
 msgid "Correct Quantity"
 msgstr "수량 수정"
 
@@ -5532,6 +5550,10 @@ msgstr "수정"
 
 msgid "Correction {correctionNumber}"
 msgstr "수정 {correctionNumber}"
+
+#. placeholder {0}: entry.correctionReason
+msgid "Correction: {0}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "수정"
@@ -5580,6 +5602,15 @@ msgstr "매출원가(기본값)"
 
 msgid "Cost of Sales"
 msgstr "매출 원가"
+
+msgid "Cost Rate"
+msgstr ""
+
+msgid "Cost Rate per Hour"
+msgstr ""
+
+msgid "Cost rates"
+msgstr ""
 
 msgid "Cost Treatment"
 msgstr ""
@@ -8007,6 +8038,9 @@ msgstr ""
 msgid "Edit Labor"
 msgstr ""
 
+msgid "Edit Labor Category"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "라인 편집"
 
@@ -8102,6 +8136,12 @@ msgstr "발주서 라인 유형 편집"
 
 msgid "Edit Question"
 msgstr "질문 편집"
+
+msgid "Edit rate"
+msgstr ""
+
+msgid "Edit Rate"
+msgstr ""
 
 msgid "Edit Reason"
 msgstr "이유 편집"
@@ -8213,6 +8253,9 @@ msgstr "작업장 편집"
 
 msgid "Edited"
 msgstr "수정됨"
+
+msgid "Effective From"
+msgstr ""
 
 msgid "Element"
 msgstr ""
@@ -10232,6 +10275,9 @@ msgstr "호스트"
 msgid "Host, secure, and back up the platform"
 msgstr "플랫폼 호스팅, 보안, 백업"
 
+msgid "hours"
+msgstr ""
+
 msgid "Hours"
 msgstr "시간"
 
@@ -10252,6 +10298,11 @@ msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "아직 배정되지 않은 시간"
+
+#. placeholder {0}: formatDate(day)
+#. placeholder {1}: row.readableId
+msgid "Hours on {0} for {1}"
+msgstr ""
 
 msgid "Hours per Week"
 msgstr "주당 시간"
@@ -10634,6 +10685,9 @@ msgstr "비활성"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "비활성 조치는 선택 목록에 표시되지 않습니다"
+
+msgid "Inactive categories cannot be picked for new time"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "수입 검사"
@@ -13091,6 +13145,9 @@ msgstr "새 칸반"
 msgid "New Label"
 msgstr ""
 
+msgid "New Labor Category"
+msgstr ""
+
 msgid "New line"
 msgstr "새로운 라인"
 
@@ -13174,6 +13231,9 @@ msgstr "새 견적"
 
 msgid "New Quote Line"
 msgstr "새 견적 라인"
+
+msgid "New Rate"
+msgstr ""
 
 msgid "New Receipt"
 msgstr "새 입고"
@@ -13894,6 +13954,9 @@ msgstr "견적 거절 사유"
 msgid "No rate"
 msgstr "환율 없음"
 
+msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
+msgstr ""
+
 msgid "No receipts yet"
 msgstr "아직 영수증 없음"
 
@@ -14007,6 +14070,12 @@ msgstr "아직 동기화된 공정이 없습니다"
 
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
+
+msgid "No time is waiting for approval."
+msgstr ""
+
+msgid "No time this week. Add a row for each charge number you worked on."
+msgstr ""
 
 msgid "No tools"
 msgstr "도구 없음"
@@ -15707,6 +15776,9 @@ msgstr "게시자"
 msgid "Posted By"
 msgstr "전기자"
 
+msgid "Posted hours, open the correction menu"
+msgstr ""
+
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "이러한 원본 유형을 가진 전기된 전표는 항상 동기화됩니다. 매일 요약은 하루의 전표를 계정당 하나의 공급자 항목으로 그룹화합니다."
 
@@ -17016,11 +17088,17 @@ msgstr "환급금"
 msgid "Reject"
 msgstr "거부"
 
+msgid "Reject all"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "로트 거부"
 
 msgid "Reject Quote"
 msgstr "견적서 거부"
+
+msgid "Reject Time"
+msgstr ""
 
 msgid "Rejected"
 msgstr "반려됨"
@@ -20073,14 +20151,23 @@ msgstr "주제"
 msgid "Subledger"
 msgstr "보조원장"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
+
+msgid "Submit Correction"
+msgstr ""
 
 msgid "Submit for approval"
 msgstr "승인을 위해 제출"
 
 msgid "Submit Inspection"
 msgstr "검사 제출"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Submitted"
 msgstr ""
@@ -20642,6 +20729,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Tell the employee what to fix"
+msgstr ""
+
 msgid "Temperature"
 msgstr "온도"
 
@@ -20934,6 +21024,9 @@ msgstr "고객으로부터 이 RFQ를 받은 날짜입니다. 기본값은 오�
 
 msgid "The deadline to send your quote to the customer."
 msgstr "고객에게 견적을 보내야 하는 마감일입니다."
+
+msgid "The default for time this person logs on projects"
+msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "피킹이 추적된 항목을 제공할 때 사용하는 기본 순서입니다: FEFO(가장 빨리 만료되는 것 우선), FIFO(선입선출), 또는 LIFO(최신 우선)."
@@ -21312,6 +21405,9 @@ msgstr "작업과 재고가 위치하는 공장, 창고, 사업장"
 msgid "The position counts invoices drafted or billed externally and months recognized. Planned months are still to come."
 msgstr "위치는 외부에서 초안되거나 청구된 송장과 인식된 월을 계산합니다. 계획된 월은 아직 앞으로 있습니다."
 
+msgid "The posted hours are reversed and these hours are charged instead"
+msgstr ""
+
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "이 이슈에 적용되는 사전 정의된 작업 및 승인 요구사항 묶음입니다. 설정 시 이슈 유형의 기본 워크플로를 재정의합니다."
 
@@ -21405,6 +21501,9 @@ msgstr "결과는 실행 페이지에 나타나지 않습니다."
 
 msgid "The revision number of the part"
 msgstr "품목의 리비전 번호"
+
+msgid "The row shows empty until you enter hours."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "이 작업 지시를 공급하기 위해 생성된 수주 라인으로, 작업 지시를 뒤의 고객 소요량과 연결합니다."

@@ -392,6 +392,24 @@ export const logTimeValidator = z.object({
   )
 });
 
+/** A new row of the timesheet grid: a charge number and a labor category. */
+export const timesheetRowValidator = z.object({
+  projectId: z.string().min(1, { message: "Charge number is required" }),
+  projectElementId: zfd.text(z.string().optional()),
+  laborCategoryId: z.string().min(1, { message: "Labor category is required" })
+});
+
+/** The grid key of a timesheet row, as `groupTimesheetRows` builds it. */
+export function timesheetRowKey(row: {
+  projectId: string;
+  projectElementId?: string | null;
+  laborCategoryId: string;
+}): string {
+  return [row.projectId, row.projectElementId ?? "", row.laborCategoryId].join(
+    "\u001f"
+  );
+}
+
 export const timesheetCorrectionValidator = z.object({
   timesheetEntryId: z.string().min(1, { message: "Entry is required" }),
   hours: zfd.numeric(
@@ -539,11 +557,7 @@ export function groupTimesheetRows<
 >(entries: T[]): TimesheetRow<T>[] {
   const rows = new Map<string, TimesheetRow<T>>();
   for (const entry of entries) {
-    const key = [
-      entry.projectId,
-      entry.projectElementId ?? "",
-      entry.laborCategoryId
-    ].join("\u001f");
+    const key = timesheetRowKey(entry);
     let row = rows.get(key);
     if (!row) {
       row = {

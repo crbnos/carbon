@@ -59,6 +59,7 @@ import Item, { useConfigurableItems } from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
 import JobSalesOrderLine from "./JobSalesOrderLine";
+import LaborCategory, { useLaborCategories } from "./LaborCategory";
 import Location from "./Location";
 import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
@@ -146,6 +147,8 @@ export {
   ItemPostingGroup,
   Items,
   JobSalesOrderLine,
+  LaborCategory,
+  useLaborCategories,
   useConfigurableItems,
   Location,
   MaterialType,

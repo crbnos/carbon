@@ -8,9 +8,12 @@ import { useLingui } from "@lingui/react/macro";
 import type { TimesheetEntryStatus as TimesheetEntryStatusType } from "../../projects.models";
 
 export function TimesheetEntryStatus({
-  status
+  status,
+  iconOnly
 }: {
   status?: TimesheetEntryStatusType | null;
+  /** The icon alone, with the label in its tooltip, for a grid cell. */
+  iconOnly?: boolean;
 }) {
   const { t } = useLingui();
   if (!status) return null;
@@ -22,7 +25,10 @@ export function TimesheetEntryStatus({
     Rejected: t`Rejected`
   };
   return (
-    <Status color={TIMESHEET_ENTRY_STATUS_COLOR_MAP[status] ?? "gray"}>
+    <Status
+      color={TIMESHEET_ENTRY_STATUS_COLOR_MAP[status] ?? "gray"}
+      iconOnly={iconOnly}
+    >
       {labels[status] ?? status}
     </Status>
   );

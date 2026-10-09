@@ -1902,6 +1902,9 @@ msgstr "プロパティを追加"
 msgid "Add Question"
 msgstr "質問を追加"
 
+msgid "Add Rate"
+msgstr ""
+
 msgid "Add Receipt"
 msgstr "領収書を追加"
 
@@ -1910,6 +1913,12 @@ msgstr "要求事項を追加"
 
 msgid "Add Risk"
 msgstr "リスクを追加"
+
+msgid "Add row"
+msgstr ""
+
+msgid "Add Row"
+msgstr ""
 
 msgid "Add rule"
 msgstr "ルールを追加"
@@ -2599,6 +2608,9 @@ msgstr "承認"
 
 msgid "Approve"
 msgstr "承認"
+
+msgid "Approve all"
+msgstr ""
 
 msgid "Approved"
 msgstr ""
@@ -5518,6 +5530,12 @@ msgstr "正解"
 msgid "Correct Answers"
 msgstr "正解"
 
+msgid "Correct hours"
+msgstr ""
+
+msgid "Correct Posted Time"
+msgstr ""
+
 msgid "Correct Quantity"
 msgstr "数量を訂正"
 
@@ -5532,6 +5550,10 @@ msgstr "修正"
 
 msgid "Correction {correctionNumber}"
 msgstr "訂正 {correctionNumber}"
+
+#. placeholder {0}: entry.correctionReason
+msgid "Correction: {0}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "修正"
@@ -5580,6 +5602,15 @@ msgstr "売上原価（デフォルト）"
 
 msgid "Cost of Sales"
 msgstr "販売原価"
+
+msgid "Cost Rate"
+msgstr ""
+
+msgid "Cost Rate per Hour"
+msgstr ""
+
+msgid "Cost rates"
+msgstr ""
 
 msgid "Cost Treatment"
 msgstr ""
@@ -8007,6 +8038,9 @@ msgstr ""
 msgid "Edit Labor"
 msgstr ""
 
+msgid "Edit Labor Category"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "行を編集"
 
@@ -8102,6 +8136,12 @@ msgstr "発注書明細タイプを編集"
 
 msgid "Edit Question"
 msgstr "質問を編集"
+
+msgid "Edit rate"
+msgstr ""
+
+msgid "Edit Rate"
+msgstr ""
 
 msgid "Edit Reason"
 msgstr "理由を編集"
@@ -8213,6 +8253,9 @@ msgstr "作業区を編集"
 
 msgid "Edited"
 msgstr "編集済み"
+
+msgid "Effective From"
+msgstr ""
 
 msgid "Element"
 msgstr ""
@@ -10232,6 +10275,9 @@ msgstr "ホスト"
 msgid "Host, secure, and back up the platform"
 msgstr "プラットフォームをホストし、保護し、バックアップする"
 
+msgid "hours"
+msgstr ""
+
 msgid "Hours"
 msgstr "時間"
 
@@ -10252,6 +10298,11 @@ msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "未配置の時間"
+
+#. placeholder {0}: formatDate(day)
+#. placeholder {1}: row.readableId
+msgid "Hours on {0} for {1}"
+msgstr ""
 
 msgid "Hours per Week"
 msgstr "週間あたりの時間"
@@ -10634,6 +10685,9 @@ msgstr "無効"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "無効なアクションは選択リストに表示されません。"
+
+msgid "Inactive categories cannot be picked for new time"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "受入検査"
@@ -13091,6 +13145,9 @@ msgstr "新規かんばん"
 msgid "New Label"
 msgstr ""
 
+msgid "New Labor Category"
+msgstr ""
+
 msgid "New line"
 msgstr "新規明細"
 
@@ -13174,6 +13231,9 @@ msgstr "新規見積"
 
 msgid "New Quote Line"
 msgstr "新規見積明細"
+
+msgid "New Rate"
+msgstr ""
 
 msgid "New Receipt"
 msgstr "新しい領収書"
@@ -13894,6 +13954,9 @@ msgstr "見積辞退理由"
 msgid "No rate"
 msgstr "レートなし"
 
+msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
+msgstr ""
+
 msgid "No receipts yet"
 msgstr "受領がまだありません"
 
@@ -14007,6 +14070,12 @@ msgstr "まだ同期工程はありません"
 
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
+
+msgid "No time is waiting for approval."
+msgstr ""
+
+msgid "No time this week. Add a row for each charge number you worked on."
+msgstr ""
 
 msgid "No tools"
 msgstr "ツールがありません"
@@ -15707,6 +15776,9 @@ msgstr "投稿者"
 msgid "Posted By"
 msgstr "投稿者"
 
+msgid "Posted hours, open the correction menu"
+msgstr ""
+
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "これらのソースタイプの転記済仕訳は常に同期されます。毎日サマリーは1日の仕訳を勘定科目ごとに1つのプロバイダーエントリにグループ化します。"
 
@@ -17016,11 +17088,17 @@ msgstr "払戻"
 msgid "Reject"
 msgstr "却下"
 
+msgid "Reject all"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "ロットを却下"
 
 msgid "Reject Quote"
 msgstr "見積もりを却下"
+
+msgid "Reject Time"
+msgstr ""
 
 msgid "Rejected"
 msgstr "却下"
@@ -20073,14 +20151,23 @@ msgstr "件名"
 msgid "Subledger"
 msgstr "補助元帳"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "匿名で提出"
+
+msgid "Submit Correction"
+msgstr ""
 
 msgid "Submit for approval"
 msgstr "承認のため提出"
 
 msgid "Submit Inspection"
 msgstr "検査を提出"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Submitted"
 msgstr ""
@@ -20642,6 +20729,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Tell the employee what to fix"
+msgstr ""
+
 msgid "Temperature"
 msgstr "温度"
 
@@ -20934,6 +21024,9 @@ msgstr "得意先からこのRFQを受け取った日付。デフォルトは今
 
 msgid "The deadline to send your quote to the customer."
 msgstr "見積を得意先に送信する期限。"
+
+msgid "The default for time this person logs on projects"
+msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "ピッキングが追跡対象エンティティを提供するデフォルト。FEFO（最短有効期限ファースト）、先入先出（古いものファースト）、または後入先出（新しいものファースト）。"
@@ -21312,6 +21405,9 @@ msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサ
 msgid "The position counts invoices drafted or billed externally and months recognized. Planned months are still to come."
 msgstr "本ポジションでは、下書きまたは外部で請求された請求書と認識済月数をカウントしています。計画月数はまだこれからです。"
 
+msgid "The posted hours are reversed and these hours are charged instead"
+msgstr ""
+
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "このイシューに適用されるタスクと承認要件のプリセットバンドル。設定されると、イシュータイプのデフォルトワークフローを置き換えます。"
 
@@ -21405,6 +21501,9 @@ msgstr "結果は実行ページに表示されません。"
 
 msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
+
+msgid "The row shows empty until you enter hours."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"

@@ -47,7 +47,8 @@ export const employeeJobValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   shiftId: zfd.text(z.string().optional()),
   departmentId: zfd.text(z.string().optional()),
-  managerId: zfd.text(z.string().optional())
+  managerId: zfd.text(z.string().optional()),
+  laborCategoryId: zfd.text(z.string().optional())
 });
 
 export const holidayValidator = z.object({

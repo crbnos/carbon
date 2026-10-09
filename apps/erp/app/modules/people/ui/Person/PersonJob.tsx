@@ -14,6 +14,7 @@ import {
   Employee,
   Hidden,
   Input,
+  LaborCategory,
   Location,
   Shift,
   Submit
@@ -57,6 +58,11 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
             />
             <Department name="departmentId" label={t`Department`} />
             <Employee name="managerId" label={t`Manager`} />
+            <LaborCategory
+              name="laborCategoryId"
+              label={t`Labor Category`}
+              helperText={t`The default for time this person logs on projects`}
+            />
             <Hidden name="intent" value="job" />
             <CustomFormFields table="employeeJob" />
           </div>

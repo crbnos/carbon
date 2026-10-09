@@ -92,6 +92,7 @@ export default function PersonJobRoute() {
     shiftId: job.shiftId ?? "",
     departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
+    laborCategoryId: job.laborCategoryId ?? "",
     ...getCustomFields(job.customFields)
   };
 

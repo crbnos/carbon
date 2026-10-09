@@ -2001,6 +2001,9 @@ export const path = {
     projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
     projectTimesheet: `${x}/projects/timesheet`,
     projectTimesheetApprovals: `${x}/projects/approvals`,
+    projectTimesheetCorrect: `${x}/projects/timesheet/correct`,
+    projectTimesheetSubmit: `${x}/projects/timesheet/submit`,
+    projectTimesheetUpdate: `${x}/projects/timesheet/update`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>

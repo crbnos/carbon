@@ -1902,6 +1902,9 @@ msgstr "प्रॉपर्टी जोड़ें"
 msgid "Add Question"
 msgstr "प्रश्न जोड़ें"
 
+msgid "Add Rate"
+msgstr ""
+
 msgid "Add Receipt"
 msgstr "रसीद जोड़ें"
 
@@ -1910,6 +1913,12 @@ msgstr "आवश्यकता जोड़ें"
 
 msgid "Add Risk"
 msgstr "जोखिम जोड़ें"
+
+msgid "Add row"
+msgstr ""
+
+msgid "Add Row"
+msgstr ""
 
 msgid "Add rule"
 msgstr "नियम जोड़ें"
@@ -2599,6 +2608,9 @@ msgstr "अनुमोदन"
 
 msgid "Approve"
 msgstr "अनुमोदित करें"
+
+msgid "Approve all"
+msgstr ""
 
 msgid "Approved"
 msgstr ""
@@ -5518,6 +5530,12 @@ msgstr "सही उत्तर"
 msgid "Correct Answers"
 msgstr "सही उत्तर"
 
+msgid "Correct hours"
+msgstr ""
+
+msgid "Correct Posted Time"
+msgstr ""
+
 msgid "Correct Quantity"
 msgstr "मात्रा को सही करें"
 
@@ -5532,6 +5550,10 @@ msgstr "सुधार"
 
 msgid "Correction {correctionNumber}"
 msgstr "सुधार {correctionNumber}"
+
+#. placeholder {0}: entry.correctionReason
+msgid "Correction: {0}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "सुधार"
@@ -5580,6 +5602,15 @@ msgstr "बेचे गए माल की लागत (डिफ़ॉल्
 
 msgid "Cost of Sales"
 msgstr "बिक्री की लागत"
+
+msgid "Cost Rate"
+msgstr ""
+
+msgid "Cost Rate per Hour"
+msgstr ""
+
+msgid "Cost rates"
+msgstr ""
 
 msgid "Cost Treatment"
 msgstr ""
@@ -8007,6 +8038,9 @@ msgstr ""
 msgid "Edit Labor"
 msgstr ""
 
+msgid "Edit Labor Category"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "लाइन संपादित करें"
 
@@ -8102,6 +8136,12 @@ msgstr "क्रय आदेश लाइन प्रकार संपा�
 
 msgid "Edit Question"
 msgstr "प्रश्न संपादित करें"
+
+msgid "Edit rate"
+msgstr ""
+
+msgid "Edit Rate"
+msgstr ""
 
 msgid "Edit Reason"
 msgstr "कारण संपादित करें"
@@ -8213,6 +8253,9 @@ msgstr "वर्क सेंटर संपादित करें"
 
 msgid "Edited"
 msgstr "संपादित"
+
+msgid "Effective From"
+msgstr ""
 
 msgid "Element"
 msgstr ""
@@ -10232,6 +10275,9 @@ msgstr "होस्ट"
 msgid "Host, secure, and back up the platform"
 msgstr "प्लेटफॉर्म को होस्ट करें, सुरक्षित रखें और बैकअप लें"
 
+msgid "hours"
+msgstr ""
+
 msgid "Hours"
 msgstr "घंटे"
 
@@ -10252,6 +10298,11 @@ msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "अभी तक असाइन न किए गए घंटे"
+
+#. placeholder {0}: formatDate(day)
+#. placeholder {1}: row.readableId
+msgid "Hours on {0} for {1}"
+msgstr ""
 
 msgid "Hours per Week"
 msgstr "सप्ताह में घंटे"
@@ -10634,6 +10685,9 @@ msgstr "निष्क्रिय"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "निष्क्रिय क्रियाएं चयन सूचियों में दिखाई नहीं देंगी"
+
+msgid "Inactive categories cannot be picked for new time"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "इनबाउंड निरीक्षण"
@@ -13091,6 +13145,9 @@ msgstr "नया कानबन"
 msgid "New Label"
 msgstr ""
 
+msgid "New Labor Category"
+msgstr ""
+
 msgid "New line"
 msgstr "नई पंक्ति"
 
@@ -13174,6 +13231,9 @@ msgstr "नया उद्धरण"
 
 msgid "New Quote Line"
 msgstr "नई कोटेशन पंक्ति"
+
+msgid "New Rate"
+msgstr ""
 
 msgid "New Receipt"
 msgstr "नई रसीद"
@@ -13894,6 +13954,9 @@ msgstr "कोई कोटेशन कारण नहीं"
 msgid "No rate"
 msgstr "कोई दर नहीं"
 
+msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
+msgstr ""
+
 msgid "No receipts yet"
 msgstr "अभी कोई रसीद नहीं"
 
@@ -14007,6 +14070,12 @@ msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
 
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
+
+msgid "No time is waiting for approval."
+msgstr ""
+
+msgid "No time this week. Add a row for each charge number you worked on."
+msgstr ""
 
 msgid "No tools"
 msgstr "कोई उपकरण नहीं"
@@ -15707,6 +15776,9 @@ msgstr "द्वारा पोस्ट किया गया"
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
 
+msgid "Posted hours, open the correction menu"
+msgstr ""
+
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "पोस्ट किए गए जर्नल इन स्रोत प्रकारों के साथ हमेशा सिंक करते हैं। दैनिक सारांश एक दिन के जर्नल को प्रति खाते में एक प्रदाता प्रविष्टि में समूहित करता है।"
 
@@ -17016,11 +17088,17 @@ msgstr "प्रतिपूर्ति"
 msgid "Reject"
 msgstr "अस्वीकार करें"
 
+msgid "Reject all"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "लॉट को अस्वीकार करें"
 
 msgid "Reject Quote"
 msgstr "उद्धरण अस्वीकार करें"
+
+msgid "Reject Time"
+msgstr ""
 
 msgid "Rejected"
 msgstr "अस्वीकृत"
@@ -20073,14 +20151,23 @@ msgstr "विषय"
 msgid "Subledger"
 msgstr "सहायक बहीखाता"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
+
+msgid "Submit Correction"
+msgstr ""
 
 msgid "Submit for approval"
 msgstr "अनुमोदन के लिए सबमिट करें"
 
 msgid "Submit Inspection"
 msgstr "निरीक्षण सबमिट करें"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Submitted"
 msgstr ""
@@ -20642,6 +20729,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Tell the employee what to fix"
+msgstr ""
+
 msgid "Temperature"
 msgstr "तापमान"
 
@@ -20934,6 +21024,9 @@ msgstr "वह तारीख जब आपको ग्राहक से य
 
 msgid "The deadline to send your quote to the customer."
 msgstr "ग्राहक को अपना उद्धरण भेजने की समय सीमा।"
+
+msgid "The default for time this person logs on projects"
+msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "डिफ़ॉल्ट ऑर्डर पिकिंग ट्रैक की गई संस्थाओं की पेशकश करने के लिए उपयोग करता है: FEFO (सबसे पहले समाप्ति), FIFO (सबसे पहले सबसे पुराना) या LIFO (सबसे पहले सबसे नया)।"
@@ -21312,6 +21405,9 @@ msgstr "वह संयंत्र, गोदाम, और साइटें
 msgid "The position counts invoices drafted or billed externally and months recognized. Planned months are still to come."
 msgstr "स्थिति बाहरी रूप से तैयार किए गए या बिल किए गए चालानों और मान्य महीनों की गिनती करती है। योजनाबद्ध महीने अभी आने वाले हैं।"
 
+msgid "The posted hours are reversed and these hours are charged instead"
+msgstr ""
+
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "कार्यों और अनुमोदन आवश्यकताओं का पूर्वनिर्धारित बंडल इस समस्या पर लागू होता है; जब सेट किया जाता है तो समस्या प्रकार के डिफ़ॉल्ट वर्कफ़्लो को ओवरराइड करता है।"
 
@@ -21405,6 +21501,9 @@ msgstr "परिणाम Runs page पर प्रदर्शित नह�
 
 msgid "The revision number of the part"
 msgstr "पार्ट की रिवीजन संख्या"
+
+msgid "The row shows empty until you enter hours."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "विक्रय आदेश पंक्ति जिसे आपूर्ति के लिए यह जॉब बनाया गया था, जॉब को इसके पीछे ग्राहक मांग से जोड़ता है।"

@@ -1902,6 +1902,9 @@ msgstr "Добавить свойство"
 msgid "Add Question"
 msgstr "Добавить вопрос"
 
+msgid "Add Rate"
+msgstr ""
+
 msgid "Add Receipt"
 msgstr "Добавить приходную накладную"
 
@@ -1910,6 +1913,12 @@ msgstr "Добавить требование"
 
 msgid "Add Risk"
 msgstr "Добавить риск"
+
+msgid "Add row"
+msgstr ""
+
+msgid "Add Row"
+msgstr ""
 
 msgid "Add rule"
 msgstr "Добавить правило"
@@ -2599,6 +2608,9 @@ msgstr "Утверждения"
 
 msgid "Approve"
 msgstr "Утвердить"
+
+msgid "Approve all"
+msgstr ""
 
 msgid "Approved"
 msgstr ""
@@ -5518,6 +5530,12 @@ msgstr "Правильный ответ"
 msgid "Correct Answers"
 msgstr "Правильные ответы"
 
+msgid "Correct hours"
+msgstr ""
+
+msgid "Correct Posted Time"
+msgstr ""
+
 msgid "Correct Quantity"
 msgstr "Исправить Количество"
 
@@ -5532,6 +5550,10 @@ msgstr "Исправление"
 
 msgid "Correction {correctionNumber}"
 msgstr "Исправление {correctionNumber}"
+
+#. placeholder {0}: entry.correctionReason
+msgid "Correction: {0}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "Исправления"
@@ -5580,6 +5602,15 @@ msgstr "Себестоимость реализованной продукции
 
 msgid "Cost of Sales"
 msgstr "Себестоимость продаж"
+
+msgid "Cost Rate"
+msgstr ""
+
+msgid "Cost Rate per Hour"
+msgstr ""
+
+msgid "Cost rates"
+msgstr ""
 
 msgid "Cost Treatment"
 msgstr ""
@@ -8007,6 +8038,9 @@ msgstr ""
 msgid "Edit Labor"
 msgstr ""
 
+msgid "Edit Labor Category"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "Изменить строку"
 
@@ -8102,6 +8136,12 @@ msgstr "Изменить тип строки заказа поставщику"
 
 msgid "Edit Question"
 msgstr "Изменить Вопрос"
+
+msgid "Edit rate"
+msgstr ""
+
+msgid "Edit Rate"
+msgstr ""
 
 msgid "Edit Reason"
 msgstr "Изменить Причину"
@@ -8213,6 +8253,9 @@ msgstr "Изменить рабочий центр"
 
 msgid "Edited"
 msgstr "Изменено"
+
+msgid "Effective From"
+msgstr ""
 
 msgid "Element"
 msgstr ""
@@ -10232,6 +10275,9 @@ msgstr "Хост"
 msgid "Host, secure, and back up the platform"
 msgstr "Размещение, защита и резервное копирование платформы"
 
+msgid "hours"
+msgstr ""
+
 msgid "Hours"
 msgstr "Часы"
 
@@ -10252,6 +10298,11 @@ msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Часы, ещё не назначенные"
+
+#. placeholder {0}: formatDate(day)
+#. placeholder {1}: row.readableId
+msgid "Hours on {0} for {1}"
+msgstr ""
 
 msgid "Hours per Week"
 msgstr "Часов в неделю"
@@ -10634,6 +10685,9 @@ msgstr "Неактивно"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Неактивные действия не будут отображаться в списках выбора"
+
+msgid "Inactive categories cannot be picked for new time"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Входной контроль"
@@ -13091,6 +13145,9 @@ msgstr "Новый канбан"
 msgid "New Label"
 msgstr ""
 
+msgid "New Labor Category"
+msgstr ""
+
 msgid "New line"
 msgstr "Новая строка"
 
@@ -13174,6 +13231,9 @@ msgstr "Новое предложение"
 
 msgid "New Quote Line"
 msgstr "Новая строка предложения"
+
+msgid "New Rate"
+msgstr ""
 
 msgid "New Receipt"
 msgstr "Новая квитанция"
@@ -13894,6 +13954,9 @@ msgstr "Причины отказа от предложения"
 msgid "No rate"
 msgstr "Курс отсутствует"
 
+msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
+msgstr ""
+
 msgid "No receipts yet"
 msgstr "Никаких квитанций пока нет"
 
@@ -14007,6 +14070,12 @@ msgstr "Операции синхронизации еще не выполнен
 
 msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
+
+msgid "No time is waiting for approval."
+msgstr ""
+
+msgid "No time this week. Add a row for each charge number you worked on."
+msgstr ""
 
 msgid "No tools"
 msgstr "Нет инструментов"
@@ -15707,6 +15776,9 @@ msgstr "Опубликовано"
 msgid "Posted By"
 msgstr "Опубликовано"
 
+msgid "Posted hours, open the correction menu"
+msgstr ""
+
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Проведенные операции с этими типами источников всегда синхронизируются. Ежедневное резюме группирует операции одного дня в одну запись поставщика по счету."
 
@@ -17016,11 +17088,17 @@ msgstr "Возмещения"
 msgid "Reject"
 msgstr "Отклонить"
 
+msgid "Reject all"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Отклонить партию"
 
 msgid "Reject Quote"
 msgstr "Отклонить предложение"
+
+msgid "Reject Time"
+msgstr ""
 
 msgid "Rejected"
 msgstr "Отклонено"
@@ -20073,14 +20151,23 @@ msgstr "Предмет"
 msgid "Subledger"
 msgstr "Вспомогательная книга"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
+
+msgid "Submit Correction"
+msgstr ""
 
 msgid "Submit for approval"
 msgstr "Отправить на утверждение"
 
 msgid "Submit Inspection"
 msgstr "Отправить контроль"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Submitted"
 msgstr ""
@@ -20642,6 +20729,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Tell the employee what to fix"
+msgstr ""
+
 msgid "Temperature"
 msgstr "Температура"
 
@@ -20934,6 +21024,9 @@ msgstr "Дата получения этого запроса цен от пок
 
 msgid "The deadline to send your quote to the customer."
 msgstr "Крайний срок для отправки вашего коммерческого предложения покупателю."
+
+msgid "The default for time this person logs on projects"
+msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "Порядок отбора по умолчанию для предложения отслеживаемых сущностей: FEFO (самое раннее истечение в первую очередь), ФИФО (самое старое в первую очередь) или LIFO (самое новое в первую очередь)."
@@ -21312,6 +21405,9 @@ msgstr "Заводы, склады и объекты, где находятся 
 msgid "The position counts invoices drafted or billed externally and months recognized. Planned months are still to come."
 msgstr "Позиция показывает количество счетов-фактур, составленных или выставленных внешне, и количество признанных месяцев. Запланированные месяцы еще впереди."
 
+msgid "The posted hours are reversed and these hours are charged instead"
+msgstr ""
+
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
 
@@ -21405,6 +21501,9 @@ msgstr "Результат не появится на странице Запу�
 
 msgid "The revision number of the part"
 msgstr "Номер ревизии детали."
+
+msgid "The row shows empty until you enter hours."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."

@@ -1515,6 +1515,23 @@ export async function getLaborCategories(
 }
 
 /**
+ * Gets one labor category.
+ * @mcp read
+ */
+export async function getLaborCategory(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("laborCategory")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/**
  * Lists the active labor categories of the company, for a picker.
  * @mcp read
  */
@@ -1795,6 +1812,31 @@ export async function submitTimesheetEntries(
     .returning("id")
     .execute();
   return rows.map((row) => row.id);
+}
+
+/**
+ * Approves Submitted entries. Returns the ids it approved; the caller posts
+ * them.
+ * @mcp action
+ */
+export async function approveTimesheetEntries(
+  client: Client,
+  args: { ids: string[]; companyId: string; approvedBy: string }
+) {
+  const now = datetime.timestamp();
+  return client
+    .from("timesheetEntry")
+    .update({
+      status: "Approved",
+      approvedBy: args.approvedBy,
+      approvedAt: now,
+      updatedBy: args.approvedBy,
+      updatedAt: now
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .eq("status", "Submitted")
+    .select("id");
 }
 
 /**

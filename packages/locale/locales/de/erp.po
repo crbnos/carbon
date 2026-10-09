@@ -1902,6 +1902,9 @@ msgstr "Eigenschaft hinzufügen"
 msgid "Add Question"
 msgstr "Frage hinzufügen"
 
+msgid "Add Rate"
+msgstr ""
+
 msgid "Add Receipt"
 msgstr "Beleg hinzufügen"
 
@@ -1910,6 +1913,12 @@ msgstr "Anforderung hinzufügen"
 
 msgid "Add Risk"
 msgstr "Risiko hinzufügen"
+
+msgid "Add row"
+msgstr ""
+
+msgid "Add Row"
+msgstr ""
 
 msgid "Add rule"
 msgstr "Regel hinzufügen"
@@ -2599,6 +2608,9 @@ msgstr "Genehmigungen"
 
 msgid "Approve"
 msgstr "Genehmigen"
+
+msgid "Approve all"
+msgstr ""
 
 msgid "Approved"
 msgstr ""
@@ -5518,6 +5530,12 @@ msgstr "Richtige Antwort"
 msgid "Correct Answers"
 msgstr "Richtige Antworten"
 
+msgid "Correct hours"
+msgstr ""
+
+msgid "Correct Posted Time"
+msgstr ""
+
 msgid "Correct Quantity"
 msgstr "Menge korrigieren"
 
@@ -5532,6 +5550,10 @@ msgstr "Korrektur"
 
 msgid "Correction {correctionNumber}"
 msgstr "Korrektur {correctionNumber}"
+
+#. placeholder {0}: entry.correctionReason
+msgid "Correction: {0}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "Korrektionen"
@@ -5580,6 +5602,15 @@ msgstr "Umsatzkosten (Standard)"
 
 msgid "Cost of Sales"
 msgstr "Umsatzkosten"
+
+msgid "Cost Rate"
+msgstr ""
+
+msgid "Cost Rate per Hour"
+msgstr ""
+
+msgid "Cost rates"
+msgstr ""
 
 msgid "Cost Treatment"
 msgstr ""
@@ -8007,6 +8038,9 @@ msgstr ""
 msgid "Edit Labor"
 msgstr ""
 
+msgid "Edit Labor Category"
+msgstr ""
+
 msgid "Edit Line"
 msgstr "Zeile bearbeiten"
 
@@ -8102,6 +8136,12 @@ msgstr "Bestellpositionstyp bearbeiten"
 
 msgid "Edit Question"
 msgstr "Frage bearbeiten"
+
+msgid "Edit rate"
+msgstr ""
+
+msgid "Edit Rate"
+msgstr ""
 
 msgid "Edit Reason"
 msgstr "Grund bearbeiten"
@@ -8213,6 +8253,9 @@ msgstr "Arbeitsplatz bearbeiten"
 
 msgid "Edited"
 msgstr "Bearbeitet"
+
+msgid "Effective From"
+msgstr ""
 
 msgid "Element"
 msgstr ""
@@ -10232,6 +10275,9 @@ msgstr "Host"
 msgid "Host, secure, and back up the platform"
 msgstr "Plattform hosten, sichern und sichern"
 
+msgid "hours"
+msgstr ""
+
 msgid "Hours"
 msgstr "Stunden"
 
@@ -10252,6 +10298,11 @@ msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Noch nicht zugewiesene Stunden"
+
+#. placeholder {0}: formatDate(day)
+#. placeholder {1}: row.readableId
+msgid "Hours on {0} for {1}"
+msgstr ""
 
 msgid "Hours per Week"
 msgstr "Stunden pro Woche"
@@ -10634,6 +10685,9 @@ msgstr "Inaktiv"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Inaktive Aktionen werden nicht in Auswahlisten angezeigt"
+
+msgid "Inactive categories cannot be picked for new time"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Wareneingangsprüfung"
@@ -13091,6 +13145,9 @@ msgstr "Neuer Kanban"
 msgid "New Label"
 msgstr ""
 
+msgid "New Labor Category"
+msgstr ""
+
 msgid "New line"
 msgstr "Neue Position"
 
@@ -13174,6 +13231,9 @@ msgstr "Neues Angebot"
 
 msgid "New Quote Line"
 msgstr "Neue Angebotsposition"
+
+msgid "New Rate"
+msgstr ""
 
 msgid "New Receipt"
 msgstr "Neue Quittung"
@@ -13894,6 +13954,9 @@ msgstr "Keine Angebotsgründe"
 msgid "No rate"
 msgstr "Kein Kurs"
 
+msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
+msgstr ""
+
 msgid "No receipts yet"
 msgstr "Noch keine Eingänge"
 
@@ -14007,6 +14070,12 @@ msgstr "Noch keine Synchronisierungsvorgänge"
 
 msgid "No time entries for this week"
 msgstr "Keine Zeiteinträge für diese Woche"
+
+msgid "No time is waiting for approval."
+msgstr ""
+
+msgid "No time this week. Add a row for each charge number you worked on."
+msgstr ""
 
 msgid "No tools"
 msgstr "Keine Werkzeuge"
@@ -15707,6 +15776,9 @@ msgstr "Gepostet von"
 msgid "Posted By"
 msgstr "Gepostet von"
 
+msgid "Posted hours, open the correction menu"
+msgstr ""
+
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Gebuchte Buchungssätze mit diesen Quellentypen werden immer synchronisiert. Die tägliche Zusammenfassung gruppiert die Buchungssätze eines Tages in einen Provider-Eintrag pro Konto."
 
@@ -17016,11 +17088,17 @@ msgstr "Erstattungen"
 msgid "Reject"
 msgstr "Ablehnen"
 
+msgid "Reject all"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Los ablehnen"
 
 msgid "Reject Quote"
 msgstr "Angebot ablehnen"
+
+msgid "Reject Time"
+msgstr ""
 
 msgid "Rejected"
 msgstr "Abgelehnt"
@@ -20073,14 +20151,23 @@ msgstr "Betreff"
 msgid "Subledger"
 msgstr "Nebenbuch"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
+
+msgid "Submit Correction"
+msgstr ""
 
 msgid "Submit for approval"
 msgstr "Zur Genehmigung einreichen"
 
 msgid "Submit Inspection"
 msgstr "Prüfung einreichen"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Submitted"
 msgstr ""
@@ -20642,6 +20729,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Tell the employee what to fix"
+msgstr ""
+
 msgid "Temperature"
 msgstr "Temperatur"
 
@@ -20934,6 +21024,9 @@ msgstr "Das Datum, an dem Sie diese Angebotsanfrage (RFQ) vom Kunden erhalten ha
 
 msgid "The deadline to send your quote to the customer."
 msgstr "Die Frist für den Versand Ihres Angebots an den Kunden."
+
+msgid "The default for time this person logs on projects"
+msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "Die Standardreihenfolge für das Kommissionieren verwendet, um verffolgte Einheiten anzubieten: FEFO (früheste Ablauf zuerst), FIFO (älteste zuerst) oder LIFO (neueste zuerst)."
@@ -21312,6 +21405,9 @@ msgstr "Die Fabriken, Lagerhäuser und Standorte, an denen sich Ihre Arbeit und 
 msgid "The position counts invoices drafted or billed externally and months recognized. Planned months are still to come."
 msgstr "Die Position zählt entworfene oder extern abgerechnete Rechnungen und erfasste Monate. Geplante Monate stehen noch bevor."
 
+msgid "The posted hours are reversed and these hours are charged instead"
+msgstr ""
+
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Das vordefinierte Paket aus Aufgaben und Genehmigungsanforderungen, das auf diesen Fall angewendet wird; überschreibt den Standard-Workflow des Falltyps, wenn festgelegt."
 
@@ -21405,6 +21501,9 @@ msgstr "Das Ergebnis wird nicht auf der Seite Ausführungen angezeigt."
 
 msgid "The revision number of the part"
 msgstr "Die Revisionsnummer des Teils"
+
+msgid "The row shows empty until you enter hours."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Die Kundenauftragsposition, die dieser Fertigungsauftrag liefern soll, wodurch der Fertigungsauftrag an den dahinter liegenden Kundenbedarf gebunden wird."
