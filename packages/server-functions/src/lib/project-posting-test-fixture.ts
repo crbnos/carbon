@@ -748,6 +748,21 @@ export async function projectPostingFixture(
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        // Posted and voided charges and reimbursements refuse a delete.
+        for (const table of ["charge", "reimbursement"] as const) {
+          await trx
+            .updateTable(table)
+            .set({
+              status: "Draft",
+              journalId: null,
+              postedAt: null,
+              postedBy: null,
+              voidedAt: null,
+              voidedBy: null
+            })
+            .where("companyId", "=", companyId)
+            .execute();
+        }
         await trx
           .updateTable("journal")
           .set({ status: "Draft" })

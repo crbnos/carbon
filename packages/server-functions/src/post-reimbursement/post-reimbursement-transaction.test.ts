@@ -4,6 +4,7 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { projectPostingFixture } from "../lib/project-posting-test-fixture";
 import { databaseTest } from "../local-database-test-fixture";
 import { reimbursementFixture } from "./post-reimbursement-test-fixture";
 import { postReimbursementTransaction } from "./post-reimbursement-transaction";
@@ -652,6 +653,137 @@ databaseTest(
         .where("sourceType", "=", "Reimbursement")
         .execute();
       expect(journals.length).toEqual(1);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a line on an Expense project debits the project account and writes a ledger row",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    const reimbursementId = `${f.prefix}-reimbursement`;
+    const employeeTypeId = `${f.prefix}-employee-type`;
+    try {
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        // The employee is only an FK target; its sync interceptors need
+        // scaffolding a journal does not, so its inserts run with triggers off.
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await trx
+          .insertInto("employeeType")
+          .values({
+            id: employeeTypeId,
+            name: "Employee",
+            companyId: f.companyId
+          })
+          .execute();
+        await trx
+          .insertInto("employee")
+          .values({
+            id: "system",
+            companyId: f.companyId,
+            employeeTypeId,
+            active: true
+          })
+          .execute();
+        await sql`SET LOCAL session_replication_role = origin`.execute(trx);
+        await trx
+          .insertInto("reimbursement")
+          .values({
+            id: reimbursementId,
+            reimbursementId: `${f.prefix}-readable`,
+            employeeId: "system",
+            status: "Draft",
+            reimbursementDate: "2026-09-11",
+            currencyCode: "USD",
+            exchangeRate: 1,
+            amount: 75,
+            payableAccountId: f.account("payables"),
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("reimbursementLine")
+          .values({
+            id: `${f.prefix}-reimbursement-line`,
+            reimbursementId,
+            accountId: f.account("indirect"),
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            description: "Site visit mileage",
+            amount: 75,
+            sequence: 0,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+      });
+
+      const result = await postReimbursementTransaction(f.db, {
+        type: "post",
+        reimbursementId,
+        companyId: f.companyId,
+        userId: "system"
+      });
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("journalId", "=", result.journalId!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const projectLine = lines.find(
+        (line) => line.accountId === f.account("project-expense")
+      );
+      expect(Number(projectLine?.amount)).toEqual(75);
+      expect(
+        lines.some((line) => line.accountId === f.account("indirect"))
+      ).toBe(false);
+
+      const tags = await f.db
+        .selectFrom("journalLineDimension")
+        .select("valueId")
+        .where("companyId", "=", f.companyId)
+        .where("journalLineId", "=", projectLine!.id)
+        .execute();
+      expect(tags.map((tag) => tag.valueId).sort()).toEqual(
+        [f.elementId, f.projectId].sort()
+      );
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select([
+          "costType",
+          "documentType",
+          "documentId",
+          "employeeId",
+          "amount",
+          "journalLineId"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentType,
+          row.documentId,
+          row.employeeId,
+          Number(row.amount),
+          row.journalLineId
+        ])
+      ).toEqual([
+        [
+          "Other Direct",
+          "Reimbursement",
+          reimbursementId,
+          "system",
+          75,
+          projectLine!.id
+        ]
+      ]);
     } finally {
       await f.cleanup();
     }

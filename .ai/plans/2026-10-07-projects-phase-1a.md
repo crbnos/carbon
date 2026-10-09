@@ -59,7 +59,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 20: Change job completion for consume-to-project jobs
 - [x] Task 21: Route PO receipts to the project account
 - [x] Task 22: Route purchase invoice lines to the project account
-- [ ] Task 23: Route charges and reimbursements to the project account
+- [x] Task 23: Route charges and reimbursements to the project account
 - [x] Task 24: Add Project and Project Element to the journal dimension builder
 - [x] Task 25: Add the new enum values to the TS mirrors
 - [ ] Task 26: Move the accounting Projects screens into the new module
@@ -2462,3 +2462,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 22 step 5: a PO line whose receipt wrote a `projectLedger` row (any of Task 21's three branches) never uses cost layers in the invoice. Its whole price variance goes to the account the receipt debited (the receipt's journal line, else the account resolved today when the receipt was posted with accounting off), with a `Material Variance` row. This also closes the Task 21 step 6 gap (the legacy self-heal layer). A variance under half a cent writes nothing, as today.
 - Task 22: the invoice writes `projectLedger` rows only with accounting on, because every routed path (G/L Account, service accrual, direct Non-Inventory, variance) builds its cost inside the accounting gate, as Tasks 18 and 19 do. ProjectElement is tagged wherever Project is: on the G/L Account debit and AP lines (as the Project tag was), and on the project debit of the other paths.
 - Task 22 (not in the plan): voiding a purchase invoice writes negative `projectLedger` rows with `reversalOfId` for its rows.
+- Task 23: `lib/project-posting.ts` gains `resolveProjectLineAccounts` (one context load for a document's lines; a Statistical line keeps its account) and `reverseProjectLedgerRows` (a void's negative rows with `reversalOfId`). The receipt and invoice voids of Tasks 21 and 22 now call the shared helper.
+- Task 23: the journal builders take a per-line `projectAccountId` and post to it in place of `accountId`; the posting path adds the project accounts' classes to `accounts` with a second account query. The charge builder also carries `projectElementId` and `sourceLineIndex` on coding lines (a Repayment's coding lines follow its offset line). The account is resolved on the document's own date (`postingDate ?? transactionDate`, `postingDate ?? reimbursementDate`), before any period shift.
+- Task 23: the sign follows the charge type: a Charge adds cost, a Credit or a Repayment (both credit the line account) writes a negative row. Rows are written whether or not accounting is on (the amount is known), with `journalLineId` when a journal exists. A reimbursement row carries the employee. The ProjectElement tag is written wherever a line has an element and the group has the dimension; a missing ProjectElement dimension is skipped, not refused.
+- Task 23 (not in the plan): voiding a charge or a reimbursement reverses its `projectLedger` rows. The project test fixture's cleanup resets charges and reimbursements to Draft before the company delete, as the charge fixture does.

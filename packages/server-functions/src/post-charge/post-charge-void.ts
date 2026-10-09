@@ -4,6 +4,7 @@
 
 import { getNextSequence } from "@carbon/database/sequence";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { reverseProjectLedgerRows } from "../lib/project-posting";
 import { allocateJournalLineIds } from "./journal-line-ids";
 import type { ChargeContext } from "./post-charge-post";
 
@@ -131,6 +132,14 @@ export async function voidCharge(
         .execute();
     }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Charge",
+    documentId: charge.id,
+    postingDate: today,
+    userId
+  });
 
   await trx
     .updateTable("charge")

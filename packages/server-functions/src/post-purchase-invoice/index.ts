@@ -40,7 +40,10 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
-import { buildProjectLedgerRow } from "../lib/project-posting";
+import {
+  buildProjectLedgerRow,
+  reverseProjectLedgerRows
+} from "../lib/project-posting";
 import { loadInvoiceProjectCharges } from "./project-charges";
 import {
   calculatePurchasePostingAmounts,
@@ -537,46 +540,13 @@ const postPurchaseInvoice = defineServerFn({
           }
 
           // Reverse the project charges of this invoice.
-          const invoiceProjectRows = await trx
-            .selectFrom("projectLedger")
-            .selectAll()
-            .where("documentType", "=", "Purchase Invoice")
-            .where("documentId", "=", invoiceId)
-            .where("companyId", "=", companyId)
-            .execute();
-          const reversedProjectRowIds = new Set(
-            invoiceProjectRows
-              .map((row) => row.reversalOfId)
-              .filter((id): id is string => Boolean(id))
-          );
-          const projectRowReversals = invoiceProjectRows
-            .filter(
-              (row) => !row.reversalOfId && !reversedProjectRowIds.has(row.id)
-            )
-            .map((row) =>
-              buildProjectLedgerRow({
-                companyId,
-                projectId: row.projectId,
-                projectElementId: row.projectElementId,
-                postingDate: today,
-                costType: row.costType,
-                documentType: "Purchase Invoice",
-                documentId: invoiceId,
-                documentLineId: row.documentLineId,
-                itemId: row.itemId,
-                supplierId: row.supplierId,
-                quantity: row.quantity === null ? null : -Number(row.quantity),
-                amount: -Number(row.amount),
-                reversalOfId: row.id,
-                createdBy: userId
-              })
-            );
-          if (projectRowReversals.length > 0) {
-            await trx
-              .insertInto("projectLedger")
-              .values(projectRowReversals)
-              .execute();
-          }
+          await reverseProjectLedgerRows(trx, {
+            companyId,
+            documentType: "Purchase Invoice",
+            documentId: invoiceId,
+            postingDate: today,
+            userId
+          });
 
           if (reversingCostLedger.length > 0) {
             await trx

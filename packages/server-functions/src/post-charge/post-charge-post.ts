@@ -4,11 +4,15 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
-import { type AccountClass, isAccountClass } from "@carbon/utils";
+import { type AccountClass, isAccountClass, toBaseAmount } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import {
+  buildProjectLedgerRow,
+  resolveProjectLineAccounts
+} from "../lib/project-posting";
 import { buildChargeJournal } from "./build-charge-journal";
 import { allocateJournalLineIds } from "./journal-line-ids";
 
@@ -144,7 +148,42 @@ export async function postChargeJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the charge's date) in place of its own account.
+  const projectAccountByLineId = await resolveProjectLineAccounts(
+    trx,
+    companyId,
+    lines,
+    charge.postingDate ?? charge.transactionDate
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+
   let postingDate = charge.postingDate ?? charge.transactionDate;
+  // The project account's journal line for each coding line, by line id.
+  const projectJournalLineIdByLineId = new Map<string, string>();
   let journalId: string | null = null;
   if (accountingEnabled) {
     const period = await resolveAccountingPeriod(
@@ -168,6 +207,8 @@ export async function postChargeJournal(
         amount: Number(line.amount),
         costCenterId: line.costCenterId,
         projectId: line.projectId,
+        projectElementId: line.projectElementId,
+        projectAccountId: projectAccountByLineId.get(line.id) ?? null,
         description: line.description
       })),
       accounts,
@@ -206,6 +247,19 @@ export async function postChargeJournal(
     if (projectIds.length && !projectDimensionId) {
       throw new Error("Company group has no active Project dimension");
     }
+    // The element tag is written where the group has the dimension.
+    const projectElementDimension = lines.some((line) => line.projectElementId)
+      ? await trx
+          .selectFrom("dimension")
+          .select("id")
+          .where("companyGroupId", "=", company.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "=", "ProjectElement")
+          .orderBy("createdAt")
+          .orderBy("id")
+          .limit(1)
+          .executeTakeFirst()
+      : undefined;
 
     const journal = await trx
       .insertInto("journal")
@@ -292,6 +346,68 @@ export async function postChargeJournal(
           .execute();
       }
     }
+    if (projectElementDimension) {
+      const elementDimensionValues = built.journalLines.flatMap(
+        (line, index) => {
+          const journalLineId = journalLineIds[index];
+          if (!line.projectElementId) return [];
+          if (!journalLineId)
+            throw new Error("Failed to map card journal line");
+          return [
+            {
+              journalLineId,
+              dimensionId: projectElementDimension.id,
+              valueId: line.projectElementId,
+              companyId
+            }
+          ];
+        }
+      );
+      if (elementDimensionValues.length) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(elementDimensionValues)
+          .execute();
+      }
+    }
+    built.journalLines.forEach((line, index) => {
+      const sourceLine =
+        line.sourceLineIndex === undefined
+          ? undefined
+          : lines[line.sourceLineIndex];
+      const journalLineId = journalLineIds[index];
+      if (sourceLine && journalLineId) {
+        projectJournalLineIdByLineId.set(sourceLine.id, journalLineId);
+      }
+    });
+  }
+
+  // One projectLedger row per line charged to a project account: a Charge
+  // adds cost, a Credit or Repayment takes it back.
+  const projectSign = charge.type === "Charge" ? 1 : -1;
+  const projectRows = lines.flatMap((line) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Charge",
+            documentId: charge.id,
+            documentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            journalLineId: projectJournalLineIdByLineId.get(line.id) ?? null,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await trx.insertInto("projectLedger").values(projectRows).execute();
   }
 
   await trx

@@ -50,7 +50,10 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
-import { buildProjectLedgerRow } from "../lib/project-posting";
+import {
+  buildProjectLedgerRow,
+  reverseProjectLedgerRows
+} from "../lib/project-posting";
 import { loadReceiptProjectRoutes } from "./project-routes";
 
 const logger = getLogger("server-functions", "post-receipt");
@@ -988,47 +991,13 @@ const postReceipt = defineServerFn({
           }
 
           // Reverse the project charges of this receipt.
-          const receiptProjectRows = await trx
-            .selectFrom("projectLedger")
-            .selectAll()
-            .where("documentType", "=", "Purchase Receipt")
-            .where("documentId", "=", receiptId)
-            .where("companyId", "=", companyId)
-            .execute();
-          const reversedProjectRowIds = new Set(
-            receiptProjectRows
-              .map((row) => row.reversalOfId)
-              .filter((id): id is string => Boolean(id))
-          );
-          const projectRowReversals = receiptProjectRows
-            .filter(
-              (row) => !row.reversalOfId && !reversedProjectRowIds.has(row.id)
-            )
-            .map((row) =>
-              buildProjectLedgerRow({
-                companyId,
-                projectId: row.projectId,
-                projectElementId: row.projectElementId,
-                postingDate: today,
-                costType: row.costType,
-                documentType: "Purchase Receipt",
-                documentId: receiptId,
-                documentLineId: row.documentLineId,
-                jobId: row.jobId,
-                itemId: row.itemId,
-                supplierId: row.supplierId,
-                quantity: row.quantity === null ? null : -Number(row.quantity),
-                amount: -Number(row.amount),
-                reversalOfId: row.id,
-                createdBy: userId
-              })
-            );
-          if (projectRowReversals.length > 0) {
-            await trx
-              .insertInto("projectLedger")
-              .values(projectRowReversals)
-              .execute();
-          }
+          await reverseProjectLedgerRows(trx, {
+            companyId,
+            documentType: "Purchase Receipt",
+            documentId: receiptId,
+            postingDate: today,
+            userId
+          });
 
           if (Object.keys(trackedEntityUpdatesVoid).length > 0) {
             const voidActivity = await trx

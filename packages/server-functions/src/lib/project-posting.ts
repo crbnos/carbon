@@ -475,3 +475,110 @@ export async function loadJobProjectCharge(
     postingDate
   };
 }
+
+/**
+ * The project account of every line charged to a non-Statistical project,
+ * keyed by line id, resolved on `postingDate`. One posting-context load for
+ * all lines. A Statistical line has no entry (it keeps its own account and
+ * the Project tag). Refuses a project or element that takes no postings.
+ */
+export async function resolveProjectLineAccounts(
+  trx: Kysely<DB>,
+  companyId: string,
+  lines: {
+    id: string;
+    projectId: string | null;
+    projectElementId: string | null;
+  }[],
+  postingDate: string
+): Promise<Map<string, string>> {
+  const accounts = new Map<string, string>();
+  const charged = lines.filter(
+    (line): line is typeof line & { projectId: string } =>
+      Boolean(line.projectId)
+  );
+  if (charged.length === 0) return accounts;
+
+  const contexts = await loadProjectPostingContexts(
+    trx,
+    companyId,
+    charged.map((line) => ({
+      projectId: line.projectId,
+      projectElementId: line.projectElementId
+    }))
+  );
+  for (const line of charged) {
+    const context = contexts.get(
+      projectPostingKey(line.projectId, line.projectElementId)
+    );
+    if (!context) {
+      throw new ProjectChargeError(
+        "The line's project or element does not exist"
+      );
+    }
+    const { treatment, accountId } = resolveProjectPostingAccount(
+      context,
+      postingDate
+    );
+    if (treatment === "Statistical" || !accountId) continue;
+    assertChargeable(context, "commitment");
+    accounts.set(line.id, accountId);
+  }
+  return accounts;
+}
+
+/**
+ * Reverses every open projectLedger row of a document, for a void: one
+ * negative row per row that is not a reversal and has none, with
+ * `reversalOfId` set.
+ */
+export async function reverseProjectLedgerRows(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    documentType: string;
+    documentId: string;
+    postingDate: string;
+    userId: string;
+  }
+): Promise<void> {
+  const rows = await trx
+    .selectFrom("projectLedger")
+    .selectAll()
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.documentId)
+    .where("companyId", "=", args.companyId)
+    .execute();
+  const reversedIds = new Set(
+    rows
+      .map((row) => row.reversalOfId)
+      .filter((id): id is string => Boolean(id))
+  );
+  const reversals = rows
+    .filter((row) => !row.reversalOfId && !reversedIds.has(row.id))
+    .map((row) =>
+      buildProjectLedgerRow({
+        companyId: args.companyId,
+        projectId: row.projectId,
+        projectElementId: row.projectElementId,
+        postingDate: args.postingDate,
+        costType: row.costType,
+        documentType: args.documentType,
+        documentId: args.documentId,
+        documentLineId: row.documentLineId,
+        jobId: row.jobId,
+        itemId: row.itemId,
+        employeeId: row.employeeId,
+        laborCategoryId: row.laborCategoryId,
+        supplierId: row.supplierId,
+        quantity: row.quantity === null ? null : -Number(row.quantity),
+        unitOfMeasureCode: row.unitOfMeasureCode,
+        amount: -Number(row.amount),
+        reversalOfId: row.id,
+        createdBy: args.userId
+      })
+    );
+  if (reversals.length > 0) {
+    await trx.insertInto("projectLedger").values(reversals).execute();
+  }
+}
