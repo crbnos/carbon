@@ -37,7 +37,7 @@ Task 12 records these in the spec.
 ## Progress
 
 - [x] Task 1: Add the service order link migration
-- [ ] Task 2: Move service order creation into a shared helper
+- [x] Task 2: Move service order creation into a shared helper
 - [ ] Task 3: Allow `Repair` before receipt and lock it after
 - [ ] Task 4: Post a `Repair` receipt with no ledger
 - [ ] Task 5: Void a `Repair` receipt
@@ -422,3 +422,8 @@ ls .ai/playbooks/field-service-phase-b.md
 - Prerequisite check: the Phase A artifacts this plan names exist (`serviceOrder`, `customerAsset`, `createServiceProject`, `resolveCoverage`, the Service module).
 - Task 1 (deviation): `salesReturnOrderLine` has a composite primary key, so the FK is composite (`"salesReturnOrderLineId", "companyId"`), and so is the index. The FK is NO ACTION, not `ON DELETE SET NULL`: `serviceOrder_depot_check` needs the line on a Depot Repair order, so a SET NULL could only fail with a CHECK error. Deleting an RMA line that has a depot order is refused by the FK instead. The FK lets the backup restore remap the column, so `ID_REF_COLUMNS` needs no entry. `pnpm db:migrate` applied the migration and regenerated the types and swagger; the workflow catalog did not change.
 - Task 1: `pnpm db:check:backups` fails on `supplierPartPrice.unitPrice` ("required since this backup"), a column this branch does not touch: the upstream `main` manifest differs from this branch's schema there. The commit skips that check with `CARBON_SKIP_BACKUP_CHECK=1`. The new column is nullable, so it blocks no restore.
+- Task 2 (deviation): `insertServiceOrder` inserts the project before the order, not after: `serviceOrder.projectId` is NOT NULL (the Phase A Task 17 reason). The project half is its own export, `insertServiceProject`. The package exports the file as `@carbon/server-functions/lib/service-orders`.
+- Task 2: `defaultProjectStates` moved to `@carbon/utils` (`project-states.ts`), because the server functions cannot import ERP code; `projects.models.ts` re-exports it, so its callers are unchanged.
+- Task 2 (deviation): the ERP `createServiceProject` is removed, not kept: its only caller was `createServiceOrder`, which now calls `insertServiceOrder`. No route called it. `createServiceOrder` keeps its signature. The service `AGENTS.md` names the new helpers.
+- Task 2 (fix found by the test): the project of an order was named "<serial> — <customer>", and a project's name is unique in its company (`project_companyId_name_key`). So a unit's second service order, after the first was Closed, failed on insert. The name is now "<order id> — <serial> — <customer>". A Depot Repair order on a unit that had a Field Visit order hits the same case.
+- Task 2: `service-orders.test.ts` (3 database cases): the order, its Service project (Released, By Coverage, identifier = the order id) and 6 states; a forced error rolls back all three and the sequence; `ensureCustomerAsset` returns the existing asset, and creates a Manual one for an unregistered serial.

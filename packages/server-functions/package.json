@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./errors": "./src/errors.ts",
+    "./lib/service-orders": "./src/lib/service-orders.ts",
     "./*": "./src/*/index.ts"
   },
   "scripts": {

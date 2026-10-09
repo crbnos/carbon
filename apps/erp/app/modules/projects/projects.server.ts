@@ -151,67 +151,6 @@ export async function createProject(
   });
 }
 
-/**
- * Creates the Service project of a service order, in the caller's
- * transaction: Released (charges post from the first visit), By Coverage,
- * named "<serial> — <customer>", with the order's readable id as its
- * identifier, the order's customer and location, the coverage contract's
- * project as its parent, and the six default states. Returns its id.
- */
-export async function createServiceProject(
-  trx: KyselyTx,
-  args: {
-    companyId: string;
-    userId: string;
-    serviceOrder: {
-      serviceOrderId: string;
-      serial: string;
-      customerName: string;
-      customerId: string;
-      locationId: string;
-      contractProjectId: string | null;
-    };
-  }
-): Promise<string> {
-  const { companyId, userId, serviceOrder } = args;
-  const project = await trx
-    .insertInto("project")
-    .values({
-      name: `${serviceOrder.serial} — ${serviceOrder.customerName}`,
-      identifier: serviceOrder.serviceOrderId,
-      projectType: "Service",
-      status: "Released",
-      costTreatment: "By Coverage",
-      customerId: serviceOrder.customerId,
-      locationId: serviceOrder.locationId,
-      parentProjectId: serviceOrder.contractProjectId,
-      priority: "None",
-      active: true,
-      companyId,
-      createdBy: userId
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-
-  await trx
-    .insertInto("projectState")
-    .values(
-      defaultProjectStates.map((state) => ({
-        projectId: project.id,
-        companyId,
-        name: state.name,
-        group: state.group,
-        color: state.color,
-        sortOrder: state.sortOrder,
-        isDefault: state.isDefault,
-        createdBy: userId
-      }))
-    )
-    .execute();
-
-  return project.id;
-}
-
 /** A new row id with the prefix the SQL `id()` default would give it. */
 const makeCopyId = (() => {
   const base58 = customAlphabet(

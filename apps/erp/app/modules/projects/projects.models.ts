@@ -98,59 +98,10 @@ export const chargeableByDefault: Record<ProjectElementType, boolean> = {
 };
 
 /**
- * The six states every new project starts with. The backfill migration
- * (`*_projects-backfill.sql`) seeds the same rows for existing projects.
+ * The six states every new project starts with. Shared with the server
+ * functions, which create a service order's project in their own transaction.
  */
-export const defaultProjectStates: {
-  name: string;
-  group: ProjectStateGroup;
-  color: string;
-  sortOrder: number;
-  isDefault: boolean;
-}[] = [
-  {
-    name: "Backlog",
-    group: "Backlog",
-    color: "#60646C",
-    sortOrder: 1,
-    isDefault: true
-  },
-  {
-    name: "Todo",
-    group: "Unstarted",
-    color: "#60646C",
-    sortOrder: 2,
-    isDefault: true
-  },
-  {
-    name: "In Progress",
-    group: "Started",
-    color: "#F59E0B",
-    sortOrder: 3,
-    isDefault: true
-  },
-  {
-    name: "In Review",
-    group: "Started",
-    color: "#3B82F6",
-    sortOrder: 4,
-    isDefault: false
-  },
-  {
-    name: "Done",
-    group: "Completed",
-    color: "#46A758",
-    sortOrder: 5,
-    isDefault: true
-  },
-  {
-    name: "Cancelled",
-    group: "Cancelled",
-    color: "#9AA4BC",
-    sortOrder: 6,
-    isDefault: true
-  }
-];
+export { defaultProjectStates } from "@carbon/utils";
 
 /** The pattern the `project_identifier_check` constraint enforces. */
 export const PROJECT_IDENTIFIER_PATTERN = /^[A-Z][A-Z0-9]{1,5}$/;

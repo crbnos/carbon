@@ -11,18 +11,15 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import { insertServiceOrder } from "@carbon/server-functions/lib/service-orders";
 import { datetime, openChargeIds } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sql } from "kysely";
 import type { z } from "zod";
 import {
   BUILD_FROM_PART_MAX_DEPTH,
   defaultProjectStates
 } from "../projects/projects.models";
-import {
-  createServiceProject,
-  insertElementsFromPart
-} from "../projects/projects.server";
+import { insertElementsFromPart } from "../projects/projects.server";
 import type {
   coverageOverrideValidator,
   customerAssetValidator,
@@ -121,53 +118,27 @@ export async function createServiceOrder(
       contract = contracts[0]!;
     }
 
-    const sequence = await sql<{ serviceOrderId: string }>`
-      SELECT get_next_sequence('serviceOrder', ${companyId}) AS "serviceOrderId"
-    `.execute(trx);
-    const serviceOrderId = sequence.rows[0]?.serviceOrderId;
-    if (!serviceOrderId) {
-      throw new ServiceOrderError("The service order sequence is missing");
-    }
-
-    const projectId = await createServiceProject(trx, {
+    const order = await insertServiceOrder(trx, {
       companyId,
       userId,
-      serviceOrder: {
-        serviceOrderId,
-        serial: asset.serial ?? "",
-        customerName: asset.customerName,
-        customerId: asset.customerId,
-        locationId: args.locationId,
-        contractProjectId: contract?.projectId ?? null
-      }
+      type: args.type,
+      trackedEntityId: asset.trackedEntityId,
+      serial: asset.serial ?? "",
+      itemId: asset.itemId,
+      customerAssetId: asset.id,
+      customerId: asset.customerId,
+      customerName: asset.customerName,
+      customerLocationId: asset.customerLocationId,
+      customerContactId: args.customerContactId ?? null,
+      locationId: args.locationId,
+      customerContractId: contract?.id ?? null,
+      contractProjectId: contract?.projectId ?? null,
+      serviceTemplateId:
+        args.startFrom === "Template" ? (args.serviceTemplateId ?? null) : null,
+      priority: args.priority ?? "None",
+      problem: args.problem ?? null
     });
-
-    const order = await trx
-      .insertInto("serviceOrder")
-      .values({
-        serviceOrderId,
-        type: args.type,
-        status: "Draft",
-        trackedEntityId: asset.trackedEntityId,
-        itemId: asset.itemId,
-        customerAssetId: asset.id,
-        customerId: asset.customerId,
-        customerLocationId: asset.customerLocationId,
-        customerContactId: args.customerContactId ?? null,
-        locationId: args.locationId,
-        customerContractId: contract?.id ?? null,
-        projectId,
-        serviceTemplateId:
-          args.startFrom === "Template"
-            ? (args.serviceTemplateId ?? null)
-            : null,
-        priority: args.priority ?? "None",
-        problem: args.problem ?? null,
-        companyId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
+    const { projectId, serviceOrderId } = order;
 
     const source =
       args.startFrom === "Template" && args.serviceTemplateId
