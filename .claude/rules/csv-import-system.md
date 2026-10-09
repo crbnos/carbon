@@ -69,14 +69,22 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 
 ### Tables & permissions
 
-`customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
+`customer`, `customerContact`, `customerLocation` → `sales`; `supplier`,
+`supplierContact`, `supplierLocation` → `purchasing`;
 `part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
-`storageType` → `parts`;
+`storageType`, `supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning`,
+`customerPartToItem` → `parts`;
 `workCenter`, `process`, `scrapReason` → `production`; `storageUnit`,
 `inventoryQuantity`, `batchQuantity`, `serialQuantity` → `inventory`;
 `department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+
+`importRequiresCreate` (also `create` on the module): the three stock imports,
+`supplierPartPrice`, `customerPartToItem`, `customerLocation` and
+`supplierLocation`, matching the `create` gate of the single-record routes they
+mirror. `imports.models.test.ts` pins both maps to the server function's
+`permissions` rules.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
 the one that opens its list page. The server function writes through a service-role
@@ -91,8 +99,9 @@ The server function's own `table` enum (`import-csv/index.ts`) accepts: `consuma
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
 `storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
 `materialFinish`, `materialGrade`, `materialType`, `materialDimension`,
-`inventoryQuantity`, `batchQuantity`, `serialQuantity`. Note it does
-**not** list `fixedAsset` (see Gotchas).
+`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `supplierPartPrice`,
+`itemUnitSalePrice`, `itemPlanning`, `customerPartToItem`, `customerLocation`,
+`supplierLocation`. Note it does **not** list `fixedAsset` (see Gotchas).
 
 ### Service import (rides the item path)
 
@@ -241,6 +250,110 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   "Inventory Adjustment — CSV import" (no per-row comment), and a zero-cost row
   posts no journal lines.
 
+### Imports onto existing items (prices, planning, customer parts)
+
+`supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning` and `customerPartToItem`
+are surfaced from the Parts list (`PartsTable.tsx`), each handled by its own
+file under `import-csv/` with its per-row decision exported and tested
+(`*-import.test.ts`). Shared pieces live in `import-csv/existing-item.ts`:
+
+- **Item resolution** (`resolveItem`): Part Number + Revision (blank → `"0"`;
+  a stored `''`/NULL revision is `"0"` too) against the company's items of the
+  types whose page has the mirrored tab. A key naming items of two accepted
+  types (`item_unique` includes `type`) is a row error naming the types; an
+  item of another type, or none, is a row error.
+- Rows are the `acceptedRows` left by `rejectForeignReferences`, so each row
+  is counted once: inserted, updated, skipped or errors. A key repeated in the
+  file is a row error on the later row. Every write runs in one
+  `db.transaction()`; reads happen before it.
+- Numbers are rounded to the storage scale (`round`) before they are checked,
+  as the app's inputs commit them.
+
+#### `supplierPartPrice` (Supplier Price Breaks)
+
+Mirrors the supplier part drawer (`$itemId.purchasing.$supplierPartId.tsx`):
+for each (item, supplier) pair in the file, the file's rows replace that
+supplier part's whole ladder (delete, then insert as `"Manual Entry"`). A pair
+with no supplier part gets one first, as `$itemId.purchasing.new.tsx` creates
+it: item, supplier, `conversionFactor: 1`, other columns at their defaults
+(supplier unit of measure NULL, not the drawer's "EA" pre-fill). Columns:
+Part Number, Revision, Supplier (`supplierFetcher`, in `REFERENCES`),
+Quantity and Unit Price (> 0, as the drawer refuses ≤ 0), Lead Time (blank →
+0, what the routes write). Item types: Part, Material, Tool, Consumable,
+Service. The drawer will not save a ladder with an invalid break, so a pair
+with any bad row (including a repeated quantity) is not written at all and its
+good rows are reported as errors. A row at a quantity the ladder already had
+counts as updated, any other as inserted; a dropped break is not counted.
+Prices are written to `supplierPartPrice.supplierUnitPrice`, per purchase
+unit in the supplier part's `currencyCode`: an existing part keeps its
+currency, and a part the import creates has `currencyCode` NULL (the company's
+base currency), as the part import's supplier columns do.
+`supplierPart.supplierUnitPrice` and the other supplier part fields are not
+touched.
+Replacing a ladder needs no `delete` permission: the edit route deletes it
+through Kysely under `update: parts` as well.
+
+#### `itemUnitSalePrice` (Item Sale Prices)
+
+Mirrors the Sales tab's sale price card (`itemUnitSalePriceValidator`,
+`upsertItemUnitSalePrice`): sets `unitSalePrice` (0 or more) on the item's one
+`itemUnitSalePrice` row. Update only: an item without that row (it is created
+by the item insert trigger) is a row error. Item types: Part, Material, Tool,
+Consumable, Service.
+
+#### `itemPlanning` (Item Planning)
+
+Mirrors the Planning tab (`itemPlanningValidator`, `upsertItemPlanning`):
+updates the (item, Location) row; a missing row is a row error, never an
+insert. Location is an enum through `locationFetcher`, re-checked in
+`REFERENCES`. Columns are the form's: reordering policy, reorder point and
+quantity, accumulation period and safety stock, minimum/maximum order
+quantity, order multiple, maximum inventory quantity, planning horizon. The
+responsible employee is not imported. A blank cell leaves the column as it is
+(so an import cannot clear a planning horizon back to the company default).
+The validator lives in the app, so `item-planning-import.ts` restates it:
+`PLANNING_COLUMNS` holds each field's minimum (plus a whole-number check for
+the INTEGER columns, which the database enforces anyway) and
+`planningRuleError` the two refinements, word for word including their
+truthiness (Maximum Quantity with a reorder point of 0 is refused). The
+refinements run on the row merged over the stored values, as the form submits
+the stored values of the fields it shows. Item types: Part, Material, Tool,
+Consumable. **MRP is not run**: the route re-plans the one item after saving;
+the import leaves that to the scheduled MRP run.
+
+#### `customerPartToItem` (Customer Part Numbers)
+
+Mirrors the part's New Customer Part drawer (`customerPartValidator`,
+`upsertItemCustomerPart`). Columns: Part Number, Revision, Customer
+(`customerFetcher`, in `REFERENCES`), Customer Part Number (required),
+Customer Part Revision (blank → `''`, the column default). Upserts on the
+`(customerId, itemId)` unique key: a pair that already has a customer part
+number is updated. Only parts have the drawer. The table has no audit columns.
+
+### Partner-location imports (`customerLocation`, `supplierLocation`)
+
+Surfaced from the Customers and Suppliers lists; handled by
+`import-csv/partner-location-import.ts`. Mirrors the Locations tab's drawer
+(`customerLocationValidator` / `supplierLocationValidator`,
+`insertCustomerLocation` / `insertSupplierLocation`): an `address` row, then
+the location row pointing at it. Columns: Customer / Supplier (fetcher, in
+`REFERENCES`), Location Name (required), and the address columns of the
+customer and supplier imports (`partnerLocationImportFields`: Address Line
+1/2, City, State / Region → `stateProvince`, Postal Code, Country as alpha-2)
+plus Phone and Fax. An unknown country code is a row error, not a failed
+transaction (`address.countryCode` references `country.alpha2`).
+
+- **Natural key**: (partner, lower(trimmed name)). A match updates that
+  location's address as the edit drawer does: each mapped column is replaced,
+  a blank cell with NULL; a column the file does not map is left alone (an
+  enum column the wizard did not map arrives as `undefined` and counts as
+  unmapped). The name is never changed. Two existing locations sharing the
+  normalized name make the row an error; a match with no address columns is
+  skipped.
+- The customer and supplier imports' primary-location address handling
+  (lowest location id) is unchanged. Location ids are random, so a location
+  added by this import or the app can become that "primary" one.
+
 ### Configuration-lookup imports (skip-duplicate, create-only)
 
 `unitOfMeasure`, `itemPostingGroup`, `storageType`, `scrapReason` and `department`
@@ -287,7 +400,7 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
 Action only (no loader). Steps:
 1. `notFound` if `tableId` missing or not a key of `importPermissions`.
-2. `requirePermissions(request, { update: importPermissions[table] })`, plus `create` on the same module for tables in `importRequiresCreate` (the three stock imports, matching the single-record adjustment's `create: inventory` route gate and `update: inventory` Save button).
+2. `requirePermissions(request, { update: importPermissions[table] })`, plus `create` on the same module for tables in `importRequiresCreate` (the three stock imports, matching the single-record adjustment's `create: inventory` route gate and `update: inventory` Save button, and the supplier price, customer part and location imports, matching their create routes).
 3. Validate form against `importSchemas[table].extend({ filePath, enumMappings })`.
    `enumMappings` arrives as a JSON **string** and is `JSON.parse`d before the service call.
 4. `columnMappings` = the remaining validated form fields after destructuring `filePath`
