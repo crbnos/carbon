@@ -43477,6 +43477,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43722,6 +43725,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -43919,6 +43925,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -68929,6 +68938,9 @@ export default {
             $ref: "#/parameters/rowFilter.journalLine.createdBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journalLine.accountDefaultRole"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -69048,6 +69060,9 @@ export default {
             $ref: "#/parameters/rowFilter.journalLine.createdBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journalLine.accountDefaultRole"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -69119,6 +69134,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.journalLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.journalLine.accountDefaultRole"
           },
           {
             $ref: "#/parameters/body.journalLine"
@@ -99382,6 +99400,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -99636,6 +99663,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -99842,6 +99878,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -101861,6 +101906,63 @@ export default {
           }
         },
         tags: ["(rpc) get_direct_ancestors_of_tracked_entities_strict"]
+      }
+    },
+    "/rpc/journal_posting_status": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) journal_posting_status"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) journal_posting_status"]
       }
     },
     "/rpc/get_supplier_interaction_with_related_records": {
@@ -135402,6 +135504,10 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        migrationClearingAccount: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -147223,6 +147329,10 @@ export default {
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accountDefaultRole: {
           format: "text",
           type: "string"
         }
@@ -162250,6 +162360,20 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        accountingCutoverDate: {
+          format: "date",
+          type: "string"
+        },
+        accountingActivatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        accountingActivatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -186249,6 +186373,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.migrationClearingAccount": {
+      name: "migrationClearingAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -199389,6 +199519,12 @@ export default {
     },
     "rowFilter.journalLine.createdBy": {
       name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.journalLine.accountDefaultRole": {
+      name: "accountDefaultRole",
       required: false,
       in: "query",
       type: "string"
@@ -216162,6 +216298,24 @@ export default {
     },
     "rowFilter.companySettings.invoiceNotificationGroup": {
       name: "invoiceNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.accountingCutoverDate": {
+      name: "accountingCutoverDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.accountingActivatedAt": {
+      name: "accountingActivatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.accountingActivatedBy": {
+      name: "accountingActivatedBy",
       required: false,
       in: "query",
       type: "string"

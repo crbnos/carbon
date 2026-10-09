@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009003005",
+  "schemaVersion": "20261009004448",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T00:43:57.287Z",
+  "exportedAt": "2026-10-09T00:46:48.624Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -99,7 +99,8 @@
         "rentalIncomeAccount",
         "leaseRevenueAccount",
         "leaseInterestIncomeAccount",
-        "netInvestmentInLeasesAccount"
+        "netInvestmentInLeasesAccount",
+        "migrationClearingAccount"
       ]
     },
     {
@@ -454,7 +455,10 @@
         "leaseSubstantiallyAllThresholdPercent",
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
-        "invoiceNotificationGroup"
+        "invoiceNotificationGroup",
+        "accountingCutoverDate",
+        "accountingActivatedAt",
+        "accountingActivatedBy"
       ]
     },
     {
@@ -1119,7 +1123,8 @@
         "updatedAt",
         "updatedBy",
         "intercompanyPartnerId",
-        "createdBy"
+        "createdBy",
+        "accountDefaultRole"
       ]
     },
     {
