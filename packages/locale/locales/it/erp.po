@@ -8149,6 +8149,9 @@ msgstr "Modifica Centro di Lavoro"
 msgid "Edited"
 msgstr "Modificato"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "Ospitare, proteggere e eseguire il backup della piattaforma"
 msgid "Hours"
 msgstr "Ore"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Ore assunte dai turni della posizione"
 
 msgid "Hours at this station"
 msgstr "Ore presso questa stazione"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Ore non ancora assegnate"
@@ -13449,6 +13458,9 @@ msgstr "Nessuna proprietà modificabile per questo elemento."
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Nessuna operazione idonea"
 
@@ -13511,6 +13523,9 @@ msgstr "Nessuno strumento di misura trovato."
 
 msgid "No grouped notifications"
 msgstr "Nessuna notifica raggruppata"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "Nessun gruppo assegnato"
@@ -20316,6 +20331,9 @@ msgstr "Indirizzare clienti per tipo."
 
 msgid "Target date"
 msgstr "Data di destinazione"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "Riga di disposizione di destinazione"

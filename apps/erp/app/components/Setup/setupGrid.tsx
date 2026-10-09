@@ -68,12 +68,15 @@ export function useCellSave() {
         body: formData
       }).catch(() => null);
       const body = (await response?.json().catch(() => null)) as {
-        error?: string | null;
+        error?: string | { message?: string } | null;
       } | null;
+      // Routes answer `{ error: "…" }` or `{ error: { message } }`.
+      const bodyError =
+        typeof body?.error === "string" ? body.error : body?.error?.message;
 
       const message =
         !response?.ok || body?.error
-          ? (body?.error ?? t`Failed to save the change`)
+          ? (bodyError ?? t`Failed to save the change`)
           : null;
       if (message) {
         toast.error(message);

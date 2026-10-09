@@ -8149,6 +8149,9 @@ msgstr "作業区を編集"
 msgid "Edited"
 msgstr "編集済み"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "プラットフォームをホストし、保護し、バックアップ
 msgid "Hours"
 msgstr "時間"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "場所のシフトから想定される時間"
 
 msgid "Hours at this station"
 msgstr "このステーションの時間"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "未配置の時間"
@@ -13449,6 +13458,9 @@ msgstr "このアイテムの編集可能なプロパティはありません。
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "対象の工程がありません"
 
@@ -13511,6 +13523,9 @@ msgstr "測定器が見つかりません。"
 
 msgid "No grouped notifications"
 msgstr "グループ化された通知がありません"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "グループが割り当てられていません"
@@ -20316,6 +20331,9 @@ msgstr "得意先をタイプ別に絞り込む。"
 
 msgid "Target date"
 msgstr "目標日"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "対象の処置行"

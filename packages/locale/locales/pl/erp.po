@@ -8149,6 +8149,9 @@ msgstr "Edytuj Stanowisko robocze"
 msgid "Edited"
 msgstr "Edytowano"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "Hostuj, zabezpiecz i wykonuj kopie zapasowe platformy"
 msgid "Hours"
 msgstr "Godziny"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Godziny założone na podstawie zmian w lokalizacji"
 
 msgid "Hours at this station"
 msgstr "Godziny na tym stanowisku"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Godziny jeszcze nieprzydzielone"
@@ -13449,6 +13458,9 @@ msgstr "Brak edytowalnych właściwości dla tego elementu."
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Brak kwalifikujących się operacji"
 
@@ -13511,6 +13523,9 @@ msgstr "Nie znaleziono przyrządów pomiarowych."
 
 msgid "No grouped notifications"
 msgstr "Brak zgrupowanych powiadomień"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "Brak przypisanych grup"
@@ -20316,6 +20331,9 @@ msgstr "Kieruj się na klientów według typu."
 
 msgid "Target date"
 msgstr "Data docelowa"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "Docelowy wiersz dyspozycji"

@@ -137,6 +137,36 @@ export function useElementDisplayLabels(): Record<
   };
 }
 
+/** How the Table layout groups its rows. */
+export const elementGroupings = [
+  "none",
+  "state",
+  "type",
+  "owner",
+  "milestone"
+] as const;
+export type ElementGrouping = (typeof elementGroupings)[number];
+
+export function useElementGrouping(projectId: string) {
+  const [stored, setStored] = useLocalStorage<ElementGrouping>(
+    `project-group-${projectId}`,
+    "none"
+  );
+  const grouping = elementGroupings.includes(stored) ? stored : "none";
+  return [grouping, setStored] as const;
+}
+
+export function useElementGroupingLabels(): Record<ElementGrouping, string> {
+  const { t } = useLingui();
+  return {
+    none: t`No grouping`,
+    state: t`State`,
+    type: t`Type`,
+    owner: t`Owner`,
+    milestone: t`Milestone`
+  };
+}
+
 // --- Saving one field ---------------------------------------------------------
 
 export type ElementUpdateField = ProjectElementEditableField | "labelIds";

@@ -8149,6 +8149,9 @@ msgstr "Arbeitsplatz bearbeiten"
 msgid "Edited"
 msgstr "Bearbeitet"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "Plattform hosten, sichern und sichern"
 msgid "Hours"
 msgstr "Stunden"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Stunden aus Standortschichten angenommen"
 
 msgid "Hours at this station"
 msgstr "Stunden bei dieser Station"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Noch nicht zugewiesene Stunden"
@@ -13449,6 +13458,9 @@ msgstr "Keine bearbeitbaren Eigenschaften für dieses Element."
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Keine berechtigten Arbeitsgänge"
 
@@ -13511,6 +13523,9 @@ msgstr "Keine Prüfmittel gefunden."
 
 msgid "No grouped notifications"
 msgstr "Keine gruppierten Benachrichtigungen"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "Keine Gruppen zugewiesen"
@@ -20316,6 +20331,9 @@ msgstr "Zielen Sie auf Kunden nach Typ ab."
 
 msgid "Target date"
 msgstr "Zieldatum"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "Verwendungsentscheid-Position"

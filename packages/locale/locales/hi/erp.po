@@ -8149,6 +8149,9 @@ msgstr "वर्क सेंटर संपादित करें"
 msgid "Edited"
 msgstr "संपादित"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "प्लेटफॉर्म को होस्ट करें, स�
 msgid "Hours"
 msgstr "घंटे"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "स्थान शिफ्ट से मानी गई घंटें"
 
 msgid "Hours at this station"
 msgstr "इस स्टेशन पर घंटे"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "अभी तक असाइन न किए गए घंटे"
@@ -13449,6 +13458,9 @@ msgstr "इस आइटम के लिए कोई संपादन यो
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "कोई पात्र ऑपरेशन नहीं"
 
@@ -13511,6 +13523,9 @@ msgstr "कोई गेज नहीं मिले।"
 
 msgid "No grouped notifications"
 msgstr "कोई समूहीकृत सूचनाएं नहीं"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "कोई समूह असाइन नहीं किया गया"
@@ -20316,6 +20331,9 @@ msgstr "ग्राहकों को प्रकार से लक्ष�
 
 msgid "Target date"
 msgstr "लक्ष्य तारीख"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "लक्ष्य निपटान पंक्ति"

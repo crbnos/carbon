@@ -8149,6 +8149,9 @@ msgstr "Edit Work Center"
 msgid "Edited"
 msgstr "Edited"
 
+msgid "Element"
+msgstr "Element"
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr "Element ids start with the identifier, so it cannot change"
 
@@ -10160,11 +10163,17 @@ msgstr "Host, secure, and back up the platform"
 msgid "Hours"
 msgstr "Hours"
 
+msgid "Hours Actual"
+msgstr "Hours Actual"
+
 msgid "Hours assumed from location shifts"
 msgstr "Hours assumed from location shifts"
 
 msgid "Hours at this station"
 msgstr "Hours at this station"
+
+msgid "Hours Estimated"
+msgstr "Hours Estimated"
 
 msgid "Hours not yet assigned"
 msgstr "Hours not yet assigned"
@@ -13449,6 +13458,9 @@ msgstr "No editable properties for this item."
 msgid "No elements"
 msgstr "No elements"
 
+msgid "No elements yet"
+msgstr "No elements yet"
+
 msgid "No eligible operations"
 msgstr "No eligible operations"
 
@@ -13511,6 +13523,9 @@ msgstr "No gauges found."
 
 msgid "No grouped notifications"
 msgstr "No grouped notifications"
+
+msgid "No grouping"
+msgstr "No grouping"
 
 msgid "No groups assigned"
 msgstr "No groups assigned"
@@ -20316,6 +20331,9 @@ msgstr "Target customers by type."
 
 msgid "Target date"
 msgstr "Target date"
+
+msgid "Target Date"
+msgstr "Target Date"
 
 msgid "Target disposition row"
 msgstr "Target disposition row"

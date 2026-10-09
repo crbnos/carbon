@@ -70,7 +70,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 31: Build the `ChargeNumberSelect` picker and its API route
 - [x] Task 32: Build the Elements page with the List layout
 - [x] Task 33: Add the Board layout
-- [ ] Task 34: Add the Table layout
+- [x] Task 34: Add the Table layout
 - [ ] Task 35: Build the element page (peek and full page)
 - [ ] Task 36: Add Log time and Issue material to the element page
 - [ ] Task 37: Build the Milestones tab
@@ -2506,3 +2506,9 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 33: a drag posts with the fetcher key `element:{id}:stateId` (the pill's key, Task 32), not `element:{id}`. `usePendingStates` reads every pending `stateId` save from `useFetchers()`, so a card moves before the server answers whether the drag or a pill made the change.
 - Task 33: the board has a mouse and a touch sensor, with module-constant options, and no keyboard sensor: Enter on a card's pill or link would start a drag. A keyboard user changes the state from the element page. The cards leave out the state pill, because the column shows the state.
 - Task 33: **+ New** focuses the quick-add row of the default Unstarted column.
+- Task 34: the cost summary is already loaded for every layout (Task 32 note). The route passes the full `rollUpCostSummary` totals to the Table as `costByElement`.
+- Task 34: `useCellSave` (`components/Setup/setupGrid.tsx`) now reads `error` as a string or as `{ message }`. The update route answers `{ error: { message } }`, which the pills read; before this the grid would have toasted an object.
+- Task 34: the editors keep their identity through a ref to the latest save (the `PlanningOrderGrids` pattern), so a revalidation does not remount an open cell.
+- Task 34: **Remaining** is the element's own budget less the subtree's committed and actual. It shows a dash when the element has no budget, and red when negative.
+- Task 34: the Display popover shows **Group by** (none, state, type, owner, milestone) only on the Table layout, stored per project in `project-group-{projectId}`. The rows sort by the group key with a stable sort, so each group keeps the tree order; rows with no owner or milestone go last.
+- Task 34: the Table layout has the quick-add row under the grid, so **+ New** works there too.

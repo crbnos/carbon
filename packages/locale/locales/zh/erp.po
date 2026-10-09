@@ -8149,6 +8149,9 @@ msgstr "编辑工作中心"
 msgid "Edited"
 msgstr "已编辑"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "托管、保护和备份平台"
 msgid "Hours"
 msgstr "时数"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "从位置班次假设的小时数"
 
 msgid "Hours at this station"
 msgstr "此工位的小时数"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "未分配的小时数"
@@ -13449,6 +13458,9 @@ msgstr "此项目没有可编辑的属性。"
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "没有符合条件的操作"
 
@@ -13511,6 +13523,9 @@ msgstr "未找到量具。"
 
 msgid "No grouped notifications"
 msgstr "没有分组通知"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "没有已分配的组"
@@ -20316,6 +20331,9 @@ msgstr "按类型定位客户。"
 
 msgid "Target date"
 msgstr "目标日期"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "目标处置行"

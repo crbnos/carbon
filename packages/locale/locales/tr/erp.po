@@ -8149,6 +8149,9 @@ msgstr "İş Merkezi Düzenle"
 msgid "Edited"
 msgstr "Düzenlendi"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
 msgid "Hours"
 msgstr "Saatler"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Konum vardiyalarından varsayılan saatler"
 
 msgid "Hours at this station"
 msgstr "Bu istasyonda saatler"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Henüz atanmayan saatler"
@@ -13449,6 +13458,9 @@ msgstr "Bu öğe için düzenlenebilir özellik yok."
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Uygun operasyon yok"
 
@@ -13511,6 +13523,9 @@ msgstr "Ölçüm aleti bulunamadı."
 
 msgid "No grouped notifications"
 msgstr "Gruplanmış bildirim yok"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "Atanmış grup yok"
@@ -20316,6 +20331,9 @@ msgstr "Müşterileri türlerine göre hedefleyin."
 
 msgid "Target date"
 msgstr "Hedef tarih"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "Hedef karar satırı"

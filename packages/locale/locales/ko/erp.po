@@ -8149,6 +8149,9 @@ msgstr "작업장 편집"
 msgid "Edited"
 msgstr "수정됨"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "플랫폼 호스팅, 보안, 백업"
 msgid "Hours"
 msgstr "시간"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "사업장 교대조에서 가정한 시간"
 
 msgid "Hours at this station"
 msgstr "이 스테이션의 시간"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "아직 배정되지 않은 시간"
@@ -13449,6 +13458,9 @@ msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "적격 공정이 없습니다"
 
@@ -13511,6 +13523,9 @@ msgstr "계측기를 찾을 수 없습니다."
 
 msgid "No grouped notifications"
 msgstr "그룹화된 알림이 없습니다"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "배정된 그룹이 없습니다"
@@ -20316,6 +20331,9 @@ msgstr "유형별로 고객을 대상으로 지정합니다."
 
 msgid "Target date"
 msgstr "목표 날짜"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "처분 결정 대상 행"

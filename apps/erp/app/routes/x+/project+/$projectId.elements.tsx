@@ -35,13 +35,20 @@ import {
   rollUpCostSummary
 } from "~/modules/projects";
 import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
-import { ElementList } from "~/modules/projects/ui/Elements/ElementList";
-import { useElementDisplay } from "~/modules/projects/ui/Elements/ElementProperties";
+import {
+  ElementList,
+  QuickAddRow
+} from "~/modules/projects/ui/Elements/ElementList";
+import {
+  useElementDisplay,
+  useElementGrouping
+} from "~/modules/projects/ui/Elements/ElementProperties";
 import type { ElementLayout } from "~/modules/projects/ui/Elements/ElementsHeader";
 import {
   ElementsHeader,
   elementLayouts
 } from "~/modules/projects/ui/Elements/ElementsHeader";
+import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -146,11 +153,15 @@ export default function ProjectElementsRoute() {
   const milestones = routeData?.milestones ?? [];
   const isClosed = routeData?.project?.status === "Closed";
 
-  const actualByElement = useMemo(() => {
+  const [grouping, setGrouping] = useElementGrouping(projectId);
+  const { costByElement, actualByElement } = useMemo(() => {
     const { byElement } = rollUpCostSummary(elements, costSummary);
-    return new Map(
-      [...byElement.entries()].map(([id, totals]) => [id, totals.actual])
-    );
+    return {
+      costByElement: byElement,
+      actualByElement: new Map(
+        [...byElement.entries()].map(([id, totals]) => [id, totals.actual])
+      )
+    };
   }, [elements, costSummary]);
 
   const groupLabels: Record<ProjectStateGroup, string> = {
@@ -263,9 +274,30 @@ export default function ProjectElementsRoute() {
           onDisplayChange={setDisplayProperty}
           onNew={focusQuickAdd}
           canCreate={layoutProps.canCreate}
+          grouping={layout === "table" ? grouping : undefined}
+          onGroupingChange={layout === "table" ? setGrouping : undefined}
         />
         <div className="min-h-0 flex-1">
-          {layout === "board" ? (
+          {layout === "table" ? (
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="min-h-0 flex-1">
+                <ElementTable
+                  {...layoutProps}
+                  costByElement={costByElement}
+                  grouping={grouping}
+                />
+              </div>
+              {layoutProps.canCreate && (
+                <QuickAddRow
+                  projectId={projectId}
+                  identifier={layoutProps.identifier}
+                  type={newType}
+                  onTypeChange={setNewType}
+                  inputRef={quickAddRef}
+                />
+              )}
+            </div>
+          ) : layout === "board" ? (
             <ElementBoard
               {...layoutProps}
               newType={newType}

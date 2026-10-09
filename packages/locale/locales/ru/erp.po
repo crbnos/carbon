@@ -8149,6 +8149,9 @@ msgstr "Изменить рабочий центр"
 msgid "Edited"
 msgstr "Изменено"
 
+msgid "Element"
+msgstr ""
+
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
@@ -10160,11 +10163,17 @@ msgstr "Размещение, защита и резервное копиров�
 msgid "Hours"
 msgstr "Часы"
 
+msgid "Hours Actual"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Часы предполагаются на основе смен в месте"
 
 msgid "Hours at this station"
 msgstr "Часы на этом рабочем месте"
+
+msgid "Hours Estimated"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Часы, ещё не назначенные"
@@ -13449,6 +13458,9 @@ msgstr "Нет редактируемых свойств для этого эл�
 msgid "No elements"
 msgstr ""
 
+msgid "No elements yet"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Нет подходящих операций"
 
@@ -13511,6 +13523,9 @@ msgstr "Средства измерения не найдены."
 
 msgid "No grouped notifications"
 msgstr "Нет сгруппированных уведомлений"
+
+msgid "No grouping"
+msgstr ""
 
 msgid "No groups assigned"
 msgstr "Нет назначенных групп"
@@ -20316,6 +20331,9 @@ msgstr "Выберите покупателей по типу."
 
 msgid "Target date"
 msgstr "Целевая дата"
+
+msgid "Target Date"
+msgstr ""
 
 msgid "Target disposition row"
 msgstr "Целевая строка решения"

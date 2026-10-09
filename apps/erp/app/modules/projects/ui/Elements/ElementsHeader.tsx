@@ -5,6 +5,7 @@
 import {
   Badge,
   Button,
+  Combobox,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -40,11 +41,14 @@ import type { ProjectElementType } from "../../projects.models";
 import { projectElementTypes } from "../../projects.models";
 import type {
   ElementDisplay,
-  ElementDisplayProperty
+  ElementDisplayProperty,
+  ElementGrouping
 } from "./ElementProperties";
 import {
   elementDisplayProperties,
-  useElementDisplayLabels
+  elementGroupings,
+  useElementDisplayLabels,
+  useElementGroupingLabels
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 
@@ -66,6 +70,9 @@ type ElementsHeaderProps = {
   onDisplayChange: (property: ElementDisplayProperty, shown: boolean) => void;
   onNew: (type: ProjectElementType) => void;
   canCreate: boolean;
+  /** The Table layout's grouping; the Display popover offers it when set. */
+  grouping?: ElementGrouping;
+  onGroupingChange?: (grouping: ElementGrouping) => void;
 };
 
 export function ElementsHeader({
@@ -76,12 +83,15 @@ export function ElementsHeader({
   display,
   onDisplayChange,
   onNew,
-  canCreate
+  canCreate,
+  grouping,
+  onGroupingChange
 }: ElementsHeaderProps) {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const typeLabels = useElementTypeLabels();
   const displayLabels = useElementDisplayLabels();
+  const groupingLabels = useElementGroupingLabels();
   const layoutLabels: Record<ElementLayout, string> = {
     list: t`List`,
     board: t`Board`,
@@ -162,6 +172,27 @@ export function ElementsHeader({
             </PopoverTrigger>
             <PopoverContent align="end" className="w-56">
               <VStack spacing={3}>
+                {grouping && onGroupingChange && (
+                  <>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      <Trans>Group by</Trans>
+                    </span>
+                    <div className="w-full">
+                      <Combobox
+                        asButton
+                        size="sm"
+                        value={grouping}
+                        options={elementGroupings.map((value) => ({
+                          value,
+                          label: groupingLabels[value]
+                        }))}
+                        onChange={(value) =>
+                          onGroupingChange((value as ElementGrouping) || "none")
+                        }
+                      />
+                    </div>
+                  </>
+                )}
                 <span className="text-xs font-medium text-muted-foreground">
                   <Trans>Shown properties</Trans>
                 </span>
