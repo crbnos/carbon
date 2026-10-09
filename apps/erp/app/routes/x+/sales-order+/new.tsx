@@ -78,6 +78,19 @@ export async function action({ request }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
 
+  // A typed number another sales order already has: keep the user on the form.
+  if (
+    result.error?.code === "23505" &&
+    result.error.details?.includes("salesOrderId") &&
+    data.salesOrderId
+  ) {
+    return validationError({
+      fieldErrors: {
+        salesOrderId: `Sales order ${data.salesOrderId} already exists`
+      }
+    });
+  }
+
   if (result.error || !result.data) {
     throw redirect(
       path.to.salesOrders,

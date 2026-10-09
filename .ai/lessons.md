@@ -3415,3 +3415,13 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** Size a fan-out by its bytes, not its count. When each event carries a rendered body, render and send it in chunks (`EMAIL_CHUNK` in `notify.ts`), each chunk in its own step with an indexed id (`render-emails-${index}`). A new step id replays a run in flight at deploy, so a send step that changes id sends again for those runs.
 
 **Applies to:** `packages/jobs/src/inngest/functions/notifications/notify.ts`; any job that fans out events with large payloads.
+
+## A caller-supplied document number used to leave the counter behind
+
+**Context:** Documents take their number from `get_next_sequence` unless the caller supplies one: a custom ID typed into `SequenceOrCustomId`, or an MCP / API upsert (`upsertSalesOrder`, `upsertQuote`, `upsertPurchaseOrder`, `upsertJob`, …) whose create path requires the number.
+
+**Problem:** A supplied number never moved the `sequence` row. Once the counter reached a number an agent or a user had already used, every new document failed on the unique constraint ("Failed to insert sales order") until someone moved the counter by hand.
+
+**Rule:** The counter is kept ahead in the database, not in app code: the `sync_advance_document_sequence` after-interceptor moves `sequence.next` past any number saved in the sequence's format, on insert and on a number change. A new numbered table must be added to that interceptor's `CASE` and given the interceptor in `attachments.ts`; the `document-sequence-synced` conformance check fails CI for a new counter that is neither covered nor in its `EXEMPT_COUNTERS`. Never "fix" a collision by retrying `get_next_sequence`.
+
+**Applies to:** `packages/database/src/event-system/handlers/sync_advance_document_sequence.sql`, `util.document_sequence_pattern`, any table with a readable document number.

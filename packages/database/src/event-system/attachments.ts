@@ -36,7 +36,10 @@ export const attachments = {
   ability: { statement: ["broadcast_reference_changes"] },
   address: { before: ["sync_address_to_parent"], events: true },
   assemblyPlanJob: { statement: ["broadcast_table_changes"] },
-  changeOrder: { statement: ["broadcast_table_changes"] },
+  changeOrder: {
+    after: ["sync_advance_document_sequence"],
+    statement: ["broadcast_table_changes"]
+  },
   charge: { events: true },
   company: { after: ["sync_insert_company_related_records"] },
   companyIntegration: { before: ["sync_verify_integration"], events: true },
@@ -44,7 +47,11 @@ export const attachments = {
   customField: { statement: ["broadcast_table_changes"] },
   customer: {
     before: ["sync_update_customer_type_group"],
-    after: ["sync_create_customer_entries", "sync_create_customer_org_group"],
+    after: [
+      "sync_create_customer_entries",
+      "sync_create_customer_org_group",
+      "sync_advance_document_sequence"
+    ],
     events: true,
     statement: ["broadcast_table_changes", "log_table_changes"]
   },
@@ -53,6 +60,7 @@ export const attachments = {
     events: true
   },
   customerContact: { statement: ["broadcast_reference_changes"] },
+  customerContract: { after: ["sync_advance_document_sequence"] },
   customerItemPriceOverride: { events: true },
   customerItemPriceOverrideBreak: { events: true },
   customerLocation: { statement: ["broadcast_reference_changes"] },
@@ -66,7 +74,7 @@ export const attachments = {
     events: true,
     statement: ["broadcast_reference_changes"]
   },
-  depreciationRun: { events: true },
+  depreciationRun: { after: ["sync_advance_document_sequence"], events: true },
   depreciationRunLine: { events: true },
   document: {
     before: ["sync_edit_document_transaction"],
@@ -87,8 +95,8 @@ export const attachments = {
     after: ["sync_create_employee_type_group"],
     events: true
   },
-  fixedAsset: { events: true },
-  gauge: { events: true },
+  fixedAsset: { after: ["sync_advance_document_sequence"], events: true },
+  gauge: { after: ["sync_advance_document_sequence"], events: true },
   gaugeCalibrationRecord: { events: true },
   implementationCheckState: { statement: ["broadcast_table_changes"] },
   implementationFieldValue: { statement: ["broadcast_table_changes"] },
@@ -96,7 +104,11 @@ export const attachments = {
   implementationRow: { statement: ["broadcast_table_changes"] },
   inspection: { statement: ["broadcast_table_changes"] },
   inspectionSample: { statement: ["broadcast_table_changes"] },
-  inventoryCount: { events: true, statement: ["broadcast_table_changes"] },
+  inventoryCount: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   inventoryCountLine: { events: true, statement: ["broadcast_table_changes"] },
   invite: { events: true },
   invoiceSettlement: { events: true, statement: ["broadcast_table_changes"] },
@@ -128,7 +140,11 @@ export const attachments = {
   itemUnitSalePrice: { events: true },
   job: {
     before: ["sync_job_complete_or_canceled"],
-    after: ["sync_insert_job_make_method", "sync_job_recompute_service_line"],
+    after: [
+      "sync_insert_job_make_method",
+      "sync_job_recompute_service_line",
+      "sync_advance_document_sequence"
+    ],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -165,7 +181,11 @@ export const attachments = {
   jobOperationNote: { statement: ["broadcast_table_changes"] },
   jobOperationStep: { statement: ["broadcast_table_changes"] },
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
-  journal: { events: true, statement: ["broadcast_table_changes"] },
+  journal: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   journalLine: { events: true },
   location: {
     after: ["sync_create_location_related_records"],
@@ -173,7 +193,10 @@ export const attachments = {
     statement: ["broadcast_reference_changes"]
   },
   maintenanceDispatch: {
-    after: ["sync_on_maintenance_dispatch_complete"],
+    after: [
+      "sync_on_maintenance_dispatch_complete",
+      "sync_advance_document_sequence"
+    ],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -185,13 +208,17 @@ export const attachments = {
   materialForm: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
   materialType: { statement: ["broadcast_reference_changes"] },
-  memo: { events: true },
+  memo: { after: ["sync_advance_document_sequence"], events: true },
   methodMaterial: {
     before: ["sync_check_method_material_self_reference"],
     events: true
   },
   modelUpload: { statement: ["broadcast_table_changes", "log_table_changes"] },
-  nonConformance: { events: true, statement: ["broadcast_table_changes"] },
+  nonConformance: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   nonConformanceActionTask: {
     events: true,
     statement: ["broadcast_table_changes"]
@@ -209,9 +236,17 @@ export const attachments = {
   nonConformanceType: { statement: ["broadcast_reference_changes"] },
   notification: { statement: ["broadcast_user_changes"] },
   part: { statement: ["broadcast_table_changes"] },
-  payment: { events: true, statement: ["broadcast_table_changes"] },
+  payment: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   paymentTerm: { statement: ["broadcast_reference_changes"] },
-  pickingList: { events: true, statement: ["broadcast_table_changes"] },
+  pickingList: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   pickingListLine: { events: true, statement: ["broadcast_table_changes"] },
   printJob: { statement: ["broadcast_table_changes"] },
   procedure: {
@@ -232,6 +267,7 @@ export const attachments = {
   },
   purchaseInvoice: {
     before: ["prevent_posted_purchase_invoice_deletion"],
+    after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -240,13 +276,23 @@ export const attachments = {
     events: true,
     statement: ["broadcast_table_changes"]
   },
-  purchaseOrder: { events: true, statement: ["broadcast_table_changes"] },
+  purchaseOrder: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   purchaseOrderDelivery: { events: true },
   purchaseOrderLine: { events: true, statement: ["broadcast_table_changes"] },
   purchaseOrderPayment: { events: true },
-  purchaseReturnOrder: { statement: ["broadcast_table_changes"] },
+  purchaseReturnOrder: {
+    after: ["sync_advance_document_sequence"],
+    statement: ["broadcast_table_changes"]
+  },
   purchaseReturnOrderLine: { statement: ["broadcast_table_changes"] },
-  purchasingRfq: { statement: ["broadcast_table_changes"] },
+  purchasingRfq: {
+    after: ["sync_advance_document_sequence"],
+    statement: ["broadcast_table_changes"]
+  },
   purchasingRfqLine: { statement: ["broadcast_table_changes"] },
   qualityDocument: {
     before: ["sync_archive_other_quality_documents"],
@@ -255,6 +301,7 @@ export const attachments = {
   },
   quote: {
     before: ["sync_update_quote_exchange_rate"],
+    after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -273,14 +320,20 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   quoteOperation: { statement: ["broadcast_table_changes"] },
-  receipt: { events: true, statement: ["broadcast_table_changes"] },
+  receipt: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   receiptLine: { events: true, statement: ["broadcast_table_changes"] },
   reimbursement: { events: true },
   reimbursementLine: { events: true },
+  rentalAgreement: { after: ["sync_advance_document_sequence"] },
   revenueRecognitionRun: { events: true },
   revenueRecognitionRunLine: { events: true },
   salesInvoice: {
     before: ["prevent_posted_sales_invoice_deletion"],
+    after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -288,20 +341,36 @@ export const attachments = {
   salesInvoiceShipment: { events: true },
   salesOrder: {
     before: ["sync_update_sales_order_exchange_rate"],
+    after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
   salesOrderLine: { events: true, statement: ["broadcast_table_changes"] },
   salesOrderPayment: { events: true },
   salesOrderShipment: { events: true },
-  salesReturnOrder: { statement: ["broadcast_table_changes"] },
+  salesReturnOrder: {
+    after: ["sync_advance_document_sequence"],
+    statement: ["broadcast_table_changes"]
+  },
   salesReturnOrderLine: { statement: ["broadcast_table_changes"] },
-  salesRfq: { events: true, statement: ["broadcast_table_changes"] },
+  salesRfq: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   salesRfqLine: { statement: ["broadcast_table_changes"] },
-  shipment: { events: true, statement: ["broadcast_table_changes"] },
+  shipment: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   shipmentLine: { events: true, statement: ["broadcast_table_changes"] },
   shippingMethod: { statement: ["broadcast_reference_changes"] },
-  stockTransfer: { events: true, statement: ["broadcast_table_changes"] },
+  stockTransfer: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   stockTransferLine: {
     after: ["sync_update_stock_transfer_status"],
     events: true,
@@ -318,7 +387,11 @@ export const attachments = {
   },
   supplier: {
     before: ["sync_update_supplier_type_group"],
-    after: ["sync_create_supplier_entries", "sync_create_supplier_org_group"],
+    after: [
+      "sync_create_supplier_entries",
+      "sync_create_supplier_org_group",
+      "sync_advance_document_sequence"
+    ],
     events: true,
     statement: ["broadcast_table_changes", "log_table_changes"]
   },
@@ -331,7 +404,11 @@ export const attachments = {
   supplierPart: { events: true },
   supplierPayment: { events: true },
   supplierProcess: { statement: ["broadcast_reference_changes"] },
-  supplierQuote: { events: true, statement: ["broadcast_table_changes"] },
+  supplierQuote: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   supplierQuoteLine: { events: true, statement: ["broadcast_table_changes"] },
   supplierShipping: { events: true },
   supplierTax: { events: true },
@@ -352,7 +429,11 @@ export const attachments = {
     ],
     statement: ["log_user_changes"]
   },
-  warehouseTransfer: { events: true, statement: ["broadcast_table_changes"] },
+  warehouseTransfer: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   warehouseTransferLine: {
     events: true,
     statement: ["broadcast_table_changes"]

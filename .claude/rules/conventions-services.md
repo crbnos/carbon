@@ -201,6 +201,9 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
   (`~/modules/settings`) calls the `get_next_sequence` RPC and returns `{ data, error }`
   like any other service call — await and check `error` before using `data`. Note the arg
   order: `(client, table, companyId)`.
+  A caller-supplied number (custom ID, API, MCP) needs no counter code: the
+  `sync_advance_document_sequence` interceptor moves the sequence past any number saved
+  in its format.
 - **RPCs**: heavy/aggregate logic is `client.rpc("fn_name", { ... })`; the function is
   defined in a migration. See database-patterns.md.
 
