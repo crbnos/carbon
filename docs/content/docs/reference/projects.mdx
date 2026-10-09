@@ -16,8 +16,10 @@ Click **New Project** on the project list. A new project starts in **"Draft"**.
 <FieldTable>
   <Field name="Name" type="text" required>What the project is called.</Field>
   <Field name="Identifier" type="text">2 to 6 capital letters or digits that start with a letter, such as `SNS`. It is unique in the company. If you leave it empty, Carbon makes one from the initials of the name. You cannot change it after you save, because every element id starts with it.</Field>
-  <Field name="Cost Treatment" type="enum" required>Where the project's cost posts: `Statistical`, `Expense` or `Contract`. See [cost treatment](#cost-treatment).</Field>
-  <Field name="Cost Account" type="reference">An account that replaces the account default for this project. Leave it empty to use the default.</Field>
+  <Field name="Cost Treatment" type="enum" required>Where the project's cost posts: `Statistical`, `Expense`, `Contract` or `Capitalize`. See [cost treatment](#cost-treatment).</Field>
+  <Field name="Cost Account" type="reference">An account that replaces the account default for this project. Leave it empty to use the default. Not shown for Capitalize.</Field>
+  <Field name="CIP Class" type="reference" required>Capitalize only. The Construction in Progress fixed asset class that holds the project's assets while they are built.</Field>
+  <Field name="Copy from" type="reference">On a new project only. Copies another project's states, labels, milestones, elements, trace links and plan lines. Templates are listed first.</Field>
   <Field name="Customer" type="reference">The customer the work is for, if any.</Field>
   <Field name="Owner" type="reference">The person responsible for the project.</Field>
   <Field name="Location" type="reference">The site the project belongs to.</Field>
@@ -52,6 +54,7 @@ The <Term>cost treatment</Term> decides which account a project charge posts to.
 | **Statistical** | The charge keeps its own account, and the project is only a dimension on the journal line. Time posts no cost. An issue goes to **Indirect Materials & Services**. |
 | **Expense** | The project's **Cost Account**, else the **Project Expense** account default. |
 | **Contract** | The project's **Cost Account**, else the **Project WIP** account default. |
+| **Capitalize** | The asset under construction that the charge builds. See [capital projects](#capital-projects). |
 
 Set **Project WIP** and **Project Expense** at **Accounting → Default Accounts**. If an Expense or Contract project has no account, Carbon refuses its charges.
 
@@ -59,11 +62,18 @@ Set **Project WIP** and **Project Expense** at **Accounting → Default Accounts
 A Statistical project has no project account, so its time and issues write no project ledger rows. Its posted hours still count. Use Expense or Contract when you want the Costs tab to show actual cost.
 </Callout>
 
+### Capital projects
+
+A Capitalize project builds fixed assets. When you release it, Carbon creates one asset under construction for the project and one for each element marked **Final asset** on its element page. Each charge posts to the asset of its nearest final-asset element, else to the project's asset. A job on a Capitalize charge number completes into that asset.
+
+**Place in Service** in the project header, or on a final-asset element, moves the assets into an in-service class. The final-asset elements and everything below them move to a Completed state. A cost that posts after that adds to the in-service asset, and its depreciation spreads the addition over the asset's remaining life. See [fixed assets](/docs/reference/fixed-assets).
+
 ## Elements
 
 An element is one node of the project tree. It has a type, a state, an owner, a priority, labels, dates, a milestone, an hours estimate and a budget.
 
-- **Types:** `System`, `Requirement`, `Function`, `Task`, `Test Case`, `Folder` and `Parameter`. A Parameter cannot have children.
+- **Types:** `System`, `Requirement`, `Function`, `Task`, `Test Case`, `Folder` and `Parameter`. A Parameter's children must be Parameters.
+- **Linked part:** any element except a Parameter can link an item and, for a serial-tracked item, one serial of it. The element page then shows the part's average hours and material cost on earlier elements linked to the same item, and **Issue material** offers the part's bill of materials first.
 - **Readable id:** the project identifier and a sequence number, such as `ST-12`. The id stays the same when you move the element.
 - **Chargeable:** on for a new element, except a Folder or a Parameter. A Parameter can never take charges.
 
@@ -79,17 +89,54 @@ A new charge needs a Released project and an Unstarted or Started element. A pos
 
 ### Layouts and the element page
 
-The **Elements** tab has three layouts. **List** shows the tree with a pill per property. **Board** has one column per state, and you drag a card to change its state. **Table** adds hours and cost columns, and only it has **Group by**. Use **Display** to choose the properties you see.
+The **Elements** tab has six layouts:
+
+- **List** shows the tree with a pill per property.
+- **Board** has one column per state. Drag a card to change its state.
+- **Table** adds hours and cost columns, and only it has **Group by**.
+- **Tree** draws the elements and their trace links as a graph. Drag from one element to another to add a link.
+- **Timeline** draws each element from its start date to its target date, with arrows for `precedes` links.
+- **Reader** shows the project as a numbered document. **Export PDF** downloads it with the current filters.
+
+Use **Display** to choose the properties you see. **Views** saves the layout, filters and display as a named view, for you or shared with everyone who can see the project. Without a view, the page opens the way you last left it.
 
 Click an element to open it beside the list, or click **Open as a page**. The page has the sections **Children**, **Plan**, **Time & materials**, **Budget** and **Activity**. **Plan** holds three kinds of plan line:
 
-- **Materials:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date.
+- **Materials:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date. **Create Job** on a Make to Order line and **Create PO Line** on a Purchase to Order line make the job or purchase order line with the element's charge number.
 - **Labor:** a <Term>labor category</Term>, hours and dates.
 - **Other Costs:** a description and an amount.
 
 ### Milestones
 
-A <Term>milestone</Term> is a dated window, such as a design review or a phase. Each element can belong to one milestone. The **Milestones** tab groups them as **Active**, **Upcoming** and **Completed**, with element progress, hours and cost on each row.
+A <Term>milestone</Term> is a dated window, such as a design review or a phase. Each element can belong to one milestone. The **Milestones** tab groups them as **Active**, **Upcoming** and **Completed**, with element progress, hours and cost on each row. **Burn chart** on a row plots the milestone's posted hours against an ideal line from its start date to its end date.
+
+## Requirements, tests and parameters
+
+A Requirement, a Test Case and a Parameter each have their own section on the element page.
+
+- A **Parameter** is a value with a unit. Its source is **Manual**, **Sum of children**, **Smallest child**, **Largest child**, **Formula** or **Linked part**. A formula such as `= SNS-20 - SNS-21` uses readable ids, numbers, `+ - * /`, `min`, `max` and `abs`. **Linked part** reads the unit cost or a numeric custom field of the nearest linked part above it. A Parameter can carry an **Allocation** of its parent Parameter and a **Contingency**.
+- A **Requirement** has a category, a target (`≤`, `≥`, `=` or a range) and the Parameter that measures it.
+- A **Test Case** has a verdict and the quality procedure it runs.
+
+A Requirement passes when its Parameter meets the target, with any contingency applied, and no Test Case that verifies it has failed. Units are free text and never convert.
+
+## Trace links
+
+A trace link connects two elements of one project: **satisfies**, **verifies**, **derives**, **implements**, **blocks**, **precedes**, **relates to** and **feeds**. Add them in the **Trace links** section of the element page or in the Tree layout. A formula writes its own **feeds** links.
+
+When the name, description, target or Parameter value of an element changes, its incoming links turn suspect. Each shows a warning until someone clicks **Mark reviewed**.
+
+## Templates and Build from part
+
+Mark a project as a **Template** in the header's menu. **Copy project** opens a new project with **Copy from** set to it. A copy starts in **"Draft"** with no charges, time or assets.
+
+**New → Build from part** on the Elements tab creates System elements under a parent element from one of three sources:
+
+- **Serial:** what was consumed to build a serial, each element linked to its consumed serial.
+- **Item:** the item's bill of materials. Bought components are left out unless you turn on **Include bought components**.
+- **Template:** the elements of a template project.
+
+Choose a depth from 1 to 5. The drawer previews the elements before it creates them.
 
 ## Charge numbers
 
@@ -98,6 +145,7 @@ A <Term>charge number</Term> is a project, or a project and one of its elements.
 - **Jobs.** You can change it while the job is Draft or Planned. After release it is fixed.
 - **Purchase order lines.** On the item tab and on the G/L Account tab. An outside processing order has no picker, because its job decides the charge.
 - **Purchase invoice lines.** A line converted from a purchase order copies the charge number of its PO line.
+- **Reimbursement lines.** Each line takes a charge number. Charge lines show their charge number read-only.
 
 **Settings → Projects → Require an element on every project charge** is off by default. Turn it on to make every charge name an element.
 
@@ -220,5 +268,20 @@ Actual is the sum of the project ledger. A Statistical project writes no ledger 
 
 ## Internals
 
-Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; Capitalize is refused in Phase 1a), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`), `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/projects/timesheet`, `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Not in Phase 1a: Capitalize, element cost-treatment overrides in the UI, Tree/Timeline/Reader layouts, trace links, baselines, change requests, element templates, attachments on elements.
+Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; `fixedAssetClassId` and `fixedAssetId` for Capitalize; `isTemplate`), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`, `isFinalAsset`, `fixedAssetId`, `itemId`, `trackedEntityId`, Requirement target columns, `verdict`, Parameter columns `parameterSource` / `parameterValue` / `parameterFormula` / `parameterItemField` / `allocationPercent` / `parameterContingencyPercent`), `projectElementLink` (`linkType` enum `projectElementLinkType`, `suspectSince`, `reviewedAt`), `projectView`, `projectUserPreference`, `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/projects/timesheet`, `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Capital projects write `fixedAssetCipCost` rows (`projectId`, `projectElementId`, `postCapitalization`). RPC `get_element_history_by_item`. Routes added in Phase 1b: `/x/project/:id/place-in-service`, `/x/project/:id/elements/build`, `/x/project/:id/elements/links`, `/x/project/:id/views`, `/x/project/:id/template`, `/x/project/:id/elements/:elementId/create-job`, `/x/project/:id/elements/:elementId/create-po-line`, `/file/project/:id.pdf`. Not built yet: element cost-treatment overrides in the UI, baselines, change requests, attachments on elements.
+
+### "This capital project has no asset under construction. Release the project first."
+A Capitalize charge needs the asset of its project or final-asset element. Release creates the assets; marking an element Final asset on a released project creates its asset.
+
+### "Asset XX was capitalized; reverse the capitalization first"
+A void of a document whose cost reached an asset under construction is refused once that asset is in service. A late cost (posted after Place in Service) can be voided until the asset is disposed.
+
+### "A Parameter can only have Parameters as children"
+A Parameter's children roll up into it, so only Parameters can go under a Parameter.
+
+### "The serial belongs to a different item"
+A linked serial must be a serial of the element's linked item. Picking another item clears the serial.
+
+### Build from part leaves bill of materials lines out
+The item source reads the method tree, which skips a line whose item has no cost record. The drawer shows the count. A Build from part parent cannot be a Parameter.
 </AgentContext>

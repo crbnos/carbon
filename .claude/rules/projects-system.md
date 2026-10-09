@@ -4,12 +4,14 @@ paths:
   - "packages/server-functions/src/post-timesheet/**"
   - "packages/server-functions/src/post-project-issue/**"
   - "packages/server-functions/src/lib/project-posting.ts"
+  - "packages/server-functions/src/lib/project-cip.ts"
 ---
 
 # Projects
 
-Phase 1a of `.ai/specs/2026-10-03-projects.md`; plan
-`.ai/plans/2026-10-07-projects-phase-1a.md` (its *Execution notes* record every
+Phases 1a and 1b of `.ai/specs/2026-10-03-projects.md`; plans
+`.ai/plans/2026-10-07-projects-phase-1a.md` and
+`.ai/plans/2026-10-08-projects-phase-1b.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -35,7 +37,12 @@ one decision:
 4. Expense → `accountDefault.projectExpenseAccount`; Contract →
    `accountDefault.projectWorkInProgressAccount`. A missing default throws a
    `ProjectChargeError` that names it.
-5. Capitalize throws. It is Phase 1b; `projectValidator` refuses it in the ERP.
+5. Capitalize → the class asset account of the asset the charge builds
+   (`capitalAssetId`: the nearest final-asset element's asset, else the project's).
+   Under Construction gives the CIP class account; Active gives the in-service
+   class account and `postCapitalization: true` (a late cost). An explicit
+   `costAccountId` is ignored. No asset (not released yet), or any other asset
+   status, throws. See *Capital projects*.
 
 Load contexts with `loadProjectPostingContexts` (3 queries for any number of refs, keyed
 by `projectPostingKey`) or `resolveProjectLineAccounts` (a document's lines). Never load
@@ -45,7 +52,8 @@ one context per line.
 
 `project_posting_account(company, project, element, date)` (migration
 `20261009055331_projects-functions.sql`, redefined by
-`20261009100941_project-posting-account-missing-default.sql`) mirrors the TS resolver for
+`20261009100941_project-posting-account-missing-default.sql` and, for Capitalize,
+`20261009103835_project-posting-account-capitalize.sql`) mirrors the TS resolver for
 the SQL posting paths: `complete_job_to_inventory` and `backflush_job_materials`
 (migration `20261009071629_complete-job-consume-to-project.sql`). Change both together.
 
@@ -134,6 +142,102 @@ RLS: an employee may insert and update only their own Draft rows. Submit
 (`submitTimesheetEntries`), correct (`createTimesheetCorrection`) and post run over
 Kysely, so they bypass that check. Approve and reject use the Supabase client and need
 `projects_update`.
+
+## Capital projects (Capitalize)
+
+`projectValidator` requires `fixedAssetClassId` (a CIP class) for Capitalize; the
+form reads CIP classes with `getCipFixedAssetClasses`, because
+`CONSTRUCTION_IN_PROGRESS_ENABLED` stays false.
+
+- `ensureCapitalAssets` (`projects.server.ts`) creates the Under Construction assets:
+  one for the project and one per `isFinalAsset` element without one, all ids and
+  numbers in one statement. The status route calls it before every change to
+  Released; the element update route calls it when `isFinalAsset` turns on past Draft.
+- Each poster writes a CIP row right after its `projectLedger` row
+  (`writeProjectCipRows`, `server-functions/src/lib/project-cip.ts`), with accounting
+  off too where the ledger row is written then.
+- A capital job (`loadJobProjectCharge` returns `keepsWip: true`) keeps its WIP lines
+  and builds `job.fixedAssetId` through the job-to-CIP sweep; SQL
+  `project_cost_treatment` mirrors `resolveProjectTreatment`
+  (`20261009105739_complete-job-cip-project.sql`). `chargeNumberError` refuses
+  `consumeToProject` on a Capitalize project.
+- **Place in service** (`$projectId.place-in-service.tsx`, `PlaceInServiceModal`)
+  runs `capitalizeCip` once per asset (needs `update: projects` and
+  `create: accounting`), then `completeElementSubtrees` moves the final-asset
+  elements and their descendants to Completed.
+- Voids call `reverseProjectCipRows` beside `reverseProjectLedgerRows`.
+
+Details (late costs, remaining-life Straight Line): `fixed-asset-lifecycle.md` →
+*Capital projects*.
+
+## Trace links and suspect flags
+
+`projectElementLink` (`fromElementId`, `toElementId`, `linkType`, `suspectSince`,
+`reviewedAt`): both ends in one project, no self link. `canLink` checks the ends
+(`allowedLinkEnds`), duplicates and `precedes` cycles. `feeds` (Parameter →
+Parameter) is written only by `saveParameterFormula`, so `deleteProjectElementLink`
+refuses it. Only the parent link rolls up cost.
+
+`updateProjectElementField` marks the incoming links of an element suspect when a
+`suspectLinkFields` value really changes (name, description, target, Parameter
+value and unit); a `feeds` link never turns suspect. `clearSuspectLink` reviews one.
+
+## Verification and Parameters
+
+`computeVerification` (`projects.models.ts`, pure, tested) computes every Parameter
+and Requirement from the rows the page loads; there is no SQL function.
+
+- Parameter source: Manual; Sum, Min or Max of child Parameters (same unit only);
+  Formula; Item (`parameterItemField` = `unitCost` or a Numeric custom field id of
+  the nearest linked part). A Parameter's children must be Parameters
+  (`insertProjectElement`, `moveProjectElement`).
+- Formula: a closed grammar parsed by `parseParameterFormula` — numbers, readable
+  ids, `+ - * /`, unary minus, `min`, `max`, `abs`. Nothing executes. A cycle shows
+  an error.
+- Contingency gives `checkedHigh` / `checkedLow`; allocation × the parent Parameter
+  gives the budget (`formatAllocation`).
+- A Requirement passes when its actual Parameter meets the target and no verifying
+  Test Case failed; `rollUpRequirementStatus` rolls up child Requirements.
+- Item values: `getProjectItemValues` reads `itemCost.unitCost` and the typed table's
+  `customFields` (`part`, `material`, `tool`, `consumable`; the row id is the item's
+  `readableId`), at most 6 queries. `item` has no `customFields` column.
+
+## Layouts, views and the Reader PDF
+
+Six layouts (`projectLayouts`): List, Board, Table, Tree (React Flow + dagre),
+Timeline (own component, `timeline-geometry.ts`), Reader. The Reader PDF
+(`file+/project+/$id[.]pdf.tsx`, `ProjectReaderPDF` in `@carbon/documents`) reads the
+same filters (`parseElementFilters`) and outline (`buildReaderOutline`).
+
+`projectView` (saved views; shared ones readable with `projects_view`) and
+`projectUserPreference` (one per user and project) hold layout, filters and display
+options. A URL without `layout` redirects to the named view, else the preference.
+
+## Templates, Build from part and part links
+
+- `copyProject` copies states, labels, milestones, elements (renumbered), links and
+  plan lines; it clears history (assets, verdicts, reviews, issued quantities, job and
+  PO line ids). `project.isTemplate` marks a template.
+- An element (not a Parameter) links an item and optionally one serial
+  (`trackedEntityId`); a trigger refuses a serial of another item and fills an empty
+  item from the serial.
+- `buildElementsFromPart` / `previewBuildFromPart` (`$projectId.elements.build.tsx`)
+  create System elements from a serial's build history (the lineage RPCs, one call per
+  level, Consume less Unconsume), an item's active make method (`getMethodTree`; lines
+  without an `itemCost` row are counted as skipped) or a template's elements, under one
+  parent, in one transaction. `planElementsFromSource` is the pure planner.
+- `get_element_history_by_item` averages hours and material cost over the elements
+  that charged the same item; the Budget section shows it.
+
+## Plan-line actions and other charge numbers
+
+- **Create Job** (`$projectId.elements.$elementId.create-job.tsx`) and **Create PO
+  line** (`…create-po-line.tsx`) from a plan-line material stamp
+  `projectElementMaterial.jobId` / `purchaseOrderLineId`.
+- Reimbursement lines carry `projectId` + `projectElementId` (`ChargeNumberControlled`);
+  charge lines show the charge number read-only.
+- The milestone burn chart (`buildBurnSeries`) plots Posted timesheet hours against
+  the ideal line.
 
 ## Known gaps
 
