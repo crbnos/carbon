@@ -91766,6 +91766,10 @@ export type Database = {
         Args: { p_company_id: string; p_cutoff_date: string }
         Returns: number
       }
+      derive_project_identifier: {
+        Args: { p_company_id: string; p_name: string }
+        Returns: string
+      }
       drop_audit_log_table: {
         Args: { p_company_id: string }
         Returns: undefined

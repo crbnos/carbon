@@ -107897,6 +107897,45 @@ export default {
         tags: ["(rpc) attach_statement_handler"]
       }
     },
+    "/rpc/derive_project_identifier": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_name: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_name", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) derive_project_identifier"]
+      }
+    },
     "/rpc/get_inventory_value_by_location": {
       post: {
         parameters: [
