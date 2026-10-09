@@ -58,7 +58,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 19: Route production events to the project account
 - [x] Task 20: Change job completion for consume-to-project jobs
 - [x] Task 21: Route PO receipts to the project account
-- [ ] Task 22: Route purchase invoice lines to the project account
+- [x] Task 22: Route purchase invoice lines to the project account
 - [ ] Task 23: Route charges and reimbursements to the project account
 - [x] Task 24: Add Project and Project Element to the journal dimension builder
 - [x] Task 25: Add the new enum values to the TS mirrors
@@ -2456,3 +2456,9 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 21: `projectLedger` rows are written whether or not accounting is on (the receipt knows its cost either way); `journalLineId` is the project debit line, or null. The row amount is the GL amount (`glCost`, the accrual cost for an invoice-first quantity).
 - Task 21 (not in the plan): voiding a PO receipt also reverses its `Project Issue` itemLedger rows and writes negative `projectLedger` rows with `reversalOfId`. Without it a void left the project charged and drove on-hand negative.
 - Task 21 step 6: skipping the cost layer does break the invoice's variance matching on its own: with no receipt layer, `post-purchase-invoice` takes its legacy self-heal path and builds a layer from the item's on-hand. Task 22 closes it (a receipt-charged line never uses layers there; its variance goes to the account the receipt debited). The two commits are adjacent.
+- Task 22: the decision lives in `post-purchase-invoice/project-charges.ts` (`loadInvoiceProjectCharges`): one query for the receipts' `projectLedger` rows of the invoice's PO lines (joined through `receiptLine.lineId`), then one `loadProjectPostingContexts` call. A line's charge number is its own, else its PO line's (invoices drafted before `convert` copied it). `assertChargeable("commitment")` runs only for lines that are actually routed.
+- Task 22: `convert` (`purchaseOrderToPurchaseInvoice`) copies `projectId` and `projectElementId` from the PO line, the only place invoice lines are built from PO lines.
+- Task 22 step 3.3: on a direct invoice only the Non-Inventory branch (indirect cost) is routed. The WIP branch is a tracked or not-yet-received stocked item that still enters stock, so it keeps its account.
+- Task 22 step 5: a PO line whose receipt wrote a `projectLedger` row (any of Task 21's three branches) never uses cost layers in the invoice. Its whole price variance goes to the account the receipt debited (the receipt's journal line, else the account resolved today when the receipt was posted with accounting off), with a `Material Variance` row. This also closes the Task 21 step 6 gap (the legacy self-heal layer). A variance under half a cent writes nothing, as today.
+- Task 22: the invoice writes `projectLedger` rows only with accounting on, because every routed path (G/L Account, service accrual, direct Non-Inventory, variance) builds its cost inside the accounting gate, as Tasks 18 and 19 do. ProjectElement is tagged wherever Project is: on the G/L Account debit and AP lines (as the Project tag was), and on the project debit of the other paths.
+- Task 22 (not in the plan): voiding a purchase invoice writes negative `projectLedger` rows with `reversalOfId` for its rows.

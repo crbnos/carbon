@@ -593,6 +593,7 @@ export async function projectPostingFixture(
           .values({ id: purchaseOrderId, companyId })
           .onConflict((oc) => oc.doNothing())
           .execute();
+        if (args.lines.length === 0) return;
         await trx
           .insertInto("purchaseOrderLine")
           .values(
@@ -669,6 +670,79 @@ export async function projectPostingFixture(
           .execute();
       });
       return { receiptId, receiptLineIds };
+    },
+    /** A Draft purchase invoice of `supplierId` with one line per entry.
+     *  `charged` lines carry the fixture's project and element. */
+    async addPurchaseInvoice(
+      key: string,
+      args: {
+        supplierId: string;
+        lines: {
+          invoiceLineType: Database["public"]["Enums"]["payableLineType"];
+          quantity: number;
+          unitPrice: number;
+          accountId?: string;
+          itemId?: string;
+          locationId?: string;
+          purchaseOrderId?: string;
+          purchaseOrderLineId?: string;
+          charged?: boolean;
+        }[];
+      }
+    ) {
+      const invoiceId = `${prefix}-pi-${key}`;
+      const lineIds = args.lines.map(
+        (_, index) => `${prefix}-pil-${key}-${index}`
+      );
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        const interaction = await trx
+          .insertInto("supplierInteraction")
+          .values({ supplierId: args.supplierId, companyId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("purchaseInvoice")
+          .values({
+            id: invoiceId,
+            invoiceId: `${prefix}-PI-${key}`,
+            status: "Draft",
+            supplierId: args.supplierId,
+            supplierInteractionId: interaction.id,
+            currencyCode: "USD",
+            dateIssued: "2026-10-01",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("purchaseInvoiceDelivery")
+          .values({ id: invoiceId, companyId })
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .insertInto("purchaseInvoiceLine")
+          .values(
+            args.lines.map((line, index) => ({
+              id: lineIds[index]!,
+              invoiceId,
+              invoiceLineType: line.invoiceLineType,
+              quantity: line.quantity,
+              supplierUnitPrice: line.unitPrice,
+              accountId: line.accountId ?? null,
+              itemId: line.itemId ?? null,
+              locationId: line.locationId ?? null,
+              purchaseOrderId: line.purchaseOrderId ?? null,
+              purchaseOrderLineId: line.purchaseOrderLineId ?? null,
+              projectId: line.charged ? projectId : null,
+              projectElementId: line.charged ? elementId : null,
+              companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      return { invoiceId, lineIds };
     },
     async cleanup() {
       await db.transaction().execute(async (trx) => {

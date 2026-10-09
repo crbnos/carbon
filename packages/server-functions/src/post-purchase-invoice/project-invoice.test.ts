@@ -1,0 +1,226 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { expect } from "vitest";
+import { projectPostingFixture } from "../lib/project-posting-test-fixture";
+import { databaseTest } from "../local-database-test-fixture";
+import postReceipt from "../post-receipt/index";
+import postPurchaseInvoice from "./index";
+
+databaseTest(
+  "a G/L Account line charged to an Expense project debits the project account",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const po = await f.addPurchaseOrder("a", { locationId, lines: [] });
+      const invoice = await f.addPurchaseInvoice("a", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "G/L Account",
+            accountId: f.account("indirect"),
+            quantity: 1,
+            unitPrice: 200,
+            charged: true
+          },
+          {
+            invoiceLineType: "G/L Account",
+            accountId: f.account("indirect"),
+            quantity: 1,
+            unitPrice: 30
+          }
+        ]
+      });
+
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      const debits = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Invoice")
+        .where("documentId", "=", invoice.invoiceId)
+        .where("accountId", "!=", f.account("payables"))
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        debits.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("project-expense"), 200],
+        [f.account("indirect"), 30]
+      ]);
+
+      const tags = await f.db
+        .selectFrom("journalLineDimension")
+        .select("valueId")
+        .where("companyId", "=", f.companyId)
+        .where("journalLineId", "=", debits[0]!.id)
+        .where("dimensionId", "in", [
+          f.dimension("Project"),
+          f.dimension("ProjectElement")
+        ])
+        .execute();
+      expect(tags.map((tag) => tag.valueId).sort()).toEqual(
+        [f.elementId, f.projectId].sort()
+      );
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select([
+          "costType",
+          "documentType",
+          "documentId",
+          "documentLineId",
+          "amount",
+          "journalLineId"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentType,
+          row.documentId,
+          row.documentLineId,
+          Number(row.amount),
+          row.journalLineId
+        ])
+      ).toEqual([
+        [
+          "Other Direct",
+          "Purchase Invoice",
+          invoice.invoiceId,
+          invoice.lineIds[0],
+          200,
+          debits[0]!.id
+        ]
+      ]);
+
+      // Voiding the invoice reverses the charge.
+      const voided = await postPurchaseInvoice(f.ctx, {
+        type: "void",
+        invoiceId: invoice.invoiceId
+      });
+      expect(voided.error).toBeNull();
+      const net = await f.db
+        .selectFrom("projectLedger")
+        .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirst();
+      expect(Number(net?.amount ?? 0)).toEqual(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the invoice of a line its receipt charged to the project writes only the price variance",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const part = await f.addItem("part", { itemTrackingType: "Inventory" });
+      const po = await f.addPurchaseOrder("b", {
+        locationId,
+        lines: [
+          { itemId: part.itemId, quantity: 4, unitPrice: 10, charged: true }
+        ]
+      });
+      const receipt = await f.addReceipt("b", {
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: part.itemId,
+            quantity: 4,
+            unitPrice: 10
+          }
+        ]
+      });
+      const received = await postReceipt(f.ctx, {
+        receiptId: receipt.receiptId
+      });
+      expect(received.error).toBeNull();
+
+      const invoice = await f.addPurchaseInvoice("b", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "Part",
+            itemId: part.itemId,
+            locationId,
+            quantity: 4,
+            unitPrice: 12,
+            purchaseOrderId: po.purchaseOrderId,
+            purchaseOrderLineId: po.lineIds[0],
+            charged: true
+          }
+        ]
+      });
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Invoice")
+        .where("documentId", "=", invoice.invoiceId)
+        .orderBy("accountId")
+        .execute();
+      expect(
+        Object.fromEntries(
+          lines.map((line) => [line.accountId, Number(line.amount)])
+        )
+      ).toEqual({
+        [f.account("grni")]: -40,
+        [f.account("project-expense")]: 8,
+        [f.account("payables")]: 48
+      });
+
+      // No layer write-up: nothing of the receipt stayed in stock.
+      const invoiceLayers = await f.db
+        .selectFrom("costLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .execute();
+      expect(invoiceLayers).toEqual([]);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "documentType", "amount"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentType,
+          Number(row.amount)
+        ])
+      ).toEqual([
+        ["Material", "Purchase Receipt", 40],
+        ["Material Variance", "Purchase Invoice", 8]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

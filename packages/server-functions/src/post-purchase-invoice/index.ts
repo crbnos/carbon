@@ -40,6 +40,8 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { buildProjectLedgerRow } from "../lib/project-posting";
+import { loadInvoiceProjectCharges } from "./project-charges";
 import {
   calculatePurchasePostingAmounts,
   getInvoicedPurchaseQuantityAfterVoid
@@ -534,6 +536,48 @@ const postPurchaseInvoice = defineServerFn({
               .execute();
           }
 
+          // Reverse the project charges of this invoice.
+          const invoiceProjectRows = await trx
+            .selectFrom("projectLedger")
+            .selectAll()
+            .where("documentType", "=", "Purchase Invoice")
+            .where("documentId", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .execute();
+          const reversedProjectRowIds = new Set(
+            invoiceProjectRows
+              .map((row) => row.reversalOfId)
+              .filter((id): id is string => Boolean(id))
+          );
+          const projectRowReversals = invoiceProjectRows
+            .filter(
+              (row) => !row.reversalOfId && !reversedProjectRowIds.has(row.id)
+            )
+            .map((row) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: row.projectId,
+                projectElementId: row.projectElementId,
+                postingDate: today,
+                costType: row.costType,
+                documentType: "Purchase Invoice",
+                documentId: invoiceId,
+                documentLineId: row.documentLineId,
+                itemId: row.itemId,
+                supplierId: row.supplierId,
+                quantity: row.quantity === null ? null : -Number(row.quantity),
+                amount: -Number(row.amount),
+                reversalOfId: row.id,
+                createdBy: userId
+              })
+            );
+          if (projectRowReversals.length > 0) {
+            await trx
+              .insertInto("projectLedger")
+              .values(projectRowReversals)
+              .execute();
+          }
+
           if (reversingCostLedger.length > 0) {
             await trx
               .insertInto("costLedger")
@@ -677,6 +721,7 @@ const postPurchaseInvoice = defineServerFn({
                 "Location",
                 "CostCenter",
                 "Project",
+                "ProjectElement",
                 "Process",
                 "FixedAssetClass"
               ]
@@ -822,6 +867,7 @@ const postPurchaseInvoice = defineServerFn({
         locationId: string | null;
         costCenterId: string | null;
         projectId: string | null;
+        projectElementId?: string | null;
         processId: string | null;
         fixedAssetClassId: string | null;
       }[] = [];
@@ -969,6 +1015,27 @@ const postPurchaseInvoice = defineServerFn({
           ? icPayablesAccount
           : accountDefaults?.data?.payablesAccount;
 
+      // Lines charged to a non-Statistical project debit its account. A
+      // purchase order line its receipt already charged writes only its price
+      // variance here.
+      const projectCharges = await loadInvoiceProjectCharges(db, companyId, {
+        invoiceLines: purchaseInvoiceLines.data,
+        purchaseOrderLines: purchaseOrderLines.data,
+        postingDate: today
+      });
+      // One projectLedger row per project debit, written in the transaction
+      // once the journal line ids exist.
+      const projectLedgerDrafts: {
+        invoiceLineId: string;
+        projectId: string;
+        projectElementId: string | null;
+        costType: "Purchased Service" | "Other Direct" | "Material Variance";
+        itemId: string | null;
+        quantity: number;
+        amount: number;
+        journalLineIndex: number;
+      }[] = [];
+
       for await (const invoiceLine of purchaseInvoiceLines.data) {
         if (invoiceLine.invoiceLineType === "Comment") continue;
         const postingAmounts = amountsByLineId.get(invoiceLine.id)!;
@@ -1076,6 +1143,10 @@ const postPurchaseInvoice = defineServerFn({
 
                   let debitAccount: string;
                   let debitDescription: string;
+                  const directProjectCharge =
+                    itemTrackingType === "Non-Inventory"
+                      ? projectCharges.forLine(invoiceLine.id)
+                      : null;
 
                   if (itemTrackingType === "Inventory" && !skipReceiptPost) {
                     const inventoryAccount = resolveInventoryAccount(
@@ -1084,12 +1155,31 @@ const postPurchaseInvoice = defineServerFn({
                     );
                     debitAccount = inventoryAccount.account;
                     debitDescription = inventoryAccount.description;
+                  } else if (directProjectCharge) {
+                    debitAccount = directProjectCharge.accountId;
+                    debitDescription = "Project Account";
                   } else if (itemTrackingType === "Non-Inventory") {
                     debitAccount = accountDefaults.data.indirectCostAccount;
                     debitDescription = "Indirect Cost Account";
                   } else {
                     debitAccount = accountDefaults.data.workInProgressAccount;
                     debitDescription = "WIP Account";
+                  }
+
+                  if (directProjectCharge) {
+                    projectLedgerDrafts.push({
+                      invoiceLineId: invoiceLine.id,
+                      projectId: directProjectCharge.projectId,
+                      projectElementId: directProjectCharge.projectElementId,
+                      costType:
+                        invoiceLine.invoiceLineType === "Service"
+                          ? "Purchased Service"
+                          : "Other Direct",
+                      itemId: invoiceLine.itemId ?? null,
+                      quantity: invoiceLineQuantityInInventoryUnit,
+                      amount: totalLineCostWithWeightedShipping,
+                      journalLineIndex: journalLineInserts.length
+                    });
                   }
 
                   journalLineInserts.push({
@@ -1134,7 +1224,16 @@ const postPurchaseInvoice = defineServerFn({
                     processId: null,
                     fixedAssetClassId: null
                   };
-                  journalLineDimensionsMeta.push(itemDimMeta, itemDimMeta);
+                  journalLineDimensionsMeta.push(
+                    directProjectCharge
+                      ? {
+                          ...itemDimMeta,
+                          projectId: directProjectCharge.projectId,
+                          projectElementId: directProjectCharge.projectElementId
+                        }
+                      : itemDimMeta,
+                    itemDimMeta
+                  );
                 }
               } // if the line is associated with a purchase order line, we do accrual/reversing
               else {
@@ -1282,7 +1381,15 @@ const postPurchaseInvoice = defineServerFn({
                       (cost: { itemId: string }) =>
                         cost.itemId === invoiceLine.itemId
                     )?.costingMethod ?? "FIFO";
+                  // A line its receipt charged to a project has no layers: its
+                  // whole variance goes to the account the receipt debited.
+                  const receiptProjectCharge = invoiceLine.purchaseOrderLineId
+                    ? projectCharges.chargedAtReceipt(
+                        invoiceLine.purchaseOrderLineId
+                      )
+                    : null;
                   const usesLayers =
+                    !receiptProjectCharge &&
                     !isOutsideProcessing &&
                     lineItemTrackingType !== "Non-Inventory" &&
                     lineCostingMethod !== "Standard" &&
@@ -1477,10 +1584,28 @@ const postPurchaseInvoice = defineServerFn({
                   }
 
                   // DR/CR Purchase Price Variance for the consumed share
+                  let projectVarianceLineIndex: number | null = null;
                   if (Math.abs(allocation.ppvShare) > 0.005) {
+                    if (receiptProjectCharge) {
+                      projectVarianceLineIndex = journalLineInserts.length;
+                      projectLedgerDrafts.push({
+                        invoiceLineId: invoiceLine.id,
+                        projectId: receiptProjectCharge.projectId,
+                        projectElementId: receiptProjectCharge.projectElementId,
+                        costType: "Material Variance",
+                        itemId: invoiceLine.itemId ?? null,
+                        quantity: quantityToReverse,
+                        amount: allocation.ppvShare,
+                        journalLineIndex: projectVarianceLineIndex
+                      });
+                    }
                     journalLineInserts.push({
-                      accountId: accountDefaults.data.purchaseVarianceAccount,
-                      description: "Purchase Price Variance",
+                      accountId:
+                        receiptProjectCharge?.accountId ??
+                        accountDefaults.data.purchaseVarianceAccount,
+                      description: receiptProjectCharge
+                        ? "Project Account (Price Variance)"
+                        : "Purchase Price Variance",
                       amount: round(debit("expense", allocation.ppvShare)),
                       quantity: round(quantityToReverse),
                       documentType: "Invoice",
@@ -1536,7 +1661,17 @@ const postPurchaseInvoice = defineServerFn({
                   const reverseJlCount =
                     journalLineInserts.length - jlStartIdxReverse;
                   for (let i = 0; i < reverseJlCount; i++) {
-                    journalLineDimensionsMeta.push(reverseDimMeta);
+                    journalLineDimensionsMeta.push(
+                      receiptProjectCharge &&
+                        projectVarianceLineIndex === jlStartIdxReverse + i
+                        ? {
+                            ...reverseDimMeta,
+                            projectId: receiptProjectCharge.projectId,
+                            projectElementId:
+                              receiptProjectCharge.projectElementId
+                          }
+                        : reverseDimMeta
+                    );
                   }
                 }
 
@@ -1555,12 +1690,32 @@ const postPurchaseInvoice = defineServerFn({
                   // Services are never received, so there is no GR/IR accrual to
                   // clear — expense the cost directly to indirect cost instead.
                   const isService = invoiceLine.invoiceLineType === "Service";
+                  const serviceProjectCharge = isService
+                    ? projectCharges.forLine(invoiceLine.id)
+                    : null;
 
                   if (isService) {
-                    // DR Indirect Cost Account
+                    if (serviceProjectCharge) {
+                      projectLedgerDrafts.push({
+                        invoiceLineId: invoiceLine.id,
+                        projectId: serviceProjectCharge.projectId,
+                        projectElementId: serviceProjectCharge.projectElementId,
+                        costType: "Purchased Service",
+                        itemId: invoiceLine.itemId ?? null,
+                        quantity: quantityToAccrue,
+                        amount: accrualCost,
+                        journalLineIndex: journalLineInserts.length
+                      });
+                    }
+                    // DR Indirect Cost Account (the project account for a
+                    // project charge)
                     journalLineInserts.push({
-                      accountId: accountDefaults.data.indirectCostAccount,
-                      description: "Indirect Cost Account",
+                      accountId:
+                        serviceProjectCharge?.accountId ??
+                        accountDefaults.data.indirectCostAccount,
+                      description: serviceProjectCharge
+                        ? "Project Account"
+                        : "Indirect Cost Account",
                       amount: round(debit("asset", accrualCost)),
                       quantity: round(quantityToAccrue),
                       documentType: "Invoice",
@@ -1637,7 +1792,14 @@ const postPurchaseInvoice = defineServerFn({
                     fixedAssetClassId: null
                   };
                   journalLineDimensionsMeta.push(
-                    accrualDimMeta,
+                    serviceProjectCharge
+                      ? {
+                          ...accrualDimMeta,
+                          projectId: serviceProjectCharge.projectId,
+                          projectElementId:
+                            serviceProjectCharge.projectElementId
+                        }
+                      : accrualDimMeta,
                     accrualDimMeta
                   );
                 }
@@ -1991,9 +2153,26 @@ const postPurchaseInvoice = defineServerFn({
 
               journalLineReference = nanoid();
 
+              // A non-Statistical project replaces the line's account.
+              const glProjectCharge = projectCharges.forLine(invoiceLine.id);
+              if (glProjectCharge) {
+                projectLedgerDrafts.push({
+                  invoiceLineId: invoiceLine.id,
+                  projectId: glProjectCharge.projectId,
+                  projectElementId: glProjectCharge.projectElementId,
+                  costType: "Other Direct",
+                  itemId: null,
+                  quantity: invoiceLineQuantityInInventoryUnit,
+                  amount: totalLineCostWithWeightedShipping,
+                  journalLineIndex: journalLineInserts.length
+                });
+              }
+
               journalLineInserts.push({
-                accountId: account.data.id,
-                description: account.data.name!,
+                accountId: glProjectCharge?.accountId ?? account.data.id,
+                description: glProjectCharge
+                  ? "Project Account"
+                  : account.data.name!,
                 amount: round(
                   debit("asset", totalLineCostWithWeightedShipping)
                 ),
@@ -2035,7 +2214,11 @@ const postPurchaseInvoice = defineServerFn({
                 itemId: null,
                 locationId: invoiceLine.locationId ?? null,
                 costCenterId: invoiceLine.costCenterId ?? null,
-                projectId: invoiceLine.projectId ?? null,
+                projectId:
+                  glProjectCharge?.projectId ?? invoiceLine.projectId ?? null,
+                projectElementId: glProjectCharge
+                  ? glProjectCharge.projectElementId
+                  : (invoiceLine.projectElementId ?? null),
                 processId: null,
                 fixedAssetClassId: null
               };
@@ -2183,6 +2366,7 @@ const postPurchaseInvoice = defineServerFn({
         }
 
         let invoiceJournalId: string | null = null;
+        let invoiceJournalLineIds: string[] = [];
         if (accountingEnabled && journalLineInserts.length > 0) {
           const journalEntryId = await getNextSequence(
             trx,
@@ -2221,6 +2405,7 @@ const postPurchaseInvoice = defineServerFn({
             )
             .returning(["id"])
             .execute();
+          invoiceJournalLineIds = journalLineResults.map((jl) => jl.id);
 
           if (dimensionMap.size > 0) {
             const journalLineDimensionInserts: {
@@ -2293,6 +2478,14 @@ const postPurchaseInvoice = defineServerFn({
                   journalLineId: jl.id,
                   dimensionId: dimensionMap.get("Project")!,
                   valueId: meta.projectId,
+                  companyId
+                });
+              }
+              if (meta.projectElementId && dimensionMap.has("ProjectElement")) {
+                journalLineDimensionInserts.push({
+                  journalLineId: jl.id,
+                  dimensionId: dimensionMap.get("ProjectElement")!,
+                  valueId: meta.projectElementId,
                   companyId
                 });
               }
@@ -2491,6 +2684,33 @@ const postPurchaseInvoice = defineServerFn({
                 .execute();
             }
           }
+        }
+
+        if (projectLedgerDrafts.length > 0) {
+          await trx
+            .insertInto("projectLedger")
+            .values(
+              projectLedgerDrafts.map((draft) =>
+                buildProjectLedgerRow({
+                  companyId,
+                  projectId: draft.projectId,
+                  projectElementId: draft.projectElementId,
+                  postingDate: today,
+                  costType: draft.costType,
+                  documentType: "Purchase Invoice",
+                  documentId: invoiceId,
+                  documentLineId: draft.invoiceLineId,
+                  itemId: draft.itemId,
+                  supplierId: purchaseInvoice.data?.supplierId ?? null,
+                  quantity: draft.quantity,
+                  amount: draft.amount,
+                  journalLineId:
+                    invoiceJournalLineIds[draft.journalLineIndex] ?? null,
+                  createdBy: userId
+                })
+              )
+            )
+            .execute();
         }
 
         if (cipCostInserts.length > 0) {
