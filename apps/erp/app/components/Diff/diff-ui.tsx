@@ -5,10 +5,10 @@
 import { Badge, HStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type { MethodDiffEntry } from "../../items.models";
+import type { DiffEntry, DiffStatus } from "~/modules/shared/diff";
 
 // -----------------------------------------------------------------------------
-// Shared Change Notice diff-UI helpers.
+// Shared diff-UI helpers (change notices, project baselines and change requests).
 //
 // The BOM / BOP / BOP-children editors all render staged rows keyed against a
 // per-entry diff (added / modified / removed). These helpers centralize the
@@ -16,10 +16,8 @@ import type { MethodDiffEntry } from "../../items.models";
 // id → diff-entry map, deriving removed-only entries, and the status badge.
 // -----------------------------------------------------------------------------
 
-// A diff entry whose before/after payloads may carry an `id`. The diff engine is
+// A diff entry's before/after payloads may carry an `id`. The diff engine is
 // generic over row shape (Record<string, unknown>); we only read `.id`.
-type DiffEntry<Row> = MethodDiffEntry<Row>;
-
 function idOf(payload: unknown): string | undefined {
   return (payload as { id?: string } | null)?.id;
 }
@@ -51,11 +49,7 @@ export function removedEntries<Row, T extends DiffEntry<Row>>(
   });
 }
 
-export function DiffBadge({
-  status
-}: {
-  status: MethodDiffEntry<unknown>["status"];
-}) {
+export function DiffBadge({ status }: { status: DiffStatus }) {
   if (status === "added") {
     return (
       <Badge variant="green">
