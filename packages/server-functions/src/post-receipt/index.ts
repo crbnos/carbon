@@ -50,6 +50,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
   reverseProjectLedgerRows
@@ -1190,6 +1191,8 @@ const postReceipt = defineServerFn({
             quantity: number;
             amount: number;
             journalLineIndex: number | null;
+            fixedAssetId: string | null;
+            postCapitalization: boolean;
           }[] = [];
           // Tracked units consumed by their project at receipt.
           const projectConsumedEntityIds: string[] = [];
@@ -1968,7 +1971,9 @@ const postReceipt = defineServerFn({
                 itemId: receiptLine.itemId ?? null,
                 quantity: receivedQuantity,
                 amount: isNegativeReceipt ? -cost : glCost,
-                journalLineIndex: projectDebitLineIndex
+                journalLineIndex: projectDebitLineIndex,
+                fixedAssetId: projectRoute.fixedAssetId,
+                postCapitalization: projectRoute.postCapitalization
               });
             }
 
@@ -2629,6 +2634,28 @@ const postReceipt = defineServerFn({
                   )
                 )
                 .execute();
+
+              // A line charged to a Capitalize project builds its asset.
+              await writeProjectCipRows(trx, {
+                companyId,
+                userId,
+                rows: projectLedgerDrafts.map((draft) =>
+                  buildProjectCipRow({
+                    resolved: draft,
+                    companyId,
+                    userId,
+                    projectId: draft.projectId,
+                    projectElementId: draft.projectElementId,
+                    sourceType: "Receipt",
+                    sourceDocumentId: receiptId,
+                    sourceDocumentLineId: draft.receiptLineId,
+                    jobId: draft.jobId,
+                    amount: draft.amount,
+                    costDate: today,
+                    journalId: receiptJournalId
+                  })
+                )
+              });
             }
 
             if (cipCostInserts.length > 0) {

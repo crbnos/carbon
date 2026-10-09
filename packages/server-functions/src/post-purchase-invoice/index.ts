@@ -40,6 +40,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
   reverseProjectLedgerRows
@@ -1004,6 +1005,8 @@ const postPurchaseInvoice = defineServerFn({
         quantity: number;
         amount: number;
         journalLineIndex: number;
+        fixedAssetId: string | null;
+        postCapitalization: boolean;
       }[] = [];
 
       for await (const invoiceLine of purchaseInvoiceLines.data) {
@@ -1141,6 +1144,9 @@ const postPurchaseInvoice = defineServerFn({
                       invoiceLineId: invoiceLine.id,
                       projectId: directProjectCharge.projectId,
                       projectElementId: directProjectCharge.projectElementId,
+                      fixedAssetId: directProjectCharge.fixedAssetId,
+                      postCapitalization:
+                        directProjectCharge.postCapitalization,
                       costType:
                         invoiceLine.invoiceLineType === "Service"
                           ? "Purchased Service"
@@ -1562,6 +1568,9 @@ const postPurchaseInvoice = defineServerFn({
                         invoiceLineId: invoiceLine.id,
                         projectId: receiptProjectCharge.projectId,
                         projectElementId: receiptProjectCharge.projectElementId,
+                        fixedAssetId: receiptProjectCharge.fixedAssetId,
+                        postCapitalization:
+                          receiptProjectCharge.postCapitalization,
                         costType: "Material Variance",
                         itemId: invoiceLine.itemId ?? null,
                         quantity: quantityToReverse,
@@ -1670,6 +1679,9 @@ const postPurchaseInvoice = defineServerFn({
                         invoiceLineId: invoiceLine.id,
                         projectId: serviceProjectCharge.projectId,
                         projectElementId: serviceProjectCharge.projectElementId,
+                        fixedAssetId: serviceProjectCharge.fixedAssetId,
+                        postCapitalization:
+                          serviceProjectCharge.postCapitalization,
                         costType: "Purchased Service",
                         itemId: invoiceLine.itemId ?? null,
                         quantity: quantityToAccrue,
@@ -2130,6 +2142,8 @@ const postPurchaseInvoice = defineServerFn({
                   invoiceLineId: invoiceLine.id,
                   projectId: glProjectCharge.projectId,
                   projectElementId: glProjectCharge.projectElementId,
+                  fixedAssetId: glProjectCharge.fixedAssetId,
+                  postCapitalization: glProjectCharge.postCapitalization,
                   costType: "Other Direct",
                   itemId: null,
                   quantity: invoiceLineQuantityInInventoryUnit,
@@ -2681,6 +2695,27 @@ const postPurchaseInvoice = defineServerFn({
               )
             )
             .execute();
+
+          // A line charged to a Capitalize project builds its asset.
+          await writeProjectCipRows(trx, {
+            companyId,
+            userId,
+            rows: projectLedgerDrafts.map((draft) =>
+              buildProjectCipRow({
+                resolved: draft,
+                companyId,
+                userId,
+                projectId: draft.projectId,
+                projectElementId: draft.projectElementId,
+                sourceType: "Purchase Invoice",
+                sourceDocumentId: invoiceId,
+                sourceDocumentLineId: draft.invoiceLineId,
+                amount: draft.amount,
+                costDate: today,
+                journalId: invoiceJournalId
+              })
+            )
+          });
         }
 
         if (cipCostInserts.length > 0) {

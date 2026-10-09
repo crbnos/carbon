@@ -14,7 +14,8 @@ import {
   loadProjectPostingContexts,
   ProjectChargeError,
   projectPostingKey,
-  resolveProjectPostingAccount
+  resolveProjectPostingAccount,
+  resolveProjectTreatment
 } from "../lib/project-posting";
 
 export type InvoiceProjectCharge = {
@@ -22,6 +23,9 @@ export type InvoiceProjectCharge = {
   projectElementId: string | null;
   /** The project account the line debits. */
   accountId: string;
+  /** The asset a Capitalize line builds, else null. */
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
 };
 
 type ChargeableInvoiceLine = {
@@ -171,13 +175,11 @@ export async function loadInvoiceProjectCharges(
       let charge: InvoiceProjectCharge | null = null;
       if (ref) {
         const context = contextOf(ref);
-        const { treatment, accountId } = resolveProjectPostingAccount(
-          context,
-          args.postingDate
-        );
+        const { treatment, accountId, fixedAssetId, postCapitalization } =
+          resolveProjectPostingAccount(context, args.postingDate);
         if (treatment !== "Statistical" && accountId) {
           assertChargeable(context, "commitment");
-          charge = { ...ref, accountId };
+          charge = { ...ref, accountId, fixedAssetId, postCapitalization };
         }
       }
       lineCharges.set(invoiceLineId, charge);
@@ -190,13 +192,31 @@ export async function loadInvoiceProjectCharges(
         projectId: row.projectId,
         projectElementId: row.projectElementId
       };
-      if (row.accountId) return { ...ref, accountId: row.accountId };
+      const context = contextOf(ref);
+      // A Capitalize variance follows its asset now: the CIP account while
+      // it is Under Construction, its class account once it is in service.
+      if (resolveProjectTreatment(context, args.postingDate) === "Capitalize") {
+        const resolved = resolveProjectPostingAccount(
+          context,
+          args.postingDate
+        );
+        return {
+          ...ref,
+          accountId: resolved.accountId!,
+          fixedAssetId: resolved.fixedAssetId,
+          postCapitalization: resolved.postCapitalization
+        };
+      }
+      const noAsset = { fixedAssetId: null, postCapitalization: false };
+      if (row.accountId) {
+        return { ...ref, accountId: row.accountId, ...noAsset };
+      }
       // Posted with accounting off: resolve the account now.
       const { accountId } = resolveProjectPostingAccount(
-        contextOf(ref),
+        context,
         args.postingDate
       );
-      return accountId ? { ...ref, accountId } : null;
+      return accountId ? { ...ref, accountId, ...noAsset } : null;
     }
   };
 }

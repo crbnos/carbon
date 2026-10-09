@@ -117,3 +117,86 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "an entry on a Capitalize element debits the CIP account and builds the asset",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { fixedAssetId } = await f.addCapitalAsset({
+        status: "Under Construction",
+        finalAssetElement: true
+      });
+      const entry = await f.db
+        .insertInto("timesheetEntry")
+        .values({
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          laborCategoryId: f.laborCategoryId,
+          hours: 10,
+          status: "Submitted",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const result = await postTimesheet(f.ctx, {
+        timesheetEntryIds: [entry.id]
+      });
+      expect(result.error).toBeNull();
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("cip"), 850],
+        [f.account("labor-absorption"), -850]
+      ]);
+
+      const cipRows = await f.db
+        .selectFrom("fixedAssetCipCost")
+        .select([
+          "fixedAssetId",
+          "sourceType",
+          "sourceDocumentId",
+          "projectId",
+          "projectElementId",
+          "amount",
+          "journalId",
+          "postCapitalization"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(cipRows).toHaveLength(1);
+      expect(cipRows[0]).toMatchObject({
+        fixedAssetId,
+        sourceType: "Timesheet",
+        sourceDocumentId: entry.id,
+        projectId: f.projectId,
+        projectElementId: f.elementId,
+        journalId: result.data?.journalIds[0],
+        postCapitalization: false
+      });
+      expect(Number(cipRows[0]!.amount)).toEqual(850);
+
+      const asset = await f.db
+        .selectFrom("fixedAsset")
+        .select(["acquisitionCost", "status"])
+        .where("id", "=", fixedAssetId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(asset.acquisitionCost)).toEqual(850);
+      expect(asset.status).toEqual("Under Construction");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

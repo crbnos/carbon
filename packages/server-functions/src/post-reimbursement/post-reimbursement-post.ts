@@ -9,9 +9,10 @@ import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
-  resolveProjectLineAccounts
+  resolveProjectLineCharges
 } from "../lib/project-posting";
 // Already generic — allocating journal-line ids has nothing charge-specific
 // about it, so this is imported rather than copied.
@@ -164,11 +165,17 @@ export async function postReimbursementJournal(
 
   // A line charged to a non-Statistical project posts to the project account
   // (the cost treatment on the reimbursement's date) in place of its own.
-  const projectAccountByLineId = await resolveProjectLineAccounts(
+  const projectChargeByLineId = await resolveProjectLineCharges(
     trx,
     companyId,
     lines,
     reimbursement.postingDate ?? reimbursement.reimbursementDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
   );
   const projectAccountIds = [
     ...new Set(projectAccountByLineId.values())
@@ -453,6 +460,33 @@ export async function postReimbursementJournal(
   if (projectRows.length) {
     await trx.insertInto("projectLedger").values(projectRows).execute();
   }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Reimbursement",
+            sourceDocumentId: reimbursement.id,
+            sourceDocumentLineId: line.id,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("reimbursement")

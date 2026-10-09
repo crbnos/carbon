@@ -108,6 +108,41 @@ export function capitalAssetId(ctx: ProjectPostingContext): string | null {
 }
 
 /**
+ * The node that decides the treatment on `postingDate`: the nearest element
+ * (itself, then its ancestors) whose treatment is in effect, else the
+ * project. Never throws.
+ */
+function treatmentNode(
+  ctx: ProjectPostingContext,
+  postingDate: string
+): { treatment: ProjectCostTreatment; explicitAccount: string | null } {
+  const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
+  const override = chain.find(
+    (element) =>
+      element.costTreatment !== null &&
+      (element.costTreatmentEffectiveFrom === null ||
+        element.costTreatmentEffectiveFrom <= postingDate)
+  );
+  return override?.costTreatment
+    ? {
+        treatment: override.costTreatment,
+        explicitAccount: override.costAccountId
+      }
+    : {
+        treatment: ctx.project.costTreatment,
+        explicitAccount: ctx.project.costAccountId
+      };
+}
+
+/** The treatment in effect on `postingDate`, with no account checks. */
+export function resolveProjectTreatment(
+  ctx: ProjectPostingContext,
+  postingDate: string
+): ProjectCostTreatment {
+  return treatmentNode(ctx, postingDate).treatment;
+}
+
+/**
  * The treatment and account a charge posts to on `postingDate`
  * (`YYYY-MM-DD`). The nearest element (itself, then its ancestors) whose
  * treatment is in effect on the date decides; else the project does.
@@ -120,19 +155,7 @@ export function resolveProjectPostingAccount(
   ctx: ProjectPostingContext,
   postingDate: string
 ): ResolvedProjectPostingAccount {
-  const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
-  const override = chain.find(
-    (element) =>
-      element.costTreatment !== null &&
-      (element.costTreatmentEffectiveFrom === null ||
-        element.costTreatmentEffectiveFrom <= postingDate)
-  );
-
-  const treatment = override?.costTreatment ?? ctx.project.costTreatment;
-  const explicitAccount = override
-    ? override.costAccountId
-    : ctx.project.costAccountId;
-
+  const { treatment, explicitAccount } = treatmentNode(ctx, postingDate);
   const noAsset = { fixedAssetId: null, postCapitalization: false };
 
   if (treatment === "Capitalize") {
@@ -597,13 +620,20 @@ export async function loadJobProjectCharge(
   };
 }
 
+/** The project account a document line posts to, and its Capitalize asset. */
+export type ProjectLineCharge = {
+  accountId: string;
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
+};
+
 /**
- * The project account of every line charged to a non-Statistical project,
+ * The project charge of every line charged to a non-Statistical project,
  * keyed by line id, resolved on `postingDate`. One posting-context load for
  * all lines. A Statistical line has no entry (it keeps its own account and
  * the Project tag). Refuses a project or element that takes no postings.
  */
-export async function resolveProjectLineAccounts(
+export async function resolveProjectLineCharges(
   trx: Kysely<DB>,
   companyId: string,
   lines: {
@@ -612,13 +642,13 @@ export async function resolveProjectLineAccounts(
     projectElementId: string | null;
   }[],
   postingDate: string
-): Promise<Map<string, string>> {
-  const accounts = new Map<string, string>();
+): Promise<Map<string, ProjectLineCharge>> {
+  const charges = new Map<string, ProjectLineCharge>();
   const charged = lines.filter(
     (line): line is typeof line & { projectId: string } =>
       Boolean(line.projectId)
   );
-  if (charged.length === 0) return accounts;
+  if (charged.length === 0) return charges;
 
   const contexts = await loadProjectPostingContexts(
     trx,
@@ -637,15 +667,38 @@ export async function resolveProjectLineAccounts(
         "The line's project or element does not exist"
       );
     }
-    const { treatment, accountId } = resolveProjectPostingAccount(
-      context,
-      postingDate
-    );
+    const { treatment, accountId, fixedAssetId, postCapitalization } =
+      resolveProjectPostingAccount(context, postingDate);
     if (treatment === "Statistical" || !accountId) continue;
     assertChargeable(context, "commitment");
-    accounts.set(line.id, accountId);
+    charges.set(line.id, { accountId, fixedAssetId, postCapitalization });
   }
-  return accounts;
+  return charges;
+}
+
+/**
+ * The project account of every line charged to a non-Statistical project,
+ * keyed by line id (`resolveProjectLineCharges` without the asset).
+ */
+export async function resolveProjectLineAccounts(
+  trx: Kysely<DB>,
+  companyId: string,
+  lines: {
+    id: string;
+    projectId: string | null;
+    projectElementId: string | null;
+  }[],
+  postingDate: string
+): Promise<Map<string, string>> {
+  const charges = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    postingDate
+  );
+  return new Map(
+    [...charges].map(([lineId, charge]) => [lineId, charge.accountId])
+  );
 }
 
 /**

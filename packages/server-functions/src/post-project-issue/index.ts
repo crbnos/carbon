@@ -12,6 +12,7 @@ import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { bookAdjustment } from "../lib/post-adjustment";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   assertChargeable,
   buildProjectLedgerRow,
@@ -234,10 +235,8 @@ const postProjectIssue = defineServerFn({
       if (!context) throw new NotFoundError("Project element not found");
       assertChargeable(context, isIssue ? "new" : "commitment");
 
-      const { treatment, accountId } = resolveProjectPostingAccount(
-        context,
-        postingDate
-      );
+      const resolved = resolveProjectPostingAccount(context, postingDate);
+      const { treatment, accountId } = resolved;
       const isStatistical = treatment === "Statistical";
       const offsetAccount = isStatistical
         ? accountDefaults.indirectCostAccount
@@ -362,6 +361,26 @@ const postProjectIssue = defineServerFn({
           .returning("id")
           .executeTakeFirstOrThrow();
         projectLedgerId = row.id;
+
+        // An issue to a Capitalize project builds its asset.
+        await writeProjectCipRows(trx, {
+          companyId,
+          userId,
+          rows: [
+            buildProjectCipRow({
+              resolved,
+              companyId,
+              userId,
+              projectId,
+              projectElementId,
+              sourceType: "Project Issue",
+              sourceDocumentId: booked.itemLedgerId,
+              amount: isIssue ? booked.cost : -booked.cost,
+              costDate: postingDate,
+              journalId: booked.journalId
+            })
+          ]
+        });
       }
 
       if (projectElementId) {

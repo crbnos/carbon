@@ -64,6 +64,9 @@ export type TimesheetLedgerRow = {
   quantity: number;
   amount: number;
   reversalOfId: string | null;
+  /** The asset a Capitalize entry builds, else null. */
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
 };
 
 export type TimesheetStamp = {
@@ -116,10 +119,8 @@ export function planTimesheetPosting(
     }
     assertChargeable(ctx, entry.reversalOfId ? "commitment" : "new");
 
-    const { treatment, accountId } = resolveProjectPostingAccount(
-      ctx,
-      entry.entryDate
-    );
+    const { treatment, accountId, fixedAssetId, postCapitalization } =
+      resolveProjectPostingAccount(ctx, entry.entryDate);
 
     const original = entry.reversalOfId
       ? originals.get(entry.reversalOfId)
@@ -157,7 +158,9 @@ export function planTimesheetPosting(
       laborCategoryId: entry.laborCategoryId,
       quantity: entry.hours,
       amount: cost,
-      reversalOfId: original?.ledgerRowId ?? null
+      reversalOfId: original?.ledgerRowId ?? null,
+      fixedAssetId,
+      postCapitalization
     });
 
     if (!options.accountingEnabled || cost === 0) continue;

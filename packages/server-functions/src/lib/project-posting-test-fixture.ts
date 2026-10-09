@@ -99,7 +99,9 @@ export async function projectPostingFixture(
     ["adjustment-variance", "Inventory adjustment variance", "Expense"],
     ["grni", "Goods received not invoiced", "Liability"],
     ["payables", "Accounts payable", "Liability"],
-    ["ppv", "Purchase price variance", "Expense"]
+    ["ppv", "Purchase price variance", "Expense"],
+    ["cip", "Construction in progress", "Asset"],
+    ["machinery", "Machinery", "Asset"]
   ];
 
   await db.transaction().execute(async (trx) => {
@@ -293,6 +295,86 @@ export async function projectPostingFixture(
     projectId,
     elementId,
     laborCategoryId,
+    /** A capital asset for a Capitalize project: a CIP class (asset account
+     *  `cip`) and an in-service class (`machinery`), and one asset in
+     *  `status`. The asset is the project's own asset, or the fixture
+     *  element's when `finalAssetElement` is set (the element becomes a final
+     *  asset). An Active asset sits in the in-service class. */
+    async addCapitalAsset(args: {
+      status: "Under Construction" | "Active";
+      finalAssetElement?: boolean;
+      acquisitionCost?: number;
+    }) {
+      const cipClassId = `${prefix}-class-cip`;
+      const classId = `${prefix}-class-machinery`;
+      const fixedAssetId = `${prefix}-asset-${crypto.randomUUID().slice(0, 8)}`;
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        const accountColumns = {
+          accumulatedDepreciationAccountId: account("misc"),
+          depreciationExpenseAccountId: account("misc"),
+          writeOffAccountId: account("misc"),
+          writeDownAccountId: account("misc"),
+          lossOnDisposalAccountId: account("misc"),
+          gainOnDisposalAccountId: account("misc")
+        };
+        await trx
+          .insertInto("fixedAssetClass")
+          .values([
+            {
+              id: cipClassId,
+              name: "Construction in Progress",
+              isConstructionInProgress: true,
+              assetAccountId: account("cip"),
+              ...accountColumns,
+              companyId,
+              createdBy: USER
+            },
+            {
+              id: classId,
+              name: "Machinery",
+              assetAccountId: account("machinery"),
+              ...accountColumns,
+              companyId,
+              createdBy: USER
+            }
+          ])
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .insertInto("fixedAsset")
+          .values({
+            id: fixedAssetId,
+            fixedAssetId,
+            name: "Test asset",
+            fixedAssetClassId: args.status === "Active" ? classId : cipClassId,
+            status: args.status,
+            acquisitionCost: args.acquisitionCost ?? 0,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("project")
+          .set({
+            costTreatment: "Capitalize",
+            fixedAssetClassId: cipClassId,
+            ...(args.finalAssetElement ? {} : { fixedAssetId })
+          })
+          .where("id", "=", projectId)
+          .where("companyId", "=", companyId)
+          .execute();
+        if (args.finalAssetElement) {
+          await trx
+            .updateTable("projectElement")
+            .set({ isFinalAsset: true, fixedAssetId })
+            .where("id", "=", elementId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+      });
+      return { fixedAssetId, cipClassId, classId };
+    },
     /** A location and a FIFO bought item with `quantity` units on hand in
      *  one cost layer at `unitCost`. */
     async addStockedItem(
@@ -766,6 +848,19 @@ export async function projectPostingFixture(
         await trx
           .updateTable("journal")
           .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
+        // Capital assets: a class is ON DELETE RESTRICT from its assets.
+        await trx
+          .deleteFrom("fixedAssetCipCost")
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .deleteFrom("fixedAsset")
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .deleteFrom("fixedAssetClass")
           .where("companyId", "=", companyId)
           .execute();
         await sql`SET LOCAL session_replication_role = origin`.execute(trx);

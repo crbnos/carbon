@@ -12,6 +12,7 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
   loadProjectPostingContexts,
@@ -343,6 +344,26 @@ const postTimesheet = defineServerFn({
             )
           )
           .execute();
+
+        // A Capitalize entry also builds its asset.
+        await writeProjectCipRows(trx, {
+          companyId,
+          userId,
+          rows: plan.ledgerRows.map((row) =>
+            buildProjectCipRow({
+              resolved: row,
+              companyId,
+              userId,
+              projectId: row.projectId,
+              projectElementId: row.projectElementId,
+              sourceType: "Timesheet",
+              sourceDocumentId: row.entryId,
+              amount: row.amount,
+              costDate: row.postingDate,
+              journalId: journalIdByEntry.get(row.entryId) ?? null
+            })
+          )
+        });
       }
 
       // One statement for every entry: each carries its own rate and journal.

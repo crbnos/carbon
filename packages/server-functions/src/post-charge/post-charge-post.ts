@@ -9,9 +9,10 @@ import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
-  resolveProjectLineAccounts
+  resolveProjectLineCharges
 } from "../lib/project-posting";
 import { buildChargeJournal } from "./build-charge-journal";
 import { allocateJournalLineIds } from "./journal-line-ids";
@@ -150,11 +151,17 @@ export async function postChargeJournal(
 
   // A line charged to a non-Statistical project posts to the project account
   // (the cost treatment on the charge's date) in place of its own account.
-  const projectAccountByLineId = await resolveProjectLineAccounts(
+  const projectChargeByLineId = await resolveProjectLineCharges(
     trx,
     companyId,
     lines,
     charge.postingDate ?? charge.transactionDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
   );
   const projectAccountIds = [
     ...new Set(projectAccountByLineId.values())
@@ -409,6 +416,32 @@ export async function postChargeJournal(
   if (projectRows.length) {
     await trx.insertInto("projectLedger").values(projectRows).execute();
   }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Charge",
+            sourceDocumentId: charge.id,
+            sourceDocumentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("charge")

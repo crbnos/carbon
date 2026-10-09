@@ -43,7 +43,7 @@
 - [x] Task 5: Apply migrations, regenerate types, ship RLS
 - [x] Task 6: Add Capitalize to the posting helpers and the SQL mirror
 - [x] Task 7: Create CIP assets on release and on marking a final asset
-- [ ] Task 8: Write CIP cost rows from the project posting paths
+- [x] Task 8: Write CIP cost rows from the project posting paths
 - [ ] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
 - [ ] Task 10: Add Place in service
 - [ ] Task 11: Post late costs to the Active asset and fix the void guards
@@ -1461,3 +1461,8 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 7: `isFinalAsset` joins `projectElementEditableFields` here, not in Task 13: the update route needs it now. `updateProjectElementField` refuses it on a Parameter. It refuses turning it off while the element's asset has a CIP cost row. Turning it off keeps `fixedAssetId`, so turning it on again reuses the asset.
 - Task 7: the update route creates the asset when `isFinalAsset` turns on and the project is past Draft (Released, On Hold or Technically Complete). The plan named Released only, but the other two statuses also take postings.
 - Task 7: a throwaway vitest run against this worktree's database created a Released Capitalize project with 2 final-asset elements and 1 other element. 2 calls made 3 assets (the project and the 2 final assets), each Under Construction at cost 0 in the CIP class. The other element got none. The rows were deleted. The script was not committed.
+- Task 8: `lib/project-cip.ts` also exports `writeProjectCipRows(trx, { companyId, userId, rows })`. It inserts the non-null rows in one insert and raises `acquisitionCost` with one `UPDATE … FROM (VALUES …)`. Each poster calls it once, right after its `projectLedger` insert, so a CIP row exists exactly where a ledger row does (with accounting off too, for receipts, charges, reimbursements and timesheets).
+- Task 8: the resolved asset travels with each poster's existing project data: `TimesheetLedgerRow`, `ReceiptProjectRoute`, `InvoiceProjectCharge` and the invoice drafts gain `fixedAssetId` and `postCapitalization`. `lib/project-posting.ts` gains `resolveProjectLineCharges` (the charge and reimbursement lines with their asset); `resolveProjectLineAccounts` now wraps it.
+- Task 8: a price variance of a line its receipt charged to a Capitalize project resolves its account again on the invoice date (`chargedAtReceipt`). The receipt's account would be the CIP account even after the asset went into service, which would leave a balance on CIP. Other treatments keep the receipt's account, as before. `resolveProjectTreatment` (the treatment alone, never throws) makes that choice without new refusals.
+- Task 8: `project-cip.test.ts` has 4 cases: the plan's 3 and a `postCapitalization` case for Task 11. The fixture gains `addCapitalAsset` (a CIP class on account `cip`, an in-service class on `machinery`, one asset), and its cleanup deletes the CIP rows, assets and classes.
+- Task 8: voids of charges and reimbursements do not yet remove their CIP rows; Task 11 handles every void.

@@ -23,6 +23,9 @@ export type ReceiptProjectRoute = {
   accountId: string;
   /** The consume-to-project job of an outside processing line. */
   jobId: string | null;
+  /** The asset a Capitalize line builds, else null. */
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
 };
 
 type RoutablePurchaseOrderLine = {
@@ -111,10 +114,8 @@ export async function loadReceiptProjectRoutes(
         "The project or element of a purchase order line does not exist"
       );
     }
-    const { treatment, accountId } = resolveProjectPostingAccount(
-      context,
-      args.postingDate
-    );
+    const { treatment, accountId, fixedAssetId, postCapitalization } =
+      resolveProjectPostingAccount(context, args.postingDate);
     if (treatment === "Statistical" || !accountId) {
       // A consume-to-project job cannot charge a Statistical project.
       if (charge.jobId) {
@@ -125,7 +126,12 @@ export async function loadReceiptProjectRoutes(
       continue;
     }
     assertChargeable(context, "commitment");
-    routes.set(lineId, { ...charge, accountId });
+    routes.set(lineId, {
+      ...charge,
+      accountId,
+      fixedAssetId,
+      postCapitalization
+    });
   }
 
   return routes;
