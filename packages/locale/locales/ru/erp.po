@@ -465,6 +465,9 @@ msgstr "{name} заканчивается {end} (было {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} заканчивается {end} (было открыто)"
 
+msgid "{name} path"
+msgstr "{name} траектория"
+
 msgid "{name} replaced"
 msgstr "{name} заменено"
 
@@ -6022,6 +6025,9 @@ msgstr "Пользовательские поля"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Пользовательские поля еще не доступны для номенклатуры."
+
+msgid "Custom path"
+msgstr "Пользовательская траектория"
 
 msgid "Custom SOW · we manage"
 msgstr "Пользовательское SOW · мы управляем"
@@ -17599,6 +17605,9 @@ msgstr "Роли, устанавливающие права доступа по 
 msgid "Room to grow without bolting on more tools"
 msgstr "Место для роста без добавления новых инструментов"
 
+msgid "Rotate"
+msgstr "Повернуть"
+
 msgid "Rounding Account"
 msgstr "Счет округления"
 
@@ -19659,6 +19668,9 @@ msgstr "Подсборка {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Только сроки действия подсборок"
 
+msgid "Sub-assembly path"
+msgstr "Траектория подсборки"
+
 msgid "Sub-Departments"
 msgstr "Подразделения"
 
@@ -20865,8 +20877,11 @@ msgstr "Деталь производится как собственное за
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Деталь берется из существующего запаса при производстве ее родительского элемента — без создания нового производственного заказа или заказа поставщику."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Путь, по которому компоненты этого шага перемещаются на место при воспроизведении; определяется на основе модели или рисуется вручную с помощью кнопки «Изменить путь»."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Траектория, по которой движется готовая подсборка как единое целое при её добавлении в сборку. Она появляется перед собственными деталями шага; пока вы не создадите её, используя функцию «Изменить траекторию», она скользит в сборку со стороны."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Траектория, по которой компоненты этого шага перемещаются на место во время воспроизведения; рассчитанная по модели или нарисованная вручную с помощью функции «Изменить траекторию», где деталь также может быть повернута в любой контрольной точке."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Сотрудники Carbon, которые будут проводить ваше внедрение, и способы связи с ними."

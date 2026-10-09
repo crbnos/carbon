@@ -85,6 +85,7 @@ import AssemblyStepMaterials from "./AssemblyStepMaterials";
 import AssemblyStepSlides from "./AssemblyStepSlides";
 import { AssemblyStepStatus, normalizeStepStatus } from "./AssemblyStepStatus";
 import AssemblyStepTools from "./AssemblyStepTools";
+import SubAssemblyPathRow from "./AssemblySubAssemblyPathRow";
 import AssemblySubAssemblyProperties from "./AssemblySubAssemblyProperties";
 
 type AssemblyInstructionPropertiesProps = {
@@ -110,8 +111,13 @@ type AssemblyInstructionPropertiesProps = {
   onSetHiddenComponents: (nodeIds: string[]) => void;
   /** The active step's motion path is open in the 3D editor */
   isEditingMotion: boolean;
-  onEditMotion: (stepId: string) => void;
+  /** The sub-assembly whose joining path is open in the 3D editor, if any */
+  editingUnitId: string | null;
+  /** Opens the editor on a step's motion, or on a sub-assembly it carries in */
+  onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
+  /** Clears a sub-assembly's path back to the automatic glide */
+  onResetUnitMotion: (headerId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   /** Every step of the instruction, in play order — numbering and sub-assemblies */
@@ -138,8 +144,10 @@ const AssemblyInstructionProperties = ({
   hiddenNodeIds,
   onSetHiddenComponents,
   isEditingMotion,
+  editingUnitId,
   onEditMotion,
   onStopEditMotion,
+  onResetUnitMotion,
   onSetCamera,
   onClearCamera,
   viewerSteps,
@@ -274,6 +282,10 @@ const AssemblyInstructionProperties = ({
           onSelectStep={onSelectStep}
           onSetCamera={onSetCamera}
           onClearCamera={onClearCamera}
+          editingUnitId={editingUnitId}
+          onEditMotion={onEditMotion}
+          onStopEditMotion={onStopEditMotion}
+          onResetUnitMotion={onResetUnitMotion}
         />
       ) : step ? (
         <Tabs defaultValue="details" className="w-full px-4 pb-2 pt-3">
@@ -311,8 +323,10 @@ const AssemblyInstructionProperties = ({
               hiddenNodeIds={hiddenNodeIds}
               onSetHiddenComponents={onSetHiddenComponents}
               isEditingMotion={isEditingMotion}
+              editingUnitId={editingUnitId}
               onEditMotion={onEditMotion}
               onStopEditMotion={onStopEditMotion}
+              onResetUnitMotion={onResetUnitMotion}
               onSetCamera={onSetCamera}
               onClearCamera={onClearCamera}
               viewerSteps={viewerSteps}
@@ -434,8 +448,10 @@ function StepForm({
   hiddenNodeIds,
   onSetHiddenComponents,
   isEditingMotion,
+  editingUnitId,
   onEditMotion,
   onStopEditMotion,
+  onResetUnitMotion,
   onSetCamera,
   onClearCamera,
   viewerSteps,
@@ -458,8 +474,10 @@ function StepForm({
   hiddenNodeIds: string[];
   onSetHiddenComponents: (nodeIds: string[]) => void;
   isEditingMotion: boolean;
-  onEditMotion: (stepId: string) => void;
+  editingUnitId: string | null;
+  onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
+  onResetUnitMotion: (headerId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   viewerSteps: AssemblyStep[];
@@ -521,6 +539,16 @@ function StepForm({
   const planFlag = useMemo(
     () => getPlanFlag(step.warnings, graphIndex),
     [step.warnings, graphIndex]
+  );
+
+  const carriedIn = useMemo(
+    () =>
+      viewerSteps.filter(
+        (viewerStep) =>
+          subPlan.get(viewerStep.id)?.isHeader &&
+          viewerStep.usedInStepId === step.id
+      ),
+    [viewerSteps, subPlan, step.id]
   );
 
   return (
@@ -684,6 +712,18 @@ function StepForm({
                 </Button>
               )}
             </PlaybackRow>
+            {carriedIn.map((header) => (
+              <SubAssemblyPathRow
+                key={header.id}
+                name={titleOf(header.id)}
+                hasPath={header.motion.type !== "none"}
+                isEditing={editingUnitId === header.id}
+                isDisabled={isDisabled}
+                onEdit={() => onEditMotion(step.id, header.id)}
+                onStopEdit={onStopEditMotion}
+                onReset={() => onResetUnitMotion(header.id)}
+              />
+            ))}
             <PlaybackRow
               label={
                 <LabelWithHelp termId="assembly-step-camera" variant="inline">

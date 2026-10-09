@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   arrivalIndexByNode,
+  buildCarryPlans,
   buildSubAssemblyPlan,
   displayOrder,
   subAssemblyPartIds,
@@ -12,7 +13,7 @@ import {
   validateSubAssemblies,
   worldOf
 } from "./subassembly";
-import type { AssemblyStep } from "./types";
+import type { AssemblyStep, Motion } from "./types";
 
 type Row = Pick<
   AssemblyStep,
@@ -233,5 +234,63 @@ describe("usableSubAssemblies", () => {
     expect(reasons("fit")).toEqual({ drive: null, heel: "own" });
     expect(reasons("sole")).toEqual({ drive: null, heel: "before" });
     expect(reasons("heel")).toEqual({ drive: "header", heel: "header" });
+  });
+});
+
+describe("buildCarryPlans", () => {
+  const drop: Motion = { type: "linear", direction: [0, 0, -1], distance: 40 };
+  const withMotion = (paths: Record<string, Motion>) =>
+    example.map((row) => ({
+      ...row,
+      motion: paths[row.id] ?? ({ type: "none" } as Motion)
+    }));
+  const plansFor = (paths: Record<string, Motion>) => {
+    const rows = withMotion(paths);
+    const plans = buildCarryPlans(rows, buildSubAssemblyPlan(rows));
+    return Object.fromEntries(rows.map((row, i) => [row.id, plans[i]]));
+  };
+
+  it("keeps the glide for a sub-assembly with no path of its own", () => {
+    const plans = plansFor({});
+    expect(plans.fit?.pathUnits).toEqual([]);
+    expect(plans.fit?.glidingPartIds.sort()).toEqual(
+      ["idler", "pinion", "plate"].sort()
+    );
+    expect(plans.heel?.joinsOnOwnPath).toBe(false);
+  });
+
+  it("flies a sub-assembly with a path instead of gliding it", () => {
+    const plans = plansFor({ drive: drop });
+    expect(plans.fit?.pathUnits).toEqual([
+      {
+        headerId: "drive",
+        nodeIds: ["plate", "pinion", "idler"],
+        motion: drop
+      }
+    ]);
+    expect(plans.fit?.glidingPartIds).toEqual([]);
+    expect(plans.fit?.carriedPartIds.sort()).toEqual(
+      ["idler", "pinion", "plate"].sort()
+    );
+    // Its header is used, so it is not where the unit joins.
+    expect(plans.drive?.joinsOnOwnPath).toBe(false);
+  });
+
+  it("an unused header with a path joins on it", () => {
+    const plans = plansFor({ heel: drop });
+    expect(plans.heel?.joinsOnOwnPath).toBe(true);
+    expect(plans.heel?.pathUnits.map((unit) => unit.headerId)).toEqual([
+      "heel"
+    ]);
+    expect(plans.heel?.glidingPartIds).toEqual([]);
+  });
+
+  it("steps that carry nothing in have an empty plan", () => {
+    expect(plansFor({ drive: drop }).sole).toEqual({
+      carriedPartIds: [],
+      pathUnits: [],
+      glidingPartIds: [],
+      joinsOnOwnPath: false
+    });
   });
 });

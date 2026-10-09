@@ -465,6 +465,9 @@ msgstr "{name} ends {end} (was {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} ends {end} (was open-ended)"
 
+msgid "{name} path"
+msgstr "{name} path"
+
 msgid "{name} replaced"
 msgstr "{name} replaced"
 
@@ -6022,6 +6025,9 @@ msgstr "Custom Fields"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Custom fields are not available for items yet."
+
+msgid "Custom path"
+msgstr "Custom path"
 
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · we manage"
@@ -17599,6 +17605,9 @@ msgstr "Roles that set default permissions for new employees"
 msgid "Room to grow without bolting on more tools"
 msgstr "Room to grow without bolting on more tools"
 
+msgid "Rotate"
+msgstr "Rotate"
+
 msgid "Rounding Account"
 msgstr "Rounding Account"
 
@@ -19659,6 +19668,9 @@ msgstr "Sub-Assembly {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Sub-assembly expiries only"
 
+msgid "Sub-assembly path"
+msgstr "Sub-assembly path"
+
 msgid "Sub-Departments"
 msgstr "Sub-Departments"
 
@@ -20865,8 +20877,11 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "The people on the Carbon side who will run your implementation, and how to reach them."

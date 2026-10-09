@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  type AnimationClip,
   AnimationMixer,
   Group,
   Matrix4,
@@ -16,8 +17,12 @@ import {
   buildStepClip,
   DEFAULT_WAYPOINT_DISTANCE,
   displayMotionForStep,
+  editorWaypointsToMotion,
+  fadeProgress,
+  isPlayableMotion,
   type MotionKeyframes,
   motionDuration,
+  motionToEditorWaypoints,
   motionToKeyframes,
   motionToWaypoints,
   motionTravelDistance,
@@ -934,6 +939,7 @@ describe("stepClipTiming", () => {
   it("plays the natural animation when no duration is authored", () => {
     expect(stepClipTiming({ motion: linear })).toEqual({
       total: seconds + 0.6,
+      units: [],
       glide: 0,
       motion: seconds,
       hold: 0.6
@@ -966,5 +972,237 @@ describe("stepClipTiming", () => {
     const timing = stepClipTiming({ motion: linear, durationSeconds: 30 });
     expect(timing.total).toBe(30);
     expect(timing.motion).toBe(seconds);
+  });
+});
+
+describe("waypoints motion", () => {
+  const halfTurnZ: [number, number, number, number] = [0, 0, 1, 0];
+
+  it("turns the set about its pivot, then shifts it, and ends seated", () => {
+    const motion: Motion = {
+      type: "waypoints",
+      waypoints: [
+        { offset: [0, 0, 50], rotation: halfTurnZ },
+        { offset: [0, 0, 0], rotation: [0, 0, 0, 1] }
+      ]
+    };
+    // Part sits 10 mm along +X from the set's center at the origin.
+    const keyframes = motionToKeyframes(
+      motion,
+      { position: [10, 0, 0], quaternion: [0, 0, 0, 1] },
+      { duration: 2, pivot: [0, 0, 0] }
+    );
+    if (!keyframes) throw new Error("expected keyframes");
+    // 180° about Z swings the part to -X, then the offset lifts it.
+    expectVectorClose(positionAt(keyframes, 0), [-10, 0, 50]);
+    expectVectorClose(quaternionAt(keyframes, 0), [0, 0, 1, 0]);
+    const last = lastIndex(keyframes);
+    expectVectorClose(positionAt(keyframes, last), [10, 0, 0]);
+    expectVectorClose(quaternionAt(keyframes, last), [0, 0, 0, 1]);
+    expect(keyframes.times[last]).toBeCloseTo(2);
+  });
+
+  it("gives a turn in place readable time", () => {
+    const turnInPlace: Motion = {
+      type: "waypoints",
+      waypoints: [
+        { offset: [0, 0, 0], rotation: [0, 0, Math.SQRT1_2, Math.SQRT1_2] },
+        { offset: [0, 0, 0], rotation: [0, 0, 0, 1] }
+      ]
+    };
+    expect(motionTravelDistance(turnInPlace)).toBeGreaterThan(0);
+    expect(motionDuration(turnInPlace)).toBeGreaterThanOrEqual(1);
+    expect(motionDuration(turnInPlace)).toBeLessThanOrEqual(4);
+  });
+
+  it("round-trips through the editor and keeps unturned paths linear / L", () => {
+    const seated: Vec3 = [1, 2, 3];
+    expect(
+      editorWaypointsToMotion(
+        [
+          { position: [1, 2, 53], rotation: [0, 0, 0, 1] },
+          { position: seated, rotation: [0, 0, 0, 1] }
+        ],
+        seated
+      ).type
+    ).toBe("linear");
+    expect(
+      editorWaypointsToMotion(
+        [
+          { position: [1, 52, 53], rotation: [0, 0, 0, 1] },
+          { position: [1, 2, 53], rotation: [0, 0, 0, 1] },
+          { position: seated, rotation: [0, 0, 0, 1] }
+        ],
+        seated
+      ).type
+    ).toBe("L");
+
+    const turned = [
+      { position: [1, 2, 53] as Vec3, rotation: halfTurnZ },
+      {
+        position: seated,
+        rotation: [0, 0, 0, 1] as [number, number, number, number]
+      }
+    ];
+    const motion = editorWaypointsToMotion(turned, seated);
+    expect(motion.type).toBe("waypoints");
+    const back = motionToEditorWaypoints(motion, seated);
+    expect(back.length).toBe(2);
+    expectVectorClose(back[0]?.position ?? [], [1, 2, 53]);
+    expectVectorClose(back[0]?.rotation ?? [], halfTurnZ);
+    expectVectorClose(back[1]?.position ?? [], seated);
+  });
+});
+
+describe("buildStepClip with sub-assembly units", () => {
+  function makeParts() {
+    const root = new Group();
+    const own = new Object3D();
+    own.position.set(0, 0, 0);
+    const unitA = new Object3D();
+    unitA.position.set(100, 0, 0);
+    const unitB = new Object3D();
+    unitB.position.set(200, 0, 0);
+    root.add(own, unitA, unitB);
+    root.updateMatrixWorld(true);
+    return {
+      own,
+      unitA,
+      unitB,
+      nodesById: new Map<string, Object3D>([
+        ["own", own],
+        ["unit-a", unitA],
+        ["unit-b", unitB]
+      ])
+    };
+  }
+  const drop: Motion = { type: "linear", direction: [0, 0, -1], distance: 10 };
+  const trackFor = (clip: AnimationClip, node: Object3D) => {
+    const track = clip.tracks.find(
+      (candidate) => candidate.name === `${node.uuid}.position`
+    );
+    if (!track) throw new Error("expected a track");
+    return { times: [...track.times], values: [...track.values] };
+  };
+  const valueAt = (
+    track: { times: number[]; values: number[] },
+    time: number
+  ) => {
+    const index = track.times.findIndex((t) => Math.abs(t - time) < 1e-6);
+    expect(index).toBeGreaterThanOrEqual(0);
+    return track.values.slice(index * 3, index * 3 + 3);
+  };
+
+  it("flies the unit in first; the step's own part waits, then inserts", () => {
+    const { own, unitA, nodesById } = makeParts();
+    const clip = buildStepClip(makeStep(drop, ["own"]), nodesById, {
+      duration: 2,
+      holdSeconds: 0.5,
+      units: [{ nodeIds: ["unit-a"], motion: drop, seconds: 1 }]
+    });
+    if (!clip) throw new Error("expected clip");
+    expect(clip.duration).toBeCloseTo(1 + 2 + 0.5);
+
+    const unit = trackFor(clip, unitA);
+    expectVectorClose(unit.values.slice(0, 3), [100, 0, 10]);
+    expectVectorClose(valueAt(unit, 1), [100, 0, 0]);
+    expectVectorClose(unit.values.slice(-3), [100, 0, 0]);
+    expect(unit.times[unit.times.length - 1]).toBeCloseTo(3.5);
+
+    const part = trackFor(clip, own);
+    // Waits at its insertion start until the unit has seated…
+    expectVectorClose(part.values.slice(0, 3), [0, 0, 10]);
+    expectVectorClose(valueAt(part, 1), [0, 0, 10]);
+    // …then inserts and holds.
+    expectVectorClose(valueAt(part, 3), [0, 0, 0]);
+  });
+
+  it("plays several units one after another", () => {
+    const { unitB, nodesById } = makeParts();
+    const clip = buildStepClip(makeStep({ type: "none" }, []), nodesById, {
+      holdSeconds: 0,
+      units: [
+        { nodeIds: ["unit-a"], motion: drop, seconds: 1 },
+        { nodeIds: ["unit-b"], motion: drop, seconds: 1.5 }
+      ]
+    });
+    if (!clip) throw new Error("expected clip");
+    expect(clip.duration).toBeCloseTo(2.5);
+    const second = trackFor(clip, unitB);
+    expectVectorClose(valueAt(second, 1), [200, 0, 10]);
+    expectVectorClose(second.values.slice(-3), [200, 0, 0]);
+  });
+
+  it("builds a clip for a unit joining at a step with no parts of its own", () => {
+    const { nodesById } = makeParts();
+    expect(
+      buildStepClip(makeStep({ type: "none" }, []), nodesById, {
+        units: [{ nodeIds: ["unit-a"], motion: drop, seconds: 1 }]
+      })
+    ).not.toBeNull();
+    // A unit with no path of its own adds nothing.
+    expect(
+      buildStepClip(makeStep({ type: "none" }, []), nodesById, {
+        units: [{ nodeIds: ["unit-a"], motion: { type: "none" }, seconds: 0 }]
+      })
+    ).toBeNull();
+  });
+
+  it("scales the unit time with an authored duration", () => {
+    const natural = stepClipTiming({ motion: drop }, 0, [2]);
+    const fitted = stepClipTiming(
+      { motion: drop, durationSeconds: natural.total / 2 },
+      0,
+      [2]
+    );
+    expect(fitted.units[0]).toBeCloseTo(1);
+    expect(fitted.total).toBeCloseTo(natural.total / 2);
+  });
+});
+
+describe("fadeProgress", () => {
+  it("waits for the units, then fades in over its own time", () => {
+    expect(fadeProgress(0.5, 2, 1.2, false)).toBe(0);
+    expect(fadeProgress(2, 2, 1.2, false)).toBe(0);
+    expect(fadeProgress(2.6, 2, 1.2, false)).toBeCloseTo(0.5);
+    expect(fadeProgress(5, 2, 1.2, false)).toBe(1);
+  });
+
+  it("is fully in once the step has finished, whatever the clock says", () => {
+    expect(fadeProgress(0, 2, 1.2, true)).toBe(1);
+  });
+
+  it("starts at once with no units", () => {
+    expect(fadeProgress(0.6, 0, 1.2, false)).toBeCloseTo(0.5);
+  });
+});
+
+describe("isPlayableMotion", () => {
+  it("accepts the motion types the player animates", () => {
+    expect(isPlayableMotion({ type: "none" })).toBe(true);
+    expect(
+      isPlayableMotion({ type: "linear", direction: [0, 0, 1], distance: 5 })
+    ).toBe(true);
+    expect(
+      isPlayableMotion({
+        type: "waypoints",
+        waypoints: [
+          { offset: [0, 0, 5], rotation: [0, 0, 0, 1] },
+          { offset: [0, 0, 0], rotation: [0, 0, 0, 1] }
+        ]
+      })
+    ).toBe(true);
+  });
+
+  it("rejects what would throw or is unknown", () => {
+    expect(isPlayableMotion(null)).toBe(false);
+    expect(isPlayableMotion({ type: "teleport" })).toBe(false);
+    expect(
+      isPlayableMotion({
+        type: "waypoints",
+        waypoints: [{ offset: [0, 0, 0], rotation: [0, 0, 0, 1] }]
+      })
+    ).toBe(false);
+    expect(isPlayableMotion({ type: "path", keyframes: [] })).toBe(false);
   });
 });

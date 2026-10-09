@@ -465,6 +465,9 @@ msgstr "{name} {end} को समाप्त होता है (पहले
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} {end} को समाप्त होता है (पहले खुली अवधि का था)"
 
+msgid "{name} path"
+msgstr "{name} मार्ग"
+
 msgid "{name} replaced"
 msgstr "{name} प्रतिस्थापित किया गया"
 
@@ -6022,6 +6025,9 @@ msgstr "कस्टम फील्ड्स"
 
 msgid "Custom fields are not available for items yet."
 msgstr "कस्टम फील्ड अभी आइटम के लिए उपलब्ध नहीं हैं।"
+
+msgid "Custom path"
+msgstr "कस्टम मार्ग"
 
 msgid "Custom SOW · we manage"
 msgstr "कस्टम SOW · हम प्रबंधित करते हैं"
@@ -17599,6 +17605,9 @@ msgstr "नई कर्मचारियों के लिए डिफ़�
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
 
+msgid "Rotate"
+msgstr "घुमाएँ"
+
 msgid "Rounding Account"
 msgstr "राउंडिंग खाता"
 
@@ -19659,6 +19668,9 @@ msgstr "उप-असेंबली {number}"
 msgid "Sub-assembly expiries only"
 msgstr "उप-विधानसभा समाप्ति केवल"
 
+msgid "Sub-assembly path"
+msgstr "सब-असेंबली मार्ग"
+
 msgid "Sub-Departments"
 msgstr "उप-विभाग"
 
@@ -20865,8 +20877,11 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "पार्ट को मौजूदा स्टॉक से लिया जाता है जब इसका मूल आइटम बनाया जाता है — कोई नया जॉब या क्रय आदेश नहीं।"
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "वह पथ जो इस चरण के घटक प्लेबैक के दौरान स्थान पर यात्रा करते हैं; मॉडल से प्राप्त, या पथ संपादित करें के साथ हाथ से खींचा गया।"
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "यह मार्ग है जो एक तैयार सब-असेंबली एक टुकड़े के रूप में तय करती है जब यह बिल्ड से जुड़ता है। यह चरण के अपने पार्ट्स से पहले आती है; जब तक आप “पथ संपादित करें” से कोई मार्ग नहीं खींचते, यह बिल्ड के बगल से आती है।"
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "यह मार्ग है जो इस चरण के घटक चलाने के समय जगह में यात्रा करते हैं; यह मॉडल से प्राप्त है, या “पथ संपादित करें” से हाथ से खींचा जाता है, जहाँ एक पार्ट किसी भी वेपॉइंट पर घुमाया जा सकता है।"
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "कार्बन की ओर से वे लोग जो आपके कार्यान्वयन को चलाएंगे, और उन तक कैसे पहुंचें।"

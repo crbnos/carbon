@@ -97,7 +97,12 @@ export const terms = {
   },
   "assembly-step-motion": {
     term: msg`Motion`,
-    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path.`,
+    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-sub-assembly-path": {
+    term: msg`Sub-assembly path`,
+    definition: msg`The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build.`,
     href: "/docs/reference/assembly-instructions#playback-settings"
   },
   "assembly-step-camera": {

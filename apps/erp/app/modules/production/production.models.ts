@@ -1298,10 +1298,24 @@ export const assemblyStepStatuses = ["Todo", "Review", "Done"] as const;
 
 const vector3 = z.tuple([z.number(), z.number(), z.number()]);
 const quaternion = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+const unitQuaternion = quaternion.refine(
+  ([x, y, z, w]) => Math.abs(Math.hypot(x, y, z, w) - 1) < 1e-3,
+  { message: "Rotation must be a unit quaternion" }
+);
+
+/** A waypoint at the seated pose: no offset and no turn (either quaternion sign). */
+function isSeatWaypoint(
+  waypoint: { offset: number[]; rotation: number[] } | undefined
+): boolean {
+  if (!waypoint) return false;
+  const [ox = 0, oy = 0, oz = 0] = waypoint.offset;
+  const w = waypoint.rotation[3] ?? 0;
+  return Math.hypot(ox, oy, oz) < 1e-3 && Math.abs(Math.abs(w) - 1) < 1e-6;
+}
 
 /**
- * Insertion motion of a step's parts. See
- * docs/specs/animated-work-instructions-contracts.md §4.
+ * Insertion motion of a step's parts. Mirrors `Motion` in
+ * `packages/viewer/src/types.ts`, the shared contract.
  */
 export const motionSchema = z.discriminatedUnion("type", [
   z.object({
@@ -1341,6 +1355,17 @@ export const motionSchema = z.discriminatedUnion("type", [
         })
       )
       .min(2)
+  }),
+  // Editor-drawn path with rotation: poses relative to the seated pose. The
+  // last waypoint is the seat itself (no offset, no turn).
+  z.object({
+    type: z.literal("waypoints"),
+    waypoints: z
+      .array(z.object({ offset: vector3, rotation: unitQuaternion }))
+      .min(2)
+      .refine((waypoints) => isSeatWaypoint(waypoints[waypoints.length - 1]), {
+        message: "The last waypoint must be the seated pose"
+      })
   }),
   z.object({ type: z.literal("none") })
 ]);

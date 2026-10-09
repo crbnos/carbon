@@ -465,6 +465,9 @@ msgstr "{name} termina {end} (era {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} termina {end} (era sem data de término)"
 
+msgid "{name} path"
+msgstr "{name} trajetória"
+
 msgid "{name} replaced"
 msgstr "{name} substituído"
 
@@ -6022,6 +6025,9 @@ msgstr "Campos Personalizados"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Os campos personalizados ainda não estão disponíveis para itens."
+
+msgid "Custom path"
+msgstr "Trajetória personalizada"
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personalizado · gerenciamos"
@@ -17599,6 +17605,9 @@ msgstr "Funções que definem permissões padrão para novos funcionários"
 msgid "Room to grow without bolting on more tools"
 msgstr "Espaço para crescer sem adicionar mais ferramentas"
 
+msgid "Rotate"
+msgstr "Girar"
+
 msgid "Rounding Account"
 msgstr "Conta de arredondamento"
 
@@ -19659,6 +19668,9 @@ msgstr "Sub-Montagem {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Apenas expirações de subconjuntos"
 
+msgid "Sub-assembly path"
+msgstr "Trajetória de sub-montagem"
+
 msgid "Sub-Departments"
 msgstr "Sub-Departamentos"
 
@@ -20865,8 +20877,11 @@ msgstr "A peça é fabricada como seu próprio trabalho quando o pai que a neces
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "A peça é retirada do estoque existente quando seu pai é construído - nenhum novo trabalho ou pedido de compra."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "O caminho que os componentes desta etapa percorrem até sua posição durante a reprodução; calculado a partir do modelo ou desenhado manualmente com Editar Caminho."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "A trajetória que a sub-montagem acabada percorre como uma peça única quando se integra à montagem. Ela chega antes das próprias peças da etapa; até você desenhar uma com Editar Trajetória, ela desliza pela lateral da montagem."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "A trajetória que os componentes da etapa percorrem para se posicionarem durante a reprodução; calculada a partir do modelo ou desenhada manualmente com Editar Trajetória, onde uma peça também pode ser girada em qualquer ponto de passagem."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "As pessoas do lado da Carbon que executarão sua implementação e como contatá-las."

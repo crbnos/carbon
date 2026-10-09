@@ -465,6 +465,9 @@ msgstr "{name}은 {end}에 끝남 (이전: {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 
+msgid "{name} path"
+msgstr "{name} 경로"
+
 msgid "{name} replaced"
 msgstr "{name} 대체됨"
 
@@ -6022,6 +6025,9 @@ msgstr "사용자 정의 필드"
 
 msgid "Custom fields are not available for items yet."
 msgstr "품목에 사용자 정의 필드를 아직 사용할 수 없습니다."
+
+msgid "Custom path"
+msgstr "사용자 정의 경로"
 
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
@@ -17599,6 +17605,9 @@ msgstr "신규 직원의 기본 권한을 설정하는 역할"
 msgid "Room to grow without bolting on more tools"
 msgstr "추가 도구 없이도 성장할 수 있는 여유"
 
+msgid "Rotate"
+msgstr "회전"
+
 msgid "Rounding Account"
 msgstr "반올림 계정"
 
@@ -19659,6 +19668,9 @@ msgstr "소조립 {number}"
 msgid "Sub-assembly expiries only"
 msgstr "하위 조립품 유효기한만"
 
+msgid "Sub-assembly path"
+msgstr "소부조립품 경로"
+
 msgid "Sub-Departments"
 msgstr "하위 부서"
 
@@ -20865,8 +20877,11 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오므로, 새로운 작업 지시 또는 발주서가 없습니다."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "이 단계의 구성 요소가 재생 중에 제자리로 이동하는 경로; 모델에서 계산되거나 편집 경로를 사용하여 손으로 그려짐."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "완성된 소부조립품이 조립에 참여할 때 하나의 부분으로 이동하는 경로입니다. 단계의 자체 부품이 도착하기 전에 도착하며, 경로 편집으로 직접 그릴 때까지 조립 옆에서 들어옵니다."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "이 단계의 부품이 재생 중에 제자리로 이동하는 경로입니다. 모델에서 계산되거나 경로 편집으로 직접 그릴 수 있으며, 모든 웨이포인트에서 부품을 회전시킬 수 있습니다."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "귀사의 실행을 담당할 Carbon 팀 인원 및 연락 방법입니다."

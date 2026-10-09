@@ -31,6 +31,7 @@ import { assemblyInstructionStepValidator } from "../../production.models";
 import type { AssemblyInstructionStepRow } from "../../types";
 import PlaybackRow from "./AssemblyPlaybackRow";
 import { SUB_ASSEMBLY_PARAM } from "./AssemblyStepList";
+import SubAssemblyPathRow from "./AssemblySubAssemblyPathRow";
 
 type AssemblySubAssemblyPropertiesProps = {
   step: AssemblyInstructionStepRow;
@@ -43,6 +44,10 @@ type AssemblySubAssemblyPropertiesProps = {
   onSelectStep: (stepId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
+  editingUnitId: string | null;
+  onEditMotion: (stepId: string, unitHeaderId?: string) => void;
+  onStopEditMotion: () => void;
+  onResetUnitMotion: (headerId: string) => void;
 };
 
 /**
@@ -59,7 +64,11 @@ export default function AssemblySubAssemblyProperties({
   itemMentions,
   onSelectStep,
   onSetCamera,
-  onClearCamera
+  onClearCamera,
+  editingUnitId,
+  onEditMotion,
+  onStopEditMotion,
+  onResetUnitMotion
 }: AssemblySubAssemblyPropertiesProps) {
   const { id: instructionId } = useParams();
   if (!instructionId) throw new Error("Could not find id");
@@ -132,6 +141,10 @@ export default function AssemblySubAssemblyProperties({
     );
 
   const cannotSave = isDisabled || !permissions.can("update", "production");
+  // The checked motion the player plays (a malformed row reads as "none").
+  const hasOwnPath =
+    (viewerSteps.find((viewerStep) => viewerStep.id === step.id)?.motion.type ??
+      "none") !== "none";
   const hasCamera = step.camera != null;
   const name = step.title || t`Sub-Assembly`;
 
@@ -280,6 +293,18 @@ export default function AssemblySubAssemblyProperties({
               </DropdownMenu>
             )}
           </PlaybackRow>
+          {/* Nothing uses it: it joins the main build here, on this path. */}
+          {!usedIn && (
+            <SubAssemblyPathRow
+              name={name}
+              hasPath={hasOwnPath}
+              isEditing={editingUnitId === step.id}
+              isDisabled={isDisabled}
+              onEdit={() => onEditMotion(step.id, step.id)}
+              onStopEdit={onStopEditMotion}
+              onReset={() => onResetUnitMotion(step.id)}
+            />
+          )}
           {!usedIn && (
             <PlaybackRow
               label={

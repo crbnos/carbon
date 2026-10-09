@@ -15,7 +15,7 @@
  * (step list, which actions to offer) and the ERP service (write validation),
  * so all three answer the same question the same way.
  */
-import type { AssemblyStep } from "./types";
+import type { AssemblyStep, Motion } from "./types";
 
 type StructureStep = Pick<
   AssemblyStep,
@@ -197,6 +197,57 @@ export function buildSubAssemblyPlan(
     });
   }
   return plan;
+}
+
+/** A finished sub-assembly that joins on a path of its own (its header's motion). */
+export type PathUnit = { headerId: string; nodeIds: string[]; motion: Motion };
+
+/** How the finished sub-assemblies a step carries in arrive. */
+export type CarryPlan = {
+  carriedPartIds: string[];
+  /** The ones with a path of their own, in sub-assembly order: they fly in first. */
+  pathUnits: PathUnit[];
+  /** Carried parts with no path of their own: they glide in beside the build. */
+  glidingPartIds: string[];
+  /**
+   * The step is an unused header whose unit joins on its own path. That path
+   * IS the header's motion, so the header has no insertion of its own.
+   */
+  joinsOnOwnPath: boolean;
+};
+
+/**
+ * Per step (same order as `steps`): which finished sub-assemblies arrive and
+ * how. A header whose `motion` is not `none` has a path of its own; the rest
+ * keep the glide from beside the build.
+ */
+export function buildCarryPlans(
+  steps: (StructureStep & Pick<AssemblyStep, "motion">)[],
+  subPlan: Map<string, SubAssemblyInfo>
+): CarryPlan[] {
+  const byId = new Map(steps.map((step) => [step.id, step]));
+  return steps.map((step) => {
+    const headers = subPlan.get(step.id)?.carriesIn ?? [];
+    const carried = new Set<string>();
+    const onPath = new Set<string>();
+    const pathUnits: PathUnit[] = [];
+    for (const headerId of headers) {
+      const nodeIds = subAssemblyPartIds(steps, headerId);
+      for (const id of nodeIds) carried.add(id);
+      const header = byId.get(headerId);
+      if (header && header.motion.type !== "none") {
+        pathUnits.push({ headerId, nodeIds, motion: header.motion });
+        for (const id of nodeIds) onPath.add(id);
+      }
+    }
+    const carriedPartIds = [...carried];
+    return {
+      carriedPartIds,
+      pathUnits,
+      glidingPartIds: carriedPartIds.filter((id) => !onPath.has(id)),
+      joinsOnOwnPath: pathUnits.some((unit) => unit.headerId === step.id)
+    };
+  });
 }
 
 export type SubAssemblyRule = 1 | 2 | 3;

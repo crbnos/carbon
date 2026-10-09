@@ -465,6 +465,9 @@ msgstr "{name} termina {end} (era {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} termina {end} (era senza data di fine)"
 
+msgid "{name} path"
+msgstr "{name} percorso"
+
 msgid "{name} replaced"
 msgstr "{name} sostituito"
 
@@ -6022,6 +6025,9 @@ msgstr "Campi Personalizzati"
 
 msgid "Custom fields are not available for items yet."
 msgstr "I campi personalizzati non sono ancora disponibili per gli articoli."
+
+msgid "Custom path"
+msgstr "Percorso personalizzato"
 
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · gestiamo noi"
@@ -17599,6 +17605,9 @@ msgstr "Ruoli che impostano le autorizzazioni predefinite per i nuovi dipendenti
 msgid "Room to grow without bolting on more tools"
 msgstr "Spazio per crescere senza aggiungere altri strumenti"
 
+msgid "Rotate"
+msgstr "Ruota"
+
 msgid "Rounding Account"
 msgstr "Conto di arrotondamento"
 
@@ -19659,6 +19668,9 @@ msgstr "Sotto-assemblaggio {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Solo scadenze dei sottoassiemi"
 
+msgid "Sub-assembly path"
+msgstr "Percorso del sottogruppo"
+
 msgid "Sub-Departments"
 msgstr "Sotto-Dipartimenti"
 
@@ -20865,8 +20877,11 @@ msgstr "La parte viene fabbricata come suo proprio lavoro quando il genitore che
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La parte viene presa da scorte esistenti quando il suo genitore viene costruito - nessun nuovo lavoro o ordine di acquisto."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Il percorso che i componenti di questo passo percorrono durante la riproduzione; calcolato dal modello o disegnato manualmente con Modifica percorso."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Il percorso che il sottogruppo finito percorre come un pezzo quando si unisce alla costruzione. Arriva prima dei componenti del passo; finché non ne disegni uno con Modifica Percorso, entra scivolando da accanto alla costruzione."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Il percorso che i componenti di questo passo percorrono per posizionarsi durante la riproduzione; ricavato dal modello, o disegnato a mano con Modifica Percorso, dove un componente può anche essere ruotato in qualsiasi punto di passaggio."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Le persone del team Carbon che gestiranno la tua implementazione e come contattarle."

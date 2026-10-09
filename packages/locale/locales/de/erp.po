@@ -465,6 +465,9 @@ msgstr "{name} endet {end} (war {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} endet {end} (war unbegrenzt)"
 
+msgid "{name} path"
+msgstr "{name} Pfad"
+
 msgid "{name} replaced"
 msgstr "{name} wurde ersetzt"
 
@@ -6022,6 +6025,9 @@ msgstr "Benutzerdefinierte Felder"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Benutzerdefinierte Felder sind für Artikel noch nicht verfügbar."
+
+msgid "Custom path"
+msgstr "Benutzerdefinierter Pfad"
 
 msgid "Custom SOW · we manage"
 msgstr "Benutzerdefiniertes SOW · wir verwalten"
@@ -17599,6 +17605,9 @@ msgstr "Rollen, die Standardberechtigungen für neue Mitarbeiter festlegen"
 msgid "Room to grow without bolting on more tools"
 msgstr "Platz zum Wachsen ohne zusätzliche Tools"
 
+msgid "Rotate"
+msgstr "Drehen"
+
 msgid "Rounding Account"
 msgstr "Rundungskonto"
 
@@ -19659,6 +19668,9 @@ msgstr "Unterbaugruppe {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Nur Ablauf von Baugruppen"
 
+msgid "Sub-assembly path"
+msgstr "Baugruppen-Pfad"
+
 msgid "Sub-Departments"
 msgstr "Unterbereiche"
 
@@ -20865,8 +20877,11 @@ msgstr "Der Teil wird als eigener Auftrag hergestellt, wenn das Elternteil, das 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete Teil hergestellt wird – kein neuer Fertigungsauftrag oder Bestellung."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Der Pfad, auf dem die Komponenten dieses Schritts während der Wiedergabe an ihren Platz fahren; aus dem Modell ermittelt oder von Hand mit Bearbeitungspfad gezeichnet."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Der Pfad, den eine fertige Baugruppe nimmt, wenn sie in den Zusammenbau eintritt. Sie kommt vor den Teilen des Schritts. Bis du mit „Pfad bearbeiten“ einen zeichnest, gleitet sie von der Seite ein."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Der Pfad, den die Komponenten dieses Schritts während der Wiedergabe an ihren Platz fahren. Er wird aus dem Modell berechnet oder mit „Pfad bearbeiten“ von Hand gezeichnet. An jedem Wegpunkt kann ein Teil auch gedreht werden."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Das Personal auf der Carbon-Seite, das Ihre Umsetzung durchführt, und wie Sie sie erreichen."

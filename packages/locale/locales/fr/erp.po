@@ -465,6 +465,9 @@ msgstr "{name} se termine {end} (était {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} se termine {end} (était sans terme)"
 
+msgid "{name} path"
+msgstr "{name} chemin"
+
 msgid "{name} replaced"
 msgstr "{name} remplacé"
 
@@ -6022,6 +6025,9 @@ msgstr "Champs personnalisés"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Les champs personnalisés ne sont pas encore disponibles pour les articles."
+
+msgid "Custom path"
+msgstr "Chemin personnalisé"
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personnalisé · nous gérons"
@@ -17599,6 +17605,9 @@ msgstr "Rôles qui définissent les autorisations par défaut pour les nouveaux 
 msgid "Room to grow without bolting on more tools"
 msgstr "Espace pour croître sans ajouter d'autres outils"
 
+msgid "Rotate"
+msgstr "Tourner"
+
 msgid "Rounding Account"
 msgstr "Compte d'arrondi"
 
@@ -19659,6 +19668,9 @@ msgstr "Sous-assemblage {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Expiries des sous-ensembles uniquement"
 
+msgid "Sub-assembly path"
+msgstr "Chemin du sous-ensemble"
+
 msgid "Sub-Departments"
 msgstr "Sous-départements"
 
@@ -20865,8 +20877,11 @@ msgstr "La pièce est fabriquée comme son propre travail quand le parent qui en
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La pièce est prélevée du stock existant lors de la construction de son parent - aucune nouvelle tâche ou bon de commande."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Le chemin que les composants de cette étape parcourent lors de la lecture ; calculé à partir du modèle ou dessiné manuellement avec Modifier le chemin."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Le chemin qu'un sous-ensemble fini parcourt comme une seule pièce quand il se joint à la construction. Il arrive avant les pièces de cette étape ; jusqu'à ce que vous en traciez un avec Modifier le chemin, il glisse depuis le côté de la construction."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Le chemin que les pièces de cette étape parcourent pour se mettre en place pendant la lecture ; calculé à partir du modèle, ou tracé à la main avec Modifier le chemin, où une pièce peut également être tournée à n'importe quel point."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Les personnes côté Carbon qui géreront votre mise en œuvre, et comment les contacter."
