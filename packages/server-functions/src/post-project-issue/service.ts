@@ -18,12 +18,17 @@ import {
   type ServicePostingContext
 } from "../lib/project-posting";
 
-/** The attribute that ties a `Service` activity to the issue that wrote it. */
+/**
+ * The attribute that ties a `Service` activity to the issue that wrote it:
+ * the issue's item ledger id, which a coverage reclass does not change.
+ */
 const ISSUE_ATTRIBUTE = "Project Issue";
 
 /** An open issue a return reverses: its ledger row and coverage. */
 export type ServiceIssue = {
   id: string;
+  /** The issue's itemLedger row. */
+  documentId: string;
   coverage: ServiceCoverage | null;
   coverageReason: string | null;
 };
@@ -47,11 +52,12 @@ export async function findServiceIssueToReturn(
 ): Promise<ServiceIssue> {
   const { rows } = await sql<{
     id: string;
+    documentId: string;
     quantity: number;
     coverage: ServiceCoverage | null;
     coverageReason: string | null;
   }>`
-    SELECT pl."id", pl."quantity", pl."coverage", pl."coverageReason"
+    SELECT pl."id", pl."documentId", pl."quantity", pl."coverage", pl."coverageReason"
     FROM "projectLedger" pl
     JOIN "itemLedger" il ON il."id" = pl."documentId" AND il."companyId" = pl."companyId"
     WHERE pl."companyId" = ${args.companyId}
@@ -82,6 +88,7 @@ export async function findServiceIssueToReturn(
   }
   return {
     id: issue.id,
+    documentId: issue.documentId,
     coverage: issue.coverage,
     coverageReason: issue.coverageReason
   };
@@ -102,6 +109,7 @@ export async function installServicePart(
     projectId: string;
     projectElementId: string | null;
     projectLedgerId: string;
+    itemLedgerId: string;
     itemId: string;
     itemName: string;
     trackedEntityId: string | null;
@@ -192,7 +200,7 @@ export async function installServicePart(
         sourceDocument: "Service Order",
         sourceDocumentId: service.serviceOrderId,
         sourceDocumentReadableId: service.serviceOrderReadableId,
-        attributes: { [ISSUE_ATTRIBUTE]: args.projectLedgerId },
+        attributes: { [ISSUE_ATTRIBUTE]: args.itemLedgerId },
         companyId,
         createdBy: userId
       })
@@ -236,6 +244,7 @@ export async function uninstallServicePart(
     service: ServicePostingContext;
     projectElementId: string | null;
     issueLedgerId: string;
+    issueItemLedgerId: string;
     returnLedgerId: string;
   }
 ): Promise<void> {
@@ -282,7 +291,7 @@ export async function uninstallServicePart(
     WHERE "type" = 'Service'
       AND "companyId" = ${companyId}
       AND "attributes" @> ${JSON.stringify({
-        [ISSUE_ATTRIBUTE]: args.issueLedgerId
+        [ISSUE_ATTRIBUTE]: args.issueItemLedgerId
       })}::jsonb
   `.execute(trx);
 

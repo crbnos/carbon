@@ -305,6 +305,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-production-event": {
     "update": "production",
   },
+  "post-project-expense": {
+    "update": "projects",
+  },
   "post-project-issue": {
     "update": "inventory",
   },
@@ -344,6 +347,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   },
   "recalculate-revenue-recognition-run": {
     "update": "accounting",
+  },
+  "reclass-project-coverage": {
+    "update": "projects",
   },
   "reschedule": {
     "update": "production",

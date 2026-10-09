@@ -37,6 +37,7 @@ const registry = {
   "post-payment": () => import("./post-payment"),
   "post-picking": () => import("./post-picking"),
   "post-production-event": () => import("./post-production-event"),
+  "post-project-expense": () => import("./post-project-expense"),
   "post-project-issue": () => import("./post-project-issue"),
   "post-purchase-invoice": () => import("./post-purchase-invoice"),
   "post-receipt": () => import("./post-receipt"),
@@ -55,6 +56,7 @@ const registry = {
   recalculate: () => import("./recalculate"),
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
+  "reclass-project-coverage": () => import("./reclass-project-coverage"),
   reschedule: () => import("./reschedule"),
   "seed-company": () => import("./seed-company"),
   sync: () => import("./sync"),

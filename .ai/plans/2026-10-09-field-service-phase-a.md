@@ -41,7 +41,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 7: Add `buildBillableItem` to the project posting helpers
 - [x] Task 8: Post service time in `post-timesheet`
 - [x] Task 9: Post service parts and install components in `post-project-issue`
-- [ ] Task 10: Add `post-project-expense` and the coverage reclass
+- [x] Task 10: Add `post-project-expense` and the coverage reclass
 - [ ] Task 11: Create customer assets in `post-shipment`
 - [ ] Task 12: Stop the second stock relief and release billable item stamps
 - [ ] Task 13: Add `create-service-order-invoice`
@@ -1226,3 +1226,10 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 9: the `Service` activity is written for any tracked issue (serial or batch). Build from part still nets only `Consume` and `Unconsume`, so it does not show a `Service` replacement yet.
 - Task 9: the service context gains `serviceOrderReadableId` and `assetTrackedEntityId` (same query). The journal carries the Customer dimension and says "Service Material". The billable item's description is the item name, priced at the item's `itemUnitSalePrice.unitSalePrice`.
 - Task 9: 2 new database tests (the plan's install and return cases). The project server-function tests (44) pass; `@carbon/server-functions` and `erp` typecheck green.
+- Task 10: `post-project-expense` posts every project, not only Service ones. A Statistical project debits `indirectCostAccount` and writes no ledger row, as `post-project-issue` does. A Capitalize project is refused ("An expense entry cannot charge a capital project"): the `fixedAssetCipCost_sourceType_check` has no `Project Expense` value, and adding one needs a migration outside this task.
+- Task 10: the entry has no status column. A ledger row with `documentType 'Project Expense'` for the entry, or a `journalId` on it, marks it posted, and a second post is a no-op (`posted: false`). A reversal entry stores its own negative amount and posts it as is, at its original's coverage.
+- Task 10: GRNI is credited with `credit("liability", amount)`, the natural-balance convention of `post-receipt`. So a 40.00 expense gives the lines COGS +40.00 and GRNI +40.00.
+- Task 10: the shared helper `postProjectJournal` (`lib/project-journal.ts`) posts one journal with its period, lines and dimension tags; both new functions use it. `journalReference.to` gains `projectExpense` and `coverageReclass` (`@carbon/database`).
+- Task 10: `reclass-project-coverage` permissions are `{ update: "projects" }`, as the other charge functions. It credits the account on the charge's own journal line (`journalLineId`), else the account the old coverage resolves to on the charge's date. It posts nothing when both accounts are the same, and it refuses Capitalized in either direction (a Refurbishment's charges stay Capitalized). The journal's `sourceType` and `documentType` are the charge's own (Timesheet, Project Issue or Project Expense). For a part, the installed component moves to the new ledger row.
+- Task 10: a reclass leaves the old row without `reversalOfId`, reversed by a later row. So `post-timesheet` now reads a correction's original row only when no row reverses it, and the `Service` activity of an issue carries the issue's item ledger id (stable across a reclass), not its ledger row id. A return after a reclass finds the new row.
+- Task 10: tests: a Standard Expense project expense (no billable item; a second post is a no-op), the plan's 40.00 Billable expense with its reversal, and the plan's 120.00 Warranty labor reclass. That test also refuses a second reclass and posts a correction against the reclassed row. The permissions snapshot gains the two functions, reviewed. `@carbon/server-functions` and `@carbon/database` typecheck green.

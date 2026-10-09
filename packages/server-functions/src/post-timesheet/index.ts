@@ -195,6 +195,26 @@ const postTimesheet = defineServerFn({
                 .where("documentType", "=", "Timesheet")
                 .where("documentId", "in", originalIds)
                 .where("reversalOfId", "is", null)
+                // Not reversed by a later row: a coverage reclass reverses
+                // a service row and writes its replacement.
+                .where(({ not, exists, selectFrom }) =>
+                  not(
+                    exists(
+                      selectFrom("projectLedger as reversal")
+                        .select("reversal.id")
+                        .whereRef(
+                          "reversal.reversalOfId",
+                          "=",
+                          "projectLedger.id"
+                        )
+                        .whereRef(
+                          "reversal.companyId",
+                          "=",
+                          "projectLedger.companyId"
+                        )
+                    )
+                  )
+                )
                 .where("companyId", "=", companyId)
                 .execute(),
         () =>

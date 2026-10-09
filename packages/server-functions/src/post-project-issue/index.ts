@@ -448,6 +448,7 @@ const postProjectIssue = defineServerFn({
             projectId,
             projectElementId,
             projectLedgerId: row.id,
+            itemLedgerId: booked.itemLedgerId,
             itemId,
             itemName: itemResult.data.name,
             trackedEntityId,
@@ -462,6 +463,7 @@ const postProjectIssue = defineServerFn({
             service,
             projectElementId,
             issueLedgerId: returnedIssue.id,
+            issueItemLedgerId: returnedIssue.documentId,
             returnLedgerId: row.id
           });
         }
