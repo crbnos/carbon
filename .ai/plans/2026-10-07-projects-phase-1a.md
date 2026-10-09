@@ -65,7 +65,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 26: Move the accounting Projects screens into the new module
 - [x] Task 27: Add module navigation, layout and paths
 - [x] Task 28: Build the project list and the new-project form
-- [ ] Task 29: Build the project page shell and the Details tab
+- [x] Task 29: Build the project page shell and the Details tab
 - [ ] Task 30: Build the project Settings tab (states and labels)
 - [ ] Task 31: Build the `ChargeNumberSelect` picker and its API route
 - [ ] Task 32: Build the Elements page with the List layout
@@ -2480,3 +2480,9 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 28: `@carbon/utils` `status-colors.ts` gains `PROJECT_STATUS_COLOR_MAP` (Draft gray, Released blue, On Hold orange, Technically Complete green, Closed gray, after the job map). `ui/Projects/ProjectStatus.tsx` renders it.
 - Task 28: `ProjectForm` already has the Details card branch that Task 29 uses (an existing project renders as a `Card` that posts to the current route). The identifier is read-only on an existing project, because each element's stored `readableId` starts with it.
 - Task 28: the list route declares no `handle.realtime`, because `project` is not in `REALTIME_TABLES`. The table has no Delete action (Task 26 note).
+- Task 29: `projects.models.ts` gains `projectStatusTransitions` and `canChangeProjectStatus`. The header shows only the actions they allow, and `$projectId.status.tsx` reads the project and refuses any other change with a flash. `updateProjectStatus` itself checks only Close.
+- Task 29: Close asks for confirmation (`Confirm`), because a Closed project has no transition back. The other five actions post at once. The primary button is the next step: Release on Draft, Technically complete on Released, Resume on On Hold, Close on Technically Complete.
+- Task 29: `shortcuts.ts` gains `PROJECT_TAB_SHORTCUTS` (⌘⇧E Elements, M Milestones, C Costs, H Time & materials, S Settings, D Details). `DETAIL_TAB_SHORTCUTS` had no keys for 5 of the 6 tabs.
+- Task 29: the page is the header plus one full-width content pane, with no explorer or properties panel. The Elements page (Task 32) owns its own layouts.
+- Task 29: the `x+/project+/_layout.tsx` breadcrumb is removed, as in `x+/workflow+/_layout.tsx`. The detail route already emits the "Projects" link, so the layout's copy showed "Projects" twice.
+- Task 29: the Details action ignores `identifier` (the form shows it read-only). A Closed project's Details form is disabled. A project still on `Capitalize` (none can be created in Phase 1a) shows Expense in the form, because the validator refuses Capitalize.

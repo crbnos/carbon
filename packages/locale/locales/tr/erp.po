@@ -753,6 +753,9 @@ msgstr "Değişiklik bildirimi, kontrollü bir mühendislik veya üretim değiş
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Alınan ancak henüz faturalanmayan malların değerini tutan bir takas hesabı; tedarikçi faturası bunu temizler."
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr ""
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Bir şirket aynı anda bir Onshape'e bağlanabilir. Onshape Government'ı kaldırın, ardından Onshape'e bağlanın."
 
@@ -4509,6 +4512,10 @@ msgstr "<0/> tarihinden beri saatlenmiş"
 msgid "Close"
 msgstr "Kapat"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr ""
+
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} dönemini kapat"
 
@@ -4526,6 +4533,9 @@ msgstr "Kapatma Tarihi"
 
 msgid "Close Period"
 msgstr "Dönemi Kapat"
+
+msgid "Close Project"
+msgstr ""
 
 msgid "Close Reports"
 msgstr "Raporları Kapat"
@@ -5491,6 +5501,9 @@ msgstr "Maliyetlendirme Yöntemi"
 
 msgid "Costing Method"
 msgstr "Maliyetlendirme Yöntemi"
+
+msgid "Costs"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Kırpılmış bölge analiz edilemedi"
@@ -8044,6 +8057,9 @@ msgid "Edited"
 msgstr "Düzenlendi"
 
 msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
+msgid "Elements"
 msgstr ""
 
 msgid "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "Verileri Taşı"
 msgid "Migrating from another system?"
 msgstr "Başka bir sistemden taşınıyor mu?"
 
+msgid "Milestones"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "en az {minimumBatchQuantity} — karşılandı"
 
@@ -15995,6 +16014,9 @@ msgstr "Muhasebe fişini boyut olmadan gönder"
 msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
+msgid "Put on hold"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "Verileriniz geri konuluyor"
 
@@ -17255,6 +17277,9 @@ msgstr "Sonuçlar"
 
 msgid "Results per page"
 msgstr "Sayfa başına sonuçlar"
+
+msgid "Resume"
+msgstr ""
 
 msgid "Resume Receiving"
 msgstr "Alımı Devam Et"
@@ -20250,6 +20275,9 @@ msgstr "Teknik Ayrıntılar"
 msgid "Technical support"
 msgstr "Teknik destek"
 
+msgid "Technically complete"
+msgstr ""
+
 msgid "Technically Complete"
 msgstr ""
 
@@ -21751,6 +21779,9 @@ msgstr "dar"
 
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
+
+msgid "Time & materials"
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"

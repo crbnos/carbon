@@ -753,6 +753,9 @@ msgstr "एक परिवर्तन सूचना समीक्षा �
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "एक क्लीयरिंग खाता जो प्राप्त किए गए लेकिन अभी तक चालान नहीं किए गए सामान का मूल्य रखता है; आपूर्तिकर्ता चालान इसे साफ करता है।"
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr ""
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape Government को अनइंस्टॉल करें, फिर Onshape को कनेक्ट करें।"
 
@@ -4509,6 +4512,10 @@ msgstr "<0/> से काम में आए"
 msgid "Close"
 msgstr "बंद करें"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr ""
+
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} बंद करें"
 
@@ -4526,6 +4533,9 @@ msgstr "बंद करने की तारीख"
 
 msgid "Close Period"
 msgstr "अवधि बंद करें"
+
+msgid "Close Project"
+msgstr ""
 
 msgid "Close Reports"
 msgstr "रिपोर्ट बंद करें"
@@ -5491,6 +5501,9 @@ msgstr "लागत निर्धारण विधि"
 
 msgid "Costing Method"
 msgstr "लागत निर्धारण विधि"
+
+msgid "Costs"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "क्रॉप किए गए क्षेत्र का विश्लेषण नहीं किया जा सका"
@@ -8044,6 +8057,9 @@ msgid "Edited"
 msgstr "संपादित"
 
 msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
+msgid "Elements"
 msgstr ""
 
 msgid "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "डेटा माइग्रेट करें"
 msgid "Migrating from another system?"
 msgstr "दूसरे सिस्टम से माइग्रेट कर रहे हैं?"
 
+msgid "Milestones"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "न्यूनतम {minimumBatchQuantity} — पूरा किया गया"
 
@@ -15995,6 +16014,9 @@ msgstr "आयाम के बिना जर्नल पुश करें"
 msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
 
+msgid "Put on hold"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "आपका डेटा वापस डाल रहे हैं"
 
@@ -17255,6 +17277,9 @@ msgstr "परिणाम"
 
 msgid "Results per page"
 msgstr "प्रति पृष्ठ परिणाम"
+
+msgid "Resume"
+msgstr ""
 
 msgid "Resume Receiving"
 msgstr "प्राप्ति को फिर से शुरू करें"
@@ -20250,6 +20275,9 @@ msgstr "तकनीकी विवरण"
 msgid "Technical support"
 msgstr "तकनीकी समर्थन"
 
+msgid "Technically complete"
+msgstr ""
+
 msgid "Technically Complete"
 msgstr ""
 
@@ -21751,6 +21779,9 @@ msgstr "तंग"
 
 msgid "Tightened"
 msgstr "कठोर"
+
+msgid "Time & materials"
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "संपत्ति और वर्ग द्वारा किराया बेड़े का समय और डॉलर उपयोग"

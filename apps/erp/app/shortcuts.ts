@@ -42,6 +42,19 @@ export const DETAIL_TAB_SHORTCUTS = {
   processes: "mod+shift+r"
 } as const satisfies Record<string, ShortcutInput>;
 
+/**
+ * Project page tabs. Details keeps the shared detail-page combo; the others
+ * take the first free letter of their name.
+ */
+export const PROJECT_TAB_SHORTCUTS = {
+  elements: "mod+shift+e",
+  milestones: "mod+shift+m",
+  costs: "mod+shift+c",
+  time: "mod+shift+h",
+  settings: "mod+shift+s",
+  details: DETAIL_TAB_SHORTCUTS.details
+} as const satisfies Record<string, ShortcutInput>;
+
 /** Document-line explorer actions (Quote, SO, PO, invoices, procedures…). */
 export const EXPLORER_SHORTCUTS = {
   addLine: "mod+shift+l",

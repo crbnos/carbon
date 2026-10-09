@@ -753,6 +753,9 @@ msgstr "変更通知は、エンジニアリングまたは製造変更をレビ
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr ""
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
 
@@ -4509,6 +4512,10 @@ msgstr "<0/>からクロックイン中"
 msgid "Close"
 msgstr "閉じる"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr ""
+
 msgid "Close {periodLabel}"
 msgstr "{periodLabel}を閉じる"
 
@@ -4526,6 +4533,9 @@ msgstr "終了日"
 
 msgid "Close Period"
 msgstr "期間を閉じる"
+
+msgid "Close Project"
+msgstr ""
 
 msgid "Close Reports"
 msgstr "レポートを閉じる"
@@ -5491,6 +5501,9 @@ msgstr "原価計算方法"
 
 msgid "Costing Method"
 msgstr "原価計算方法"
+
+msgid "Costs"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "トリミングされた領域を分析できませんでした"
@@ -8044,6 +8057,9 @@ msgid "Edited"
 msgstr "編集済み"
 
 msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
+msgid "Elements"
 msgstr ""
 
 msgid "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "データを移行"
 msgid "Migrating from another system?"
 msgstr "別のシステムから移行していますか？"
 
+msgid "Milestones"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 達成済み"
 
@@ -15995,6 +16014,9 @@ msgstr "ディメンションなしで仕訳を転記する"
 msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
+msgid "Put on hold"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "データを復元中"
 
@@ -17255,6 +17277,9 @@ msgstr "結果"
 
 msgid "Results per page"
 msgstr "ページあたりの結果数"
+
+msgid "Resume"
+msgstr ""
 
 msgid "Resume Receiving"
 msgstr "受信を再開"
@@ -20250,6 +20275,9 @@ msgstr "技術詳細"
 msgid "Technical support"
 msgstr "テクニカルサポート"
 
+msgid "Technically complete"
+msgstr ""
+
 msgid "Technically Complete"
 msgstr ""
 
@@ -21751,6 +21779,9 @@ msgstr "逼迫"
 
 msgid "Tightened"
 msgstr "きつい検査"
+
+msgid "Time & materials"
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"

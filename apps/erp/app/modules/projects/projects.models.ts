@@ -196,6 +196,28 @@ export const projectValidator = z.object({
   priority: zfd.text(z.enum(projectElementPriorities).optional())
 });
 
+/**
+ * The status changes the project header offers, by current status. Release
+ * opens a Draft project to charges; Close is final.
+ */
+export const projectStatusTransitions: Record<
+  ProjectStatus,
+  readonly ProjectStatus[]
+> = {
+  Draft: ["Released"],
+  Released: ["On Hold", "Technically Complete"],
+  "On Hold": ["Released", "Technically Complete"],
+  "Technically Complete": ["Released", "Closed"],
+  Closed: []
+};
+
+export function canChangeProjectStatus(
+  from: ProjectStatus,
+  to: ProjectStatus
+): boolean {
+  return projectStatusTransitions[from].includes(to);
+}
+
 export const projectStatusValidator = z.object({
   status: z.enum(projectStatuses, { error: "Status is required" })
 });

@@ -753,6 +753,9 @@ msgstr "Zawiadomienie o zmianie śledzi kontrolowaną zmianę inżynieryjną lub
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Konto kompensacyjne zawierające wartość towarów otrzymanych, ale jeszcze niezafakturowanych; faktura dostawcy go wyzerowuje."
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr ""
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Firma łączy się z tylko jednym Onshape na raz. Odinstaluj Onshape Government, a następnie połącz Onshape."
 
@@ -4509,6 +4512,10 @@ msgstr "Zalogowany od <0/>"
 msgid "Close"
 msgstr "Zamknij"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr ""
+
 msgid "Close {periodLabel}"
 msgstr "Zamknij {periodLabel}"
 
@@ -4526,6 +4533,9 @@ msgstr "Data zamknięcia"
 
 msgid "Close Period"
 msgstr "Zamknij Okres"
+
+msgid "Close Project"
+msgstr ""
 
 msgid "Close Reports"
 msgstr "Zamknij raporty"
@@ -5491,6 +5501,9 @@ msgstr "Metoda kalkulacji kosztów"
 
 msgid "Costing Method"
 msgstr "Metoda kalkulacji kosztów"
+
+msgid "Costs"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Nie można było przeanalizować przycętego regionu"
@@ -8044,6 +8057,9 @@ msgid "Edited"
 msgstr "Edytowano"
 
 msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
+msgid "Elements"
 msgstr ""
 
 msgid "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "Migruj dane"
 msgid "Migrating from another system?"
 msgstr "Migracja z innego systemu?"
 
+msgid "Milestones"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — osiągnięto"
 
@@ -15995,6 +16014,9 @@ msgstr "Wyślij dowód księgowy bez wymiaru"
 msgid "Push to accounting"
 msgstr "Wyślij do systemu księgowego"
 
+msgid "Put on hold"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "Przywracanie twoich danych"
 
@@ -17255,6 +17277,9 @@ msgstr "Wyniki"
 
 msgid "Results per page"
 msgstr "Wyniki na stronę"
+
+msgid "Resume"
+msgstr ""
 
 msgid "Resume Receiving"
 msgstr "Wznów Odbieranie"
@@ -20250,6 +20275,9 @@ msgstr "Szczegóły techniczne"
 msgid "Technical support"
 msgstr "Pomoc techniczna"
 
+msgid "Technically complete"
+msgstr ""
+
 msgid "Technically Complete"
 msgstr ""
 
@@ -21751,6 +21779,9 @@ msgstr "ciasne"
 
 msgid "Tightened"
 msgstr "Obostrzona"
+
+msgid "Time & materials"
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Czasowe i pieniężne wykorzystanie floty wynajmu wg zasobu i klasy"

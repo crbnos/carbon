@@ -1,0 +1,94 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { data, useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import type { Project } from "~/modules/projects";
+import { projectValidator, updateProject } from "~/modules/projects";
+import { ProjectForm } from "~/modules/projects/ui/Projects";
+import { path } from "~/utils/path";
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "projects"
+  });
+
+  const { projectId } = params;
+  if (!projectId) throw new Error("Could not find projectId");
+
+  const validation = await validator(projectValidator).validate(
+    await request.formData()
+  );
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  // The identifier is fixed once the project exists: every element's stored
+  // readable id starts with it.
+  const { id: _id, identifier: _identifier, ...fields } = validation.data;
+
+  const update = await updateProject(client, {
+    ...fields,
+    id: projectId,
+    companyId,
+    updatedBy: userId
+  });
+
+  if (update.error) {
+    return data(
+      {},
+      await flash(request, error(update.error, "Failed to update the project"))
+    );
+  }
+
+  throw redirect(
+    path.to.projectDetails(projectId),
+    await flash(request, success("Project updated"))
+  );
+}
+
+export default function ProjectDetailsRoute() {
+  const { projectId } = useParams();
+  if (!projectId) throw new Error("Could not find projectId");
+
+  const routeData = useRouteData<{ project: Project }>(
+    path.to.project(projectId)
+  );
+  const project = routeData?.project;
+  if (!project) return null;
+
+  return (
+    <VStack spacing={4} className="p-4 max-w-[80rem] mx-auto">
+      <ProjectForm
+        key={project.id}
+        isDisabled={project.status === "Closed"}
+        initialValues={{
+          id: project.id,
+          name: project.name,
+          identifier: project.identifier ?? undefined,
+          description: project.description ?? undefined,
+          costTreatment:
+            project.costTreatment === "Capitalize"
+              ? "Expense"
+              : project.costTreatment,
+          costAccountId: project.costAccountId ?? undefined,
+          customerId: project.customerId ?? undefined,
+          ownerId: project.ownerId ?? undefined,
+          locationId: project.locationId ?? undefined,
+          startDate: project.startDate ?? undefined,
+          endDate: project.endDate ?? undefined,
+          priority: project.priority ?? undefined
+        }}
+      />
+    </VStack>
+  );
+}

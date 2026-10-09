@@ -753,6 +753,9 @@ msgstr "变更通知跟踪通过评审和实施的受控工程或制造变更。
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "持有已收但未开票商品价值的结算账户；供应商发票将其结清。"
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr ""
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "一家公司一次只能连接一个 Onshape。请卸载 Onshape Government，然后连接 Onshape。"
 
@@ -4509,6 +4512,10 @@ msgstr "自 <0/> 打卡"
 msgid "Close"
 msgstr "关闭"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr ""
+
 msgid "Close {periodLabel}"
 msgstr "关闭{periodLabel}"
 
@@ -4526,6 +4533,9 @@ msgstr "关闭日期"
 
 msgid "Close Period"
 msgstr "关闭期间"
+
+msgid "Close Project"
+msgstr ""
 
 msgid "Close Reports"
 msgstr "关闭报告"
@@ -5491,6 +5501,9 @@ msgstr "成本核算方法"
 
 msgid "Costing Method"
 msgstr "成本核算方法"
+
+msgid "Costs"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "无法分析裁剪区域"
@@ -8044,6 +8057,9 @@ msgid "Edited"
 msgstr "已编辑"
 
 msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
+msgid "Elements"
 msgstr ""
 
 msgid "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "迁移数据"
 msgid "Migrating from another system?"
 msgstr "从另一个系统迁移？"
 
+msgid "Milestones"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 已达到"
 
@@ -15995,6 +16014,9 @@ msgstr "发布不包含维度的凭证"
 msgid "Push to accounting"
 msgstr "推送到会计系统"
 
+msgid "Put on hold"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
@@ -17255,6 +17277,9 @@ msgstr "结果"
 
 msgid "Results per page"
 msgstr "每页结果数"
+
+msgid "Resume"
+msgstr ""
 
 msgid "Resume Receiving"
 msgstr "恢复接收"
@@ -20250,6 +20275,9 @@ msgstr "技术细节"
 msgid "Technical support"
 msgstr "技术支持"
 
+msgid "Technically complete"
+msgstr ""
+
 msgid "Technically Complete"
 msgstr ""
 
@@ -21751,6 +21779,9 @@ msgstr "紧张"
 
 msgid "Tightened"
 msgstr "加严检验"
+
+msgid "Time & materials"
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "按资产和类别统计的租赁设备的时间和成本利用率"

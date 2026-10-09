@@ -753,6 +753,9 @@ msgstr "Извещение об изменении отслеживает кон
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Счет, содержащий стоимость полученных товаров, еще не выставленных счетом; счет-фактура поставщика его очищает."
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr ""
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Организация может подключаться к одному Onshape одновременно. Удалите Onshape Government, затем подключите Onshape."
 
@@ -4509,6 +4512,10 @@ msgstr "Работаю с <0/>"
 msgid "Close"
 msgstr "Закрыть"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr ""
+
 msgid "Close {periodLabel}"
 msgstr "Закрыть {periodLabel}"
 
@@ -4526,6 +4533,9 @@ msgstr "Дата закрытия"
 
 msgid "Close Period"
 msgstr "Закрыть период"
+
+msgid "Close Project"
+msgstr ""
 
 msgid "Close Reports"
 msgstr "Закрыть отчеты"
@@ -5491,6 +5501,9 @@ msgstr "Метод калькуляции"
 
 msgid "Costing Method"
 msgstr "Метод калькуляции"
+
+msgid "Costs"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Не удалось проанализировать обрезанный регион"
@@ -8044,6 +8057,9 @@ msgid "Edited"
 msgstr "Изменено"
 
 msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
+msgid "Elements"
 msgstr ""
 
 msgid "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "Перенос данных"
 msgid "Migrating from another system?"
 msgstr "Миграция из другой системы?"
 
+msgid "Milestones"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "мин {minimumBatchQuantity} — достигнуто"
 
@@ -15995,6 +16014,9 @@ msgstr "Провести операцию без измерения"
 msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
 
+msgid "Put on hold"
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "Восстановление ваших данных"
 
@@ -17255,6 +17277,9 @@ msgstr "Результаты"
 
 msgid "Results per page"
 msgstr "Результатов на странице"
+
+msgid "Resume"
+msgstr ""
 
 msgid "Resume Receiving"
 msgstr "Возобновить получение"
@@ -20250,6 +20275,9 @@ msgstr "Технические сведения"
 msgid "Technical support"
 msgstr "Техническая поддержка"
 
+msgid "Technically complete"
+msgstr ""
+
 msgid "Technically Complete"
 msgstr ""
 
@@ -21751,6 +21779,9 @@ msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Усиленный"
+
+msgid "Time & materials"
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Использование арендного парка по времени и стоимости по активам и классам"

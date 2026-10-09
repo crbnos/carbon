@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import {
+  canChangeProjectStatus,
+  getProject,
+  projectStatusValidator,
+  updateProjectStatus
+} from "~/modules/projects";
+import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "project-status");
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "projects"
+  });
+
+  const { projectId } = params;
+  if (!projectId) throw new Error("Could not find projectId");
+
+  const back = requestReferrer(request) ?? path.to.project(projectId);
+
+  const validation = await validator(projectStatusValidator).validate(
+    await request.formData()
+  );
+  if (validation.error) {
+    throw redirect(back, await flash(request, error(null, "Invalid status")));
+  }
+  const { status } = validation.data;
+
+  const project = await getProject(client, companyId, projectId);
+  if (project.error || !project.data) {
+    logger.error("Failed to load project", {
+      companyId,
+      projectId,
+      error: project.error
+    });
+    throw redirect(
+      back,
+      await flash(request, error(project.error, "Failed to load project"))
+    );
+  }
+
+  if (!canChangeProjectStatus(project.data.status, status)) {
+    throw redirect(
+      back,
+      await flash(
+        request,
+        error(
+          null,
+          `A ${project.data.status} project cannot change to ${status}`
+        )
+      )
+    );
+  }
+
+  const update = await updateProjectStatus(client, {
+    id: projectId,
+    companyId,
+    status,
+    updatedBy: userId
+  });
+
+  if (update.error) {
+    throw redirect(
+      back,
+      await flash(
+        request,
+        error(
+          update.error,
+          update.error.message ?? "Failed to update the project status"
+        )
+      )
+    );
+  }
+
+  throw redirect(back, await flash(request, success(`Project is ${status}`)));
+}

@@ -753,6 +753,9 @@ msgstr "A change notice tracks a controlled engineering or manufacturing change 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 
+msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+msgstr "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 
@@ -4509,6 +4512,10 @@ msgstr "Clocked in since <0/>"
 msgid "Close"
 msgstr "Close"
 
+#. placeholder {0}: project.identifier
+msgid "Close {0}"
+msgstr "Close {0}"
+
 msgid "Close {periodLabel}"
 msgstr "Close {periodLabel}"
 
@@ -4526,6 +4533,9 @@ msgstr "Close Date"
 
 msgid "Close Period"
 msgstr "Close Period"
+
+msgid "Close Project"
+msgstr "Close Project"
 
 msgid "Close Reports"
 msgstr "Close Reports"
@@ -5491,6 +5501,9 @@ msgstr "Costing method"
 
 msgid "Costing Method"
 msgstr "Costing Method"
+
+msgid "Costs"
+msgstr "Costs"
 
 msgid "Could not analyze cropped region"
 msgstr "Could not analyze cropped region"
@@ -8045,6 +8058,9 @@ msgstr "Edited"
 
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr "Element ids start with the identifier, so it cannot change"
+
+msgid "Elements"
+msgstr "Elements"
 
 msgid "Eliminated"
 msgstr "Eliminated"
@@ -12330,6 +12346,9 @@ msgstr "Migrate data"
 msgid "Migrating from another system?"
 msgstr "Migrating from another system?"
 
+msgid "Milestones"
+msgstr "Milestones"
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — met"
 
@@ -15995,6 +16014,9 @@ msgstr "Push the journal without the dimension"
 msgid "Push to accounting"
 msgstr "Push to accounting"
 
+msgid "Put on hold"
+msgstr "Put on hold"
+
 msgid "Putting your data back"
 msgstr "Putting your data back"
 
@@ -17255,6 +17277,9 @@ msgstr "Results"
 
 msgid "Results per page"
 msgstr "Results per page"
+
+msgid "Resume"
+msgstr "Resume"
 
 msgid "Resume Receiving"
 msgstr "Resume Receiving"
@@ -20250,6 +20275,9 @@ msgstr "Technical details"
 msgid "Technical support"
 msgstr "Technical support"
 
+msgid "Technically complete"
+msgstr "Technically complete"
+
 msgid "Technically Complete"
 msgstr "Technically Complete"
 
@@ -21751,6 +21779,9 @@ msgstr "tight"
 
 msgid "Tightened"
 msgstr "Tightened"
+
+msgid "Time & materials"
+msgstr "Time & materials"
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
