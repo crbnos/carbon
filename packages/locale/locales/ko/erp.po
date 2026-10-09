@@ -2804,7 +2804,7 @@ msgstr "이 작업 지시를 취소하시겠습니까? 현장에서 더 이상 �
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "이 RMA를 취소하시겠습니까? 이렇게 하면 승인된 수량이 원본 문서로 반환됩니다."
 
-msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with a charge that is not reversed cannot be cancelled."
 msgstr ""
 
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."

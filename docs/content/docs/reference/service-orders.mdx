@@ -39,7 +39,7 @@ The form also takes a **Contact** and the **Problem**. The order has the tabs **
 You set On Hold, Completed, Closed and Cancelled. Carbon sets the rest from the visits, and cancelled visits do not count. **Reopen**, in the order's menu, returns a Completed order to its visits' status.
 </Callout>
 
-You cannot cancel an order that has any charge, even a reversed one. Deleting the Draft invoice of an order moves the order from Closed back to Completed, and its billable items back to Unbilled.
+You can cancel an order only when every charge on it is reversed. Deleting the Draft invoice of an order moves the order from Closed back to Completed, and its billable items back to Unbilled.
 
 ## The work tree
 
@@ -180,8 +180,8 @@ A serial can have only one open service order (any status other than Closed or C
 ### "The coverage contract is not one of this customer's contracts"
 The Coverage Contract belongs to another customer. Pick one of the unit's customer's contracts, or leave it empty.
 
-### "This service order has posted charges. Reverse them before you cancel it."
-An order with any ledger row cannot be cancelled, even when every charge was reversed. Instead, complete the order, write off its unbilled items on the Billing tab, then Close it.
+### "This service order has 2 charges that are not reversed. Reverse every charge before you cancel the order, or complete the order and write off its billable items."
+At least one charge on the order still stands. Return each part with **Issue Part** and **Return to stock**, then cancel. A coverage override does not reverse a charge: it moves the cost to a new charge. Time and expenses cannot be reversed from a service order yet. For those, complete the order, write off its unbilled items on the Billing tab, then Close it.
 
 ### "Set Warranty Expense in Account Defaults before you charge a service order"
 The company has no Warranty Expense account default. Set it in Accounting → Default Accounts (Operating Expenses group). The same message names Cost of Goods Sold or Work in Progress when those defaults are missing.

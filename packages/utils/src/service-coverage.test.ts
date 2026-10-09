@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { resolveCoverage } from "./service-coverage";
+import { openChargeIds, resolveCoverage } from "./service-coverage";
 
 const fieldVisit = {
   orderType: "Field Visit" as const,
@@ -87,5 +87,44 @@ describe("resolveCoverage", () => {
         hasCoverageContract: true
       })
     ).toBe("Capitalized");
+  });
+});
+
+describe("openChargeIds", () => {
+  it("has no open charge when every charge is reversed", () => {
+    expect(
+      openChargeIds([
+        { id: "a", reversalOfId: null },
+        { id: "b", reversalOfId: "a" },
+        { id: "c", reversalOfId: null },
+        { id: "d", reversalOfId: "c" }
+      ])
+    ).toEqual([]);
+  });
+
+  it("keeps a charge with no reversal open", () => {
+    expect(
+      openChargeIds([
+        { id: "a", reversalOfId: null },
+        { id: "b", reversalOfId: "a" },
+        { id: "c", reversalOfId: null }
+      ])
+    ).toEqual(["c"]);
+  });
+
+  it("keeps the new row of a reclass open until it is reversed", () => {
+    const reclassed = [
+      { id: "a", reversalOfId: null },
+      { id: "b", reversalOfId: "a" },
+      { id: "c", reversalOfId: null }
+    ];
+    expect(openChargeIds(reclassed)).toEqual(["c"]);
+    expect(
+      openChargeIds([...reclassed, { id: "d", reversalOfId: "c" }])
+    ).toEqual([]);
+  });
+
+  it("has no open charge with no rows", () => {
+    expect(openChargeIds([])).toEqual([]);
   });
 });

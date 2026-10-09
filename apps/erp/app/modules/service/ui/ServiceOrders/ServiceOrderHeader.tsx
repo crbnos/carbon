@@ -264,7 +264,7 @@ const ServiceOrderHeader = () => {
         <Confirm
           action={path.to.serviceOrderStatus(id)}
           title={t`Cancel ${order.serviceOrderId}`}
-          text={t`Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled.`}
+          text={t`Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with a charge that is not reversed cannot be cancelled.`}
           confirmText={t`Cancel Service Order`}
           confirmVariant="destructive"
           onCancel={cancelDisclosure.onClose}

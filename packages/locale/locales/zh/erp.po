@@ -2804,7 +2804,7 @@ msgstr "你确定要取消此工作吗？它将不再在车间可用。"
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "确实要取消此 RMA 吗？这将把授权数量释放回源文档。"
 
-msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with a charge that is not reversed cannot be cancelled."
 msgstr ""
 
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."

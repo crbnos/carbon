@@ -73,7 +73,7 @@ list table). The asset page is its own folder, `customer-asset+/$assetId.tsx`.
 (`projectStatusOfOrder`: On Hold → On Hold, Completed → Technically Complete, Closed /
 Cancelled → Closed, else Released). Call it after every visit change and every order
 status change, in the same transaction. `canMoveServiceOrder` and `canMoveVisit` are
-the allowed moves. `cancelServiceOrder` refuses an order with any ledger row.
+the allowed moves. `cancelServiceOrder` refuses an order while a ledger row stands (`openChargeIds`, `@carbon/utils`: not a reversal, and no row reverses it); an order whose every charge is reversed can be cancelled.
 
 ## Coverage
 
@@ -198,6 +198,10 @@ No charges are seeded. The wipe deletes `customerAssetComponent`, `serviceVisit`
 
 ## Known gaps
 
+- A service order has no way to reverse its time or expenses (no correction on a Service
+  timesheet row, no expense reversal in the UI). Only a part return reverses a charge, so
+  an order with time or an expense cannot be cancelled; complete it and write off its
+  billable items.
 - The visit window uses `DateTimePicker`, which reads the browser's time zone, not the
   company's.
 - The service tables do not broadcast, so no page declares `handle.realtime`.

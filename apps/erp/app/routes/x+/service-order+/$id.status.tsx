@@ -35,7 +35,7 @@ const MESSAGES: Record<ServiceOrderStatusAction, string> = {
  * Moves an order to the status the user chose, then rolls its status up
  * from its visits and sets its work tree's status to match
  * (`syncServiceOrderStatus`). A cancel goes through `cancelServiceOrder`,
- * which refuses an order with posted charges.
+ * which refuses an order with a charge that is not reversed.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

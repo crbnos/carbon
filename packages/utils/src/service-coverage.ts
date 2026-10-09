@@ -60,3 +60,23 @@ export function resolveCoverage(args: {
   if (args.hasCoverageContract) return "Contract";
   return "Billable";
 }
+
+/**
+ * The ledger rows of a project that still stand: a row that is not a reversal
+ * and that no other row reverses. A void, a timesheet correction, a part return
+ * and an expense reversal each write a row whose `reversalOfId` names the row it
+ * undoes. A coverage reclass reverses the old row and writes a new one, and the
+ * new one stands until it is reversed in turn.
+ */
+export function openChargeIds(
+  rows: ReadonlyArray<{ id: string; reversalOfId: string | null }>
+): string[] {
+  const reversed = new Set(
+    rows
+      .map((row) => row.reversalOfId)
+      .filter((id): id is string => Boolean(id))
+  );
+  return rows
+    .filter((row) => !row.reversalOfId && !reversed.has(row.id))
+    .map((row) => row.id);
+}

@@ -11,7 +11,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
-import { datetime } from "@carbon/utils";
+import { datetime, openChargeIds } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -428,9 +428,11 @@ export async function syncServiceOrderStatus(
 }
 
 /**
- * Cancels an order with no posted charge: the order goes to Cancelled, its
- * open visits to Cancelled and its project to Closed. An order whose project
- * has a ledger row is refused; reverse the charges first.
+ * Cancels an order with no charge that stands: the order goes to Cancelled,
+ * its open visits to Cancelled and its project to Closed. An order is refused
+ * while one of its ledger rows is not reversed (`openChargeIds`); an order
+ * whose every charge is reversed (a timesheet correction, a part return, an
+ * expense reversal) can be cancelled.
  */
 export async function cancelServiceOrder(
   db: Kysely<KyselyDatabase>,
@@ -451,16 +453,20 @@ export async function cancelServiceOrder(
       );
     }
 
-    const posted = await trx
+    const ledger = await trx
       .selectFrom("projectLedger")
-      .select("id")
+      .select(["id", "reversalOfId"])
       .where("projectId", "=", order.projectId)
       .where("companyId", "=", args.companyId)
-      .limit(1)
-      .executeTakeFirst();
-    if (posted) {
+      .execute();
+    const open = openChargeIds(ledger).length;
+    if (open > 0) {
       throw new ServiceOrderError(
-        "This service order has posted charges. Reverse them before you cancel it."
+        `${
+          open === 1
+            ? "This service order has 1 charge that is not reversed."
+            : `This service order has ${open} charges that are not reversed.`
+        } Reverse every charge before you cancel the order, or complete the order and write off its billable items.`
       );
     }
 
