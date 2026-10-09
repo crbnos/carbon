@@ -53,7 +53,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 14: Add the time, labor category and ledger service functions
 - [x] Task 15: Add the pure project posting helpers and tests
 - [x] Task 16: Add the `post-timesheet` server function
-- [ ] Task 17: Add the `post-project-issue` server function
+- [x] Task 17: Add the `post-project-issue` server function
 - [ ] Task 18: Route job material issues to the project account
 - [ ] Task 19: Route production events to the project account
 - [ ] Task 20: Change job completion for consume-to-project jobs
@@ -2435,3 +2435,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 16: a Statistical entry is stamped with its rate when one exists, and needs none. A non-Statistical entry with no rate on its date is refused. A reversal whose original has no `costRate` falls back to the rate on its date. The first-charge state change skips reversals.
 - Task 16: `startElementsOnFirstCharge(trx, companyId, elementIds)` in `lib/project-posting.ts` is the SQL of the ERP `startElementOnFirstCharge` for many elements in one statement; Task 17 reuses it. `ProjectChargeError` now carries `status = 422`, so a server function returns a refusal as a 422 with its message instead of a 500.
 - Task 16: `lib/project-posting-test-fixture.ts` builds the scratch company (accounts, account defaults, period, the three dimensions, a labor category at 85.00, a Released project with Todo / In Progress / Done states and one element). Tasks 17–19 extend it.
+- Task 17: `bookAdjustment` already returns `cost`, so `post-adjustment.ts` did not change. No `journalReference.to.projectIssue` was added: the adjustment core writes its journal lines with no `documentLineReference`, so nothing would read it. The lines carry `documentType: "Project Issue"` and the project id as `documentId` (the itemLedger `documentId`); the `projectLedger` row's `documentId` is the itemLedger id.
+- Task 17: `assertCompanyRecords` accepts `project` and `item` (type union only). The function also re-reads `storageUnitId` and `trackedEntityId` under the company.
+- Task 17: an Issue is refused (400) when the bin, or the tracked entity, holds less than the quantity, as a negative adjustment is. A Serial or Batch item needs a `trackedEntityId`; its quantity is settled with `settleQuantity` (a Return brings a Consumed entity back to Available). New tracked entities are never created here.
+- Task 17: the plan line update touches the oldest `projectElementMaterial` row for the item when the element has several. The first-charge state change runs on an Issue only.

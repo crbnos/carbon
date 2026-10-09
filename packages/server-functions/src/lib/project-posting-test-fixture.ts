@@ -150,6 +150,8 @@ export async function projectPostingFixture(
           ACCOUNT_DEFAULT_COLUMNS.map((column) => [column, account("misc")])
         ),
         workInProgressAccount: account("wip"),
+        rawMaterialsAccount: account("inventory"),
+        finishedGoodsAccount: account("inventory"),
         indirectCostAccount: account("indirect"),
         inventoryAdjustmentVarianceAccount: account("adjustment-variance"),
         laborAbsorptionAccount: account("labor-absorption"),
@@ -285,6 +287,83 @@ export async function projectPostingFixture(
     projectId,
     elementId,
     laborCategoryId,
+    /** A location and a FIFO bought item with `quantity` units on hand in
+     *  one cost layer at `unitCost`. */
+    async addStockedItem(
+      key: string,
+      { quantity, unitCost }: { quantity: number; unitCost: number }
+    ) {
+      const locationId = `${prefix}-location-${key}`;
+      const itemId = `${prefix}-item-${key}`;
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("location")
+          .values({
+            id: locationId,
+            name: `Plant ${key}`,
+            addressLine1: "1 Main St",
+            city: "Springfield",
+            postalCode: "00000",
+            timezone: "America/New_York",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("item")
+          .values({
+            id: itemId,
+            readableId: `${prefix}-${key}`,
+            name: `Part ${key}`,
+            type: "Part",
+            itemTrackingType: "Inventory",
+            replenishmentSystem: "Buy",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        // An item insert may already have created its cost row.
+        await trx.deleteFrom("itemCost").where("itemId", "=", itemId).execute();
+        await trx
+          .insertInto("itemCost")
+          .values({
+            itemId,
+            costingMethod: "FIFO",
+            unitCost,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate: "2026-01-01",
+            entryType: "Positive Adjmt.",
+            itemId,
+            locationId,
+            quantity,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("costLedger")
+          .values({
+            itemLedgerType: "Positive Adjmt.",
+            costLedgerType: "Direct Cost",
+            adjustment: false,
+            itemId,
+            quantity,
+            cost: quantity * unitCost,
+            remainingQuantity: quantity,
+            postingDate: "2026-01-01",
+            companyId
+          })
+          .execute();
+      });
+      return { locationId, itemId };
+    },
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);

@@ -37,6 +37,7 @@ const registry = {
   "post-payment": () => import("./post-payment"),
   "post-picking": () => import("./post-picking"),
   "post-production-event": () => import("./post-production-event"),
+  "post-project-issue": () => import("./post-project-issue"),
   "post-purchase-invoice": () => import("./post-purchase-invoice"),
   "post-receipt": () => import("./post-receipt"),
   "post-reimbursement": () => import("./post-reimbursement"),

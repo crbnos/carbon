@@ -16,10 +16,12 @@ import { NotFoundError } from "./errors";
 type CompanyScopedTable =
   | "inspection"
   | "inspectionSample"
+  | "item"
   | "jobOperationStep"
   | "location"
   | "nonConformance"
   | "productionEvent"
+  | "project"
   | "purchaseOrder"
   | "scrapReason"
   | "storageUnit"
