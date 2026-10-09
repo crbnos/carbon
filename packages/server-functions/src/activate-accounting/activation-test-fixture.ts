@@ -256,6 +256,11 @@ export async function activationFixture() {
           .where("companyId", "=", companyId)
           .execute();
         await trx
+          .updateTable("purchaseInvoice")
+          .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
           .updateTable("charge")
           .set({
             status: "Draft",

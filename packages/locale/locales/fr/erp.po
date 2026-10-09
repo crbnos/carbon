@@ -13365,6 +13365,9 @@ msgstr "Aucun tarif de location client."
 msgid "No Data"
 msgstr "Aucune donnée"
 
+msgid "No data exists"
+msgstr ""
+
 msgid "No data yet"
 msgstr "Aucune donnée pour le moment"
 

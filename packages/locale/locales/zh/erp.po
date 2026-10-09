@@ -13365,6 +13365,9 @@ msgstr "没有客户租赁费率。"
 msgid "No Data"
 msgstr "无数据"
 
+msgid "No data exists"
+msgstr ""
+
 msgid "No data yet"
 msgstr "暂无数据"
 

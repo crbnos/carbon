@@ -13365,6 +13365,9 @@ msgstr "Sin tasas de alquiler para clientes."
 msgid "No Data"
 msgstr "Sin datos"
 
+msgid "No data exists"
+msgstr ""
+
 msgid "No data yet"
 msgstr "Aún no hay datos"
 

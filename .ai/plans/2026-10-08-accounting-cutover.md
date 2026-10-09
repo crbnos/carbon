@@ -55,7 +55,7 @@
 - [ ] Task 38: Run every gate and verify the enable flow in the browser
 
 ### Phase F — Legacy documents on or after the cutover (spec section 5a)
-- [ ] Task 39: Write the journals of legacy sales and purchase invoices at enable
+- [x] Task 39: Write the journals of legacy sales and purchase invoices at enable
 - [ ] Task 40: Write the journals of legacy memos, payments, charges and reimbursements
 - [ ] Task 41: Write the journals of legacy movements that stored a cost row
 - [ ] Task 42: Write the cost rows and journals of legacy movements that stored none

@@ -13365,6 +13365,9 @@ msgstr "Müşteri kira oranı yok."
 msgid "No Data"
 msgstr "Veri Yok"
 
+msgid "No data exists"
+msgstr ""
+
 msgid "No data yet"
 msgstr "Henüz veri yok"
 

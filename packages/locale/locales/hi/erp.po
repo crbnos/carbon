@@ -13365,6 +13365,9 @@ msgstr "कोई ग्राहक किराया दरें नही�
 msgid "No Data"
 msgstr "कोई डेटा नहीं"
 
+msgid "No data exists"
+msgstr ""
+
 msgid "No data yet"
 msgstr "अभी तक कोई डेटा नहीं"
 

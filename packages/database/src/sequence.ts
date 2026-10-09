@@ -93,6 +93,44 @@ export async function getNextSequence(
   return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
 }
 
+/**
+ * `count` numbers of one sequence in a single statement, in order. The same
+ * atomic increment as `getNextSequence`, by `count` steps at once.
+ */
+export async function getNextSequences(
+  trx: Transaction<KyselyDatabase>,
+  tableName: string,
+  companyId: string,
+  count: number
+): Promise<string[]> {
+  if (count <= 0) return [];
+  const sequence = await trx
+    .updateTable("sequence")
+    .set({
+      next: sql<number>`"next" + "step" * ${count}`,
+      updatedBy: "system"
+    })
+    .where("table", "=", tableName)
+    .where("companyId", "=", companyId)
+    .returning(["next", "step", "prefix", "suffix", "size"])
+    .executeTakeFirstOrThrow();
+
+  const { prefix, suffix, next, step, size } = sequence;
+  if (!Number.isInteger(next)) throw new Error("Next is not an integer");
+  if (!Number.isInteger(step)) throw new Error("Step is not an integer");
+  if (!Number.isInteger(size)) throw new Error("Size is not an integer");
+
+  const timezone = await getCompanyTimeZone(trx, companyId);
+  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
+  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
+  const first = next! - step! * (count - 1);
+  return Array.from(
+    { length: count },
+    (_, index) =>
+      `${derivedPrefix}${(first + step! * index).toString().padStart(size!, "0")}${derivedSuffix}`
+  );
+}
+
 export async function getNextRevisionSequence(
   trx: Transaction<KyselyDatabase>,
   tableName: string,

@@ -13365,6 +13365,9 @@ msgstr "No customer rental rates."
 msgid "No Data"
 msgstr "No Data"
 
+msgid "No data exists"
+msgstr "No data exists"
+
 msgid "No data yet"
 msgstr "No data yet"
 

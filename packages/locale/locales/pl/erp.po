@@ -13365,6 +13365,9 @@ msgstr "Brak stawek wynajmu klienta."
 msgid "No Data"
 msgstr "Brak danych"
 
+msgid "No data exists"
+msgstr ""
+
 msgid "No data yet"
 msgstr "Brak danych"
 

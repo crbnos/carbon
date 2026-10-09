@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The accounting enable (.ai/specs/2026-10-08-accounting-cutover.md section
-// 5). One transaction: it resets inventory as of the cutover date, re-costs
+// 5). One transaction: it writes the journals of legacy documents dated on
+// or after the cutover (section 5a), resets inventory as of the cutover date, re-costs
 // the outbound movements after it, supersedes the Provisional journals before
 // it, posts the opening journal, promotes the Provisional journals on or after
 // it, closes the periods before it and stamps the cutover. It holds
@@ -36,6 +37,8 @@ import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
+import { journalLegacyDocuments, type LegacyJournalCounts } from "./legacy";
+import { chunks } from "./legacy/write";
 
 export const activateAccountingInput = z.object({
   cutoverDate: z
@@ -48,6 +51,8 @@ export type ActivateAccountingResult = {
   cutoverDate: string;
   /** Null when nothing was open and the trial balance was empty. */
   openingJournalId: string | null;
+  /** Legacy documents dated on or after the cutover that got their journal. */
+  legacyJournals: LegacyJournalCounts;
 };
 
 /** Migration Clearing must total zero within this. */
@@ -116,6 +121,16 @@ const activateAccounting = defineServerFn({
             "Set the migrationClearingAccount account default."
           );
         }
+
+        // 3a (spec step 1a). The journals of legacy documents dated on or
+        // after the cutover, Provisional, so the steps below treat them like
+        // every other Provisional journal.
+        const legacyJournals = await journalLegacyDocuments(trx, {
+          companyId,
+          userId,
+          cutoverDate
+        });
+
         const inventory = await getCutoverInventory(trx, args);
         const defaults = await trx
           .selectFrom("accountDefault")
@@ -307,7 +322,7 @@ const activateAccounting = defineServerFn({
           .where("id", "=", companyId)
           .execute();
 
-        return { cutoverDate, openingJournalId };
+        return { cutoverDate, openingJournalId, legacyJournals };
       });
   }
 });
@@ -316,17 +331,6 @@ export default activateAccounting;
 
 function now() {
   return datetime.timestamp();
-}
-
-/** Rows per statement, well inside Postgres's 65,535 bind parameters. */
-const CHUNK_SIZE = 1000;
-
-function chunks<T>(rows: T[]): T[][] {
-  const result: T[][] = [];
-  for (let start = 0; start < rows.length; start += CHUNK_SIZE) {
-    result.push(rows.slice(start, start + CHUNK_SIZE));
-  }
-  return result;
 }
 
 /** Layers `calculateCOGS` relieves: not an adjustment child, not a PO artifact. */
