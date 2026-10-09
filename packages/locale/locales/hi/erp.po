@@ -1959,6 +1959,9 @@ msgstr "स्टॉक ट्रांसफर जोड़ें"
 msgid "Add Supplier"
 msgstr "आपूर्तिकर्ता जोड़ें"
 
+msgid "Add the first milestone"
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "अगली क्षमता को एक ही सिस्टम पर जोड़ें, दूसरा टूल खरीदने के बजाय।"
 
@@ -7034,6 +7037,10 @@ msgstr "चालान {0} को हटाएँ"
 msgid "Delete the label {0}? It is removed from every element that has it."
 msgstr ""
 
+#. placeholder {0}: deleting.name
+msgid "Delete the milestone {0}? Its elements stay, without a milestone."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य स्तर हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
@@ -7607,6 +7614,7 @@ msgstr "देय (नियत तिथि के अनुसार)।"
 msgid "due {0}"
 msgstr "देय {0}"
 
+#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -8024,6 +8032,9 @@ msgstr "सामग्री प्रकार संपादित करे
 
 msgid "Edit Memo"
 msgstr "मेमो संपादित करें"
+
+msgid "Edit Milestone"
+msgstr ""
 
 msgid "Edit Non Conformance Type"
 msgstr "गैर-अनुरूपता प्रकार संपादित करें"
@@ -9679,6 +9690,7 @@ msgstr "से"
 msgid "From"
 msgstr "से"
 
+#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -13105,6 +13117,9 @@ msgstr "नया सामग्री पदार्थ"
 msgid "New Material Type"
 msgstr "नई सामग्री प्रकार"
 
+msgid "New Milestone"
+msgstr ""
+
 msgid "New Non Conformance Type"
 msgstr "नई गैर-अनुरूपता प्रकार"
 
@@ -13511,6 +13526,9 @@ msgstr "कोई डेटा नहीं"
 msgid "No data exists"
 msgstr "कोई डेटा मौजूद नहीं है"
 
+msgid "No dates"
+msgstr ""
+
 msgid "No days off scheduled"
 msgstr "कोई दिन बंद निर्धारित नहीं है"
 
@@ -13710,6 +13728,9 @@ msgid "No materials"
 msgstr "कोई सामग्री नहीं"
 
 msgid "No milestone"
+msgstr ""
+
+msgid "No milestones yet. Add one, then set it on the elements it covers."
 msgstr ""
 
 msgid "No new notifications"
@@ -22862,6 +22883,9 @@ msgstr "UoM"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "{0} तक की बचत"
+
+msgid "Upcoming"
+msgstr ""
 
 msgid "Update"
 msgstr "अपडेट करें"

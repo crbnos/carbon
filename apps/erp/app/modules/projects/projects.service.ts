@@ -723,6 +723,32 @@ export async function upsertProjectMilestone(
 }
 
 /**
+ * Completes a milestone now, or reopens it when `completed` is false.
+ * @mcp update
+ */
+export async function completeProjectMilestone(
+  client: Client,
+  args: {
+    id: string;
+    companyId: string;
+    completed: boolean;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("projectMilestone")
+    .update({
+      completedAt: args.completed ? datetime.timestamp() : null,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+/**
  * Deletes a milestone of a project. Elements on it lose the milestone.
  * @mcp delete
  */

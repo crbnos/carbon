@@ -1959,6 +1959,9 @@ msgstr "재고 이전 추가"
 msgid "Add Supplier"
 msgstr "공급업체 추가"
 
+msgid "Add the first milestone"
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "다른 도구를 구매하는 대신 같은 시스템에 다음 기능을 추가하세요."
 
@@ -7034,6 +7037,10 @@ msgstr "{0} 송장 삭제"
 msgid "Delete the label {0}? It is removed from every element that has it."
 msgstr ""
 
+#. placeholder {0}: deleting.name
+msgid "Delete the milestone {0}? Its elements stay, without a milestone."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "수량 {0}에 대한 가격 구간을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -7607,6 +7614,7 @@ msgstr "마감 (마감일 기준)"
 msgid "due {0}"
 msgstr "{0} 예정"
 
+#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -8024,6 +8032,9 @@ msgstr "자재 유형 편집"
 
 msgid "Edit Memo"
 msgstr "메모 편집"
+
+msgid "Edit Milestone"
+msgstr ""
 
 msgid "Edit Non Conformance Type"
 msgstr "부적합 유형 편집"
@@ -9679,6 +9690,7 @@ msgstr "에서"
 msgid "From"
 msgstr "출발지"
 
+#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -13105,6 +13117,9 @@ msgstr "새 자재 재질"
 msgid "New Material Type"
 msgstr "새 자재 유형"
 
+msgid "New Milestone"
+msgstr ""
+
 msgid "New Non Conformance Type"
 msgstr "새 부적합 유형"
 
@@ -13511,6 +13526,9 @@ msgstr "데이터 없음"
 msgid "No data exists"
 msgstr "존재하는 데이터가 없습니다"
 
+msgid "No dates"
+msgstr ""
+
 msgid "No days off scheduled"
 msgstr "예정된 휴무가 없습니다"
 
@@ -13710,6 +13728,9 @@ msgid "No materials"
 msgstr "자재 없음"
 
 msgid "No milestone"
+msgstr ""
+
+msgid "No milestones yet. Add one, then set it on the elements it covers."
 msgstr ""
 
 msgid "No new notifications"
@@ -22862,6 +22883,9 @@ msgstr "UoM"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "최대 {0} 절감"
+
+msgid "Upcoming"
+msgstr ""
 
 msgid "Update"
 msgstr "업데이트"

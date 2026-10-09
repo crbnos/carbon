@@ -641,3 +641,134 @@ export function rollUpCostSummary(
 
   return { byElement, project };
 }
+
+export type MilestoneGroup = "Active" | "Upcoming" | "Completed";
+
+/**
+ * Which list a milestone shows in. A completed milestone is Completed. A
+ * milestone that starts after `today`, or has no dates, is Upcoming. Every
+ * other milestone is Active, including one whose end date has passed (it is
+ * overdue). Dates are `YYYY-MM-DD` strings, so string order is date order.
+ */
+export function milestoneGroup(
+  milestone: {
+    startDate: string | null;
+    endDate: string | null;
+    completedAt: string | null;
+  },
+  today: string
+): MilestoneGroup {
+  if (milestone.completedAt) return "Completed";
+  if (!milestone.startDate && !milestone.endDate) return "Upcoming";
+  if (milestone.startDate && milestone.startDate > today) return "Upcoming";
+  return "Active";
+}
+
+export type MilestoneSummary<
+  M extends {
+    id: string;
+    startDate: string | null;
+    endDate: string | null;
+    completedAt: string | null;
+  }
+> = M & {
+  group: MilestoneGroup;
+  isOverdue: boolean;
+  elementCount: number;
+  completedCount: number;
+  estimatedHours: number;
+  actualHours: number;
+  budget: number;
+  actualCost: number;
+};
+
+/**
+ * The progress of each milestone: its elements (Cancelled ones are left
+ * out), how many are Completed, hours actual against estimated, and cost
+ * actual against budget. Each element counts its own cost rows only, not its
+ * children's, so an element and its child on the same milestone are not
+ * counted twice.
+ */
+export function summarizeMilestones<
+  M extends {
+    id: string;
+    startDate: string | null;
+    endDate: string | null;
+    completedAt: string | null;
+  }
+>(args: {
+  milestones: M[];
+  elements: {
+    id: string;
+    milestoneId: string | null;
+    estimatedHours: number | null;
+    budget: number | null;
+    state: { group: ProjectStateGroup } | null;
+  }[];
+  costSummary: {
+    projectElementId: string | null;
+    actual: number;
+    actualHours: number;
+  }[];
+  today: string;
+}): MilestoneSummary<M>[] {
+  const costByElement = new Map<string, { actual: number; hours: number }>();
+  for (const row of args.costSummary) {
+    if (!row.projectElementId) continue;
+    costByElement.set(row.projectElementId, {
+      actual: Number(row.actual),
+      hours: Number(row.actualHours)
+    });
+  }
+
+  const totals = new Map<
+    string,
+    {
+      elementCount: number;
+      completedCount: number;
+      estimatedHours: number;
+      actualHours: number;
+      budget: number;
+      actualCost: number;
+    }
+  >();
+  for (const element of args.elements) {
+    if (!element.milestoneId) continue;
+    if (element.state?.group === "Cancelled") continue;
+    const total = totals.get(element.milestoneId) ?? {
+      elementCount: 0,
+      completedCount: 0,
+      estimatedHours: 0,
+      actualHours: 0,
+      budget: 0,
+      actualCost: 0
+    };
+    const cost = costByElement.get(element.id);
+    total.elementCount += 1;
+    if (element.state?.group === "Completed") total.completedCount += 1;
+    total.estimatedHours += Number(element.estimatedHours ?? 0);
+    total.budget += Number(element.budget ?? 0);
+    total.actualHours += cost?.hours ?? 0;
+    total.actualCost += cost?.actual ?? 0;
+    totals.set(element.milestoneId, total);
+  }
+
+  return args.milestones.map((milestone) => {
+    const group = milestoneGroup(milestone, args.today);
+    return {
+      ...milestone,
+      group,
+      isOverdue:
+        group === "Active" &&
+        milestone.endDate !== null &&
+        milestone.endDate < args.today,
+      elementCount: 0,
+      completedCount: 0,
+      estimatedHours: 0,
+      actualHours: 0,
+      budget: 0,
+      actualCost: 0,
+      ...totals.get(milestone.id)
+    };
+  });
+}

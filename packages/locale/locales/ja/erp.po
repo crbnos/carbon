@@ -1959,6 +1959,9 @@ msgstr "在庫移動を追加"
 msgid "Add Supplier"
 msgstr "仕入先を追加"
 
+msgid "Add the first milestone"
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "同じシステム上に次の機能を追加して、別のツールを購入する代わりにします。"
 
@@ -7034,6 +7037,10 @@ msgstr "{0}の請求書を削除"
 msgid "Delete the label {0}? It is removed from every element that has it."
 msgstr ""
 
+#. placeholder {0}: deleting.name
+msgid "Delete the milestone {0}? Its elements stay, without a milestone."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "数量{0}の価格スケールを削除しますか？この操作は取り消せません。"
@@ -7607,6 +7614,7 @@ msgstr "期限内（期日まで）"
 msgid "due {0}"
 msgstr "納期 {0}"
 
+#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
@@ -8024,6 +8032,9 @@ msgstr "材料タイプを編集"
 
 msgid "Edit Memo"
 msgstr "メモを編集"
+
+msgid "Edit Milestone"
+msgstr ""
 
 msgid "Edit Non Conformance Type"
 msgstr "不適合タイプを編集"
@@ -9679,6 +9690,7 @@ msgstr "から"
 msgid "From"
 msgstr "開始"
 
+#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -13105,6 +13117,9 @@ msgstr "新規素材"
 msgid "New Material Type"
 msgstr "新しい材料タイプ"
 
+msgid "New Milestone"
+msgstr ""
+
 msgid "New Non Conformance Type"
 msgstr "新しい不適合タイプ"
 
@@ -13511,6 +13526,9 @@ msgstr "データなし"
 msgid "No data exists"
 msgstr "データが存在しません"
 
+msgid "No dates"
+msgstr ""
+
 msgid "No days off scheduled"
 msgstr "休暇の予定がありません"
 
@@ -13710,6 +13728,9 @@ msgid "No materials"
 msgstr "物料がありません"
 
 msgid "No milestone"
+msgstr ""
+
+msgid "No milestones yet. Add one, then set it on the elements it covers."
 msgstr ""
 
 msgid "No new notifications"
@@ -22862,6 +22883,9 @@ msgstr "UoM"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "最大 {0} 削減"
+
+msgid "Upcoming"
+msgstr ""
 
 msgid "Update"
 msgstr "更新"

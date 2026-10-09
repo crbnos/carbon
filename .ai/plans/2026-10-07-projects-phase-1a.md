@@ -73,7 +73,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 34: Add the Table layout
 - [x] Task 35: Build the element page (peek and full page)
 - [x] Task 36: Add Log time and Issue material to the element page
-- [ ] Task 37: Build the Milestones tab
+- [x] Task 37: Build the Milestones tab
 - [ ] Task 38: Build the Costs tab and the Time & materials tab
 - [ ] Task 39: Build My Timesheet and Approvals in the ERP
 - [ ] Task 40: Build the MES timesheet
@@ -2528,3 +2528,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 36: Inventory → **Issue to Project** links to `/x/projects/issue`, whose default export renders the same modal with the `ChargeNumber` picker; closing it goes to Inventory → Quantities. The page sits under the Projects layout, so it shows the Projects sidebar.
 - Task 36: Log time and Issue material need a chargeable element of a project that is not Closed; the buttons are disabled otherwise (the server functions refuse the other states with their reason). They show in the action row and at the top of the Time & materials section.
 - Task 36: `@carbon/utils` `status-colors.ts` gains `TIMESHEET_ENTRY_STATUS_COLOR_MAP` (Draft gray, Submitted yellow, Approved blue, Posted green, Rejected red), rendered by `ui/Element/TimesheetEntryStatus.tsx`. Task 39 can reuse both.
+- Task 37: a milestone row links to the Elements page with `?filter=milestoneId:eq:<id>`, the filter that page already reads (`filterValues`), not `?milestone=`.
+- Task 37: `completeProjectMilestone(client, { id, companyId, completed, updatedBy })` (`projects.service.ts`, `@mcp update`) sets `completedAt` to now or clears it. The action takes a fourth intent, `reopen`, so a milestone completed by mistake can go back.
+- Task 37: the grouping and totals are the pure `milestoneGroup` / `summarizeMilestones` (`projects.models.ts`, pinned by `apps/erp/test/projects-milestones.test.ts`). A milestone with no dates is Upcoming; one past its end date and not completed stays Active and shows its date in red. Cancelled elements are left out of the count. Each element adds only its own cost and hours, not its children's, so a parent and child on one milestone are not counted twice.
+- Task 37: the list is three sections of plain rows (the Settings-tab row style), not the `Table` `groupRowsBy` of `OutboundTable`. A milestone list is short and has no columns to sort, filter or export.

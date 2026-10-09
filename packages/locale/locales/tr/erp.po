@@ -1959,6 +1959,9 @@ msgstr "Stok Transferi Ekle"
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
 
+msgid "Add the first milestone"
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç satın almak yerine."
 
@@ -7034,6 +7037,10 @@ msgstr "{0} faturasını sil"
 msgid "Delete the label {0}? It is removed from every element that has it."
 msgstr ""
 
+#. placeholder {0}: deleting.name
+msgid "Delete the milestone {0}? Its elements stay, without a milestone."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Miktar {0} için fiyat kademesi silinsin mi? Bu işlem geri alınamaz."
@@ -7607,6 +7614,7 @@ msgstr "Son tarih (son tarih'e göre)"
 msgid "due {0}"
 msgstr "teslim {0}"
 
+#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vadesi {0}"
@@ -8024,6 +8032,9 @@ msgstr "Malzeme Tipini Düzenle"
 
 msgid "Edit Memo"
 msgstr "Memo Düzenle"
+
+msgid "Edit Milestone"
+msgstr ""
 
 msgid "Edit Non Conformance Type"
 msgstr "Uygunsuzluk Türünü Düzenle"
@@ -9679,6 +9690,7 @@ msgstr "gelen"
 msgid "From"
 msgstr "Başlangıç"
 
+#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -13105,6 +13117,9 @@ msgstr "Yeni ana malzeme"
 msgid "New Material Type"
 msgstr "Yeni Malzeme Tipi"
 
+msgid "New Milestone"
+msgstr ""
+
 msgid "New Non Conformance Type"
 msgstr "Yeni Uygunsuzluk Türü"
 
@@ -13511,6 +13526,9 @@ msgstr "Veri Yok"
 msgid "No data exists"
 msgstr "Veri mevcut değil"
 
+msgid "No dates"
+msgstr ""
+
 msgid "No days off scheduled"
 msgstr "Planlanmış izin yok"
 
@@ -13710,6 +13728,9 @@ msgid "No materials"
 msgstr "Malzeme yok"
 
 msgid "No milestone"
+msgstr ""
+
+msgid "No milestones yet. Add one, then set it on the elements it covers."
 msgstr ""
 
 msgid "No new notifications"
@@ -22862,6 +22883,9 @@ msgstr "Birim"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "en fazla {0} tasarruf"
+
+msgid "Upcoming"
+msgstr ""
 
 msgid "Update"
 msgstr "Güncelle"

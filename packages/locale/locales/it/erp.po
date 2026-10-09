@@ -1959,6 +1959,9 @@ msgstr "Aggiungi trasferimento di stock"
 msgid "Add Supplier"
 msgstr "Aggiungi Fornitore"
 
+msgid "Add the first milestone"
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aggiungi la prossima funzionalità nello stesso sistema invece di acquistare un altro strumento."
 
@@ -7034,6 +7037,10 @@ msgstr "Elimina la fattura del {0}"
 msgid "Delete the label {0}? It is removed from every element that has it."
 msgstr ""
 
+#. placeholder {0}: deleting.name
+msgid "Delete the milestone {0}? Its elements stay, without a milestone."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Eliminare lo scaglione di prezzo per la quantità {0}? Questa azione non può essere annullata."
@@ -7607,6 +7614,7 @@ msgstr "Scadenza (per data di scadenza)"
 msgid "due {0}"
 msgstr "dovuto {0}"
 
+#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Scadenza {0}"
@@ -8024,6 +8032,9 @@ msgstr "Modifica Tipo di Materiale"
 
 msgid "Edit Memo"
 msgstr "Modifica Memo"
+
+msgid "Edit Milestone"
+msgstr ""
 
 msgid "Edit Non Conformance Type"
 msgstr "Modifica Tipo di Non Conformità"
@@ -9679,6 +9690,7 @@ msgstr "da"
 msgid "From"
 msgstr "Da"
 
+#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -13105,6 +13117,9 @@ msgstr "Nuovo Materiale base"
 msgid "New Material Type"
 msgstr "Nuovo Tipo di Materiale"
 
+msgid "New Milestone"
+msgstr ""
+
 msgid "New Non Conformance Type"
 msgstr "Nuovo Tipo di Non Conformità"
 
@@ -13511,6 +13526,9 @@ msgstr "Nessun dato"
 msgid "No data exists"
 msgstr "Non esistono dati"
 
+msgid "No dates"
+msgstr ""
+
 msgid "No days off scheduled"
 msgstr "Nessun giorno libero programmato"
 
@@ -13710,6 +13728,9 @@ msgid "No materials"
 msgstr "Nessun materiale"
 
 msgid "No milestone"
+msgstr ""
+
+msgid "No milestones yet. Add one, then set it on the elements it covers."
 msgstr ""
 
 msgid "No new notifications"
@@ -22862,6 +22883,9 @@ msgstr "UdM"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "fino a {0} risparmiati"
+
+msgid "Upcoming"
+msgstr ""
 
 msgid "Update"
 msgstr "Aggiorna"
