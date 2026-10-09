@@ -173,7 +173,10 @@ export async function buildLegacyAdjustmentJournals(
     quantity: number;
   }) =>
     `${row.documentType}|${row.documentId}|${row.itemId}|${row.createdAt}|${sign(Number(row.quantity))}`;
-  const ledgerQueues = groupBy(documentLedgers, pairKey);
+  const ledgerQueues = groupBy<(typeof documentLedgers)[number]>(
+    documentLedgers,
+    pairKey
+  );
   const pairedLedger = new Map<string, (typeof documentLedgers)[number]>();
   for (const row of documentRows) {
     const next = ledgerQueues.get(pairKey(row))?.shift();
