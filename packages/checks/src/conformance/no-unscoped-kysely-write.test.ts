@@ -44,6 +44,36 @@ describe("noUnscopedKyselyWrite", () => {
     expect(scan(ts)).toHaveLength(0);
   });
 
+  it("accepts companyGroupId on a group-scoped table with no companyId", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("currency")',
+      "  .set({ decimalPlaces })",
+      '  .where("id", "=", id)',
+      '  .where("companyGroupId", "=", companyGroupId)',
+      "  .execute();"
+    ].join("\n");
+    expect(scan(ts)).toHaveLength(0);
+  });
+
+  it("does not accept companyGroupId on a company-scoped table", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("quoteLine")',
+      "  .set({ sortOrder })",
+      '  .where("id", "=", id)',
+      '  .where("companyGroupId", "=", companyGroupId)',
+      "  .execute();"
+    ].join("\n");
+    expect(scan(ts)).toHaveLength(1);
+  });
+
+  it("still flags a group-scoped table written by id alone", () => {
+    const ts =
+      'await trx.updateTable("currency").set({ decimalPlaces }).where("id", "=", id).execute();';
+    expect(scan(ts)).toHaveLength(1);
+  });
+
   it("accepts an aliased table's qualified companyId", () => {
     const ts =
       'await trx.updateTable("job as j").set({ status }).where("j.id", "=", id).where("j.companyId", "=", companyId).executeTakeFirst();';
