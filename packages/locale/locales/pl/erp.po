@@ -19649,6 +19649,9 @@ msgstr "Identyfikator Serwisu"
 msgid "Service lines"
 msgstr "Pozycje usług"
 
+msgid "Service order"
+msgstr ""
+
 msgid "Service Period"
 msgstr "Okres świadczenia"
 

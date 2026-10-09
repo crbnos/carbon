@@ -19649,6 +19649,9 @@ msgstr "Hizmet Kimliği"
 msgid "Service lines"
 msgstr "Hizmet Satırları"
 
+msgid "Service order"
+msgstr ""
+
 msgid "Service Period"
 msgstr "Hizmet Dönemi"
 

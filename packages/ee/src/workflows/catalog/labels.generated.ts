@@ -407,6 +407,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.salesInvoice.sendError": msg`Send error`,
   "entity.salesInvoice.sentAt": msg`Sent at`,
   "entity.salesInvoice.sentTo": msg`Sent to`,
+  "entity.salesInvoice.serviceOrderId": msg`Service order`,
   "entity.salesInvoice.shipmentId": msg`Shipment`,
   "entity.salesInvoice.status": msg`Status`,
   "entity.salesInvoice.subtotal": msg`Subtotal`,

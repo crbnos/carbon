@@ -1237,7 +1237,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     sentAt: { kind: "primitive", of: "date" },
     sentTo: { kind: "primitive", of: "string" },
     sendError: { kind: "primitive", of: "string" },
-    customerContractId: { kind: "primitive", of: "string" }
+    customerContractId: { kind: "primitive", of: "string" },
+    serviceOrderId: { kind: "primitive", of: "string" }
   },
   salesOrder: {
     id: { kind: "primitive", of: "string" },

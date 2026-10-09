@@ -19649,6 +19649,9 @@ msgstr "सेवा ID"
 msgid "Service lines"
 msgstr "सेवा पंक्तियां"
 
+msgid "Service order"
+msgstr ""
+
 msgid "Service Period"
 msgstr "सेवा अवधि"
 
