@@ -25,6 +25,7 @@ Click **New Project** on the project list. A new project starts in **"Draft"**.
   <Field name="Location" type="reference">The site the project belongs to.</Field>
   <Field name="Priority" type="enum">`Urgent`, `High`, `Medium`, `Low` or `None`.</Field>
   <Field name="Start Date / End Date" type="date">The planned window of the project.</Field>
+  <Field name="Lock Plan After Milestone" type="reference">On an existing project only. When this milestone is completed, the plan changes only through a [change request](#change-requests).</Field>
 </FieldTable>
 
 Edit these fields later on the **Details** tab.
@@ -138,6 +139,36 @@ Mark a project as a **Template** in the header's menu. **Copy project** opens a 
 
 Choose a depth from 1 to 5. The drawer previews the elements before it creates them.
 
+## Baselines and change requests
+
+The plan of a project is its elements, their names, types, budgets, estimates, part links, Requirement targets and Parameters, the trace links and the plan lines. State, owner, priority, labels, dates, milestone, verdict and comments are progress. Baselines, change requests and the plan lock cover the plan only. Progress stays editable at all times.
+
+### Baselines
+
+A baseline is a read-only copy of the plan. Click **Take Baseline** on the **Baselines** tab, or complete a milestone, which takes one named after it. Click a baseline to compare it with the current plan, or use **Compare with…** in its menu to compare two baselines. The compare lists each changed element in tree order, with its changed fields, plan lines and trace links.
+
+### Change requests
+
+A change request is a draft set of plan changes with a title and a reason. Click **New Change Request** on the **Change requests** tab. The Elements tab then opens with a banner, and every plan change goes into the change request. The live plan does not change. Rows the change request adds, changes or removes show **Added**, **Modified** or **Removed** in the List layout. Click **Leave** to go back to the live plan, and **Review** to open the change request.
+
+The review page shows one card per changed element. Reviewers comment on a changed field or on the element, mark each element **Viewed**, and resolve comments. A **Viewed** mark clears when the element changes again in the change request.
+
+1. **Submit** sends a Draft for review.
+2. **Approve** applies the changes to the plan in one step and takes a baseline named "After" the change request. **Reject** sends it back with notes.
+3. **Reopen** turns a Rejected change request back into a Draft.
+
+If an [approval rule](/docs/reference/approvals) for project change requests exists, its approvers decide. Approval rules are available on the Business plan. Without a rule, anyone who can update projects approves.
+
+<Callout type="warn" title="A change request applies whole, or not at all.">
+If the live plan changed a row after the change request changed it, approval does not apply it. The page lists the conflicting rows. Click **Reopen**, check the rows, then submit again. A change request cannot delete an element that has costs, time, a job or a purchase order line.
+</Callout>
+
+A formula cannot change inside a change request. Leave the change request to edit it.
+
+### Plan lock
+
+Set **Lock Plan After Milestone** on the **Details** tab. When that milestone is completed, the Elements tab shows **Plan locked**, and a plan change outside a Draft change request is refused. **Open Change Request** goes to the change requests page.
+
 ## Charge numbers
 
 A <Term>charge number</Term> is a project, or a project and one of its elements. The picker lists Released projects and their chargeable elements in an Unstarted or Started state. A **Charge Number** field is on:
@@ -202,7 +233,7 @@ Time, issues, receipts, charges and reimbursements write ledger rows in every co
 
 ## Keyboard shortcuts
 
-**⌘⇧E**, **⌘⇧M**, **⌘⇧C**, **⌘⇧H**, **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
+**⌘⇧E**, **⌘⇧M**, **⌘⇧B**, **⌘⇧R**, **⌘⇧C**, **⌘⇧H**, **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
 
 ## Related
 
@@ -268,7 +299,7 @@ Actual is the sum of the project ledger. A Statistical project writes no ledger 
 
 ## Internals
 
-Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; `fixedAssetClassId` and `fixedAssetId` for Capitalize; `isTemplate`), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`, `isFinalAsset`, `fixedAssetId`, `itemId`, `trackedEntityId`, Requirement target columns, `verdict`, Parameter columns `parameterSource` / `parameterValue` / `parameterFormula` / `parameterItemField` / `allocationPercent` / `parameterContingencyPercent`), `projectElementLink` (`linkType` enum `projectElementLinkType`, `suspectSince`, `reviewedAt`), `projectView`, `projectUserPreference`, `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/projects/timesheet`, `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Capital projects write `fixedAssetCipCost` rows (`projectId`, `projectElementId`, `postCapitalization`). RPC `get_element_history_by_item`. Routes added in Phase 1b: `/x/project/:id/place-in-service`, `/x/project/:id/elements/build`, `/x/project/:id/elements/links`, `/x/project/:id/views`, `/x/project/:id/template`, `/x/project/:id/elements/:elementId/create-job`, `/x/project/:id/elements/:elementId/create-po-line`, `/file/project/:id.pdf`. Not built yet: element cost-treatment overrides in the UI, baselines, change requests, attachments on elements.
+Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; `fixedAssetClassId` and `fixedAssetId` for Capitalize; `isTemplate`), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`, `isFinalAsset`, `fixedAssetId`, `itemId`, `trackedEntityId`, Requirement target columns, `verdict`, Parameter columns `parameterSource` / `parameterValue` / `parameterFormula` / `parameterItemField` / `allocationPercent` / `parameterContingencyPercent`), `projectElementLink` (`linkType` enum `projectElementLinkType`, `suspectSince`, `reviewedAt`), `projectView`, `projectUserPreference`, `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/projects/timesheet`, `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Capital projects write `fixedAssetCipCost` rows (`projectId`, `projectElementId`, `postCapitalization`). RPC `get_element_history_by_item`. Routes added in Phase 1b: `/x/project/:id/place-in-service`, `/x/project/:id/elements/build`, `/x/project/:id/elements/links`, `/x/project/:id/views`, `/x/project/:id/template`, `/x/project/:id/elements/:elementId/create-job`, `/x/project/:id/elements/:elementId/create-po-line`, `/file/project/:id.pdf`. Phase 1c tables: `projectBaseline` (`snapshot` JSONB with `formatVersion`, `source` enum `projectBaselineSource`), `projectChangeRequest` (`status` enum `projectChangeRequestStatus`, `readableId` `<identifier>-CR-<n>`, `baseBaselineId`, `appliedBaselineId`), `projectChangeRequestItem` (`operation`, `targetTable`, `targetId`, `payload`, `baseRow`), `projectChangeRequestComment`, `projectChangeRequestView`; `project.lockPlanAfterMilestoneId`. Approval document type `projectChangeRequest`. Routes added in Phase 1c: `/x/project/:id/baselines`, `/x/project/:id/baselines/compare`, `/x/project/:id/change-requests`, `/x/project/:id/change-requests/new`, `/x/project/:id/change-requests/:crId` (with `/status`, `/comments`, `/viewed`); `?cr=<id>` on the Elements and element pages opens a change request. Not built yet: element cost-treatment overrides in the UI, attachments on elements.
 
 ### "This capital project has no asset under construction. Release the project first."
 A Capitalize charge needs the asset of its project or final-asset element. Release creates the assets; marking an element Final asset on a released project creates its asset.
@@ -281,6 +312,15 @@ A Parameter's children roll up into it, so only Parameters can go under a Parame
 
 ### "The serial belongs to a different item"
 A linked serial must be a serial of the element's linked item. Picking another item clears the serial.
+
+### "The plan is locked after XX. Open a change request to change it."
+The project's lock milestone is completed. Open a change request on the Change requests tab and make the change there. Progress fields (state, owner, dates) are never locked.
+
+### "XX-CR-1 is approved but cannot apply: the live plan changed under N of its rows."
+A row the change request changes was changed in the live plan after the draft read it. Reopen the change request; Carbon lays its changes over the current plan. Check the rows and submit again.
+
+### "A formula cannot change in a change request."
+A formula writes its own feeds links, which a change request does not carry. Leave the change request (**Leave** on the banner) to edit the formula.
 
 ### Build from part leaves bill of materials lines out
 The item source reads the method tree, which skips a line whose item has no cost record. The drawer shows the count. A Build from part parent cannot be a Parameter.

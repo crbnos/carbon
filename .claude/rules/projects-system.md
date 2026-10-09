@@ -9,9 +9,10 @@ paths:
 
 # Projects
 
-Phases 1a and 1b of `.ai/specs/2026-10-03-projects.md`; plans
-`.ai/plans/2026-10-07-projects-phase-1a.md` and
-`.ai/plans/2026-10-08-projects-phase-1b.md` (their *Execution notes* record every
+Phases 1a, 1b and 1c of `.ai/specs/2026-10-03-projects.md`; plans
+`.ai/plans/2026-10-07-projects-phase-1a.md`,
+`.ai/plans/2026-10-08-projects-phase-1b.md` and
+`.ai/plans/2026-10-08-projects-phase-1c.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -239,6 +240,61 @@ options. A URL without `layout` redirects to the named view, else the preference
 - The milestone burn chart (`buildBurnSeries`) plots Posted timesheet hours against
   the ideal line.
 
+## Baselines, change requests and the plan lock
+
+The **plan layer** is `PLAN_LAYER_FIELDS` (`projects.models.ts`): the plan columns of
+`projectElement` and of the four other plan tables (links and the three plan-line
+tables). Progress (state, owner, priority, labels, dates, milestone, verdict) and
+history (a link's suspect flag and review, a material's issued quantity and job or PO
+line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
+`isPlanLayerField(table, field)` is the test every route uses.
+
+- **Baseline** — `projectBaseline.snapshot` holds `{ elements, links, materials,
+  labor, costs }` (`toPlanSnapshot`, sorted by id) with `formatVersion`
+  (`PROJECT_BASELINE_FORMAT_VERSION`). `insertProjectBaseline(trx, …)` takes
+  `project.nextBaselineSequence` (the UPDATE locks the project row) then loads the
+  snapshot (`loadPlanSnapshot`, 5 queries). Completing a milestone takes one
+  (source Milestone). `diffPlanSnapshots` reuses `diffRows` (`modules/shared/diff.ts`).
+- **Change request** — `projectChangeRequest` (Draft → In Review → Approved → Applied,
+  or Rejected / Cancelled) with one `projectChangeRequestItem` per touched row:
+  `operation`, `targetTable`, `targetId` (an Add's id is made up front in the SQL
+  `id()` format), `payload`, `baseRow`. `mergeChangeRequestItem` (pure) folds a write
+  into the row's item; `upsertChangeRequestItems` writes a batch in one transaction and
+  refuses anything but a Draft. `createChangeRequest` takes a "Before" baseline.
+- **Overlay** — the plan-layer routes read the change request with
+  `readChangeRequestId` (form field `changeRequestId`, else `?cr=` on the action URL;
+  the UI uses `withChangeRequest`) and call the `*InChangeRequest` helpers instead of the
+  live write. Progress fields always write live. `applyChangeRequestItems` (pure) gives
+  the plan as the change request leaves it, with the delete cascades;
+  `overlayElementList` / `overlayPlanLines` / `overlayLinkList` and
+  `getProjectElementPageInChangeRequest` show it on the pages, each row with its
+  `changeOperation`. A formula save is refused in a change request (its `feeds` links
+  do not travel).
+- **Apply** — `applyChangeRequest(db, …)` runs in one Kysely transaction: it locks the
+  change request and the project, refuses with `ProjectChangeConflictError` when
+  `findConflicts` finds a live row that changed since its `baseRow` (or is gone), then
+  applies element Adds (numbered from `nextElementSequence`), Updates
+  (`jsonb_populate_recordset`, one statement per table), line and link Adds and Deletes,
+  and element Deletes (refused when the subtree has charges). It takes an "After"
+  baseline and sets Applied. `reopenChangeRequest` rebases the items onto the live plan
+  (`rebaseChangeRequestItems`).
+- **Approval** — the status route (`$projectId.change-requests.$crId.status.tsx`) opens
+  an approval request when `isApprovalRequired(…, "projectChangeRequest", …)` is true
+  (approval rules are commercial, so Community always gets false). With a pending
+  request, `approveRequest` / `rejectRequest` (`packages/ee/src/approvals/service.ts`)
+  flip the change request from In Review only; else a user with `update: projects`
+  decides directly. The ERP route runs the apply after either; no projects code lives in
+  `packages/ee`. The notification document id is `<projectId>:<crId>`.
+- **Plan lock** — `project.lockPlanAfterMilestoneId`. `isProjectPlanLocked` is true once
+  that milestone has `completedAt`. `requireEditablePlanRoute` (wrapping
+  `requireProjectPlanEditable`) refuses a plan-layer write outside a Draft change request
+  with `projectPlanLockedMessage`. `applyChangeRequest` never calls it.
+- **Review** — `getChangeRequestReview` diffs the live plan against the overlay (Applied:
+  its Before and After baselines). A `projectChangeRequestView` mark is per element card
+  and goes stale when an item of that element is newer than `viewedAt`. Comments may
+  target a field (`targetTable`, `targetId`, `field`); Resolve writes over Kysely
+  because RLS lets only the author update a comment.
+
 ## Known gaps
 
 - A receipt still creates a Receipt-usage inspection lot for a line the project
@@ -249,3 +305,8 @@ options. A URL without `layout` redirects to the named view, else the preference
   columns, so screens load them with `getJobProjectCharge` / `getLineChargeNumber`.
 - `POSTING_POLICY` syncs `Timesheet` and `Project Issue` journals to external ledgers by
   default.
+- Ids inside the JSONB of `projectBaseline.snapshot` and `projectChangeRequestItem`
+  (`payload`, `baseRow`) are not rewritten by a restore into another company.
+- With the plan locked, the Elements page turns off only create and delete; the other
+  plan-layer controls stay enabled and the server refuses them.
+- The demo datasets seed no baseline, change request, item, comment or view.

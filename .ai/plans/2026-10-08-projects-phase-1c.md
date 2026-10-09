@@ -45,7 +45,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 - [x] Task 10: Add the approvals engine branch and notifications
 - [x] Task 11: Build the change request pages
 - [x] Task 12: Add the plan lock
-- [ ] Task 13: Update the rule file, module AGENTS.md, docs and spec
+- [x] Task 13: Update the rule file, module AGENTS.md, docs and spec
 - [ ] Task 14: Verify in the browser
 
 ## Dependencies
@@ -727,4 +727,8 @@ ls .ai/playbooks/projects-phase-1c.md
 - Task 12 (UI scope): on a locked plan with no Draft change request open, the Elements page turns off create and delete. That covers the quick-add row, **+ New** and the row menu's Delete. The header shows **Plan locked** with the message as a tooltip and **Open Change Request**, which goes to the change requests page. The other plan-layer controls (the budget and estimate pills, the element sidebar, the plan lines, links and moves) stay enabled. The server refuses them with the message, which shows as a toast. Disabling each of them would touch every pill and the element page.
 - Task 12: the Details tab has **Lock Plan After Milestone**, a select of the project's milestones (existing projects only). `projectValidator` gains `lockPlanAfterMilestoneId`. The route refuses a milestone of another project, because the composite FK only pins the company. The MCP digest changes with the validator.
 - Task 12: the 3 `projects-lock.test.ts` cases pass, and `erp` typechecks green.
+- Task 13: `projects-system.md` gains *Baselines, change requests and the plan lock* and 3 known gaps. The module AGENTS.md lists the concepts, tables, functions and 2 safety rules. The reference page gains *Baselines and change requests* (baselines, change requests, the plan lock) and the **Lock Plan After Milestone** field. It also gains ⌘⇧B and ⌘⇧R, 3 troubleshooting entries and the Phase 1c tables and routes. `cd docs && pnpm typecheck` exits 0. No docs dev server was running, so the page was not fetched.
+- Task 13: the spec's changelog has a "Phase 1c implemented" entry with the plan's 4 decisions and 4 changes found during the run. Its status line now names Phases 1a, 1b and 1c; it still named Phase 1a only.
+- Demo datasets: no dataset seeds `projectBaseline`, `projectChangeRequest`, `projectChangeRequestItem`, `projectChangeRequestComment` or `projectChangeRequestView`. So none of them joins `COVERAGE_FLOORS`; `validate.ts` already excepts the `projectChangeRequest` approval type (Task 1).
+- Task 14: Browser verification deferred. The overnight run skips browser checks (`.ai/runs/2026-10-09-overnight-execution.md`), so the box stays unticked.
 

@@ -29,6 +29,12 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   Min, Max, Formula, Item) and Requirement status from the loaded rows.
 - **Template** — a project with `isTemplate`; `copyProject` copies it, Build from part
   copies its elements into another project.
+- **Baseline** — `projectBaseline`: a read-only JSONB snapshot of the plan layer
+  (`PLAN_LAYER_FIELDS`), taken by hand, on milestone completion or by a change request.
+- **Change request** — `projectChangeRequest` + `projectChangeRequestItem`: a draft of
+  plan-layer edits made in the normal UI with `?cr=`, reviewed (comments, Viewed marks),
+  approved through the approvals engine or by `update: projects`, then applied in one
+  transaction. `project.lockPlanAfterMilestoneId` locks the plan after a milestone.
 - **Timesheet entry** — `timesheetEntry`: Draft → Submitted → Approved → Posted, or
   Rejected (editable again). A Posted entry changes only by a correction (reversal +
   replacement).
@@ -49,6 +55,9 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 - MUST validate a document's charge number with `chargeNumberError` in the route action.
 - MUST pass `db` (Kysely) from the route to `deleteProjectState`, `setProjectStateDefault`
   and the `projects.server.ts` functions.
+- MUST route every plan-layer write through `readChangeRequestId` +
+  `requireEditablePlanRoute`, and send the open change request from the UI with
+  `withChangeRequest` — a write that skips them bypasses the draft and the plan lock.
 
 ### Ask First
 - Changing `defaultProjectStates` — tier 09 `PROJECT_STATES` and the backfill migration copy it.
@@ -65,6 +74,8 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 - Never write a bare PostgREST embed from `job` or `purchaseOrderLine` — name the FK
   (`item!job_itemId_fkey`). The project FKs push bare embeds past TS2589.
 - Never write a `feeds` link outside `saveParameterFormula` — the formula owns them.
+- Never call projects code from `packages/ee` — the approvals engine only flips the change
+  request status; the ERP route runs `applyChangeRequest`.
 
 ## Validation Commands
 ```bash
@@ -88,6 +99,9 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `fixedAssetCipCost` (`projectId`, `projectElementId`, `postCapitalization`) | CIP rows of capital projects |
 | `get_project_cost_summary` (RPC) | Plan, committed and actual per element |
 | `get_element_history_by_item` (RPC) | Average hours and material cost of elements on one item |
+| `projectBaseline` | Plan snapshots (`snapshot` JSONB, `formatVersion`) |
+| `projectChangeRequest`, `projectChangeRequestItem` | Change requests and their row edits (`payload`, `baseRow`) |
+| `projectChangeRequestComment`, `projectChangeRequestView` | Review comments (field-level) and per-user Viewed marks |
 
 ## Key Service Functions
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
@@ -108,10 +122,21 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   (models) — Build from part.
 - `getProjectViews`, `upsertProjectView`, `getProjectUserPreference`,
   `upsertProjectUserPreference` — saved views and preferences.
+- `loadPlanSnapshot`, `createProjectBaseline` / `insertProjectBaseline` (`.server`),
+  `getProjectBaselines`, `getProjectBaseline`, `diffPlanSnapshots` (models) — baselines.
+- `createChangeRequest`, `upsertChangeRequestItems`, `loadChangeRequestOverlay`,
+  `applyChangeRequest`, `reopenChangeRequest`, `setChangeRequestStatus`,
+  `getChangeRequestReview` (`.server`); `applyChangeRequestItems`,
+  `mergeChangeRequestItem`, `findConflicts`, `rebaseChangeRequestItems` (models) — change
+  requests.
+- `requireProjectPlanEditable`, `requireEditablePlanRoute` (`.server`),
+  `isProjectPlanLocked` (models) — the plan lock.
 
 ## Related Modules
 - **production** — `job.projectId/projectElementId/consumeToProject`; `getJobProjectCharge`.
 - **purchasing / invoicing** — charge number on PO and invoice lines; `getLineChargeNumber`.
+- **settings / ee approvals** — approval document type `projectChangeRequest`; the
+  approvals engine flips the change request status.
 - **accounting** — `Project` and `ProjectElement` dimensions; account defaults Project WIP and
   Project Expense; journal sources `Timesheet` and `Project Issue`; CIP assets, `capitalizeCip`
   and the remaining-life Straight Line for capital projects.
@@ -121,7 +146,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 
 ## Rules References
 - `.claude/rules/projects-system.md` — posting, charge gates, ids, consume-to-project jobs,
-  capital projects, trace links, verification, layouts, templates, Build from part.
+  capital projects, trace links, verification, layouts, templates, Build from part,
+  baselines, change requests and the plan lock.
 - `.claude/rules/fixed-asset-lifecycle.md` — the CIP side of capital projects.
 - `.claude/rules/accounting-sync-handlers.md` — how the new journal sources sync.
 - `.claude/rules/database-patterns.md` — Kysely transactions and server functions.
